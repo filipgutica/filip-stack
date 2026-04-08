@@ -8,6 +8,14 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 - Keep diffs minimal and focused; avoid unrelated refactors.
 - Maintain public API and exported type compatibility unless the user asks for a change or the fix requires one.
 - Prefer deterministic, correct fixes; do not hide failures or weaken checks to get green tests.
+- Preserve unrelated comments, code, and configuration; only change them when the task requires it or they become inaccurate.
+
+## Assumption Management
+- Do not guess when requirements, behavior, or data shape are unclear.
+- State important assumptions explicitly and verify them against code, tests, or docs before acting.
+- Surface confusion, inconsistencies, and missing context early instead of pushing through them.
+- Present material tradeoffs and push back on brittle, bloated, or inconsistent approaches.
+- For non-trivial work that does not need full plan mode, give a short inline plan before editing: intent, approach, and main risk or assumption.
 
 ## Workflow Orchestration
 - Plan first for any non-trivial task.
@@ -34,8 +42,10 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 - Favor the correct fix over the expedient fix.
 - Avoid hacky fixes, spaghetti code, and temporary-looking patches.
 - Prefer reuse of existing code and patterns when they fit cleanly.
+- Prefer the simplest end-to-end fix; favor deletion or reuse over new abstraction when both solve the problem.
 - Do not over-engineer or introduce abstraction before it is justified.
 - Separate refactors from behavior changes when practical.
+- Remove dead code made obsolete by the change, but do not expand the task into unrelated cleanup.
 
 ## Test Integrity
 - Treat existing tests as intended behavior by default.

@@ -33,7 +33,7 @@ This skill is for execution, not planning.
 ## Subagent Workflow
 
 - use one subagent to implement the change
-- for bounded subagent work, use the host's faster model, for example `gpt-5.4-mini` in Codex or `Sonnet 4.6` in Claude Code
+- use your judgment on model selection — prefer a capable but efficient model for bounded, clearly-scoped tasks; scale up if the task is complex; clarify with the user if the task is ambiguous before delegating
 - if the task is large or complicated, split the plan into multiple sequential subagent tasks, each with a narrow and clearly bounded scope
 - send each task to the subagent one at a time; do not batch multiple steps into a single subagent call
 - keep all review and acceptance decisions in the main thread
@@ -42,6 +42,11 @@ This skill is for execution, not planning.
 - if the review finds an obvious issue, send one correction cycle through the same subagent before moving on
 - after all tasks are complete, do one final review pass on the combined change against the original request
 - keep the review independent and do not let it rewrite unrelated code
+
+### Host-specific subagent notes
+
+- **Claude Code**: Use the `Agent` tool. Pass `model: "sonnet"` for subagent work. Subagent prompts must be self-contained — subagents have no access to the parent conversation context, so include all file paths, prior findings, and instructions explicitly.
+- **Codex**: Subagent delegation is handled by the host runtime.
 
 ## Internal review is mandatory
 

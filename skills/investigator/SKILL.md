@@ -19,7 +19,7 @@ Investigate a problem, prove the likely cause, and drive it to a reviewed fix.
 ## Subagent Workflow
 
 - use one worker subagent to investigate the issue and return findings, likely root cause, and a proposed fix path
-- for bounded subagent work, use the host's faster model, for example `gpt-5.4-mini` in Codex or `Sonnet 4.6` in Claude Code
+- use your judgment on model selection — prefer a capable but efficient model for bounded, clearly-scoped tasks; scale up if the task is complex; clarify with the user if the task is ambiguous before delegating
 - keep all review and acceptance decisions in the main thread
 - use the `reviewer` skill in the main thread for both the findings pass and the diff pass
 - if the investigation or fix is very complicated, split it into smaller steps and review each step before proceeding
@@ -27,6 +27,11 @@ Investigate a problem, prove the likely cause, and drive it to a reviewed fix.
 - if the review finds a concrete issue, send one correction cycle through the same subagent
 - require the implementation pass to be reviewed before final acceptance
 - keep the subagent task narrow and avoid unrelated refactors
+
+### Host-specific subagent notes
+
+- **Claude Code**: Use the `Agent` tool. Pass `model: "sonnet"` for subagent work. Subagent prompts must be self-contained — subagents have no access to the parent conversation context, so include all file paths, prior findings, and instructions explicitly.
+- **Codex**: Subagent delegation is handled by the host runtime.
 
 ## Operating Rules
 

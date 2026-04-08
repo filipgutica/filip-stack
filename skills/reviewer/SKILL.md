@@ -1,11 +1,11 @@
 ---
 name: reviewer
-description: Use when you need a focused review pass for a plan, investigation, diff, or validation result. Reviews against both ~/.codex/AGENTS.md for global guidance and the project AGENTS.md for project-specific rules, then checks the task, plan, diff, and evidence for ambiguity, completeness, scope, correctness, and verification before returning.
+description: Use when you need a focused review pass for a plan, investigation, diff, or validation result. Reviews against the host's global engineering standards (`~/.codex/AGENTS.md` in Codex, `~/.claude/CLAUDE.md` in Claude Code) and the project AGENTS.md for project-specific rules, then checks the task, plan, diff, and evidence for ambiguity, completeness, scope, correctness, and verification before returning.
 ---
 
 # Reviewer
 
-Review plans, investigations, diffs, and validation results using both `~/.codex/AGENTS.md` for global standards, principles, and general guidance and the project `AGENTS.md` for project-specific rules, policies, and conventions, then apply the original request and evidence in hand.
+Review plans, investigations, diffs, and validation results using the global engineering standards file (`~/.codex/AGENTS.md` in Codex, `~/.claude/CLAUDE.md` in Claude Code) for global standards, principles, and general guidance and the project `AGENTS.md` for project-specific rules, policies, and conventions, then apply the original request and evidence in hand.
 
 ## Use when
 
@@ -29,8 +29,8 @@ Review plans, investigations, diffs, and validation results using both `~/.codex
 
 ## Responsibilities
 
-- use both `~/.codex/AGENTS.md` and the project `AGENTS.md` as review inputs, alongside the original request and available evidence
-- treat `~/.codex/AGENTS.md` as the global baseline for general guidance and the project `AGENTS.md` as the source of project-specific rules and policies
+- use both the global standards file and the project `AGENTS.md` as review inputs, alongside the original request and available evidence
+- treat the global standards file as the global baseline for general guidance and the project `AGENTS.md` as the source of project-specific rules and policies
 - if the project `AGENTS.md` is required for the review context but not available, call out the missing context explicitly
 - look for ambiguity, missing assumptions, missing validation, and unnecessary scope
 - check whether the work actually solves the original request

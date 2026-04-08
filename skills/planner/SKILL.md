@@ -9,7 +9,7 @@ Create a high-quality implementation plan before any code is written.
 
 This skill is for planning only.
 
-Enter host Plan Mode when available.
+Enter host Plan Mode when available. In Claude Code, use the `EnterPlanMode` tool. In Codex, the host controls mode switching.
 
 If the host cannot switch modes from the skill, behave as planning-only and do not execute implementation work.
 
@@ -44,12 +44,17 @@ If the host cannot switch modes from the skill, behave as planning-only and do n
 ## Subagent Workflow
 
 - use one subagent to draft the plan
-- for bounded subagent work, use the host's faster model, for example `gpt-5.4-mini` in Codex or `Sonnet 4.6` in Claude Code
+- use your judgment on model selection — prefer a capable but efficient model for bounded, clearly-scoped tasks; scale up if the task is complex; clarify with the user if the task is ambiguous before delegating
 - keep all review and acceptance decisions in the main thread
 - run the `reviewer` skill in the main thread once against the draft plan and original request
 - if the task is complex, break the plan into bounded, well-defined, verifiable phases with bounded subtasks instead of one monolithic pass
 - give each phase, task, and subtask clear scope, a concrete deliverable, and verifiable exit criteria
 - if the review finds an issue, revise the plan once and stop
+
+### Host-specific subagent notes
+
+- **Claude Code**: Use the `Agent` tool. Pass `model: "sonnet"` for subagent work. Subagent prompts must be self-contained — subagents have no access to the parent conversation context, so include all file paths, prior findings, and instructions explicitly.
+- **Codex**: Subagent delegation is handled by the host runtime.
 
 ## Internal review is mandatory
 
