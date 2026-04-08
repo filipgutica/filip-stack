@@ -31,12 +31,12 @@ If the host cannot switch modes from the skill, behave as planning-only and do n
 
 - restate the task clearly
 - identify constraints, confirmed facts, and assumptions
-- seek clarification when important requirements or behavior are ambiguous
+- ask clarifying questions when important requirements or expected behavior are unclear
 - propose the minimal effective approach
 - identify and call out material tradeoffs
 - split the work into bounded, well-defined, verifiable phases or tasks
 - for complex work, use bounded, well-defined, verifiable phases with explicit subtasks
-- make each phase, task, and subtask independently checkable before moving on
+- make each phase, task, and subtask independently verifiable before moving on
 - identify affected files or areas
 - call out risks and edge cases
 - define how the result should be validated
