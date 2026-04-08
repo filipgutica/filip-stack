@@ -1,0 +1,20 @@
+#!/usr/bin/env node
+import { existsSync } from 'node:fs'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath, pathToFileURL } from 'node:url'
+
+const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
+const cliPath = resolve(repoRoot, 'dist/cli.js')
+
+if (!existsSync(cliPath)) {
+  console.error('Missing built CLI at dist/cli.js.')
+  console.error('Run `pnpm install && pnpm build` before running ./bin/filip-stack.')
+  process.exit(1)
+}
+
+const { runCli } = await import(pathToFileURL(cliPath).href)
+
+process.exitCode = await runCli({
+  argv: process.argv.slice(2),
+  repoRoot,
+})

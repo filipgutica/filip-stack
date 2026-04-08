@@ -1,0 +1,4 @@
+interface:
+  display_name: "Planner"
+  short_description: "Create a concrete implementation plan"
+  default_prompt: "Use $planner to turn the request into a bounded, verifiable implementation plan with assumptions, risks, and validation."

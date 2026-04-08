@@ -1,0 +1,7 @@
+interface:
+  display_name: "Preview Package Install"
+  short_description: "Install preview packages for a repo"
+  default_prompt: "Use $preview-package-install to install preview packages from a package list, choose the target pnpm workspace if needed, then offer commit-and-push or feedback."
+
+policy:
+  allow_implicit_invocation: true

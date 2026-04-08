@@ -1,0 +1,4 @@
+interface:
+  display_name: "Project Notes Tracker"
+  short_description: "Track project notes through todo, in progress, and complete"
+  default_prompt: "Use $project-notes-tracker to create or update a project note ticket."
