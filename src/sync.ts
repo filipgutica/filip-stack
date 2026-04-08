@@ -37,6 +37,19 @@ const readOptionalFile = async (path: string): Promise<string | null> => {
   }
 }
 
+const pathExists = async (path: string): Promise<boolean> => {
+  try {
+    await stat(path)
+    return true
+  } catch (caughtError) {
+    if (caughtError instanceof Error && 'code' in caughtError && caughtError.code === 'ENOENT') {
+      return false
+    }
+
+    throw caughtError
+  }
+}
+
 type HookMatchers = Record<string, unknown[]>
 
 const isHookObject = (value: unknown): value is { hooks: HookMatchers } => {
@@ -332,6 +345,7 @@ const copyDirectoryContents = async (
 }
 
 const copyDirectory = async (sourceRoot: string, destinationRoot: string, options: CopyOptions) => {
+  if (!await pathExists(sourceRoot)) return
   await ensureDirectory(destinationRoot, options)
   await copyDirectoryContents(sourceRoot, destinationRoot, sourceRoot, options)
 }
@@ -351,6 +365,8 @@ export const syncSetup = async ({
   }
 
   if (selectedScopes.has('hooks')) {
+    await copyDirectory(join(repoRoot, 'hooks/shared'), join(homeDir, '.codex/hooks'), options)
+    await copyDirectory(join(repoRoot, 'hooks/shared'), join(homeDir, '.claude/hooks'), options)
     await copyDirectory(join(repoRoot, 'hooks/codex/scripts'), join(homeDir, '.codex/hooks'), options)
     await copyDirectory(join(repoRoot, 'hooks/claude/scripts'), join(homeDir, '.claude/hooks'), options)
     await mergeClaudeSettingsFile({

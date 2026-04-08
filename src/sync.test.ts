@@ -11,6 +11,8 @@ let testRoot: string
 let repoRoot: string
 let homeDir: string
 
+const readRepoHookFragment = async (path: string) => readFile(join(process.cwd(), path), 'utf8')
+
 const writeFixture = async (path: string, content: string) => {
   await mkdir(dirname(path), { recursive: true })
   await writeFile(path, content)
@@ -20,6 +22,7 @@ const createRepoFixture = async () => {
   await writeFixture(join(repoRoot, 'skills/reviewer/SKILL.md'), 'repo reviewer')
   await writeFixture(join(repoRoot, 'skills/reviewer/agents/openai.yaml'), 'agent config')
   await writeFixture(join(repoRoot, 'skills/implementer/SKILL.md'), 'repo implementer')
+  await writeFixture(join(repoRoot, 'hooks/shared/project-notes-hook.mjs'), 'shared hook')
   await writeFixture(join(repoRoot, 'hooks/codex/scripts/pre-tool-use.sh'), 'codex hook')
   await writeFixture(
     join(repoRoot, 'hooks/codex/hooks.json'),
@@ -98,8 +101,14 @@ describe('syncSetup', () => {
     await expect(readFile(join(homeDir, '.codex/hooks/pre-tool-use.sh'), 'utf8')).resolves.toBe(
       'codex hook',
     )
+    await expect(readFile(join(homeDir, '.codex/hooks/project-notes-hook.mjs'), 'utf8')).resolves.toBe(
+      'shared hook',
+    )
     await expect(readFile(join(homeDir, '.claude/hooks/post-tool-use.sh'), 'utf8')).resolves.toBe(
       'claude hook',
+    )
+    await expect(readFile(join(homeDir, '.claude/hooks/project-notes-hook.mjs'), 'utf8')).resolves.toBe(
+      'shared hook',
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain('PreToolUse')
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
@@ -232,6 +241,112 @@ describe('syncSetup', () => {
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
       'PostToolUse',
     )
+  })
+
+  it('preserves existing same-event hooks alongside notes hook entries', async () => {
+    await writeFixture(
+      join(repoRoot, 'hooks/claude/hooks.json'),
+      await readRepoHookFragment('hooks/claude/hooks.json'),
+    )
+    await writeFixture(
+      join(repoRoot, 'hooks/codex/hooks.json'),
+      await readRepoHookFragment('hooks/codex/hooks.json'),
+    )
+    await writeFixture(
+      join(homeDir, '.claude/settings.json'),
+      JSON.stringify(
+        {
+          model: 'opus',
+          hooks: {
+            Stop: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'existing-claude-stop-hook',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+    )
+    await writeFixture(
+      join(homeDir, '.codex/hooks.json'),
+      JSON.stringify(
+        {
+          hooks: {
+            Stop: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'existing-codex-stop-hook',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+    )
+
+    await syncSetup({
+      repoRoot,
+      homeDir,
+      scopes: ['hooks'],
+      dryRun: false,
+    })
+
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
+      'existing-claude-stop-hook',
+    )
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
+      'node ~/.claude/hooks/project-notes-hook.mjs claude Stop',
+    )
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
+      'existing-codex-stop-hook',
+    )
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
+      'node ~/.codex/hooks/project-notes-hook.mjs codex Stop',
+    )
+  })
+
+  it('does not duplicate notes hook config on repeated sync', async () => {
+    await writeFixture(
+      join(repoRoot, 'hooks/claude/hooks.json'),
+      await readRepoHookFragment('hooks/claude/hooks.json'),
+    )
+    await writeFixture(
+      join(repoRoot, 'hooks/codex/hooks.json'),
+      await readRepoHookFragment('hooks/codex/hooks.json'),
+    )
+    await syncSetup({
+      repoRoot,
+      homeDir,
+      scopes: ['hooks'],
+      dryRun: false,
+    })
+
+    await syncSetup({
+      repoRoot,
+      homeDir,
+      scopes: ['hooks'],
+      dryRun: false,
+    })
+
+    const codexHooks = await readFile(join(homeDir, '.codex/hooks.json'), 'utf8')
+    const claudeSettings = await readFile(join(homeDir, '.claude/settings.json'), 'utf8')
+
+    expect(codexHooks.match(/project-notes-hook\.mjs codex Stop/g) ?? []).toHaveLength(1)
+    expect(codexHooks.match(/project-notes-hook\.mjs codex SessionStart/g) ?? []).toHaveLength(1)
+    expect(claudeSettings.match(/project-notes-hook\.mjs claude Stop/g) ?? []).toHaveLength(1)
+    expect(claudeSettings.match(/project-notes-hook\.mjs claude SessionStart/g) ?? []).toHaveLength(1)
   })
 
   it('fails on invalid hook config fragments', async () => {

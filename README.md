@@ -110,6 +110,7 @@ things:
 
 - copies hook scripts
 - updates the tool-specific hook config needed to activate them
+- enables shared project-notes tracking hooks for both hosts
 
 Claude hooks:
 
@@ -124,14 +125,32 @@ Codex hooks:
 
 Repo hook config fragments are expected to contain a top-level `hooks` object.
 Unrelated existing user settings are preserved.
-The checked-in hook fragments currently start empty, so no hook config is
-activated until you add actual hook entries.
+The checked-in hook fragments install a shared project-notes tracker for both hosts.
+
+The notes hooks use these repo-local conventions:
+
+- `.notes/todo/`, `.notes/in-progress/`, and `.notes/complete/` hold tracked Markdown tickets
+- `.notes/.runtime/` stores machine-managed session bindings and transient hook state and should stay untracked
+- `SessionStart` ensures `.notes/` exists and restores ticket bindings
+- `UserPromptSubmit` supports `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`, `notes approve`, and `notes bypass`
+- `UserPromptSubmit` also reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
+- `PreToolUse` blocks mutating work when the session has no bound ticket or the ticket has no approved plan
+- `Stop` does not author notes or trigger plan transitions
+
+`notes bypass` is session-only. After that prompt, the next prompt becomes the bypass reason unless it is `cancel`.
+
+Planning is now a two-step flow:
+
+- `notes plan: <seed>` tells the model to add the seed under `## Planning Seed` and start planner-driven planning while keeping the ticket in `.notes/todo/`
+- Claude can enter planning flow directly; Codex should tell the user to switch to Plan Mode and use `$planner`
+- `notes approve` tells the model to write the approved plan into `## Approved Plan`, set `status: "in-progress"`, stamp `started`, and move the ticket to `.notes/in-progress/`
 
 ## Destinations
 
 ```text
 skills/*           -> ~/.agents/skills/
 hooks/codex/scripts/*   -> ~/.codex/hooks/
+hooks/shared/*          -> ~/.codex/hooks/ and ~/.claude/hooks/
 hooks/codex/hooks.json  -> ~/.codex/hooks.json (merged)
 hooks/claude/scripts/*  -> ~/.claude/hooks/
 hooks/claude/hooks.json -> ~/.claude/settings.json (merged)
