@@ -31,9 +31,9 @@ describe('formatDryRun', () => {
         { type: 'mkdir', path: '/home/user/.claude/hooks' },
         {
           type: 'update',
-          source: '/repo/hooks/claude/settings.json',
+          source: '/repo/hooks/claude/hooks.json',
           destination: '/home/user/.claude/settings.json',
-          detail: 'merge Claude hooks settings',
+          detail: 'merge Claude hooks config',
         },
       ],
     })

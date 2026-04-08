@@ -201,7 +201,7 @@ const mergeClaudeSettingsFile = async ({
       type: 'update',
       destination: destinationPath,
       source: sourcePath,
-      detail: 'merge Claude hooks settings',
+      detail: 'merge Claude hooks config',
     },
     actions,
   )
@@ -354,7 +354,7 @@ export const syncSetup = async ({
     await copyDirectory(join(repoRoot, 'hooks/codex/scripts'), join(homeDir, '.codex/hooks'), options)
     await copyDirectory(join(repoRoot, 'hooks/claude/scripts'), join(homeDir, '.claude/hooks'), options)
     await mergeClaudeSettingsFile({
-      sourcePath: join(repoRoot, 'hooks/claude/settings.json'),
+      sourcePath: join(repoRoot, 'hooks/claude/hooks.json'),
       destinationPath: join(homeDir, '.claude/settings.json'),
       dryRun,
       actions,

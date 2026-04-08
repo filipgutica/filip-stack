@@ -114,7 +114,7 @@ things:
 Claude hooks:
 
 - `hooks/claude/scripts/*` -> `~/.claude/hooks/`
-- `hooks/claude/settings.json` merges into `~/.claude/settings.json`
+- `hooks/claude/hooks.json` merges into `~/.claude/settings.json`
 
 Codex hooks:
 
@@ -134,7 +134,7 @@ skills/*           -> ~/.agents/skills/
 hooks/codex/scripts/*   -> ~/.codex/hooks/
 hooks/codex/hooks.json  -> ~/.codex/hooks.json (merged)
 hooks/claude/scripts/*  -> ~/.claude/hooks/
-hooks/claude/settings.json -> ~/.claude/settings.json (merged)
+hooks/claude/hooks.json -> ~/.claude/settings.json (merged)
 globals/AGENTS.md  -> ~/.codex/AGENTS.md
 globals/CLAUDE.md  -> ~/.claude/CLAUDE.md
 ```

@@ -46,7 +46,7 @@ const createRepoFixture = async () => {
   await writeFixture(join(repoRoot, 'hooks/codex/scripts/.gitkeep'), '')
   await writeFixture(join(repoRoot, 'hooks/claude/scripts/post-tool-use.sh'), 'claude hook')
   await writeFixture(
-    join(repoRoot, 'hooks/claude/settings.json'),
+    join(repoRoot, 'hooks/claude/hooks.json'),
     JSON.stringify(
       {
         hooks: {
@@ -276,9 +276,9 @@ describe('syncSetup', () => {
 
     expect(actions).toContainEqual({
       type: 'update',
-      source: join(repoRoot, 'hooks/claude/settings.json'),
+      source: join(repoRoot, 'hooks/claude/hooks.json'),
       destination: join(homeDir, '.claude/settings.json'),
-      detail: 'merge Claude hooks settings',
+      detail: 'merge Claude hooks config',
     })
     expect(actions).toContainEqual({
       type: 'update',

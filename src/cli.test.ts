@@ -33,7 +33,7 @@ describe('runCli', () => {
     await mkdir(join(repoRoot, 'globals'), { recursive: true })
     await writeFile(join(repoRoot, 'skills/reviewer/SKILL.md'), 'reviewer')
     await writeFile(join(repoRoot, 'hooks/codex/hooks.json'), JSON.stringify({ hooks: {} }, null, 2))
-    await writeFile(join(repoRoot, 'hooks/claude/settings.json'), JSON.stringify({ hooks: {} }, null, 2))
+    await writeFile(join(repoRoot, 'hooks/claude/hooks.json'), JSON.stringify({ hooks: {} }, null, 2))
     await writeFile(join(repoRoot, 'globals/AGENTS.md'), 'agents')
     await writeFile(join(repoRoot, 'globals/CLAUDE.md'), 'claude')
   })
