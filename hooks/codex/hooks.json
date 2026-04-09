@@ -30,27 +30,6 @@
           }
         ]
       }
-    ],
-    "PostToolUse": [
-      {
-        "matcher": "Bash",
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.codex/hooks/project-notes-hook.mjs codex PostToolUse"
-          }
-        ]
-      }
-    ],
-    "Stop": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "node ~/.codex/hooks/project-notes-hook.mjs codex Stop"
-          }
-        ]
-      }
     ]
   }
 }

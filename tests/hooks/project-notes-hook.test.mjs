@@ -77,8 +77,12 @@ describe('project notes hook', () => {
     expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$planner`')
     const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
     expect(state).toContain('"ticketPath": ".notes/todo/')
+    const ticketPath = state.match(/"ticketPath": "([^"]+)"/)?.[1]
     await expect(
-      readFile(join(repoRoot, '.notes/todo/2026-04-08-track-hook-work.md'), 'utf8'),
+      readFile(join(repoRoot, ticketPath), 'utf8'),
+    ).resolves.toContain('## Completion Criteria')
+    await expect(
+      readFile(join(repoRoot, ticketPath), 'utf8'),
     ).resolves.not.toContain('Planning request (2026-04-08): Tighten notes workflow')
   })
 
@@ -114,8 +118,10 @@ describe('project notes hook', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout.join('\n')).toContain('writing the approved plan into `## Approved Plan`')
     expect(result.stdout.join('\n')).toContain('moving the ticket into `.notes/in-progress/`')
+    const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
+    const ticketPath = state.match(/"ticketPath": "([^"]+)"/)?.[1]
     await expect(
-      readFile(join(repoRoot, '.notes/todo/2026-04-08-track-hook-work.md'), 'utf8'),
+      readFile(join(repoRoot, ticketPath), 'utf8'),
     ).resolves.toContain('Not started.')
   })
 
@@ -241,6 +247,7 @@ describe('project notes hook', () => {
     })
 
     expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
+    expect(result.stdout.join('\n')).toContain(`move the ticket to \`.notes/complete/\``)
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('No work logged yet.')
   })
 })

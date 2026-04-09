@@ -1,9 +1,9 @@
 ---
 title: "tighten project notes hook behavior"
-status: "in-progress"
+status: "complete"
 created: "2026-04-08"
 started: "2026-04-08"
-completed: null
+completed: "2026-04-08"
 tags: ["notes"]
 ---
 
@@ -20,6 +20,13 @@ refine Codex versus Claude gating, clarify prompt-command behavior, and verify s
   logging only appends for tracked sessions
 
 Not started.
+
+## Completion Criteria
+
+- The shared notes hook should only handle deterministic state, gating, and reminders.
+- Planning, approval, work-log writing, and completion transitions should be model-driven instead of script-authored.
+- Prompt-time reminders should replace stop-time work-log warnings.
+- The hook tests and documentation should match the simplified contract.
 
 ## Work Log
 - 2026-04-08 Bash: sed -n '1,220p' .notes/todo/2026-04-08-tighten-project-notes-hook-behavior.md; Bash: if [ -f .notes/.runtime/$CODEX_THREAD_ID.json ]; then sed -n '1,220p' .notes/.runtime/$CODEX_THREAD_ID.json; else echo 'missing runtime file'; fi
@@ -45,4 +52,4 @@ Not started.
 
 ## Completion Summary
 
-Not completed.
+Simplified the shared project-notes hook so it only manages deterministic state, gating, and prompt-time reminders. Planning, approval, work-log updates, and completion transitions are now model-driven. Updated the docs and tests to reflect the smaller contract, verified the repo with `pnpm check`, committed the changes, and pushed them to `origin/main`.

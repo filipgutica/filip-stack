@@ -26,8 +26,6 @@ When the shared notes hooks are installed:
 - `UserPromptSubmit` can create, bind, trigger planning guidance, trigger approval guidance, or bypass the gate through reserved prompts.
 - `UserPromptSubmit` should also remind the model to keep the linked ticket's `## Work Log` updated during normal tracked work once the ticket has an approved plan.
 - `PreToolUse` blocks mutating work when the session has no bound ticket or the ticket has no approved plan yet.
-- `PostToolUse` should stay lightweight; do not rely on it to author notes or infer detailed progress.
-- `Stop` should stay passive. Do not rely on it to make the model write notes or perform plan transitions.
 
 The current session should track exactly one `todo` or `in-progress` ticket at a time.
 
@@ -79,6 +77,8 @@ Use these sections in order:
 
 ## Approved Plan
 
+## Completion Criteria
+
 ## Work Log
 
 ## Completion Summary
@@ -91,7 +91,7 @@ When creating a ticket:
 - Create it in `.notes/todo/`.
 - Set `status: "todo"`, `created` to the current date, and `started`/`completed` to `null`.
 - Put the user's initial problem statement, constraints, context, and unresolved planning questions under `## Planning Seed`.
-- Leave `## Approved Plan` as `Not started.`, `## Work Log` as `No work logged yet.`, and `## Completion Summary` as `Not completed.` unless real content already exists.
+- Leave `## Approved Plan` as `Not started.`, `## Completion Criteria` as `Not defined yet.`, `## Work Log` as `No work logged yet.`, and `## Completion Summary` as `Not completed.` unless real content already exists.
 - If hooks are installed, bind the current session to the new ticket immediately.
 
 When a plan is approved:
@@ -100,6 +100,7 @@ When a plan is approved:
 - Set `status: "in-progress"` and `started` to the current date.
 - Move the file to `.notes/in-progress/`.
 - Preserve the planning seed rather than replacing it.
+- Define explicit `## Completion Criteria` once the approved plan is known so the agent can tell when the ticket should move to `.notes/complete/`.
 - Hooks should treat placeholder content such as `Not started.` as "no approved plan yet" and continue blocking mutating work until real plan content exists.
 - `notes plan:` alone should not lift the gate.
 
@@ -112,9 +113,11 @@ When doing work:
 
 When completing work:
 
+- Only complete the ticket once the body of work and the stated `## Completion Criteria` are satisfied.
 - Add a concise summary under `## Completion Summary` covering what changed, important tradeoffs, validation, and lessons learned.
 - Set `status: "complete"` and `completed` to the current date.
 - Move the file to `.notes/complete/`.
+- When the work is committed or pushed and the ticket's completion criteria are satisfied, the agent should complete the ticket in the same turn rather than leaving it in `.notes/in-progress/`.
 
 ## Guardrails
 

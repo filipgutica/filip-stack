@@ -6,6 +6,7 @@ import { basename, dirname, extname, join, relative, resolve } from 'node:path'
 const NOTES_DIRECTORIES = ['todo', 'in-progress', 'complete']
 const PLACEHOLDERS = {
   approvedPlan: 'Not started.',
+  completionCriteria: 'Not defined yet.',
   workLog: 'No work logged yet.',
   completionSummary: 'Not completed.',
 }
@@ -51,10 +52,6 @@ const parsePayload = (stdin) => {
 
 const formatOutput = ({ host, event, exitCode, stdout }) => {
   if (stdout.length === 0) return null
-
-  if (host === 'codex' && event === 'Stop' && exitCode === 0) {
-    return `${JSON.stringify({ systemMessage: stdout.join('\n') })}\n`
-  }
 
   return `${stdout.join('\n')}\n`
 }
@@ -254,6 +251,8 @@ const createTicket = async ({ repoRoot, title, planningSeed }) => {
     `${planningSeed.trim() || 'Created from hook command.'}\n\n` +
     `## Approved Plan\n\n` +
     `${PLACEHOLDERS.approvedPlan}\n\n` +
+    `## Completion Criteria\n\n` +
+    `${PLACEHOLDERS.completionCriteria}\n\n` +
     `## Work Log\n\n` +
     `${PLACEHOLDERS.workLog}\n\n` +
     `## Completion Summary\n\n` +
@@ -504,7 +503,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
 
     if (hasApprovedPlan(loadedTicket.content)) {
       stdout.push(
-        `Project notes tracking: keep \`${state.ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands.`,
+        `Project notes tracking: keep \`${state.ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. If the ticket's completion criteria are now satisfied, add a Completion Summary, set \`status: "complete"\`, stamp \`completed\`, and move the ticket to \`.notes/complete/\`.`,
       )
     }
   }
@@ -570,14 +569,6 @@ export const runHook = async ({
       return { exitCode: 2, stdout, stderr }
     }
 
-    return { exitCode: 0, stdout, stderr }
-  }
-
-  if (event === 'PostToolUse') {
-    return { exitCode: 0, stdout, stderr }
-  }
-
-  if (event === 'Stop') {
     return { exitCode: 0, stdout, stderr }
   }
 

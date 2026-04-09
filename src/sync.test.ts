@@ -53,9 +53,9 @@ const createRepoFixture = async () => {
     JSON.stringify(
       {
         hooks: {
-          PostToolUse: [
+          PreToolUse: [
             {
-              matcher: 'Write|Edit',
+              matcher: 'Write|Edit|Bash',
               hooks: [
                 {
                   type: 'command',
@@ -112,7 +112,7 @@ describe('syncSetup', () => {
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain('PreToolUse')
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
-      'PostToolUse',
+      'PreToolUse',
     )
     await expect(readFile(join(homeDir, '.codex/config.toml'), 'utf8')).resolves.toContain(
       'codex_hooks = true',
@@ -209,10 +209,16 @@ describe('syncSetup', () => {
       'SessionStart',
     )
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
-      'PostToolUse',
+      'PreToolUse',
+    )
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
+      'existing-claude-hook',
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
       'Notification',
+    )
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
+      'existing-codex-hook',
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
       'PreToolUse',
@@ -222,6 +228,9 @@ describe('syncSetup', () => {
     )
     await expect(readFile(join(homeDir, '.codex/config.toml'), 'utf8')).resolves.toContain(
       'prevent_idle_sleep = true',
+    )
+    await expect(readFile(join(homeDir, '.codex/config.toml'), 'utf8')).resolves.toContain(
+      'trust_level = "trusted"',
     )
   })
 
@@ -239,7 +248,7 @@ describe('syncSetup', () => {
       '"model": "opus"',
     )
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
-      'PostToolUse',
+      'PreToolUse',
     )
   })
 
@@ -258,12 +267,12 @@ describe('syncSetup', () => {
         {
           model: 'opus',
           hooks: {
-            Stop: [
+            UserPromptSubmit: [
               {
                 hooks: [
                   {
                     type: 'command',
-                    command: 'existing-claude-stop-hook',
+                    command: 'existing-claude-prompt-hook',
                   },
                 ],
               },
@@ -279,12 +288,12 @@ describe('syncSetup', () => {
       JSON.stringify(
         {
           hooks: {
-            Stop: [
+            UserPromptSubmit: [
               {
                 hooks: [
                   {
                     type: 'command',
-                    command: 'existing-codex-stop-hook',
+                    command: 'existing-codex-prompt-hook',
                   },
                 ],
               },
@@ -304,16 +313,16 @@ describe('syncSetup', () => {
     })
 
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
-      'existing-claude-stop-hook',
+      'existing-claude-prompt-hook',
     )
     await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
-      'node ~/.claude/hooks/project-notes-hook.mjs claude Stop',
+      'node ~/.claude/hooks/project-notes-hook.mjs claude UserPromptSubmit',
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
-      'existing-codex-stop-hook',
+      'existing-codex-prompt-hook',
     )
     await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
-      'node ~/.codex/hooks/project-notes-hook.mjs codex Stop',
+      'node ~/.codex/hooks/project-notes-hook.mjs codex UserPromptSubmit',
     )
   })
 
@@ -343,10 +352,116 @@ describe('syncSetup', () => {
     const codexHooks = await readFile(join(homeDir, '.codex/hooks.json'), 'utf8')
     const claudeSettings = await readFile(join(homeDir, '.claude/settings.json'), 'utf8')
 
-    expect(codexHooks.match(/project-notes-hook\.mjs codex Stop/g) ?? []).toHaveLength(1)
     expect(codexHooks.match(/project-notes-hook\.mjs codex SessionStart/g) ?? []).toHaveLength(1)
-    expect(claudeSettings.match(/project-notes-hook\.mjs claude Stop/g) ?? []).toHaveLength(1)
+    expect(codexHooks.match(/project-notes-hook\.mjs codex UserPromptSubmit/g) ?? []).toHaveLength(1)
     expect(claudeSettings.match(/project-notes-hook\.mjs claude SessionStart/g) ?? []).toHaveLength(1)
+    expect(claudeSettings.match(/project-notes-hook\.mjs claude UserPromptSubmit/g) ?? []).toHaveLength(1)
+  })
+
+  it('removes stale project-notes hook entries that no longer exist in repo fragments', async () => {
+    await writeFixture(
+      join(repoRoot, 'hooks/claude/hooks.json'),
+      await readRepoHookFragment('hooks/claude/hooks.json'),
+    )
+    await writeFixture(
+      join(repoRoot, 'hooks/codex/hooks.json'),
+      await readRepoHookFragment('hooks/codex/hooks.json'),
+    )
+    await writeFixture(
+      join(homeDir, '.claude/settings.json'),
+      JSON.stringify(
+        {
+          model: 'opus',
+          hooks: {
+            Stop: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'existing-claude-stop-hook',
+                  },
+                ],
+              },
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'node ~/.claude/hooks/project-notes-hook.mjs claude Stop',
+                  },
+                ],
+              },
+            ],
+            UserPromptSubmit: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'existing-claude-prompt-hook',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+    )
+    await writeFixture(
+      join(homeDir, '.codex/hooks.json'),
+      JSON.stringify(
+        {
+          hooks: {
+            PostToolUse: [
+              {
+                matcher: 'Bash',
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'node ~/.codex/hooks/project-notes-hook.mjs codex PostToolUse',
+                  },
+                ],
+              },
+            ],
+            UserPromptSubmit: [
+              {
+                hooks: [
+                  {
+                    type: 'command',
+                    command: 'existing-codex-prompt-hook',
+                  },
+                ],
+              },
+            ],
+          },
+        },
+        null,
+        2,
+      ),
+    )
+
+    await syncSetup({
+      repoRoot,
+      homeDir,
+      scopes: ['hooks'],
+      dryRun: false,
+    })
+
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.not.toContain(
+      'project-notes-hook.mjs claude Stop',
+    )
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
+      'existing-claude-stop-hook',
+    )
+    await expect(readFile(join(homeDir, '.claude/settings.json'), 'utf8')).resolves.toContain(
+      'existing-claude-prompt-hook',
+    )
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.not.toContain(
+      'project-notes-hook.mjs codex PostToolUse',
+    )
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
+      'existing-codex-prompt-hook',
+    )
   })
 
   it('fails on invalid hook config fragments', async () => {

@@ -135,7 +135,6 @@ The notes hooks use these repo-local conventions:
 - `UserPromptSubmit` supports `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`, `notes approve`, and `notes bypass`
 - `UserPromptSubmit` also reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
 - `PreToolUse` blocks mutating work when the session has no bound ticket or the ticket has no approved plan
-- `Stop` does not author notes or trigger plan transitions
 
 `notes bypass` is session-only. After that prompt, the next prompt becomes the bypass reason unless it is `cancel`.
 
@@ -144,6 +143,7 @@ Planning is now a two-step flow:
 - `notes plan: <seed>` tells the model to add the seed under `## Planning Seed` and start planner-driven planning while keeping the ticket in `.notes/todo/`
 - Claude can enter planning flow directly; Codex should tell the user to switch to Plan Mode and use `$planner`
 - `notes approve` tells the model to write the approved plan into `## Approved Plan`, set `status: "in-progress"`, stamp `started`, and move the ticket to `.notes/in-progress/`
+- Tickets should define `## Completion Criteria` once the approved plan is known so the agent can tell when to move them to `.notes/complete/`
 
 ## Destinations
 

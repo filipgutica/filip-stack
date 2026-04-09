@@ -52,6 +52,19 @@ const pathExists = async (path: string): Promise<boolean> => {
 
 type HookMatchers = Record<string, unknown[]>
 
+const MANAGED_NOTES_HOOK_COMMANDS = new Set([
+  'node ~/.claude/hooks/project-notes-hook.mjs claude SessionStart',
+  'node ~/.claude/hooks/project-notes-hook.mjs claude UserPromptSubmit',
+  'node ~/.claude/hooks/project-notes-hook.mjs claude PreToolUse',
+  'node ~/.claude/hooks/project-notes-hook.mjs claude PostToolUse',
+  'node ~/.claude/hooks/project-notes-hook.mjs claude Stop',
+  'node ~/.codex/hooks/project-notes-hook.mjs codex SessionStart',
+  'node ~/.codex/hooks/project-notes-hook.mjs codex UserPromptSubmit',
+  'node ~/.codex/hooks/project-notes-hook.mjs codex PreToolUse',
+  'node ~/.codex/hooks/project-notes-hook.mjs codex PostToolUse',
+  'node ~/.codex/hooks/project-notes-hook.mjs codex Stop',
+])
+
 const isHookObject = (value: unknown): value is { hooks: HookMatchers } => {
   if (typeof value !== 'object' || value === null) return false
   if (!('hooks' in value)) return false
@@ -131,6 +144,36 @@ const mergeHookMatchers = ({
   return merged
 }
 
+const pruneManagedHookMatchers = ({
+  existing,
+}: {
+  existing: HookMatchers
+}): HookMatchers => {
+  const prunedEntries = Object.entries(existing)
+    .map(([eventName, entries]) => {
+      const nextEntries = entries.filter((entry) => {
+        if (typeof entry !== 'object' || entry === null || !('hooks' in entry)) return true
+
+        const nestedHooks = (entry as { hooks?: unknown }).hooks
+        if (!Array.isArray(nestedHooks)) return true
+
+        const remainingNestedHooks = nestedHooks.filter((nestedHook) => {
+          if (typeof nestedHook !== 'object' || nestedHook === null || !('command' in nestedHook)) return true
+
+          const command = (nestedHook as { command?: unknown }).command
+          return typeof command !== 'string' || !MANAGED_NOTES_HOOK_COMMANDS.has(command)
+        })
+
+        return remainingNestedHooks.length > 0
+      })
+
+      return [eventName, nextEntries] as const
+    })
+    .filter(([, entries]) => entries.length > 0)
+
+  return Object.fromEntries(prunedEntries)
+}
+
 const hasConfiguredHooks = ({ hooks }: { hooks: HookMatchers }) =>
   Object.values(hooks).some((entries) => entries.length > 0)
 
@@ -158,7 +201,14 @@ const mergeHookJsonFile = async ({
     existingContent === null
       ? { hooks: {} }
       : parseHookFile({ content: existingContent, path: destinationPath })
-  const merged = { hooks: mergeHookMatchers({ existing: existingHooks.hooks, incoming: sourceHooks.hooks }) }
+  const merged = {
+    hooks: mergeHookMatchers({
+      existing: pruneManagedHookMatchers({
+        existing: existingHooks.hooks,
+      }),
+      incoming: sourceHooks.hooks,
+    }),
+  }
   const nextContent = `${JSON.stringify(merged, null, 2)}\n`
 
   if (existingContent === nextContent) return
@@ -203,7 +253,12 @@ const mergeClaudeSettingsFile = async ({
       : {}
   const mergedSettings = {
     ...existingSettings,
-    hooks: mergeHookMatchers({ existing: existingHooks, incoming: sourceHooks.hooks }),
+    hooks: mergeHookMatchers({
+      existing: pruneManagedHookMatchers({
+        existing: existingHooks,
+      }),
+      incoming: sourceHooks.hooks,
+    }),
   }
   const nextContent = `${JSON.stringify(mergedSettings, null, 2)}\n`
 
