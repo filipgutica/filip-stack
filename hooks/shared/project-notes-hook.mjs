@@ -24,9 +24,6 @@ const slugify = (value) =>
     .replace(/^-+|-+$/g, '')
     .slice(0, 60) || 'task'
 
-const summarizeText = (value, maxLength = 160) =>
-  value.replace(/\s+/g, ' ').trim().slice(0, maxLength)
-
 const isObject = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 
 const readStdin = async () => {
@@ -117,10 +114,8 @@ const loadSessionState = async ({ runtimeRoot, sessionId }) => {
       path,
       state: {
         sessionId,
-        mode: 'tracked',
-        ticketPath: null,
-        bypassReason: null,
-        pendingBypassConfirmation: false,
+        ticketId: null,
+        lastKnownTicketPath: null,
       },
     }
   }
@@ -133,10 +128,10 @@ const loadSessionState = async ({ runtimeRoot, sessionId }) => {
       path,
       state: {
         sessionId,
-        mode: parsed.mode === 'bypassed' ? 'bypassed' : 'tracked',
-        ticketPath: typeof parsed.ticketPath === 'string' ? parsed.ticketPath : null,
-        bypassReason: typeof parsed.bypassReason === 'string' ? parsed.bypassReason : null,
-        pendingBypassConfirmation: parsed.pendingBypassConfirmation === true,
+        ticketId: typeof parsed.ticketId === 'string' ? parsed.ticketId : null,
+        lastKnownTicketPath: typeof parsed.lastKnownTicketPath === 'string'
+          ? parsed.lastKnownTicketPath
+          : (typeof parsed.ticketPath === 'string' ? parsed.ticketPath : null),
       },
     }
   } catch {
@@ -144,10 +139,8 @@ const loadSessionState = async ({ runtimeRoot, sessionId }) => {
       path,
       state: {
         sessionId,
-        mode: 'tracked',
-        ticketPath: null,
-        bypassReason: null,
-        pendingBypassConfirmation: false,
+        ticketId: null,
+        lastKnownTicketPath: null,
       },
     }
   }
@@ -173,6 +166,38 @@ const parseFrontmatter = (content) => {
   )
 }
 
+const serializeFrontmatterValue = (value) => {
+  if (value === null) return 'null'
+  if (typeof value === 'string') return `"${value.replace(/"/g, '\\"')}"`
+  return String(value)
+}
+
+const updateFrontmatterFields = ({ content, fields }) => {
+  const match = content.match(/^---\n([\s\S]*?)\n---\n?/)
+  if (!match) return content
+
+  const lines = match[1].split('\n')
+  const fieldMap = new Map(Object.entries(fields))
+
+  const updatedLines = lines.map((line) => {
+    const lineMatch = line.match(/^([^:]+):\s*(.*)$/)
+    if (!lineMatch) return line
+
+    const key = lineMatch[1].trim()
+    if (!fieldMap.has(key)) return line
+
+    const nextValue = fieldMap.get(key)
+    fieldMap.delete(key)
+    return `${key}: ${serializeFrontmatterValue(nextValue)}`
+  })
+
+  for (const [key, value] of fieldMap.entries()) {
+    updatedLines.push(`${key}: ${serializeFrontmatterValue(value)}`)
+  }
+
+  return content.replace(match[0], `---\n${updatedLines.join('\n')}\n---\n\n`)
+}
+
 const getSectionContent = ({ content, heading }) => {
   const match = content.match(sectionPattern(heading))
   return match ? match[2].trim() : ''
@@ -190,19 +215,19 @@ const loadTicket = async ({ repoRoot, ticketPath }) => {
   const content = await readOptionalFile(absolutePath)
   if (content === null) return null
 
-  return { absolutePath, content }
+  return {
+    absolutePath,
+    ticketPath,
+    content,
+    frontmatter: parseFrontmatter(content),
+  }
 }
 
-const writeTicket = async ({ absolutePath, content }) => {
-  await mkdir(dirname(absolutePath), { recursive: true })
-  await writeFile(absolutePath, content)
-}
-
-const listOpenTickets = async ({ repoRoot }) => {
+const loadAllTickets = async ({ repoRoot, directories = NOTES_DIRECTORIES }) => {
   const notesRoot = join(repoRoot, '.notes')
   const results = []
 
-  for (const directory of ['todo', 'in-progress']) {
+  for (const directory of directories) {
     const absoluteDirectory = join(notesRoot, directory)
     const entries = await readdir(absoluteDirectory, { withFileTypes: true }).catch(() => [])
 
@@ -213,20 +238,134 @@ const listOpenTickets = async ({ repoRoot }) => {
       const content = await readFile(absolutePath, 'utf8')
       const frontmatter = parseFrontmatter(content)
       results.push({
-        title: frontmatter.title || entry.name.replace(/\.md$/, ''),
-        status: frontmatter.status || directory,
+        absolutePath,
         ticketPath: relative(repoRoot, absolutePath),
-        hasApprovedPlan: hasApprovedPlan(content),
+        content,
+        frontmatter,
       })
     }
   }
 
-  return results.sort((left, right) => left.ticketPath.localeCompare(right.ticketPath))
+  return results
+}
+
+const findTicketById = async ({ repoRoot, ticketId }) => {
+  if (ticketId === null) return null
+
+  const tickets = await loadAllTickets({ repoRoot })
+  const matches = tickets.filter(({ frontmatter }) => frontmatter['ticket-id'] === ticketId)
+
+  return matches.length === 1 ? matches[0] : null
+}
+
+const findOpenTicketBySessionId = async ({ repoRoot, sessionId }) => {
+  const tickets = await loadAllTickets({ repoRoot, directories: ['todo', 'in-progress'] })
+  const matches = tickets.filter(({ frontmatter }) => frontmatter['session-id'] === sessionId)
+
+  return matches.length === 1 ? matches[0] : null
+}
+
+const bindStateToTicket = async ({ state, sessionStatePath, ticket }) => {
+  state.ticketId = ticket.frontmatter['ticket-id'] || null
+  state.lastKnownTicketPath = ticket.ticketPath
+  await saveSessionState({ path: sessionStatePath, state })
+}
+
+const ensureTicketIdentity = async ({ ticket }) => {
+  const nextFields = {}
+
+  if (!ticket.frontmatter['ticket-id']) {
+    nextFields['ticket-id'] = basename(ticket.ticketPath, '.md')
+  }
+
+  if (Object.keys(nextFields).length === 0) return ticket
+
+  const nextContent = updateFrontmatterFields({
+    content: ticket.content,
+    fields: nextFields,
+  })
+  await writeTicket({ absolutePath: ticket.absolutePath, content: nextContent })
+
+  return {
+    ...ticket,
+    content: nextContent,
+    frontmatter: {
+      ...ticket.frontmatter,
+      ...nextFields,
+    },
+  }
+}
+
+const updateTicketSessionId = async ({ ticket, sessionId }) => {
+  let ensuredTicket = await ensureTicketIdentity({ ticket })
+
+  if (ensuredTicket.frontmatter['session-id'] === sessionId) return ensuredTicket
+
+  const nextContent = updateFrontmatterFields({
+    content: ensuredTicket.content,
+    fields: { 'session-id': sessionId },
+  })
+  await writeTicket({ absolutePath: ensuredTicket.absolutePath, content: nextContent })
+
+  return {
+    ...ensuredTicket,
+    content: nextContent,
+    frontmatter: {
+      ...ensuredTicket.frontmatter,
+      'session-id': sessionId,
+    },
+  }
+}
+
+const loadBoundTicket = async ({ repoRoot, state, sessionStatePath }) => {
+  let loadedTicket = null
+
+  if (state.ticketId !== null) {
+    loadedTicket = await findTicketById({ repoRoot, ticketId: state.ticketId })
+  }
+
+  if (loadedTicket === null && state.lastKnownTicketPath !== null) {
+    loadedTicket = await loadTicket({ repoRoot, ticketPath: state.lastKnownTicketPath })
+  }
+
+  if (loadedTicket === null) return null
+
+  loadedTicket = await ensureTicketIdentity({ ticket: loadedTicket })
+
+  if (loadedTicket.frontmatter['ticket-id'] && loadedTicket.frontmatter['ticket-id'] !== state.ticketId) {
+    state.ticketId = loadedTicket.frontmatter['ticket-id']
+  }
+  if (loadedTicket.ticketPath !== state.lastKnownTicketPath) {
+    state.lastKnownTicketPath = loadedTicket.ticketPath
+  }
+  await saveSessionState({ path: sessionStatePath, state })
+
+  return loadedTicket
+}
+
+const writeTicket = async ({ absolutePath, content }) => {
+  await mkdir(dirname(absolutePath), { recursive: true })
+  await writeFile(absolutePath, content)
+}
+
+const listOpenTickets = async ({ repoRoot }) => {
+  const tickets = await loadAllTickets({ repoRoot, directories: ['todo', 'in-progress'] })
+
+  return tickets
+    .map(({ ticketPath, content, frontmatter }) => ({
+      title: frontmatter.title || basename(ticketPath, '.md'),
+      status: frontmatter.status || dirname(ticketPath),
+      ticketPath,
+      ticketId: frontmatter['ticket-id'] || null,
+      sessionId: frontmatter['session-id'] || null,
+      hasApprovedPlan: hasApprovedPlan(content),
+    }))
+    .sort((left, right) => left.ticketPath.localeCompare(right.ticketPath))
 }
 
 // Create a new todo ticket using the shared notes contract and bind the active
 // session to it through the runtime state managed elsewhere in this hook file.
-const createTicket = async ({ repoRoot, title, planningSeed }) => {
+const createTicket = async ({ repoRoot, title, planningSeed, sessionId }) => {
   const date = toDateStamp()
   const directory = join(repoRoot, '.notes/todo')
   const slug = slugify(title)
@@ -238,8 +377,12 @@ const createTicket = async ({ repoRoot, title, planningSeed }) => {
     suffix += 1
   }
 
+  const ticketId = basename(candidate, '.md')
+
   const content = `---\n` +
     `title: "${title.replace(/"/g, '\\"')}"\n` +
+    `ticket-id: "${ticketId}"\n` +
+    `session-id: "${sessionId}"\n` +
     `status: "todo"\n` +
     `created: "${date}"\n` +
     `started: null\n` +
@@ -260,7 +403,10 @@ const createTicket = async ({ repoRoot, title, planningSeed }) => {
 
   await writeTicket({ absolutePath: candidate, content })
 
-  return relative(repoRoot, candidate)
+  return {
+    ticketId,
+    ticketPath: relative(repoRoot, candidate),
+  }
 }
 
 const matchTicket = ({ tickets, selector }) => {
@@ -284,84 +430,6 @@ const extractPrompt = (payload) =>
     payload.message,
   ].find((value) => typeof value === 'string') || ''
 
-const getToolName = (payload) =>
-  [
-    payload.tool_name,
-    payload.toolName,
-    payload.matcher,
-    payload.tool,
-    payload.name,
-  ].find((value) => typeof value === 'string') || ''
-
-const getCommandText = (payload) => {
-  const input = isObject(payload.tool_input) ? payload.tool_input : isObject(payload.input) ? payload.input : {}
-  const nested = isObject(input.command) ? input.command : {}
-
-  return [
-    payload.command,
-    input.command,
-    input.cmd,
-    nested.command,
-    input.text,
-  ].find((value) => typeof value === 'string') || ''
-}
-
-const isWriteShellCommand = (payload) => {
-  const command = getCommandText(payload)
-  return /\b(git\s+(add|commit|push|rm|mv|restore)|mv\s|cp\s|rm\s|mkdir\s|touch\s|tee\s|cat\s+>|echo\s+.+>|sed\s+-i|perl\s+-i|pnpm\s+install|npm\s+install|yarn\s+add)\b/.test(command)
-}
-
-// Codex only exposes Bash interception today, so treat Bash as best-effort and
-// look for obviously mutating shell commands. This is intentionally conservative
-// and does not claim to catch every possible write hidden behind shell wrappers.
-const isMutatingBashCommand = (payload) => {
-  return isWriteShellCommand(payload)
-}
-
-// Claude exposes explicit write/edit tool names, so prefer those strong signals
-// instead of trying to infer every mutation from shell text alone.
-const isClaudeMutatingToolUse = (payload) => {
-  const toolName = getToolName(payload)
-  if (/(edit|write|multiedit|notebookedit|apply_patch|create_file|delete_file)/i.test(toolName)) return true
-  if (/bash/i.test(toolName)) return isMutatingBashCommand(payload)
-  return false
-}
-
-// Host-specific gate: Claude can block explicit write tools; Codex is limited
-// to a best-effort Bash heuristic based on current hook support.
-const isMutatingToolUse = ({ host, payload }) => {
-  const toolName = getToolName(payload)
-
-  if (host === 'claude') return isClaudeMutatingToolUse(payload)
-  if (/bash/i.test(toolName)) return isMutatingBashCommand(payload)
-
-  return false
-}
-
-const blockingMessage = ({ ticketBound, hasPlan }) => {
-  if (!ticketBound) {
-    return [
-      'Project notes tracking blocked mutating work: no ticket is bound to this session.',
-      'Use one of these prompts first:',
-      '- `notes create: <title>` to create and bind a new ticket',
-      '- `notes use: <ticket>` to bind an existing todo/in-progress ticket',
-      '- `notes bypass` to bypass the gate for this session only',
-    ]
-  }
-
-  if (!hasPlan) {
-    return [
-      'Project notes tracking blocked mutating work: the bound ticket does not have an approved plan yet.',
-      'Use one of these prompts first:',
-      '- `notes plan: <seed>` to start planning for this ticket',
-      '- `notes approve` after the plan has been reviewed and approved',
-      '- `notes bypass` to bypass the gate for this session only',
-    ]
-  }
-
-  return []
-}
-
 const resolveSessionId = ({ host, payload, env }) =>
   (
     env.CODEX_THREAD_ID
@@ -373,32 +441,10 @@ const resolveSessionId = ({ host, payload, env }) =>
   ).toString()
 
 // UserPromptSubmit is the main control surface for notes automation. It lets a
-// session create/bind tickets, request planning, approve plans, or
-// enter a temporary bypass mode.
+// session create/bind tickets, request planning, approve plans, and explicitly
+// close tickets.
 const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, payload, stdout, stderr }) => {
   const prompt = extractPrompt(payload).trim()
-
-  if (prompt.toLowerCase() === 'notes bypass') {
-    state.pendingBypassConfirmation = true
-    await saveSessionState({ path: sessionStatePath, state })
-    stdout.push('Project notes tracking: next prompt will be stored as the bypass reason for this session. Send `cancel` to abort.')
-    return { exitCode: 0 }
-  }
-
-  if (state.pendingBypassConfirmation) {
-    state.pendingBypassConfirmation = false
-    if (prompt.toLowerCase() === 'cancel') {
-      await saveSessionState({ path: sessionStatePath, state })
-      stdout.push('Project notes tracking: session bypass request cancelled.')
-      return { exitCode: 0 }
-    }
-
-    state.mode = 'bypassed'
-    state.bypassReason = prompt === '' ? 'No reason provided.' : summarizeText(prompt, 240)
-    await saveSessionState({ path: sessionStatePath, state })
-    stdout.push(`Project notes tracking: mutating-work gate bypassed for this session. Reason: ${state.bypassReason}`)
-    return { exitCode: 0 }
-  }
 
   if (prompt.toLowerCase().startsWith('notes create:')) {
     const title = prompt.slice('notes create:'.length).trim()
@@ -407,22 +453,31 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    const ticketPath = await createTicket({
+    const createdTicket = await createTicket({
       repoRoot,
       title,
       planningSeed: `Created from session prompt.\n\nOriginal request: ${title}`,
+      sessionId: state.sessionId,
     })
-    state.ticketPath = ticketPath
-    state.mode = 'tracked'
-    state.bypassReason = null
+    state.ticketId = createdTicket.ticketId
+    state.lastKnownTicketPath = createdTicket.ticketPath
     await saveSessionState({ path: sessionStatePath, state })
-    stdout.push(`Project notes tracking: created and bound ticket \`${ticketPath}\`.`)
+    stdout.push(`Project notes tracking: created and bound ticket \`${createdTicket.ticketPath}\`.`)
     return { exitCode: 0 }
   }
 
   if (prompt.toLowerCase().startsWith('notes use:')) {
     const selector = prompt.slice('notes use:'.length).trim()
     const tickets = await listOpenTickets({ repoRoot })
+
+    if (selector === '') {
+      const summary = tickets.length === 0
+        ? 'Project notes tracking: there are no open tickets to bind. Use `notes create: <title>` to start one.'
+        : `Project notes tracking: open tickets: ${tickets.map(({ ticketPath }) => `\`${ticketPath}\``).join(', ')}. Use \`notes use: <ticket>\` with one of these paths, a filename stem, or a title.`
+      stdout.push(summary)
+      return { exitCode: 0 }
+    }
+
     const match = matchTicket({ tickets, selector })
 
     if (match === null) {
@@ -430,37 +485,58 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    state.ticketPath = match.ticketPath
-    state.mode = 'tracked'
-    state.bypassReason = null
-    await saveSessionState({ path: sessionStatePath, state })
+    let loadedTicket = await loadTicket({ repoRoot, ticketPath: match.ticketPath })
+    loadedTicket = await updateTicketSessionId({ ticket: loadedTicket, sessionId: state.sessionId })
+    await bindStateToTicket({ state, sessionStatePath, ticket: loadedTicket })
     stdout.push(`Project notes tracking: bound this session to \`${match.ticketPath}\`.`)
     return { exitCode: 0 }
   }
 
   if (prompt.toLowerCase() === 'notes approve') {
-    if (state.ticketPath === null) {
+    if (state.ticketId === null && state.lastKnownTicketPath === null) {
       stderr.push('Project notes tracking: bind or create a ticket before approving a plan.')
       return { exitCode: 1 }
     }
 
-    const loadedTicket = await loadTicket({ repoRoot, ticketPath: state.ticketPath })
+    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
-      state.ticketPath = null
+      state.ticketId = null
+      state.lastKnownTicketPath = null
       await saveSessionState({ path: sessionStatePath, state })
       stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
       return { exitCode: 1 }
     }
 
     stdout.push(
-      `Project notes tracking: update \`${state.ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`.`,
+      `Project notes tracking: update \`${loadedTicket.ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`,
+    )
+    return { exitCode: 0 }
+  }
+
+  if (prompt.toLowerCase() === 'notes complete') {
+    if (state.ticketId === null && state.lastKnownTicketPath === null) {
+      stderr.push('Project notes tracking: bind or create a ticket before completing it.')
+      return { exitCode: 1 }
+    }
+
+    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+    if (loadedTicket === null) {
+      state.ticketId = null
+      state.lastKnownTicketPath = null
+      await saveSessionState({ path: sessionStatePath, state })
+      stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
+      return { exitCode: 1 }
+    }
+
+    stdout.push(
+      `Project notes tracking: update \`${loadedTicket.ticketPath}\` by writing the close-out summary into \`## Completion Summary\`, confirming the completion criteria are satisfied, setting \`status: "complete"\`, stamping \`completed: "${toDateStamp()}"\`, and moving the ticket into \`.notes/complete/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`,
     )
     return { exitCode: 0 }
   }
 
   if (prompt.toLowerCase().startsWith('notes plan:')) {
     const planSeed = prompt.slice('notes plan:'.length).trim()
-    if (state.ticketPath === null) {
+    if (state.ticketId === null && state.lastKnownTicketPath === null) {
       stderr.push('Project notes tracking: bind or create a ticket before starting planning.')
       return { exitCode: 1 }
     }
@@ -469,33 +545,33 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    const loadedTicket = await loadTicket({ repoRoot, ticketPath: state.ticketPath })
+    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
-      state.ticketPath = null
+      state.ticketId = null
+      state.lastKnownTicketPath = null
       await saveSessionState({ path: sessionStatePath, state })
       stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
       return { exitCode: 1 }
     }
 
-    state.mode = 'tracked'
-    state.bypassReason = null
     await saveSessionState({ path: sessionStatePath, state })
     if (host === 'claude') {
       stdout.push(
-        `Project notes tracking: update \`${state.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen enter plan mode and use \`$planner\` with that seed.`,
+        `Project notes tracking: update \`${loadedTicket.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen enter plan mode and use \`$planner\` with that seed.`,
       )
     } else {
       stdout.push(
-        `Project notes tracking: update \`${state.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen tell the user to switch to Plan Mode and use \`$planner\` with that seed.`,
+        `Project notes tracking: update \`${loadedTicket.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen tell the user to switch to Plan Mode and use \`$planner\` with that seed.`,
       )
     }
     return { exitCode: 0 }
   }
 
-  if (state.ticketPath !== null) {
-    const loadedTicket = await loadTicket({ repoRoot, ticketPath: state.ticketPath })
+  if (state.ticketId !== null || state.lastKnownTicketPath !== null) {
+    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
-      state.ticketPath = null
+      state.ticketId = null
+      state.lastKnownTicketPath = null
       await saveSessionState({ path: sessionStatePath, state })
       stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
       return { exitCode: 1 }
@@ -503,12 +579,12 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
 
     if (hasApprovedPlan(loadedTicket.content)) {
       stdout.push(
-        `Project notes tracking: keep \`${state.ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. If the ticket's completion criteria are now satisfied, add a Completion Summary, set \`status: "complete"\`, stamp \`completed\`, and move the ticket to \`.notes/complete/\`.`,
+        `Project notes tracking: keep \`${loadedTicket.ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`,
       )
     }
   }
 
-  if (state.ticketPath === null) {
+  if (state.ticketId === null && state.lastKnownTicketPath === null) {
     const tickets = await listOpenTickets({ repoRoot })
     const summary = tickets.length === 0
       ? 'No open tickets found. Use `notes create: <title>` to start tracking this session.'
@@ -536,9 +612,23 @@ export const runHook = async ({
   const { path: sessionStatePath, state } = await loadSessionState({ runtimeRoot, sessionId })
 
   if (event === 'SessionStart') {
+    if (state.ticketId === null && state.lastKnownTicketPath === null) {
+      const matchedTicket = await findOpenTicketBySessionId({ repoRoot, sessionId })
+      if (matchedTicket !== null) {
+        await bindStateToTicket({ state, sessionStatePath, ticket: matchedTicket })
+      }
+    }
+
     const tickets = await listOpenTickets({ repoRoot })
-    if (state.ticketPath !== null) {
-      stdout.push(`Project notes tracking: session bound to \`${state.ticketPath}\`.`)
+    if (state.ticketId !== null || state.lastKnownTicketPath !== null) {
+      const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+      if (loadedTicket !== null) {
+        stdout.push(`Project notes tracking: session bound to \`${loadedTicket.ticketPath}\`.`)
+      } else {
+        state.ticketId = null
+        state.lastKnownTicketPath = null
+        stdout.push('Project notes tracking: no open ticket is bound to this session. Use `notes create: <title>` to start one.')
+      }
     } else if (tickets.length === 0) {
       stdout.push('Project notes tracking: no open ticket is bound to this session. Use `notes create: <title>` to start one.')
     } else {
@@ -552,24 +642,6 @@ export const runHook = async ({
   if (event === 'UserPromptSubmit') {
     const result = await handleUserPrompt({ host, repoRoot, state, sessionStatePath, payload, stdout, stderr })
     return { ...result, stdout, stderr }
-  }
-
-  if (event === 'PreToolUse') {
-    if (!isMutatingToolUse({ host, payload }) || state.mode === 'bypassed') {
-      return { exitCode: 0, stdout, stderr }
-    }
-
-    const loadedTicket = await loadTicket({ repoRoot, ticketPath: state.ticketPath })
-    const ticketBound = loadedTicket !== null
-    const planApproved = ticketBound ? hasApprovedPlan(loadedTicket.content) : false
-
-    if (!ticketBound || !planApproved) {
-      stderr.push(...blockingMessage({ ticketBound, hasPlan: planApproved }))
-      await saveSessionState({ path: sessionStatePath, state })
-      return { exitCode: 2, stdout, stderr }
-    }
-
-    return { exitCode: 0, stdout, stderr }
   }
 
   return { exitCode: 0, stdout, stderr }

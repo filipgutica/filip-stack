@@ -9,7 +9,7 @@ export type ScopeFlags = {
 }
 
 export const DEFAULT_SCOPES: Scope[] = ['skills', 'hooks']
-export const ALL_SCOPES: Scope[] = ['skills', 'hooks', 'globals']
+const ALL_SCOPES: Scope[] = ['skills', 'hooks', 'globals']
 
 export const resolveScopes = ({
   all = false,

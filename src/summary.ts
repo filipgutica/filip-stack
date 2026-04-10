@@ -9,7 +9,9 @@ export type SummarySection = {
   destinations: string[]
   plannedFiles: number
   plannedDirectories: number
+  plannedDeletes: number
   fileTargets: string[]
+  deleteTargets: string[]
 }
 
 export type RunSummary = {
@@ -37,6 +39,7 @@ const relativePath = (path: string, root: string) => {
 
 const actionDestination = (action: SyncAction) => {
   if (action.type === 'mkdir') return action.path
+  if (action.type === 'delete') return action.path
   return action.destination
 }
 
@@ -102,6 +105,9 @@ export const buildRunSummary = ({
             action.type === 'copy' || action.type === 'update',
         )
         .map((action) => relativePath(action.destination, homeDir))
+      const deleteTargets = relevantActions
+        .filter((action): action is Extract<SyncAction, { type: 'delete'; path: string }> => action.type === 'delete')
+        .map((action) => relativePath(action.path, homeDir))
 
       return {
         title: section.title,
@@ -111,7 +117,9 @@ export const buildRunSummary = ({
           (action) => action.type === 'copy' || action.type === 'update',
         ).length,
         plannedDirectories: relevantActions.filter((action) => action.type === 'mkdir').length,
+        plannedDeletes: deleteTargets.length,
         fileTargets,
+        deleteTargets,
       }
     })
 

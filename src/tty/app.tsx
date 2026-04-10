@@ -1,15 +1,15 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useApp, useInput } from 'ink'
 
-import type { Scope } from '../scopes.js'
+import { DEFAULT_SCOPES, type Scope } from '../scopes.js'
 import type { RunSyncResult } from '../run.js'
 import {
   actionOptions,
-  createInitialTtyState,
   getSelectedScopes,
   moveCursor,
   scopeOptions,
   toggleScopeSelection,
+  type TtyScreen,
 } from './state.js'
 import { ActionSelectorScreen, ErrorScreen, RunningScreen, ScopeSelectorScreen, SummaryScreen } from './screens/index.js'
 
@@ -23,14 +23,13 @@ type AppProps = {
 
 export const App = ({ repoRoot, homeDir, runSync }: AppProps) => {
   const { exit } = useApp()
-  const initialState = useMemo(() => createInitialTtyState(), [])
-  const [screen, setScreen] = useState(initialState.screen)
-  const [scopeCursor, setScopeCursor] = useState(initialState.scopeCursor)
-  const [actionCursor, setActionCursor] = useState(initialState.actionCursor)
-  const [selectedScopes, setSelectedScopes] = useState(initialState.selectedScopes)
-  const [pendingAction, setPendingAction] = useState<boolean | null>(initialState.pendingAction)
-  const [result, setResult] = useState<RunSyncResult | null>(initialState.result)
-  const [errorMessage, setErrorMessage] = useState<string | null>(initialState.errorMessage)
+  const [screen, setScreen] = useState<TtyScreen>('scopes')
+  const [scopeCursor, setScopeCursor] = useState(0)
+  const [actionCursor, setActionCursor] = useState(0)
+  const [selectedScopes, setSelectedScopes] = useState(() => new Set<Scope>(DEFAULT_SCOPES))
+  const [pendingAction, setPendingAction] = useState<boolean | null>(null)
+  const [result, setResult] = useState<RunSyncResult | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
 
   const scopes = useMemo(() => getSelectedScopes(selectedScopes), [selectedScopes])
 

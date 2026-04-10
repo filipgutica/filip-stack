@@ -1,5 +1,5 @@
 import type { RunSyncResult } from '../run.js'
-import { DEFAULT_SCOPES, type Scope } from '../scopes.js'
+import type { Scope } from '../scopes.js'
 
 export type TtyScreen = 'scopes' | 'action' | 'running' | 'result'
 
@@ -33,16 +33,6 @@ export const actionOptions: ActionOption[] = [
   { label: 'Sync', dryRun: false },
   { label: 'Dry Run', dryRun: true },
 ]
-
-export const createInitialTtyState = (): TtyState => ({
-  screen: 'scopes',
-  scopeCursor: 0,
-  actionCursor: 0,
-  selectedScopes: new Set(DEFAULT_SCOPES),
-  pendingAction: null,
-  result: null,
-  errorMessage: null,
-})
 
 export const moveCursor = ({
   current,

@@ -29,7 +29,7 @@ export const formatDryRun = ({ actions, scopes, repoRoot, homeDir }: FormatDryRu
     lines.push(`- Source: \`${section.source}\``)
     lines.push(`- Destination: ${destinationLabel}`)
     lines.push(
-      `- Planned: ${section.plannedFiles} file${section.plannedFiles === 1 ? '' : 's'}, ${section.plannedDirectories} director${section.plannedDirectories === 1 ? 'y' : 'ies'}`,
+      `- Planned: ${section.plannedFiles} file${section.plannedFiles === 1 ? '' : 's'}, ${section.plannedDirectories} director${section.plannedDirectories === 1 ? 'y' : 'ies'}${section.plannedDeletes > 0 ? `, ${section.plannedDeletes} deletion${section.plannedDeletes === 1 ? '' : 's'}` : ''}`,
     )
 
     if (section.fileTargets.length > 0) {
@@ -37,6 +37,13 @@ export const formatDryRun = ({ actions, scopes, repoRoot, homeDir }: FormatDryRu
       lines.push(...section.fileTargets.map((target) => `  - \`${target}\``))
     } else {
       lines.push('- Files: none')
+    }
+
+    if (section.deleteTargets.length > 0) {
+      lines.push('- Deletions:')
+      lines.push(...section.deleteTargets.map((target) => `  - \`${target}\``))
+    } else {
+      lines.push('- Deletions: none')
     }
 
     lines.push('')
@@ -59,6 +66,11 @@ export const formatSyncSummary = ({
     lines.push(
       `- Updated: ${section.plannedFiles} file${section.plannedFiles === 1 ? '' : 's'}`
     )
+    if (section.plannedDeletes > 0) {
+      lines.push(
+        `- Deleted: ${section.plannedDeletes} item${section.plannedDeletes === 1 ? '' : 's'}`
+      )
+    }
     lines.push(
       `- Destination: ${section.destinations
         .map((destination) => `\`${homePath(destination, homeDir)}\``)

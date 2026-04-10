@@ -1,5 +1,6 @@
-import { Box, Text } from 'ink'
+import { Text } from 'ink'
 
+import { SelectorScreen } from '../components/selector-screen.js'
 import { actionOptions } from '../state.js'
 
 type ActionSelectorScreenProps = {
@@ -7,18 +8,11 @@ type ActionSelectorScreenProps = {
 }
 
 export const ActionSelectorScreen = ({ cursor }: ActionSelectorScreenProps) => (
-  <Box flexDirection="column">
-    <Text bold>Choose action</Text>
-    <Text dimColor>Enter to run, escape to go back.</Text>
-    <Box marginTop={1} flexDirection="column">
-      {actionOptions.map((option, index) => {
-        const pointer = index === cursor ? '>' : ' '
-        return (
-          <Text key={option.label}>
-            {pointer} {option.label}
-          </Text>
-        )
-      })}
-    </Box>
-  </Box>
+  <SelectorScreen title="Choose action" instructions="Enter to run, escape to go back.">
+    {actionOptions.map((option, index) => (
+      <Text key={option.label}>
+        {index === cursor ? '>' : ' '} {option.label}
+      </Text>
+    ))}
+  </SelectorScreen>
 )

@@ -16,6 +16,11 @@ describe('formatDryRun', () => {
           source: '/repo/skills/reviewer/SKILL.md',
           destination: '/home/user/.agents/skills/reviewer/SKILL.md',
         },
+        {
+          type: 'delete',
+          path: '/home/user/.agents/skills/old-skill',
+          detail: 'delete stale managed skill',
+        },
         { type: 'mkdir', path: '/home/user/.codex/hooks' },
         {
           type: 'update',
@@ -43,8 +48,9 @@ describe('formatDryRun', () => {
     expect(output).toContain('### Skills')
     expect(output).toContain('### Codex Hooks')
     expect(output).toContain('### Claude Hooks')
-    expect(output).toContain('- Planned: 1 file, 2 directories')
+    expect(output).toContain('- Planned: 1 file, 2 directories, 1 deletion')
     expect(output).toContain('- `.agents/skills/reviewer/SKILL.md`')
+    expect(output).toContain('- `.agents/skills/old-skill`')
     expect(output).toContain('- `.codex/hooks.json`')
     expect(output).toContain('- `.codex/config.toml`')
     expect(output).toContain('- `.claude/settings.json`')
@@ -67,6 +73,11 @@ describe('formatSyncSummary', () => {
           destination: '/home/user/.agents/skills/reviewer/SKILL.md',
         },
         {
+          type: 'delete',
+          path: '/home/user/.agents/skills/old-skill',
+          detail: 'delete stale managed skill',
+        },
+        {
           type: 'copy',
           source: '/repo/skills/implementer/SKILL.md',
           destination: '/home/user/.agents/skills/implementer/SKILL.md',
@@ -82,6 +93,7 @@ describe('formatSyncSummary', () => {
     expect(output).toContain('Synced Skills.')
     expect(output).toContain('## Skills')
     expect(output).toContain('- Updated: 2 files')
+    expect(output).toContain('- Deleted: 1 item')
     expect(output).toContain('- Destination: `~/.agents/skills`')
     expect(output).not.toContain('~/.codex/hooks.json')
     expect(output).not.toContain('filesystem action')

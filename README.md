@@ -126,24 +126,30 @@ Codex hooks:
 Repo hook config fragments are expected to contain a top-level `hooks` object.
 Unrelated existing user settings are preserved.
 The checked-in hook fragments install a shared project-notes tracker for both hosts.
+They intentionally avoid per-tool hooks so the host does not spam the console on
+every tool invocation.
 
 The notes hooks use these repo-local conventions:
 
 - `.notes/todo/`, `.notes/in-progress/`, and `.notes/complete/` hold tracked Markdown tickets
 - `.notes/.runtime/` stores machine-managed session bindings and transient hook state and should stay untracked
+- Ticket frontmatter carries durable binding metadata: `ticket-id` is stable across moves and `session-id` tracks the currently bound session
 - `SessionStart` ensures `.notes/` exists and restores ticket bindings
-- `UserPromptSubmit` supports `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`, `notes approve`, and `notes bypass`
+- `UserPromptSubmit` supports `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`, `notes approve`, and `notes complete`
+- `notes use:` with no selector lists open tickets instead of guessing a binding
 - `UserPromptSubmit` also reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
-- `PreToolUse` blocks mutating work when the session has no bound ticket or the ticket has no approved plan
-
-`notes bypass` is session-only. After that prompt, the next prompt becomes the bypass reason unless it is `cancel`.
+- `~/.filip-stack/sync-manifest.json` tracks filip-stack-managed skills, hook scripts, and hook commands on the host machine
+- when a managed skill, script, or hook command disappears from the repo, the next matching sync removes only that managed host artifact and leaves unrelated local content alone
 
 Planning is now a two-step flow:
 
 - `notes plan: <seed>` tells the model to add the seed under `## Planning Seed` and start planner-driven planning while keeping the ticket in `.notes/todo/`
 - Claude can enter planning flow directly; Codex should tell the user to switch to Plan Mode and use `$planner`
 - `notes approve` tells the model to write the approved plan into `## Approved Plan`, set `status: "in-progress"`, stamp `started`, and move the ticket to `.notes/in-progress/`
-- Tickets should define `## Completion Criteria` once the approved plan is known so the agent can tell when to move them to `.notes/complete/`
+- `notes complete` tells the model to close out the bound ticket by writing `## Completion Summary`, setting `status: "complete"`, stamping `completed`, and moving the ticket to `.notes/complete/`
+- Tickets should define `## Completion Criteria` once the approved plan is known, but they should stay in `.notes/in-progress/` until the user explicitly closes out the session
+- Runtime state should resolve tickets by durable `ticket-id` and treat the stored path as a cache, so bindings survive normal ticket moves between note states
+- Fresh sessions should default to new tickets; continuing an old ticket from a fresh session is an explicit `notes use` action, while true host resume should preserve the existing session/ticket link when the host keeps the same session ID
 
 ## Destinations
 
@@ -158,13 +164,18 @@ globals/AGENTS.md  -> ~/.codex/AGENTS.md
 globals/CLAUDE.md  -> ~/.claude/CLAUDE.md
 ```
 
+Sync also keeps a host-local manifest at `~/.filip-stack/sync-manifest.json`
+to record which skills, hook scripts, and hook config commands are managed by
+this repo.
+
 ## Sync Model
 
-Sync is additive and update-oriented:
+Sync is additive and update-oriented for unmanaged local content:
 
 - create missing files and directories from this repo
 - overwrite files and directories that collide with repo-managed names
-- do not delete extra local files or directories
+- remove stale filip-stack-managed skills, hook scripts, and managed hook config commands when they disappear from this repo and the matching scope is synced
+- do not delete unrelated local files, directories, or unmanaged hook commands
 - do not use destructive mirroring such as `rsync --delete`
 
 Different local names are safe and left alone. Matching names are considered

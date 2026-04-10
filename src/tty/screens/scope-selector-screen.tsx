@@ -1,6 +1,7 @@
-import { Box, Text } from 'ink'
+import { Text } from 'ink'
 
 import type { Scope } from '../../scopes.js'
+import { SelectorScreen } from '../components/selector-screen.js'
 import { scopeOptions } from '../state.js'
 
 type ScopeSelectorScreenProps = {
@@ -9,19 +10,11 @@ type ScopeSelectorScreenProps = {
 }
 
 export const ScopeSelectorScreen = ({ cursor, selectedScopes }: ScopeSelectorScreenProps) => (
-  <Box flexDirection="column">
-    <Text bold>Select scopes</Text>
-    <Text dimColor>Use up/down to move, space to toggle, enter to continue.</Text>
-    <Box marginTop={1} flexDirection="column">
-      {scopeOptions.map((option, index) => {
-        const pointer = index === cursor ? '>' : ' '
-        const checked = selectedScopes.has(option.value) ? 'x' : ' '
-        return (
-          <Text key={option.value}>
-            {pointer} [{checked}] {option.label}
-          </Text>
-        )
-      })}
-    </Box>
-  </Box>
+  <SelectorScreen title="Select scopes" instructions="Use up/down to move, space to toggle, enter to continue.">
+    {scopeOptions.map((option, index) => (
+      <Text key={option.value}>
+        {index === cursor ? '>' : ' '} [{selectedScopes.has(option.value) ? 'x' : ' '}] {option.label}
+      </Text>
+    ))}
+  </SelectorScreen>
 )

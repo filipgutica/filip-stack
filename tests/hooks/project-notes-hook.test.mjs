@@ -55,9 +55,12 @@ describe('project notes hook', () => {
 
     await bindTrackedTicket({ repoRoot })
 
-    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
-      '"ticketPath": ".notes/todo/',
-    )
+    const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
+    expect(state).toContain('"ticketId": "')
+    expect(state).toContain('"lastKnownTicketPath": ".notes/todo/')
+    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
+    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('session-id: "thread-1"')
+    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('ticket-id: "')
   })
 
   it('notes plan tells Codex to have the user switch to Plan Mode and use the planner skill', async () => {
@@ -76,8 +79,8 @@ describe('project notes hook', () => {
     expect(result.stdout.join('\n')).toContain('appending this seed under `## Planning Seed`: Tighten notes workflow')
     expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$planner`')
     const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
-    expect(state).toContain('"ticketPath": ".notes/todo/')
-    const ticketPath = state.match(/"ticketPath": "([^"]+)"/)?.[1]
+    expect(state).toContain('"lastKnownTicketPath": ".notes/todo/')
+    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
     await expect(
       readFile(join(repoRoot, ticketPath), 'utf8'),
     ).resolves.toContain('## Completion Criteria')
@@ -119,57 +122,78 @@ describe('project notes hook', () => {
     expect(result.stdout.join('\n')).toContain('writing the approved plan into `## Approved Plan`')
     expect(result.stdout.join('\n')).toContain('moving the ticket into `.notes/in-progress/`')
     const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
-    const ticketPath = state.match(/"ticketPath": "([^"]+)"/)?.[1]
+    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
     await expect(
       readFile(join(repoRoot, ticketPath), 'utf8'),
     ).resolves.toContain('Not started.')
   })
 
-  it('blocks mutating work without an approved plan', async () => {
+  it('notes complete tells the model to close the ticket instead of mutating it in hook code', async () => {
     const repoRoot = await createGitRepoRoot()
-    await bindTrackedTicket({ repoRoot })
+    const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
+    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
+    await writeFile(
+      join(repoRoot, ticketPath),
+      `---\n` +
+        `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "thread-1"\n` +
+        `status: "in-progress"\n` +
+        `created: "2026-04-08"\n` +
+        `started: "2026-04-08"\n` +
+        `completed: null\n` +
+        `tags: ["notes"]\n` +
+        `---\n\n` +
+        `# Track hook work\n\n` +
+        `## Planning Seed\n\n` +
+        `Created from session prompt.\n\n` +
+        `## Approved Plan\n\n` +
+        `Use the approved plan.\n\n` +
+        `## Completion Criteria\n\n` +
+        `Finish the tracked hook work.\n\n` +
+        `## Work Log\n\n` +
+        `No work logged yet.\n\n` +
+        `## Completion Summary\n\n` +
+        `Not completed.\n`,
+    )
+    await writeFile(
+      join(repoRoot, '.notes/.runtime/thread-1.json'),
+      `${JSON.stringify({
+        sessionId: 'thread-1',
+        ticketId: '2026-04-08-track-hook-work',
+        lastKnownTicketPath: ticketPath,
+      }, null, 2)}\n`,
+    )
 
     const result = await runHook({
       host: 'codex',
-      event: 'PreToolUse',
-      payload: { cwd: repoRoot, tool_name: 'Bash', command: 'git add .' },
-      cwd: repoRoot,
-      env: { CODEX_THREAD_ID: 'thread-1' },
-    })
-
-    expect(result.exitCode).toBe(2)
-    expect(result.stderr.join('\n')).toContain('does not have an approved plan yet')
-  })
-
-  it('blocks explicit Claude edit tools without an approved plan', async () => {
-    const repoRoot = await createGitRepoRoot()
-    await bindTrackedTicket({ repoRoot, host: 'claude', sessionId: 'claude-thread-1' })
-
-    const result = await runHook({
-      host: 'claude',
-      event: 'PreToolUse',
-      payload: { cwd: repoRoot, tool_name: 'Edit', session_id: 'claude-thread-1' },
-      cwd: repoRoot,
-      env: {},
-    })
-
-    expect(result.exitCode).toBe(2)
-    expect(result.stderr.join('\n')).toContain('does not have an approved plan yet')
-  })
-
-  it('does not treat non-Bash Codex tool names as gated mutations', async () => {
-    const repoRoot = await createGitRepoRoot()
-    await bindTrackedTicket({ repoRoot })
-
-    const result = await runHook({
-      host: 'codex',
-      event: 'PreToolUse',
-      payload: { cwd: repoRoot, tool_name: 'Edit' },
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes complete' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
 
     expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('writing the close-out summary into `## Completion Summary`')
+    expect(result.stdout.join('\n')).toContain('moving the ticket into `.notes/complete/`')
+    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('Not completed.')
+  })
+
+  it('notes use with no selector lists open tickets instead of failing', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes use:' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-2' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('open tickets:')
+    expect(result.stdout.join('\n')).toContain('.notes/todo/')
   })
 
   it('ignores completed tickets when binding by prompt', async () => {
@@ -180,6 +204,8 @@ describe('project notes hook', () => {
       completedTicketPath,
       `---\n` +
         `title: "Done"\n` +
+        `ticket-id: "2026-04-08-done"\n` +
+        `session-id: "thread-1"\n` +
         `status: "complete"\n` +
         `created: "2026-04-08"\n` +
         `started: "2026-04-08"\n` +
@@ -208,6 +234,8 @@ describe('project notes hook', () => {
       join(repoRoot, ticketPath),
       `---\n` +
         `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "thread-1"\n` +
         `status: "in-progress"\n` +
         `created: "2026-04-08"\n` +
         `started: "2026-04-08"\n` +
@@ -228,10 +256,8 @@ describe('project notes hook', () => {
       join(repoRoot, '.notes/.runtime/thread-1.json'),
       `${JSON.stringify({
         sessionId: 'thread-1',
-        mode: 'tracked',
-        ticketPath,
-        bypassReason: null,
-        pendingBypassConfirmation: false,
+        ticketId: '2026-04-08-track-hook-work',
+        lastKnownTicketPath: ticketPath,
       }, null, 2)}\n`,
     )
 
@@ -247,7 +273,214 @@ describe('project notes hook', () => {
     })
 
     expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
-    expect(result.stdout.join('\n')).toContain(`move the ticket to \`.notes/complete/\``)
+    expect(result.stdout.join('\n')).toContain('until the user explicitly says to close out the session or uses `notes complete`')
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('No work logged yet.')
+  })
+
+  it('preserves the session binding after a ticket moves from todo to in-progress', async () => {
+    const repoRoot = await createGitRepoRoot()
+    const oldTicketPath = '.notes/todo/2026-04-08-track-hook-work.md'
+    const movedTicketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
+    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
+    await writeFile(
+      join(repoRoot, movedTicketPath),
+      `---\n` +
+        `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "thread-1"\n` +
+        `status: "in-progress"\n` +
+        `created: "2026-04-08"\n` +
+        `started: "2026-04-08"\n` +
+        `completed: null\n` +
+        `tags: ["notes"]\n` +
+        `---\n\n` +
+        `# Track hook work\n\n` +
+        `## Planning Seed\n\n` +
+        `Created from session prompt.\n\n` +
+        `## Approved Plan\n\n` +
+        `Use the approved plan.\n\n` +
+        `## Completion Criteria\n\n` +
+        `Finish the tracked hook work.\n\n` +
+        `## Work Log\n\n` +
+        `No work logged yet.\n\n` +
+        `## Completion Summary\n\n` +
+        `Not completed.\n`,
+    )
+    await writeFile(
+      join(repoRoot, '.notes/.runtime/thread-1.json'),
+      `${JSON.stringify({
+        sessionId: 'thread-1',
+        ticketId: '2026-04-08-track-hook-work',
+        lastKnownTicketPath: oldTicketPath,
+      }, null, 2)}\n`,
+    )
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: {
+        cwd: repoRoot,
+        prompt: 'continue implementing the notes workflow',
+      },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain(`keep \`${movedTicketPath}\` updated during this turn`)
+    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
+      `"lastKnownTicketPath": "${movedTicketPath}"`,
+    )
+  })
+
+  it('preserves the session binding after a ticket moves from in-progress to complete', async () => {
+    const repoRoot = await createGitRepoRoot()
+    const oldTicketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
+    const movedTicketPath = '.notes/complete/2026-04-08-track-hook-work.md'
+    await mkdir(join(repoRoot, '.notes/complete'), { recursive: true })
+    await writeFile(
+      join(repoRoot, movedTicketPath),
+      `---\n` +
+        `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "thread-1"\n` +
+        `status: "complete"\n` +
+        `created: "2026-04-08"\n` +
+        `started: "2026-04-08"\n` +
+        `completed: "2026-04-08"\n` +
+        `tags: ["notes"]\n` +
+        `---\n\n` +
+        `# Track hook work\n\n` +
+        `## Planning Seed\n\n` +
+        `Created from session prompt.\n\n` +
+        `## Approved Plan\n\n` +
+        `Use the approved plan.\n\n` +
+        `## Completion Criteria\n\n` +
+        `Finish the tracked hook work.\n\n` +
+        `## Work Log\n\n` +
+        `Completed the tracked hook work.\n\n` +
+        `## Completion Summary\n\n` +
+        `Finished.\n`,
+    )
+    await writeFile(
+      join(repoRoot, '.notes/.runtime/thread-1.json'),
+      `${JSON.stringify({
+        sessionId: 'thread-1',
+        ticketId: '2026-04-08-track-hook-work',
+        lastKnownTicketPath: oldTicketPath,
+      }, null, 2)}\n`,
+    )
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: {
+        cwd: repoRoot,
+        prompt: 'continue implementing the notes workflow',
+      },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
+      `"lastKnownTicketPath": "${movedTicketPath}"`,
+    )
+  })
+
+  it('restores a session binding from ticket frontmatter when runtime state is empty', async () => {
+    const repoRoot = await createGitRepoRoot()
+    const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
+    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
+    await writeFile(
+      join(repoRoot, ticketPath),
+      `---\n` +
+        `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "thread-1"\n` +
+        `status: "in-progress"\n` +
+        `created: "2026-04-08"\n` +
+        `started: "2026-04-08"\n` +
+        `completed: null\n` +
+        `tags: ["notes"]\n` +
+        `---\n\n` +
+        `# Track hook work\n\n` +
+        `## Planning Seed\n\n` +
+        `Created from session prompt.\n\n` +
+        `## Approved Plan\n\n` +
+        `Use the approved plan.\n\n` +
+        `## Completion Criteria\n\n` +
+        `Finish the tracked hook work.\n\n` +
+        `## Work Log\n\n` +
+        `No work logged yet.\n\n` +
+        `## Completion Summary\n\n` +
+        `Not completed.\n`,
+    )
+    await writeFile(
+      join(repoRoot, '.notes/.runtime/thread-1.json'),
+      `${JSON.stringify({
+        sessionId: 'thread-1',
+        ticketId: null,
+        lastKnownTicketPath: null,
+      }, null, 2)}\n`,
+    )
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'SessionStart',
+      payload: { cwd: repoRoot },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain(`session bound to \`${ticketPath}\``)
+    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
+      '"ticketId": "2026-04-08-track-hook-work"',
+    )
+  })
+
+  it('updates session-id in the ticket when a new session binds an existing ticket', async () => {
+    const repoRoot = await createGitRepoRoot()
+    const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
+    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
+    await writeFile(
+      join(repoRoot, ticketPath),
+      `---\n` +
+        `title: "Track hook work"\n` +
+        `ticket-id: "2026-04-08-track-hook-work"\n` +
+        `session-id: "old-session"\n` +
+        `status: "in-progress"\n` +
+        `created: "2026-04-08"\n` +
+        `started: "2026-04-08"\n` +
+        `completed: null\n` +
+        `tags: ["notes"]\n` +
+        `---\n\n` +
+        `# Track hook work\n\n` +
+        `## Planning Seed\n\n` +
+        `Created from session prompt.\n\n` +
+        `## Approved Plan\n\n` +
+        `Use the approved plan.\n\n` +
+        `## Completion Criteria\n\n` +
+        `Finish the tracked hook work.\n\n` +
+        `## Work Log\n\n` +
+        `No work logged yet.\n\n` +
+        `## Completion Summary\n\n` +
+        `Not completed.\n`,
+    )
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes use: 2026-04-08-track-hook-work' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-2' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('session-id: "thread-2"')
+    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-2.json'), 'utf8')).resolves.toContain(
+      '"ticketId": "2026-04-08-track-hook-work"',
+    )
   })
 })

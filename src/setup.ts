@@ -1,5 +1,7 @@
-import { mkdir, readFile, writeFile } from 'node:fs/promises'
+import { mkdir, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+
+import { readOptionalFile } from './fs.js'
 
 export type SetupShellAliasOptions = {
   rcFile: string
@@ -14,18 +16,6 @@ const marker = (aliasName: string) => `# filip-stack: ${aliasName}`
 const aliasLine = ({ aliasName, commandPath }: Pick<SetupShellAliasOptions, 'aliasName' | 'commandPath'>) =>
   `alias ${aliasName}=${JSON.stringify(commandPath)}`
 
-const readExistingRcFile = async (rcFile: string): Promise<string> => {
-  try {
-    return await readFile(rcFile, 'utf8')
-  } catch (caughtError) {
-    if (caughtError instanceof Error && 'code' in caughtError && caughtError.code === 'ENOENT') {
-      return ''
-    }
-
-    throw caughtError
-  }
-}
-
 export const setupShellAlias = async ({
   rcFile,
   aliasName,
@@ -39,7 +29,7 @@ export const setupShellAlias = async ({
 
   const markerLine = marker(aliasName)
   const entry = `${markerLine}\n${aliasLine({ aliasName, commandPath })}\n`
-  const existingContent = await readExistingRcFile(rcFile)
+  const existingContent = await readOptionalFile(rcFile) ?? ''
 
   if (existingContent.includes(markerLine)) {
     log(`alias already configured in ${rcFile}`)
