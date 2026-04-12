@@ -7,7 +7,11 @@
     "node": ">=20.16.0"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json",
+    "build:ts": "tsc -p tsconfig.build.json",
+    "build:plugins": "node scripts/build-plugins.mjs",
+    "generate:codex-app-server-types": "node scripts/generate-codex-app-server-types.mjs",
+    "build": "pnpm build:ts && pnpm build:plugins",
+    "generate:codex-app-server-types": "node scripts/generate-codex-app-server-types.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test && pnpm build"

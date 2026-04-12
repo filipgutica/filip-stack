@@ -1,0 +1,20 @@
+{
+  "name": "filip-stack",
+  "version": "0.1.0",
+  "description": "Personal Codex plugin bundle for coordinator workflows and notes tracking.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "skills": "./skills",
+  "hooks": "./hooks/hooks.json",
+  "interface": {
+    "displayName": "Filip Stack",
+    "shortDescription": "Coordinator workflows and notes tracking.",
+    "category": "Productivity",
+    "capabilities": ["Interactive", "Write"],
+    "defaultPrompt": [
+      "Use filip-stack:coordinator to plan a code change.",
+      "Use filip-stack:project-notes-tracker to create and manage a local ticket."
+    ]
+  }
+}

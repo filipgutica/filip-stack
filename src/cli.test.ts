@@ -5,35 +5,17 @@ import { tmpdir } from 'node:os'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { runCli } from './cli.js'
-import type { RunSyncResult } from './run.js'
-import type { Scope } from './scopes.js'
 
 let testRoot: string
 let repoRoot: string
 let homeDir: string
-
-const inkRunner = vi.fn<
-  (options: {
-    repoRoot: string
-    homeDir: string
-    runSync: (options: { scopes: Scope[]; dryRun: boolean }) => Promise<RunSyncResult>
-  }) => Promise<number>
->()
 
 describe('runCli', () => {
   beforeEach(async () => {
     testRoot = await mkdtemp(join(tmpdir(), 'filip-stack-cli-test-'))
     repoRoot = join(testRoot, 'repo')
     homeDir = join(testRoot, 'home')
-    inkRunner.mockReset()
-    inkRunner.mockResolvedValue(0)
-    await mkdir(join(repoRoot, 'skills/reviewer'), { recursive: true })
-    await mkdir(join(repoRoot, 'hooks/codex/scripts'), { recursive: true })
-    await mkdir(join(repoRoot, 'hooks/claude/scripts'), { recursive: true })
     await mkdir(join(repoRoot, 'globals'), { recursive: true })
-    await writeFile(join(repoRoot, 'skills/reviewer/SKILL.md'), 'reviewer')
-    await writeFile(join(repoRoot, 'hooks/codex/hooks.json'), JSON.stringify({ hooks: {} }, null, 2))
-    await writeFile(join(repoRoot, 'hooks/claude/hooks.json'), JSON.stringify({ hooks: {} }, null, 2))
     await writeFile(join(repoRoot, 'globals/AGENTS.md'), 'agents')
     await writeFile(join(repoRoot, 'globals/CLAUDE.md'), 'claude')
   })
@@ -42,42 +24,7 @@ describe('runCli', () => {
     await rm(testRoot, { recursive: true, force: true })
   })
 
-  it('routes no-arg tty mode into ink', async () => {
-    await expect(
-      runCli({
-        argv: [],
-        repoRoot,
-        homeDir,
-        isTty: true,
-        runInkApp: inkRunner,
-        log: () => {},
-        error: () => {},
-      }),
-    ).resolves.toBe(0)
-
-    expect(inkRunner).toHaveBeenCalledTimes(1)
-  })
-
-  it('does not use ink for explicit args', async () => {
-    const error = vi.fn()
-
-    await expect(
-      runCli({
-        argv: ['--unknown'],
-        repoRoot,
-        homeDir,
-        isTty: true,
-        runInkApp: inkRunner,
-        log: () => {},
-        error,
-      }),
-    ).resolves.toBe(2)
-
-    expect(inkRunner).not.toHaveBeenCalled()
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('Unknown argument: unknown'))
-  })
-
-  it('falls back to command mode for no-arg non-tty execution', async () => {
+  it('syncs globals by default', async () => {
     const messages: string[] = []
 
     await expect(
@@ -85,15 +32,14 @@ describe('runCli', () => {
         argv: [],
         repoRoot,
         homeDir,
-        isTty: false,
-        runInkApp: inkRunner,
         log: (message) => messages.push(message),
         error: () => {},
       }),
     ).resolves.toBe(0)
 
-    expect(inkRunner).not.toHaveBeenCalled()
-    expect(messages.join('\n')).toContain('Sync Complete')
+    expect(messages.join('\n')).toContain('Synced Globals')
+    await expect(readFile(join(homeDir, '.codex/AGENTS.md'), 'utf8')).resolves.toBe('agents')
+    await expect(readFile(join(homeDir, '.claude/CLAUDE.md'), 'utf8')).resolves.toBe('claude')
   })
 
   it('rejects unknown flags through yargs', async () => {
@@ -104,30 +50,11 @@ describe('runCli', () => {
         argv: ['--unknown'],
         repoRoot,
         homeDir,
-        isTty: false,
         log: () => {},
         error,
       }),
     ).resolves.toBe(2)
     expect(error).toHaveBeenCalledWith(expect.stringContaining('Unknown argument: unknown'))
-  })
-
-  it('rejects all combined with an individual scope', async () => {
-    const error = vi.fn()
-
-    await expect(
-      runCli({
-        argv: ['--all', '--skills'],
-        repoRoot,
-        homeDir,
-        isTty: false,
-        log: () => {},
-        error,
-      }),
-    ).resolves.toBe(2)
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('--all cannot be combined with --skills, --hooks, or --globals'),
-    )
   })
 
   it('runs setup against the provided rc file', async () => {
@@ -138,7 +65,6 @@ describe('runCli', () => {
         argv: ['setup', '--rc-file', rcFile, '--alias', 'filip-stack'],
         repoRoot,
         homeDir,
-        isTty: false,
         log: () => {},
         error: () => {},
       }),
@@ -155,7 +81,6 @@ describe('runCli', () => {
         argv: ['setup', '--rc-file', '~/.testrc'],
         repoRoot,
         homeDir,
-        isTty: false,
         log: () => {},
         error: () => {},
       }),
@@ -166,15 +91,14 @@ describe('runCli', () => {
     )
   })
 
-  it('rejects sync scope flags for setup', async () => {
+  it('allows --globals with setup only as an error', async () => {
     const error = vi.fn()
 
     await expect(
       runCli({
-        argv: ['setup', '--skills'],
+        argv: ['setup', '--globals'],
         repoRoot,
         homeDir,
-        isTty: false,
         log: () => {},
         error,
       }),
@@ -192,7 +116,6 @@ describe('runCli', () => {
         argv: ['--rc-file', join(testRoot, '.zshrc')],
         repoRoot,
         homeDir,
-        isTty: false,
         log: () => {},
         error,
       }),
@@ -207,16 +130,66 @@ describe('runCli', () => {
 
     await expect(
       runCli({
-        argv: ['--hooks', '--dry-run'],
+        argv: ['--dry-run'],
         repoRoot,
         homeDir,
-        isTty: false,
         log: (message) => messages.push(message),
         error: () => {},
       }),
     ).resolves.toBe(0)
 
     expect(messages.join('\n')).toContain('Dry Run')
-    expect(messages.join('\n')).toContain('Codex Hooks')
+    expect(messages.join('\n')).toContain('Globals')
+  })
+
+  it('rejects invalid install targets', async () => {
+    const error = vi.fn()
+
+    await expect(
+      runCli({
+        argv: ['install', 'bad-target'],
+        repoRoot,
+        homeDir,
+        log: () => {},
+        error,
+      }),
+    ).resolves.toBe(2)
+
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('target must be one of: claude, codex, all'))
+  })
+
+  it('accepts a valid install target', async () => {
+    const messages: string[] = []
+    const codexInstallCalls: Array<{ homeDir: string; marketplacePath: string; pluginName: string }> = []
+
+    await mkdir(join(homeDir, '.claude'), { recursive: true })
+    await mkdir(join(homeDir, '.codex'), { recursive: true })
+    await writeFile(join(homeDir, '.claude/settings.json'), '{}')
+    await writeFile(join(homeDir, '.codex/hooks.json'), JSON.stringify({ hooks: {} }, null, 2))
+
+    await expect(
+      runCli({
+        argv: ['install', 'codex'],
+        repoRoot: process.cwd(),
+        homeDir,
+        log: (message) => messages.push(message),
+        error: () => {},
+        installCodexPlugin: async ({ homeDir, marketplacePath, pluginName }) => {
+          codexInstallCalls.push({ homeDir, marketplacePath, pluginName })
+        },
+      }),
+    ).resolves.toBe(0)
+
+    expect(messages.join('\n')).toContain('Plugin Install Complete')
+    expect(messages.join('\n')).toContain('Installed Codex plugin configuration.')
+    expect(messages.join('\n')).not.toContain('Claude local settings now point')
+    await expect(readFile(join(homeDir, 'plugins/filip-stack/.codex-plugin/plugin.json'), 'utf8')).resolves.toContain('"name": "filip-stack"')
+    expect(codexInstallCalls).toEqual([
+      {
+        homeDir,
+        marketplacePath: join(homeDir, '.agents', 'plugins', 'marketplace.json'),
+        pluginName: 'filip-stack',
+      },
+    ])
   })
 })

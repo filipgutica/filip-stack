@@ -1,4 +1,0 @@
-interface:
-  display_name: "Reviewer"
-  short_description: "Review plans, diffs, and validation"
-  default_prompt: "Use $reviewer to review this plan, investigation, or diff against the host's global engineering standards and the original request, or the host's built-in review command if available."

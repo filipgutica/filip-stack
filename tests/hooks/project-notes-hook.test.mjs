@@ -4,21 +4,13 @@ import { tmpdir } from 'node:os'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { runHook } from '../../hooks/shared/project-notes-hook.mjs'
+import { runHook } from '../../plugin/shared/scripts/project-notes-hook.mjs'
 
 let testRoot = null
 
 const createGitRepoRoot = async () => {
   testRoot = await mkdtemp(join(tmpdir(), 'filip-stack-notes-hook-'))
   await mkdir(join(testRoot, '.git'))
-  await runHook({
-    host: 'codex',
-    event: 'SessionStart',
-    payload: { cwd: testRoot },
-    cwd: testRoot,
-    env: { CODEX_THREAD_ID: 'thread-1' },
-  })
-
   return testRoot
 }
 
@@ -34,6 +26,14 @@ const bindTrackedTicket = async ({ repoRoot, host = 'codex', sessionId = 'thread
   })
 }
 
+const writeRuntimeState = async ({ repoRoot, sessionId, ticketId, lastKnownTicketPath }) => {
+  await mkdir(join(repoRoot, '.notes/.runtime'), { recursive: true })
+  await writeFile(
+    join(repoRoot, `.notes/.runtime/${sessionId}.json`),
+    `${JSON.stringify({ sessionId, ticketId, lastKnownTicketPath }, null, 2)}\n`,
+  )
+}
+
 afterEach(async () => {
   if (testRoot !== null) {
     await rm(testRoot, { recursive: true, force: true })
@@ -42,12 +42,12 @@ afterEach(async () => {
 })
 
 describe('project notes hook', () => {
-  it('creates the .notes structure on session start inside a git repo', async () => {
+  it('creates the .notes structure when a notes command runs inside a git repo', async () => {
     const repoRoot = await createGitRepoRoot()
 
-    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
-      '"sessionId": "thread-1"',
-    )
+    await bindTrackedTicket({ repoRoot })
+
+    await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain('"sessionId": "thread-1"')
   })
 
   it('creates and binds a ticket from a prompt command', async () => {
@@ -63,7 +63,7 @@ describe('project notes hook', () => {
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('ticket-id: "')
   })
 
-  it('notes plan tells Codex to have the user switch to Plan Mode and use the planner skill', async () => {
+  it('notes plan tells Codex to have the user switch to Plan Mode and use the coordinator skill', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot })
 
@@ -77,7 +77,7 @@ describe('project notes hook', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout.join('\n')).toContain('appending this seed under `## Planning Seed`: Tighten notes workflow')
-    expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$planner`')
+    expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$filip-stack:coordinator`')
     const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
     expect(state).toContain('"lastKnownTicketPath": ".notes/todo/')
     const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
@@ -89,7 +89,7 @@ describe('project notes hook', () => {
     ).resolves.not.toContain('Planning request (2026-04-08): Tighten notes workflow')
   })
 
-  it('notes plan tells Claude to enter plan mode and use the planner skill directly', async () => {
+  it('notes plan tells Claude to enter plan mode and use the coordinator skill directly', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot, host: 'claude', sessionId: 'claude-thread-1' })
 
@@ -103,7 +103,7 @@ describe('project notes hook', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout.join('\n')).toContain('appending this seed under `## Planning Seed`: Tighten notes workflow')
-    expect(result.stdout.join('\n')).toContain('Then enter plan mode and use `$planner`')
+    expect(result.stdout.join('\n')).toContain('Then enter plan mode and use `$coordinator`')
   })
 
   it('notes approve tells the model to update the ticket instead of mutating it in hook code', async () => {
@@ -156,14 +156,12 @@ describe('project notes hook', () => {
         `## Completion Summary\n\n` +
         `Not completed.\n`,
     )
-    await writeFile(
-      join(repoRoot, '.notes/.runtime/thread-1.json'),
-      `${JSON.stringify({
-        sessionId: 'thread-1',
-        ticketId: '2026-04-08-track-hook-work',
-        lastKnownTicketPath: ticketPath,
-      }, null, 2)}\n`,
-    )
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: ticketPath,
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -252,14 +250,12 @@ describe('project notes hook', () => {
         `## Completion Summary\n\n` +
         `Not completed.\n`,
     )
-    await writeFile(
-      join(repoRoot, '.notes/.runtime/thread-1.json'),
-      `${JSON.stringify({
-        sessionId: 'thread-1',
-        ticketId: '2026-04-08-track-hook-work',
-        lastKnownTicketPath: ticketPath,
-      }, null, 2)}\n`,
-    )
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: ticketPath,
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -306,14 +302,12 @@ describe('project notes hook', () => {
         `## Completion Summary\n\n` +
         `Not completed.\n`,
     )
-    await writeFile(
-      join(repoRoot, '.notes/.runtime/thread-1.json'),
-      `${JSON.stringify({
-        sessionId: 'thread-1',
-        ticketId: '2026-04-08-track-hook-work',
-        lastKnownTicketPath: oldTicketPath,
-      }, null, 2)}\n`,
-    )
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: oldTicketPath,
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -362,14 +356,12 @@ describe('project notes hook', () => {
         `## Completion Summary\n\n` +
         `Finished.\n`,
     )
-    await writeFile(
-      join(repoRoot, '.notes/.runtime/thread-1.json'),
-      `${JSON.stringify({
-        sessionId: 'thread-1',
-        ticketId: '2026-04-08-track-hook-work',
-        lastKnownTicketPath: oldTicketPath,
-      }, null, 2)}\n`,
-    )
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: oldTicketPath,
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -416,28 +408,42 @@ describe('project notes hook', () => {
         `## Completion Summary\n\n` +
         `Not completed.\n`,
     )
-    await writeFile(
-      join(repoRoot, '.notes/.runtime/thread-1.json'),
-      `${JSON.stringify({
-        sessionId: 'thread-1',
-        ticketId: null,
-        lastKnownTicketPath: null,
-      }, null, 2)}\n`,
-    )
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: null,
+      lastKnownTicketPath: null,
+    })
 
     const result = await runHook({
       host: 'codex',
-      event: 'SessionStart',
-      payload: { cwd: repoRoot },
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'continue implementing the notes workflow' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain(`session bound to \`${ticketPath}\``)
+    expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
     await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
       '"ticketId": "2026-04-08-track-hook-work"',
     )
+  })
+
+  it('stays quiet on normal prompts when no ticket is bound', async () => {
+    const repoRoot = await createGitRepoRoot()
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'continue implementing the notes workflow' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
   })
 
   it('updates session-id in the ticket when a new session binds an existing ticket', async () => {

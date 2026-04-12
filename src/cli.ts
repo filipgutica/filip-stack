@@ -6,36 +6,27 @@ import chalk from 'chalk'
 import yargs from 'yargs/yargs'
 import { hideBin } from 'yargs/helpers'
 
-import { DEFAULT_SCOPES, resolveScopes, type Scope } from './scopes.js'
 import { setupShellAlias } from './setup.js'
-import { formatDryRun, formatSyncSummary } from './output.js'
 import { renderMarkdown } from './markdown.js'
-import { runSync, type RunSyncResult } from './run.js'
-import { runInkApp as defaultRunInkApp } from './tty/run-ink.js'
+import { syncGlobals } from './sync.js'
+import { installPlugins, updatePlugins, type InstallTarget } from './install.js'
 
 export type RunCliOptions = {
   argv: string[]
   repoRoot?: string
   homeDir?: string
-  isTty?: boolean
-  runInkApp?: (options: {
-    repoRoot: string
-    homeDir: string
-    runSync: (options: { scopes: Scope[]; dryRun: boolean }) => Promise<RunSyncResult>
-  }) => Promise<number>
   log?: (message: string) => void
   error?: (message: string) => void
+  installCodexPlugin?: Parameters<typeof installPlugins>[0]['installCodexPlugin']
 }
 
 type ParsedArgs = {
   _: Array<string | number>
-  skills?: boolean
-  hooks?: boolean
   globals?: boolean
-  all?: boolean
   dryRun?: boolean
   rcFile?: string
   alias?: string
+  target?: string
 }
 
 const repoRootFromDist = () => resolve(dirname(fileURLToPath(import.meta.url)), '..')
@@ -45,26 +36,18 @@ const parseArgs = async (argv: string[]): Promise<ParsedArgs> => {
     .scriptName('./bin/filip-stack')
     .usage(
       [
-        'Usage: ./bin/filip-stack [--skills] [--hooks] [--globals] [--all] [--dry-run]',
+        'Usage: ./bin/filip-stack [--globals] [--dry-run]',
         '       ./bin/filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
+        '       ./bin/filip-stack install <claude|codex|all>',
+        '       ./bin/filip-stack update <claude|codex|all>',
       ].join('\n'),
     )
     .command('setup', 'Add a shell alias so this CLI can be called from anywhere')
-    .option('skills', {
-      type: 'boolean',
-      description: 'Sync shared skills',
-    })
-    .option('hooks', {
-      type: 'boolean',
-      description: 'Sync Claude and Codex hooks',
-    })
+    .command('install <target>', 'Install generated plugins into Claude, Codex, or both')
+    .command('update <target>', 'Rebuild and refresh generated plugins for Claude, Codex, or both')
     .option('globals', {
       type: 'boolean',
       description: 'Sync global AGENTS.md and CLAUDE.md',
-    })
-    .option('all', {
-      type: 'boolean',
-      description: 'Sync skills, hooks, and globals',
     })
     .option('dry-run', {
       type: 'boolean',
@@ -100,27 +83,84 @@ const expandHomePath = (path: string, homeDir: string): string => {
   return path
 }
 
-const hasSyncFlags = (parsed: ParsedArgs) =>
-  Boolean(parsed.all || parsed.skills || parsed.hooks || parsed.globals)
+const hasSyncFlags = (parsed: ParsedArgs) => Boolean(parsed.globals)
+const parseInstallTarget = (value: unknown): InstallTarget => {
+  if (value === 'claude' || value === 'codex' || value === 'all') return value
+  throw new Error('target must be one of: claude, codex, all')
+}
+const installSummaryLines = (target: InstallTarget) => {
+  if (target === 'claude') {
+    return [
+      '# Plugin Install Complete',
+      '',
+      'Installed Claude plugin configuration.',
+      '',
+      '- Rebuild with `pnpm build` after plugin source changes.',
+      '- Claude local settings now point at the generated plugin path.',
+    ]
+  }
+
+  if (target === 'codex') {
+    return [
+      '# Plugin Install Complete',
+      '',
+      'Installed Codex plugin configuration.',
+      '',
+      '- Rebuild with `pnpm build` after plugin source changes.',
+      '- Codex local marketplace/config now point at the installed home-local plugin copy.',
+    ]
+  }
+
+  return [
+    '# Plugin Install Complete',
+    '',
+    'Installed Claude and Codex plugin configuration.',
+    '',
+    '- Rebuild with `pnpm build` after plugin source changes.',
+    '- Claude local settings now point at the generated plugin path.',
+    '- Codex local marketplace/config now point at the installed home-local plugin copy.',
+  ]
+}
+
+const updateSummaryLines = (target: InstallTarget) => {
+  if (target === 'claude') {
+    return [
+      '# Plugin Update Complete',
+      '',
+      'Updated Claude plugin configuration.',
+      '',
+      '- Restart Claude or reload plugins if it has an active cached plugin session.',
+    ]
+  }
+
+  if (target === 'codex') {
+    return [
+      '# Plugin Update Complete',
+      '',
+      'Updated Codex plugin configuration.',
+      '',
+      '- Restart Codex if it has an active cached plugin session.',
+    ]
+  }
+
+  return [
+    '# Plugin Update Complete',
+    '',
+    'Updated Claude and Codex plugin configuration.',
+    '',
+    '- Restart the hosts or reload plugins if they have active cached plugin sessions.',
+  ]
+}
 
 export const runCli = async ({
   argv,
   repoRoot = repoRootFromDist(),
   homeDir = homedir(),
-  isTty = Boolean(process.stdout.isTTY),
-  runInkApp = defaultRunInkApp,
   log = console.log,
   error = console.error,
+  installCodexPlugin,
 }: RunCliOptions): Promise<number> => {
   try {
-    if (argv.length === 0 && isTty) {
-      return runInkApp({
-        repoRoot,
-        homeDir,
-        runSync: ({ scopes, dryRun }) => runSync({ repoRoot, homeDir, scopes, dryRun }),
-      })
-    }
-
     const parsed = await parseArgs(argv)
     const command = parsed._[0]
 
@@ -140,6 +180,27 @@ export const runCli = async ({
       return 0
     }
 
+    if (command === 'install' || command === 'update') {
+      if (hasSyncFlags(parsed)) {
+        throw new Error(`${command} cannot be combined with sync scope flags`)
+      }
+      if (parsed.rcFile !== undefined || parsed.alias !== undefined) {
+        throw new Error('--rc-file and --alias can only be used with setup')
+      }
+
+      const target = parseInstallTarget(parsed.target)
+
+      if (command === 'install') {
+        await installPlugins({ repoRoot, homeDir, target, installCodexPlugin })
+        log(renderMarkdown(installSummaryLines(target).join('\n')))
+      } else {
+        await updatePlugins({ repoRoot, homeDir, target, installCodexPlugin })
+        log(renderMarkdown(updateSummaryLines(target).join('\n')))
+      }
+
+      return 0
+    }
+
     if (command !== undefined) {
       throw new Error(`Unknown command: ${String(command)}`)
     }
@@ -148,31 +209,31 @@ export const runCli = async ({
       throw new Error('--rc-file and --alias can only be used with setup')
     }
 
-    const scopes = resolveScopes({
-      all: parsed.all,
-      skills: parsed.skills,
-      hooks: parsed.hooks,
-      globals: parsed.globals,
-    })
-
-    const result = await runSync({
+    const actions = await syncGlobals({
       repoRoot,
       homeDir,
-      scopes,
       dryRun: Boolean(parsed.dryRun),
     })
 
     if (parsed.dryRun) {
-      log(renderMarkdown(formatDryRun({ actions: result.actions, scopes: result.scopes, repoRoot, homeDir })))
+      log(
+        renderMarkdown(
+          [
+            '# Dry Run',
+            '',
+            'No files were changed. Selected scope: Globals.',
+            '',
+            '## Globals',
+            '- Source: `globals/`',
+            '- Destinations: `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`',
+            `- Planned actions: ${actions.length}`,
+          ].join('\n'),
+        ),
+      )
     } else {
       log(
         renderMarkdown(
-          formatSyncSummary({
-            actions: result.actions,
-            scopes: result.scopes,
-            repoRoot,
-            homeDir,
-          }),
+          ['# Sync Complete', '', 'Synced Globals.', '', '## Globals', '- Updated: `~/.codex/AGENTS.md`, `~/.claude/CLAUDE.md`'].join('\n'),
         ),
       )
     }

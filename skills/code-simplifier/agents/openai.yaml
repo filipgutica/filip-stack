@@ -1,4 +1,0 @@
-interface:
-  display_name: "Code Simplifier"
-  short_description: "Find code complexity and plan safe simplification"
-  default_prompt: "Use $code-simplifier to analyze a targeted file, diff, or path, or a broader subsystem or repo area, then return prioritized findings and a $planner-style simplification plan without implementing changes."

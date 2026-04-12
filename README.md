@@ -2,201 +2,185 @@
 
 Personal source of truth for shared Claude and Codex setup across my machines.
 
-This is intentionally small. It is not a product, a package, or a configuration
-management system.
+This repo now builds self-contained local plugins for both hosts. It no longer
+uses raw synced `skills/` and `hooks/` as the primary install surface.
 
-## What Syncs
+## Build
 
-By default, sync copies:
-
-- shared skills
-- hook scripts and hook-specific config
-
-Global files are ignored by default and only sync when explicitly requested.
-
-## Usage
-
-Install dependencies and build the CLI after cloning or pulling changes:
+Build the CLI and generated plugin outputs:
 
 ```sh
 pnpm install
 pnpm build
 ```
 
-Then run sync:
+This generates:
 
-```sh
-./bin/filip-stack
-./bin/filip-stack --skills
-./bin/filip-stack --hooks
-./bin/filip-stack --globals
-./bin/filip-stack --all
-./bin/filip-stack --dry-run
-./bin/filip-stack --interactive
-./bin/filip-stack setup
+```text
+dist/plugins/claude/filip-stack/
+dist/plugins/codex/filip-stack/
 ```
 
-Scope flags:
+`dist/` stays gitignored. After cloning or pulling changes, build locally before
+trying to load either plugin.
 
-- no scope flags: sync skills and hooks
-- `--skills`: sync only skills
-- `--hooks`: sync only hooks
-- `--globals`: sync only global files
-- `--all`: sync skills, hooks, and globals
-- `--all` cannot be combined with `--skills`, `--hooks`, or `--globals`
-- `--interactive`: choose scopes interactively
-- `--interactive` cannot be combined with scope flags
+## Repo Layout
 
-`--dry-run` can be combined with any scope flag and prints the planned changes
-without writing to the target machine.
+Hand-edited plugin source lives under:
 
-`--dry-run` can also be combined with `--interactive`.
-
-## Setup Command
-
-Use `setup` to add a shell alias so the CLI can be called from anywhere:
-
-```sh
-./bin/filip-stack setup
+```text
+plugin/shared/
+plugin/claude/
+plugin/codex/
 ```
 
-By default, this appends an idempotent entry to your shell rc file:
+Generated installable plugin roots live under:
 
-```sh
-alias filip-stack="/path/to/filip-stack/bin/filip-stack"
+```text
+dist/plugins/claude/filip-stack/
+dist/plugins/codex/filip-stack/
 ```
 
-After opening a new shell or reloading the rc file, run sync from any directory:
+Manifest locations inside the built plugin roots are host-specific:
 
-```sh
-filip-stack
-filip-stack --all
-filip-stack --interactive
+```text
+dist/plugins/claude/filip-stack/.claude-plugin/plugin.json
+dist/plugins/codex/filip-stack/.codex-plugin/plugin.json
 ```
 
-Choose a specific rc file:
+## Install and Update
+
+Build plus persistent install:
 
 ```sh
-./bin/filip-stack setup --rc-file ~/.zshrc
-./bin/filip-stack setup --rc-file ~/.bashrc
+./bin/filip-stack install claude
+./bin/filip-stack install codex
+./bin/filip-stack install all
 ```
 
-Choose a different alias name:
+After changing anything under `plugin/`, rebuild and refresh:
 
 ```sh
-./bin/filip-stack setup --alias stack-sync
-stack-sync --dry-run
+pnpm build
+./bin/filip-stack update claude
+./bin/filip-stack update codex
+./bin/filip-stack update all
 ```
 
-Preview the rc-file change without writing:
+Install and update now share the same underlying sync flow:
+
+- build plugin outputs once
+- sync Claude state and CLI-managed install/update
+- sync Codex state and trigger Codex's own plugin install step
+
+Claude install behavior:
+
+- writes a persistent directory-backed marketplace source into `~/.claude/settings.json`
+- refreshes that marketplace through Claude's own CLI
+- installs or updates `filip-stack@local-plugins` through Claude's own CLI
+
+Codex install behavior:
+
+- copies the built plugin into `~/plugins/filip-stack` for the home-local marketplace source
+- updates `~/.agents/plugins/marketplace.json`
+- enables `filip-stack@filip-stack-local` in `~/.codex/config.toml`
+- asks Codex's own app-server to run `plugin/install` for `filip-stack`
+
+Codex notes:
+
+- the local marketplace contract follows the same home-local convention used by the plugin creator guidance:
+  `~/.agents/plugins/marketplace.json` plus `./plugins/<plugin-name>` means the plugin source lives at `~/plugins/<plugin-name>`
+- Codex does maintain `~/.codex/plugins/cache/<marketplace>/<plugin>` at runtime, but that cache is now populated by Codex itself through the app-server install mutation instead of this repo writing it directly
+- this Codex install flow is grounded in the local Codex app-server schema and observed runtime behavior. I did not find official OpenAI docs that describe a public `codex plugin install` CLI command or a documented local-plugin cache flow
+
+Claude notes:
+
+- this flow is grounded in Claude's documented marketplace/plugin commands, not by writing `~/.claude/plugins/*` cache files directly
+- if Claude already has a stale broken `local-plugins` marketplace cached from an older install flow, repair it with:
 
 ```sh
-./bin/filip-stack setup --dry-run
-./bin/filip-stack setup --rc-file ~/.zshrc --dry-run
+claude plugin marketplace remove local-plugins
+claude plugin marketplace add ./dist/marketplaces/claude/filip-stack-local
+claude plugin install filip-stack@local-plugins
 ```
 
-If `--rc-file` is omitted, setup picks an rc file from the current shell and
-falls back to `~/.zshrc`. Setup can be run repeatedly; if the alias marker is
-already present, it leaves the rc file unchanged.
+This repo is intentionally local-plugin-first in v1. Hosted marketplace
+distribution is out of scope.
 
-The CLI is written in TypeScript. Built output in `dist/` is generated locally
-and is not committed. If `./bin/filip-stack` reports that `dist/cli.js` is missing,
-run `pnpm install && pnpm build`.
+## Included Skills
 
-## Hook Sync
+Both generated plugins include:
 
-Hooks are config-driven for both Claude and Codex. Syncing hooks now does two
-things:
+- `coordinator`
+- `project-notes-tracker`
 
-- copies hook scripts
-- updates the tool-specific hook config needed to activate them
-- enables shared project-notes tracking hooks for both hosts
+Codex names plugin-provided skills with the plugin prefix in API responses, for example:
 
-Claude hooks:
+- `filip-stack:coordinator`
+- `filip-stack:project-notes-tracker`
 
-- `hooks/claude/scripts/*` -> `~/.claude/hooks/`
-- `hooks/claude/hooks.json` merges into `~/.claude/settings.json`
+## Project Notes Hook
 
-Codex hooks:
-
-- `hooks/codex/scripts/*` -> `~/.codex/hooks/`
-- `hooks/codex/hooks.json` merges into `~/.codex/hooks.json`
-- `~/.codex/config.toml` is updated to ensure `[features].codex_hooks = true`
-
-Repo hook config fragments are expected to contain a top-level `hooks` object.
-Unrelated existing user settings are preserved.
-The checked-in hook fragments install a shared project-notes tracker for both hosts.
-They intentionally avoid per-tool hooks so the host does not spam the console on
-every tool invocation.
-
-The notes hooks use these repo-local conventions:
+The generated plugins bundle the shared project notes hook. Its runtime behavior
+remains repo-local:
 
 - `.notes/todo/`, `.notes/in-progress/`, and `.notes/complete/` hold tracked Markdown tickets
 - `.notes/.runtime/` stores machine-managed session bindings and transient hook state and should stay untracked
 - Ticket frontmatter carries durable binding metadata: `ticket-id` is stable across moves and `session-id` tracks the currently bound session
-- `SessionStart` ensures `.notes/` exists and restores ticket bindings
 - `UserPromptSubmit` supports `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`, `notes approve`, and `notes complete`
+- `UserPromptSubmit` can restore an already-linked session when the same session ID is still present
 - `notes use:` with no selector lists open tickets instead of guessing a binding
-- `UserPromptSubmit` also reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
-- `~/.filip-stack/sync-manifest.json` tracks filip-stack-managed skills, hook scripts, and hook commands on the host machine
-- when a managed skill, script, or hook command disappears from the repo, the next matching sync removes only that managed host artifact and leaves unrelated local content alone
+- `UserPromptSubmit` reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
+- `UserPromptSubmit` stays quiet during normal prompts when no ticket is bound
 
-Planning is now a two-step flow:
+Planning remains a two-step flow:
 
-- `notes plan: <seed>` tells the model to add the seed under `## Planning Seed` and start planner-driven planning while keeping the ticket in `.notes/todo/`
-- Claude can enter planning flow directly; Codex should tell the user to switch to Plan Mode and use `$planner`
-- `notes approve` tells the model to write the approved plan into `## Approved Plan`, set `status: "in-progress"`, stamp `started`, and move the ticket to `.notes/in-progress/`
-- `notes complete` tells the model to close out the bound ticket by writing `## Completion Summary`, setting `status: "complete"`, stamping `completed`, and moving the ticket to `.notes/complete/`
-- Tickets should define `## Completion Criteria` once the approved plan is known, but they should stay in `.notes/in-progress/` until the user explicitly closes out the session
-- Runtime state should resolve tickets by durable `ticket-id` and treat the stored path as a cache, so bindings survive normal ticket moves between note states
-- Fresh sessions should default to new tickets; continuing an old ticket from a fresh session is an explicit `notes use` action, while true host resume should preserve the existing session/ticket link when the host keeps the same session ID
+- `notes plan: <seed>` appends the seed under `## Planning Seed` and starts coordinator-driven planning while keeping the ticket in `.notes/todo/`
+- `notes approve` writes the approved plan into `## Approved Plan`, stamps `started`, and moves the ticket to `.notes/in-progress/`
+- `notes complete` writes `## Completion Summary`, stamps `completed`, and moves the ticket to `.notes/complete/`
 
-## Destinations
+## CLI
+
+The CLI is now only for globals and shell bootstrap.
+
+Sync global guidance files:
+
+```sh
+./bin/filip-stack
+./bin/filip-stack --globals
+./bin/filip-stack --dry-run
+```
+
+Globals synced by the CLI:
 
 ```text
-skills/*           -> ~/.agents/skills/
-hooks/codex/scripts/*   -> ~/.codex/hooks/
-hooks/shared/*          -> ~/.codex/hooks/ and ~/.claude/hooks/
-hooks/codex/hooks.json  -> ~/.codex/hooks.json (merged)
-hooks/claude/scripts/*  -> ~/.claude/hooks/
-hooks/claude/hooks.json -> ~/.claude/settings.json (merged)
 globals/AGENTS.md  -> ~/.codex/AGENTS.md
 globals/CLAUDE.md  -> ~/.claude/CLAUDE.md
 ```
 
-Sync also keeps a host-local manifest at `~/.filip-stack/sync-manifest.json`
-to record which skills, hook scripts, and hook config commands are managed by
-this repo.
+Add a shell alias for the CLI:
 
-## Sync Model
+```sh
+./bin/filip-stack setup
+./bin/filip-stack setup --rc-file ~/.zshrc
+./bin/filip-stack setup --alias stack-sync
+./bin/filip-stack setup --dry-run
+```
 
-Sync is additive and update-oriented for unmanaged local content:
+If `--rc-file` is omitted, setup picks an rc file from the current shell and
+falls back to `~/.zshrc`.
 
-- create missing files and directories from this repo
-- overwrite files and directories that collide with repo-managed names
-- remove stale filip-stack-managed skills, hook scripts, and managed hook config commands when they disappear from this repo and the matching scope is synced
-- do not delete unrelated local files, directories, or unmanaged hook commands
-- do not use destructive mirroring such as `rsync --delete`
+## Migration
 
-Different local names are safe and left alone. Matching names are considered
-repo-managed and may be overwritten by sync.
+This repo intentionally retires the old raw-sync model for skills and hooks.
 
-The Node implementation uses native filesystem APIs rather than shelling out to
-`rsync`.
+One-time migration:
 
-## Included Skills
-
-This repo currently syncs these named shared skills:
-
-- `implementer`
-- `investigator`
-- `planner`
-- `preview-package-install`
-- `project-notes-tracker`
-- `reviewer`
-
-It intentionally excludes `data-service-review` because that skill is specific
-to one environment. Hidden `.system` skills are also excluded.
+1. Remove old filip-stack-managed raw skills and hook entries from Claude and Codex host locations.
+2. Stop using the old raw skills/hooks sync flow.
+3. Run `pnpm install && pnpm build`.
+4. Run `./bin/filip-stack install all`.
+5. Keep using the CLI only for globals.
 
 ## Development
 

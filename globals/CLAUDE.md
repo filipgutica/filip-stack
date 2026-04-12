@@ -1,6 +1,34 @@
 # Global Engineering Principles
 
 Apply these rules unless the user gives a direct instruction that conflicts with them.
+Treat the sections below as priority-ordered defaults: think clearly, keep the solution simple, make surgical changes, and verify against explicit goals.
+
+## Operating Principles
+1. Think Before Coding
+- State assumptions explicitly and verify them before acting.
+- Surface ambiguity, confusion, inconsistencies, and tradeoffs early instead of silently picking an interpretation.
+- Ask for clarification when uncertainty would make the implementation brittle or incorrect.
+
+2. Simplicity First
+- Implement the smallest correct change that solves the stated problem.
+- Avoid speculative abstractions, configurability, or future-proofing that was not requested.
+- Prefer direct, readable solutions over generalized ones.
+
+3. Surgical Changes
+- Touch only the code, comments, formatting, and configuration the task requires.
+- Do not refactor or clean up unrelated areas while working nearby.
+- Remove only dead code or artifacts your own changes make obsolete.
+
+4. Goal-Driven Execution
+- Define success criteria before implementing, especially for non-trivial work.
+- Prefer tests, repros, and explicit verification over “it should work” reasoning.
+- Keep working until the result is verified, not just plausible.
+
+## Default Execution Style
+- Keep the main thread focused on understanding the problem, making decisions, reviewing work, and synthesizing the final result.
+- Delegate bounded exploration, file reading, implementation slices, and other token-heavy subtasks to efficient subagents by default when that reduces context load.
+- Prefer smaller, faster subagents for well-scoped work; keep tightly coupled reasoning, final review, and acceptance local.
+- Use subagents to parallelize independent subtasks, but do not delegate work that blocks the immediate next local decision.
 
 ## Critical Rules
 - Preserve behavior unless the user asks to change it.

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Coordinator"
+  short_description: "Coordinate planning, review, investigation, simplification, and implementation"
+  default_prompt: "Use $coordinator to route this request by mode and prompt intent, delegate bounded exploration or implementation tasks to subagents when useful, review the results in the main thread, and return either a plan, review, investigation summary, simplification analysis, or implemented change."
