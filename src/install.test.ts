@@ -4,44 +4,12 @@ import { tmpdir } from 'node:os'
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { installPlugins, updatePlugins } from './install.js'
+import { installPlugins } from './install.js'
 
 let testRoot: string
 let repoRoot: string
 let homeDir: string
 let buildOutputRoot: string
-
-const createCommandRecorder = ({
-  failMarketplaceUpdate = false,
-  failPluginUpdate = false,
-}: {
-  failMarketplaceUpdate?: boolean
-  failPluginUpdate?: boolean
-} = {}) => {
-  const calls: Array<{ command: string; args: string[]; env?: NodeJS.ProcessEnv }> = []
-
-  const runCommand = async ({
-    command,
-    args,
-    env,
-  }: {
-    command: string
-    args: string[]
-    env?: NodeJS.ProcessEnv
-  }) => {
-    calls.push({ command, args, env })
-
-    if (failMarketplaceUpdate && args.join(' ') === 'plugin marketplace update local-plugins') {
-      throw new Error('marketplace not configured')
-    }
-
-    if (failPluginUpdate && args.join(' ') === 'plugin update filip-stack@local-plugins') {
-      throw new Error('plugin not installed')
-    }
-  }
-
-  return { calls, runCommand }
-}
 
 const createCodexInstallRecorder = () => {
   const calls: Array<{ homeDir: string; marketplacePath: string; pluginName: string; clientVersion: string }> = []
@@ -103,56 +71,6 @@ describe('install/update plugins', () => {
         pluginName: 'filip-stack',
         clientVersion: packageJson.version,
       },
-    ])
-  })
-
-  it('installs claude plugin through settings-based local registration', async () => {
-    const { calls, runCommand } = createCommandRecorder({
-      failMarketplaceUpdate: true,
-      failPluginUpdate: true,
-    })
-
-    await installPlugins({
-      repoRoot,
-      homeDir,
-      buildOutputRoot,
-      target: 'claude',
-      runCommand,
-    })
-
-    const settings = await readFile(join(homeDir, '.claude/settings.json'), 'utf8')
-
-    expect(settings).toContain('"local-plugins"')
-    expect(settings).toContain('"source": "directory"')
-    expect(settings).toContain('"filip-stack@local-plugins": true')
-    expect(settings).toContain('"path":')
-    expect(settings).toContain(join(testRoot, 'marketplaces', 'claude', 'filip-stack-local'))
-    expect(calls.map(({ command, args }) => `${command} ${args.join(' ')}`)).toEqual([
-      `claude plugin marketplace update local-plugins`,
-      `claude plugin marketplace add ${join(testRoot, 'marketplaces', 'claude', 'filip-stack-local')}`,
-      `claude plugin update filip-stack@local-plugins`,
-      `claude plugin install filip-stack@local-plugins`,
-    ])
-  })
-
-  it('updates claude plugin by refreshing the local plugin path registration', async () => {
-    const { calls, runCommand } = createCommandRecorder()
-
-    await updatePlugins({
-      repoRoot,
-      homeDir,
-      buildOutputRoot,
-      target: 'claude',
-      runCommand,
-    })
-
-    const settings = await readFile(join(homeDir, '.claude/settings.json'), 'utf8')
-
-    expect(settings).toContain('"filip-stack@local-plugins": true')
-    expect(settings).toContain(join(testRoot, 'marketplaces', 'claude', 'filip-stack-local'))
-    expect(calls.map(({ command, args }) => `${command} ${args.join(' ')}`)).toEqual([
-      'claude plugin marketplace update local-plugins',
-      'claude plugin update filip-stack@local-plugins',
     ])
   })
 })

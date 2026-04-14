@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { runHook } from '../../plugin/shared/scripts/project-notes-hook.mjs'
+import { runHook } from '../../plugins/filip-stack/scripts/project-notes-hook.mjs'
 
 let testRoot = null
 

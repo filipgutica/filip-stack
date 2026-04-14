@@ -38,13 +38,13 @@ const parseArgs = async (argv: string[]): Promise<ParsedArgs> => {
       [
         'Usage: ./bin/filip-stack [--globals] [--dry-run]',
         '       ./bin/filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
-        '       ./bin/filip-stack install <claude|codex|all>  # local dev/recovery install helpers',
-        '       ./bin/filip-stack update <claude|codex|all>   # refresh local host state after plugin changes',
+        '       ./bin/filip-stack install codex  # local dev/recovery install helper',
+        '       ./bin/filip-stack update codex   # rebuild and refresh local Codex plugin state',
       ].join('\n'),
     )
     .command('setup', 'Add a shell alias so this CLI can be called from anywhere')
-    .command('install <target>', 'Run local plugin install helpers for Claude, Codex, or both')
-    .command('update <target>', 'Rebuild plugin artifacts and refresh local host state')
+    .command('install <target>', 'Run local Codex plugin install helper')
+    .command('update <target>', 'Rebuild Codex plugin artifacts and refresh local state')
     .option('globals', {
       type: 'boolean',
       description: 'Sync global AGENTS.md and CLAUDE.md',
@@ -85,72 +85,26 @@ const expandHomePath = (path: string, homeDir: string): string => {
 
 const hasSyncFlags = (parsed: ParsedArgs) => Boolean(parsed.globals)
 const parseInstallTarget = (value: unknown): InstallTarget => {
-  if (value === 'claude' || value === 'codex' || value === 'all') return value
-  throw new Error('target must be one of: claude, codex, all')
-}
-const installSummaryLines = (target: InstallTarget) => {
-  if (target === 'claude') {
-    return [
-      '# Plugin Install Complete',
-      '',
-      'Installed Claude local development plugin configuration.',
-      '',
-      '- Rebuild with `pnpm build` after plugin source changes.',
-      '- This is the local convenience path; hosted marketplace install remains the preferred long-term Claude flow.',
-    ]
-  }
-
-  if (target === 'codex') {
-    return [
-      '# Plugin Install Complete',
-      '',
-      'Installed Codex local plugin bridge configuration.',
-      '',
-      '- Rebuild with `pnpm build` after plugin source changes.',
-      '- Codex local marketplace/config now point at the installed home-local plugin copy.',
-    ]
-  }
-
-  return [
-    '# Plugin Install Complete',
-    '',
-    'Installed Claude local development and Codex bridge configuration.',
-    '',
-    '- Rebuild with `pnpm build` after plugin source changes.',
-    '- Claude local install is the development/recovery path; hosted marketplace distribution is the preferred long-term path.',
-    '- Codex local marketplace/config now point at the installed home-local plugin copy.',
-  ]
+  if (value === 'codex') return value
+  throw new Error('target must be: codex')
 }
 
-const updateSummaryLines = (target: InstallTarget) => {
-  if (target === 'claude') {
-    return [
-      '# Plugin Update Complete',
-      '',
-      'Updated Claude local development plugin configuration.',
-      '',
-      '- Restart Claude or reload plugins if it has an active cached plugin session.',
-    ]
-  }
+const installSummaryLines = (_target: InstallTarget) => [
+  '# Plugin Install Complete',
+  '',
+  'Installed Codex local plugin bridge configuration.',
+  '',
+  '- Rebuild with `pnpm build` after plugin source changes.',
+  '- Codex local marketplace/config now point at the installed home-local plugin copy.',
+]
 
-  if (target === 'codex') {
-    return [
-      '# Plugin Update Complete',
-      '',
-      'Updated Codex local plugin bridge configuration.',
-      '',
-      '- Restart Codex if it has an active cached plugin session.',
-    ]
-  }
-
-  return [
-    '# Plugin Update Complete',
-    '',
-    'Updated Claude local development and Codex bridge configuration.',
-    '',
-    '- Restart the hosts or reload plugins if they have active cached plugin sessions.',
-  ]
-}
+const updateSummaryLines = (_target: InstallTarget) => [
+  '# Plugin Update Complete',
+  '',
+  'Updated Codex local plugin bridge configuration.',
+  '',
+  '- Restart Codex if it has an active cached plugin session.',
+]
 
 export const runCli = async ({
   argv,

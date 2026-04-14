@@ -1,39 +1,22 @@
-import { execFile as execFileCallback } from 'node:child_process'
 import { cp, mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
-import { promisify } from 'node:util'
 import { buildPlugins } from './plugin-build.js'
 import {
   installCodexPluginViaAppServer,
   type CodexPluginInstaller,
 } from './codex-app-server.js'
 
-export type InstallTarget = 'claude' | 'codex' | 'all'
+export type InstallTarget = 'codex'
 
 type InstallOptions = {
   repoRoot: string
   homeDir: string
   buildOutputRoot?: string
-  runCommand?: CommandRunner
   installCodexPlugin?: CodexPluginInstaller
 }
 
-type CommandRunner = (input: {
-  command: string
-  args: string[]
-  env?: NodeJS.ProcessEnv
-}) => Promise<void>
-
-const execFile = promisify(execFileCallback)
-
 const ensureDirectory = async (path: string) => {
   await mkdir(path, { recursive: true })
-}
-
-const runCommand: CommandRunner = async ({ command, args, env }) => {
-  await execFile(command, args, {
-    env: env ?? process.env,
-  })
 }
 
 const writeJson = async ({ path, value }: { path: string; value: unknown }) => {
@@ -51,42 +34,6 @@ const readJsonObject = async ({ path }: { path: string }) => {
   } catch {}
 
   return {}
-}
-
-const upsertClaudeSettings = async ({
-  homeDir,
-  marketplacePath,
-}: {
-  homeDir: string
-  marketplacePath: string
-}) => {
-  const settingsPath = join(homeDir, '.claude', 'settings.json')
-  const settings = await readJsonObject({ path: settingsPath })
-  const marketplaces =
-    typeof settings.extraKnownMarketplaces === 'object'
-    && settings.extraKnownMarketplaces !== null
-    && !Array.isArray(settings.extraKnownMarketplaces)
-      ? { ...(settings.extraKnownMarketplaces as Record<string, unknown>) }
-      : {}
-  const enabledPlugins =
-    typeof settings.enabledPlugins === 'object'
-    && settings.enabledPlugins !== null
-    && !Array.isArray(settings.enabledPlugins)
-      ? { ...(settings.enabledPlugins as Record<string, unknown>) }
-      : {}
-
-  marketplaces['local-plugins'] = {
-    source: {
-      source: 'directory',
-      path: marketplacePath,
-    },
-  }
-  enabledPlugins['filip-stack@local-plugins'] = true
-
-  settings.extraKnownMarketplaces = marketplaces
-  settings.enabledPlugins = enabledPlugins
-
-  await writeJson({ path: settingsPath, value: settings })
 }
 
 const upsertCodexMarketplace = async ({
@@ -147,48 +94,6 @@ const upsertCodexConfig = async ({ homeDir }: { homeDir: string }) => {
   await writeFile(configPath, `${existing}${separator}${pluginBlock}`)
 }
 
-const syncClaude = async ({
-  homeDir,
-  marketplacePath,
-  runCommand,
-}: {
-  homeDir: string
-  marketplacePath: string
-  runCommand: CommandRunner
-}) => {
-  await upsertClaudeSettings({ homeDir, marketplacePath })
-
-  const env = { ...process.env, HOME: homeDir }
-
-  try {
-    await runCommand({
-      command: 'claude',
-      args: ['plugin', 'marketplace', 'update', 'local-plugins'],
-      env,
-    })
-  } catch {
-    await runCommand({
-      command: 'claude',
-      args: ['plugin', 'marketplace', 'add', marketplacePath],
-      env,
-    })
-  }
-
-  try {
-    await runCommand({
-      command: 'claude',
-      args: ['plugin', 'update', 'filip-stack@local-plugins'],
-      env,
-    })
-  } catch {
-    await runCommand({
-      command: 'claude',
-      args: ['plugin', 'install', 'filip-stack@local-plugins'],
-      env,
-    })
-  }
-}
-
 const syncCodex = async ({
   homeDir,
   codexOutputRoot,
@@ -222,28 +127,16 @@ const syncPlugins = async ({
   repoRoot,
   homeDir,
   buildOutputRoot,
-  target,
-  runCommand: commandRunner = runCommand,
   installCodexPlugin = installCodexPluginViaAppServer,
 }: SyncPluginsOptions) => {
   const buildResult = await buildPlugins({ repoRoot, outputRoot: buildOutputRoot })
 
-  if (target === 'claude' || target === 'all') {
-    await syncClaude({
-      homeDir,
-      marketplacePath: buildResult.claudeMarketplaceRoot,
-      runCommand: commandRunner,
-    })
-  }
-
-  if (target === 'codex' || target === 'all') {
-    await syncCodex({
-      homeDir,
-      codexOutputRoot: buildResult.codexOutputRoot,
-      version: buildResult.version,
-      installCodexPlugin,
-    })
-  }
+  await syncCodex({
+    homeDir,
+    codexOutputRoot: buildResult.codexOutputRoot,
+    version: buildResult.version,
+    installCodexPlugin,
+  })
 }
 
 export const installPlugins = async (options: SyncPluginsOptions) => syncPlugins(options)

@@ -28,21 +28,14 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Validate Claude plugin
+        run: pnpm validate-claude-plugin
+
       - name: Typecheck
         run: pnpm typecheck
 
       - name: Test
         run: pnpm test
 
-      - name: Build
+      - name: Build (Codex plugin)
         run: pnpm build
-
-      - name: Upload build artifacts
-        if: github.event_name == 'push'
-        uses: actions/upload-artifact@v4
-        with:
-          name: filip-stack-build-artifacts
-          path: |
-            dist/plugins
-            dist/marketplaces
-            dist/publish

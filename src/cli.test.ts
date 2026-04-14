@@ -155,7 +155,7 @@ describe('runCli', () => {
       }),
     ).resolves.toBe(2)
 
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('target must be one of: claude, codex, all'))
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('target must be: codex'))
   })
 
   it('accepts a valid install target', async () => {

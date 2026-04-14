@@ -1,0 +1,13 @@
+{
+  "name": "local-plugins",
+  "version": "0.1.0",
+  "owner": {
+    "name": "Filip Gutica"
+  },
+  "plugins": [
+    {
+      "name": "filip-stack",
+      "source": "./plugins/filip-stack"
+    }
+  ]
+}

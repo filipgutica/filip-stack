@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "repository": "https://github.com/filipgutica/filip-stack.git",
   "engines": {
     "node": ">=20.16.0"
   },
@@ -10,6 +11,8 @@
     "build:ts": "tsc -p tsconfig.build.json",
     "build:plugins": "node scripts/build-plugins.mjs",
     "build": "pnpm build:ts && pnpm build:plugins",
+    "stamp-version": "node scripts/stamp-version.mjs",
+    "validate-claude-plugin": "node scripts/validate-claude-plugin.mjs",
     "generate:codex-app-server-types": "node scripts/generate-codex-app-server-types.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",

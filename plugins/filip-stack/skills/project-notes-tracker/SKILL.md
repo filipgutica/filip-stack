@@ -1,6 +1,6 @@
 ---
 name: project-notes-tracker
-description: Manage project-local Markdown work tickets in a .notes todo/in-progress/complete tracker. Use when creating a .notes ticket, turning an approved plan into tracked work, logging implementation progress, completing work, or coordinating with hook-backed session tracking.
+description: "Manage project-local Markdown work tickets in a .notes todo/in-progress/complete tracker. Use when creating a .notes ticket, turning an approved plan into tracked work, logging implementation progress, completing work, or coordinating with hook-backed session tracking."
 ---
 
 # Project Notes Tracker

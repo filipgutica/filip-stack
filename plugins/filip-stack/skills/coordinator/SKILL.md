@@ -1,6 +1,6 @@
 ---
 name: coordinator
-description: Use as the main engineering entrypoint for planning, implementation, investigation, review, and code simplification. Routes work based on Plan Mode and prompt intent, delegates bounded exploration and implementation tasks to subagents, and keeps the main thread responsible for review, coordination, and final synthesis. Update check marker shared skill metadata.
+description: "Use as the main engineering entrypoint for planning, implementation, investigation, review, and code simplification. Routes work based on Plan Mode and prompt intent, delegates bounded exploration and implementation tasks to subagents, and keeps the main thread responsible for review, coordination, and final synthesis. Update check marker shared skill metadata."
 ---
 
 # Coordinator
@@ -32,23 +32,23 @@ Classify the task using both host mode and prompt intent before doing substantia
 - If the prompt asks for planning, design, or phased execution, produce a bounded plan and stop.
 - If the prompt asks for simplification analysis, return findings plus a bounded simplification plan and stop unless the user explicitly asks for edits.
 - If the prompt asks for investigation, investigate first and only continue to implementation when the evidence supports a concrete fix path.
-- If the prompt asks for implementation or fixing outside Plan Mode, start with a bounded exploration and planning pass, then continue into execution when the path is clear.
+- If the prompt asks for implementation or fixing outside Plan Mode, start with a bounded exploration and planning pass, then default to delegating implementation to a worker subagent. Follow with a critic pass before accepting the result in the main thread.
 - If the prompt is ambiguous, begin with bounded exploration, restate the assumed scope, and choose the smallest safe next step.
 
-For any non-trivial request outside Plan Mode, always do a bounded planning or exploration pass before implementation.
+For any non-trivial request outside Plan Mode, always do a bounded planning or exploration pass before implementation, then prefer worker delegation over direct main-thread edits.
 
 ## Delegation Rules
 
 - For non-trivial planning, broad simplification, or broad review, use two parallel explorer subagents by default unless the target is obviously tiny.
 - In Plan Mode, default to delegated exploration and delegated adversarial review; the main thread should synthesize and approve rather than perform the expensive analysis itself.
 - Give each explorer a distinct bounded slice or analysis lens so the work does not overlap.
-- For implementation or investigation, use one or more worker subagents with clear ownership boundaries.
-- After a worker returns meaningful output on non-trivial work, use a critic pass before accepting or integrating it.
+- For implementation or investigation, prefer delegating to one or more worker subagents with clear ownership boundaries over implementing directly in the main thread. Reserve main-thread edits for trivial fixes, final integration adjustments, or when delegation would cost more than the work itself.
+- After a worker returns meaningful output on non-trivial work, always run a critic pass before accepting or integrating it.
 - Only parallelize workers when write scopes are disjoint or the work can be cleanly staged.
-- Review every meaningful subagent result in the main thread before accepting it.
+- Review every subagent result in the main thread before accepting it. Acceptance is always a main-thread decision.
 - If a worker result has an obvious issue, send one bounded correction cycle back before moving on.
 - Close completed or no-longer-needed subagents promptly after their output has been reviewed and either accepted or discarded.
-- Use direct main-thread edits only as a fallback for tiny fixes, final integration adjustments, or blocked worker output.
+- Use direct main-thread edits only as a fallback for trivial fixes, final integration adjustments, or blocked worker output.
 
 ## Subagent Roles
 
@@ -119,7 +119,8 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 
 - While in Plan Mode: produce the plan only. Do not call `Edit`, `Write`, or `Bash` for mutations.
 - While in Plan Mode: the main thread should not do broad repository exploration itself. Use explorer subagents for codebase discovery and critic or explorer subagents for adversarial review, then synthesize the result locally.
-- When the user approves the plan and asks to proceed, call `ExitPlanMode` before starting implementation.
+- When the user approves the plan and asks to proceed, call `ExitPlanMode`, then default to delegating implementation to a worker subagent. Write a self-contained worker prompt that includes the full plan, critical file paths, and clear acceptance criteria. Prefer this over editing files directly in the main thread.
+- After the worker returns, run a critic pass on meaningful output before the main thread accepts, integrates, or reports the result.
 - If routing lands in Plan Mode unexpectedly mid-task, stop, produce findings, and wait for user direction before exiting.
 
 ## Host Notes

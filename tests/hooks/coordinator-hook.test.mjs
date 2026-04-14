@@ -4,7 +4,7 @@ import { join } from 'node:path'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { runHook } from '../../plugin/shared/scripts/coordinator-hook.mjs'
+import { runHook } from '../../plugins/filip-stack/scripts/coordinator-hook.mjs'
 
 let testRoot = null
 
