@@ -7,6 +7,8 @@ Personal source of truth for shared Claude and Codex setup across my machines.
 - **Claude** — Git-based marketplace. Add the repo as a marketplace once; updates pull automatically on version bump.
 - **Codex** — Local bridge install via CLI helper.
 
+Claude distribution is repo-backed only. There is no GitHub Pages marketplace publish path.
+
 ## Repo Layout
 
 ```text
@@ -36,6 +38,13 @@ Updates are automatic: when a new version is released, run:
 
 ```sh
 claude plugin update filip-stack@local-plugins
+```
+
+The Claude marketplace version is stamped from `package.json` during the release workflow into:
+
+```text
+.claude-plugin/marketplace.json
+plugins/filip-stack/.claude-plugin/plugin.json
 ```
 
 ## Codex Install
@@ -125,6 +134,8 @@ Commands: `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`,
 - **validate** — runs on all PRs and pushes: typecheck, test, build
 - **release** — runs on push to `main` after validate: semantic-release bumps version,
   stamps plugin manifests, commits back, creates GitHub release
+
+There is no separate Pages deployment workflow. Claude installs directly from this GitHub repo as a git-based marketplace.
 
 ## Development
 
