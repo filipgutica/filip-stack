@@ -11,7 +11,7 @@ This is the main shared engineering workflow skill.
 
 ## Default Flow
 
-Prompt -> Route by mode and intent -> Explore if unclear -> Delegate worker(s) -> Critic pass -> Main-thread review and acceptance -> Validate -> Final synthesis
+Prompt -> Route by mode and intent -> Explore if unclear -> Delegate worker(s) -> Critic pass -> Main-thread review, acceptance, and synthesis -> Validate
 
 ## Core Role
 
