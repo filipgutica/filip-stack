@@ -13,7 +13,7 @@
     "category": "Productivity",
     "capabilities": ["Interactive", "Write"],
     "defaultPrompt": [
-      "For non-trivial engineering work, first do a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, use subagents for codebase exploration and adversarial review in Plan Mode, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
+      "For non-trivial engineering work, first do a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, run a critic pass before final acceptance, use subagents for codebase exploration and adversarial review in Plan Mode, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
       "Use $filip-stack:project-notes-tracker to create and manage a local ticket."
     ]
   }

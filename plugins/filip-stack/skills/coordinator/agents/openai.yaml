@@ -1,4 +1,4 @@
 interface:
   display_name: "Coordinator"
   short_description: "Coordinate planning, review, investigation, simplification, and implementation"
-  default_prompt: "Use the coordinator skill to plan, implement, investigate, review, or simplify. Delegate exploration and implementation to subagents; keep the main thread responsible for coordination, acceptance, and synthesis."
+  default_prompt: "For non-trivial engineering work, start with a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, run a critic pass before final acceptance, and keep the main thread responsible for coordination, approval, review, and synthesis."

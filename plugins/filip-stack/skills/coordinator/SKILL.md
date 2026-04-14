@@ -130,7 +130,7 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 - Prefer the faster, cheaper tier for bounded read-only exploration and straightforward, low-risk implementation in a narrow scope.
 - Prefer the stronger tier for main-thread synthesis, acceptance review, integration, cross-cutting changes, ambiguous investigations, and architecturally sensitive work.
 - When using two parallel explorers, default both to the faster, cheaper tier unless one explorer is handling the harder architectural or risk-analysis lens.
-- Prefer the stronger tier for critic passes — critics need enough reasoning power to catch subtle correctness issues and scope drift.
+- Prefer a faster, cheaper tier for well-bounded critic passes; escalate critics to the stronger tier when the worker output is subtle, cross-cutting, high-risk, or likely to hide correctness or scope-drift issues.
 - In Claude Code:
   - Delegate using the `Agent` tool (see `## Claude Code Delegation` above).
   - Track multi-step progress with `TaskCreate` / `TaskUpdate`.
@@ -140,7 +140,7 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 - In Codex:
   - follow the host's Plan Mode and subagent behavior
   - model tiers: `5.4-mini` for all subagents (Explorer, Critic, Worker, Integrator); `5.4` for main-thread synthesis and high-stakes work
-  - do not escalate bounded explorer work to the stronger tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
+  - do not escalate bounded explorer or critic work to the stronger tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
 - Subagent prompts must always be self-contained regardless of host.
 
 ## Rules
