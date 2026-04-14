@@ -6,7 +6,7 @@ When filling these templates, write the final prompt as prose rather than reprod
 
 In Claude Code, pass the filled prompt to the `Agent` tool:
 - Explorer → `Agent(subagent_type="Explore", model="haiku", prompt="...")`
-- Critic → `Agent(subagent_type="Explore", model="haiku", prompt="...")` (well-bounded passes; omit model for cross-cutting or high-risk reviews)
+- Critic → `Agent(subagent_type="Explore", model="sonnet", prompt="...")`
 - Worker → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 - Integrator → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 

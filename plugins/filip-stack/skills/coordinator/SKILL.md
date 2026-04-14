@@ -130,16 +130,16 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 - Prefer the faster, cheaper tier for bounded read-only exploration and straightforward, low-risk implementation in a narrow scope.
 - Prefer the stronger tier for main-thread synthesis, acceptance review, integration, cross-cutting changes, ambiguous investigations, and architecturally sensitive work.
 - When using two parallel explorers, default both to the faster, cheaper tier unless one explorer is handling the harder architectural or risk-analysis lens.
-- Prefer the faster, cheaper tier for critic passes when the scope is well bounded.
+- Prefer the stronger tier for critic passes — critics need enough reasoning power to catch subtle correctness issues and scope drift.
 - In Claude Code:
   - Delegate using the `Agent` tool (see `## Claude Code Delegation` above).
   - Track multi-step progress with `TaskCreate` / `TaskUpdate`.
   - Exit Plan Mode with `ExitPlanMode` before any mutation.
   - Run validation via `Bash` (typecheck, lint, targeted tests).
-  - Model mapping: Explorer → `haiku`, Critic → `haiku` (well-bounded passes), Worker → `sonnet` (default, omit the parameter), main-thread synthesis → `sonnet`. Escalate to `opus` only for unusually complex cross-cutting work or high-stakes synthesis.
+  - Model mapping: Explorer → `haiku`, Critic → `sonnet`, Worker → `sonnet` (default, omit the parameter), main-thread synthesis → `sonnet`. Escalate to `opus` only for unusually complex cross-cutting work or high-stakes synthesis.
 - In Codex:
   - follow the host's Plan Mode and subagent behavior
-  - model tiers: lighter model (e.g. `o4-mini`) for Explorer and well-bounded Critic passes; default model for Worker, Integrator, and main-thread synthesis
+  - model tiers: lighter model (e.g. `5.4-mini`) for Explorer; default model for Critic, Worker, Integrator, and main-thread synthesis
   - do not escalate bounded explorer work to the stronger tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
 - Subagent prompts must always be self-contained regardless of host.
 
