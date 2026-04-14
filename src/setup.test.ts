@@ -24,26 +24,26 @@ describe('setupShellAlias', () => {
     await setupShellAlias({
       rcFile,
       aliasName: 'filip-stack',
-      commandPath: '/repo/bin/filip-stack',
+      commandPath: 'node /repo/dist/cli.js',
       dryRun: false,
       log: () => {},
     })
 
-    await expect(readFile(rcFile, 'utf8')).resolves.toContain('alias filip-stack="/repo/bin/filip-stack"')
+    await expect(readFile(rcFile, 'utf8')).resolves.toContain('alias filip-stack="node /repo/dist/cli.js"')
   })
 
   it('is idempotent for the same alias marker', async () => {
     await setupShellAlias({
       rcFile,
       aliasName: 'filip-stack',
-      commandPath: '/repo/bin/filip-stack',
+      commandPath: 'node /repo/dist/cli.js',
       dryRun: false,
       log: () => {},
     })
     await setupShellAlias({
       rcFile,
       aliasName: 'filip-stack',
-      commandPath: '/repo/bin/filip-stack',
+      commandPath: 'node /repo/dist/cli.js',
       dryRun: false,
       log: () => {},
     })
@@ -58,13 +58,13 @@ describe('setupShellAlias', () => {
     await setupShellAlias({
       rcFile,
       aliasName: 'filip-stack',
-      commandPath: '/repo/bin/filip-stack',
+      commandPath: 'node /repo/dist/cli.js',
       dryRun: true,
       log: (message) => messages.push(message),
     })
 
     expect(existsSync(rcFile)).toBe(false)
-    expect(messages).toContain('would append alias to ' + rcFile + ': filip-stack -> /repo/bin/filip-stack')
+    expect(messages).toContain('would append alias to ' + rcFile + ': filip-stack -> node /repo/dist/cli.js')
   })
 
   it('preserves existing rc file content', async () => {
@@ -73,7 +73,7 @@ describe('setupShellAlias', () => {
     await setupShellAlias({
       rcFile,
       aliasName: 'filip-stack',
-      commandPath: '/repo/bin/filip-stack',
+      commandPath: 'node /repo/dist/cli.js',
       dryRun: false,
       log: () => {},
     })
@@ -86,7 +86,7 @@ describe('setupShellAlias', () => {
       setupShellAlias({
         rcFile,
         aliasName: 'bad alias',
-        commandPath: '/repo/bin/filip-stack',
+        commandPath: 'node /repo/dist/cli.js',
         dryRun: false,
         log: () => {},
       }),

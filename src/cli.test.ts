@@ -71,7 +71,7 @@ describe('runCli', () => {
     ).resolves.toBe(0)
 
     await expect(readFile(rcFile, 'utf8')).resolves.toContain(
-      'alias filip-stack="' + join(repoRoot, 'bin/filip-stack') + '"',
+      'alias filip-stack="node ' + join(repoRoot, 'dist/cli.js') + '"',
     )
   })
 
@@ -87,7 +87,7 @@ describe('runCli', () => {
     ).resolves.toBe(0)
 
     await expect(readFile(join(homeDir, '.testrc'), 'utf8')).resolves.toContain(
-      'alias filip-stack="' + join(repoRoot, 'bin/filip-stack') + '"',
+      'alias filip-stack="node ' + join(repoRoot, 'dist/cli.js') + '"',
     )
   })
 

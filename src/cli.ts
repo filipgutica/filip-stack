@@ -33,13 +33,13 @@ const repoRootFromDist = () => resolve(dirname(fileURLToPath(import.meta.url)), 
 
 const parseArgs = async (argv: string[]): Promise<ParsedArgs> => {
   const parsed = await yargs(argv)
-    .scriptName('./bin/filip-stack')
+    .scriptName('filip-stack')
     .usage(
       [
-        'Usage: ./bin/filip-stack [--globals] [--dry-run]',
-        '       ./bin/filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
-        '       ./bin/filip-stack install codex  # local dev/recovery install helper',
-        '       ./bin/filip-stack update codex   # rebuild and refresh local Codex plugin state',
+        'Usage: filip-stack [--globals] [--dry-run]',
+        '       filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
+        '       filip-stack install codex  # local dev/recovery install helper',
+        '       filip-stack update codex   # rebuild and refresh local Codex plugin state',
       ].join('\n'),
     )
     .command('setup', 'Add a shell alias so this CLI can be called from anywhere')
@@ -126,7 +126,7 @@ export const runCli = async ({
       await setupShellAlias({
         rcFile: resolve(expandHomePath(parsed.rcFile ?? defaultRcFile(homeDir), homeDir)),
         aliasName: parsed.alias ?? 'filip-stack',
-        commandPath: resolve(repoRoot, 'bin/filip-stack'),
+        commandPath: `node ${resolve(repoRoot, 'dist/cli.js')}`,
         dryRun: Boolean(parsed.dryRun),
         log: (message) => log(chalk.cyan(message)),
       })

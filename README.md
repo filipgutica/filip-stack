@@ -7,7 +7,7 @@ uses raw synced `skills/` and `hooks/` as the primary install surface.
 
 The distribution model is intentionally split:
 
-- Claude: hosted marketplace artifact for normal installs, plus a local install helper for development and recovery
+- Claude: Git-based marketplace install by default, plus a Pages-hosted marketplace file and a local install helper for development and recovery
 - Codex: validated local bridge install until there is a clearer public remote plugin install model
 
 ## Build
@@ -53,11 +53,15 @@ Generated Claude marketplace outputs live under:
 ```text
 dist/marketplaces/claude/filip-stack-local/
 dist/publish/claude-marketplace/
+.claude-plugin/marketplace.json
+plugins/filip-stack/
 ```
 
 `dist/marketplaces/claude/filip-stack-local/` is the canonical marketplace tree.
 `dist/publish/claude-marketplace/` is the GitHub Pages friendly copy that CI can
 publish directly.
+`.claude-plugin/marketplace.json` plus `plugins/filip-stack/` is the tracked
+Git-based marketplace layout for `claude plugin marketplace add filipgutica/filip-stack`.
 
 Manifest locations inside the built plugin roots are host-specific:
 
@@ -68,6 +72,13 @@ dist/plugins/codex/filip-stack/.codex-plugin/plugin.json
 
 Plugin and marketplace versions are stamped from `package.json` during build so
 the release version only needs to be updated in one place.
+
+After changing Claude plugin contents, refresh the tracked Git-based marketplace
+files with:
+
+```sh
+pnpm sync:claude-marketplace-repo
+```
 
 ## Install and Update
 
@@ -94,28 +105,26 @@ Install and update share the same underlying local sync flow:
 - sync Claude local settings and CLI-managed install/update
 - sync Codex local state and trigger Codex's own plugin install step
 
-For day-to-day usage, prefer the hosted Claude marketplace path below. The local
-Claude install helper is primarily for development and recovery.
+For day-to-day usage, prefer the Git-based Claude marketplace path below. The
+local Claude install helper is primarily for development and recovery.
 
 ## Claude Distribution
 
 Claude is the only host in this repo that has a clear traditional marketplace
 distribution story today.
 
-Published artifact:
-
-- CI deploys `dist/publish/claude-marketplace/` to GitHub Pages on merge to `main`
-- that published directory contains:
-  - `marketplace.json` for remote marketplace registration
-  - `.claude-plugin/marketplace.json` for the canonical marketplace shape
-  - `filip-stack/` as the plugin payload
-
 Recommended install shape:
 
 ```sh
-claude plugin marketplace add <published-marketplace-url>/marketplace.json
+claude plugin marketplace add filipgutica/filip-stack
 claude plugin install filip-stack@local-plugins
 ```
+
+What makes that work:
+
+- the repo root contains `.claude-plugin/marketplace.json`
+- the plugin payload is tracked in `plugins/filip-stack/`
+- Claude clones the repo as a Git-based marketplace, so relative plugin paths work
 
 For local development or recovery, you can still use:
 
@@ -128,6 +137,19 @@ Claude install behavior:
 - writes a persistent directory-backed marketplace source into `~/.claude/settings.json`
 - refreshes that marketplace through Claude's own CLI
 - installs or updates `filip-stack@local-plugins` through Claude's own CLI
+
+Pages-hosted marketplace:
+
+- CI also deploys `dist/publish/claude-marketplace/` to GitHub Pages on merge to `main`
+- that published `marketplace.json` uses a `git-subdir` plugin source pointing back to this repo's `plugins/filip-stack/`
+- use this only if you want a URL-based marketplace entry instead of the simpler Git-based add
+
+URL-based install shape:
+
+```sh
+claude plugin marketplace add https://filipgutica.github.io/filip-stack/marketplace.json
+claude plugin install filip-stack@local-plugins
+```
 
 ## Codex Distribution
 
@@ -261,6 +283,7 @@ GitHub Actions owns validation and Claude publishing:
   - runs on `main`
   - builds the repo
   - deploys `dist/publish/claude-marketplace/` to GitHub Pages
+- `CI` also verifies that `.claude-plugin/marketplace.json` and `plugins/filip-stack/` are in sync with the current Claude build output
 
 ## Development
 
