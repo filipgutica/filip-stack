@@ -139,7 +139,7 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
   - Model mapping: Explorer → `haiku`, Critic → `sonnet`, Worker → `sonnet` (default, omit the parameter), main-thread synthesis → `sonnet`. Escalate to `opus` only for unusually complex cross-cutting work or high-stakes synthesis.
 - In Codex:
   - follow the host's Plan Mode and subagent behavior
-  - model tiers: lighter model (e.g. `5.4-mini`) for Explorer; default model for Critic, Worker, Integrator, and main-thread synthesis
+  - model tiers: `5.4-mini` for all subagents (Explorer, Critic, Worker, Integrator); `5.4` for main-thread synthesis and high-stakes work
   - do not escalate bounded explorer work to the stronger tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
 - Subagent prompts must always be self-contained regardless of host.
 
