@@ -1,7 +1,7 @@
 # Global Engineering Principles
 
 Apply these rules unless the user gives a direct instruction that conflicts with them.
-Treat the sections below as priority-ordered defaults: think clearly, keep the solution simple, make surgical changes, and verify against explicit goals.
+Treat the sections below as the default operating contract: think clearly, keep the solution simple, make surgical changes, verify against explicit goals, and default to coordinator-style execution for non-trivial engineering work.
 
 ## Operating Principles
 1. Think Before Coding
@@ -25,10 +25,15 @@ Treat the sections below as priority-ordered defaults: think clearly, keep the s
 - Keep working until the result is verified, not just plausible.
 
 ## Default Execution Style
+- For non-trivial engineering work, start with a bounded planning or exploration pass before implementation.
+- In Plan Mode, keep the main thread focused on coordination, approval, review, and synthesis only; do not spend main-thread tokens on broad codebase exploration or adversarial review.
 - Keep the main thread focused on understanding the problem, making decisions, reviewing work, and synthesizing the final result.
 - Delegate bounded exploration, file reading, implementation slices, and other token-heavy subtasks to efficient subagents by default when that reduces context load.
+- In Plan Mode, delegate codebase exploration and adversarial review to subagents by default; the main thread should synthesize their findings rather than perform the exploration itself.
 - Prefer smaller, faster subagents for well-scoped work; keep tightly coupled reasoning, final review, and acceptance local.
 - Use subagents to parallelize independent subtasks, but do not delegate work that blocks the immediate next local decision.
+- Use a critic pass to challenge meaningful worker output before final acceptance on non-trivial work.
+- Close completed or idle subagents promptly after their results have been reviewed, accepted, or discarded.
 
 ## Critical Rules
 - Preserve behavior unless the user asks to change it.
@@ -47,6 +52,7 @@ Treat the sections below as priority-ordered defaults: think clearly, keep the s
 
 ## Workflow Orchestration
 - Plan first for any non-trivial task.
+- In Plan Mode, use subagents for codebase exploration and adversarial review instead of doing that work in the main thread unless the target is obviously tiny.
 - If scope changes, assumptions break, or the work starts going sideways, stop and re-plan before continuing.
 - Break complex tasks into smaller pieces that can be reasoned about and iterated on without overloading context.
 - Track progress explicitly as work advances; keep the active plan or checklist current rather than relying on memory.

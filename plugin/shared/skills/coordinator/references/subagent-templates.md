@@ -120,10 +120,42 @@ Deliverable:
 - residual risks
 ```
 
+## Critic Template
+
+Use for bounded adversarial review of worker output before acceptance.
+
+```md
+Role: critic
+
+Task:
+<state the worker output, diff, or synthesis to challenge>
+
+Context:
+<what the critic needs to know that it cannot derive from the task alone — approved plan, worker findings, relevant constraints, or key files already identified>
+
+Scope:
+- Allowed paths or subsystem:
+- Explicit exclusions:
+- Review lens:
+
+Deliverable:
+- findings ordered by severity
+- whether the result is acceptable or needs another pass
+- concrete corrections or missing validation
+- risks or unsupported claims
+
+Rules:
+- read-only; do not edit files
+- keep the scope bounded
+- stay adversarial and specific
+- do not accept work
+- call out missing evidence explicitly
+```
+
 ## Flow Mapping
 
 - Planning: use explorer templates only
 - Review: use explorer templates only when extra evidence is needed; keep acceptance in the main thread
 - Investigation: start with explorer, then hand off to worker if the fix path is clear
 - Simplification: use explorer templates for analysis; use worker only if the user explicitly asks for edits
-- Implementation: start with explorer when the path is not fully clear, then use worker; use integrator only when multiple worker results need stitching
+- Implementation: start with explorer when the path is not fully clear, then use worker; use critic for adversarial review of meaningful worker output; use integrator only when multiple worker results need stitching

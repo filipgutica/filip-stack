@@ -44,18 +44,20 @@ const createCommandRecorder = ({
 }
 
 const createCodexInstallRecorder = () => {
-  const calls: Array<{ homeDir: string; marketplacePath: string; pluginName: string }> = []
+  const calls: Array<{ homeDir: string; marketplacePath: string; pluginName: string; clientVersion: string }> = []
 
   const installCodexPlugin = async ({
     homeDir,
     marketplacePath,
     pluginName,
+    clientVersion,
   }: {
     homeDir: string
     marketplacePath: string
     pluginName: string
+    clientVersion: string
   }) => {
-    calls.push({ homeDir, marketplacePath, pluginName })
+    calls.push({ homeDir, marketplacePath, pluginName, clientVersion })
   }
 
   return { calls, installCodexPlugin }
@@ -79,6 +81,7 @@ describe('install/update plugins', () => {
 
   it('installs codex plugin and updates codex config', async () => {
     const { calls, installCodexPlugin } = createCodexInstallRecorder()
+    const packageJson = JSON.parse(await readFile(join(repoRoot, 'package.json'), 'utf8')) as { version: string }
 
     await installPlugins({
       repoRoot,
@@ -89,6 +92,8 @@ describe('install/update plugins', () => {
     })
 
     await expect(readFile(join(homeDir, 'plugins/filip-stack/.codex-plugin/plugin.json'), 'utf8')).resolves.toContain('"name": "filip-stack"')
+    await expect(readFile(join(homeDir, 'plugins/filip-stack/hooks/hooks.json'), 'utf8')).resolves.toContain('coordinator-hook.mjs')
+    await expect(readFile(join(homeDir, 'plugins/filip-stack/hooks/hooks.json'), 'utf8')).resolves.toContain('project-notes-hook.mjs')
     await expect(readFile(join(homeDir, '.agents/plugins/marketplace.json'), 'utf8')).resolves.toContain('"name": "filip-stack-local"')
     await expect(readFile(join(homeDir, '.codex/config.toml'), 'utf8')).resolves.toContain('[plugins."filip-stack@filip-stack-local"]')
     expect(calls).toEqual([
@@ -96,6 +101,7 @@ describe('install/update plugins', () => {
         homeDir,
         marketplacePath: join(homeDir, '.agents', 'plugins', 'marketplace.json'),
         pluginName: 'filip-stack',
+        clientVersion: packageJson.version,
       },
     ])
   })

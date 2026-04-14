@@ -38,13 +38,13 @@ const parseArgs = async (argv: string[]): Promise<ParsedArgs> => {
       [
         'Usage: ./bin/filip-stack [--globals] [--dry-run]',
         '       ./bin/filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
-        '       ./bin/filip-stack install <claude|codex|all>',
-        '       ./bin/filip-stack update <claude|codex|all>',
+        '       ./bin/filip-stack install <claude|codex|all>  # local dev/recovery install helpers',
+        '       ./bin/filip-stack update <claude|codex|all>   # refresh local host state after plugin changes',
       ].join('\n'),
     )
     .command('setup', 'Add a shell alias so this CLI can be called from anywhere')
-    .command('install <target>', 'Install generated plugins into Claude, Codex, or both')
-    .command('update <target>', 'Rebuild and refresh generated plugins for Claude, Codex, or both')
+    .command('install <target>', 'Run local plugin install helpers for Claude, Codex, or both')
+    .command('update <target>', 'Rebuild plugin artifacts and refresh local host state')
     .option('globals', {
       type: 'boolean',
       description: 'Sync global AGENTS.md and CLAUDE.md',
@@ -93,10 +93,10 @@ const installSummaryLines = (target: InstallTarget) => {
     return [
       '# Plugin Install Complete',
       '',
-      'Installed Claude plugin configuration.',
+      'Installed Claude local development plugin configuration.',
       '',
       '- Rebuild with `pnpm build` after plugin source changes.',
-      '- Claude local settings now point at the generated plugin path.',
+      '- This is the local convenience path; hosted marketplace install remains the preferred long-term Claude flow.',
     ]
   }
 
@@ -104,7 +104,7 @@ const installSummaryLines = (target: InstallTarget) => {
     return [
       '# Plugin Install Complete',
       '',
-      'Installed Codex plugin configuration.',
+      'Installed Codex local plugin bridge configuration.',
       '',
       '- Rebuild with `pnpm build` after plugin source changes.',
       '- Codex local marketplace/config now point at the installed home-local plugin copy.',
@@ -114,10 +114,10 @@ const installSummaryLines = (target: InstallTarget) => {
   return [
     '# Plugin Install Complete',
     '',
-    'Installed Claude and Codex plugin configuration.',
+    'Installed Claude local development and Codex bridge configuration.',
     '',
     '- Rebuild with `pnpm build` after plugin source changes.',
-    '- Claude local settings now point at the generated plugin path.',
+    '- Claude local install is the development/recovery path; hosted marketplace distribution is the preferred long-term path.',
     '- Codex local marketplace/config now point at the installed home-local plugin copy.',
   ]
 }
@@ -127,7 +127,7 @@ const updateSummaryLines = (target: InstallTarget) => {
     return [
       '# Plugin Update Complete',
       '',
-      'Updated Claude plugin configuration.',
+      'Updated Claude local development plugin configuration.',
       '',
       '- Restart Claude or reload plugins if it has an active cached plugin session.',
     ]
@@ -137,7 +137,7 @@ const updateSummaryLines = (target: InstallTarget) => {
     return [
       '# Plugin Update Complete',
       '',
-      'Updated Codex plugin configuration.',
+      'Updated Codex local plugin bridge configuration.',
       '',
       '- Restart Codex if it has an active cached plugin session.',
     ]
@@ -146,7 +146,7 @@ const updateSummaryLines = (target: InstallTarget) => {
   return [
     '# Plugin Update Complete',
     '',
-    'Updated Claude and Codex plugin configuration.',
+    'Updated Claude local development and Codex bridge configuration.',
     '',
     '- Restart the hosts or reload plugins if they have active cached plugin sessions.',
   ]

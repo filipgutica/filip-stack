@@ -18,6 +18,18 @@ const writeTextFile = async ({ path, content }: { path: string; content: string 
   await writeFile(path, content)
 }
 
+const loadRepoVersion = async ({ repoRoot }: { repoRoot: string }) => {
+  const packageJson = JSON.parse(await readFile(join(repoRoot, 'package.json'), 'utf8')) as {
+    version?: unknown
+  }
+
+  if (typeof packageJson.version !== 'string' || packageJson.version.length === 0) {
+    throw new Error('package.json is missing a valid version string')
+  }
+
+  return packageJson.version
+}
+
 const copyDirectory = async ({ source, destination }: { source: string; destination: string }) => {
   await cp(source, destination, {
     recursive: true,
@@ -68,12 +80,26 @@ const renderTemplate = ({
     template,
   )
 
+const renderPluginManifest = ({
+  template,
+  version,
+}: {
+  template: string
+  version: string
+}) => {
+  const parsed = JSON.parse(template) as Record<string, unknown>
+
+  return `${JSON.stringify({ ...parsed, version }, null, 2)}\n`
+}
+
 const buildClaudePlugin = async ({
   repoRoot,
   outputRoot,
+  version,
 }: {
   repoRoot: string
   outputRoot: string
+  version: string
 }) => {
   const sharedRoot = join(repoRoot, 'plugin/shared')
   const claudeRoot = join(repoRoot, 'plugin/claude')
@@ -103,7 +129,7 @@ const buildClaudePlugin = async ({
 
   await writeTextFile({
     path: join(outputRoot, '.claude-plugin', 'plugin.json'),
-    content: `${pluginTemplate.trim()}\n`,
+    content: renderPluginManifest({ template: pluginTemplate, version }),
   })
   await writeTextFile({
     path: join(outputRoot, 'hooks', 'hooks.json'),
@@ -114,15 +140,18 @@ const buildClaudePlugin = async ({
 const buildClaudeMarketplace = async ({
   outputRoot,
   pluginRoot,
+  version,
 }: {
   outputRoot: string
   pluginRoot: string
+  version: string
 }) => {
   await rm(outputRoot, { recursive: true, force: true })
   await ensureDirectory(outputRoot)
 
   const marketplace = {
     name: 'local-plugins',
+    version,
     owner: {
       name: 'Filip Gutica',
     },
@@ -140,16 +169,42 @@ const buildClaudeMarketplace = async ({
   })
 }
 
+const buildClaudePublishedMarketplace = async ({
+  outputRoot,
+  marketplaceRoot,
+}: {
+  outputRoot: string
+  marketplaceRoot: string
+}) => {
+  await rm(outputRoot, { recursive: true, force: true })
+  await copyDirectory({ source: marketplaceRoot, destination: outputRoot })
+
+  const marketplace = await readFile(join(marketplaceRoot, '.claude-plugin', 'marketplace.json'), 'utf8')
+  await Promise.all([
+    writeTextFile({
+      path: join(outputRoot, 'marketplace.json'),
+      content: marketplace,
+    }),
+    writeTextFile({
+      path: join(outputRoot, '.nojekyll'),
+      content: '',
+    }),
+  ])
+}
+
 const buildCodexPlugin = async ({
   repoRoot,
   outputRoot,
+  version,
 }: {
   repoRoot: string
   outputRoot: string
+  version: string
 }) => {
   const sharedRoot = join(repoRoot, 'plugin/shared')
   const codexRoot = join(repoRoot, 'plugin/codex')
-  const hookScriptPath = join(outputRoot, 'scripts', 'project-notes-hook.mjs')
+  const coordinatorHookScriptPath = join(outputRoot, 'scripts', 'coordinator-hook.mjs')
+  const notesHookScriptPath = join(outputRoot, 'scripts', 'project-notes-hook.mjs')
 
   await rm(outputRoot, { recursive: true, force: true })
   await copyDirectory({ source: join(sharedRoot, 'scripts'), destination: join(outputRoot, 'scripts') })
@@ -162,14 +217,15 @@ const buildCodexPlugin = async ({
 
   await writeTextFile({
     path: join(outputRoot, '.codex-plugin', 'plugin.json'),
-    content: `${pluginTemplate.trim()}\n`,
+    content: renderPluginManifest({ template: pluginTemplate, version }),
   })
   await writeTextFile({
     path: join(outputRoot, 'hooks', 'hooks.json'),
     content: `${renderTemplate({
       template: hooksTemplate.trim(),
       replacements: {
-        HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(hookScriptPath)} codex UserPromptSubmit`),
+        COORDINATOR_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(coordinatorHookScriptPath)} codex UserPromptSubmit`),
+        NOTES_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(notesHookScriptPath)} codex UserPromptSubmit`),
       },
     })}\n`,
   })
@@ -179,17 +235,25 @@ export const buildPlugins = async ({
   repoRoot,
   outputRoot = join(repoRoot, 'dist', 'plugins'),
 }: BuildPluginsOptions) => {
+  const version = await loadRepoVersion({ repoRoot })
   const claudeOutputRoot = join(outputRoot, 'claude', PLUGIN_NAME)
   const codexOutputRoot = join(outputRoot, 'codex', PLUGIN_NAME)
   const claudeMarketplaceRoot = join(dirname(outputRoot), 'marketplaces', 'claude', 'filip-stack-local')
+  const claudePublishedMarketplaceRoot = join(dirname(outputRoot), 'publish', 'claude-marketplace')
 
-  await buildClaudePlugin({ repoRoot, outputRoot: claudeOutputRoot })
-  await buildCodexPlugin({ repoRoot, outputRoot: codexOutputRoot })
-  await buildClaudeMarketplace({ outputRoot: claudeMarketplaceRoot, pluginRoot: claudeOutputRoot })
+  await buildClaudePlugin({ repoRoot, outputRoot: claudeOutputRoot, version })
+  await buildCodexPlugin({ repoRoot, outputRoot: codexOutputRoot, version })
+  await buildClaudeMarketplace({ outputRoot: claudeMarketplaceRoot, pluginRoot: claudeOutputRoot, version })
+  await buildClaudePublishedMarketplace({
+    outputRoot: claudePublishedMarketplaceRoot,
+    marketplaceRoot: claudeMarketplaceRoot,
+  })
 
   return {
+    version,
     claudeOutputRoot,
     codexOutputRoot,
     claudeMarketplaceRoot,
+    claudePublishedMarketplaceRoot,
   }
 }

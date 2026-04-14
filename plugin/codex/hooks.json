@@ -5,7 +5,15 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__HOOK_COMMAND__"
+            "command": "__COORDINATOR_HOOK_COMMAND__"
+          }
+        ]
+      },
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NOTES_HOOK_COMMAND__"
           }
         ]
       }

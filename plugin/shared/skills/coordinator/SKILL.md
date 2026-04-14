@@ -5,9 +5,13 @@ description: Use as the main engineering entrypoint for planning, implementation
 
 # Coordinator
 
-Coordinate non-trivial engineering work while keeping the main thread focused on routing, review, and synthesis.
+Coordinate non-trivial engineering work by default while keeping the main thread focused on routing, review, and synthesis.
 
 This is the main shared engineering workflow skill.
+
+## Default Flow
+
+Prompt -> Route by mode and intent -> Explore if unclear -> Delegate worker(s) -> Critic pass -> Main-thread review and acceptance -> Validate -> Final synthesis
 
 ## Core Role
 
@@ -15,12 +19,15 @@ This is the main shared engineering workflow skill.
 - Use subagents for bounded exploration and implementation work to reduce main-thread context pressure.
 - Prefer parallel exploration when it improves coverage without duplicating work.
 - Keep the final acceptance decision in the main thread.
+- Run a critic pass on meaningful worker output before main-thread acceptance on non-trivial work.
+- In Plan Mode, keep the main thread limited to coordination, approval, review, and synthesis; delegate codebase exploration and adversarial analysis to subagents by default.
 
 ## Routing Rules
 
 Classify the task using both host mode and prompt intent before doing substantial work.
 
 - If the host is in Plan Mode, do planning, review, investigation, or simplification analysis only. Do not mutate files.
+- If the host is in Plan Mode, do not spend main-thread tokens on broad codebase exploration. Use explorer subagents for discovery and critic or explorer subagents for adversarial review unless the target is obviously tiny.
 - If the prompt is review-only, stay review-only.
 - If the prompt asks for planning, design, or phased execution, produce a bounded plan and stop.
 - If the prompt asks for simplification analysis, return findings plus a bounded simplification plan and stop unless the user explicitly asks for edits.
@@ -33,11 +40,14 @@ For any non-trivial request outside Plan Mode, always do a bounded planning or e
 ## Delegation Rules
 
 - For non-trivial planning, broad simplification, or broad review, use two parallel explorer subagents by default unless the target is obviously tiny.
+- In Plan Mode, default to delegated exploration and delegated adversarial review; the main thread should synthesize and approve rather than perform the expensive analysis itself.
 - Give each explorer a distinct bounded slice or analysis lens so the work does not overlap.
 - For implementation or investigation, use one or more worker subagents with clear ownership boundaries.
+- After a worker returns meaningful output on non-trivial work, use a critic pass before accepting or integrating it.
 - Only parallelize workers when write scopes are disjoint or the work can be cleanly staged.
 - Review every meaningful subagent result in the main thread before accepting it.
 - If a worker result has an obvious issue, send one bounded correction cycle back before moving on.
+- Close completed or no-longer-needed subagents promptly after their output has been reviewed and either accepted or discarded.
 - Use direct main-thread edits only as a fallback for tiny fixes, final integration adjustments, or blocked worker output.
 
 ## Subagent Roles
@@ -68,6 +78,14 @@ Standardize on these roles unless the task clearly does not need delegation.
 - Use when: multiple worker results need coordinated reconciliation or a final integration adjustment would be awkward to push back to a single worker
 - Default shape: optional and rare; prefer staying in the main thread unless the integration is large enough to justify delegation
 
+### Critic
+
+- Purpose: bounded adversarial review of worker output before acceptance
+- Allowed actions: inspect plans, diffs, findings, and validation; identify correctness risks, regressions, missing tests, scope drift, weak evidence, and unnecessary complexity; recommend reject or revise
+- Not allowed: edit files, widen scope, or accept work
+- Use when: a worker has returned meaningful output and the main thread needs a critical pass before acceptance or integration
+- Default shape: one critic pass per meaningful worker chunk; prefer a faster, cheaper subagent tier when the scope is well bounded
+
 The main thread always owns routing, scope control, review, acceptance, and final synthesis.
 
 ## Internal Playbooks
@@ -78,6 +96,7 @@ Load only the playbook needed for the active flow:
 - Implementation: [references/implementation.md](references/implementation.md)
 - Investigation: [references/investigation.md](references/investigation.md)
 - Review: [references/review.md](references/review.md)
+- Critic: [references/critic.md](references/critic.md)
 - Simplification: [references/simplification.md](references/simplification.md)
 - Prompt templates: [references/subagent-templates.md](references/subagent-templates.md)
 
@@ -99,6 +118,7 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 ## Plan Mode (Claude Code)
 
 - While in Plan Mode: produce the plan only. Do not call `Edit`, `Write`, or `Bash` for mutations.
+- While in Plan Mode: the main thread should not do broad repository exploration itself. Use explorer subagents for codebase discovery and critic or explorer subagents for adversarial review, then synthesize the result locally.
 - When the user approves the plan and asks to proceed, call `ExitPlanMode` before starting implementation.
 - If routing lands in Plan Mode unexpectedly mid-task, stop, produce findings, and wait for user direction before exiting.
 
@@ -109,6 +129,7 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 - Prefer the faster, cheaper tier for bounded read-only exploration and straightforward, low-risk implementation in a narrow scope.
 - Prefer the stronger tier for main-thread synthesis, acceptance review, integration, cross-cutting changes, ambiguous investigations, and architecturally sensitive work.
 - When using two parallel explorers, default both to the faster, cheaper tier unless one explorer is handling the harder architectural or risk-analysis lens.
+- Prefer the faster, cheaper tier for critic passes when the scope is well bounded.
 - In Claude Code:
   - Delegate using the `Agent` tool (see `## Claude Code Delegation` above).
   - Track multi-step progress with `TaskCreate` / `TaskUpdate`.
@@ -127,4 +148,5 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
 - Keep diffs minimal and avoid unrelated refactors.
 - Do not skip review just because a worker claims the result is done.
 - Do not claim validation passed unless it was run.
+- Before final return, close any completed or idle subagents that are no longer needed.
 - Prefer a usable bounded result with explicit uncertainty over wide, speculative exploration.

@@ -9,6 +9,7 @@ export type CodexPluginInstaller = (input: {
   homeDir: string
   marketplacePath: string
   pluginName: string
+  clientVersion: string
 }) => Promise<void>
 
 type PendingRequest<TResult> = {
@@ -28,6 +29,7 @@ export const installCodexPluginViaAppServer: CodexPluginInstaller = async ({
   homeDir,
   marketplacePath,
   pluginName,
+  clientVersion,
 }) => {
   const child = spawn('codex', ['app-server'], {
     env: { ...process.env, HOME: homeDir },
@@ -119,7 +121,7 @@ export const installCodexPluginViaAppServer: CodexPluginInstaller = async ({
     const initializeParams: InitializeParams = {
       clientInfo: {
         name: 'filip-stack-installer',
-        version: '0.1.0',
+        version: clientVersion,
       },
       capabilities: {
         experimentalApi: true,

@@ -160,7 +160,8 @@ describe('runCli', () => {
 
   it('accepts a valid install target', async () => {
     const messages: string[] = []
-    const codexInstallCalls: Array<{ homeDir: string; marketplacePath: string; pluginName: string }> = []
+    const codexInstallCalls: Array<{ homeDir: string; marketplacePath: string; pluginName: string; clientVersion: string }> = []
+    const packageJson = JSON.parse(await readFile(join(process.cwd(), 'package.json'), 'utf8')) as { version: string }
 
     await mkdir(join(homeDir, '.claude'), { recursive: true })
     await mkdir(join(homeDir, '.codex'), { recursive: true })
@@ -174,14 +175,14 @@ describe('runCli', () => {
         homeDir,
         log: (message) => messages.push(message),
         error: () => {},
-        installCodexPlugin: async ({ homeDir, marketplacePath, pluginName }) => {
-          codexInstallCalls.push({ homeDir, marketplacePath, pluginName })
+        installCodexPlugin: async ({ homeDir, marketplacePath, pluginName, clientVersion }) => {
+          codexInstallCalls.push({ homeDir, marketplacePath, pluginName, clientVersion })
         },
       }),
     ).resolves.toBe(0)
 
     expect(messages.join('\n')).toContain('Plugin Install Complete')
-    expect(messages.join('\n')).toContain('Installed Codex plugin configuration.')
+    expect(messages.join('\n')).toContain('Installed Codex local plugin bridge configuration.')
     expect(messages.join('\n')).not.toContain('Claude local settings now point')
     await expect(readFile(join(homeDir, 'plugins/filip-stack/.codex-plugin/plugin.json'), 'utf8')).resolves.toContain('"name": "filip-stack"')
     expect(codexInstallCalls).toEqual([
@@ -189,6 +190,7 @@ describe('runCli', () => {
         homeDir,
         marketplacePath: join(homeDir, '.agents', 'plugins', 'marketplace.json'),
         pluginName: 'filip-stack',
+        clientVersion: packageJson.version,
       },
     ])
   })

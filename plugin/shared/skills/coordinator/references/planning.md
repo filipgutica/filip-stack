@@ -9,9 +9,11 @@ Use this when the task needs a concrete plan before code is written or when the 
 3. For non-trivial work, use two parallel exploration passes with distinct lenses or areas.
 4. Synthesize the findings in the main thread.
 5. Produce a minimal effective plan with bounded, verifiable phases or tasks.
-6. Review the plan critically in the main thread once before returning it.
+6. For non-trivial work, use a bounded critic or explorer pass to challenge the draft plan before returning it.
+7. Review the plan in the main thread, decide whether to accept the critique, and return the synthesized result.
 
 Use the `explorer` role and prompt shape from [subagent-templates.md](subagent-templates.md).
+Use the `critic` role and prompt shape from [subagent-templates.md](subagent-templates.md) when you want an adversarial read on the draft plan without spending main-thread tokens on that analysis.
 
 ## Planning Rules
 

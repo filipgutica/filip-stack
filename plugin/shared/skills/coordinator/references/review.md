@@ -3,6 +3,7 @@
 Use this when the prompt is review-only or when the main thread is reviewing a plan, findings, or diff from a subagent.
 
 The main thread owns review and acceptance. If extra evidence is needed before the review verdict, use the `explorer` template from [subagent-templates.md](subagent-templates.md) for bounded read-only follow-up.
+If the task needs an adversarial read-only pass against worker output before acceptance, use the `critic` template from [critic.md](critic.md).
 
 ## Review Priorities
 
@@ -36,6 +37,8 @@ When reviewing worker or explorer output in the main thread:
 - the diff is correct but larger than the minimum needed
 
 **Do not send more than one correction cycle per worker result.** If the second attempt still has a blocking issue, take over in the main thread or escalate to the user.
+
+After a worker, explorer, or critic result has been accepted or definitively superseded, close that subagent unless it is immediately needed for another bounded follow-up.
 
 ## Output
 

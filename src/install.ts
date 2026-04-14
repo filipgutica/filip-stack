@@ -192,10 +192,12 @@ const syncClaude = async ({
 const syncCodex = async ({
   homeDir,
   codexOutputRoot,
+  version,
   installCodexPlugin = installCodexPluginViaAppServer,
 }: {
   homeDir: string
   codexOutputRoot: string
+  version: string
   installCodexPlugin?: CodexPluginInstaller
 }) => {
   const marketplaceSourceRoot = join(homeDir, 'plugins', 'filip-stack')
@@ -210,6 +212,7 @@ const syncCodex = async ({
     homeDir,
     marketplacePath,
     pluginName: 'filip-stack',
+    clientVersion: version,
   })
 }
 
@@ -237,6 +240,7 @@ const syncPlugins = async ({
     await syncCodex({
       homeDir,
       codexOutputRoot: buildResult.codexOutputRoot,
+      version: buildResult.version,
       installCodexPlugin,
     })
   }

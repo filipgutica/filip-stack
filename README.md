@@ -2,8 +2,13 @@
 
 Personal source of truth for shared Claude and Codex setup across my machines.
 
-This repo now builds self-contained local plugins for both hosts. It no longer
+This repo builds host-specific plugin artifacts from shared source. It no longer
 uses raw synced `skills/` and `hooks/` as the primary install surface.
+
+The distribution model is intentionally split:
+
+- Claude: hosted marketplace artifact for normal installs, plus a local install helper for development and recovery
+- Codex: validated local bridge install until there is a clearer public remote plugin install model
 
 ## Build
 
@@ -19,10 +24,12 @@ This generates:
 ```text
 dist/plugins/claude/filip-stack/
 dist/plugins/codex/filip-stack/
+dist/marketplaces/claude/filip-stack-local/
+dist/publish/claude-marketplace/
 ```
 
 `dist/` stays gitignored. After cloning or pulling changes, build locally before
-trying to load either plugin.
+trying to load a local plugin install.
 
 ## Repo Layout
 
@@ -41,6 +48,17 @@ dist/plugins/claude/filip-stack/
 dist/plugins/codex/filip-stack/
 ```
 
+Generated Claude marketplace outputs live under:
+
+```text
+dist/marketplaces/claude/filip-stack-local/
+dist/publish/claude-marketplace/
+```
+
+`dist/marketplaces/claude/filip-stack-local/` is the canonical marketplace tree.
+`dist/publish/claude-marketplace/` is the GitHub Pages friendly copy that CI can
+publish directly.
+
 Manifest locations inside the built plugin roots are host-specific:
 
 ```text
@@ -48,9 +66,12 @@ dist/plugins/claude/filip-stack/.claude-plugin/plugin.json
 dist/plugins/codex/filip-stack/.codex-plugin/plugin.json
 ```
 
+Plugin and marketplace versions are stamped from `package.json` during build so
+the release version only needs to be updated in one place.
+
 ## Install and Update
 
-Build plus persistent install:
+Local install helpers:
 
 ```sh
 ./bin/filip-stack install claude
@@ -58,7 +79,7 @@ Build plus persistent install:
 ./bin/filip-stack install all
 ```
 
-After changing anything under `plugin/`, rebuild and refresh:
+After changing anything under `plugin/`, rebuild and refresh local host state:
 
 ```sh
 pnpm build
@@ -67,17 +88,50 @@ pnpm build
 ./bin/filip-stack update all
 ```
 
-Install and update now share the same underlying sync flow:
+Install and update share the same underlying local sync flow:
 
 - build plugin outputs once
-- sync Claude state and CLI-managed install/update
-- sync Codex state and trigger Codex's own plugin install step
+- sync Claude local settings and CLI-managed install/update
+- sync Codex local state and trigger Codex's own plugin install step
+
+For day-to-day usage, prefer the hosted Claude marketplace path below. The local
+Claude install helper is primarily for development and recovery.
+
+## Claude Distribution
+
+Claude is the only host in this repo that has a clear traditional marketplace
+distribution story today.
+
+Published artifact:
+
+- CI deploys `dist/publish/claude-marketplace/` to GitHub Pages on merge to `main`
+- that published directory contains:
+  - `marketplace.json` for remote marketplace registration
+  - `.claude-plugin/marketplace.json` for the canonical marketplace shape
+  - `filip-stack/` as the plugin payload
+
+Recommended install shape:
+
+```sh
+claude plugin marketplace add <published-marketplace-url>/marketplace.json
+claude plugin install filip-stack@local-plugins
+```
+
+For local development or recovery, you can still use:
+
+```sh
+./bin/filip-stack install claude
+```
 
 Claude install behavior:
 
 - writes a persistent directory-backed marketplace source into `~/.claude/settings.json`
 - refreshes that marketplace through Claude's own CLI
 - installs or updates `filip-stack@local-plugins` through Claude's own CLI
+
+## Codex Distribution
+
+Codex currently stays local-install only in this repo.
 
 Codex install behavior:
 
@@ -104,8 +158,8 @@ claude plugin marketplace add ./dist/marketplaces/claude/filip-stack-local
 claude plugin install filip-stack@local-plugins
 ```
 
-This repo is intentionally local-plugin-first in v1. Hosted marketplace
-distribution is out of scope.
+This is intentionally a thin bridge. The repo does not claim a public hosted
+Codex marketplace/install path yet.
 
 ## Included Skills
 
@@ -118,6 +172,17 @@ Codex names plugin-provided skills with the plugin prefix in API responses, for 
 
 - `filip-stack:coordinator`
 - `filip-stack:project-notes-tracker`
+
+## Coordinator Hook
+
+The generated plugins bundle a shared coordinator prompt hook that reinforces the
+default workflow on normal prompts:
+
+- runs on `UserPromptSubmit`
+- nudges the model toward the coordinator workflow directly for ordinary prompts
+- keeps the reminder self-gating by saying it applies to non-trivial engineering work
+- skips reserved `notes *` control prompts
+- runs before the notes hook so workflow routing guidance appears first
 
 ## Project Notes Hook
 
@@ -132,6 +197,7 @@ remains repo-local:
 - `notes use:` with no selector lists open tickets instead of guessing a binding
 - `UserPromptSubmit` reminds the model to keep the linked `## Work Log` updated during normal tracked work once the ticket has an approved plan
 - `UserPromptSubmit` stays quiet during normal prompts when no ticket is bound
+- the notes hook remains notes-only and runs after the coordinator hook on `UserPromptSubmit`
 
 Planning remains a two-step flow:
 
@@ -141,7 +207,7 @@ Planning remains a two-step flow:
 
 ## CLI
 
-The CLI is now only for globals and shell bootstrap.
+The CLI is now for globals, shell bootstrap, and local plugin install helpers.
 
 Sync global guidance files:
 
@@ -181,6 +247,20 @@ One-time migration:
 3. Run `pnpm install && pnpm build`.
 4. Run `./bin/filip-stack install all`.
 5. Keep using the CLI only for globals.
+
+## CI
+
+GitHub Actions owns validation and Claude publishing:
+
+- `CI`
+  - runs `pnpm typecheck`
+  - runs `pnpm test`
+  - runs `pnpm build`
+  - uploads built artifacts on pushes
+- `Publish Claude Marketplace`
+  - runs on `main`
+  - builds the repo
+  - deploys `dist/publish/claude-marketplace/` to GitHub Pages
 
 ## Development
 
