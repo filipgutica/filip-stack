@@ -136,10 +136,11 @@ For bounded, well-scoped explorer tasks, prefer the faster, cheaper model tier a
   - Track multi-step progress with `TaskCreate` / `TaskUpdate`.
   - Exit Plan Mode with `ExitPlanMode` before any mutation.
   - Run validation via `Bash` (typecheck, lint, targeted tests).
+  - Model mapping: Explorer → `haiku`, Critic → `haiku` (well-bounded passes), Worker → `sonnet` (default, omit the parameter), main-thread synthesis → `sonnet`. Escalate to `opus` only for unusually complex cross-cutting work or high-stakes synthesis.
 - In Codex:
   - follow the host's Plan Mode and subagent behavior
-  - apply the capability-matching rules above when choosing between lighter and stronger subagent tiers
-  - do not escalate bounded explorer work to the strongest tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
+  - model tiers: lighter model (e.g. `o4-mini`) for Explorer and well-bounded Critic passes; default model for Worker, Integrator, and main-thread synthesis
+  - do not escalate bounded explorer work to the stronger tier unless the task is unusually ambiguous, cross-cutting, or risk-heavy
 - Subagent prompts must always be self-contained regardless of host.
 
 ## Rules
