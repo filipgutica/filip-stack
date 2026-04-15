@@ -1,3 +1,10 @@
+## [0.2.2](https://github.com/filipgutica/filip-stack/compare/v0.2.1...v0.2.2) (2026-04-15)
+
+
+### Bug Fixes
+
+* tighten notes hook reminders and stop backstop ([9bc885b](https://github.com/filipgutica/filip-stack/commit/9bc885b20768f0eeb19c069615b86aafac4b0091))
+
 ## [0.2.1](https://github.com/filipgutica/filip-stack/compare/v0.2.0...v0.2.1) (2026-04-15)
 
 
