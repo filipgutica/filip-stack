@@ -121,7 +121,7 @@ coordinator skill invocations.
 
 ## Project Notes Hook
 
-Fires on `UserPromptSubmit`. Runtime state is repo-local:
+Fires on `UserPromptSubmit` and `Stop`. Runtime state is repo-local:
 
 - `.notes/todo/`, `.notes/in-progress/`, `.notes/complete/` — tracked Markdown tickets
 - `.notes/.runtime/` — machine-managed session state (gitignored)

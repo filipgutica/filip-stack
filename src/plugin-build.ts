@@ -95,6 +95,7 @@ const buildCodexPlugin = async ({
       replacements: {
         COORDINATOR_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(coordinatorHookScriptPath)} codex UserPromptSubmit`),
         NOTES_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(notesHookScriptPath)} codex UserPromptSubmit`),
+        NOTES_STOP_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(notesHookScriptPath)} codex Stop`),
       },
     })}\n`,
   })

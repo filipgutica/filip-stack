@@ -38,6 +38,12 @@ describe('buildPlugins', () => {
             command: string
           }>
         }>
+        Stop: Array<{
+          hooks: Array<{
+            type: string
+            command: string
+          }>
+        }>
       }
     }
 
@@ -49,6 +55,10 @@ describe('buildPlugins', () => {
     )
     expect(parsedCodexHooks.hooks.UserPromptSubmit[1]?.hooks[0]?.command).toBe(
       `node "${join(result.codexOutputRoot, 'scripts', 'project-notes-hook.mjs')}" codex UserPromptSubmit`,
+    )
+    expect(parsedCodexHooks.hooks.Stop).toHaveLength(1)
+    expect(parsedCodexHooks.hooks.Stop[0]?.hooks[0]?.command).toBe(
+      `node "${join(result.codexOutputRoot, 'scripts', 'project-notes-hook.mjs')}" codex Stop`,
     )
     expect(codexSkill).toContain('name: coordinator')
     expect(codexSkill).toContain('description:')

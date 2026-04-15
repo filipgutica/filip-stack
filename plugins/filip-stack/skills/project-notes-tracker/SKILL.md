@@ -24,6 +24,7 @@ When the shared notes hooks are installed:
 
 - `UserPromptSubmit` can create, bind, restore, trigger planning guidance, or trigger approval guidance through reserved prompts.
 - `UserPromptSubmit` should also remind the model to keep the linked ticket's `## Work Log` updated during normal tracked work once the ticket has an approved plan.
+- `Stop` should block completion when a bound ticket is still `todo` but already has a real approved plan, and require the model to transition it to `.notes/in-progress/` plus update `## Approved Plan` and `## Work Log` before ending the turn.
 - `UserPromptSubmit` should stay quiet when there is no bound ticket and the prompt is not an explicit `notes *` command.
 
 The current session should track exactly one `todo` or `in-progress` ticket at a time.
@@ -49,7 +50,7 @@ Planning flow rules:
 - In Claude, the hook should tell the model to enter planning flow and use `$coordinator` with the seed.
 - In Codex, the hook should prompt the user to switch into Plan Mode and use `$filip-stack:coordinator` with the seed because mode switching is host-controlled.
 - `notes approve` should tell the model to write the approved plan into the ticket and move it to `.notes/in-progress/`.
-- During normal prompts, the hook may remind the model to move a still-`todo` ticket into `.notes/in-progress/` before implementation work starts if the plan has already been accepted.
+- During normal prompts, `UserPromptSubmit` should remind the model to keep the bound ticket updated and, when the ticket is still `todo`, to double-check whether it now belongs in `.notes/in-progress/`.
 - Do not rely on the hook script to parse coordinator output or write ticket contents on the model's behalf.
 
 ## Ticket Format
@@ -107,6 +108,7 @@ When a plan is approved:
 - Define explicit `## Completion Criteria` once the approved plan is known so the agent can tell when the ticket should move to `.notes/complete/`.
 - Hooks should treat placeholder content such as `Not started.` as "no approved plan yet" and continue blocking mutating work until real plan content exists.
 - `notes plan:` alone should not lift the gate.
+- Once a bound `todo` ticket has a real approved plan, the `Stop` hook should block ending the turn until the ticket moves to `.notes/in-progress/`, `status: "in-progress"` is set, `started` is stamped if needed, `## Approved Plan` is populated, and `## Work Log` is updated for the implementation turn.
 
 When doing work:
 

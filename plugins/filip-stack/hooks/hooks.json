@@ -17,6 +17,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "node \"${CLAUDE_PLUGIN_ROOT}/scripts/project-notes-hook.mjs\" claude Stop"
+          }
+        ]
+      }
     ]
   }
 }

@@ -440,6 +440,21 @@ const buildWorkLogReminder = ({ ticketPath }) =>
 const buildPendingApprovalReminder = ({ ticketPath }) =>
   `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\` without an approved plan. If the plan has been accepted, implementation starts this turn, or you are already doing implementation work, first move the ticket to \`.notes/in-progress/\`, set frontmatter \`status: "in-progress"\`, stamp \`started\` if needed, write a concise summary into \`## Approved Plan\`, and then keep \`## Work Log\` updated during the turn.`
 
+const buildBoundTicketReminder = ({ ticketPath }) =>
+  `Project notes tracking: keep the bound ticket \`${ticketPath}\` up to date during this turn.`
+
+const buildTodoTransitionNudge = ({ ticketPath }) =>
+  `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\`. Double-check whether this ticket should now move to \`.notes/in-progress/\`, have \`status: "in-progress"\`, get \`started\` stamped if needed, and be updated in \`## Approved Plan\` and \`## Work Log\`.`
+
+const buildStopBlockPayload = ({ reason }) =>
+  JSON.stringify({
+    decision: 'block',
+    reason,
+  })
+
+const buildStopTransitionReason = ({ ticketPath }) =>
+  `Project notes tracking: before stopping, update \`${ticketPath}\` by moving it to \`.notes/in-progress/\`, setting frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, ensuring \`## Approved Plan\` reflects the accepted plan, and appending a short \`## Work Log\` entry for this implementation turn. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`
+
 const extractPrompt = (payload) =>
   [
     payload.prompt,
@@ -598,6 +613,12 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    stdout.push(buildBoundTicketReminder({ ticketPath: loadedTicket.ticketPath }))
+
+    if (loadedTicket.frontmatter.status === 'todo') {
+      stdout.push(buildTodoTransitionNudge({ ticketPath: loadedTicket.ticketPath }))
+    }
+
     if (loadedTicket.frontmatter.status === 'todo' && !hasApprovedPlan(loadedTicket.content)) {
       stdout.push(buildPendingApprovalReminder({ ticketPath: loadedTicket.ticketPath }))
     }
@@ -605,6 +626,29 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
     if (hasApprovedPlan(loadedTicket.content)) {
       stdout.push(buildWorkLogReminder({ ticketPath: loadedTicket.ticketPath }))
     }
+  }
+
+  return { exitCode: 0 }
+}
+
+const handleStop = async ({ repoRoot, state, sessionStatePath, stdout, stderr }) => {
+  await restoreSessionBinding({ repoRoot, state, sessionStatePath })
+
+  if (state.ticketId === null && state.lastKnownTicketPath === null) {
+    return { exitCode: 0 }
+  }
+
+  const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+  if (loadedTicket === null) {
+    state.ticketId = null
+    state.lastKnownTicketPath = null
+    await saveSessionState({ path: sessionStatePath, state })
+    stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
+    return { exitCode: 1 }
+  }
+
+  if (loadedTicket.frontmatter.status === 'todo' && hasApprovedPlan(loadedTicket.content)) {
+    stdout.push(buildStopBlockPayload({ reason: buildStopTransitionReason({ ticketPath: loadedTicket.ticketPath }) }))
   }
 
   return { exitCode: 0 }
@@ -628,6 +672,11 @@ export const runHook = async ({
 
   if (event === 'UserPromptSubmit') {
     const result = await handleUserPrompt({ host, repoRoot, state, sessionStatePath, payload, stdout, stderr })
+    return { ...result, stdout, stderr }
+  }
+
+  if (event === 'Stop') {
+    const result = await handleStop({ repoRoot, state, sessionStatePath, stdout, stderr })
     return { ...result, stdout, stderr }
   }
 

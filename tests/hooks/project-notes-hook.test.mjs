@@ -34,6 +34,49 @@ const writeRuntimeState = async ({ repoRoot, sessionId, ticketId, lastKnownTicke
   )
 }
 
+const writeTicketFixture = async ({
+  repoRoot,
+  ticketPath,
+  title = 'Track hook work',
+  ticketId = '2026-04-08-track-hook-work',
+  sessionId = 'thread-1',
+  status,
+  created = '2026-04-08',
+  started = null,
+  completed = null,
+  planningSeed = 'Created from session prompt.',
+  approvedPlan = 'Not started.',
+  completionCriteria = 'Finish the tracked hook work.',
+  workLog = 'No work logged yet.',
+  completionSummary = 'Not completed.',
+}) => {
+  await mkdir(join(repoRoot, ticketPath.split('/').slice(0, -1).join('/')), { recursive: true })
+  await writeFile(
+    join(repoRoot, ticketPath),
+    `---\n` +
+      `title: "${title}"\n` +
+      `ticket-id: "${ticketId}"\n` +
+      `session-id: "${sessionId}"\n` +
+      `status: "${status}"\n` +
+      `created: "${created}"\n` +
+      `started: ${started === null ? 'null' : `"${started}"`}\n` +
+      `completed: ${completed === null ? 'null' : `"${completed}"`}\n` +
+      `tags: ["notes"]\n` +
+      `---\n\n` +
+      `# ${title}\n\n` +
+      `## Planning Seed\n\n` +
+      `${planningSeed}\n\n` +
+      `## Approved Plan\n\n` +
+      `${approvedPlan}\n\n` +
+      `## Completion Criteria\n\n` +
+      `${completionCriteria}\n\n` +
+      `## Work Log\n\n` +
+      `${workLog}\n\n` +
+      `## Completion Summary\n\n` +
+      `${completionSummary}\n`,
+  )
+}
+
 afterEach(async () => {
   if (testRoot !== null) {
     await rm(testRoot, { recursive: true, force: true })
@@ -128,9 +171,16 @@ describe('project notes hook', () => {
     ).resolves.toContain('Not started.')
   })
 
-  it('reminds the model to promote a bound todo ticket before implementation work starts', async () => {
+  it('reminds the model to update a bound ticket during normal prompts', async () => {
     const repoRoot = await createGitRepoRoot()
-    await bindTrackedTicket({ repoRoot })
+    const ticketPath = '.notes/todo/2026-04-08-track-hook-work.md'
+    await writeTicketFixture({ repoRoot, ticketPath, status: 'todo', approvedPlan: 'Use the approved plan.' })
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: ticketPath,
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -141,29 +191,32 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
-    expect(result.stdout.join('\n')).toContain('first move the ticket to `.notes/in-progress/`')
-    expect(result.stdout.join('\n')).toContain('write a concise summary into `## Approved Plan`')
+    expect(result.stdout.join('\n')).toContain('keep the bound ticket `.notes/todo/2026-04-08-track-hook-work.md` up to date during this turn')
+    expect(result.stdout.join('\n')).toContain('Double-check whether this ticket should now move to `.notes/in-progress/`')
+    expect(result.stdout.join('\n')).not.toContain('moving the ticket into `.notes/in-progress/`')
   })
 
-  it('keeps the todo reminder advisory while the session is still discussing the plan', async () => {
+  it('notes plan alone does not move a bound todo ticket to in-progress', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot })
 
     const result = await runHook({
       host: 'codex',
       event: 'UserPromptSubmit',
-      payload: { cwd: repoRoot, prompt: 'let us review the plan before we start coding' },
+      payload: { cwd: repoRoot, prompt: 'notes plan: Tighten notes workflow' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
-    expect(result.stdout.join('\n')).toContain('If the plan has been accepted, implementation starts this turn, or you are already doing implementation work')
+    expect(result.stdout.join('\n')).toContain('appending this seed under `## Planning Seed`: Tighten notes workflow')
+    expect(result.stdout.join('\n')).not.toContain('moving the ticket into `.notes/in-progress/`')
+    const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
+    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
+    expect(ticketPath).toContain('.notes/todo/')
   })
 
-  it('does not emit the work-log reminder while the ticket is still todo with no approved plan', async () => {
+  it('does not require an in-progress transition when there is no accepted plan yet', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot })
 
@@ -176,38 +229,69 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
+    expect(result.stdout.join('\n')).toContain('Double-check whether this ticket should now move to `.notes/in-progress/`')
     expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
+    expect(result.stdout.join('\n')).not.toContain('accepted plan')
+    expect(result.stdout.join('\n')).not.toContain('moving the ticket into `.notes/in-progress/`')
     expect(result.stdout.join('\n')).not.toContain('Append a short Work Log entry in plain language')
+  })
+
+  it('Stop blocks when a bound todo ticket already has an approved plan', async () => {
+    const repoRoot = await createGitRepoRoot()
+    const ticketPath = '.notes/todo/2026-04-08-track-hook-work.md'
+    await writeTicketFixture({ repoRoot, ticketPath, status: 'todo', approvedPlan: 'Use the approved plan.' })
+    await writeRuntimeState({
+      repoRoot,
+      sessionId: 'thread-1',
+      ticketId: '2026-04-08-track-hook-work',
+      lastKnownTicketPath: ticketPath,
+    })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'Stop',
+      payload: { cwd: repoRoot },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toHaveLength(1)
+    const payload = JSON.parse(result.stdout[0])
+    expect(payload.decision).toBe('block')
+    expect(payload.reason).toContain('before stopping')
+    expect(payload.reason).toContain('`.notes/in-progress/`')
+    expect(payload.reason).toContain('`## Work Log`')
+  })
+
+  it('Stop stays quiet when a bound todo ticket has no approved plan yet', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'Stop',
+      payload: { cwd: repoRoot },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
   })
 
   it('notes complete tells the model to close the ticket instead of mutating it in hook code', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
-    await writeFile(
-      join(repoRoot, ticketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "in-progress"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: null\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Completion Criteria\n\n` +
-        `Finish the tracked hook work.\n\n` +
-        `## Work Log\n\n` +
-        `No work logged yet.\n\n` +
-        `## Completion Summary\n\n` +
-        `Not completed.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath,
+      status: 'in-progress',
+      started: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+    })
     await writeRuntimeState({
       repoRoot,
       sessionId: 'thread-1',
@@ -249,20 +333,20 @@ describe('project notes hook', () => {
   it('ignores completed tickets when binding by prompt', async () => {
     const repoRoot = await createGitRepoRoot()
     const completedTicketPath = join(repoRoot, '.notes/complete/2026-04-08-done.md')
-    await mkdir(join(repoRoot, '.notes/complete'), { recursive: true })
-    await writeFile(
-      completedTicketPath,
-      `---\n` +
-        `title: "Done"\n` +
-        `ticket-id: "2026-04-08-done"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "complete"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: "2026-04-08"\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n# Done\n\n## Planning Seed\n\nDone.\n\n## Approved Plan\n\nDone.\n\n## Work Log\n\nDone.\n\n## Completion Summary\n\nDone.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath: '.notes/complete/2026-04-08-done.md',
+      title: 'Done',
+      ticketId: '2026-04-08-done',
+      status: 'complete',
+      started: '2026-04-08',
+      completed: '2026-04-08',
+      planningSeed: 'Done.',
+      approvedPlan: 'Done.',
+      completionCriteria: 'Done.',
+      workLog: 'Done.',
+      completionSummary: 'Done.',
+    })
 
     const result = await runHook({
       host: 'codex',
@@ -279,29 +363,13 @@ describe('project notes hook', () => {
   it('UserPromptSubmit reminds the model to keep the work log updated once the ticket has an approved plan', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
-    await writeFile(
-      join(repoRoot, ticketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "in-progress"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: null\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Work Log\n\n` +
-        `No work logged yet.\n\n` +
-        `## Completion Summary\n\n` +
-        `Not completed.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath,
+      status: 'in-progress',
+      started: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+    })
     await writeRuntimeState({
       repoRoot,
       sessionId: 'thread-1',
@@ -320,6 +388,7 @@ describe('project notes hook', () => {
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
 
+    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
     expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
     expect(result.stdout.join('\n')).toContain('until the user explicitly says to close out the session or uses `notes complete`')
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('No work logged yet.')
@@ -329,31 +398,13 @@ describe('project notes hook', () => {
     const repoRoot = await createGitRepoRoot()
     const oldTicketPath = '.notes/todo/2026-04-08-track-hook-work.md'
     const movedTicketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
-    await writeFile(
-      join(repoRoot, movedTicketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "in-progress"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: null\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Completion Criteria\n\n` +
-        `Finish the tracked hook work.\n\n` +
-        `## Work Log\n\n` +
-        `No work logged yet.\n\n` +
-        `## Completion Summary\n\n` +
-        `Not completed.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath: movedTicketPath,
+      status: 'in-progress',
+      started: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+    })
     await writeRuntimeState({
       repoRoot,
       sessionId: 'thread-1',
@@ -383,31 +434,16 @@ describe('project notes hook', () => {
     const repoRoot = await createGitRepoRoot()
     const oldTicketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
     const movedTicketPath = '.notes/complete/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/complete'), { recursive: true })
-    await writeFile(
-      join(repoRoot, movedTicketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "complete"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: "2026-04-08"\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Completion Criteria\n\n` +
-        `Finish the tracked hook work.\n\n` +
-        `## Work Log\n\n` +
-        `Completed the tracked hook work.\n\n` +
-        `## Completion Summary\n\n` +
-        `Finished.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath: movedTicketPath,
+      status: 'complete',
+      started: '2026-04-08',
+      completed: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+      workLog: 'Completed the tracked hook work.',
+      completionSummary: 'Finished.',
+    })
     await writeRuntimeState({
       repoRoot,
       sessionId: 'thread-1',
@@ -435,31 +471,13 @@ describe('project notes hook', () => {
   it('restores a session binding from ticket frontmatter when runtime state is empty', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
-    await writeFile(
-      join(repoRoot, ticketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "thread-1"\n` +
-        `status: "in-progress"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: null\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Completion Criteria\n\n` +
-        `Finish the tracked hook work.\n\n` +
-        `## Work Log\n\n` +
-        `No work logged yet.\n\n` +
-        `## Completion Summary\n\n` +
-        `Not completed.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath,
+      status: 'in-progress',
+      started: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+    })
     await writeRuntimeState({
       repoRoot,
       sessionId: 'thread-1',
@@ -501,31 +519,14 @@ describe('project notes hook', () => {
   it('updates session-id in the ticket when a new session binds an existing ticket', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
-    await mkdir(join(repoRoot, '.notes/in-progress'), { recursive: true })
-    await writeFile(
-      join(repoRoot, ticketPath),
-      `---\n` +
-        `title: "Track hook work"\n` +
-        `ticket-id: "2026-04-08-track-hook-work"\n` +
-        `session-id: "old-session"\n` +
-        `status: "in-progress"\n` +
-        `created: "2026-04-08"\n` +
-        `started: "2026-04-08"\n` +
-        `completed: null\n` +
-        `tags: ["notes"]\n` +
-        `---\n\n` +
-        `# Track hook work\n\n` +
-        `## Planning Seed\n\n` +
-        `Created from session prompt.\n\n` +
-        `## Approved Plan\n\n` +
-        `Use the approved plan.\n\n` +
-        `## Completion Criteria\n\n` +
-        `Finish the tracked hook work.\n\n` +
-        `## Work Log\n\n` +
-        `No work logged yet.\n\n` +
-        `## Completion Summary\n\n` +
-        `Not completed.\n`,
-    )
+    await writeTicketFixture({
+      repoRoot,
+      ticketPath,
+      status: 'in-progress',
+      sessionId: 'old-session',
+      started: '2026-04-08',
+      approvedPlan: 'Use the approved plan.',
+    })
 
     const result = await runHook({
       host: 'codex',

@@ -17,6 +17,16 @@
           }
         ]
       }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "__NOTES_STOP_HOOK_COMMAND__"
+          }
+        ]
+      }
     ]
   }
 }
