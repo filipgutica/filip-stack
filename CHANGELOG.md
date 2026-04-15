@@ -1,3 +1,10 @@
+## [0.2.1](https://github.com/filipgutica/filip-stack/compare/v0.2.0...v0.2.1) (2026-04-15)
+
+
+### Bug Fixes
+
+* update notes skill ([32fc805](https://github.com/filipgutica/filip-stack/commit/32fc805031edbd0e7d35b693c8375f0b76ccb3aa))
+
 # [0.2.0](https://github.com/filipgutica/filip-stack/compare/v0.1.1...v0.2.0) (2026-04-14)
 
 
