@@ -431,6 +431,15 @@ const matchTicket = ({ tickets, selector }) => {
   )
 }
 
+const buildApprovalGuidance = ({ ticketPath }) =>
+  `Project notes tracking: update \`${ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`
+
+const buildWorkLogReminder = ({ ticketPath }) =>
+  `Project notes tracking: keep \`${ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`
+
+const buildPendingApprovalReminder = ({ ticketPath }) =>
+  `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\` without an approved plan. If the plan has been accepted, implementation starts this turn, or you are already doing implementation work, first move the ticket to \`.notes/in-progress/\`, set frontmatter \`status: "in-progress"\`, stamp \`started\` if needed, write a concise summary into \`## Approved Plan\`, and then keep \`## Work Log\` updated during the turn.`
+
 const extractPrompt = (payload) =>
   [
     payload.prompt,
@@ -518,9 +527,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    stdout.push(
-      `Project notes tracking: update \`${loadedTicket.ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`,
-    )
+    stdout.push(buildApprovalGuidance({ ticketPath: loadedTicket.ticketPath }))
     return { exitCode: 0 }
   }
 
@@ -567,7 +574,6 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    await saveSessionState({ path: sessionStatePath, state })
     if (host === 'claude') {
       stdout.push(
         `Project notes tracking: update \`${loadedTicket.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen enter plan mode and use \`$coordinator\` with that seed.`,
@@ -592,10 +598,12 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    if (loadedTicket.frontmatter.status === 'todo' && !hasApprovedPlan(loadedTicket.content)) {
+      stdout.push(buildPendingApprovalReminder({ ticketPath: loadedTicket.ticketPath }))
+    }
+
     if (hasApprovedPlan(loadedTicket.content)) {
-      stdout.push(
-        `Project notes tracking: keep \`${loadedTicket.ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`,
-      )
+      stdout.push(buildWorkLogReminder({ ticketPath: loadedTicket.ticketPath }))
     }
   }
 

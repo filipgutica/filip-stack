@@ -109,6 +109,8 @@ describe('project notes hook', () => {
   it('notes approve tells the model to update the ticket instead of mutating it in hook code', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot })
+    const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
+    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
 
     const result = await runHook({
       host: 'codex',
@@ -121,11 +123,61 @@ describe('project notes hook', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout.join('\n')).toContain('writing the approved plan into `## Approved Plan`')
     expect(result.stdout.join('\n')).toContain('moving the ticket into `.notes/in-progress/`')
-    const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
-    const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
     await expect(
       readFile(join(repoRoot, ticketPath), 'utf8'),
     ).resolves.toContain('Not started.')
+  })
+
+  it('reminds the model to promote a bound todo ticket before implementation work starts', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'continue implementing the notes workflow' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
+    expect(result.stdout.join('\n')).toContain('first move the ticket to `.notes/in-progress/`')
+    expect(result.stdout.join('\n')).toContain('write a concise summary into `## Approved Plan`')
+  })
+
+  it('keeps the todo reminder advisory while the session is still discussing the plan', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'let us review the plan before we start coding' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
+    expect(result.stdout.join('\n')).toContain('If the plan has been accepted, implementation starts this turn, or you are already doing implementation work')
+  })
+
+  it('does not emit the work-log reminder while the ticket is still todo with no approved plan', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'go ahead and implement' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
+    expect(result.stdout.join('\n')).not.toContain('Append a short Work Log entry in plain language')
   })
 
   it('notes complete tells the model to close the ticket instead of mutating it in hook code', async () => {
