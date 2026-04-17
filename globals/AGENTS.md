@@ -112,6 +112,7 @@ Treat the sections below as the default operating contract: think clearly, keep 
 ## Dependencies
 - Do not add dependencies unless clearly necessary.
 - If adding one, explain why existing tools are insufficient and prefer small, maintained libraries.
+- **NEVER EDIT LOCKFILES DIRECTLY** (e.g. `package-lock.json`, `pnpm-lock.yaml`, `yarn.lock`, `Cargo.lock`, `poetry.lock`, `uv.lock`, `Gemfile.lock`, `go.sum`). Update manifests and regenerate lockfiles via the package manager.
 
 ## Error Handling
 - Do not swallow errors silently.

@@ -113,12 +113,6 @@ Both Claude and Codex plugins include:
 - `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, simplification)
 - `project-notes-tracker` — local ticket lifecycle (create, plan, approve, complete)
 
-## Coordinator Hook
-
-Fires on `UserPromptSubmit`. Nudges the model toward the coordinator workflow
-on ordinary prompts. Stays quiet for `notes *` control commands and explicit
-coordinator skill invocations.
-
 ## Project Notes Hook
 
 Fires on `UserPromptSubmit` and `Stop`. Runtime state is repo-local:

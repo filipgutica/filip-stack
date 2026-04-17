@@ -72,7 +72,6 @@ const buildCodexPlugin = async ({
 }) => {
   const claudePluginRoot = join(repoRoot, 'plugins', PLUGIN_NAME)
   const codexRoot = join(repoRoot, 'plugin/codex')
-  const coordinatorHookScriptPath = join(outputRoot, 'scripts', 'coordinator-hook.mjs')
   const notesHookScriptPath = join(outputRoot, 'scripts', 'project-notes-hook.mjs')
 
   await rm(outputRoot, { recursive: true, force: true })
@@ -93,7 +92,6 @@ const buildCodexPlugin = async ({
     content: `${renderTemplate({
       template: hooksTemplate.trim(),
       replacements: {
-        COORDINATOR_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(coordinatorHookScriptPath)} codex UserPromptSubmit`),
         NOTES_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(notesHookScriptPath)} codex UserPromptSubmit`),
         NOTES_STOP_HOOK_COMMAND: JSON.stringify(`node ${JSON.stringify(notesHookScriptPath)} codex Stop`),
       },

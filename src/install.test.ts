@@ -60,7 +60,6 @@ describe('install/update plugins', () => {
     })
 
     await expect(readFile(join(homeDir, 'plugins/filip-stack/.codex-plugin/plugin.json'), 'utf8')).resolves.toContain('"name": "filip-stack"')
-    await expect(readFile(join(homeDir, 'plugins/filip-stack/hooks/hooks.json'), 'utf8')).resolves.toContain('coordinator-hook.mjs')
     await expect(readFile(join(homeDir, 'plugins/filip-stack/hooks/hooks.json'), 'utf8')).resolves.toContain('project-notes-hook.mjs')
     await expect(readFile(join(homeDir, '.agents/plugins/marketplace.json'), 'utf8')).resolves.toContain('"name": "filip-stack-local"')
     await expect(readFile(join(homeDir, '.codex/config.toml'), 'utf8')).resolves.toContain('[plugins."filip-stack@filip-stack-local"]')
