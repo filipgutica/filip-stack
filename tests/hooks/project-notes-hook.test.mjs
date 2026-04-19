@@ -93,7 +93,7 @@ describe('project notes hook', () => {
     await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain('"sessionId": "thread-1"')
   })
 
-  it('creates and binds a ticket from a prompt command', async () => {
+  it('creates a ticket and registers it in session runtime state without attaching until work begins', async () => {
     const repoRoot = await createGitRepoRoot()
 
     await bindTrackedTicket({ repoRoot })
@@ -102,7 +102,8 @@ describe('project notes hook', () => {
     expect(state).toContain('"ticketId": "')
     expect(state).toContain('"lastKnownTicketPath": ".notes/todo/')
     const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]
-    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('session-id: "thread-1"')
+    // Ticket has no session attached yet — sessions list is empty until work begins.
+    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('sessions: []')
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('ticket-id: "')
   })
 
@@ -262,7 +263,7 @@ describe('project notes hook', () => {
     expect(payload.decision).toBe('block')
     expect(payload.reason).toContain('before stopping')
     expect(payload.reason).toContain('`.notes/in-progress/`')
-    expect(payload.reason).toContain('`## Work Log`')
+    expect(payload.reason).toContain('Work Log entry')
   })
 
   it('Stop stays quiet when a bound todo ticket has no approved plan yet', async () => {
@@ -313,14 +314,14 @@ describe('project notes hook', () => {
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('Not completed.')
   })
 
-  it('notes use with no selector lists open tickets instead of failing', async () => {
+  it('notes track with no selector lists open tickets instead of failing', async () => {
     const repoRoot = await createGitRepoRoot()
     await bindTrackedTicket({ repoRoot })
 
     const result = await runHook({
       host: 'codex',
       event: 'UserPromptSubmit',
-      payload: { cwd: repoRoot, prompt: 'notes use:' },
+      payload: { cwd: repoRoot, prompt: 'notes track:' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-2' },
     })
@@ -351,7 +352,7 @@ describe('project notes hook', () => {
     const result = await runHook({
       host: 'codex',
       event: 'UserPromptSubmit',
-      payload: { cwd: repoRoot, prompt: 'notes use: done' },
+      payload: { cwd: repoRoot, prompt: 'notes track: done' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
@@ -516,7 +517,7 @@ describe('project notes hook', () => {
     expect(result.stderr).toEqual([])
   })
 
-  it('updates session-id in the ticket when a new session binds an existing ticket', async () => {
+  it('appends a new session to the ticket sessions list when tracking an existing ticket', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
     await writeTicketFixture({
@@ -531,15 +532,122 @@ describe('project notes hook', () => {
     const result = await runHook({
       host: 'codex',
       event: 'UserPromptSubmit',
-      payload: { cwd: repoRoot, prompt: 'notes use: 2026-04-08-track-hook-work' },
+      payload: { cwd: repoRoot, prompt: 'notes track: 2026-04-08-track-hook-work' },
       cwd: repoRoot,
       env: { CODEX_THREAD_ID: 'thread-2' },
     })
 
     expect(result.exitCode).toBe(0)
-    await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('session-id: "thread-2"')
+    // Legacy session-id migrated to sessions list; thread-2 appended alongside it.
+    // The sessions JSON is stored with escaped quotes inside the YAML string value.
+    const ticketContent = await readFile(join(repoRoot, ticketPath), 'utf8')
+    expect(ticketContent).toContain('\\"id\\":\\"old-session\\"')
+    expect(ticketContent).toContain('\\"id\\":\\"thread-2\\"')
     await expect(readFile(join(repoRoot, '.notes/.runtime/thread-2.json'), 'utf8')).resolves.toContain(
       '"ticketId": "2026-04-08-track-hook-work"',
     )
+  })
+
+  it('sessions list round-trips correctly after multiple writes', async () => {
+    const repoRoot = await createGitRepoRoot()
+    await bindTrackedTicket({ repoRoot })
+
+    // First work prompt: lazy-attaches thread-1 into sessions list.
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'start working' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    // Second session attaches via notes track:.
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes track:' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-2' },
+    })
+
+    const stateFile = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
+    const ticketPath = JSON.parse(stateFile).lastKnownTicketPath
+
+    // Attach thread-2 via notes track: <id>.
+    const ticketId = JSON.parse(stateFile).ticketId
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: `notes track: ${ticketId}` },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-2' },
+    })
+
+    // Second work prompt on thread-1: must still read thread-1 correctly after two writes.
+    const result = await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'keep working' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    expect(result.exitCode).toBe(0)
+    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
+    // Both session IDs must survive the multi-write round-trip.
+    const ticketContent = await readFile(join(repoRoot, ticketPath), 'utf8')
+    expect(ticketContent).toContain('\\"id\\":\\"thread-1\\"')
+    expect(ticketContent).toContain('\\"id\\":\\"thread-2\\"')
+  })
+
+  it('detaches session from old ticket when switching to a new ticket', async () => {
+    const repoRoot = await createGitRepoRoot()
+    // Create two tickets and attach thread-1 to the first.
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes create: first ticket' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+    const firstState = JSON.parse(await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8'))
+    const firstTicketPath = firstState.lastKnownTicketPath
+
+    // Trigger lazy attach on the first ticket.
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'work on first ticket' },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    // Create a second ticket.
+    await runHook({
+      host: 'claude',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: 'notes create: second ticket', session_id: 'thread-other' },
+      cwd: repoRoot,
+      env: {},
+    })
+    const allTodo = await (await import('node:fs/promises')).readdir(join(repoRoot, '.notes/todo'))
+    const secondTicketFile = allTodo.find((f) => f.includes('second-ticket'))
+    const secondTicketId = secondTicketFile?.replace('.md', '')
+
+    // Switch thread-1 to the second ticket.
+    await runHook({
+      host: 'codex',
+      event: 'UserPromptSubmit',
+      payload: { cwd: repoRoot, prompt: `notes track: ${secondTicketId}` },
+      cwd: repoRoot,
+      env: { CODEX_THREAD_ID: 'thread-1' },
+    })
+
+    // thread-1 must be removed from the first ticket's sessions list.
+    const firstTicketContent = await readFile(join(repoRoot, firstTicketPath), 'utf8')
+    expect(firstTicketContent).not.toContain('\\"id\\":\\"thread-1\\"')
+    // thread-1 must appear in the second ticket.
+    const secondTicketContent = await readFile(join(repoRoot, `.notes/todo/${secondTicketFile}`), 'utf8')
+    expect(secondTicketContent).toContain('\\"id\\":\\"thread-1\\"')
   })
 })

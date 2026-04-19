@@ -120,7 +120,7 @@ Fires on `UserPromptSubmit` and `Stop`. Runtime state is repo-local:
 - `.notes/todo/`, `.notes/in-progress/`, `.notes/complete/` — tracked Markdown tickets
 - `.notes/.runtime/` — machine-managed session state (gitignored)
 
-Commands: `notes create: <title>`, `notes use: <ticket>`, `notes plan: <seed>`,
+Commands: `notes create: <title>`, `notes track: <ticket>`, `notes plan: <seed>`,
 `notes approve`, `notes complete`.
 
 ## CI

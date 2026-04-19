@@ -27,22 +27,39 @@ When the shared notes hooks are installed:
 - `Stop` should block completion when a bound ticket is still `todo` but already has a real approved plan, and require the model to transition it to `.notes/in-progress/` plus update `## Approved Plan` and `## Work Log` before ending the turn.
 - `UserPromptSubmit` should stay quiet when there is no bound ticket and the prompt is not an explicit `notes *` command.
 
-The current session should track exactly one `todo` or `in-progress` ticket at a time.
+Each session tracks at most one `todo` or `in-progress` ticket at a time. A ticket may be attached to multiple sessions (across hosts or within the same host), allowing Claude and Codex sessions to collaborate on the same work.
 
 Session continuity rules:
 
 - A true host resume should keep the same ticket/session link when the host preserves the same session ID.
-- A fresh session should default to new work and therefore a new ticket.
-- If the user wants to continue an old ticket from a fresh session, they should explicitly opt in with `notes use: <ticket>`.
+- A fresh session starts unbound — `notes create:` does not auto-bind.
+- To attach a session to an existing ticket, use `notes track: <ticket>`. Multiple sessions may attach to the same ticket.
+- Switching to a different ticket via `notes track:` detaches the session from its previous ticket first.
 
 Reserved prompt commands:
 
-- `notes create: <title>` creates a new ticket in `.notes/todo/` and binds the session to it.
-- `notes use: <ticket>` binds the session to an existing `todo` or `in-progress` ticket. Match by relative path, filename stem, or title.
-- `notes use:` with no selector should list open tickets instead of guessing.
+- `notes create: <title>` creates a new ticket in `.notes/todo/`. It does **not** bind the creating session — use `notes track:` to attach a session.
+- `notes track: <ticket>` attaches the current session to an existing `todo` or `in-progress` ticket. Match by relative path, filename stem, or title. Multiple sessions may track the same ticket. Switches the session away from any previously tracked ticket.
+- `notes track:` with no selector should list open tickets instead of guessing.
 - `notes plan: <seed>` tells the model to add the planning seed to the bound ticket and start a coordinator-driven planning workflow. It does not approve the plan yet.
 - `notes approve` tells the model to write the approved plan into `## Approved Plan`, stamp `started`, and move the ticket to `.notes/in-progress/`.
 - `notes complete` tells the model to close out the bound ticket by writing `## Completion Summary`, stamping `completed`, and moving it to `.notes/complete/`.
+
+Example multi-session workflow:
+
+```
+# Claude session: seed planning tickets, no session attached yet
+notes create: redesign auth middleware
+notes create: migrate legacy session tokens
+
+# Claude session later: start planning — session is lazily attached when work begins
+notes track: 2026-04-18-redesign-auth-middleware
+notes plan: tighten the auth flow
+
+# Codex session (separate terminal): attach to the same ticket
+notes track: 2026-04-18-redesign-auth-middleware
+# Both sessions now track the same ticket; each appends [claude]/[codex] Work Log entries.
+```
 
 Planning flow rules:
 
@@ -63,7 +80,7 @@ Each ticket must start with YAML frontmatter:
 ---
 title: "<ticket title>"
 ticket-id: "<stable ticket id>"
-session-id: "<current bound session id>"
+sessions: [{"id":"<session-id>","host":"claude|codex","attached-at":"<ISO timestamp>"}]
 status: "todo"
 created: "YYYY-MM-DD"
 started: null
@@ -71,6 +88,8 @@ completed: null
 tags: ["short", "kebab", "tags"]
 ---
 ```
+
+`sessions` is a JSON array. New tickets start with `sessions: []`. A session is written into the list when it first does real work on the ticket — running `notes track:`, `notes plan:`, `notes approve`, `notes complete`, or sending any normal work prompt — not at ticket creation. The `Stop` hook is read-only and does not trigger attachment. Multiple sessions can be in the list simultaneously. A session is removed when it switches to a different ticket via `notes track:`. Legacy tickets with a single `session-id: "..."` field are automatically migrated to the list format on first write; the legacy field is cleared at that point.
 
 Use these sections in order:
 
@@ -93,10 +112,10 @@ Use these sections in order:
 When creating a ticket:
 
 - Create it in `.notes/todo/`.
-- Set `ticket-id` to a stable identifier that survives file moves, `session-id` to the currently bound session, `status: "todo"`, `created` to the current date, and `started`/`completed` to `null`.
+- Set `ticket-id` to a stable identifier that survives file moves, `sessions` to `[]`, `status: "todo"`, `created` to the current date, and `started`/`completed` to `null`.
 - Put the user's initial problem statement, constraints, context, and unresolved planning questions under `## Planning Seed`.
 - Leave `## Approved Plan` as `Not started.`, `## Completion Criteria` as `Not defined yet.`, `## Work Log` as `No work logged yet.`, and `## Completion Summary` as `Not completed.` unless real content already exists.
-- If hooks are installed, bind the current session to the new ticket immediately.
+- Sessions are not bound on creation. Use `notes track: <ticket>` to attach a session.
 
 When a plan is approved:
 
@@ -104,7 +123,7 @@ When a plan is approved:
 - Set `status: "in-progress"` and `started` to the current date.
 - Move the file to `.notes/in-progress/`.
 - Preserve the planning seed rather than replacing it.
-- Preserve `ticket-id` across moves and update `session-id` if the ticket is now bound to a different session.
+- Preserve `ticket-id` and `sessions` list unchanged across moves.
 - Define explicit `## Completion Criteria` once the approved plan is known so the agent can tell when the ticket should move to `.notes/complete/`.
 - Hooks should treat placeholder content such as `Not started.` as "no approved plan yet" and continue blocking mutating work until real plan content exists.
 - `notes plan:` alone should not lift the gate.
@@ -112,7 +131,7 @@ When a plan is approved:
 
 When doing work:
 
-- Append dated entries under `## Work Log`.
+- Append dated entries under `## Work Log`, prefixed with the host tag: `[claude]` or `[codex]`.
 - Record material actions, decisions, validation, files or areas touched, and tradeoffs that would help future work.
 - Keep entries factual and concise. Do not paste transcript dumps.
 - Hook-driven logging should stay lightweight: use prompt-time hooks to signal that a Work Log update is needed, then let the model write the actual note in plain language during the turn.
@@ -124,7 +143,7 @@ When completing work:
 - Add a concise summary under `## Completion Summary` covering what changed, important tradeoffs, validation, and lessons learned.
 - Set `status: "complete"` and `completed` to the current date.
 - Move the file to `.notes/complete/`.
-- Preserve `ticket-id` across moves and update `session-id` if the closing session changed.
+- Preserve `ticket-id` and `sessions` list unchanged across moves.
 - Do not complete a ticket just because one implementation round finished or the current criteria appear satisfied; leave it in `.notes/in-progress/` until the user explicitly closes it out.
 
 ## Guardrails
@@ -134,4 +153,4 @@ When completing work:
 - Prefer a short useful history over exhaustive logs.
 - If the repo has local `AGENTS.md` guidance for `.notes`, follow it unless it conflicts with this lifecycle contract.
 - Ignore completed tickets when suggesting candidates for a new session binding.
-- Treat ticket frontmatter as the source of truth for durable binding: `ticket-id` is the stable identity, `session-id` is the currently bound session, and runtime files should only cache the last known path.
+- Treat ticket frontmatter as the source of truth for durable binding: `ticket-id` is the stable identity, `sessions` is the list of attached sessions, and runtime files should only cache the last known path.

@@ -60,6 +60,11 @@ Treat the sections below as the default operating contract: think clearly, keep 
 - Keep the main thread responsible for coordination, review, and final acceptance.
 - Do not mark work complete until the result has been verified.
 
+## Search Defaults
+- When searching code, first try `rg`.
+- When locating files, first try `rg --files`.
+- Do not use recursive `grep` for repository search unless `rg` is unavailable.
+
 ## Verification Before Done
 - Before marking work complete, run `typecheck`, `lint`, `stylelint`, and applicable tests, or clearly explain why a step does not apply.
 - Verify behavior before claiming success.

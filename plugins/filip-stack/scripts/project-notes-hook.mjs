@@ -166,6 +166,22 @@ const parseFrontmatter = (content) => {
   )
 }
 
+// Read the sessions list from frontmatter. Handles both the new `sessions: [...]`
+// field and legacy `session-id: "..."` tickets (lazy migration on read).
+// parseFrontmatter strips outer quotes but does not unescape inner \" sequences,
+// so we unescape before JSON.parse when the value went through serializeFrontmatterValue.
+const parseSessions = (frontmatter) => {
+  const raw = frontmatter.sessions
+  if (raw) {
+    try { return JSON.parse(raw.replace(/\\"/g, '"')) } catch {}
+  }
+  const legacyId = frontmatter['session-id']
+  if (legacyId) {
+    return [{ id: legacyId, host: 'unknown', 'attached-at': frontmatter.created || null }]
+  }
+  return []
+}
+
 const serializeFrontmatterValue = (value) => {
   if (value === null) return 'null'
   if (typeof value === 'string') return `"${value.replace(/"/g, '\\"')}"`
@@ -260,7 +276,9 @@ const findTicketById = async ({ repoRoot, ticketId }) => {
 
 const findOpenTicketBySessionId = async ({ repoRoot, sessionId }) => {
   const tickets = await loadAllTickets({ repoRoot, directories: ['todo', 'in-progress'] })
-  const matches = tickets.filter(({ frontmatter }) => frontmatter['session-id'] === sessionId)
+  const matches = tickets.filter(({ frontmatter }) =>
+    parseSessions(frontmatter).some((s) => s.id === sessionId),
+  )
 
   return matches.length === 1 ? matches[0] : null
 }
@@ -306,24 +324,54 @@ const ensureTicketIdentity = async ({ ticket }) => {
   }
 }
 
-const updateTicketSessionId = async ({ ticket, sessionId }) => {
-  let ensuredTicket = await ensureTicketIdentity({ ticket })
+// Append a session entry to the ticket's sessions list. Idempotent — if the
+// session is already attached, the ticket is returned unchanged. Migrates legacy
+// `session-id` tickets to the new sessions list format on first write.
+const attachSessionToTicket = async ({ ticket, sessionId, host }) => {
+  const ensuredTicket = await ensureTicketIdentity({ ticket })
+  const sessions = parseSessions(ensuredTicket.frontmatter)
 
-  if (ensuredTicket.frontmatter['session-id'] === sessionId) return ensuredTicket
+  if (sessions.some((s) => s.id === sessionId)) return ensuredTicket
 
-  const nextContent = updateFrontmatterFields({
-    content: ensuredTicket.content,
-    fields: { 'session-id': sessionId },
-  })
+  // Include any legacy session as the first entry when migrating, then clear the
+  // legacy `session-id` field so the frontmatter doesn't carry both formats.
+  const nextSessions = [...sessions, { id: sessionId, host, 'attached-at': new Date().toISOString() }]
+  const fields = { sessions: JSON.stringify(nextSessions) }
+  if (ensuredTicket.frontmatter['session-id']) fields['session-id'] = null
+  const nextContent = updateFrontmatterFields({ content: ensuredTicket.content, fields })
   await writeTicket({ absolutePath: ensuredTicket.absolutePath, content: nextContent })
 
   return {
     ...ensuredTicket,
     content: nextContent,
-    frontmatter: {
-      ...ensuredTicket.frontmatter,
-      'session-id': sessionId,
-    },
+    frontmatter: { ...parseFrontmatter(nextContent) },
+  }
+}
+
+// Attach the session to the ticket only if it isn't already in the sessions list.
+// Called lazily when the session first does real work rather than at ticket creation.
+const ensureSessionAttached = ({ ticket, sessionId, host }) =>
+  parseSessions(ticket.frontmatter).some((s) => s.id === sessionId)
+    ? Promise.resolve(ticket)
+    : attachSessionToTicket({ ticket, sessionId, host })
+
+// Remove a session entry from the ticket's sessions list.
+const detachSessionFromTicket = async ({ ticket, sessionId }) => {
+  const sessions = parseSessions(ticket.frontmatter)
+  const nextSessions = sessions.filter((s) => s.id !== sessionId)
+
+  if (nextSessions.length === sessions.length) return ticket
+
+  const nextContent = updateFrontmatterFields({
+    content: ticket.content,
+    fields: { sessions: JSON.stringify(nextSessions) },
+  })
+  await writeTicket({ absolutePath: ticket.absolutePath, content: nextContent })
+
+  return {
+    ...ticket,
+    content: nextContent,
+    frontmatter: { ...parseFrontmatter(nextContent) },
   }
 }
 
@@ -367,15 +415,15 @@ const listOpenTickets = async ({ repoRoot }) => {
       status: frontmatter.status || dirname(ticketPath),
       ticketPath,
       ticketId: frontmatter['ticket-id'] || null,
-      sessionId: frontmatter['session-id'] || null,
+      sessions: parseSessions(frontmatter),
       hasApprovedPlan: hasApprovedPlan(content),
     }))
     .sort((left, right) => left.ticketPath.localeCompare(right.ticketPath))
 }
 
-// Create a new todo ticket using the shared notes contract and bind the active
-// session to it through the runtime state managed elsewhere in this hook file.
-const createTicket = async ({ repoRoot, title, planningSeed, sessionId }) => {
+// Create a new todo ticket. Sessions are not bound on creation; use
+// `notes track: <id>` to explicitly attach a session to the ticket.
+const createTicket = async ({ repoRoot, title, planningSeed }) => {
   const date = toDateStamp()
   const directory = join(repoRoot, '.notes/todo')
   const slug = slugify(title)
@@ -392,7 +440,7 @@ const createTicket = async ({ repoRoot, title, planningSeed, sessionId }) => {
   const content = `---\n` +
     `title: "${title.replace(/"/g, '\\"')}"\n` +
     `ticket-id: "${ticketId}"\n` +
-    `session-id: "${sessionId}"\n` +
+    `sessions: []\n` +
     `status: "todo"\n` +
     `created: "${date}"\n` +
     `started: null\n` +
@@ -432,10 +480,10 @@ const matchTicket = ({ tickets, selector }) => {
 }
 
 const buildApprovalGuidance = ({ ticketPath }) =>
-  `Project notes tracking: update \`${ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`
+  `Project notes tracking: update \`${ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and \`sessions\` list unchanged.`
 
-const buildWorkLogReminder = ({ ticketPath }) =>
-  `Project notes tracking: keep \`${ticketPath}\` updated during this turn. Append a short Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`
+const buildWorkLogReminder = ({ ticketPath, host }) =>
+  `Project notes tracking: keep \`${ticketPath}\` updated during this turn. Append a short \`[${host}]\` Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`
 
 const buildPendingApprovalReminder = ({ ticketPath }) =>
   `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\` without an approved plan. If the plan has been accepted, implementation starts this turn, or you are already doing implementation work, first move the ticket to \`.notes/in-progress/\`, set frontmatter \`status: "in-progress"\`, stamp \`started\` if needed, write a concise summary into \`## Approved Plan\`, and then keep \`## Work Log\` updated during the turn.`
@@ -452,8 +500,8 @@ const buildStopBlockPayload = ({ reason }) =>
     reason,
   })
 
-const buildStopTransitionReason = ({ ticketPath }) =>
-  `Project notes tracking: before stopping, update \`${ticketPath}\` by moving it to \`.notes/in-progress/\`, setting frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, ensuring \`## Approved Plan\` reflects the accepted plan, and appending a short \`## Work Log\` entry for this implementation turn. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`
+const buildStopTransitionReason = ({ ticketPath, host }) =>
+  `Project notes tracking: before stopping, update \`${ticketPath}\` by moving it to \`.notes/in-progress/\`, setting frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, ensuring \`## Approved Plan\` reflects the accepted plan, and appending a short \`[${host}]\` Work Log entry for this implementation turn. Preserve \`ticket-id\` and \`sessions\` list unchanged.`
 
 const extractPrompt = (payload) =>
   [
@@ -491,23 +539,22 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       repoRoot,
       title,
       planningSeed: `Created from session prompt.\n\nOriginal request: ${title}`,
-      sessionId: state.sessionId,
     })
     state.ticketId = createdTicket.ticketId
     state.lastKnownTicketPath = createdTicket.ticketPath
     await saveSessionState({ path: sessionStatePath, state })
-    stdout.push(`Project notes tracking: created and bound ticket \`${createdTicket.ticketPath}\`.`)
+    stdout.push(`Project notes tracking: created ticket \`${createdTicket.ticketPath}\`. This session will be attached to it when work begins. Use \`notes track: ${createdTicket.ticketId}\` to attach another session.`)
     return { exitCode: 0 }
   }
 
-  if (prompt.toLowerCase().startsWith('notes use:')) {
-    const selector = prompt.slice('notes use:'.length).trim()
+  if (prompt.toLowerCase().startsWith('notes track:')) {
+    const selector = prompt.slice('notes track:'.length).trim()
     const tickets = await listOpenTickets({ repoRoot })
 
     if (selector === '') {
       const summary = tickets.length === 0
-        ? 'Project notes tracking: there are no open tickets to bind. Use `notes create: <title>` to start one.'
-        : `Project notes tracking: open tickets: ${tickets.map(({ ticketPath }) => `\`${ticketPath}\``).join(', ')}. Use \`notes use: <ticket>\` with one of these paths, a filename stem, or a title.`
+        ? 'Project notes tracking: there are no open tickets to track. Use `notes create: <title>` to start one.'
+        : `Project notes tracking: open tickets: ${tickets.map(({ ticketPath }) => `\`${ticketPath}\``).join(', ')}. Use \`notes track: <ticket>\` with one of these paths, a filename stem, or a title.`
       stdout.push(summary)
       return { exitCode: 0 }
     }
@@ -519,10 +566,18 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    // If already bound to a different ticket, detach from it first.
+    if (state.ticketId !== null && state.ticketId !== match.ticketId) {
+      const previousTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+      if (previousTicket !== null) {
+        await detachSessionFromTicket({ ticket: previousTicket, sessionId: state.sessionId })
+      }
+    }
+
     let loadedTicket = await loadTicket({ repoRoot, ticketPath: match.ticketPath })
-    loadedTicket = await updateTicketSessionId({ ticket: loadedTicket, sessionId: state.sessionId })
+    loadedTicket = await attachSessionToTicket({ ticket: loadedTicket, sessionId: state.sessionId, host })
     await bindStateToTicket({ state, sessionStatePath, ticket: loadedTicket })
-    stdout.push(`Project notes tracking: bound this session to \`${match.ticketPath}\`.`)
+    stdout.push(`Project notes tracking: this session is now tracking \`${match.ticketPath}\`.`)
     return { exitCode: 0 }
   }
 
@@ -533,7 +588,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+    let loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
       state.ticketId = null
       state.lastKnownTicketPath = null
@@ -542,6 +597,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    loadedTicket = await ensureSessionAttached({ ticket: loadedTicket, sessionId: state.sessionId, host })
     stdout.push(buildApprovalGuidance({ ticketPath: loadedTicket.ticketPath }))
     return { exitCode: 0 }
   }
@@ -553,7 +609,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+    let loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
       state.ticketId = null
       state.lastKnownTicketPath = null
@@ -562,8 +618,9 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    loadedTicket = await ensureSessionAttached({ ticket: loadedTicket, sessionId: state.sessionId, host })
     stdout.push(
-      `Project notes tracking: update \`${loadedTicket.ticketPath}\` by writing the close-out summary into \`## Completion Summary\`, confirming the completion criteria are satisfied, setting \`status: "complete"\`, stamping \`completed: "${toDateStamp()}"\`, and moving the ticket into \`.notes/complete/\`. Preserve \`ticket-id\` and update \`session-id\` if this session changed.`,
+      `Project notes tracking: update \`${loadedTicket.ticketPath}\` by writing the close-out summary into \`## Completion Summary\`, confirming the completion criteria are satisfied, setting \`status: "complete"\`, stamping \`completed: "${toDateStamp()}"\`, and moving the ticket into \`.notes/complete/\`. Preserve \`ticket-id\` and \`sessions\` list unchanged.`,
     )
     return { exitCode: 0 }
   }
@@ -580,7 +637,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
-    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+    let loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
       state.ticketId = null
       state.lastKnownTicketPath = null
@@ -588,6 +645,8 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       stderr.push('Project notes tracking: the bound ticket no longer exists. Bind or create a new ticket.')
       return { exitCode: 1 }
     }
+
+    loadedTicket = await ensureSessionAttached({ ticket: loadedTicket, sessionId: state.sessionId, host })
 
     if (host === 'claude') {
       stdout.push(
@@ -604,7 +663,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
   await restoreSessionBinding({ repoRoot, state, sessionStatePath })
 
   if (state.ticketId !== null || state.lastKnownTicketPath !== null) {
-    const loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
+    let loadedTicket = await loadBoundTicket({ repoRoot, state, sessionStatePath })
     if (loadedTicket === null) {
       state.ticketId = null
       state.lastKnownTicketPath = null
@@ -613,6 +672,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       return { exitCode: 1 }
     }
 
+    loadedTicket = await ensureSessionAttached({ ticket: loadedTicket, sessionId: state.sessionId, host })
     stdout.push(buildBoundTicketReminder({ ticketPath: loadedTicket.ticketPath }))
 
     if (loadedTicket.frontmatter.status === 'todo') {
@@ -624,14 +684,14 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
     }
 
     if (hasApprovedPlan(loadedTicket.content)) {
-      stdout.push(buildWorkLogReminder({ ticketPath: loadedTicket.ticketPath }))
+      stdout.push(buildWorkLogReminder({ ticketPath: loadedTicket.ticketPath, host }))
     }
   }
 
   return { exitCode: 0 }
 }
 
-const handleStop = async ({ repoRoot, state, sessionStatePath, stdout, stderr }) => {
+const handleStop = async ({ host, repoRoot, state, sessionStatePath, stdout, stderr }) => {
   await restoreSessionBinding({ repoRoot, state, sessionStatePath })
 
   if (state.ticketId === null && state.lastKnownTicketPath === null) {
@@ -648,7 +708,7 @@ const handleStop = async ({ repoRoot, state, sessionStatePath, stdout, stderr })
   }
 
   if (loadedTicket.frontmatter.status === 'todo' && hasApprovedPlan(loadedTicket.content)) {
-    stdout.push(buildStopBlockPayload({ reason: buildStopTransitionReason({ ticketPath: loadedTicket.ticketPath }) }))
+    stdout.push(buildStopBlockPayload({ reason: buildStopTransitionReason({ ticketPath: loadedTicket.ticketPath, host }) }))
   }
 
   return { exitCode: 0 }
@@ -676,7 +736,7 @@ export const runHook = async ({
   }
 
   if (event === 'Stop') {
-    const result = await handleStop({ repoRoot, state, sessionStatePath, stdout, stderr })
+    const result = await handleStop({ host, repoRoot, state, sessionStatePath, stdout, stderr })
     return { ...result, stdout, stderr }
   }
 
