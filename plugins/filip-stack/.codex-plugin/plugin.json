@@ -1,6 +1,6 @@
 {
   "name": "filip-stack",
-  "version": "0.2.2",
+  "version": "0.3.0",
   "description": "Personal Codex plugin bundle for coordinator workflows and notes tracking.",
   "author": {
     "name": "Filip Gutica"
@@ -11,7 +11,10 @@
     "displayName": "Filip Stack",
     "shortDescription": "Coordinator workflows and notes tracking.",
     "category": "Productivity",
-    "capabilities": ["Interactive", "Write"],
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
     "defaultPrompt": [
       "For non-trivial engineering work, first do a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, run a critic pass before final acceptance, use subagents for codebase exploration and adversarial review in Plan Mode, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
       "Use $filip-stack:project-notes-tracker to create and manage a local ticket."

@@ -1,3 +1,17 @@
+# [0.3.0](https://github.com/filipgutica/filip-stack/compare/v0.2.1...v0.3.0) (2026-04-22)
+
+
+### Bug Fixes
+
+* simplify coordinator ([a4de31a](https://github.com/filipgutica/filip-stack/commit/a4de31a528befb89f868c729db99df839acae64c))
+* tighten notes hook reminders and stop backstop ([9bc885b](https://github.com/filipgutica/filip-stack/commit/9bc885b20768f0eeb19c069615b86aafac4b0091))
+
+
+### Features
+
+* multi-session support for project-notes-tracker ([e6bf4db](https://github.com/filipgutica/filip-stack/commit/e6bf4db9496468a7b4afe6294e9a98a3f9297a1d))
+* update codex to be a proper repo plugin ([ff8e684](https://github.com/filipgutica/filip-stack/commit/ff8e684ffdb3939f0774cc3d8c6a80202267570c))
+
 ## [0.2.2](https://github.com/filipgutica/filip-stack/compare/v0.2.1...v0.2.2) (2026-04-17)
 
 
