@@ -482,18 +482,6 @@ const matchTicket = ({ tickets, selector }) => {
 const buildApprovalGuidance = ({ ticketPath }) =>
   `Project notes tracking: update \`${ticketPath}\` by writing the approved plan into \`## Approved Plan\`, updating frontmatter status to \`in-progress\`, setting \`started: "${toDateStamp()}"\` if needed, and moving the ticket into \`.notes/in-progress/\`. Preserve \`ticket-id\` and \`sessions\` list unchanged.`
 
-const buildWorkLogReminder = ({ ticketPath, host }) =>
-  `Project notes tracking: keep \`${ticketPath}\` updated during this turn. Append a short \`[${host}]\` Work Log entry in plain language when you complete a meaningful chunk of work, and do not include raw tool commands. Leave the ticket in \`.notes/in-progress/\` until the user explicitly says to close out the session or uses \`notes complete\`.`
-
-const buildPendingApprovalReminder = ({ ticketPath }) =>
-  `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\` without an approved plan. If the plan has been accepted, implementation starts this turn, or you are already doing implementation work, first move the ticket to \`.notes/in-progress/\`, set frontmatter \`status: "in-progress"\`, stamp \`started\` if needed, write a concise summary into \`## Approved Plan\`, and then keep \`## Work Log\` updated during the turn.`
-
-const buildBoundTicketReminder = ({ ticketPath }) =>
-  `Project notes tracking: keep the bound ticket \`${ticketPath}\` up to date during this turn.`
-
-const buildTodoTransitionNudge = ({ ticketPath }) =>
-  `Project notes tracking: \`${ticketPath}\` is still in \`.notes/todo/\`. Double-check whether this ticket should now move to \`.notes/in-progress/\`, have \`status: "in-progress"\`, get \`started\` stamped if needed, and be updated in \`## Approved Plan\` and \`## Work Log\`.`
-
 const buildStopBlockPayload = ({ reason }) =>
   JSON.stringify({
     decision: 'block',
@@ -673,19 +661,6 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
     }
 
     loadedTicket = await ensureSessionAttached({ ticket: loadedTicket, sessionId: state.sessionId, host })
-    stdout.push(buildBoundTicketReminder({ ticketPath: loadedTicket.ticketPath }))
-
-    if (loadedTicket.frontmatter.status === 'todo') {
-      stdout.push(buildTodoTransitionNudge({ ticketPath: loadedTicket.ticketPath }))
-    }
-
-    if (loadedTicket.frontmatter.status === 'todo' && !hasApprovedPlan(loadedTicket.content)) {
-      stdout.push(buildPendingApprovalReminder({ ticketPath: loadedTicket.ticketPath }))
-    }
-
-    if (hasApprovedPlan(loadedTicket.content)) {
-      stdout.push(buildWorkLogReminder({ ticketPath: loadedTicket.ticketPath, host }))
-    }
   }
 
   return { exitCode: 0 }

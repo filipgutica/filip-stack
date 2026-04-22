@@ -2,7 +2,7 @@
 title: "hooks test"
 ticket-id: "2026-04-22-hooks-test"
 sessions: "[{\"id\":\"019db6e0-e592-7da1-a3ac-7097c8e99cbb\",\"host\":\"codex\",\"attached-at\":\"2026-04-22T21:10:35.724Z\"}]"
-status: "todo"
+status: "in-progress"
 created: "2026-04-22"
 started: "2026-04-22"
 completed: null
@@ -29,6 +29,8 @@ Add a dedicated `filip-stack codex-hooks` CLI command that installs or updates t
 ## Work Log
 
 - 2026-04-22 [codex] Added the `codex-hooks` CLI command and hook-sync logic, covered the new behavior with CLI and sync tests, documented the manual Codex hook setup path, verified `notes create:` works after installing hooks, and tightened coordinator guidance to explicitly use `gpt-5.4-mini` for Codex subagents.
+- 2026-04-22 [codex] Committed and pushed the change set on `codex/codex-hooks-command`, and documented that Codex marketplace updates should be pulled with `codex plugin marketplace upgrade filip-stack` while the global notes hooks are refreshed separately with `filip-stack codex-hooks`.
+- 2026-04-22 [codex] Removed noisy visible `UserPromptSubmit` reminder output for ordinary Codex prompts while preserving explicit `notes *` command responses and `Stop` hook enforcement, and updated the hook tests plus notes-skill contract to match the quieter behavior.
 
 ## Completion Summary
 
