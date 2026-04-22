@@ -74,7 +74,15 @@ The Codex marketplace version is stamped from `package.json` during the release 
 plugins/filip-stack/.codex-plugin/plugin.json
 ```
 
-> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path. If Codex ignores the plugin `hooks` field or `${CODEX_PLUGIN_ROOT}`, the project-notes hook will simply not run in Codex yet.
+Install the global Codex notes hooks separately:
+
+```sh
+filip-stack codex-hooks
+```
+
+This command installs or updates `~/.codex/hooks.json` so reserved project-notes prompts such as `notes create: <title>` and `notes plan: <seed>` route through Filip Stack's hook runtime even if Codex does not honor plugin-bundled hooks consistently.
+
+> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path, but `filip-stack codex-hooks` is the reliable setup path for the notes hook flow.
 
 ## CLI
 
@@ -85,6 +93,13 @@ node dist/cli.js setup
 node dist/cli.js setup --rc-file ~/.zshrc
 node dist/cli.js setup --alias stack-sync
 node dist/cli.js setup --dry-run
+```
+
+Install or update the global Codex notes hooks:
+
+```sh
+filip-stack codex-hooks
+filip-stack codex-hooks --dry-run
 ```
 
 Sync global guidance files:

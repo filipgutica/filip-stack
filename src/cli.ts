@@ -8,7 +8,7 @@ import { hideBin } from 'yargs/helpers'
 
 import { setupShellAlias } from './setup.js'
 import { renderMarkdown } from './markdown.js'
-import { syncGlobals } from './sync.js'
+import { syncCodexHooks, syncGlobals } from './sync.js'
 
 export type RunCliOptions = {
   argv: string[]
@@ -34,9 +34,11 @@ const parseArgs = async (argv: string[]): Promise<ParsedArgs> => {
     .usage(
       [
         'Usage: filip-stack [--globals] [--dry-run]',
+        '       filip-stack codex-hooks [--dry-run]',
         '       filip-stack setup [--rc-file ~/.zshrc] [--alias filip-stack] [--dry-run]',
       ].join('\n'),
     )
+    .command('codex-hooks', 'Install or update the global Codex notes hooks')
     .command('setup', 'Add a shell alias so this CLI can be called from anywhere')
     .option('globals', {
       type: 'boolean',
@@ -101,6 +103,53 @@ export const runCli = async ({
         dryRun: Boolean(parsed.dryRun),
         log: (message) => log(chalk.cyan(message)),
       })
+
+      return 0
+    }
+
+    if (command === 'codex-hooks') {
+      if (hasSyncFlags(parsed)) {
+        throw new Error('codex-hooks cannot be combined with sync scope flags')
+      }
+      if (parsed.rcFile !== undefined || parsed.alias !== undefined) {
+        throw new Error('--rc-file and --alias can only be used with setup')
+      }
+
+      const actions = await syncCodexHooks({
+        repoRoot,
+        homeDir,
+        dryRun: Boolean(parsed.dryRun),
+      })
+
+      if (parsed.dryRun) {
+        log(
+          renderMarkdown(
+            [
+              '# Dry Run',
+              '',
+              'No files were changed. Selected scope: Codex Hooks.',
+              '',
+              '## Codex Hooks',
+              '- Source: `plugins/filip-stack/scripts/project-notes-hook.mjs`',
+              '- Destination: `~/.codex/hooks.json`',
+              `- Planned actions: ${actions.length}`,
+            ].join('\n'),
+          ),
+        )
+      } else {
+        log(
+          renderMarkdown(
+            [
+              '# Sync Complete',
+              '',
+              'Synced Codex Hooks.',
+              '',
+              '## Codex Hooks',
+              '- Updated: `~/.codex/hooks.json`',
+            ].join('\n'),
+          ),
+        )
+      }
 
       return 0
     }

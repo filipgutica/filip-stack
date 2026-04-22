@@ -1,5 +1,7 @@
-import { copyFile, mkdir, stat } from 'node:fs/promises'
+import { copyFile, mkdir, stat, writeFile } from 'node:fs/promises'
 import { dirname, join } from 'node:path'
+
+import { readOptionalFile } from './fs.js'
 
 export type SyncAction =
   | { type: 'mkdir'; path: string }
@@ -10,6 +12,19 @@ export type SyncOptions = {
   repoRoot: string
   homeDir: string
   dryRun: boolean
+}
+
+type HookCommand = {
+  type: 'command'
+  command: string
+}
+
+type HookMatcher = {
+  hooks: HookCommand[]
+}
+
+type HooksConfig = {
+  hooks: Record<string, HookMatcher[]>
 }
 
 const pathExists = async (path: string) => {
@@ -79,6 +94,131 @@ export const syncGlobals = async ({
     dryRun,
     actions,
   })
+
+  return actions
+}
+
+const codexHooksPath = (homeDir: string) => join(homeDir, '.codex', 'hooks.json')
+
+const managedHookCommand = ({
+  repoRoot,
+  event,
+}: {
+  repoRoot: string
+  event: 'UserPromptSubmit' | 'Stop'
+}) => `node "${join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs')}" codex ${event}`
+
+const emptyHooksConfig = (): HooksConfig => ({ hooks: {} })
+
+const parseHooksConfig = (raw: string | null): HooksConfig => {
+  if (raw === null) return emptyHooksConfig()
+
+  try {
+    const parsed = JSON.parse(raw)
+    if (
+      typeof parsed !== 'object' ||
+      parsed === null ||
+      !('hooks' in parsed) ||
+      typeof parsed.hooks !== 'object' ||
+      parsed.hooks === null ||
+      Array.isArray(parsed.hooks)
+    ) {
+      return emptyHooksConfig()
+    }
+
+    const hooks = Object.entries(parsed.hooks).reduce<Record<string, HookMatcher[]>>((acc, [key, value]) => {
+      if (Array.isArray(value)) {
+        acc[key] = value as HookMatcher[]
+      }
+      return acc
+    }, {})
+
+    return { hooks }
+  } catch {
+    return emptyHooksConfig()
+  }
+}
+
+const isManagedHookCommand = (command: string) =>
+  command.includes('project-notes-hook.mjs') && command.includes(' codex ')
+
+const upsertManagedHook = ({
+  config,
+  event,
+  command,
+}: {
+  config: HooksConfig
+  event: 'UserPromptSubmit' | 'Stop'
+  command: string
+}) => {
+  const existingMatchers = Array.isArray(config.hooks[event]) ? config.hooks[event] : []
+  const retainedMatchers = existingMatchers.flatMap((matcher) => {
+    if (!matcher || typeof matcher !== 'object' || !Array.isArray(matcher.hooks)) return [matcher]
+
+    const hooks = matcher.hooks.filter((hook) => !(
+      hook &&
+      typeof hook === 'object' &&
+      hook.type === 'command' &&
+      typeof hook.command === 'string' &&
+      isManagedHookCommand(hook.command)
+    ))
+
+    return hooks.length > 0 ? [{ ...matcher, hooks }] : []
+  })
+
+  config.hooks[event] = [
+    ...retainedMatchers,
+    {
+      hooks: [
+        {
+          type: 'command',
+          command,
+        },
+      ],
+    },
+  ]
+}
+
+export const syncCodexHooks = async ({
+  repoRoot,
+  homeDir,
+  dryRun,
+}: SyncOptions): Promise<SyncAction[]> => {
+  const actions: SyncAction[] = []
+  const destination = codexHooksPath(homeDir)
+  const destinationDirectory = dirname(destination)
+
+  if (!(await pathExists(destinationDirectory))) {
+    actions.push({ type: 'mkdir', path: destinationDirectory })
+    if (!dryRun) {
+      await mkdir(destinationDirectory, { recursive: true })
+    }
+  }
+
+  const existingContent = await readOptionalFile(destination)
+  const nextConfig = parseHooksConfig(existingContent)
+
+  upsertManagedHook({
+    config: nextConfig,
+    event: 'UserPromptSubmit',
+    command: managedHookCommand({ repoRoot, event: 'UserPromptSubmit' }),
+  })
+  upsertManagedHook({
+    config: nextConfig,
+    event: 'Stop',
+    command: managedHookCommand({ repoRoot, event: 'Stop' }),
+  })
+
+  actions.push({
+    type: existingContent === null ? 'copy' : 'update',
+    source: join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs'),
+    destination,
+    detail: 'sync Codex project-notes hooks',
+  })
+
+  if (!dryRun) {
+    await writeFile(destination, `${JSON.stringify(nextConfig, null, 2)}\n`)
+  }
 
   return actions
 }

@@ -10,6 +10,14 @@ In Claude Code, pass the filled prompt to the `Agent` tool:
 - Worker → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 - Integrator → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 
+In Codex, pass the filled prompt to `spawn_agent` and set the model explicitly:
+- Explorer → `spawn_agent(agent_type="explorer", model="gpt-5.4-mini", message="...")`
+- Critic → `spawn_agent(agent_type="explorer", model="gpt-5.4-mini", message="...")`
+- Worker → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
+- Integrator → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
+
+Do not rely on inherited model selection in Codex. If the task needs stronger reasoning, escalate deliberately to `model="gpt-5.4"` and state why.
+
 ## Explorer Template
 
 Use for read-only discovery.
