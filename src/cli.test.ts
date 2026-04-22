@@ -16,8 +16,10 @@ describe('runCli', () => {
     repoRoot = join(testRoot, 'repo')
     homeDir = join(testRoot, 'home')
     await mkdir(join(repoRoot, 'globals'), { recursive: true })
+    await mkdir(join(repoRoot, 'plugins', 'filip-stack', 'scripts'), { recursive: true })
     await writeFile(join(repoRoot, 'globals/AGENTS.md'), 'agents')
     await writeFile(join(repoRoot, 'globals/CLAUDE.md'), 'claude')
+    await writeFile(join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs'), '#!/usr/bin/env node\n')
   })
 
   afterEach(async () => {
@@ -140,6 +142,78 @@ describe('runCli', () => {
 
     expect(messages.join('\n')).toContain('Dry Run')
     expect(messages.join('\n')).toContain('Globals')
+  })
+
+  it('syncs Codex hooks through the codex-hooks command', async () => {
+    const messages: string[] = []
+
+    await expect(
+      runCli({
+        argv: ['codex-hooks'],
+        repoRoot,
+        homeDir,
+        log: (message) => messages.push(message),
+        error: () => {},
+      }),
+    ).resolves.toBe(0)
+
+    expect(messages.join('\n')).toContain('Synced Codex Hooks')
+    await expect(readFile(join(homeDir, '.codex/hooks.json'), 'utf8')).resolves.toContain(
+      'project-notes-hook.mjs',
+    )
+  })
+
+  it('renders dry-run markdown for codex-hooks', async () => {
+    const messages: string[] = []
+
+    await expect(
+      runCli({
+        argv: ['codex-hooks', '--dry-run'],
+        repoRoot,
+        homeDir,
+        log: (message) => messages.push(message),
+        error: () => {},
+      }),
+    ).resolves.toBe(0)
+
+    expect(messages.join('\n')).toContain('Dry Run')
+    expect(messages.join('\n')).toContain('Codex Hooks')
+  })
+
+  it('rejects sync flags with codex-hooks', async () => {
+    const error = vi.fn()
+
+    await expect(
+      runCli({
+        argv: ['codex-hooks', '--globals'],
+        repoRoot,
+        homeDir,
+        log: () => {},
+        error,
+      }),
+    ).resolves.toBe(2)
+
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('codex-hooks cannot be combined with sync scope flags'),
+    )
+  })
+
+  it('rejects setup-only options for codex-hooks', async () => {
+    const error = vi.fn()
+
+    await expect(
+      runCli({
+        argv: ['codex-hooks', '--rc-file', join(testRoot, '.zshrc')],
+        repoRoot,
+        homeDir,
+        log: () => {},
+        error,
+      }),
+    ).resolves.toBe(2)
+
+    expect(error).toHaveBeenCalledWith(
+      expect.stringContaining('--rc-file and --alias can only be used with setup'),
+    )
   })
 
 })

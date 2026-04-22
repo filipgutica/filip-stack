@@ -23,7 +23,7 @@ Keep the file's folder and frontmatter `status` synchronized.
 When the shared notes hooks are installed:
 
 - `UserPromptSubmit` can create, bind, restore, trigger planning guidance, or trigger approval guidance through reserved prompts.
-- `UserPromptSubmit` should also remind the model to keep the linked ticket's `## Work Log` updated during normal tracked work once the ticket has an approved plan.
+- `UserPromptSubmit` should stay quiet on ordinary tracked prompts in Codex after restoring or attaching session state; use explicit `notes *` commands and the `Stop` hook for visible guidance instead of adding per-turn prompt noise.
 - `Stop` should block completion when a bound ticket is still `todo` but already has a real approved plan, and require the model to transition it to `.notes/in-progress/` plus update `## Approved Plan` and `## Work Log` before ending the turn.
 - `UserPromptSubmit` should stay quiet when there is no bound ticket and the prompt is not an explicit `notes *` command.
 
@@ -67,7 +67,7 @@ Planning flow rules:
 - In Claude, the hook should tell the model to enter planning flow and use `$coordinator` with the seed.
 - In Codex, the hook should prompt the user to switch into Plan Mode and use `$filip-stack:coordinator` with the seed because mode switching is host-controlled.
 - `notes approve` should tell the model to write the approved plan into the ticket and move it to `.notes/in-progress/`.
-- During normal prompts, `UserPromptSubmit` should remind the model to keep the bound ticket updated and, when the ticket is still `todo`, to double-check whether it now belongs in `.notes/in-progress/`.
+- During normal prompts, `UserPromptSubmit` may restore or attach session state silently, but it should not emit visible reminder text for ordinary Codex prompts.
 - Do not rely on the hook script to parse coordinator output or write ticket contents on the model's behalf.
 
 ## Ticket Format
@@ -134,7 +134,7 @@ When doing work:
 - Append dated entries under `## Work Log`, prefixed with the host tag: `[claude]` or `[codex]`.
 - Record material actions, decisions, validation, files or areas touched, and tradeoffs that would help future work.
 - Keep entries factual and concise. Do not paste transcript dumps.
-- Hook-driven logging should stay lightweight: use prompt-time hooks to signal that a Work Log update is needed, then let the model write the actual note in plain language during the turn.
+- Hook-driven logging should stay lightweight: prefer explicit `notes *` commands and stop-time enforcement over visible per-turn prompt reminders, then let the model write the actual note in plain language during the turn.
 - Hook-driven state restoration should stay lightweight too: restore an already-linked session when possible, but keep ticket edits and planning logic in the model rather than the hook script.
 
 When completing work:

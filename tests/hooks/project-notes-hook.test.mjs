@@ -172,7 +172,7 @@ describe('project notes hook', () => {
     ).resolves.toContain('Not started.')
   })
 
-  it('reminds the model to update a bound ticket during normal prompts', async () => {
+  it('stays quiet during normal prompts while preserving the bound ticket state', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/todo/2026-04-08-track-hook-work.md'
     await writeTicketFixture({ repoRoot, ticketPath, status: 'todo', approvedPlan: 'Use the approved plan.' })
@@ -192,9 +192,8 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain('keep the bound ticket `.notes/todo/2026-04-08-track-hook-work.md` up to date during this turn')
-    expect(result.stdout.join('\n')).toContain('Double-check whether this ticket should now move to `.notes/in-progress/`')
-    expect(result.stdout.join('\n')).not.toContain('moving the ticket into `.notes/in-progress/`')
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
   })
 
   it('notes plan alone does not move a bound todo ticket to in-progress', async () => {
@@ -230,12 +229,8 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
-    expect(result.stdout.join('\n')).toContain('Double-check whether this ticket should now move to `.notes/in-progress/`')
-    expect(result.stdout.join('\n')).toContain('is still in `.notes/todo/` without an approved plan')
-    expect(result.stdout.join('\n')).not.toContain('accepted plan')
-    expect(result.stdout.join('\n')).not.toContain('moving the ticket into `.notes/in-progress/`')
-    expect(result.stdout.join('\n')).not.toContain('Append a short Work Log entry in plain language')
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
   })
 
   it('Stop blocks when a bound todo ticket already has an approved plan', async () => {
@@ -361,7 +356,7 @@ describe('project notes hook', () => {
     expect(result.stderr.join('\n')).toContain('could not find an open ticket')
   })
 
-  it('UserPromptSubmit reminds the model to keep the work log updated once the ticket has an approved plan', async () => {
+  it('UserPromptSubmit stays quiet once the ticket has an approved plan', async () => {
     const repoRoot = await createGitRepoRoot()
     const ticketPath = '.notes/in-progress/2026-04-08-track-hook-work.md'
     await writeTicketFixture({
@@ -389,9 +384,8 @@ describe('project notes hook', () => {
       env: { CODEX_THREAD_ID: 'thread-1' },
     })
 
-    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
-    expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
-    expect(result.stdout.join('\n')).toContain('until the user explicitly says to close out the session or uses `notes complete`')
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
     await expect(readFile(join(repoRoot, ticketPath), 'utf8')).resolves.toContain('No work logged yet.')
   })
 
@@ -425,7 +419,8 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain(`keep \`${movedTicketPath}\` updated during this turn`)
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
     await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
       `"lastKnownTicketPath": "${movedTicketPath}"`,
     )
@@ -495,7 +490,8 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain(`keep \`${ticketPath}\` updated during this turn`)
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
     await expect(readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')).resolves.toContain(
       '"ticketId": "2026-04-08-track-hook-work"',
     )
@@ -593,7 +589,8 @@ describe('project notes hook', () => {
     })
 
     expect(result.exitCode).toBe(0)
-    expect(result.stdout.join('\n')).toContain('keep the bound ticket')
+    expect(result.stdout).toEqual([])
+    expect(result.stderr).toEqual([])
     // Both session IDs must survive the multi-write round-trip.
     const ticketContent = await readFile(join(repoRoot, ticketPath), 'utf8')
     expect(ticketContent).toContain('\\"id\\":\\"thread-1\\"')

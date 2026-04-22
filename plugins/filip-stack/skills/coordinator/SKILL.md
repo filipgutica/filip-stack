@@ -75,7 +75,9 @@ Keep instructions host-agnostic. Match model tier to task shape:
 
 **Claude Code** — Explorer: `haiku`; Worker / Critic: `sonnet` (default, omit the parameter); main-thread synthesis on unusually complex or high-stakes work: `opus`.
 
-**Codex** — all subagents: `5.4-mini`; main-thread synthesis and high-stakes work: `5.4`.
+**Codex** — all subagents: `gpt-5.4-mini`; main-thread synthesis and high-stakes work: `gpt-5.4`.
+
+When delegating in Codex, set the subagent model explicitly on every `spawn_agent` call instead of relying on inheritance or shorthand. Use `model: "gpt-5.4-mini"` for explorer, worker, integrator, and critic roles unless the task is unusually ambiguous, cross-cutting, or risk-heavy. Use `model: "gpt-5.4"` only for main-thread synthesis or intentionally escalated high-stakes subagent work.
 
 Escalate bounded explorer or critic work to the stronger tier only when the task is unusually ambiguous, cross-cutting, or risk-heavy.
 
