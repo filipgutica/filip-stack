@@ -22,7 +22,17 @@ await stampJson(join(repoRoot, 'plugins/filip-stack/.claude-plugin/plugin.json')
   version,
 }))
 
+await stampJson(join(repoRoot, 'plugins/filip-stack/.codex-plugin/plugin.json'), (json) => ({
+  ...json,
+  version,
+}))
+
 await stampJson(join(repoRoot, '.claude-plugin/marketplace.json'), (json) => ({
+  ...json,
+  version,
+}))
+
+await stampJson(join(repoRoot, '.agents/plugins/marketplace.json'), (json) => ({
   ...json,
   version,
 }))

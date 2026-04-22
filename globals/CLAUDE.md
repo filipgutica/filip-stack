@@ -61,9 +61,16 @@ Treat the sections below as the default operating contract: think clearly, keep 
 - Do not mark work complete until the result has been verified.
 
 ## Search Defaults
-- When searching code, first try `rg`.
-- When locating files, first try `rg --files`.
-- Do not use recursive `grep` for repository search unless `rg` is unavailable.
+- **Always use `rg` for code/content search.** Never use `grep` when `rg` is available.
+- **Always use `rg --files` for file discovery.** Do not use `find` or `ls -R` for locating files by pattern.
+- Never use recursive `grep` for repository search. `rg` is always preferred.
+
+## CI Failure Investigation
+- Before analyzing source code for a CI test failure, reproduce it locally first: install deps, then run the failing spec in isolation.
+- If it passes locally → treat as flaky or stale-cache; rerun CI before investigating further.
+- If it fails locally → now investigate why.
+- Never build a root-cause hypothesis from source code alone before attempting local reproduction. Unverified hypotheses waste context and time.
+- Challenge any assumption that blocks local reproduction (e.g. "can't install X locally") — verify it before accepting it.
 
 ## Verification Before Done
 - Before marking work complete, run `typecheck`, `lint`, `stylelint`, and applicable tests, or clearly explain why a step does not apply.

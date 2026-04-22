@@ -9,12 +9,9 @@
   },
   "scripts": {
     "postinstall": "lefthook install",
-    "build:ts": "tsc -p tsconfig.build.json",
-    "build:plugins": "node scripts/build-plugins.mjs",
-    "build": "pnpm build:ts && pnpm build:plugins",
+    "build": "tsc -p tsconfig.build.json",
     "stamp-version": "node scripts/stamp-version.mjs",
-    "validate-claude-plugin": "node scripts/validate-claude-plugin.mjs",
-    "generate:codex-app-server-types": "node scripts/generate-codex-app-server-types.mjs",
+    "validate-plugins": "node scripts/validate-plugins.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
     "check": "pnpm typecheck && pnpm test && pnpm build"

@@ -28,8 +28,8 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate Claude plugin
-        run: pnpm validate-claude-plugin
+      - name: Validate plugin manifests
+        run: pnpm validate-plugins
 
       - name: Typecheck
         run: pnpm typecheck

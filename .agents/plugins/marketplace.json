@@ -1,0 +1,21 @@
+{
+  "name": "filip-stack",
+  "version": "0.2.2",
+  "interface": {
+    "displayName": "Filip Stack"
+  },
+  "plugins": [
+    {
+      "name": "filip-stack",
+      "source": {
+        "source": "local",
+        "path": "./plugins/filip-stack"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    }
+  ]
+}

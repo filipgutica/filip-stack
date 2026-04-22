@@ -4,21 +4,23 @@ Personal source of truth for shared Claude and Codex setup across my machines.
 
 ## Distribution Model
 
-- **Claude** — Git-based marketplace. Add the repo as a marketplace once; updates pull automatically on version bump.
-- **Codex** — Local bridge install via CLI helper.
-
-Claude distribution is repo-backed only. There is no GitHub Pages marketplace publish path.
+Both Claude and Codex are distributed directly from this GitHub repo as git-based marketplaces. No build step required — plugin payloads are tracked directly in git and versioned on release.
 
 ## Repo Layout
 
 ```text
-plugins/filip-stack/       Claude marketplace plugin payload (skills, hooks, scripts)
-                           Also the shared source for the Codex build
-plugin/codex/              Codex-specific build templates (plugin.json, hooks.json)
-.claude-plugin/            Git marketplace registry (marketplace.json)
+plugins/filip-stack/       Plugin payload shared by Claude and Codex (skills, hooks, scripts)
+  .claude-plugin/          Claude plugin manifest
+  .codex-plugin/           Codex plugin manifest
+  hooks/claude.json        Claude hooks (uses ${CLAUDE_PLUGIN_ROOT})
+  hooks/codex.json         Codex hooks (uses ${CODEX_PLUGIN_ROOT})
+  skills/                  Shared skill SKILL.md and openai.yaml files
+  scripts/                 Hook runtime (project-notes-hook.mjs)
+.claude-plugin/            Claude git marketplace registry (marketplace.json)
+.agents/plugins/           Codex git marketplace registry (marketplace.json)
 globals/                   AGENTS.md and CLAUDE.md synced to host home dirs
-scripts/                   Build, validate, and stamp scripts
-src/                       TypeScript CLI source
+scripts/                   Stamp and validate scripts
+src/                       TypeScript CLI source (globals sync + shell setup)
 tests/                     Hook integration tests
 dist/                      Build output (gitignored)
 ```
@@ -49,20 +51,30 @@ plugins/filip-stack/.claude-plugin/plugin.json
 
 ## Codex Install
 
-Build first, then use the CLI helper:
-
 ```sh
-pnpm install && pnpm build
-node dist/cli.js setup              # adds shell alias to your rc file
-filip-stack install codex           # local bridge install
+codex plugin marketplace add filipgutica/filip-stack
 ```
 
-After pulling changes, refresh Codex:
+Then restart Codex, open the plugin directory, and install `filip-stack` from the `filip-stack` marketplace.
+
+Codex reads `.agents/plugins/marketplace.json` at the repo root, which points
+`source` at `./plugins/filip-stack`. No build step required — the plugin payload
+is tracked directly in git.
+
+Updates are automatic: when a new version is released, run:
 
 ```sh
-pnpm build
-filip-stack update codex
+codex plugin marketplace upgrade filip-stack
 ```
+
+The Codex marketplace version is stamped from `package.json` during the release workflow into:
+
+```text
+.agents/plugins/marketplace.json
+plugins/filip-stack/.codex-plugin/plugin.json
+```
+
+> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path. If Codex ignores the plugin `hooks` field or `${CODEX_PLUGIN_ROOT}`, the project-notes hook will simply not run in Codex yet.
 
 ## CLI
 
@@ -103,7 +115,9 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 Commit messages are validated locally by commitlint via the lefthook `commit-msg` hook.
 On merge to `main`, CI bumps `package.json`, stamps the version into
-`plugins/filip-stack/.claude-plugin/plugin.json` and `.claude-plugin/marketplace.json`,
+`plugins/filip-stack/.claude-plugin/plugin.json`,
+`plugins/filip-stack/.codex-plugin/plugin.json`,
+`.claude-plugin/marketplace.json`, and `.agents/plugins/marketplace.json`,
 and creates a GitHub release. No manual version commands needed.
 
 ## Included Skills

@@ -5,7 +5,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__NOTES_HOOK_COMMAND__"
+            "command": "node \"${CODEX_PLUGIN_ROOT}/scripts/project-notes-hook.mjs\" codex UserPromptSubmit"
           }
         ]
       }
@@ -15,7 +15,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "__NOTES_STOP_HOOK_COMMAND__"
+            "command": "node \"${CODEX_PLUGIN_ROOT}/scripts/project-notes-hook.mjs\" codex Stop"
           }
         ]
       }

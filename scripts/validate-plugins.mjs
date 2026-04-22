@@ -42,11 +42,14 @@ const validateSkillMd = async (path) => {
   }
 }
 
-console.log('Validating Claude plugin...')
+console.log('Validating plugin manifests...')
 
 await validateJson(join(pluginRoot, '.claude-plugin/plugin.json'), ['name'])
+await validateJson(join(pluginRoot, '.codex-plugin/plugin.json'), ['name', 'skills'])
 await validateJson(join(pluginRoot, 'hooks/hooks.json'), ['hooks'])
+await validateJson(join(pluginRoot, 'hooks/codex.json'), ['hooks'])
 await validateJson(join(repoRoot, '.claude-plugin/marketplace.json'), ['name', 'owner', 'plugins'])
+await validateJson(join(repoRoot, '.agents/plugins/marketplace.json'), ['name', 'plugins'])
 
 const skillsDir = join(pluginRoot, 'skills')
 const skills = await readdir(skillsDir).catch(() => [])

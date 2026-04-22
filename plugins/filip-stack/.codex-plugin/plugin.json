@@ -1,12 +1,12 @@
 {
   "name": "filip-stack",
-  "version": "0.1.0",
+  "version": "0.2.2",
   "description": "Personal Codex plugin bundle for coordinator workflows and notes tracking.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
-  "hooks": "./hooks/hooks.json",
+  "hooks": "./hooks/codex.json",
   "interface": {
     "displayName": "Filip Stack",
     "shortDescription": "Coordinator workflows and notes tracking.",
