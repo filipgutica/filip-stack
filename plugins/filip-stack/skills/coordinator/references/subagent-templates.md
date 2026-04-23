@@ -10,13 +10,15 @@ In Claude Code, pass the filled prompt to the `Agent` tool:
 - Worker → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 - Integrator → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 
+The Claude Code main thread should generally stay on `sonnet`. Escalate to `opus` only for unusually complex or high-stakes synthesis or review.
+
 In Codex, pass the filled prompt to `spawn_agent` and set the model explicitly:
 - Explorer → `spawn_agent(agent_type="explorer", model="gpt-5.4-mini", message="...")`
-- Critic → `spawn_agent(agent_type="explorer", model="gpt-5.4-mini", message="...")`
+- Critic → `spawn_agent(agent_type="explorer", model="gpt-5.4", message="...")`
 - Worker → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
 - Integrator → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
 
-Do not rely on inherited model selection in Codex. If the task needs stronger reasoning, escalate deliberately to `model="gpt-5.4"` and state why.
+The Codex main thread should generally stay on `gpt-5.4`. Do not rely on inherited model selection in Codex. If an explorer, worker, or integrator task needs stronger reasoning, escalate deliberately to `model="gpt-5.4"` and state why.
 
 ## Explorer Template
 
@@ -166,6 +168,7 @@ Rules:
 
 - Planning: use explorer templates only
 - Review: use explorer templates only when extra evidence is needed; keep acceptance in the main thread
-- Investigation: start with explorer, then hand off to worker if the fix path is clear
+- Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is clear
 - Simplification: use explorer templates for analysis; use worker only if the user explicitly asks for edits
-- Implementation: start with explorer when the path is not fully clear, then use worker; use critic for adversarial review of meaningful worker output; use integrator only when multiple worker results need stitching
+- Implementation: start with a short local read, use explorer only when the path is not fully clear and delegated discovery materially helps, then use worker; use critic selectively for behavior changes, risky refactors, weak verification, or ambiguous worker output; use integrator only when multiple worker results need stitching
+- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic by default when the scope and checks are clear

@@ -7,6 +7,8 @@ description: "Use as the main engineering entrypoint for planning, implementatio
 
 Route non-trivial engineering work to the right flow, delegate bounded subtasks to subagents, and keep the main thread responsible for coordination, review, and synthesis.
 
+Favor the lightest workflow that safely fits the task. Scale delegation and review intensity to task risk, behavioral uncertainty, and verification strength rather than task size alone.
+
 ## Core Behaviors
 
 - **Plan before non-trivial implementation.** For non-trivial work outside Plan Mode, produce an inline plan first — state the intent, approach, and main risk or assumption — and get confirmation before proceeding. Skip this only for obviously trivial changes (typo fixes, single-line renames, mechanical updates).
@@ -16,12 +18,13 @@ Route non-trivial engineering work to the right flow, delegate bounded subtasks 
 
 Classify using host mode and prompt intent before starting substantial work.
 
-- **Plan Mode**: planning, review, investigation, or simplification analysis only — no file mutations. Use explorer subagents for discovery; use critic or explorer subagents for adversarial review.
+- **Plan Mode**: planning, review, investigation, or simplification analysis only — no file mutations. Use explorer subagents for discovery only when delegated read-only work materially helps; use critic or explorer subagents for adversarial review only when the review risk justifies it.
 - **Review-only**: stay review-only.
 - **Planning / design / phased execution**: produce a bounded plan and stop.
 - **Simplification analysis**: return findings plus a bounded simplification plan and stop unless the user explicitly asks for edits.
 - **Investigation**: investigate first; continue to implementation only when evidence supports a concrete fix path.
-- **Implementation or fix (outside Plan Mode)**: for non-trivial changes, produce an inline plan first and confirm before proceeding; then do a bounded exploration pass and delegate implementation to a worker subagent by default; run a critic pass before accepting the result. For obviously trivial fixes, proceed directly.
+- **Implementation or fix (outside Plan Mode)**: for non-trivial changes, produce an inline plan first and confirm before proceeding. Do one short bounded exploration pass, then choose the lightest safe execution path. Keep main-thread coordination, scope control, review, and synthesis as the default control point.
+- **Mechanical-change fast path**: for rename-only refactors, import/export rewires, file moves with no behavior change, narrow internal test additions, or small repetitive mechanical edits with obvious scope, prefer one short local exploration pass, then execute locally or use one worker only if delegation materially helps. Do not use an explorer by default. Do not use a critic by default unless behavior, public surface, verification strength, or refactor risk justifies it.
 - **Ambiguous**: stop and ask before proceeding — do not guess scope or intent.
 
 ## Subagent Roles
@@ -30,8 +33,10 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Purpose**: bounded read-only discovery
 - **Allowed**: inspect code, tests, logs, docs, configs, repo structure; summarize findings; identify risks and scope boundaries
 - **Not allowed**: edit files, propose wide rewrites, or claim acceptance decisions
-- **Use when**: planning, broad review, simplification, early investigation, or any non-trivial request needing evidence before mutation
-- **Default shape**: two parallel explorers for non-trivial analysis, each with a distinct area or lens
+- **Use when**: planning, broad review, simplification, early investigation, or implementation work with real unknowns that are distinct enough to justify delegation
+- **Default shape**: no explorer by default. Use one explorer when a bounded delegated read materially reduces uncertainty. Use parallel explorers only when the unknowns are genuinely independent and materially different.
+- **Skip when**: a few focused local reads establish scope, fix path, and likely touchpoints well enough to proceed safely
+- **Anti-duplication rule**: if explorer discovery was already delegated, synthesize those findings in the main thread instead of substantially re-reading the same surface unless verification or a new decision requires it
 
 ### Worker
 - **Purpose**: bounded implementation in a clearly defined scope
@@ -50,10 +55,13 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Purpose**: adversarial review of worker output before acceptance
 - **Allowed**: inspect plans, diffs, findings, validation; identify correctness risks, regressions, missing tests, scope drift, unnecessary complexity; recommend reject or revise
 - **Not allowed**: edit files, widen scope, or accept work
-- **Use when**: a worker returns meaningful output on non-trivial work
-- **Default shape**: one critic pass per meaningful worker chunk
+- **Use when**: behavior changes, public API or type-contract changes, risky refactors, weak or incomplete verification, or ambiguous or cross-cutting worker output justify adversarial review
+- **Usually unnecessary when**: rename-only internal refactors, purely mechanical edits with green checks, or bounded non-behavioral changes with obvious acceptance criteria
+- **Default shape**: selective, not automatic. Run one critic pass per meaningful worker chunk only when the task risk justifies it
 
 The main thread always owns routing, scope control, review, acceptance, and final synthesis.
+
+If the main thread already has enough evidence after a few local reads, skip explorer delegation entirely. If delegated findings or worker output are already sufficient, do not duplicate the same discovery work locally without a specific reason.
 
 ## Claude Code Delegation
 
@@ -65,21 +73,26 @@ The main thread always owns routing, scope control, review, acceptance, and fina
 ## Plan Mode (Claude Code)
 
 - Produce the plan only — do not call `Edit`, `Write`, or `Bash` for mutations.
-- Delegate repository discovery to explorer subagents; synthesize locally.
+- Use explorer subagents for repository discovery only when there are real unknowns that materially benefit from delegated read-only work; otherwise establish scope locally and synthesize in the main thread.
 - When the user approves: call `ExitPlanMode`, then delegate implementation to a worker with a self-contained prompt (full plan, critical file paths, acceptance criteria).
-- After the worker returns: run a critic pass on meaningful output before accepting.
+- After the worker returns: use a critic pass only when the output is behaviorally risky, cross-cutting, weakly validated, or otherwise merits adversarial review before acceptance.
 
 ## Host Notes
 
 Keep instructions host-agnostic. Match model tier to task shape:
 
-**Claude Code** — Explorer: `haiku`; Worker / Critic: `sonnet` (default, omit the parameter); main-thread synthesis on unusually complex or high-stakes work: `opus`.
+**Claude Code** — main thread: `sonnet`; Explorer: `haiku`; Worker / Integrator / Critic: `sonnet`; escalate to `opus` only for unusually complex or high-stakes synthesis or review.
 
-**Codex** — all subagents: `gpt-5.4-mini`; main-thread synthesis and high-stakes work: `gpt-5.4`.
+**Codex** — main thread: `gpt-5.4`; Explorer / Worker / Integrator: `gpt-5.4-mini`; Critic: `gpt-5.4`.
 
-When delegating in Codex, set the subagent model explicitly on every `spawn_agent` call instead of relying on inheritance or shorthand. Use `model: "gpt-5.4-mini"` for explorer, worker, integrator, and critic roles unless the task is unusually ambiguous, cross-cutting, or risk-heavy. Use `model: "gpt-5.4"` only for main-thread synthesis or intentionally escalated high-stakes subagent work.
+When delegating in Codex, set the subagent model explicitly on every `spawn_agent` call instead of relying on inheritance or shorthand. Use `model: "gpt-5.4-mini"` for explorer, worker, and integrator roles by default. Use `model: "gpt-5.4"` for critic passes and for main-thread synthesis.
 
-Escalate bounded explorer or critic work to the stronger tier only when the task is unusually ambiguous, cross-cutting, or risk-heavy.
+Escalate bounded explorer, worker, or integrator work to the stronger tier only when the task is unusually ambiguous, cross-cutting, or risk-heavy.
+
+## Contrast Example
+
+- **Bounded mechanical rename**: do a short local read to confirm scope, execute locally or use one worker if it materially saves time, run targeted checks, and skip explorer and critic by default.
+- **Risky behavioral refactor**: do focused local discovery first, use explorer subagents only if there are real unknowns, delegate implementation to a worker once the fix path is clear, and run a critic pass before acceptance.
 
 ## Playbooks
 

@@ -29,12 +29,14 @@ Do not force every category into the findings. Explicitly say when a category do
 ## Workflow
 
 1. Inspect the target code first and identify the main complexity sources.
-2. Use two parallel exploration passes by default unless the target is obviously tiny.
-3. For broad analysis, start with an inventory pass over the relevant surface rather than reading every source file.
-4. Ignore dependency, build, generated, vendored, declaration, minified, and coverage outputs unless the user explicitly asks for them.
-5. Synthesize the findings in the main thread.
-6. Produce a bounded simplification plan with clear assumptions, tradeoffs, risks, and validation.
-7. Stop after analysis unless the user explicitly asks for implementation.
+2. Start with focused local reads when a small number of files can establish scope cheaply.
+3. Use explorer delegation only when there are real unknowns or distinct surfaces that materially benefit from delegated discovery.
+4. Use parallel explorers only when the questions are independent and materially different; do not duplicate a local read that already established scope.
+5. For broad analysis, start with an inventory pass over the relevant surface rather than reading every source file.
+6. Ignore dependency, build, generated, vendored, declaration, minified, and coverage outputs unless the user explicitly asks for them.
+7. Synthesize the findings in the main thread.
+8. Produce a bounded simplification plan with clear assumptions, tradeoffs, risks, and validation.
+9. Stop after analysis unless the user explicitly asks for implementation.
 
 Use the `explorer` template from [subagent-templates.md](subagent-templates.md) for analysis. If the user later wants the simplification implemented, switch to the `worker` template and keep the write scope bounded.
 
