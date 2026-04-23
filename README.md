@@ -29,7 +29,7 @@ dist/                      Build output (gitignored)
 
 ```sh
 claude plugin marketplace add filipgutica/filip-stack
-claude plugin install filip-stack@local-plugins
+claude plugin install filip-stack@filip-stack
 ```
 
 Claude reads `.claude-plugin/marketplace.json` at the repo root, which points
@@ -37,12 +37,12 @@ Claude reads `.claude-plugin/marketplace.json` at the repo root, which points
 is tracked directly in git.
 
 Claude command names include the marketplace alias, so the installed plugin is
-addressed as `filip-stack@local-plugins`.
+addressed as `filip-stack@filip-stack`.
 
 Updates are automatic: when a new version is released, run:
 
 ```sh
-claude plugin update filip-stack@local-plugins
+claude plugin update filip-stack@filip-stack
 ```
 
 The Claude marketplace version is stamped from `package.json` during the release workflow into:
