@@ -1,3 +1,10 @@
+## [0.3.2](https://github.com/filipgutica/filip-stack/compare/v0.3.1...v0.3.2) (2026-04-23)
+
+
+### Bug Fixes
+
+* rename claude marketplace to filip-stack ([e700df2](https://github.com/filipgutica/filip-stack/commit/e700df263ffdd5cccc78fcec052df7cf67be9bda))
+
 ## [0.3.1](https://github.com/filipgutica/filip-stack/compare/v0.3.0...v0.3.1) (2026-04-23)
 
 
