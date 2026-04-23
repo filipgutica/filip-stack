@@ -3,6 +3,23 @@
 
 ### Bug Fixes
 
+* clarify coordinator proportionality in readme ([2c56dba](https://github.com/filipgutica/filip-stack/commit/2c56dba9e6492399de8307e87ab8cc559eab9dbe))
+* quiet codex user prompt hook output ([9871260](https://github.com/filipgutica/filip-stack/commit/987126065da35c70d501845934c84a602a6afdfa))
+* simplify coordinator ([a4de31a](https://github.com/filipgutica/filip-stack/commit/a4de31a528befb89f868c729db99df839acae64c))
+* tighten notes hook reminders and stop backstop ([9bc885b](https://github.com/filipgutica/filip-stack/commit/9bc885b20768f0eeb19c069615b86aafac4b0091))
+
+
+### Features
+
+* add codex hooks sync command ([1c4cf64](https://github.com/filipgutica/filip-stack/commit/1c4cf64618b222fab62eab369e4598cb4ab502e8))
+* multi-session support for project-notes-tracker ([e6bf4db](https://github.com/filipgutica/filip-stack/commit/e6bf4db9496468a7b4afe6294e9a98a3f9297a1d))
+* update codex to be a proper repo plugin ([ff8e684](https://github.com/filipgutica/filip-stack/commit/ff8e684ffdb3939f0774cc3d8c6a80202267570c))
+
+# [0.3.0](https://github.com/filipgutica/filip-stack/compare/v0.2.1...v0.3.0) (2026-04-23)
+
+
+### Bug Fixes
+
 * quiet codex user prompt hook output ([9871260](https://github.com/filipgutica/filip-stack/commit/987126065da35c70d501845934c84a602a6afdfa))
 * simplify coordinator ([a4de31a](https://github.com/filipgutica/filip-stack/commit/a4de31a528befb89f868c729db99df839acae64c))
 * tighten notes hook reminders and stop backstop ([9bc885b](https://github.com/filipgutica/filip-stack/commit/9bc885b20768f0eeb19c069615b86aafac4b0091))
