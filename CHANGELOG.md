@@ -1,3 +1,11 @@
+## [0.3.1](https://github.com/filipgutica/filip-stack/compare/v0.3.0...v0.3.1) (2026-04-23)
+
+
+### Bug Fixes
+
+* clarify coordinator proportionality in readme ([2c56dba](https://github.com/filipgutica/filip-stack/commit/2c56dba9e6492399de8307e87ab8cc559eab9dbe))
+* explain claude and codex plugin naming ([90267c3](https://github.com/filipgutica/filip-stack/commit/90267c30c80a1babc4e74678e69afadeabe6294e))
+
 # [0.3.0](https://github.com/filipgutica/filip-stack/compare/v0.2.1...v0.3.0) (2026-04-23)
 
 
