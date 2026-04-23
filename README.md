@@ -36,6 +36,9 @@ Claude reads `.claude-plugin/marketplace.json` at the repo root, which points
 `source` at `./plugins/filip-stack`. No build step required — the plugin payload
 is tracked directly in git.
 
+Claude command names include the marketplace alias, so the installed plugin is
+addressed as `filip-stack@local-plugins`.
+
 Updates are automatic: when a new version is released, run:
 
 ```sh
@@ -60,6 +63,9 @@ Then restart Codex, open the plugin directory, and install `filip-stack` from th
 Codex reads `.agents/plugins/marketplace.json` at the repo root, which points
 `source` at `./plugins/filip-stack`. No build step required — the plugin payload
 is tracked directly in git.
+
+Codex marketplace commands target the marketplace name directly, so the upgrade
+command uses `filip-stack` rather than a `plugin@marketplace` identifier.
 
 Updates are automatic: when a new version is released, run:
 
