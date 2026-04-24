@@ -1,0 +1,4 @@
+interface:
+  display_name: "Simplification Review"
+  short_description: "Analyze recent or scoped code for bounded simplification opportunities"
+  default_prompt: "Review local changes first with git diff and git status --short, fall back to git diff origin/main when needed, keep the review bounded to the resolved scope, and return behavior-preserving simplification findings and a plan without editing code by default."
