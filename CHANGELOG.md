@@ -1,3 +1,10 @@
+# [0.4.0](https://github.com/filipgutica/filip-stack/compare/v0.3.2...v0.4.0) (2026-04-24)
+
+
+### Features
+
+* add simplification review skill ([29db9c4](https://github.com/filipgutica/filip-stack/commit/29db9c4145ee7d52cd985b00e18a72a4d0ee263a))
+
 ## [0.3.2](https://github.com/filipgutica/filip-stack/compare/v0.3.1...v0.3.2) (2026-04-23)
 
 
