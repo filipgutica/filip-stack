@@ -54,18 +54,6 @@ Rules:
 - call out missing context explicitly
 ```
 
-When the explorer is being used for simplification work, explicitly inspect for:
-- ambiguity or hard-to-follow logic
-- duplicated code or repeated logic
-- dead or unused code
-- overly-complex or unnecessary abstractions
-- brittle structure or hard-to-extend organization
-- weak separation of concerns
-- dead, redundant, or low-value tests
-- tests that do not assert meaningful behavior
-
-Also call out when a suspected issue is not worth changing because the current complexity appears justified or the cleanup would mostly be stylistic.
-
 ## Worker Template
 
 Use for bounded implementation.
@@ -169,6 +157,5 @@ Rules:
 - Planning: use explorer templates only
 - Review: use explorer templates only when extra evidence is needed; keep acceptance in the main thread
 - Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is clear
-- Simplification: use explorer templates for analysis; use worker only if the user explicitly asks for edits
 - Implementation: start with a short local read, use explorer only when the path is not fully clear and delegated discovery materially helps, then use worker; use critic selectively for behavior changes, risky refactors, weak verification, or ambiguous worker output; use integrator only when multiple worker results need stitching
 - Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic by default when the scope and checks are clear

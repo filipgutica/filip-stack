@@ -1,7 +1,7 @@
 {
   "name": "filip-stack",
   "version": "0.3.2",
-  "description": "Personal Claude plugin bundle for coordinator workflows and notes tracking.",
+  "description": "Personal Claude plugin bundle for workflow coordination, simplification review, and notes tracking.",
   "author": {
     "name": "Filip Gutica"
   },
