@@ -1,7 +1,7 @@
 {
   "name": "filip-stack",
   "version": "0.3.2",
-  "description": "Personal Codex plugin bundle for coordinator workflows and notes tracking.",
+  "description": "Personal Codex plugin bundle for workflow coordination, simplification review, and notes tracking.",
   "author": {
     "name": "Filip Gutica"
   },
@@ -9,7 +9,7 @@
   "hooks": "./hooks/codex.json",
   "interface": {
     "displayName": "Filip Stack",
-    "shortDescription": "Coordinator workflows and notes tracking.",
+    "shortDescription": "Workflow coordination, simplification review, and notes tracking.",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
@@ -17,6 +17,7 @@
     ],
     "defaultPrompt": [
       "For non-trivial engineering work, first do a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, run a critic pass before final acceptance, use subagents for codebase exploration and adversarial review in Plan Mode, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
+      "Use $filip-stack:simplification-review for analyze-first simplification reviews scoped to local changes, untracked files, branch diff, or an explicit area.",
       "Use $filip-stack:project-notes-tracker to create and manage a local ticket."
     ]
   }

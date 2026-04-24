@@ -145,10 +145,12 @@ and creates a GitHub release. No manual version commands needed.
 
 Both Claude and Codex plugins include:
 
-- `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, simplification)
+- `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, delegation, synthesis)
+- `simplification-review` — analyze-first simplification review skill scoped to local changes, untracked files, branch diff, or an explicit area
 - `project-notes-tracker` — local ticket lifecycle (create, plan, approve, complete)
 
 The coordinator guidance is intentionally proportional: use the lightest safe workflow for the task, keep bounded mechanical changes local when possible, and reserve explorer or critic passes for real unknowns, behavior risk, or weak verification.
+Use `simplification-review` when the task is a bounded maintainability review rather than implementation. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface.
 
 ## Project Notes Hook
 

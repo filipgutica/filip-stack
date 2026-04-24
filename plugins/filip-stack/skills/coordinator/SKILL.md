@@ -1,6 +1,6 @@
 ---
 name: coordinator
-description: "Use as the main engineering entrypoint for planning, implementation, investigation, review, and code simplification. Routes work based on Plan Mode and prompt intent, delegates bounded exploration and implementation tasks to subagents, and keeps the main thread responsible for review, coordination, and final synthesis."
+description: "Use as the main engineering entrypoint for planning, implementation, investigation, and review. Routes work based on mode and prompt intent, delegates bounded exploration and implementation tasks to subagents, and keeps the main thread responsible for review, coordination, and final synthesis."
 ---
 
 # Coordinator
@@ -18,10 +18,10 @@ Favor the lightest workflow that safely fits the task. Scale delegation and revi
 
 Classify using host mode and prompt intent before starting substantial work.
 
-- **Plan Mode**: planning, review, investigation, or simplification analysis only — no file mutations. Use explorer subagents for discovery only when delegated read-only work materially helps; use critic or explorer subagents for adversarial review only when the review risk justifies it.
+- **Plan Mode**: planning, review, or investigation only — no file mutations. Use explorer subagents for discovery only when delegated read-only work materially helps; use critic or explorer subagents for adversarial review only when the review risk justifies it.
 - **Review-only**: stay review-only.
 - **Planning / design / phased execution**: produce a bounded plan and stop.
-- **Simplification analysis**: return findings plus a bounded simplification plan and stop unless the user explicitly asks for edits.
+- **Simplification analysis**: route to `simplification-review`. Keep coordinator responsible for workflow choice, delegation intensity, and synthesis, but leave simplification heuristics and output shape to that skill.
 - **Investigation**: investigate first; continue to implementation only when evidence supports a concrete fix path.
 - **Implementation or fix (outside Plan Mode)**: for non-trivial changes, produce an inline plan first and confirm before proceeding. Do one short bounded exploration pass, then choose the lightest safe execution path. Keep main-thread coordination, scope control, review, and synthesis as the default control point.
 - **Mechanical-change fast path**: for rename-only refactors, import/export rewires, file moves with no behavior change, narrow internal test additions, or small repetitive mechanical edits with obvious scope, prefer one short local exploration pass, then execute locally or use one worker only if delegation materially helps. Do not use an explorer by default. Do not use a critic by default unless behavior, public surface, verification strength, or refactor risk justifies it.
@@ -33,7 +33,7 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Purpose**: bounded read-only discovery
 - **Allowed**: inspect code, tests, logs, docs, configs, repo structure; summarize findings; identify risks and scope boundaries
 - **Not allowed**: edit files, propose wide rewrites, or claim acceptance decisions
-- **Use when**: planning, broad review, simplification, early investigation, or implementation work with real unknowns that are distinct enough to justify delegation
+- **Use when**: planning, broad review, early investigation, or implementation work with real unknowns that are distinct enough to justify delegation
 - **Default shape**: no explorer by default. Use one explorer when a bounded delegated read materially reduces uncertainty. Use parallel explorers only when the unknowns are genuinely independent and materially different.
 - **Skip when**: a few focused local reads establish scope, fix path, and likely touchpoints well enough to proceed safely
 - **Anti-duplication rule**: if explorer discovery was already delegated, synthesize those findings in the main thread instead of substantially re-reading the same surface unless verification or a new decision requires it
@@ -94,7 +94,6 @@ Escalate bounded explorer, worker, or integrator work to the stronger tier only 
 - **Bounded mechanical rename**: do a short local read to confirm scope, execute locally or use one worker if it materially saves time, run targeted checks, and skip explorer and critic by default.
 - **Risky behavioral refactor**: do focused local discovery first, use explorer subagents only if there are real unknowns, delegate implementation to a worker once the fix path is clear, and run a critic pass before acceptance.
 
-## Playbooks
+## References
 
-- Simplification analysis: [references/simplification.md](references/simplification.md)
 - Prompt templates: [references/subagent-templates.md](references/subagent-templates.md)
