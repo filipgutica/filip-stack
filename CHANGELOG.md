@@ -1,3 +1,10 @@
+## [0.5.1](https://github.com/filipgutica/filip-stack/compare/v0.5.0...v0.5.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* broaden coordinator routing ([8c81949](https://github.com/filipgutica/filip-stack/commit/8c81949581efd24b167b539751f6533dfd11aebd))
+
 # [0.5.0](https://github.com/filipgutica/filip-stack/compare/v0.4.1...v0.5.0) (2026-04-29)
 
 
