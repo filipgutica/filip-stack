@@ -14,13 +14,7 @@
     "validate-plugins": "node scripts/validate-plugins.mjs",
     "typecheck": "tsc --noEmit -p tsconfig.json",
     "test": "vitest run",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
-  },
-  "dependencies": {
-    "chalk": "^5.4.1",
-    "marked": "^15.0.7",
-    "marked-terminal": "^7.3.0",
-    "yargs": "^17.7.2"
+    "check": "pnpm validate-plugins && pnpm typecheck && pnpm test && pnpm build"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -29,7 +23,6 @@
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
     "@types/node": "^22.13.4",
-    "@types/yargs": "^17.0.33",
     "lefthook": "^1.11.13",
     "semantic-release": "^24.2.5",
     "typescript": "^5.7.3",
