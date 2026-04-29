@@ -1,3 +1,10 @@
+# [0.5.0](https://github.com/filipgutica/filip-stack/compare/v0.4.1...v0.5.0) (2026-04-29)
+
+
+### Features
+
+* add fallow-backed simplification guidance ([38392ed](https://github.com/filipgutica/filip-stack/commit/38392edeb53af2bc241e30423cbcb37a805d088a))
+
 ## [0.4.1](https://github.com/filipgutica/filip-stack/compare/v0.4.0...v0.4.1) (2026-04-29)
 
 
