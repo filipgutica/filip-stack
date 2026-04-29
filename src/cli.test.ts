@@ -15,10 +15,7 @@ describe('runCli', () => {
     testRoot = await mkdtemp(join(tmpdir(), 'filip-stack-cli-test-'))
     repoRoot = join(testRoot, 'repo')
     homeDir = join(testRoot, 'home')
-    await mkdir(join(repoRoot, 'globals'), { recursive: true })
     await mkdir(join(repoRoot, 'plugins', 'filip-stack', 'scripts'), { recursive: true })
-    await writeFile(join(repoRoot, 'globals/AGENTS.md'), 'agents')
-    await writeFile(join(repoRoot, 'globals/CLAUDE.md'), 'claude')
     await writeFile(join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs'), '#!/usr/bin/env node\n')
   })
 
@@ -26,122 +23,50 @@ describe('runCli', () => {
     await rm(testRoot, { recursive: true, force: true })
   })
 
-  it('syncs globals by default', async () => {
-    const messages: string[] = []
+  it('requires the codex-hooks command', async () => {
+    const error = vi.fn()
 
     await expect(
       runCli({
         argv: [],
         repoRoot,
         homeDir,
-        log: (message) => messages.push(message),
-        error: () => {},
+        log: () => {},
+        error,
       }),
-    ).resolves.toBe(0)
+    ).resolves.toBe(2)
 
-    expect(messages.join('\n')).toContain('Synced Globals')
-    await expect(readFile(join(homeDir, '.codex/AGENTS.md'), 'utf8')).resolves.toBe('agents')
-    await expect(readFile(join(homeDir, '.claude/CLAUDE.md'), 'utf8')).resolves.toBe('claude')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Usage: filip-stack codex-hooks [--dry-run]'))
   })
 
-  it('rejects unknown flags through yargs', async () => {
+  it('rejects removed globals flags', async () => {
     const error = vi.fn()
 
     await expect(
       runCli({
-        argv: ['--unknown'],
+        argv: ['--globals'],
         repoRoot,
         homeDir,
         log: () => {},
         error,
       }),
     ).resolves.toBe(2)
-    expect(error).toHaveBeenCalledWith(expect.stringContaining('Unknown argument: unknown'))
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Unknown command: --globals'))
   })
 
-  it('runs setup against the provided rc file', async () => {
-    const rcFile = join(testRoot, '.zshrc')
-
-    await expect(
-      runCli({
-        argv: ['setup', '--rc-file', rcFile, '--alias', 'filip-stack'],
-        repoRoot,
-        homeDir,
-        log: () => {},
-        error: () => {},
-      }),
-    ).resolves.toBe(0)
-
-    await expect(readFile(rcFile, 'utf8')).resolves.toContain(
-      'alias filip-stack="node ' + join(repoRoot, 'dist/cli.js') + '"',
-    )
-  })
-
-  it('expands home paths for setup rc files', async () => {
-    await expect(
-      runCli({
-        argv: ['setup', '--rc-file', '~/.testrc'],
-        repoRoot,
-        homeDir,
-        log: () => {},
-        error: () => {},
-      }),
-    ).resolves.toBe(0)
-
-    await expect(readFile(join(homeDir, '.testrc'), 'utf8')).resolves.toContain(
-      'alias filip-stack="node ' + join(repoRoot, 'dist/cli.js') + '"',
-    )
-  })
-
-  it('allows --globals with setup only as an error', async () => {
+  it('rejects removed setup command', async () => {
     const error = vi.fn()
 
     await expect(
       runCli({
-        argv: ['setup', '--globals'],
+        argv: ['setup'],
         repoRoot,
         homeDir,
         log: () => {},
         error,
       }),
     ).resolves.toBe(2)
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('setup cannot be combined with sync scope flags'),
-    )
-  })
-
-  it('rejects setup-only options for sync', async () => {
-    const error = vi.fn()
-
-    await expect(
-      runCli({
-        argv: ['--rc-file', join(testRoot, '.zshrc')],
-        repoRoot,
-        homeDir,
-        log: () => {},
-        error,
-      }),
-    ).resolves.toBe(2)
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('--rc-file and --alias can only be used with setup'),
-    )
-  })
-
-  it('renders dry-run markdown in command mode', async () => {
-    const messages: string[] = []
-
-    await expect(
-      runCli({
-        argv: ['--dry-run'],
-        repoRoot,
-        homeDir,
-        log: (message) => messages.push(message),
-        error: () => {},
-      }),
-    ).resolves.toBe(0)
-
-    expect(messages.join('\n')).toContain('Dry Run')
-    expect(messages.join('\n')).toContain('Globals')
+    expect(error).toHaveBeenCalledWith(expect.stringContaining('Unknown command: setup'))
   })
 
   it('syncs Codex hooks through the codex-hooks command', async () => {
@@ -163,7 +88,7 @@ describe('runCli', () => {
     )
   })
 
-  it('renders dry-run markdown for codex-hooks', async () => {
+  it('renders dry-run output for codex-hooks', async () => {
     const messages: string[] = []
 
     await expect(
@@ -179,41 +104,4 @@ describe('runCli', () => {
     expect(messages.join('\n')).toContain('Dry Run')
     expect(messages.join('\n')).toContain('Codex Hooks')
   })
-
-  it('rejects sync flags with codex-hooks', async () => {
-    const error = vi.fn()
-
-    await expect(
-      runCli({
-        argv: ['codex-hooks', '--globals'],
-        repoRoot,
-        homeDir,
-        log: () => {},
-        error,
-      }),
-    ).resolves.toBe(2)
-
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('codex-hooks cannot be combined with sync scope flags'),
-    )
-  })
-
-  it('rejects setup-only options for codex-hooks', async () => {
-    const error = vi.fn()
-
-    await expect(
-      runCli({
-        argv: ['codex-hooks', '--rc-file', join(testRoot, '.zshrc')],
-        repoRoot,
-        homeDir,
-        log: () => {},
-        error,
-      }),
-    ).resolves.toBe(2)
-
-    expect(error).toHaveBeenCalledWith(
-      expect.stringContaining('--rc-file and --alias can only be used with setup'),
-    )
-  })
-
 })

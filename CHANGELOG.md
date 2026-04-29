@@ -1,3 +1,10 @@
+## [0.4.1](https://github.com/filipgutica/filip-stack/compare/v0.4.0...v0.4.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* remove globals sync cli ([6eb8a0c](https://github.com/filipgutica/filip-stack/commit/6eb8a0c47837323f313c72deb81ab72093579672))
+
 # [0.4.0](https://github.com/filipgutica/filip-stack/compare/v0.3.2...v0.4.0) (2026-04-24)
 
 

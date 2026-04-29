@@ -1,6 +1,6 @@
 # Filip Stack
 
-Personal source of truth for shared Claude and Codex setup across my machines.
+Personal Claude and Codex plugin bundle.
 
 ## Distribution Model
 
@@ -18,9 +18,8 @@ plugins/filip-stack/       Plugin payload shared by Claude and Codex (skills, ho
   scripts/                 Hook runtime (project-notes-hook.mjs)
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
-globals/                   AGENTS.md and CLAUDE.md synced to host home dirs
 scripts/                   Stamp and validate scripts
-src/                       TypeScript CLI source (globals sync + shell setup)
+src/                       Minimal CLI source for Codex hook setup
 tests/                     Hook integration tests
 dist/                      Build output (gitignored)
 ```
@@ -80,48 +79,16 @@ The Codex marketplace version is stamped from `package.json` during the release 
 plugins/filip-stack/.codex-plugin/plugin.json
 ```
 
-Install the global Codex notes hooks separately:
+Install the global Codex notes hooks separately when needed:
 
 ```sh
-filip-stack codex-hooks
+node dist/cli.js codex-hooks
+node dist/cli.js codex-hooks --dry-run
 ```
 
 This command installs or updates `~/.codex/hooks.json` so reserved project-notes prompts such as `notes create: <title>` and `notes plan: <seed>` route through Filip Stack's hook runtime even if Codex does not honor plugin-bundled hooks consistently.
 
-> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path, but `filip-stack codex-hooks` is the reliable setup path for the notes hook flow.
-
-## CLI
-
-Add a shell alias so the CLI is available from anywhere:
-
-```sh
-node dist/cli.js setup
-node dist/cli.js setup --rc-file ~/.zshrc
-node dist/cli.js setup --alias stack-sync
-node dist/cli.js setup --dry-run
-```
-
-Install or update the global Codex notes hooks:
-
-```sh
-filip-stack codex-hooks
-filip-stack codex-hooks --dry-run
-```
-
-Sync global guidance files:
-
-```sh
-filip-stack
-filip-stack --globals
-filip-stack --dry-run
-```
-
-Globals synced:
-
-```text
-globals/AGENTS.md  ->  ~/.codex/AGENTS.md
-globals/CLAUDE.md  ->  ~/.claude/CLAUDE.md
-```
+> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path, but `codex-hooks` is the reliable setup path for the notes hook flow.
 
 ## Versioning
 
@@ -164,7 +131,7 @@ Commands: `notes create: <title>`, `notes track: <ticket>`, `notes plan: <seed>`
 
 ## CI
 
-- **validate** — runs on all PRs and pushes: typecheck, test, build
+- **validate** — runs on all PRs and pushes: plugin manifest validation, typecheck, test, build
 - **release** — runs on push to `main` after validate: semantic-release bumps version,
   stamps plugin manifests, commits back, creates GitHub release
 
@@ -173,8 +140,9 @@ There is no separate Pages deployment workflow. Claude installs directly from th
 ## Development
 
 ```sh
+pnpm validate-plugins
 pnpm typecheck
 pnpm test
 pnpm build
-pnpm check          # typecheck + test + build
+pnpm check          # validate plugin manifests + typecheck + test + build
 ```
