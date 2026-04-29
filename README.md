@@ -113,11 +113,11 @@ and creates a GitHub release. No manual version commands needed.
 Both Claude and Codex plugins include:
 
 - `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, delegation, synthesis)
-- `simplification-review` — analyze-first simplification review skill scoped to local changes, untracked files, branch diff, or an explicit area
+- `simplification-review` — analyze-first simplification, cleanup, reuse, efficiency, and maintainability review skill scoped to local changes, untracked files, branch diff, or an explicit area. Uses Fallow as the primary deterministic analysis engine for supported JS/TS/Vue/Nest, dead-code, duplication, health, dependency, and CSS/SCSS/CSS Module cleanup signals.
 - `project-notes-tracker` — local ticket lifecycle (create, plan, approve, complete)
 
 The coordinator guidance is intentionally proportional: use the lightest safe workflow for the task, keep bounded mechanical changes local when possible, and reserve explorer or critic passes for real unknowns, behavior risk, or weak verification.
-Use `simplification-review` when the task is a bounded maintainability review rather than implementation. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface.
+Use `simplification-review` for broad natural-language requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, finding dead or unused code, removing redundant tests or styles, checking efficiency, or validating cleanup after generated code. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface. The skill works through the Fallow CLI by default; Fallow MCP is optional when already available.
 
 ## Project Notes Hook
 
