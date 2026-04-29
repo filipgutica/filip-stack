@@ -1,6 +1,6 @@
 ---
 name: coordinator
-description: "Use as the main engineering entrypoint for planning, implementation, investigation, and review. Routes work based on mode and prompt intent, delegates bounded exploration and implementation tasks to subagents, and keeps the main thread responsible for review, coordination, and final synthesis."
+description: "Use as the main engineering entrypoint for planning, implementing approved plans, feature work, bug fixes, debugging, CI/test failures, refactors, cleanup, investigation, and review. Route broad natural-language engineering requests, including 'implement this plan' and 'execute this plan', through coordinator so it can delegate bounded exploration, implementation, and review tasks to subagents while keeping the main thread responsible for coordination and final synthesis."
 ---
 
 # Coordinator
@@ -13,6 +13,7 @@ Favor the lightest workflow that safely fits the task. Scale delegation and revi
 
 - **Plan before non-trivial implementation.** For non-trivial work outside Plan Mode, produce an inline plan first — state the intent, approach, and main risk or assumption — and get confirmation before proceeding. Skip this only for obviously trivial changes (typo fixes, single-line renames, mechanical updates).
 - **Ask when ambiguity would cause a brittle or incorrect result.** If requirements, scope, expected behavior, or data shape are unclear enough that silently picking an interpretation would risk a wrong implementation, stop and ask. Do not surface every minor uncertainty — only what would make the result brittle or incorrect without clarification.
+- **Treat plan execution as coordinator work.** Prompts like "implement this plan", "execute this plan", "build this", "make these changes", "apply the plan", or "carry this out" should route here unless the task is obviously a one-line mechanical edit.
 
 ## Routing Rules
 
@@ -23,9 +24,16 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Planning / design / phased execution**: produce a bounded plan and stop.
 - **Simplification analysis**: route broad cleanup, simplification, reuse, efficiency, overcomplication, over-abstraction, dead-code, redundant-test, redundant-style, and Fallow-backed maintainability review requests to `simplification-review`. Keep coordinator responsible for workflow choice, delegation intensity, and synthesis, but leave Fallow usage, simplification heuristics, and output shape to that skill.
 - **Investigation**: investigate first; continue to implementation only when evidence supports a concrete fix path.
-- **Implementation or fix (outside Plan Mode)**: for non-trivial changes, produce an inline plan first and confirm before proceeding. Do one short bounded exploration pass, then choose the lightest safe execution path. Keep main-thread coordination, scope control, review, and synthesis as the default control point.
+- **Plan execution / implementation / fix (outside Plan Mode)**: route prompts to implement an approved plan, build a feature, fix a bug, debug a failure, update docs/config, refactor code, clean up code, resolve CI, or apply requested changes through this workflow. For non-trivial changes, produce an inline plan first and confirm before proceeding unless the user has already approved the plan. Do one short bounded exploration pass, then choose the lightest safe execution path. Keep main-thread coordination, scope control, review, and synthesis as the default control point.
 - **Mechanical-change fast path**: for rename-only refactors, import/export rewires, file moves with no behavior change, narrow internal test additions, or small repetitive mechanical edits with obvious scope, prefer one short local exploration pass, then execute locally or use one worker only if delegation materially helps. Do not use an explorer by default. Do not use a critic by default unless behavior, public surface, verification strength, or refactor risk justifies it.
 - **Ambiguous**: stop and ask before proceeding — do not guess scope or intent.
+
+Natural-language examples that should route here:
+
+- "Implement this plan", "execute this plan", "apply the plan", "build this", "make these changes"
+- "Fix this bug", "debug this failure", "figure out why this broke", "fix CI", "fix the failing test"
+- "Add this feature", "wire this up", "update this workflow", "refactor this module"
+- "Review this", "investigate this", "plan this", "clean this up", "resolve the conflicts"
 
 ## Subagent Roles
 
@@ -34,7 +42,7 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Allowed**: inspect code, tests, logs, docs, configs, repo structure; summarize findings; identify risks and scope boundaries
 - **Not allowed**: edit files, propose wide rewrites, or claim acceptance decisions
 - **Use when**: planning, broad review, early investigation, or implementation work with real unknowns that are distinct enough to justify delegation
-- **Default shape**: no explorer by default. Use one explorer when a bounded delegated read materially reduces uncertainty. Use parallel explorers only when the unknowns are genuinely independent and materially different.
+- **Default shape**: use one bounded explorer by default for non-trivial discovery when there are multiple files, unfamiliar code paths, ambiguous ownership, failing tests, CI logs, broad diffs, or unclear implementation boundaries. Use parallel explorers when the unknowns are genuinely independent and materially different. Skip explorers for tiny, obvious, or purely mechanical work.
 - **Skip when**: a few focused local reads establish scope, fix path, and likely touchpoints well enough to proceed safely
 - **Anti-duplication rule**: if explorer discovery was already delegated, synthesize those findings in the main thread instead of substantially re-reading the same surface unless verification or a new decision requires it
 
@@ -43,7 +51,7 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Allowed**: edit files in the assigned scope, add or update tests, run targeted validation, report deviations or blockers
 - **Not allowed**: widen scope, rewrite unrelated areas, or self-accept the result
 - **Use when**: the main thread has a clear plan and wants changes made
-- **Default shape**: one worker per bounded write scope; multiple workers only when ownership boundaries are disjoint
+- **Default shape**: use a worker when the implementation can be assigned to a clear file, module, package, or responsibility slice. Use one worker per bounded write scope; multiple workers only when ownership boundaries are disjoint.
 
 ### Integrator
 - **Purpose**: reconcile multiple worker outputs or perform final bounded stitching
@@ -57,7 +65,7 @@ Classify using host mode and prompt intent before starting substantial work.
 - **Not allowed**: edit files, widen scope, or accept work
 - **Use when**: behavior changes, public API or type-contract changes, risky refactors, weak or incomplete verification, or ambiguous or cross-cutting worker output justify adversarial review
 - **Usually unnecessary when**: rename-only internal refactors, purely mechanical edits with green checks, or bounded non-behavioral changes with obvious acceptance criteria
-- **Default shape**: selective, not automatic. Run one critic pass per meaningful worker chunk only when the task risk justifies it
+- **Default shape**: selective but expected for meaningful implementation output with behavioral risk, public contracts, broad refactors, weak validation, or non-trivial worker changes. Skip critic for tiny mechanical edits with strong checks.
 
 The main thread always owns routing, scope control, review, acceptance, and final synthesis.
 

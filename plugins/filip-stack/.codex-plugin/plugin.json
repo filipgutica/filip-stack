@@ -16,7 +16,7 @@
       "Write"
     ],
     "defaultPrompt": [
-      "For non-trivial engineering work, first do a bounded planning or exploration pass, delegate bounded exploration and implementation to subagents by default, run a critic pass before final acceptance, use subagents for codebase exploration and adversarial review in Plan Mode, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
+      "Use $filip-stack:coordinator for broad engineering requests including planning, implementing approved plans, feature work, bug fixes, debugging, CI/test failures, refactors, cleanup, investigation, review, conflict resolution, and prompts like 'implement this plan' or 'execute this plan'. For non-trivial work, first do a bounded planning or exploration pass, use bounded explorers by default when discovery spans multiple files or unclear code paths, delegate clear implementation slices to workers, run critic review for meaningful risky output, keep the main thread responsible for coordination, approval, review, and synthesis, and close completed or idle subagents before finishing.",
       "Use $filip-stack:simplification-review for analyze-first simplification, cleanup, reuse, efficiency, overcomplication, dead-code, redundant-test, redundant-style, and Fallow-backed maintainability reviews scoped to local changes, untracked files, branch diff, or an explicit area.",
       "Use $filip-stack:project-notes-tracker to create and manage a local ticket."
     ]
