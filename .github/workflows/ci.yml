@@ -37,7 +37,7 @@ jobs:
       - name: Test
         run: pnpm test
 
-      - name: Build (Codex plugin)
+      - name: Build minimal CLI
         run: pnpm build
 
   release:
