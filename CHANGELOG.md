@@ -1,3 +1,10 @@
+# [0.6.0](https://github.com/filipgutica/filip-stack/compare/v0.5.1...v0.6.0) (2026-04-30)
+
+
+### Features
+
+* upgrade simplification review reporting ([bee811a](https://github.com/filipgutica/filip-stack/commit/bee811a0869ae2ff8636af3c1366d6f34c487028))
+
 ## [0.5.1](https://github.com/filipgutica/filip-stack/compare/v0.5.0...v0.5.1) (2026-04-29)
 
 
