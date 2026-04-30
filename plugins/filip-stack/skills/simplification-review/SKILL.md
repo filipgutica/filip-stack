@@ -63,10 +63,10 @@ Avoid recommending simplifications that:
 2. For supported JS/TS/Vue/Nest/style cleanup signals, run the most focused Fallow command before broad manual exploration. Use `--format json --quiet` for agent-readable output.
 3. Prefer workspace-scoped Fallow commands for package/app-specific work in monorepos.
 4. Start focused local reads only after Fallow identifies relevant files, or when the request is about qualitative simplification that Fallow cannot judge.
-5. Use explorer subagents only when the touched surface is broad enough or split enough that bounded delegated review materially helps.
-6. When delegating, keep subagents read-only and constrain them to reuse, extensibility, maintainability, efficiency, quality, and Fallow finding review within the resolved scope.
-7. Synthesize deterministic Fallow findings with human review judgment; ignore low-confidence or stylistic churn.
-8. Produce a bounded simplification plan with assumptions, tradeoffs, validation concerns, and the smallest safe simplification direction.
+5. For non-tiny scopes, run parallel read-only explorer passes for `Quality`, `Reuse`, and `Efficiency`. For tiny scopes, a single local pass is acceptable, but keep the same categories in the final report.
+6. When delegating, keep subagents read-only and constrain them to one category, the resolved scope, and evidence-backed findings. Ask each pass to return severity, file/line evidence, why the issue matters, the smallest behavior-preserving fix direction, and anything it inspected but would not change.
+7. Synthesize deterministic Fallow findings with the specialist review passes; ignore low-confidence, unsupported, or mostly stylistic churn.
+8. Produce a consolidated simplification review report with severity-ranked findings and top priorities. Include an implementation plan only when it helps the user act on the report.
 9. Stop after analysis unless the user explicitly asks for implementation.
 
 Use the command recipes and safety rules in [references/fallow-cleanup-recipes.md](references/fallow-cleanup-recipes.md).
@@ -97,25 +97,45 @@ If a request is phrased broadly, such as "can we simplify this", "this feels ove
 
 When using explorer subagents, have them explicitly inspect for:
 
-- ambiguity or hard-to-follow logic
-- duplicated code or repeated logic
-- dead or unused code
-- overly complex or unnecessary abstractions
-- brittle structure or hard-to-extend organization
-- weak separation of concerns
-- inefficient code with a clear behavior-preserving simplification path
-- dead, redundant, or low-value tests
-- tests that do not assert meaningful behavior
-- redundant styles or unused style paths with enough evidence to remove safely
+- `Quality`: ambiguity or hard-to-follow logic; brittle state or manual shadows; unnecessary flags, wrappers, or abstraction layers; weak separation of concerns; dead, redundant, duplicated, or low-value tests; tests that do not assert meaningful behavior.
+- `Reuse`: duplicated code or repeated logic; local reinvention of existing project components, helpers, composables, utilities, or conventions; divergent patterns that make later maintenance harder; clone groups or shared helpers surfaced by Fallow.
+- `Efficiency`: repeated work, avoidable recomputation, hot-path allocation, broad reactive invalidation, redundant watchers/listeners, unnecessary deep observation, or inefficient code with a clear behavior-preserving simplification path.
+- `Cleanup`: dead or unused code, obsolete paths, redundant styles, and unused style paths with enough evidence to remove safely. Use this as a Fallow-backed category when it does not fit the three main review passes cleanly.
 
 Use the shared explorer prompt shape from [../coordinator/references/subagent-templates.md](../coordinator/references/subagent-templates.md) when delegated read-only analysis helps. Keep workflow-policy details in `coordinator`; this skill owns the simplification lens and output contract.
 
 ## Output
 
-- `Summary`
-- `Prioritized Findings`
-- `Simplification Plan`
-- `Tradeoffs`
-- `Risks`
-- `Validation`
-- `Open Questions`
+Default to a report-first output. Do not edit code or imply implementation has started.
+
+Use this structure:
+
+```md
+Simplification Review: <scope>
+
+High Severity
+
+[Quality|Reuse|Efficiency|Cleanup] <finding title> — <file>:<line>
+<evidence, why it matters, and the smallest safe direction>
+
+Medium Severity
+
+[Quality|Reuse|Efficiency|Cleanup] <finding title> — <file>:<line>
+<evidence, why it matters, and the smallest safe direction>
+
+Low Severity
+
+<compact grouped bullets or a small table with category, finding, and location>
+
+Top priorities: <short ordered list of the most important fixes>
+
+Validation notes: <Fallow command/results, missing checks, or important confidence limits when relevant>
+```
+
+Severity guidance:
+
+- `High`: likely correctness bug, duplicate side effect, public-contract risk, hidden reactivity/lifecycle failure, or cleanup that prevents a real regression.
+- `Medium`: meaningful maintainability, reuse, fragility, or efficiency issue with a clear behavior-preserving path.
+- `Low`: small simplification, local readability cleanup, minor duplication, or optimization that is useful but not urgent.
+
+If no material findings exist, say so directly and list what was checked.
