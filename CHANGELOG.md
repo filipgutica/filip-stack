@@ -1,3 +1,10 @@
+# [0.7.0](https://github.com/filipgutica/filip-stack/compare/v0.6.0...v0.7.0) (2026-05-05)
+
+
+### Features
+
+* split filip-stack marketplace plugins ([3b1d387](https://github.com/filipgutica/filip-stack/commit/3b1d3879975f19f065670356dab5751b9a0ef8bf))
+
 # [0.6.0](https://github.com/filipgutica/filip-stack/compare/v0.5.1...v0.6.0) (2026-04-30)
 
 
