@@ -1,9 +1,9 @@
-import { readdir, readFile } from 'node:fs/promises'
+import { readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const pluginRoot = join(repoRoot, 'plugins/filip-stack')
+const pluginsRoot = join(repoRoot, 'plugins')
 
 let errors = 0
 
@@ -42,19 +42,51 @@ const validateSkillMd = async (path) => {
   }
 }
 
+const pathExists = async (path) => {
+  try {
+    await stat(path)
+    return true
+  } catch (err) {
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
+      return false
+    }
+    throw err
+  }
+}
+
 console.log('Validating plugin manifests...')
 
-await validateJson(join(pluginRoot, '.claude-plugin/plugin.json'), ['name'])
-await validateJson(join(pluginRoot, '.codex-plugin/plugin.json'), ['name', 'skills'])
-await validateJson(join(pluginRoot, 'hooks/hooks.json'), ['hooks'])
-await validateJson(join(pluginRoot, 'hooks/codex.json'), ['hooks'])
 await validateJson(join(repoRoot, '.claude-plugin/marketplace.json'), ['name', 'owner', 'plugins'])
 await validateJson(join(repoRoot, '.agents/plugins/marketplace.json'), ['name', 'plugins'])
 
-const skillsDir = join(pluginRoot, 'skills')
-const skills = await readdir(skillsDir).catch(() => [])
-for (const skill of skills) {
-  await validateSkillMd(join(skillsDir, skill, 'SKILL.md'))
+const pluginEntries = await readdir(pluginsRoot, { withFileTypes: true }).catch((err) => {
+  fail(`${pluginsRoot} — ${err.message}`)
+  return []
+})
+
+const pluginDirs = pluginEntries
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort()
+
+for (const pluginDir of pluginDirs) {
+  const pluginRoot = join(pluginsRoot, pluginDir)
+
+  await validateJson(join(pluginRoot, '.claude-plugin/plugin.json'), ['name'])
+  await validateJson(join(pluginRoot, '.codex-plugin/plugin.json'), ['name', 'skills'])
+
+  for (const hooksPath of ['hooks/hooks.json', 'hooks/codex.json']) {
+    const fullPath = join(pluginRoot, hooksPath)
+    if (await pathExists(fullPath)) {
+      await validateJson(fullPath, ['hooks'])
+    }
+  }
+
+  const skillsDir = join(pluginRoot, 'skills')
+  const skills = await readdir(skillsDir).catch(() => [])
+  for (const skill of skills) {
+    await validateSkillMd(join(skillsDir, skill, 'SKILL.md'))
+  }
 }
 
 if (errors > 0) {

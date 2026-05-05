@@ -1,4 +1,4 @@
-import { readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,15 +17,24 @@ const stampJson = async (path, updater) => {
   console.log(`Stamped ${version} into ${path}`)
 }
 
-await stampJson(join(repoRoot, 'plugins/filip-stack/.claude-plugin/plugin.json'), (json) => ({
-  ...json,
-  version,
-}))
+const pluginsRoot = join(repoRoot, 'plugins')
+const pluginEntries = await readdir(pluginsRoot, { withFileTypes: true })
+const pluginDirs = pluginEntries
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort()
 
-await stampJson(join(repoRoot, 'plugins/filip-stack/.codex-plugin/plugin.json'), (json) => ({
-  ...json,
-  version,
-}))
+for (const pluginDir of pluginDirs) {
+  await stampJson(join(pluginsRoot, pluginDir, '.claude-plugin/plugin.json'), (json) => ({
+    ...json,
+    version,
+  }))
+
+  await stampJson(join(pluginsRoot, pluginDir, '.codex-plugin/plugin.json'), (json) => ({
+    ...json,
+    version,
+  }))
+}
 
 await stampJson(join(repoRoot, '.claude-plugin/marketplace.json'), (json) => ({
   ...json,

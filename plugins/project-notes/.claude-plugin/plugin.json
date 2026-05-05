@@ -1,0 +1,9 @@
+{
+  "name": "project-notes",
+  "version": "0.6.0",
+  "description": "Project notes ticket tracker with hook-driven planning seed handoff.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "skills": "./skills"
+}

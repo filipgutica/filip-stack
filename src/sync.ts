@@ -48,7 +48,7 @@ const managedHookCommand = ({
 }: {
   repoRoot: string
   event: 'UserPromptSubmit' | 'Stop'
-}) => `node "${join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs')}" codex ${event}`
+}) => `node "${join(repoRoot, 'plugins', 'project-notes', 'scripts', 'project-notes-hook.mjs')}" codex ${event}`
 
 const emptyHooksConfig = (): HooksConfig => ({ hooks: {} })
 
@@ -153,7 +153,7 @@ export const syncCodexHooks = async ({
 
   actions.push({
     type: existingContent === null ? 'copy' : 'update',
-    source: join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs'),
+    source: join(repoRoot, 'plugins', 'project-notes', 'scripts', 'project-notes-hook.mjs'),
     destination,
     detail: 'sync Codex project-notes hooks',
   })

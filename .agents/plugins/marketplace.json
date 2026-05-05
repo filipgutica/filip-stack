@@ -6,10 +6,22 @@
   },
   "plugins": [
     {
-      "name": "filip-stack",
+      "name": "workflow",
       "source": {
         "source": "local",
-        "path": "./plugins/filip-stack"
+        "path": "./plugins/workflow"
+      },
+      "policy": {
+        "installation": "AVAILABLE",
+        "authentication": "ON_INSTALL"
+      },
+      "category": "Productivity"
+    },
+    {
+      "name": "project-notes",
+      "source": {
+        "source": "local",
+        "path": "./plugins/project-notes"
       },
       "policy": {
         "installation": "AVAILABLE",

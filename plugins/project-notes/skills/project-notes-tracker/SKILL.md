@@ -65,7 +65,7 @@ Planning flow rules:
 
 - `notes plan:` should tell the model to append the seed under `## Planning Seed` and keep the ticket in `.notes/todo/`.
 - In Claude, the hook should tell the model to enter planning flow and use `$coordinator` with the seed.
-- In Codex, the hook should prompt the user to switch into Plan Mode and use `$filip-stack:coordinator` with the seed because mode switching is host-controlled.
+- In Codex, the hook should prompt the user to switch into Plan Mode and use `$workflow:coordinator` with the seed because mode switching is host-controlled.
 - `notes approve` should tell the model to write the approved plan into the ticket and move it to `.notes/in-progress/`.
 - During normal prompts, `UserPromptSubmit` may restore or attach session state silently, but it should not emit visible reminder text for ordinary Codex prompts.
 - Do not rely on the hook script to parse coordinator output or write ticket contents on the model's behalf.

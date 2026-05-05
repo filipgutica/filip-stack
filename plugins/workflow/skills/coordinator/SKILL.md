@@ -1,17 +1,18 @@
 ---
 name: coordinator
-description: "Use as the main engineering entrypoint for planning, implementing approved plans, feature work, bug fixes, debugging, CI/test failures, refactors, cleanup, investigation, and review. Route broad natural-language engineering requests, including 'implement this plan' and 'execute this plan', through coordinator so it can delegate bounded exploration, implementation, and review tasks to subagents while keeping the main thread responsible for coordination and final synthesis."
+description: "Use as the main engineering entrypoint for broad engineering work, implementation, debugging, CI failures, refactors, cleanup, investigation, review, and prompts like 'implement this plan' or 'execute this plan'."
 ---
 
 # Coordinator
 
-Route non-trivial engineering work to the right flow, delegate bounded subtasks to subagents, and keep the main thread responsible for coordination, review, and synthesis.
+Route non-trivial engineering work to the right flow, delegate bounded subtasks to subagents, and keep the main thread responsible for coordination, review, acceptance, and synthesis.
 
 Favor the lightest workflow that safely fits the task. Scale delegation and review intensity to task risk, behavioral uncertainty, and verification strength rather than task size alone.
 
 ## Core Behaviors
 
-- **Plan before non-trivial implementation.** For non-trivial work outside Plan Mode, produce an inline plan first — state the intent, approach, and main risk or assumption — and get confirmation before proceeding. Skip this only for obviously trivial changes (typo fixes, single-line renames, mechanical updates).
+- **Coordinate before changing code.** For non-trivial implementation, create only the execution structure needed to delegate, review, integrate, and verify safely. Do not own detailed implementation-plan formatting.
+- **Route pure planning requests.** If the user asks for a written implementation plan, detailed task plan, or plan-output format, use `superpowers:writing-plans` for the plan content. Coordinator may still handle routing, scope control, and handoff.
 - **Ask when ambiguity would cause a brittle or incorrect result.** If requirements, scope, expected behavior, or data shape are unclear enough that silently picking an interpretation would risk a wrong implementation, stop and ask. Do not surface every minor uncertainty — only what would make the result brittle or incorrect without clarification.
 - **Treat plan execution as coordinator work.** Prompts like "implement this plan", "execute this plan", "build this", "make these changes", "apply the plan", or "carry this out" should route here unless the task is obviously a one-line mechanical edit.
 
@@ -21,10 +22,10 @@ Classify using host mode and prompt intent before starting substantial work.
 
 - **Plan Mode**: planning, review, or investigation only — no file mutations. Use explorer subagents for discovery only when delegated read-only work materially helps; use critic or explorer subagents for adversarial review only when the review risk justifies it.
 - **Review-only**: stay review-only.
-- **Planning / design / phased execution**: produce a bounded plan and stop.
+- **Pure written planning / design / plan-output requests**: route to `superpowers:writing-plans`; coordinator should not invent or own the final plan schema.
 - **Simplification analysis**: route broad cleanup, simplification, reuse, efficiency, overcomplication, over-abstraction, dead-code, redundant-test, redundant-style, and Fallow-backed maintainability review requests to `simplification-review`. Keep coordinator responsible for workflow choice, delegation intensity, and synthesis, but leave Fallow usage, simplification heuristics, and output shape to that skill.
 - **Investigation**: investigate first; continue to implementation only when evidence supports a concrete fix path.
-- **Plan execution / implementation / fix (outside Plan Mode)**: route prompts to implement an approved plan, build a feature, fix a bug, debug a failure, update docs/config, refactor code, clean up code, resolve CI, or apply requested changes through this workflow. For non-trivial changes, produce an inline plan first and confirm before proceeding unless the user has already approved the plan. Do one short bounded exploration pass, then choose the lightest safe execution path. Keep main-thread coordination, scope control, review, and synthesis as the default control point.
+- **Plan execution / implementation / fix (outside Plan Mode)**: route prompts to implement an approved plan, build a feature, fix a bug, debug a failure, update docs/config, refactor code, clean up code, resolve CI, or apply requested changes through this workflow. Use enough inline structure to assign work, manage risk, and verify outcomes; do not stop at plan formatting unless the user asked for planning only.
 - **Mechanical-change fast path**: for rename-only refactors, import/export rewires, file moves with no behavior change, narrow internal test additions, or small repetitive mechanical edits with obvious scope, prefer one short local exploration pass, then execute locally or use one worker only if delegation materially helps. Do not use an explorer by default. Do not use a critic by default unless behavior, public surface, verification strength, or refactor risk justifies it.
 - **Ambiguous**: stop and ask before proceeding — do not guess scope or intent.
 
@@ -34,6 +35,18 @@ Natural-language examples that should route here:
 - "Fix this bug", "debug this failure", "figure out why this broke", "fix CI", "fix the failing test"
 - "Add this feature", "wire this up", "update this workflow", "refactor this module"
 - "Review this", "investigate this", "plan this", "clean this up", "resolve the conflicts"
+
+## Orchestration Loop
+
+For non-trivial implementation or investigation, coordinate the work in this order:
+
+1. **Classify intent and risk.** Identify whether the request is review-only, planning-only, investigation, implementation, CI/debugging, refactor, cleanup, or plan execution. Note behavior/public API risk and validation strength.
+2. **Bound discovery.** Read locally for small obvious scopes. Delegate explorer subagents when discovery spans multiple files, unclear ownership, failing CI logs, unfamiliar paths, or independent unknowns.
+3. **Choose execution shape.** Keep simple mechanical work local. Use workers when implementation can be assigned to clear files, modules, packages, or responsibilities.
+4. **Assign disjoint scopes.** When using multiple workers, give each one a self-contained prompt, explicit ownership, and non-overlapping write scope.
+5. **Review before accepting.** Run a critic pass when behavior changes, public contracts, risky refactors, weak validation, or broad worker output justify adversarial review.
+6. **Integrate and verify.** Reconcile worker output, run targeted checks first, broaden verification only when the blast radius justifies it.
+7. **Synthesize outcome.** Summarize what changed, what was verified, residual risks, and any follow-up the user needs.
 
 ## Subagent Roles
 
@@ -80,9 +93,10 @@ If the main thread already has enough evidence after a few local reads, skip exp
 
 ## Plan Mode (Claude Code)
 
-- Produce the plan only — do not call `Edit`, `Write`, or `Bash` for mutations.
+- Planning only — do not call `Edit`, `Write`, or `Bash` for mutations.
 - Use explorer subagents for repository discovery only when there are real unknowns that materially benefit from delegated read-only work; otherwise establish scope locally and synthesize in the main thread.
-- When the user approves: call `ExitPlanMode`, then delegate implementation to a worker with a self-contained prompt (full plan, critical file paths, acceptance criteria).
+- For pure written implementation plans, use `superpowers:writing-plans` for the plan artifact.
+- When the user approves: call `ExitPlanMode`, then delegate implementation to a worker with a self-contained prompt covering the approved scope, critical file paths, and acceptance criteria.
 - After the worker returns: use a critic pass only when the output is behaviorally risky, cross-cutting, weakly validated, or otherwise merits adversarial review before acceptance.
 
 ## Host Notes
