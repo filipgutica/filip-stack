@@ -15,8 +15,8 @@ describe('runCli', () => {
     testRoot = await mkdtemp(join(tmpdir(), 'filip-stack-cli-test-'))
     repoRoot = join(testRoot, 'repo')
     homeDir = join(testRoot, 'home')
-    await mkdir(join(repoRoot, 'plugins', 'filip-stack', 'scripts'), { recursive: true })
-    await writeFile(join(repoRoot, 'plugins', 'filip-stack', 'scripts', 'project-notes-hook.mjs'), '#!/usr/bin/env node\n')
+    await mkdir(join(repoRoot, 'plugins', 'project-notes', 'scripts'), { recursive: true })
+    await writeFile(join(repoRoot, 'plugins', 'project-notes', 'scripts', 'project-notes-hook.mjs'), '#!/usr/bin/env node\n')
   })
 
   afterEach(async () => {

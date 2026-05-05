@@ -1,20 +1,29 @@
 # Filip Stack
 
-Personal Claude and Codex plugin bundle.
+Personal Claude and Codex plugin marketplace.
 
 ## Distribution Model
 
 Both Claude and Codex are distributed directly from this GitHub repo as git-based marketplaces. No build step required — plugin payloads are tracked directly in git and versioned on release.
 
+The `filip-stack` marketplace ships two plugins:
+
+- `workflow` — coordinator and Fallow-backed simplification review
+- `project-notes` — project notes ticket tracking plus notes hooks
+
 ## Repo Layout
 
 ```text
-plugins/filip-stack/       Plugin payload shared by Claude and Codex (skills, hooks, scripts)
+plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  hooks/claude.json        Claude hooks (uses ${CLAUDE_PLUGIN_ROOT})
+  skills/                  coordinator and simplification-review skills
+plugins/project-notes/     Project notes plugin payload shared by Claude and Codex
+  .claude-plugin/          Claude plugin manifest
+  .codex-plugin/           Codex plugin manifest
+  hooks/hooks.json         Claude hooks (uses ${CLAUDE_PLUGIN_ROOT})
   hooks/codex.json         Codex hooks (uses ${CODEX_PLUGIN_ROOT})
-  skills/                  Shared skill SKILL.md and openai.yaml files
+  skills/                  project-notes-tracker skill
   scripts/                 Hook runtime (project-notes-hook.mjs)
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
@@ -28,27 +37,30 @@ dist/                      Build output (gitignored)
 
 ```sh
 claude plugin marketplace add filipgutica/filip-stack
-claude plugin install filip-stack@filip-stack
+claude plugin install workflow@filip-stack
+claude plugin install project-notes@filip-stack
 ```
 
-Claude reads `.claude-plugin/marketplace.json` at the repo root, which points
-`source` at `./plugins/filip-stack`. No build step required — the plugin payload
-is tracked directly in git.
+Claude reads `.claude-plugin/marketplace.json` at the repo root, which lists
+the `workflow` and `project-notes` plugins and points their `source` values at
+`./plugins/workflow` and `./plugins/project-notes`. No build step required —
+the plugin payloads are tracked directly in git.
 
 Claude command names include the marketplace alias, so the installed plugin is
-addressed as `filip-stack@filip-stack`.
+addressed as `<plugin-name>@filip-stack`.
 
 Updates are automatic: when a new version is released, run:
 
 ```sh
-claude plugin update filip-stack@filip-stack
+claude plugin update workflow@filip-stack
+claude plugin update project-notes@filip-stack
 ```
 
 The Claude marketplace version is stamped from `package.json` during the release workflow into:
 
 ```text
 .claude-plugin/marketplace.json
-plugins/filip-stack/.claude-plugin/plugin.json
+plugins/*/.claude-plugin/plugin.json
 ```
 
 ## Codex Install
@@ -57,11 +69,13 @@ plugins/filip-stack/.claude-plugin/plugin.json
 codex plugin marketplace add filipgutica/filip-stack
 ```
 
-Then restart Codex, open the plugin directory, and install `filip-stack` from the `filip-stack` marketplace.
+Then restart Codex, open the plugin directory, and install `workflow` and
+`project-notes` from the `filip-stack` marketplace.
 
-Codex reads `.agents/plugins/marketplace.json` at the repo root, which points
-`source` at `./plugins/filip-stack`. No build step required — the plugin payload
-is tracked directly in git.
+Codex reads `.agents/plugins/marketplace.json` at the repo root, which lists
+the `workflow` and `project-notes` plugins and points their source paths at
+`./plugins/workflow` and `./plugins/project-notes`. No build step required —
+the plugin payloads are tracked directly in git.
 
 Codex marketplace commands target the marketplace name directly, so the upgrade
 command uses `filip-stack` rather than a `plugin@marketplace` identifier.
@@ -76,7 +90,7 @@ The Codex marketplace version is stamped from `package.json` during the release 
 
 ```text
 .agents/plugins/marketplace.json
-plugins/filip-stack/.codex-plugin/plugin.json
+plugins/*/.codex-plugin/plugin.json
 ```
 
 Install the global Codex notes hooks separately when needed:
@@ -86,9 +100,9 @@ node dist/cli.js codex-hooks
 node dist/cli.js codex-hooks --dry-run
 ```
 
-This command installs or updates `~/.codex/hooks.json` so reserved project-notes prompts such as `notes create: <title>` and `notes plan: <seed>` route through Filip Stack's hook runtime even if Codex does not honor plugin-bundled hooks consistently.
+This command installs or updates `~/.codex/hooks.json` so reserved project-notes prompts such as `notes create: <title>` and `notes plan: <seed>` route through the `project-notes` hook runtime even if Codex does not honor plugin-bundled hooks consistently.
 
-> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/filip-stack/hooks/codex.json` bundled with the plugin as a best-effort path, but `codex-hooks` is the reliable setup path for the notes hook flow.
+> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/project-notes/hooks/codex.json` bundled with the `project-notes` plugin as a best-effort path, but `codex-hooks` is the reliable setup path for the notes hook flow.
 
 ## Versioning
 
@@ -103,17 +117,20 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 
 Commit messages are validated locally by commitlint via the lefthook `commit-msg` hook.
 On merge to `main`, CI bumps `package.json`, stamps the version into
-`plugins/filip-stack/.claude-plugin/plugin.json`,
-`plugins/filip-stack/.codex-plugin/plugin.json`,
+`plugins/*/.claude-plugin/plugin.json`,
+`plugins/*/.codex-plugin/plugin.json`,
 `.claude-plugin/marketplace.json`, and `.agents/plugins/marketplace.json`,
 and creates a GitHub release. No manual version commands needed.
 
 ## Included Skills
 
-Both Claude and Codex plugins include:
+The `workflow` plugin includes:
 
 - `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, delegation, synthesis)
 - `simplification-review` — analyze-first simplification, cleanup, reuse, efficiency, and maintainability review skill scoped to local changes, untracked files, branch diff, or an explicit area. Uses Fallow as the primary deterministic analysis engine for supported JS/TS/Vue/Nest, dead-code, duplication, health, dependency, and CSS/SCSS/CSS Module cleanup signals.
+
+The `project-notes` plugin includes:
+
 - `project-notes-tracker` — local ticket lifecycle (create, plan, approve, complete)
 
 The coordinator guidance is intentionally proportional: use the lightest safe workflow for the task, keep bounded mechanical changes local when possible, and reserve explorer or critic passes for real unknowns, behavior risk, or weak verification.

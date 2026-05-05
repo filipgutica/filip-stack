@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { runHook } from '../../plugins/filip-stack/scripts/project-notes-hook.mjs'
+import { runHook } from '../../plugins/project-notes/scripts/project-notes-hook.mjs'
 
 let testRoot = null
 
@@ -121,7 +121,7 @@ describe('project notes hook', () => {
 
     expect(result.exitCode).toBe(0)
     expect(result.stdout.join('\n')).toContain('appending this seed under `## Planning Seed`: Tighten notes workflow')
-    expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$filip-stack:coordinator`')
+    expect(result.stdout.join('\n')).toContain('tell the user to switch to Plan Mode and use `$workflow:coordinator`')
     const state = await readFile(join(repoRoot, '.notes/.runtime/thread-1.json'), 'utf8')
     expect(state).toContain('"lastKnownTicketPath": ".notes/todo/')
     const ticketPath = state.match(/"lastKnownTicketPath": "([^"]+)"/)?.[1]

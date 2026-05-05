@@ -642,7 +642,7 @@ const handleUserPrompt = async ({ host, repoRoot, state, sessionStatePath, paylo
       )
     } else {
       stdout.push(
-        `Project notes tracking: update \`${loadedTicket.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen tell the user to switch to Plan Mode and use \`$filip-stack:coordinator\` with that seed.`,
+        `Project notes tracking: update \`${loadedTicket.ticketPath}\` by appending this seed under \`## Planning Seed\`: ${planSeed}\nThen tell the user to switch to Plan Mode and use \`$workflow:coordinator\` with that seed.`,
       )
     }
     return { exitCode: 0 }

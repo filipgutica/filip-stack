@@ -1,0 +1,22 @@
+{
+  "name": "project-notes",
+  "version": "0.4.1",
+  "description": "Project notes ticket tracker with hook-driven planning seed handoff.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "skills": "./skills",
+  "hooks": "./hooks/codex.json",
+  "interface": {
+    "displayName": "Project Notes",
+    "shortDescription": "Project notes ticket tracker with hook-driven planning seed handoff.",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use $project-notes:project-notes-tracker to create and manage a local ticket."
+    ]
+  }
+}

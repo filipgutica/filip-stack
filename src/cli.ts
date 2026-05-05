@@ -62,7 +62,7 @@ export const runCli = async ({
           'Dry Run',
           'No files were changed. Selected scope: Codex Hooks.',
           'Codex Hooks',
-          'Source: plugins/filip-stack/scripts/project-notes-hook.mjs',
+          'Source: plugins/project-notes/scripts/project-notes-hook.mjs',
           'Destination: ~/.codex/hooks.json',
           `Planned actions: ${actions.length}`,
         ].join('\n'),

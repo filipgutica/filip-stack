@@ -1,4 +1,0 @@
-interface:
-  display_name: "Coordinator"
-  short_description: "Coordinate planning, implementing approved plans, feature work, fixes, debugging, CI/test failures, refactors, cleanup, investigation, and review"
-  default_prompt: "Use for broad engineering requests including implement this plan, execute this plan, build this, make these changes, fix this bug, debug this failure, fix CI, refactor this, clean this up, investigate this, plan this, and review this. For non-trivial work, start with a bounded planning or exploration pass, use bounded explorers by default when discovery spans multiple files or unclear code paths, delegate clear implementation slices to workers, run critic review for meaningful risky output, and keep the main thread responsible for coordination, approval, review, and synthesis."
