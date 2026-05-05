@@ -1,3 +1,24 @@
+# [0.6.0](https://github.com/filipgutica/filip-stack/compare/v0.5.1...v0.6.0) (2026-04-30)
+
+
+### Features
+
+* upgrade simplification review reporting ([bee811a](https://github.com/filipgutica/filip-stack/commit/bee811a0869ae2ff8636af3c1366d6f34c487028))
+
+## [0.5.1](https://github.com/filipgutica/filip-stack/compare/v0.5.0...v0.5.1) (2026-04-29)
+
+
+### Bug Fixes
+
+* broaden coordinator routing ([8c81949](https://github.com/filipgutica/filip-stack/commit/8c81949581efd24b167b539751f6533dfd11aebd))
+
+# [0.5.0](https://github.com/filipgutica/filip-stack/compare/v0.4.1...v0.5.0) (2026-04-29)
+
+
+### Features
+
+* add fallow-backed simplification guidance ([38392ed](https://github.com/filipgutica/filip-stack/commit/38392edeb53af2bc241e30423cbcb37a805d088a))
+
 ## [0.4.1](https://github.com/filipgutica/filip-stack/compare/v0.4.0...v0.4.1) (2026-04-29)
 
 
