@@ -92,6 +92,7 @@ If a request is phrased broadly, such as "can we simplify this", "this feels ove
 - Use quiet JSON output for agent workflows: `--format json --quiet`.
 - For changed-file or PR workflows, prefer `fallow audit --base main --format json --quiet` or a focused `--changed-since main` command.
 - For broad cleanup, start with `fallow --format json --quiet` or the narrow subcommand that matches the request.
+- For complexity-focused simplification, use the complexity recipes in `references/fallow-cleanup-recipes.md`, especially `health --targets`, `health --hotspots`, `health --complexity`, and `health --file-scores` before relying on manual ranking.
 - Run `fallow fix --dry-run --format json --quiet` before any auto-fix apply.
 - Do not delete files, exports, dependencies, tests, or styles solely from summary counts. Inspect the concrete finding and trace risky cases first.
 
