@@ -72,8 +72,21 @@ const pluginDirs = pluginEntries
 for (const pluginDir of pluginDirs) {
   const pluginRoot = join(pluginsRoot, pluginDir)
 
-  await validateJson(join(pluginRoot, '.claude-plugin/plugin.json'), ['name'])
-  await validateJson(join(pluginRoot, '.codex-plugin/plugin.json'), ['name', 'skills'])
+  const claudeManifest = join(pluginRoot, '.claude-plugin/plugin.json')
+  const codexManifest = join(pluginRoot, '.codex-plugin/plugin.json')
+  const hasClaudeManifest = await pathExists(claudeManifest)
+  const hasCodexManifest = await pathExists(codexManifest)
+
+  if (!hasClaudeManifest && !hasCodexManifest) {
+    fail(`${pluginRoot} is missing a Claude or Codex plugin manifest`)
+  }
+
+  if (hasClaudeManifest) {
+    await validateJson(claudeManifest, ['name'])
+  }
+  if (hasCodexManifest) {
+    await validateJson(codexManifest, ['name', 'skills'])
+  }
 
   for (const hooksPath of ['hooks/hooks.json', 'hooks/codex.json']) {
     const fullPath = join(pluginRoot, hooksPath)
