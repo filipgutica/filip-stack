@@ -1,3 +1,10 @@
+# [0.10.0](https://github.com/filipgutica/filip-stack/compare/v0.9.0...v0.10.0) (2026-05-06)
+
+
+### Features
+
+* add simplification complexity recipes ([b2768f8](https://github.com/filipgutica/filip-stack/commit/b2768f846d4a2f5dc1a1662e616bf83bf140ba11))
+
 # [0.9.0](https://github.com/filipgutica/filip-stack/compare/v0.8.0...v0.9.0) (2026-05-06)
 
 
