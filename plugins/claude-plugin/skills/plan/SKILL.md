@@ -5,8 +5,9 @@ description: User-invoked only. Use when the user explicitly asks Codex to ask C
 
 # Claude Plan
 
-Use Claude CLI as an external planning adviser. Codex remains responsible for
-the final plan, scope control, and deciding what to implement.
+Use Claude CLI as an external planning adviser. Claude's plan is input for
+Codex to enrich and inform its own plan; Codex remains responsible for the
+final plan, scope control, and deciding what to implement.
 
 ## Workflow
 
@@ -20,8 +21,8 @@ claude -p --permission-mode plan --no-session-persistence "<prompt>"
 3. Ask Claude for a concise implementation plan grounded in the current repo.
    Include any known constraints, files, test expectations, and open questions.
 4. Read Claude's output critically. Do not treat it as authoritative.
-5. Present the useful plan, corrected for repo reality and Codex judgment. Call
-   out any parts you rejected or could not verify.
+5. Use the useful parts to enrich Codex's own plan, corrected for repo reality
+   and Codex judgment. Call out any parts you rejected or could not verify.
 
 ## Prompt Shape
 

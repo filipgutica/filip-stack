@@ -6,10 +6,6 @@
   },
   "plugins": [
     {
-      "name": "claude-plugin",
-      "source": "./plugins/claude-plugin"
-    },
-    {
       "name": "workflow",
       "source": "./plugins/workflow"
     },

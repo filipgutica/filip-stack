@@ -1,4 +1,4 @@
-import { readdir, readFile, writeFile } from 'node:fs/promises'
+import { readdir, readFile, stat, writeFile } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
@@ -17,6 +17,18 @@ const stampJson = async (path, updater) => {
   console.log(`Stamped ${version} into ${path}`)
 }
 
+const pathExists = async (path) => {
+  try {
+    await stat(path)
+    return true
+  } catch (err) {
+    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
+      return false
+    }
+    throw err
+  }
+}
+
 const pluginsRoot = join(repoRoot, 'plugins')
 const pluginEntries = await readdir(pluginsRoot, { withFileTypes: true })
 const pluginDirs = pluginEntries
@@ -25,15 +37,21 @@ const pluginDirs = pluginEntries
   .sort()
 
 for (const pluginDir of pluginDirs) {
-  await stampJson(join(pluginsRoot, pluginDir, '.claude-plugin/plugin.json'), (json) => ({
-    ...json,
-    version,
-  }))
+  const claudeManifest = join(pluginsRoot, pluginDir, '.claude-plugin/plugin.json')
+  if (await pathExists(claudeManifest)) {
+    await stampJson(claudeManifest, (json) => ({
+      ...json,
+      version,
+    }))
+  }
 
-  await stampJson(join(pluginsRoot, pluginDir, '.codex-plugin/plugin.json'), (json) => ({
-    ...json,
-    version,
-  }))
+  const codexManifest = join(pluginsRoot, pluginDir, '.codex-plugin/plugin.json')
+  if (await pathExists(codexManifest)) {
+    await stampJson(codexManifest, (json) => ({
+      ...json,
+      version,
+    }))
+  }
 }
 
 await stampJson(join(repoRoot, '.claude-plugin/marketplace.json'), (json) => ({
