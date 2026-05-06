@@ -72,6 +72,17 @@ fallow health --format json --quiet
 fallow health -w <workspace> --format json --quiet
 ```
 
+Complexity recipes:
+
+```sh
+fallow health --targets --effort low --format json --quiet
+fallow health --hotspots --since 6m --format json --quiet
+fallow health --complexity --top 20 --sort cognitive --format json --quiet
+fallow health --file-scores --format json --quiet
+```
+
+Use these when the request is about reducing complexity, choosing refactoring targets, finding high-churn complexity hotspots, or prioritizing broad simplification work. Treat `--targets` as a ranked refactoring-opportunity signal, `--hotspots` as churn plus complexity prioritization, `--complexity --sort cognitive` as the focused function-level complexity view, and `--file-scores` as the file-level maintainability view.
+
 CSS, SCSS, Tailwind, and CSS Module cleanup:
 
 ```sh
