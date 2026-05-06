@@ -1,0 +1,6 @@
+interface:
+  display_name: "Claude Review"
+  short_description: "Ask Claude CLI to review current changes"
+  default_prompt: "Use $claude-plugin:review to ask Claude CLI to review the current changes."
+policy:
+  allow_implicit_invocation: false
