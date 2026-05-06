@@ -1,0 +1,6 @@
+interface:
+  display_name: "Claude Plan"
+  short_description: "Ask Claude CLI for an implementation plan"
+  default_prompt: "Use $claude-plugin:plan to ask Claude CLI for a richer implementation plan."
+policy:
+  allow_implicit_invocation: false

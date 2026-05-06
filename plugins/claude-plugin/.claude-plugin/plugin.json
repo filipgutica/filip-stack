@@ -1,0 +1,9 @@
+{
+  "name": "claude-plugin",
+  "version": "0.6.0",
+  "description": "User-invoked Claude CLI planning and review helpers for Codex.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "skills": "./skills"
+}
