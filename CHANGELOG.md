@@ -1,3 +1,10 @@
+# [0.8.0](https://github.com/filipgutica/filip-stack/compare/v0.7.0...v0.8.0) (2026-05-06)
+
+
+### Features
+
+* add claude plugin helpers ([b60456a](https://github.com/filipgutica/filip-stack/commit/b60456af3a0222c14c59a840663694962a51022a))
+
 # [0.7.0](https://github.com/filipgutica/filip-stack/compare/v0.6.0...v0.7.0) (2026-05-05)
 
 
