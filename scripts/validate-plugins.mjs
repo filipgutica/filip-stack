@@ -47,27 +47,27 @@ const pathExists = async (path) => {
     await stat(path)
     return true
   } catch (err) {
-    if (err && typeof err === 'object' && 'code' in err && err.code === 'ENOENT') {
-      return false
-    }
+    if (err?.code === 'ENOENT') return false
     throw err
   }
 }
+
+const readDirectoryNames = async (path) => (
+  await readdir(path, { withFileTypes: true }).catch((err) => {
+    fail(`${path} — ${err.message}`)
+    return []
+  })
+)
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort()
 
 console.log('Validating plugin manifests...')
 
 await validateJson(join(repoRoot, '.claude-plugin/marketplace.json'), ['name', 'owner', 'plugins'])
 await validateJson(join(repoRoot, '.agents/plugins/marketplace.json'), ['name', 'plugins'])
 
-const pluginEntries = await readdir(pluginsRoot, { withFileTypes: true }).catch((err) => {
-  fail(`${pluginsRoot} — ${err.message}`)
-  return []
-})
-
-const pluginDirs = pluginEntries
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort()
+const pluginDirs = await readDirectoryNames(pluginsRoot)
 
 for (const pluginDir of pluginDirs) {
   const pluginRoot = join(pluginsRoot, pluginDir)
@@ -88,11 +88,10 @@ for (const pluginDir of pluginDirs) {
     await validateJson(codexManifest, ['name', 'skills'])
   }
 
-  for (const hooksPath of ['hooks/hooks.json', 'hooks/codex.json']) {
-    const fullPath = join(pluginRoot, hooksPath)
-    if (await pathExists(fullPath)) {
-      await validateJson(fullPath, ['hooks'])
-    }
+  const hooksDir = join(pluginRoot, 'hooks')
+  const hooksFiles = await readdir(hooksDir).catch(() => [])
+  for (const hooksFile of hooksFiles.filter((file) => file.endsWith('.json')).sort()) {
+    await validateJson(join(hooksDir, hooksFile), ['hooks'])
   }
 
   const skillsDir = join(pluginRoot, 'skills')

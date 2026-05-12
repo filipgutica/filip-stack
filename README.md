@@ -21,7 +21,7 @@ plugins/workflow/          Workflow plugin payload shared by Claude and Codex
 plugins/project-notes/     Project notes plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  hooks/hooks.json         Claude hooks (uses ${CLAUDE_PLUGIN_ROOT})
+  hooks/claude.json        Claude hooks (uses ${CLAUDE_PLUGIN_ROOT})
   hooks/codex.json         Codex hooks (uses ${CODEX_PLUGIN_ROOT})
   skills/                  project-notes-tracker skill
   scripts/                 Hook runtime (project-notes-hook.mjs)
@@ -93,16 +93,36 @@ The Codex marketplace version is stamped from `package.json` during the release 
 plugins/*/.codex-plugin/plugin.json
 ```
 
-Install the global Codex notes hooks separately when needed:
+The `project-notes` plugin bundles its Codex lifecycle hooks through
+`plugins/project-notes/.codex-plugin/plugin.json`, which points at
+`./hooks/codex.json`. Enable Codex hook support before relying on those
+plugin-bundled hooks:
+
+```toml
+[features]
+hooks = true
+plugin_hooks = true
+```
+
+Restart Codex after changing `~/.codex/config.toml`, then verify the active
+feature state with:
+
+```sh
+codex features list
+```
+
+Older Codex versions may not support plugin-bundled hooks. In that case,
+install the global Codex notes hooks separately:
 
 ```sh
 node dist/cli.js codex-hooks
 node dist/cli.js codex-hooks --dry-run
 ```
 
-This command installs or updates `~/.codex/hooks.json` so reserved project-notes prompts such as `notes create: <title>` and `notes plan: <seed>` route through the `project-notes` hook runtime even if Codex does not honor plugin-bundled hooks consistently.
-
-> **Note:** Codex hook support is not documented as part of the plugin system. This repo keeps `plugins/project-notes/hooks/codex.json` bundled with the `project-notes` plugin as a best-effort path, but `codex-hooks` is the reliable setup path for the notes hook flow.
+This fallback command installs or updates `~/.codex/hooks.json` so reserved
+project-notes prompts such as `notes create: <title>` and
+`notes plan: <seed>` route through the `project-notes` hook runtime without
+depending on plugin hook loading.
 
 ## Versioning
 
