@@ -1,3 +1,10 @@
+## [0.10.1](https://github.com/filipgutica/filip-stack/compare/v0.10.0...v0.10.1) (2026-05-14)
+
+
+### Bug Fixes
+
+* use claude-p for claude adviser ([60d1854](https://github.com/filipgutica/filip-stack/commit/60d1854c643b48d3b23f3e1cb1b10a96351fc8a3))
+
 # [0.10.0](https://github.com/filipgutica/filip-stack/compare/v0.9.0...v0.10.0) (2026-05-06)
 
 
