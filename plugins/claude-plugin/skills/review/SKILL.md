@@ -12,17 +12,28 @@ responsible for triage, verification, and deciding whether findings are real.
 
 1. Determine the review scope: uncommitted changes by default, or the branch
    diff/base ref if the user specifies one.
-2. Run Claude CLI from the repository root with a non-interactive review prompt:
+2. Run the Claude TUI adviser helper from the repository root. The helper reads
+   the prompt from stdin and invokes `npx -y claude-p`, which drives the
+   interactive Claude TUI through a real PTY and returns JSON output:
 
 ```bash
-claude -p --permission-mode plan --no-session-persistence "<prompt>"
+printf '%s' "<prompt>" | node plugins/claude-plugin/scripts/claude-tui-adviser.mjs review
 ```
 
+   `claude-p` owns the fragile TUI lifecycle: terminal probing, `SessionStart`
+   readiness, prompt entry, `Stop` hook completion, and transcript extraction.
+   The helper keeps the plugin contract small by using `npx -y claude-p` as the
+   single execution path and normalizing its JSON result into a Codex handoff.
+   Run this command outside Codex's default sandbox when sandboxing blocks
+   Claude auth, keychain, or TUI startup.
 3. Ask Claude to review for correctness, regressions, missed tests, public API
    or behavior changes, and risky edge cases. Tell it not to edit files.
 4. Check each finding against the actual repo before presenting or acting on it.
-5. Report confirmed findings first, with file references when available. Clearly
-   label uncertain or rejected findings.
+5. Present Claude's review only after triage:
+   - Claude's review summary
+   - confirmed actionable findings
+   - uncertain or rejected findings
+   - Codex's action plan for valid findings
 
 ## Prompt Shape
 
@@ -41,5 +52,6 @@ contract drift. Do not edit files.
 
 ## Failure Handling
 
-If `claude` is not installed, not authenticated, times out, or fails, report the
-failure and continue with Codex's own review instead of blocking.
+If `npx`, the `claude-p` package, or `claude` is unavailable, Claude is not
+authenticated, the TUI times out, or the helper fails, report the failure and
+continue with Codex's own review instead of blocking.
