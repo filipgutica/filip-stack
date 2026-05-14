@@ -6,15 +6,15 @@ Personal Claude and Codex plugin marketplace.
 
 Both Claude and Codex are distributed directly from this GitHub repo as git-based marketplaces. No build step required — plugin payloads are tracked directly in git and versioned on release.
 
-The `filip-stack` Codex marketplace ships three plugins:
+The `filip-stack` Codex marketplace ships two plugins:
 
-- `claude-plugin` — user-invoked Claude TUI planning and review adviser for Codex
 - `workflow` — coordinator and Fallow-backed simplification review
 - `project-notes` — project notes ticket tracking plus notes hooks
 
-The Claude marketplace ships `workflow` and `project-notes`. `claude-plugin`
-is Codex-only because it exists to let Codex ask the local Claude CLI for an
-external advisory pass.
+The Claude marketplace also ships `workflow` and `project-notes`.
+
+The former Codex-only `claude-plugin` now lives in the dedicated
+`codex-claude-plugin` marketplace.
 
 ## Repo Layout
 
@@ -30,10 +30,6 @@ plugins/project-notes/     Project notes plugin payload shared by Claude and Cod
   hooks/codex.json         Codex hooks (uses ${CODEX_PLUGIN_ROOT})
   skills/                  project-notes-tracker skill
   scripts/                 Hook runtime (project-notes-hook.mjs)
-plugins/claude-plugin/     Codex-only Claude CLI adviser plugin
-  .codex-plugin/           Codex plugin manifest
-  skills/                  plan and review skills
-  scripts/                 claude-p launcher and JSON handoff runtime
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
@@ -79,13 +75,11 @@ codex plugin marketplace add filipgutica/filip-stack
 ```
 
 Then restart Codex, open the plugin directory, and install `workflow` and
-`project-notes` from the `filip-stack` marketplace. Install `claude-plugin`
-only when you want Codex to ask the local Claude CLI for advisory plan or
-review passes.
+`project-notes` from the `filip-stack` marketplace.
 
 Codex reads `.agents/plugins/marketplace.json` at the repo root, which lists
-the `claude-plugin`, `workflow`, and `project-notes` plugins and points their
-source paths at `./plugins/*`. No build step required — the plugin payloads are
+the `workflow` and `project-notes` plugins and points their source paths at
+`./plugins/*`. No build step required — the plugin payloads are
 tracked directly in git.
 
 Codex marketplace commands target the marketplace name directly, so the upgrade
@@ -163,23 +157,6 @@ The `workflow` plugin includes:
 The `project-notes` plugin includes:
 
 - `project-notes-tracker` — local ticket lifecycle (create, plan, approve, complete)
-
-The `claude-plugin` Codex plugin includes:
-
-- `plan` — invokes `claude-p` for an ephemeral read-only Claude TUI session and
-  folds the JSON handoff into Codex's own plan after validation.
-- `review` — uses the same `claude-p` path for advisory code review, then has
-  Codex validate and separate confirmed, rejected, and actionable findings.
-
-The Claude adviser helper intentionally avoids `claude -p` by running
-[`npx -y claude-p`](https://github.com/smithersai/claude-p) as its single
-execution path. `claude-p` runs the local Claude CLI in interactive mode with a
-real PTY, handles terminal startup probes, waits for `SessionStart`, sends the
-prompt, waits for `Stop`, and emits JSON compatible with
-`claude -p --output-format json`. The helper normalizes that result into a Codex
-handoff. If Codex sandboxing blocks package resolution, Claude auth, keychain
-access, or TUI startup, run the helper outside the default sandbox and let Codex
-continue with its own plan or review if the handoff fails.
 
 The coordinator guidance is intentionally proportional: use the lightest safe workflow for the task, keep bounded mechanical changes local when possible, and reserve explorer or critic passes for real unknowns, behavior risk, or weak verification.
 Use `simplification-review` for broad natural-language requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, finding dead or unused code, removing redundant tests or styles, checking efficiency, or validating cleanup after generated code. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface. The skill works through the Fallow CLI by default; Fallow MCP is optional when already available.
