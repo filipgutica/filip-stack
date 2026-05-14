@@ -1,14 +1,14 @@
 {
   "name": "claude-plugin",
   "version": "0.10.0",
-  "description": "User-invoked Claude CLI planning and review helpers for Codex.",
+  "description": "User-invoked Claude TUI planning and review adviser for Codex.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Claude",
-    "shortDescription": "Ask Claude CLI for planning and code review help.",
+    "shortDescription": "Ask Claude TUI for planning and code review help.",
     "category": "Productivity",
     "capabilities": [
       "Interactive"

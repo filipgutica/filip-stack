@@ -12,15 +12,23 @@ final plan, scope control, and deciding what to implement.
 ## Workflow
 
 1. Summarize the user's goal, relevant constraints, and current repo context.
-2. Run Claude CLI from the repository root with a non-interactive planning prompt:
+2. Run the Claude TUI adviser helper from the repository root. The helper reads
+   the prompt from stdin and invokes `npx -y claude-p`, which drives the
+   interactive Claude TUI through a real PTY and returns JSON output:
 
 ```bash
-claude -p --permission-mode plan --no-session-persistence "<prompt>"
+printf '%s' "<prompt>" | node plugins/claude-plugin/scripts/claude-tui-adviser.mjs plan
 ```
 
+   `claude-p` owns the fragile TUI lifecycle: terminal probing, `SessionStart`
+   readiness, prompt entry, `Stop` hook completion, and transcript extraction.
+   The helper keeps the plugin contract small by using `npx -y claude-p` as the
+   single execution path and normalizing its JSON result into a Codex handoff.
+   Run this command outside Codex's default sandbox when sandboxing blocks
+   Claude auth, keychain, or TUI startup.
 3. Ask Claude for a concise implementation plan grounded in the current repo.
    Include any known constraints, files, test expectations, and open questions.
-4. Read Claude's output critically. Do not treat it as authoritative.
+4. Read the returned handoff JSON critically. Do not treat it as authoritative.
 5. Use the useful parts to enrich Codex's own plan, corrected for repo reality
    and Codex judgment. Call out any parts you rejected or could not verify.
 
@@ -44,5 +52,6 @@ files.
 
 ## Failure Handling
 
-If `claude` is not installed, not authenticated, times out, or fails, report the
-failure and continue with Codex's own planning instead of blocking.
+If `npx`, the `claude-p` package, or `claude` is unavailable, Claude is not
+authenticated, the TUI times out, or the helper fails, report the failure and
+continue with Codex's own planning instead of blocking.
