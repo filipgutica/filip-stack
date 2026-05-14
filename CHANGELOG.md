@@ -1,3 +1,10 @@
+# [0.11.0](https://github.com/filipgutica/filip-stack/compare/v0.10.1...v0.11.0) (2026-05-14)
+
+
+### Features
+
+* move claude plugin to dedicated repo ([47db29c](https://github.com/filipgutica/filip-stack/commit/47db29c67bd60200591b7fa75ec944d63171b45d))
+
 ## [0.10.1](https://github.com/filipgutica/filip-stack/compare/v0.10.0...v0.10.1) (2026-05-14)
 
 
