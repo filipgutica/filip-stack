@@ -8,10 +8,6 @@
     {
       "name": "workflow",
       "source": "./plugins/workflow"
-    },
-    {
-      "name": "project-notes",
-      "source": "./plugins/project-notes"
     }
   ]
 }
