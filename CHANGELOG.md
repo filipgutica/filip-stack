@@ -1,3 +1,15 @@
+# [1.0.0](https://github.com/filipgutica/filip-stack/compare/v0.11.0...v1.0.0) (2026-05-25)
+
+
+* feat!: remove project notes plugin ([1bd6668](https://github.com/filipgutica/filip-stack/commit/1bd666876021b7de697c78cf8c4563705a1aed64))
+
+
+### BREAKING CHANGES
+
+* project-notes plugin and tracker skill are removed.
+
+Notes hooks and the Codex hook installer are removed too.
+
 # [0.11.0](https://github.com/filipgutica/filip-stack/compare/v0.10.1...v0.11.0) (2026-05-14)
 
 

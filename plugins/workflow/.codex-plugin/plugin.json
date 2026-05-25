@@ -1,6 +1,6 @@
 {
   "name": "workflow",
-  "version": "0.11.0",
+  "version": "1.0.0",
   "description": "Coordinator and Fallow-backed simplification review for engineering workflow.",
   "author": {
     "name": "Filip Gutica"
