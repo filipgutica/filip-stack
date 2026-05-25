@@ -9,12 +9,9 @@
   },
   "scripts": {
     "postinstall": "lefthook install",
-    "build": "tsc -p tsconfig.build.json",
     "stamp-version": "node scripts/stamp-version.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "typecheck": "tsc --noEmit -p tsconfig.json",
-    "test": "vitest run",
-    "check": "pnpm validate-plugins && pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm validate-plugins"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -22,10 +19,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
-    "@types/node": "^22.13.4",
     "lefthook": "^1.11.13",
-    "semantic-release": "^24.2.5",
-    "typescript": "^5.7.3",
-    "vitest": "^3.0.5"
+    "semantic-release": "^24.2.5"
   }
 }

@@ -161,9 +161,7 @@ Prefer repo-specific commands when discoverable. In this repo, use:
 
 ```sh
 pnpm validate-plugins
-pnpm typecheck
-pnpm test
-pnpm build
+pnpm check
 ```
 
 For other pnpm repos, use the closest available workspace-scoped commands first, then broader checks when the cleanup can affect shared behavior:

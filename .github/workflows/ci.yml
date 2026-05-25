@@ -31,15 +31,6 @@ jobs:
       - name: Validate plugin manifests
         run: pnpm validate-plugins
 
-      - name: Typecheck
-        run: pnpm typecheck
-
-      - name: Test
-        run: pnpm test
-
-      - name: Build minimal CLI
-        run: pnpm build
-
   release:
     runs-on: ubuntu-latest
     needs: validate
