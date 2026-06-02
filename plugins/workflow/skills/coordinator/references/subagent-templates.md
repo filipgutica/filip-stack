@@ -12,13 +12,13 @@ In Claude Code, pass the filled prompt to the `Agent` tool:
 
 The Claude Code main thread should generally stay on `sonnet`. Escalate to `opus` only for unusually complex or high-stakes synthesis or review.
 
-In Codex, pass the filled prompt to `spawn_agent` and set the model explicitly:
-- Explorer → `spawn_agent(agent_type="explorer", model="gpt-5.4-mini", message="...")`
-- Critic → `spawn_agent(agent_type="explorer", model="gpt-5.4", message="...")`
-- Worker → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
-- Integrator → `spawn_agent(agent_type="worker", model="gpt-5.4-mini", message="...")`
+In Codex, pass the filled prompt to `spawn_agent` and follow the currently exposed tool policy for model overrides:
+- Explorer → `spawn_agent(agent_type="explorer", message="...")`
+- Critic → `spawn_agent(agent_type="critic", message="...")` when available, otherwise use the read-only explorer role with a critic prompt
+- Worker → `spawn_agent(agent_type="worker", message="...")`
+- Integrator → `spawn_agent(agent_type="worker", message="...")`
 
-The Codex main thread should generally stay on `gpt-5.4`. Do not rely on inherited model selection in Codex. If an explorer, worker, or integrator task needs stronger reasoning, escalate deliberately to `model="gpt-5.4"` and state why.
+Use model overrides only when the user asks for a specific model or a task-specific reason justifies one. If an explorer, worker, integrator, or critic task needs stronger reasoning, escalate deliberately and state why.
 
 ## Explorer Template
 
