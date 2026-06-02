@@ -1,6 +1,6 @@
 interface:
   display_name: "Coordinator"
   short_description: "Coordinate planning, implementing approved plans, feature work, fixes, debugging, CI/test failures, refactors, cleanup, investigation, and review"
-  default_prompt: "Use for broad engineering orchestration: implement plans, fix/debug, refactor, clean up, review, delegate, verify, and synthesize."
+  default_prompt: "Use for broad engineering orchestration: implement plans, fix/debug, refactor, clean up, review, honor explicit subagent role flows, delegate, verify, and synthesize."
 policy:
   allow_implicit_invocation: true
