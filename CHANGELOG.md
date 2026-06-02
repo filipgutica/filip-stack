@@ -1,3 +1,10 @@
+## [1.0.1](https://github.com/filipgutica/filip-stack/compare/v1.0.0...v1.0.1) (2026-06-02)
+
+
+### Bug Fixes
+
+* make coordinator delegation workflow durable ([09761c9](https://github.com/filipgutica/filip-stack/commit/09761c94d9050657f82e995c294b7cb4030ac588))
+
 # [1.0.0](https://github.com/filipgutica/filip-stack/compare/v0.11.0...v1.0.0) (2026-05-25)
 
 
