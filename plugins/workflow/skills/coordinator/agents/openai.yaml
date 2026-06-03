@@ -1,6 +1,6 @@
 interface:
   display_name: "Coordinator"
-  short_description: "Coordinate planning, implementing approved plans, feature work, fixes, debugging, CI/test failures, refactors, cleanup, investigation, and review"
-  default_prompt: "Use for broad engineering orchestration: implement plans, fix/debug, refactor, clean up, review, honor explicit subagent role flows, delegate, verify, and synthesize."
+  short_description: "Coordinate plan and implementation workflows"
+  default_prompt: "Use $workflow:coordinator for broad engineering orchestration. Coordinate plan-only work through Plan Coordination, approved implementation through Implementation Coordination, route pure written plans to superpowers:writing-plans when available, say when Superpowers is unavailable and fall back to default planning behaviour, and finish meaningful edits with $workflow:review-cycle."
 policy:
   allow_implicit_invocation: true

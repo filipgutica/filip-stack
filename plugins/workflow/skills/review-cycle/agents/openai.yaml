@@ -1,0 +1,7 @@
+interface:
+  display_name: "Review Cycle"
+  short_description: "Self-review meaningful edits before done"
+  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification to inspect the diff for scope drift, slop, mistakes, overcomplication, and missing checks."
+
+policy:
+  allow_implicit_invocation: true

@@ -8,7 +8,7 @@ Both Claude and Codex are distributed directly from this GitHub repo as git-base
 
 The `filip-stack` Codex marketplace ships one plugin:
 
-- `workflow` — coordinator and Fallow-backed simplification review
+- `workflow` — coordinator, review cycle, and Fallow-backed simplification review
 
 The Claude marketplace also ships `workflow`.
 
@@ -21,7 +21,7 @@ The former Codex-only `claude-plugin` now lives in the dedicated
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  skills/                  coordinator and simplification-review skills
+  skills/                  coordinator, review-cycle, and simplification-review skills
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
@@ -105,11 +105,24 @@ and creates a GitHub release. No manual version commands needed.
 
 The `workflow` plugin includes:
 
-- `coordinator` — main engineering workflow skill (planning, implementation, review, investigation, delegation, synthesis)
+- `coordinator` — main engineering workflow skill with explicit Plan Coordination and Implementation Coordination flows
+- `review-cycle` — focused diff/self-review after meaningful edits and before final response, commit, PR, completion claim, or broad verification
 - `simplification-review` — analyze-first simplification, cleanup, reuse, efficiency, and maintainability review skill scoped to local changes, untracked files, branch diff, or an explicit area. Uses Fallow as the primary deterministic analysis engine for supported JS/TS/Vue/Nest, dead-code, duplication, health, dependency, and CSS/SCSS/CSS Module cleanup signals.
 
-The coordinator guidance is intentionally proportional: use the lightest safe workflow for the task, keep bounded mechanical changes local when possible, honor explicit subagent or role-based workflow requests, and reserve explorer or critic passes for real unknowns, behavior risk, weak verification, or requested review roles.
+The coordinator guidance is intentionally proportional: use Plan Coordination for plan-only work, use Implementation Coordination for approved changes, keep bounded mechanical changes local when possible, honor explicit subagent or role-based workflow requests, and finish meaningful edits with `review-cycle`.
 Use `simplification-review` for broad natural-language requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, finding dead or unused code, removing redundant tests or styles, checking efficiency, or validating cleanup after generated code. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface. The skill works through the Fallow CLI by default; Fallow MCP is optional when already available.
+
+## Companion Plugin
+
+`workflow` works best with Superpowers installed because coordinator routes pure written plans and some execution workflows to `superpowers:*` skills when they are available.
+
+If Superpowers is not installed, coordinator should state:
+
+```text
+Superpowers is not available; falling back to default planning behaviour.
+```
+
+It then continues with the closest safe default workflow and must not claim that a Superpowers workflow was used.
 
 ## CI
 

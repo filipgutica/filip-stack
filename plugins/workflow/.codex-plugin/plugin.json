@@ -1,22 +1,25 @@
 {
   "name": "workflow",
   "version": "1.0.1",
-  "description": "Coordinator and Fallow-backed simplification review for engineering workflow.",
+  "description": "Coordinator, review cycle, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Workflow",
-    "shortDescription": "Coordinator and Fallow-backed simplification review for engineering workflow.",
+    "shortDescription": "Coordinator, review cycle, and simplification review for engineering workflow.",
+    "longDescription": "Coordinate engineering work through explicit planning and implementation workflows, run focused review cycles before completion claims, and use Fallow-backed simplification review for cleanup and maintainability analysis. Works best with Superpowers installed and falls back clearly when Superpowers is unavailable.",
+    "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
       "Interactive",
       "Write"
     ],
     "defaultPrompt": [
-      "Use $workflow:coordinator for broad engineering orchestration and plan execution.",
-      "Use $workflow:simplification-review for scoped simplification and cleanup review."
+      "Use $workflow:coordinator for planning and implementation coordination.",
+      "Use $workflow:review-cycle after meaningful edits.",
+      "Use $workflow:simplification-review for scoped simplification review."
     ]
   }
 }
