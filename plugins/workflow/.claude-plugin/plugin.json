@@ -1,7 +1,7 @@
 {
   "name": "workflow",
   "version": "1.0.1",
-  "description": "Coordinator and Fallow-backed simplification review for engineering workflow.",
+  "description": "Coordinator, review cycle, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
   "author": {
     "name": "Filip Gutica"
   },

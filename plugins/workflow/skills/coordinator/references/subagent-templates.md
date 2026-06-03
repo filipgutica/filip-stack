@@ -8,7 +8,6 @@ In Claude Code, pass the filled prompt to the `Agent` tool:
 - Explorer → `Agent(subagent_type="Explore", model="haiku", prompt="...")`
 - Critic → `Agent(subagent_type="Explore", model="sonnet", prompt="...")`
 - Worker → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
-- Integrator → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
 
 The Claude Code main thread should generally stay on `sonnet`. Escalate to `opus` only for unusually complex or high-stakes synthesis or review.
 
@@ -16,9 +15,8 @@ In Codex, pass the filled prompt to `spawn_agent` and follow the currently expos
 - Explorer → `spawn_agent(agent_type="explorer", message="...")`
 - Critic → `spawn_agent(agent_type="critic", message="...")` when available, otherwise use the read-only explorer role with a critic prompt
 - Worker → `spawn_agent(agent_type="worker", message="...")`
-- Integrator → `spawn_agent(agent_type="worker", message="...")`
 
-Use model overrides only when the user asks for a specific model or a task-specific reason justifies one. If an explorer, worker, integrator, or critic task needs stronger reasoning, escalate deliberately and state why.
+Use model overrides only when the user asks for a specific model or a task-specific reason justifies one. If an explorer, worker, or critic task needs stronger reasoning, escalate deliberately and state why.
 
 ## Explorer Template
 
@@ -88,38 +86,6 @@ Deliverable:
 - known limitations or blockers
 ```
 
-## Integrator Template
-
-Use only when multiple accepted worker outputs need reconciliation.
-
-```md
-Role: integrator
-
-Task:
-<state the integration or reconciliation work needed>
-
-Context:
-<summary of accepted worker outputs, the interfaces or conflicts to reconcile, and any constraints the workers were given>
-
-Inputs:
-- worker outputs or files to reconcile:
-- interfaces or seams to align:
-
-Requirements:
-- do not restart exploration
-- only make bounded integration edits
-- preserve accepted worker intent unless an integration issue forces a correction
-
-Validation:
-- run focused validation on the integrated surface
-
-Deliverable:
-- summary of integration work
-- files changed
-- focused validation
-- residual risks
-```
-
 ## Critic Template
 
 Use for bounded adversarial review of worker output before acceptance.
@@ -154,8 +120,9 @@ Rules:
 
 ## Flow Mapping
 
-- Planning: use explorer templates only
-- Review: use explorer templates only when extra evidence is needed; keep acceptance in the main thread
-- Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is clear
-- Implementation: start with a short local read, use explorer only when the path is not fully clear and delegated discovery materially helps, then use worker; use critic selectively for behavior changes, risky refactors, weak verification, or ambiguous worker output; use integrator only when multiple worker results need stitching
-- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic by default when the scope and checks are clear
+- Plan Coordination: use explorer templates for bounded read-only discovery; use critic templates for plan review when behavior, public contracts, weak evidence, or explicit review requests justify it. Keep final plan acceptance in the main thread.
+- Implementation Coordination: start with focused local reads; use explorer only when real unknowns remain; use worker for non-trivial clear write scopes; use critic for behavior changes, risky refactors, weak verification, public contracts, broad worker output, or explicit critic requests. The main thread reconciles multiple accepted worker results.
+- Review-only: use explorer templates only when extra evidence is needed; keep acceptance and final findings in the main thread.
+- Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is concrete.
+- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic by default when the scope and checks are clear.
+- Final review cycle: after meaningful edits, run `$workflow:review-cycle`; use a critic template only when that review cycle identifies critic-worthy risk.
