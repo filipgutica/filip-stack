@@ -1,3 +1,10 @@
+# [1.1.0](https://github.com/filipgutica/filip-stack/compare/v1.0.1...v1.1.0) (2026-06-03)
+
+
+### Features
+
+* streamline workflow coordinator ([24b7495](https://github.com/filipgutica/filip-stack/commit/24b7495b5246c9d14dc5228a57e2d5ed320e25a5))
+
 ## [1.0.1](https://github.com/filipgutica/filip-stack/compare/v1.0.0...v1.0.1) (2026-06-02)
 
 
