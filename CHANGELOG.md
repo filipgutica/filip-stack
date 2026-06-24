@@ -1,3 +1,10 @@
+# [1.2.0](https://github.com/filipgutica/filip-stack/compare/v1.1.0...v1.2.0) (2026-06-24)
+
+
+### Features
+
+* add minimal code workflow skill ([198f83a](https://github.com/filipgutica/filip-stack/commit/198f83a232d2b68413c85411457694d52c8a8d70))
+
 # [1.1.0](https://github.com/filipgutica/filip-stack/compare/v1.0.1...v1.1.0) (2026-06-03)
 
 
