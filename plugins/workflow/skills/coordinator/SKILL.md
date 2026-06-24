@@ -12,6 +12,8 @@ Coordinate engineering work through one of two workflows:
 
 Keep the main thread responsible for routing, scope control, review, acceptance, and synthesis. Use the lightest workflow that safely fits the task, but do not silently collapse requested coordinator, delegation, or role-based work into ordinary local execution.
 
+Use `$workflow:minimal-code` as the default implementation lens: prefer the smallest correct readable change, reuse existing project code, avoid speculative abstraction and dependencies, keep explanations concise, and add useful JSDoc to shared or non-obvious utility functions. Do not let minimality override correctness, validation, tests, type integrity, security, accessibility, or explicit user requirements.
+
 ## Required Companion
 
 This skill works best with Superpowers installed. Some routes intentionally hand off to `superpowers:*` skills for specialized planning or execution discipline.
@@ -30,6 +32,7 @@ Classify the request before substantial work:
 
 - **Plan-only or Plan Mode**: use Plan Coordination. Do not mutate files. Pure written implementation plans route to `superpowers:writing-plans` when available.
 - **Implementation, fix, debug, refactor, CI, cleanup, or approved plan execution**: use Implementation Coordination unless the task is a one-line mechanical edit.
+- **Minimal-code posture**: for implementation, bug fixes, refactors, tests, docs edits, generated-code cleanup, utility extraction, and dependency decisions, apply `$workflow:minimal-code` by default before choosing a solution shape.
 - **Simplification analysis**: route broad cleanup, reuse, efficiency, overcomplication, dead-code, redundant-test, redundant-style, and Fallow-backed maintainability review requests to `$workflow:simplification-review`.
 - **Review-only**: stay read-only. Gather evidence and report findings; do not implement unless the user asks.
 - **Investigation**: gather evidence first. Continue to implementation only when the fix path is concrete.
@@ -108,7 +111,7 @@ Use this for Plan Mode, plan-only requests, investigation plans, and design coor
 Use this for approved plans, features, fixes, debugging, CI/test failures, refactors, docs/config updates, and cleanup implementation.
 
 1. **Classify intent and risk.** Identify whether this is implementation, fix, debugging, CI, refactor, cleanup, or plan execution. Note behavior risk, public API risk, and available validation.
-2. **Explore.** Read enough code, tests, logs, configs, and docs to establish the fix path. Delegate explorers only for real unknowns that materially benefit from read-only parallel work.
+2. **Explore.** Read enough code, tests, logs, configs, and docs to establish the fix path. Apply `$workflow:minimal-code` while choosing the solution shape: reuse first, prefer direct code, avoid speculative abstraction, and keep the intended diff small. Delegate explorers only for real unknowns that materially benefit from read-only parallel work.
 3. **Choose execution shape.** Keep tiny or tightly coupled edits local. Prefer a worker for non-trivial implementation when the write scope can be assigned to clear files, modules, packages, or responsibilities. If the host cannot use requested delegation, say so and continue with the closest local equivalent.
 4. **Implement.** Assign disjoint scopes when using workers. Worker prompts must be self-contained, name ownership, preserve behavior unless instructed otherwise, and report validation.
 5. **Criticize implementation.** Use a critic pass for behavior changes, public contracts, risky refactors, weak validation, broad worker output, or explicitly requested critic roles.
