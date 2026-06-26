@@ -1,3 +1,10 @@
+# [1.3.0](https://github.com/filipgutica/filip-stack/compare/v1.2.0...v1.3.0) (2026-06-26)
+
+
+### Features
+
+* add separate critic review workflow ([16ae712](https://github.com/filipgutica/filip-stack/commit/16ae712b61d1a095d2eb20bdfbe250baa9880afa))
+
 # [1.2.0](https://github.com/filipgutica/filip-stack/compare/v1.1.0...v1.2.0) (2026-06-24)
 
 
