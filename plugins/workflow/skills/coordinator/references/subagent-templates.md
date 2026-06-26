@@ -88,7 +88,7 @@ Deliverable:
 
 ## Critic Template
 
-Use for bounded adversarial review of worker output before acceptance.
+Use for bounded adversarial review of plans, diffs, worker output, and validation claims before acceptance.
 
 ```md
 Role: critic
@@ -109,11 +109,14 @@ Deliverable:
 - whether the result is acceptable or needs another pass
 - concrete corrections or missing validation
 - risks or unsupported claims
+- unnecessary test changes, review artifacts, or accidentally removed public metadata
 
 Rules:
 - read-only; do not edit files
 - keep the scope bounded
 - stay adversarial and specific
+- challenge test changes that do not prove the requested behavior, including unrequested helper extraction, broad fixture churn, focused/skipped tests, debug logging, weakened assertions, and snapshot noise
+- challenge public docs, DTO/schema annotations, generated types, examples, descriptions, and API-facing metadata that disappear without an explicit reason
 - do not accept work
 - call out missing evidence explicitly
 ```
@@ -121,8 +124,8 @@ Rules:
 ## Flow Mapping
 
 - Plan Coordination: use explorer templates for bounded read-only discovery; use critic templates for plan review when behavior, public contracts, weak evidence, or explicit review requests justify it. Keep final plan acceptance in the main thread.
-- Implementation Coordination: start with focused local reads; use explorer only when real unknowns remain; use worker for non-trivial clear write scopes; use critic for behavior changes, risky refactors, weak verification, public contracts, broad worker output, or explicit critic requests. The main thread reconciles multiple accepted worker results.
+- Implementation Coordination: start with focused local reads; use explorer only when real unknowns remain; use worker for non-trivial clear write scopes; use critic for meaningful edits before main-thread acceptance. The main thread reconciles multiple accepted worker results and critic findings.
 - Review-only: use explorer templates only when extra evidence is needed; keep acceptance and final findings in the main thread.
 - Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is concrete.
-- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic by default when the scope and checks are clear.
-- Final review cycle: after meaningful edits, run `$workflow:review-cycle`; use a critic template only when that review cycle identifies critic-worthy risk.
+- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic only when the edit is truly tiny, mechanical, clear in scope, and strongly checked.
+- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the final acceptance gate; confirm the latest diff has separate critic coverage unless a narrow fast-path skip applies or the host cannot provide a separate reviewer.

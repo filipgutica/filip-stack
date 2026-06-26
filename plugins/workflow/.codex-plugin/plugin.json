@@ -1,15 +1,15 @@
 {
   "name": "workflow",
   "version": "1.2.0",
-  "description": "Coordinator, minimal-code posture, review cycle, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
+  "description": "Coordinator, minimal-code posture, final review cycle with separate critic coverage, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Workflow",
-    "shortDescription": "Coordinator, minimal-code posture, review cycle, and simplification review for engineering workflow.",
-    "longDescription": "Coordinate engineering work through explicit planning and implementation workflows, use a minimal-code posture for small readable changes, run focused review cycles before completion claims, and use Fallow-backed simplification review for cleanup and maintainability analysis. Works best with Superpowers installed and falls back clearly when Superpowers is unavailable.",
+    "shortDescription": "Coordinator, minimal-code posture, final review cycle with separate critic coverage, and simplification review for engineering workflow.",
+    "longDescription": "Coordinate engineering work through explicit planning and implementation workflows, use a minimal-code posture for small readable changes, run review cycles that include separate critic review before completion claims, and use Fallow-backed simplification review for cleanup and maintainability analysis. Works best with Superpowers installed and falls back clearly when Superpowers is unavailable.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
@@ -19,7 +19,7 @@
     "defaultPrompt": [
       "Use $workflow:coordinator for planning and implementation coordination.",
       "Use $workflow:minimal-code as the default implementation lens for small, readable, low-ceremony changes.",
-      "Use $workflow:review-cycle after meaningful edits.",
+      "Use $workflow:review-cycle after meaningful edits as the final acceptance gate, confirming separate critic review before acceptance unless a narrow fast-path skip applies.",
       "Use $workflow:simplification-review for scoped simplification review."
     ]
   }

@@ -1,7 +1,7 @@
 {
   "name": "workflow",
   "version": "1.2.0",
-  "description": "Coordinator, minimal-code posture, review cycle, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
+  "description": "Coordinator, minimal-code posture, final review cycle with separate critic coverage, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
   "author": {
     "name": "Filip Gutica"
   },
