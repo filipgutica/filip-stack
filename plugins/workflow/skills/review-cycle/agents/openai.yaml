@@ -1,7 +1,7 @@
 interface:
   display_name: "Review Cycle"
-  short_description: "Self-review meaningful edits before done"
-  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification to inspect the diff for scope drift, slop, mistakes, overcomplication, and missing checks."
+  short_description: "Review meaningful edits with a separate critic before done"
+  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification as the final acceptance gate to inspect the diff for scope drift, slop, mistakes, overcomplication, test artifacts, missing public metadata, and missing checks, and to confirm separate read-only critic review before acceptance unless a narrow fast-path skip applies."
 
 policy:
   allow_implicit_invocation: true

@@ -8,7 +8,7 @@ description: "Use as the main engineering entrypoint for broad engineering work,
 Coordinate engineering work through one of two workflows:
 
 - **Plan Coordination**: explore, gather context, draft a plan, criticize it, revise it, and output the plan.
-- **Implementation Coordination**: explore, implement, criticize, review, revise, run a final review cycle, and present the result.
+- **Implementation Coordination**: explore, implement, review with a separate critic, revise, run a final review cycle, and present the result.
 
 Keep the main thread responsible for routing, scope control, review, acceptance, and synthesis. Use the lightest workflow that safely fits the task, but do not silently collapse requested coordinator, delegation, or role-based work into ordinary local execution.
 
@@ -62,7 +62,7 @@ stateDiagram-v2
     state "2. Explore" as ImplementStep2
     state "3. Choose execution shape" as ImplementStep3
     state "4. Implement" as ImplementStep4
-    state "5. Criticize implementation" as ImplementStep5
+    state "5. Run separate critic review" as ImplementStep5
     state "6. Review and revise" as ImplementStep6
     state "7. Run final review cycle" as ImplementStep7
     state "8. Present final review" as ImplementStep8
@@ -114,16 +114,16 @@ Use this for approved plans, features, fixes, debugging, CI/test failures, refac
 2. **Explore.** Read enough code, tests, logs, configs, and docs to establish the fix path. Apply `$workflow:minimal-code` while choosing the solution shape: reuse first, prefer direct code, avoid speculative abstraction, and keep the intended diff small. Delegate explorers only for real unknowns that materially benefit from read-only parallel work.
 3. **Choose execution shape.** Keep tiny or tightly coupled edits local. Prefer a worker for non-trivial implementation when the write scope can be assigned to clear files, modules, packages, or responsibilities. If the host cannot use requested delegation, say so and continue with the closest local equivalent.
 4. **Implement.** Assign disjoint scopes when using workers. Worker prompts must be self-contained, name ownership, preserve behavior unless instructed otherwise, and report validation.
-5. **Criticize implementation.** Use a critic pass for behavior changes, public contracts, risky refactors, weak validation, broad worker output, or explicitly requested critic roles.
-6. **Review and revise.** The main thread reviews every meaningful result before accepting it. Send one bounded correction pass for clear issues, or take over locally when another loop would be wasteful.
-7. **Run final review cycle.** Invoke `$workflow:review-cycle` after meaningful edits and before final response, commit, PR, completion claim, or broad verification.
+5. **Run separate critic review.** For meaningful edits, use a read-only critic agent or equivalent separate review pass before accepting the work. The critic challenges the diff, scope, validation claims, public surface impact, and unsupported assumptions. Skip this only for the mechanical fast path below or when the host cannot provide a separate reviewer; if skipped, say why.
+6. **Review and revise.** The main thread reviews every meaningful result and every critic finding before accepting it. Send one bounded correction pass for clear issues, or take over locally when another loop would be wasteful.
+7. **Run final review cycle.** Invoke `$workflow:review-cycle` after meaningful edits and before final response, commit, PR, completion claim, or broad verification. This is a final acceptance gate, not a substitute for the separate critic review.
 8. **Present final review.** Summarize what changed, what was verified, residual risks, and any follow-up. If the user asked for a role-based flow, name roles used and roles intentionally skipped.
 
 ## Role Rules
 
 - **Explorer**: read-only discovery. Use for bounded unknowns; do not edit or accept work.
 - **Worker**: bounded implementation in a clear write scope. Use for non-trivial clear ownership; do not widen scope or self-accept.
-- **Critic**: read-only adversarial review of plans, diffs, worker output, and validation claims. Do not edit or accept work.
+- **Critic**: read-only adversarial review of plans, diffs, worker output, and validation claims. Do not edit or accept work. For meaningful edits, this is the default third-party review role before main-thread acceptance.
 
 Explicit delegation requests are meaningful. If the user asks for coordinator workflow with subagents, delegation, parallel agents, explorer/worker/critic roles, or similar role-based flow, treat that as authorization to use those roles where the host allows it.
 
@@ -134,7 +134,7 @@ For rename-only refactors, import/export rewires, file moves with no behavior ch
 1. Do one short local read to confirm scope.
 2. Execute locally, or use one worker only if it materially helps.
 3. Run targeted checks.
-4. Skip explorer and critic by default unless behavior, public surface, verification strength, or refactor risk justifies them.
+4. Skip explorer and critic only when the edit is truly tiny, mechanical, clear in scope, and strongly checked; otherwise use the separate critic review.
 
 ## Host Notes
 
