@@ -31,7 +31,7 @@ Catch obvious mistakes before final response without relying on same-thread acce
    - Fallow for supported JS/TS/Vue changes when appropriate
    - explicit "not applicable" notes only when a check genuinely does not fit
 6. Run missing narrow verification when feasible.
-7. Confirm the latest meaningful diff was reviewed by a `critic` subagent or equivalent separate read-only review pass before acceptance. Run or rerun that pass if no critic has reviewed the current diff. The critic should challenge scope, correctness, validation claims, public surface impact, test hygiene, metadata preservation, and unsupported assumptions.
+7. Confirm the latest meaningful diff was reviewed by a `critic` subagent or equivalent separate read-only review pass before acceptance. Run or rerun that pass if no critic has reviewed the current diff. The critic should challenge scope, correctness, validation claims, public surface impact, test hygiene, metadata preservation, unsupported assumptions, and the reviewer objection pass: special-case branches after contract changes, type predicates or `as` casts that do not narrow immediate call sites, wrapper helpers that add ceremony, negative or edge tests without real caller state or an owned behavior contract, and schema/metadata names that should reuse existing names.
 8. Fix issues found by the review cycle before final response, or report the blocker clearly.
 
 ## Critic Pass Default
@@ -45,6 +45,7 @@ Run a critic pass for meaningful edits, especially:
 - incomplete or unavailable verification
 - test changes that refactor helpers, fixtures, snapshots, assertions, or execution controls beyond what the requested behavior needs
 - public docs, DTO/schema, generated type, or API-facing metadata changes that could accidentally remove existing descriptions or annotations
+- new special-case branches, type predicates, `as` casts, wrapper helpers, negative or edge tests, or schema/metadata divergences that may be ceremony after a contract change
 
 Skip a critic pass only for:
 
