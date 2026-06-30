@@ -1,3 +1,10 @@
+# [1.4.0](https://github.com/filipgutica/filip-stack/compare/v1.3.0...v1.4.0) (2026-06-30)
+
+
+### Features
+
+* sharpen review critic objection pass ([1beacef](https://github.com/filipgutica/filip-stack/commit/1beacefc2c790f2e71493379c6ee36dec00eea58))
+
 # [1.3.0](https://github.com/filipgutica/filip-stack/compare/v1.2.0...v1.3.0) (2026-06-26)
 
 
