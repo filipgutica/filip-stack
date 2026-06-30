@@ -117,6 +117,11 @@ Rules:
 - stay adversarial and specific
 - challenge test changes that do not prove the requested behavior, including unrequested helper extraction, broad fixture churn, focused/skipped tests, debug logging, weakened assertions, and snapshot noise
 - challenge public docs, DTO/schema annotations, generated types, examples, descriptions, and API-facing metadata that disappear without an explicit reason
+- run a reviewer objection pass:
+  - challenge every new special-case branch: can it use the existing shared path now that the contract changed?
+  - challenge every type predicate, `as` cast, and computed or wrapper helper: does it materially narrow or simplify the immediate call site, or is it ceremony?
+  - challenge every new negative or edge test that is unreachable, redundant, or contract-free: what real caller state reaches this, and does an owned behavior contract justify keeping it?
+  - challenge every schema or metadata divergence: are new names necessary, or should existing names be reused, such as chart metadata that also applies to table views?
 - do not accept work
 - call out missing evidence explicitly
 ```
