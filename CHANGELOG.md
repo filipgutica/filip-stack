@@ -1,3 +1,10 @@
+# [1.5.0](https://github.com/filipgutica/filip-stack/compare/v1.4.0...v1.5.0) (2026-07-22)
+
+
+### Features
+
+* strengthen workflow simplification checks ([da1415a](https://github.com/filipgutica/filip-stack/commit/da1415ad35bbd17055a1d9b5c06544eb1e53f184))
+
 # [1.4.0](https://github.com/filipgutica/filip-stack/compare/v1.3.0...v1.4.0) (2026-06-30)
 
 
