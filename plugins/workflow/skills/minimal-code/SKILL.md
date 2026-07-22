@@ -30,6 +30,10 @@ Before writing or changing code, walk this ladder in order:
 - Keep prose concise: state what changed, how it was verified, and any real limitation. Do not include feature tours or generic explanations.
 - Preserve existing public contracts unless the user explicitly asks to change them.
 - Do not hide failures, weaken assertions, skip meaningful validation, or remove error handling to make the diff smaller.
+- After a behavior-preserving refactor, normalize data and control flow to the unified shape instead of retaining transitional variants without a current need.
+- Name stable domain contracts at their producer. Use `ReturnType` or `NonNullable` only for local, incidental shapes rather than reconstructing a producer-owned contract at the consumer.
+- Put cancellation and freshness checks at the stateful or externally visible boundary they protect. Guard earlier only when the intervening work is meaningfully expensive, stateful, or unsafe.
+- Simplify or reorder prerequisites and guards before adding a comment to justify unusual sequencing; comments should explain unavoidable constraints, not preserve avoidable structure.
 
 ## Utility Comments
 

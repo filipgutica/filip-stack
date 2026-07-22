@@ -14,8 +14,10 @@ Catch obvious mistakes before final response without relying on same-thread acce
 - Did the diff solve the user's actual request?
 - Did the work stay within scope?
 - Are public contracts, exports, schemas, and generated types still compatible?
-- Are test changes limited to proving the requested behavior without unrequested helper extraction, fixture churn, focused/skipped tests, debug code, weak assertions, or snapshot noise?
+- Can changed contracts and control flow be understood locally without chasing implementation-derived types or relying on comments to justify the structure?
+- Are test changes limited to proving the requested behavior without unrequested helper extraction, fixture churn, focused/skipped tests, debug code, weak assertions, snapshot noise, or missing regression coverage for touched failure modes?
 - Did public docs, DTO/schema annotations, descriptions, and generated/API-facing metadata preserve existing information unless intentionally changed?
+- Did shared paths, source-of-truth ownership, package boundaries, and TypeScript narrowing stay minimal instead of adding special-case branches, duplicate mappings, or appeasement scaffolding?
 - Did verification actually run, and does it prove the relevant claim?
 - Did a separate read-only critic review meaningful edits before acceptance, or was a narrow skip reason documented?
 
@@ -24,15 +26,20 @@ Catch obvious mistakes before final response without relying on same-thread acce
 1. Inspect the current repo state with `git status --short`.
 2. Inspect the focused diff for files you changed.
 3. Check for scope drift, accidental unrelated edits, debug leftovers, broad refactors, unsafe casts, weakened tests, stale comments, and test artifacts such as unrequested helper extraction, broad fixture churn, focused/skipped tests, temporary logging, or snapshot churn.
-4. For public docs, DTOs, schemas, generated types, and API-facing metadata, confirm existing descriptions, annotations, validation decorators, examples, and compatibility details were preserved unless the task intentionally changed them.
-5. Map the change to verification evidence:
+4. For TypeScript and async/control-flow changes, make the contract and guard review concrete:
+   - If a consumer uses `NonNullable<ReturnType<...>>`, determine whether it clarifies a local incidental shape or reconstructs a domain contract that should instead be named at its producer.
+   - For every cancellation or freshness check, identify the mutation, side effect, or externally visible boundary it protects and its distinct purpose.
+   - When repeated guards are separated only by pure or trivial work, reorder prerequisites and coalesce the guards unless a real boundary requires them to remain separate.
+   - Treat comments that explain unusual sequencing as a prompt to simplify first; retain them only for an unavoidable constraint.
+5. For public docs, DTOs, schemas, generated types, and API-facing metadata, confirm existing descriptions, annotations, validation decorators, examples, and compatibility details were preserved unless the task intentionally changed them.
+6. Map the change to verification evidence:
    - typecheck, lint, stylelint, and applicable tests when relevant
    - targeted tests first for bug fixes or narrow changes
    - Fallow for supported JS/TS/Vue changes when appropriate
    - explicit "not applicable" notes only when a check genuinely does not fit
-6. Run missing narrow verification when feasible.
-7. Confirm the latest meaningful diff was reviewed by a `critic` subagent or equivalent separate read-only review pass before acceptance. Run or rerun that pass if no critic has reviewed the current diff. The critic should challenge scope, correctness, validation claims, public surface impact, test hygiene, metadata preservation, unsupported assumptions, and the reviewer objection pass: special-case branches after contract changes, type predicates or `as` casts that do not narrow immediate call sites, wrapper helpers that add ceremony, negative or edge tests without real caller state or an owned behavior contract, and schema/metadata names that should reuse existing names.
-8. Fix issues found by the review cycle before final response, or report the blocker clearly.
+7. Run missing narrow verification when feasible.
+8. Confirm the latest meaningful diff was reviewed by a `critic` subagent or equivalent separate read-only review pass before acceptance. Run or rerun that pass if no critic has reviewed the current diff. The critic should challenge scope, correctness, validation claims, public surface impact, test hygiene, metadata preservation, unsupported assumptions, and the reviewer objection pass in its template.
+9. Fix issues found by the review cycle before final response, or report the blocker clearly.
 
 ## Critic Pass Default
 
@@ -45,7 +52,7 @@ Run a critic pass for meaningful edits, especially:
 - incomplete or unavailable verification
 - test changes that refactor helpers, fixtures, snapshots, assertions, or execution controls beyond what the requested behavior needs
 - public docs, DTO/schema, generated type, or API-facing metadata changes that could accidentally remove existing descriptions or annotations
-- new special-case branches, type predicates, `as` casts, wrapper helpers, negative or edge tests, or schema/metadata divergences that may be ceremony after a contract change
+- new special-case branches, duplicate mappings or helpers, type predicates, `as` casts, wrapper helpers, negative or edge tests, schema/metadata divergences that may be ceremony after a contract change, or package boundary changes that may duplicate existing ownership
 
 Skip a critic pass only for:
 

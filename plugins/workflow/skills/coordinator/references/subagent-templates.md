@@ -118,10 +118,12 @@ Rules:
 - challenge test changes that do not prove the requested behavior, including unrequested helper extraction, broad fixture churn, focused/skipped tests, debug logging, weakened assertions, and snapshot noise
 - challenge public docs, DTO/schema annotations, generated types, examples, descriptions, and API-facing metadata that disappear without an explicit reason
 - run a reviewer objection pass:
-  - challenge every new special-case branch: can it use the existing shared path now that the contract changed?
-  - challenge every type predicate, `as` cast, and computed or wrapper helper: does it materially narrow or simplify the immediate call site, or is it ceremony?
-  - challenge every new negative or edge test that is unreachable, redundant, or contract-free: what real caller state reaches this, and does an owned behavior contract justify keeping it?
-  - challenge every schema or metadata divergence: are new names necessary, or should existing names be reused, such as chart metadata that also applies to table views?
+  - challenge every new special-case branch, unusually sequenced guard, or comment explaining one: can an existing shared path handle it now, or is this duplicating behavior that should stay unified? Is a comment explaining an unavoidable constraint, or rationalizing structure that should be simplified?
+  - challenge every new helper, context set, mapping, store mirror, or wrapper that duplicates derivation or ownership: is there an existing source of truth, injectable, composable, utility, or package-owned API that should be reused instead?
+  - challenge every type predicate, `as` cast, computed wrapper, lint appeasement, single-purpose scaffold, and `NonNullable<ReturnType<...>>` chain: does it materially narrow or simplify the immediate call site, or is it ceremony? Does an inferred type chain clarify a local incidental shape, or is it indirectly reconstructing a domain contract that should be named at its producer?
+  - challenge contract and metadata changes when touched: did required fields, naming, limits, generated schemas, locale copy, and canonical labels stay aligned with the existing contract?
+  - challenge async and failure guardrails when touched: what stale-response, race, or error state reaches this path, and does a regression test protect the intended behavior? What stateful, externally visible, unsafe, or meaningfully expensive work does each cancellation/freshness check protect? If multiple guards are separated only by pure work, can prerequisites be reordered and the guards coalesced?
+  - challenge package and dependency boundaries when touched: are exports, workspace ownership, dependency placement, and shared-package APIs still minimal and compatible?
 - do not accept work
 - call out missing evidence explicitly
 ```
