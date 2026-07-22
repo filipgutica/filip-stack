@@ -38,10 +38,13 @@ Keep the review limited to the resolved surface unless the user explicitly widen
 Inspect the resolved scope for these categories and call out only the ones that actually apply:
 
 - duplicated code, weak reuse, or repeated logic
+- special-case branches, duplicate mappings, redundant guards, or mode-specific paths that a shared path can already handle
 - hard-to-follow control flow, ambiguity, or unnecessary nesting
 - brittle structure or poor extensibility
+- duplicate sources of truth, derived context sets, helper sets, or local state mirrors that can be simplified by reusing an existing store, composable, injectable, utility, or already-owned package API
 - leaky, layered, or unnecessary abstractions
 - overcomplicated, over-engineered, or over-abstracted code
+- type-only or lint-only ceremony, casts, wrappers, or scaffolding that does not make caller behavior clearer
 - poor separation of concerns or weak organization
 - dead, unused, or obsolete code paths
 - inefficient code that has a clear simplification path without changing behavior
@@ -99,7 +102,7 @@ If a request is phrased broadly, such as "can we simplify this", "this feels ove
 When using explorer subagents, have them explicitly inspect for:
 
 - `Quality`: ambiguity or hard-to-follow logic; brittle state or manual shadows; unnecessary flags, wrappers, or abstraction layers; weak separation of concerns; dead, redundant, duplicated, or low-value tests; tests that do not assert meaningful behavior.
-- `Reuse`: duplicated code or repeated logic; local reinvention of existing project components, helpers, composables, utilities, or conventions; divergent patterns that make later maintenance harder; clone groups or shared helpers surfaced by Fallow.
+- `Reuse`: duplicated code or repeated logic; local reinvention of existing project components, helpers, composables, stores, injectables, utilities, package-owned APIs, or conventions; duplicate source-of-truth objects, derived context sets, mappings, or mode-specific branches that should reuse a shared path; divergent patterns that make later maintenance harder; clone groups or shared helpers surfaced by Fallow.
 - `Efficiency`: repeated work, avoidable recomputation, hot-path allocation, broad reactive invalidation, redundant watchers/listeners, unnecessary deep observation, or inefficient code with a clear behavior-preserving simplification path.
 - `Cleanup`: dead or unused code, obsolete paths, redundant styles, and unused style paths with enough evidence to remove safely. Use this as a Fallow-backed category when it does not fit the three main review passes cleanly.
 
