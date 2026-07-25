@@ -1,7 +1,7 @@
 interface:
   display_name: "Review Cycle"
-  short_description: "Review meaningful edits with a separate critic before done"
-  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification as the final acceptance gate to inspect the diff for scope drift, slop, mistakes, overcomplication, test artifacts, missing public metadata, and missing checks, and to confirm separate read-only critic review before acceptance unless a narrow fast-path skip applies."
+  short_description: "Gate meaningful edits with final diff and evidence review"
+  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification as the main-thread final diff and evidence gate. Inspect scope, complexity, test artifacts, public metadata, and verification, and confirm the coordinator used one proportionate review tier; do not add a third reviewer or rerun review unless a revision materially changed the reviewed surface or risk."
 
 policy:
   allow_implicit_invocation: true

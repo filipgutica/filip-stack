@@ -1,151 +1,119 @@
 ---
 name: coordinator
-description: "Use as the main engineering entrypoint for broad engineering work, implementation, debugging, CI failures, refactors, cleanup, investigation, review, and prompts like 'implement this plan' or 'execute this plan'."
+description: "Use as the operational entrypoint for approved engineering implementation, debugging, CI failures, refactors, cleanup, investigation, review feedback, and end-to-end ticket execution."
 ---
 
 # Coordinator
 
-Coordinate engineering work through one of two workflows:
+Own the operational loop for engineering work: route an authorized request, bound its evidence and risk, execute the smallest safe unit, select proportionate independent review, verify, and hand off. Keep the main thread responsible for scope, routing, acceptance, and synthesis.
 
-- **Plan Coordination**: explore, gather context, draft a plan, criticize it, revise it, and output the plan.
-- **Implementation Coordination**: explore, implement, review with a separate critic, revise, run a final review cycle, and present the result.
+Use `$workflow:minimal-code` as the default implementation lens. Prefer the smallest correct readable change, existing project code and patterns, and direct solutions over speculative abstraction. Minimality never overrides correctness, validation, tests, type integrity, security, accessibility, or explicit user requirements.
 
-Keep the main thread responsible for routing, scope control, review, acceptance, and synthesis. Use the lightest workflow that safely fits the task, but do not silently collapse requested coordinator, delegation, or role-based work into ordinary local execution.
+## Scope and Authorization
 
-Use `$workflow:minimal-code` as the default implementation lens: prefer the smallest correct readable change, reuse existing project code, avoid speculative abstraction and dependencies, keep explanations concise, and add useful JSDoc to shared or non-obvious utility functions. Do not let minimality override correctness, validation, tests, type integrity, security, accessibility, or explicit user requirements.
-
-## Required Companion
-
-This skill works best with Superpowers installed. Some routes intentionally hand off to `superpowers:*` skills for specialized planning or execution discipline.
-
-If a referenced `superpowers:*` skill is unavailable, say:
-
-> Superpowers is not available; falling back to default planning behaviour.
-
-Then continue with the closest safe default workflow. Do not pretend that Superpowers was used.
-
-For pure written planning when `superpowers:writing-plans` is unavailable, produce a compact default plan that satisfies the active Plan Mode contract: title, summary, key changes, test plan, assumptions, and no file mutations.
-
-## Routing
-
-Classify the request before substantial work:
-
-- **Plan-only or Plan Mode**: use Plan Coordination. Do not mutate files. Pure written implementation plans route to `superpowers:writing-plans` when available.
-- **Implementation, fix, debug, refactor, CI, cleanup, or approved plan execution**: use Implementation Coordination unless the task is a one-line mechanical edit.
-- **Minimal-code posture**: for implementation, bug fixes, refactors, tests, docs edits, generated-code cleanup, utility extraction, and dependency decisions, apply `$workflow:minimal-code` by default before choosing a solution shape.
-- **Simplification analysis**: route broad cleanup, reuse, efficiency, overcomplication, dead-code, redundant-test, redundant-style, and Fallow-backed maintainability review requests to `$workflow:simplification-review`.
-- **Review-only**: stay read-only. Gather evidence and report findings; do not implement unless the user asks.
-- **Investigation**: gather evidence first. Continue to implementation only when the fix path is concrete.
-- **Ambiguous**: ask only when guessing would make the result brittle or incorrect.
-
-Treat prompts like "implement this plan", "execute this plan", "build this", "make these changes", "apply the plan", or "carry this out" as Implementation Coordination unless the task is obviously tiny.
+- **Plan Mode and plan-only discussion** are free-flow exploration or artifact planning, not a coordinator route. They may produce a plan, ticket, ERD, or other written artifact, but grant no implementation authority.
+- **Explicit implementation** (for example, "implement this plan", "execute this", or "make these changes") enters this coordinator. An ordinary request to implement a ticket does not authorize publishing.
+- **Explicit end-to-end ticket execution** (for example, "execute ticket ABC-123 end-to-end") additionally authorizes branch setup, task commits, push, and a draft PR. Equivalent wording must be equally unambiguous.
+- **Review-only** stays read-only. **Investigation** gathers evidence first and proceeds only once a concrete fix path is authorized. **Simplification analysis** routes to `$workflow:simplification-review`.
+- Use the fast path only for an obviously local, low-risk, non-behavioral edit with clear scope. Ask only when an unresolved decision would make the implementation brittle or incorrect.
 
 ## State Machine
 
-The diagram is a companion. Every state label maps directly to a routing rule or to the exact title of a numbered workflow step below.
-
 ```mermaid
 stateDiagram-v2
-    state "Routing: Classify the request" as RoutingClassify
-    state "Routing: Review-only" as RoutingReviewOnly
-    state "Routing: Simplification analysis" as RoutingSimplification
-    state "Routing: Ambiguous" as RoutingAmbiguous
+    state "Route and establish authority" as Route
+    state "Plan Mode: discuss or produce an artifact" as PlanMode
+    state "Review-only or investigation" as ReadOnly
+    state "Fast path: local edit and targeted check" as FastPath
+    state "Bounded cycle: goal, evidence, risk, verification" as Bound
+    state "Choose one review tier" as ReviewTier
+    state "Execute bounded work" as Execute
+    state "Standard review or adversarial critic" as Review
+    state "Revise only for material findings" as Revise
+    state "Proportional verification and review-cycle gate" as Verify
+    state "Handoff" as Handoff
+    state "E2E: branch, ledger, one task per commit" as E2E
+    state "Push and draft PR" as Publish
+    state "Review feedback: receive and classify" as Feedback
 
-    state "1. Classify intent and constraints" as PlanStep1
-    state "2. Explore and gather context" as PlanStep2
-    state "3. Draft the plan" as PlanStep3
-    state "4. Criticize the plan" as PlanStep4
-    state "5. Revise" as PlanStep5
-    state "6. Output the plan" as PlanStep6
-
-    state "1. Classify intent and risk" as ImplementStep1
-    state "2. Explore" as ImplementStep2
-    state "3. Choose execution shape" as ImplementStep3
-    state "4. Implement" as ImplementStep4
-    state "5. Run separate critic review" as ImplementStep5
-    state "6. Review and revise" as ImplementStep6
-    state "7. Run final review cycle" as ImplementStep7
-    state "8. Present final review" as ImplementStep8
-
-    [*] --> RoutingClassify
-    RoutingClassify --> PlanStep1: plan-only or Plan Mode
-    RoutingClassify --> ImplementStep1: approved work or fix
-    RoutingClassify --> RoutingReviewOnly: review-only
-    RoutingClassify --> RoutingSimplification: simplification/cleanup review
-    RoutingClassify --> RoutingAmbiguous: brittle ambiguity
-
-    PlanStep1 --> PlanStep2
-    PlanStep2 --> PlanStep3
-    PlanStep3 --> PlanStep4
-    PlanStep4 --> PlanStep5
-    PlanStep5 --> PlanStep6
-    PlanStep6 --> [*]
-
-    ImplementStep1 --> ImplementStep2
-    ImplementStep2 --> ImplementStep3
-    ImplementStep3 --> ImplementStep4
-    ImplementStep4 --> ImplementStep5
-    ImplementStep5 --> ImplementStep6
-    ImplementStep6 --> ImplementStep7
-    ImplementStep7 --> ImplementStep8
-    ImplementStep8 --> [*]
-
-    RoutingReviewOnly --> [*]
-    RoutingSimplification --> [*]
-    RoutingAmbiguous --> [*]
+    [*] --> Route
+    Route --> PlanMode: plan-only or Plan Mode
+    Route --> ReadOnly: review-only or investigation
+    Route --> FastPath: trivial low-risk implementation
+    Route --> Bound: explicit implementation
+    Route --> E2E: explicit named ticket end-to-end
+    PlanMode --> [*]
+    ReadOnly --> [*]
+    FastPath --> Verify
+    Bound --> ReviewTier
+    ReviewTier --> Execute
+    Execute --> Review
+    Review --> Revise: valid finding
+    Revise --> Review: reviewed surface or risk materially changed
+    Revise --> Verify: correction stays within reviewed surface and risk
+    Review --> Verify: accepted
+    Verify --> Handoff
+    E2E --> Bound: next ledger task
+    Handoff --> E2E: task complete, more tasks remain
+    E2E --> Publish: all tasks complete
+    Publish --> [*]
+    Handoff --> [*]
+    Route --> Feedback: code-review feedback
+    Feedback --> FastPath: isolated low-risk correction
+    Feedback --> Bound: material or uncertain correction
 ```
 
-## Workflow 1: Plan Coordination
+## Bounded Coordinator Cycle
 
-Use this for Plan Mode, plan-only requests, investigation plans, and design coordination.
+Use this for meaningful implementation. A bounded task is a coherent, reviewable change with one owner and a clear verification signal.
 
-1. **Classify intent and constraints.** Identify the goal, success criteria, in/out of scope, host mode, and whether file mutations are allowed.
-2. **Explore and gather context.** Use focused local reads for small scopes. Use bounded read-only explorers only when discovery spans multiple files, unclear ownership, failing logs, unfamiliar paths, or independent unknowns.
-3. **Draft the plan.** For pure written implementation plans, invoke `superpowers:writing-plans` when available. If it is unavailable, state the fallback message and write a compact default plan.
-4. **Criticize the plan.** Use a critic pass when the plan changes behavior, crosses public contracts, has weak evidence, or the user asked for adversarial review.
-5. **Revise.** Incorporate valid critic findings and resolve contradictions, unsupported assumptions, and scope drift.
-6. **Output the plan.** In Plan Mode, return the final plan in the required plan format and do not ask to proceed. Name any roles used or intentionally skipped when the user asked for a role-based workflow.
+1. **Establish the unit.** State the goal, relevant evidence, in/out of scope, behavior and contract risk, assumptions, and narrowest credible verification. Use focused tests and relevant type/lint/style checks for code, a consumer check when a shared export changes, schema validation and dry-run when supported for config/workflow, and configured docs validation or diff review for docs. Explain a meaningful omission and its replacement evidence. Explore locally first; use read-only exploration only for material unknowns.
+2. **Choose execution and review shape.** Keep tightly coupled work local or assign a disjoint, bounded worker scope. Choose exactly one review tier:
+   - **Fast path:** no independent reviewer for a tiny, mechanical, strongly checked change.
+   - **Routine meaningful work:** one standard reviewer.
+   - **High-risk, ambiguous, security, contract, concurrency, or broad work:** one adversarial critic.
+   Do not automatically stack a reviewer and critic. Use the stronger tier when a real risk calls for it.
+3. **Execute.** Make the bounded change. Workers report changed files, verification, deviations, and blockers; they do not accept their own work.
+4. **Review and revise.** Run the selected review. Incorporate valid findings. Re-review only when the revised surface or risk materially changed; do not create reflexive correction loops.
+5. **Verify and gate.** Run the narrowest credible checks for the affected surface. Invoke `$workflow:review-cycle` after meaningful edits as the main-thread diff and evidence gate. It does not add a third reviewer and does not automatically rerun independent review.
+6. **Handoff.** Report the result, evidence, omissions, and residual risk. Commit only when the request authorizes it; commit is mandatory per task only in the explicit end-to-end route below.
 
-## Workflow 2: Implementation Coordination
+## Explicit End-to-End Ticket Route
 
-Use this for approved plans, features, fixes, debugging, CI/test failures, refactors, docs/config updates, and cleanup implementation.
+Use this route only with explicit named-ticket end-to-end authority. It has no routine user checkpoints; stop only for blockers or material scope decisions.
 
-1. **Classify intent and risk.** Identify whether this is implementation, fix, debugging, CI, refactor, cleanup, or plan execution. Note behavior risk, public API risk, and available validation.
-2. **Explore.** Read enough code, tests, logs, configs, and docs to establish the fix path. Apply `$workflow:minimal-code` while choosing the solution shape: reuse first, prefer direct code, avoid speculative abstraction, and keep the intended diff small. Delegate explorers only for real unknowns that materially benefit from read-only parallel work.
-3. **Choose execution shape.** Keep tiny or tightly coupled edits local. Prefer a worker for non-trivial implementation when the write scope can be assigned to clear files, modules, packages, or responsibilities. If the host cannot use requested delegation, say so and continue with the closest local equivalent.
-4. **Implement.** Assign disjoint scopes when using workers. Worker prompts must be self-contained, name ownership, preserve behavior unless instructed otherwise, and report validation.
-5. **Run separate critic review.** For meaningful edits, use a read-only critic agent or equivalent separate review pass before accepting the work. The critic challenges the diff, scope, validation claims, public surface impact, unsupported assumptions, and the critic template's reviewer-objection pass. Skip this only for the mechanical fast path below or when the host cannot provide a separate reviewer; if skipped, say why.
-6. **Review and revise.** The main thread reviews every meaningful result and every critic finding before accepting it. Send one bounded correction pass for clear issues, or take over locally when another loop would be wasteful.
-7. **Run final review cycle.** Invoke `$workflow:review-cycle` after meaningful edits and before final response, commit, PR, completion claim, or broad verification. This is a final acceptance gate, not a substitute for the separate critic review.
-8. **Present final review.** Summarize what changed, what was verified, residual risks, and any follow-up. If the user asked for a role-based flow, name roles used and roles intentionally skipped.
+1. Create or confirm the working branch and establish the ticket goal, success criteria, non-goals, and verification.
+2. Create or resume the branch ledger using [references/branch-task-ledger.md](references/branch-task-ledger.md). Break the work into bounded tasks before implementation.
+3. For each task, run one bounded coordinator cycle. Make one Conventional Commit after its review-cycle gate and verification pass, then update the ledger only after the commit exists.
+4. After all tasks and branch-level checks pass, push and open a draft PR. Use this exact body shape:
 
-## Role Rules
+```md
+## Summary
+Closes <ticket>
 
-- **Explorer**: read-only discovery. Use for bounded unknowns; do not edit or accept work.
-- **Worker**: bounded implementation in a clear write scope. Use for non-trivial clear ownership; do not widen scope or self-accept.
-- **Critic**: read-only adversarial review of plans, diffs, worker output, and validation claims. Do not edit or accept work. For meaningful edits, this is the default third-party review role before main-thread acceptance.
+<concise summary>
 
-Explicit delegation requests are meaningful. If the user asks for coordinator workflow with subagents, delegation, parallel agents, explorer/worker/critic roles, or similar role-based flow, treat that as authorization to use those roles where the host allows it.
+## Changes
+- <change>
+```
 
-## Mechanical Fast Path
+Humanize prose when appropriate, but preserve the headings and shape. Do not publish from an ordinary implementation or review-feedback request merely because it follows this route in history.
 
-For rename-only refactors, import/export rewires, file moves with no behavior change, narrow internal test additions, or small repetitive mechanical edits:
+## Review Feedback Route
 
-1. Do one short local read to confirm scope.
-2. Execute locally, or use one worker only if it materially helps.
-3. Run targeted checks.
-4. Skip explorer and critic only when the edit is truly tiny, mechanical, clear in scope, and strongly checked; otherwise use the separate critic review.
+For external code-review comments, invoke `$superpowers:receiving-code-review` when available, then verify the comment against the code and contract. Use the fast path for an isolated low-risk correction; otherwise start a bounded coordinator cycle. Review feedback never inherits branch, commit, push, or PR authority from earlier work unless the current request grants it.
 
-## Host Notes
+## Role Boundaries
 
-Keep instructions host-agnostic. Match model capability to task shape:
+- **Explorer:** read-only discovery for bounded unknowns; no edits or acceptance.
+- **Worker:** owns a disjoint bounded implementation surface; no scope widening or self-acceptance.
+- **Standard reviewer:** independently checks a routine meaningful diff against its goal, evidence, scope, and verification.
+- **Adversarial critic:** read-only challenge of high-risk or ambiguous plans, diffs, worker output, and verification claims. Use the critic template's objection pass.
+- **Main thread:** selects the route and tier, integrates results, runs the review-cycle gate, and accepts the result.
 
-- Use the faster, cheaper tier for bounded exploration and straightforward low-risk work.
-- Use the stronger tier for synthesis, review, integration, ambiguous investigation, broad worker output, public-contract changes, and architecturally sensitive work.
-- If using parallel explorers, keep both on the lighter tier by default unless one has a harder risk or architecture lens.
-
-Follow the host's current subagent schema and policy. Do not hard-code stale model names or tool signatures.
+Use model tiers according to current host policy: efficient tiers for bounded exploration and routine work; stronger tiers for synthesis, high-risk review, ambiguous investigation, public contracts, and broad worker output. Do not hard-code vendor-specific models or tool signatures here.
 
 ## References
 
 - Prompt templates: [references/subagent-templates.md](references/subagent-templates.md)
+- Branch ledger: [references/branch-task-ledger.md](references/branch-task-ledger.md)
