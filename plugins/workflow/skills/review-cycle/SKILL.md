@@ -28,13 +28,16 @@ Catch obvious mistakes before final response without relying on same-thread acce
 3. Check for scope drift, accidental unrelated edits, debug leftovers, broad refactors, unsafe casts, weakened tests, stale comments, and test artifacts such as unrequested helper extraction, broad fixture churn, focused/skipped tests, temporary logging, or snapshot churn.
 4. For TypeScript and async/control-flow changes, make the contract and guard review concrete:
    - If a consumer uses `NonNullable<ReturnType<...>>`, determine whether it clarifies a local incidental shape or reconstructs a domain contract that should instead be named at its producer.
+   - Before reviewing guards, challenge whether each new watcher, effect, deferred operation, lifecycle hook, or manual invalidation state is necessary.
+   - If a patch creates an async boundary and then guards it, test whether a direct or declarative alternative removes that boundary.
+   - Challenge every explicit non-default scheduling, batching, flush, deferral, or timing option: identify the concrete ordering or lifecycle failure it prevents, compare behavior with the default, and retain it only when focused evidence shows the default is insufficient.
    - For every cancellation or freshness check, identify the mutation, side effect, or externally visible boundary it protects and its distinct purpose.
    - When repeated guards are separated only by pure or trivial work, reorder prerequisites and coalesce the guards unless a real boundary requires them to remain separate.
    - Treat comments that explain unusual sequencing as a prompt to simplify first; retain them only for an unavoidable constraint.
 5. For public docs, DTOs, schemas, generated types, and API-facing metadata, confirm existing descriptions, annotations, validation decorators, examples, and compatibility details were preserved unless the task intentionally changed them.
 6. Map the change to verification evidence:
    - typecheck, lint, stylelint, and applicable tests when relevant
-   - targeted tests first for bug fixes or narrow changes
+   - smallest causal regression test first for bug fixes or narrow changes
    - Fallow for supported JS/TS/Vue changes when appropriate
    - explicit "not applicable" notes only when a check genuinely does not fit
 7. Run missing narrow verification when feasible.

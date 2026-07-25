@@ -20,11 +20,12 @@ Before writing or changing code, walk this ladder in order:
 3. **Use the platform.** Prefer language, runtime, browser, framework, and standard-library features before custom code.
 4. **Avoid dependencies.** Do not add a dependency unless existing tools are clearly insufficient and the benefit is worth the new maintenance surface.
 5. **Keep the shape direct.** Prefer one clear function, branch, or data transform over factories, registries, adapters, or configuration layers.
-6. **Write the smallest readable fix.** Small is good only when the result remains understandable, testable, and correct.
+6. **Write the smallest causal fix.** For bug fixes, test the smallest causal behavior change first; keep the result understandable, testable, and correct.
 
 ## Implementation Rules
 
 - Make the narrowest change that satisfies the user's goal.
+- Prefer existing source state and declarative or framework-native invalidation over mirrored state, watchers/effects, manual reset counters, or timing-based coordination unless focused evidence proves the simpler path insufficient.
 - Avoid future-proofing, broad configurability, generic abstractions, and extra extension points unless the current task proves they are needed.
 - Prefer deleting or reusing code over adding code when behavior stays correct.
 - Keep prose concise: state what changed, how it was verified, and any real limitation. Do not include feature tours or generic explanations.
