@@ -1,3 +1,11 @@
+# [1.6.0](https://github.com/filipgutica/filip-stack/compare/v1.5.0...v1.6.0) (2026-07-27)
+
+
+### Features
+
+* consolidate coordinator execution policy ([c73e92c](https://github.com/filipgutica/filip-stack/commit/c73e92cd18558440113bd8e68e992127baa17f81))
+* strengthen causal fix review guidance ([67feb8c](https://github.com/filipgutica/filip-stack/commit/67feb8c6a8af60dd909ab3daa16d08b2e4208a4a))
+
 # [1.5.0](https://github.com/filipgutica/filip-stack/compare/v1.4.0...v1.5.0) (2026-07-22)
 
 
