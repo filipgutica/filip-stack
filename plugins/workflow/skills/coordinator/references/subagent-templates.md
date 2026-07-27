@@ -1,22 +1,10 @@
 # Subagent Prompt Templates
 
-Use these templates to keep delegation consistent across Codex and Claude. Fill in only the task-specific details that matter.
+Use these templates to keep delegated work bounded and host-neutral. Fill in only the task-specific details that matter.
 
 When filling these templates, write the final prompt as prose rather than reproducing the section headers verbatim. The structure below is a checklist of what to cover, not a format to copy literally.
 
-In Claude Code, pass the filled prompt to the `Agent` tool:
-- Explorer → `Agent(subagent_type="Explore", model="haiku", prompt="...")`
-- Critic → `Agent(subagent_type="Explore", model="sonnet", prompt="...")`
-- Worker → `Agent(subagent_type="general-purpose", prompt="...")` (default model = sonnet)
-
-The Claude Code main thread should generally stay on `sonnet`. Escalate to `opus` only for unusually complex or high-stakes synthesis or review.
-
-In Codex, pass the filled prompt to `spawn_agent` and follow the currently exposed tool policy for model overrides:
-- Explorer → `spawn_agent(agent_type="explorer", message="...")`
-- Critic → `spawn_agent(agent_type="critic", message="...")` when available, otherwise use the read-only explorer role with a critic prompt
-- Worker → `spawn_agent(agent_type="worker", message="...")`
-
-Use model overrides only when the user asks for a specific model or a task-specific reason justifies one. If an explorer, worker, or critic task needs stronger reasoning, escalate deliberately and state why.
+Follow the host's current agent schema and routing policy. Use a role only when it materially improves independence, parallelism, or context management. Match a lighter tier to bounded exploration and routine work; reserve stronger reasoning for synthesis, high-risk review, ambiguous investigation, public contracts, and broad worker output.
 
 ## Explorer Template
 
@@ -86,6 +74,35 @@ Deliverable:
 - known limitations or blockers
 ```
 
+## Standard Reviewer Template
+
+Use for one independent routine review of meaningful work. Do not pair it with an adversarial critic unless a changed risk explicitly requires escalation.
+
+```md
+Role: reviewer
+
+Task:
+<state the diff, output, or claim to review>
+
+Context:
+<approved goal, relevant constraints, affected files, and intended verification>
+
+Scope:
+- Allowed paths or subsystem:
+- Explicit exclusions:
+
+Deliverable:
+- findings ordered by severity
+- whether the result satisfies the stated goal and scope
+- missing or mis-scoped verification
+- minimal corrections, if any
+
+Rules:
+- read-only; do not edit or accept work
+- inspect the actual diff and available evidence
+- report no findings when the result is sound; do not invent churn
+```
+
 ## Critic Template
 
 Use for bounded adversarial review of plans, diffs, worker output, and validation claims before acceptance.
@@ -122,7 +139,7 @@ Rules:
   - challenge every new helper, context set, mapping, store mirror, or wrapper that duplicates derivation or ownership: is there an existing source of truth, injectable, composable, utility, or package-owned API that should be reused instead?
   - challenge every type predicate, `as` cast, computed wrapper, lint appeasement, single-purpose scaffold, and `NonNullable<ReturnType<...>>` chain: does it materially narrow or simplify the immediate call site, or is it ceremony? Does an inferred type chain clarify a local incidental shape, or is it indirectly reconstructing a domain contract that should be named at its producer?
   - challenge contract and metadata changes when touched: did required fields, naming, limits, generated schemas, locale copy, and canonical labels stay aligned with the existing contract?
-  - challenge async and failure guardrails when touched: what stale-response, race, or error state reaches this path, and does a regression test protect the intended behavior? What stateful, externally visible, unsafe, or meaningfully expensive work does each cancellation/freshness check protect? If multiple guards are separated only by pure work, can prerequisites be reordered and the guards coalesced?
+  - challenge async and failure guardrails when touched: what stale-response, race, or error state reaches this path, and does a regression test protect the intended behavior? What real state transition requires each watcher, deferred tick, reset counter, or freshness guard? Could existing source state drive a declarative identity or ordering change? Did the patch create a race and then add guards for its own race? Is there focused evidence that the simpler approach fails? What concrete ordering or lifecycle failure requires each non-default scheduling, batching, flush, deferral, or timing option, and what happens under the default? For remaining guards, what stateful, externally visible, unsafe, or meaningfully expensive boundary does each protect, and can ordering prerequisites coalesce guards separated only by pure work?
   - challenge package and dependency boundaries when touched: are exports, workspace ownership, dependency placement, and shared-package APIs still minimal and compatible?
 - do not accept work
 - call out missing evidence explicitly
@@ -130,9 +147,9 @@ Rules:
 
 ## Flow Mapping
 
-- Plan Coordination: use explorer templates for bounded read-only discovery; use critic templates for plan review when behavior, public contracts, weak evidence, or explicit review requests justify it. Keep final plan acceptance in the main thread.
-- Implementation Coordination: start with focused local reads; use explorer only when real unknowns remain; use worker for non-trivial clear write scopes; use critic for meaningful edits before main-thread acceptance. The main thread reconciles multiple accepted worker results and critic findings.
-- Review-only: use explorer templates only when extra evidence is needed; keep acceptance and final findings in the main thread.
-- Investigation: start with focused local reads; use explorer only when real unknowns remain, then hand off to worker if the fix path is concrete.
-- Mechanical rename-style work: confirm scope locally, then execute locally or use a single worker when delegation materially helps; skip explorer and critic only when the edit is truly tiny, mechanical, clear in scope, and strongly checked.
-- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the final acceptance gate; confirm the latest diff has separate critic coverage unless a narrow fast-path skip applies or the host cannot provide a separate reviewer.
+- Plan Mode: do not delegate implementation. Use written planning or bounded read-only exploration only when it improves the resulting artifact.
+- Bounded coordinator cycle: start with focused local reads; use explorers only for real unknowns and workers only for disjoint implementation ownership. Select no independent reviewer for the fast path, one standard reviewer for routine meaningful work, or one adversarial critic for high-risk, ambiguous, security, contract, concurrency, or broad work. Do not stack the latter two automatically.
+- Review-only: use read-only roles only when additional evidence is needed; keep acceptance and final findings in the main thread.
+- Investigation: start with focused local reads; use an explorer only when real unknowns remain, then begin an authorized bounded cycle once the fix path is concrete.
+- Review feedback: apply `$superpowers:receiving-code-review` when available, verify the feedback, then choose the fast path or a bounded cycle by risk. Feedback does not authorize publish actions.
+- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread diff and evidence gate. It is not a third reviewer and does not rerun selected independent review unless a revision materially changed the reviewed surface or risk.
