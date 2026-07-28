@@ -147,9 +147,10 @@ Rules:
 
 ## Flow Mapping
 
-- Plan Mode: do not delegate implementation. Use written planning or bounded read-only exploration only when it improves the resulting artifact.
-- Bounded coordinator cycle: start with focused local reads; use explorers only for real unknowns and workers only for disjoint implementation ownership. Select no independent reviewer for the fast path, one standard reviewer for routine meaningful work, or one adversarial critic for high-risk, ambiguous, security, contract, concurrency, or broad work. Do not stack the latter two automatically.
+- Planning: do not delegate implementation. Use written planning or bounded read-only exploration only when it improves the resulting artifact. For explicitly requested user-involved branch-ledger planning on an established branch, use the external ledger only; do not create or switch branches, edit source or repository files, commit, push, open a PR, or publish.
+- Investigation: start with focused local reads; use an explorer only for real unknowns. Follow explore, hypothesize, focused test or repro, validate or revise, then present. Do not begin implementation until a concrete fix path has separate explicit authority.
+- Implementation: start with focused local reads; use workers only for disjoint implementation ownership. For the bounded coordinator cycle, select no independent reviewer for the fast path, one standard reviewer for routine meaningful work, or one adversarial critic for high-risk, ambiguous, security, contract, concurrency, or broad work. Do not stack the latter two automatically.
 - Review-only: use read-only roles only when additional evidence is needed; keep acceptance and final findings in the main thread.
-- Investigation: start with focused local reads; use an explorer only when real unknowns remain, then begin an authorized bounded cycle once the fix path is concrete.
 - Review feedback: apply `$superpowers:receiving-code-review` when available, verify the feedback, then choose the fast path or a bounded cycle by risk. Feedback does not authorize publish actions.
+- Named-ticket end-to-end: only explicit authority permits branch setup, per-task commits, push, and a draft PR. Use the ledger and one bounded coordinator cycle per task.
 - Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread diff and evidence gate. It is not a third reviewer and does not rerun selected independent review unless a revision materially changed the reviewed surface or risk.

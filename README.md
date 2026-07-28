@@ -8,7 +8,7 @@ Both Claude and Codex are distributed directly from this GitHub repo as git-base
 
 The `filip-stack` Codex marketplace ships one plugin:
 
-- `workflow` — coordinator, minimal-code posture, review cycle, and Fallow-backed simplification review
+- `workflow` — coordinator routing, minimal-code posture, layered review field guide, review cycle, and Fallow-backed simplification review
 
 The Claude marketplace also ships `workflow`.
 
@@ -21,7 +21,7 @@ The former Codex-only `claude-plugin` now lives in the dedicated
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  skills/                  coordinator, minimal-code, review-cycle, and simplification-review skills
+  skills/                  coordinator, field-guide, minimal-code, review-cycle, and simplification-review skills
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
@@ -105,12 +105,15 @@ and creates a GitHub release. No manual version commands needed.
 
 The `workflow` plugin includes:
 
-- `coordinator` — main engineering workflow skill with explicit Plan Coordination and Implementation Coordination flows
+- `coordinator` — high-level router with focused Planning, Investigation, and authorized Implementation flows
+- `field-guide` — consults and maintains layered local project and shared guidance derived from committed code-review corrections
 - `minimal-code` — default implementation posture for small, readable, low-ceremony changes. Reuses existing code first, prefers platform and standard-library features before dependencies, avoids speculative abstractions and scaffolding, keeps explanations concise, and adds useful JSDoc to shared or non-obvious utility functions without trading away correctness or verification.
-- `review-cycle` — final acceptance gate for scope drift, test artifacts, metadata preservation, verification, and separate critic coverage after meaningful edits and before final response, commit, PR, completion claim, or broad verification
+- `review-cycle` — final diff-and-evidence acceptance gate for scope drift, test artifacts, metadata preservation, review-tier evidence, and verification after meaningful edits and before final response, commit, PR, completion claim, or broad verification
 - `simplification-review` — analyze-first simplification, cleanup, reuse, efficiency, and maintainability review skill scoped to local changes, untracked files, branch diff, or an explicit area. Uses Fallow as the primary deterministic analysis engine for supported JS/TS/Vue/Nest, dead-code, duplication, health, dependency, and CSS/SCSS/CSS Module cleanup signals.
 
-The coordinator guidance is intentionally proportional: use Plan Coordination for plan-only work, use Implementation Coordination for approved changes with `minimal-code` as the default implementation lens, keep bounded mechanical changes local when possible, honor explicit subagent or role-based workflow requests, review meaningful edits with a separate read-only critic before acceptance, and finish meaningful edits with `review-cycle`.
+The coordinator keeps its root router small and loads detailed Planning, Investigation, or Implementation guidance only for the selected route. Implementation uses `minimal-code`, selects one proportionate review tier, and finishes meaningful edits with `review-cycle`. Named-ticket branch setup, task commits, push, and draft PR creation remain explicitly authorized end-to-end behavior.
+
+The field guide lives outside repositories at `~/.field-guide`. It loads only relevant indexed guidance and records review learning only after the corresponding correction commit exists. Project guidance remains local to its repository; shared guidance requires an explicit general preference or supporting committed evidence from multiple projects.
 Use `simplification-review` for broad natural-language requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, finding dead or unused code, removing redundant tests or styles, checking efficiency, or validating cleanup after generated code. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface. The skill works through the Fallow CLI by default; Fallow MCP is optional when already available.
 
 The `minimal-code` skill is inspired by [Ponytail](https://github.com/DietrichGebert/ponytail)'s minimalism posture, but the workflow plugin uses original local guidance rather than vendored upstream text. Ponytail is MIT licensed. This skill has no lifecycle hooks or always-on injection; broad use comes from skill metadata and coordinator routing.
@@ -139,5 +142,5 @@ There is no separate Pages deployment workflow. Claude installs directly from th
 
 ```sh
 pnpm validate-plugins
-pnpm check          # validate plugin manifests
+pnpm check          # field-guide tests plus plugin manifest validation
 ```

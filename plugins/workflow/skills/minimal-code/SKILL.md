@@ -25,6 +25,7 @@ Before writing or changing code, walk this ladder in order:
 ## Implementation Rules
 
 - Make the narrowest change that satisfies the user's goal.
+- For meaningful code work, consult relevant project and shared guidance through `$workflow:field-guide` when available; current user instructions and repository contracts take precedence.
 - Prefer existing source state and declarative or framework-native invalidation over mirrored state, watchers/effects, manual reset counters, or timing-based coordination unless focused evidence proves the simpler path insufficient.
 - Avoid future-proofing, broad configurability, generic abstractions, and extra extension points unless the current task proves they are needed.
 - Prefer deleting or reusing code over adding code when behavior stays correct.
@@ -65,6 +66,6 @@ If the smallest implementation conflicts with these boundaries, choose the small
 ## Working With Other Workflow Skills
 
 - Use `$workflow:coordinator` to route planning and implementation.
-- Use this skill as the default implementation lens inside coordinator's Implementation Coordination.
+- Use this skill as the default implementation lens inside the coordinator's Implementation flow.
 - Use `$workflow:simplification-review` when the user wants deeper analysis of existing code, over-engineering, dead code, reuse, efficiency, or cleanup opportunities.
 - Use `$workflow:review-cycle` after meaningful edits and before final responses, commits, PRs, completion claims, or broad verification.

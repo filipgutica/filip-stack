@@ -10,8 +10,9 @@
   "scripts": {
     "postinstall": "lefthook install",
     "stamp-version": "node scripts/stamp-version.mjs",
+    "test:field-guide": "node --test plugins/workflow/skills/field-guide/scripts/field-guide.test.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "check": "pnpm validate-plugins"
+    "check": "pnpm test:field-guide && pnpm validate-plugins"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
