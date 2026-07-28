@@ -1,3 +1,11 @@
+# [1.7.0](https://github.com/filipgutica/filip-stack/compare/v1.6.0...v1.7.0) (2026-07-28)
+
+
+### Features
+
+* **workflow:** add field guide and split coordinator flows ([435c9c4](https://github.com/filipgutica/filip-stack/commit/435c9c43c4a5dff73650042bc71e3adc8b574cdc))
+* **workflow:** make review cycle invoke missing review ([c7c61dd](https://github.com/filipgutica/filip-stack/commit/c7c61dd4201678ae080590741b2659815be81706))
+
 # [1.6.0](https://github.com/filipgutica/filip-stack/compare/v1.5.0...v1.6.0) (2026-07-27)
 
 
