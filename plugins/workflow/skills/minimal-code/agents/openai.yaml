@@ -1,6 +1,6 @@
 interface:
   display_name: "Minimal Code"
   short_description: "Default to small, readable, low-ceremony implementation"
-  default_prompt: "Use $workflow:minimal-code as the default implementation posture for coding, debugging, refactoring, tests, docs edits, generated-code cleanup, utility extraction, and dependency decisions. Prefer the smallest correct readable change, reuse existing project code, use platform and standard-library features before dependencies, avoid speculative abstractions and scaffolding, keep explanations concise, add useful JSDoc for shared or non-obvious utility functions, and preserve correctness, verification, type integrity, security, accessibility, and explicit user requirements."
+  default_prompt: "Use $workflow:minimal-code for implementation work. Prefer the smallest correct, readable change. Reuse project code and platform features. Avoid speculative abstractions and dependencies. Add JSDoc only to shared or non-obvious utilities. Preserve correctness, verification, types, security, accessibility, and explicit requirements."
 policy:
   allow_implicit_invocation: true

@@ -2,9 +2,9 @@
 
 Use these templates to keep delegated work bounded and host-neutral. Fill in only the task-specific details that matter.
 
-When filling these templates, write the final prompt as prose rather than reproducing the section headers verbatim. The structure below is a checklist of what to cover, not a format to copy literally.
+Write each final prompt as prose. Do not copy the section headers. Use the template as a content checklist.
 
-Follow the host's current agent schema and routing policy. Use a role only when it materially improves independence, parallelism, or context management. Match a lighter tier to bounded exploration and routine work; reserve stronger reasoning for synthesis, high-risk review, ambiguous investigation, public contracts, and broad worker output.
+Follow the host's current agent schema and routing policy. Use a role only when it improves independence, parallelism, or context management. Use lighter tiers for bounded or routine work. Use stronger reasoning for synthesis, high-risk review, ambiguous investigation, public contracts, and broad worker output.
 
 ## Explorer Template
 
@@ -17,7 +17,7 @@ Task:
 <state the bounded question or surface to inspect>
 
 Context:
-<what the subagent needs to know that it cannot derive from the task alone — repo area, prior findings, relevant constraints, or key files already identified>
+<context the subagent cannot derive: repository area, prior findings, constraints, or known key files>
 
 Scope:
 - Allowed paths or subsystem:
@@ -34,7 +34,7 @@ Deliverable:
 - recommended next step for the main thread
 
 Rules:
-- read-only; do not edit files
+- read-only. Do not edit files.
 - keep the scope bounded
 - do not speculate beyond the evidence
 - call out missing context explicitly
@@ -51,7 +51,7 @@ Task:
 <state the exact change to implement>
 
 Context:
-<what the subagent needs to know that it cannot derive from the task alone — approved plan, prior explorer findings, relevant constraints, or key files already identified>
+<context the subagent cannot derive: approved plan, prior findings, constraints, or known key files>
 
 Ownership:
 - files or areas you own:
@@ -98,9 +98,9 @@ Deliverable:
 - minimal corrections, if any
 
 Rules:
-- read-only; do not edit or accept work
+- read-only. Do not edit or accept work.
 - inspect the actual diff and available evidence
-- report no findings when the result is sound; do not invent churn
+- report no findings when the result is sound. Do not invent churn.
 ```
 
 ## Critic Template
@@ -114,7 +114,7 @@ Task:
 <state the worker output, diff, or synthesis to challenge>
 
 Context:
-<what the critic needs to know that it cannot derive from the task alone — approved plan, worker findings, relevant constraints, or key files already identified>
+<context the critic cannot derive: approved plan, worker findings, constraints, or known key files>
 
 Scope:
 - Allowed paths or subsystem:
@@ -129,27 +129,28 @@ Deliverable:
 - unnecessary test changes, review artifacts, or accidentally removed public metadata
 
 Rules:
-- read-only; do not edit files
+- read-only. Do not edit files.
 - keep the scope bounded
 - stay adversarial and specific
-- challenge test changes that do not prove the requested behavior, including unrequested helper extraction, broad fixture churn, focused/skipped tests, debug logging, weakened assertions, and snapshot noise
+- challenge test changes that do not prove the requested behavior, including unrequested helper extraction, broad fixture churn, focused or skipped tests, debug logging, weakened assertions, and snapshot noise
 - challenge public docs, DTO/schema annotations, generated types, examples, descriptions, and API-facing metadata that disappear without an explicit reason
 - run a reviewer objection pass:
-  - challenge every new special-case branch, unusually sequenced guard, or comment explaining one: can an existing shared path handle it now, or is this duplicating behavior that should stay unified? Is a comment explaining an unavoidable constraint, or rationalizing structure that should be simplified?
-  - challenge every new helper, context set, mapping, store mirror, or wrapper that duplicates derivation or ownership: is there an existing source of truth, injectable, composable, utility, or package-owned API that should be reused instead?
-  - challenge every type predicate, `as` cast, computed wrapper, lint appeasement, single-purpose scaffold, and `NonNullable<ReturnType<...>>` chain: does it materially narrow or simplify the immediate call site, or is it ceremony? Does an inferred type chain clarify a local incidental shape, or is it indirectly reconstructing a domain contract that should be named at its producer?
-  - challenge contract and metadata changes when touched: did required fields, naming, limits, generated schemas, locale copy, and canonical labels stay aligned with the existing contract?
-  - challenge async and failure guardrails when touched: what stale-response, race, or error state reaches this path, and does a regression test protect the intended behavior? What real state transition requires each watcher, deferred tick, reset counter, or freshness guard? Could existing source state drive a declarative identity or ordering change? Did the patch create a race and then add guards for its own race? Is there focused evidence that the simpler approach fails? What concrete ordering or lifecycle failure requires each non-default scheduling, batching, flush, deferral, or timing option, and what happens under the default? For remaining guards, what stateful, externally visible, unsafe, or meaningfully expensive boundary does each protect, and can ordering prerequisites coalesce guards separated only by pure work?
-  - challenge package and dependency boundaries when touched: are exports, workspace ownership, dependency placement, and shared-package APIs still minimal and compatible?
+  - challenge each new special-case branch, unusual guard sequence, or explanatory comment. Can an existing shared path handle it? Does the comment explain an unavoidable constraint?
+  - challenge each helper, context set, mapping, state mirror, or wrapper that duplicates ownership. Prefer an existing source of truth or project API.
+  - challenge each type predicate, cast, computed wrapper, tool-appeasement change, scaffold, or `NonNullable<ReturnType<...>>` chain. Does it simplify the call site? Should the producer name the contract?
+  - challenge contract and metadata changes. Check required fields, names, limits, schemas, locale text, and canonical labels against the existing contract.
+  - challenge async and failure guards. Identify the stale response, race, error, or state transition that requires each guard. Confirm that a regression test protects the behavior. Test default scheduling, batching, flush, deferral, and timing behavior. Check whether existing source state supports a declarative change. Determine whether the patch creates and then guards its own race. For each remaining guard, name the stateful, visible, unsafe, or expensive boundary it protects. Combine guards separated only by pure work.
+  - challenge package and dependency boundaries. Keep exports, ownership, dependency placement, and shared APIs minimal and compatible.
 - do not accept work
 - call out missing evidence explicitly
 ```
 
 ## Flow Mapping
 
-- Plan Mode: do not delegate implementation. Use written planning or bounded read-only exploration only when it improves the resulting artifact.
-- Bounded coordinator cycle: start with focused local reads; use explorers only for real unknowns and workers only for disjoint implementation ownership. Select no independent reviewer for the fast path, one standard reviewer for routine meaningful work, or one adversarial critic for high-risk, ambiguous, security, contract, concurrency, or broad work. Do not stack the latter two automatically.
-- Review-only: use read-only roles only when additional evidence is needed; keep acceptance and final findings in the main thread.
-- Investigation: start with focused local reads; use an explorer only when real unknowns remain, then begin an authorized bounded cycle once the fix path is concrete.
+- Planning: do not delegate implementation. Use read-only exploration only when it improves the artifact. Branch-ledger planning requires an explicit user request and an established branch. It may update only the external ledger. It cannot create or switch branches, edit repository files, commit, push, or publish.
+- Investigation: start with focused local reads. Use an explorer only for specific unknowns. Explore, hypothesize, test, validate or revise, then present. Do not implement without separate explicit authority.
+- Implementation: use workers only for separate implementation ownership. Select no reviewer for the fast path, one standard reviewer, or one adversarial critic by risk. Do not stack review tiers by default.
+- Review-only: use read-only roles only when more evidence is needed. Keep acceptance and final findings in the main thread.
 - Review feedback: apply `$superpowers:receiving-code-review` when available, verify the feedback, then choose the fast path or a bounded cycle by risk. Feedback does not authorize publish actions.
-- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread diff and evidence gate. It is not a third reviewer and does not rerun selected independent review unless a revision materially changed the reviewed surface or risk.
+- Named-ticket end-to-end: only explicit authority permits branch setup, per-task commits, push, and a draft pull request. Use the ledger and one bounded coordinator cycle per task.
+- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread acceptance gate. It confirms the completed review or invokes the missing tier. It does not duplicate a review that still covers the current surface and risk.

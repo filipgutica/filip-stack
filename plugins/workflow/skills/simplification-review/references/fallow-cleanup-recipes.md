@@ -1,19 +1,19 @@
 # Fallow Cleanup Recipes
 
-Use Fallow as the deterministic first pass for supported JS/TS/Vue/Nest and style cleanup. Keep the broader simplification-review lens active for reuse, overcomplication, abstraction quality, efficiency, test quality, and maintainability issues that Fallow cannot decide.
+Use Fallow as the deterministic first check for supported JavaScript, TypeScript, Vue, Nest, and style cleanup. Also inspect reuse, abstraction quality, efficiency, tests, and maintainability.
 
 Use the official Fallow skill as the upstream usage reference for Fallow-specific agent behavior:
 
 https://github.com/fallow-rs/fallow-skills/blob/main/fallow/skills/fallow/SKILL.md
 
-Follow upstream Fallow guidance for exact command invocation details. In particular, prefer quiet JSON output for agent workflows and remember that exit code 1 means issues were found, while exit code 2 is a runtime/config error. Preserve the local Filip Stack policy for broad simplification review, trace-before-deletion safety, and workspace-scoped cleanup defaults.
+Follow upstream Fallow guidance for current command details. Prefer quiet JSON output for agent workflows. Exit code 1 means Fallow found issues. Exit code 2 means a runtime or configuration error. Keep the local review scope and deletion safety rules.
 
 ## Scope Selection
 
 - If the user names a package, app, workspace, or paths that clearly belong to one workspace, use `-w <workspace>`.
-- In pnpm, npm, and yarn monorepos, Fallow detects workspaces automatically and still analyzes the full monorepo graph while scoping reported issues to the selected workspace.
+- In pnpm, npm, and yarn monorepos, Fallow detects workspaces automatically. It analyzes the full graph but reports issues for the selected workspace.
 - Use repo-wide analysis only when the user asks for repo-wide cleanup or the target cannot be inferred.
-- If scope is still ambiguous after inspecting the prompt, `git status --short`, and `git diff --name-only`, ask the user for the target area instead of guessing.
+- If scope remains ambiguous, inspect the prompt, `git status --short`, and `git diff --name-only`. Then ask the user to name the target area.
 
 Examples:
 
@@ -26,9 +26,9 @@ fallow dupes -w apps/web --format json --quiet
 
 ## CLI Recipes
 
-Use `--format json --quiet` for agent workflows. When the host command runner aborts on non-zero exit codes, append `|| true` to Fallow analysis commands and inspect the JSON output so issue-found exit code 1 does not stop the workflow. Do not hide or ignore runtime/config errors.
+Use `--format json --quiet` for agent workflows. If the host stops on exit code 1, append `|| true` only to analysis commands. Inspect the JSON and report all runtime or configuration errors.
 
-Quick PR or changed-code check:
+Quick pull-request or changed-code check:
 
 ```sh
 fallow audit --base main --format json --quiet
@@ -81,7 +81,7 @@ fallow health --complexity --top 20 --sort cognitive --format json --quiet
 fallow health --file-scores --format json --quiet
 ```
 
-Use these when the request is about reducing complexity, choosing refactoring targets, finding high-churn complexity hotspots, or prioritizing broad simplification work. Treat `--targets` as a ranked refactoring-opportunity signal, `--hotspots` as churn plus complexity prioritization, `--complexity --sort cognitive` as the focused function-level complexity view, and `--file-scores` as the file-level maintainability view.
+Use these commands to reduce complexity or rank refactoring work. `--targets` ranks opportunities. `--hotspots` combines churn and complexity. `--complexity --sort cognitive` ranks functions. `--file-scores` ranks files.
 
 CSS, SCSS, Tailwind, and CSS Module cleanup:
 
@@ -164,7 +164,7 @@ pnpm validate-plugins
 pnpm check
 ```
 
-For other pnpm repos, use the closest available workspace-scoped commands first, then broader checks when the cleanup can affect shared behavior:
+For other pnpm repositories, use the closest available workspace-scoped commands first. Run broader checks when cleanup can affect shared behavior:
 
 ```sh
 pnpm --filter <workspace> typecheck

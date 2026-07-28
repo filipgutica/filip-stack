@@ -1,19 +1,18 @@
 # Filip Stack
 
-Personal Claude and Codex plugin marketplace.
+`Filip Stack` is a personal plugin marketplace for Claude and Codex.
 
 ## Distribution Model
 
-Both Claude and Codex are distributed directly from this GitHub repo as git-based marketplaces. No build step required — plugin payloads are tracked directly in git and versioned on release.
+Claude and Codex use this GitHub repository as a Git-based marketplace. Each release assigns a version to the tracked plugin files. No build step is required.
 
 The `filip-stack` Codex marketplace ships one plugin:
 
-- `workflow` — coordinator, minimal-code posture, review cycle, and Fallow-backed simplification review
+- `workflow`: coordinator routing, minimal-code guidance, a layered review field guide, review-cycle checks, and Fallow-based simplification review
 
 The Claude marketplace also ships `workflow`.
 
-The former Codex-only `claude-plugin` now lives in the dedicated
-`codex-claude-plugin` marketplace.
+The former Codex-only `claude-plugin` now lives in the separate `codex-claude-plugin` marketplace.
 
 ## Repo Layout
 
@@ -21,7 +20,7 @@ The former Codex-only `claude-plugin` now lives in the dedicated
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  skills/                  coordinator, minimal-code, review-cycle, and simplification-review skills
+  skills/                  coordinator, field-guide, minimal-code, review-cycle, and simplification-review skills
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
@@ -34,14 +33,13 @@ claude plugin marketplace add filipgutica/filip-stack
 claude plugin install workflow@filip-stack
 ```
 
-Claude reads `.claude-plugin/marketplace.json` at the repo root, which lists
-the `workflow` plugin and points its `source` value at `./plugins/workflow`.
-No build step required — the plugin payload is tracked directly in git.
+Claude reads `.claude-plugin/marketplace.json` at the repository root. This file lists `workflow` and sets its `source` to `./plugins/workflow`.
+Git tracks the plugin files directly, so installation does not require a build.
 
 Claude command names include the marketplace alias, so the installed plugin is
 addressed as `<plugin-name>@filip-stack`.
 
-Updates are automatic: when a new version is released, run:
+To install a released update, run:
 
 ```sh
 claude plugin update workflow@filip-stack
@@ -63,14 +61,13 @@ codex plugin marketplace add filipgutica/filip-stack
 Then restart Codex, open the plugin directory, and install `workflow` from the
 `filip-stack` marketplace.
 
-Codex reads `.agents/plugins/marketplace.json` at the repo root, which lists
-the `workflow` plugin and points its source path at `./plugins/workflow`.
-No build step required — the plugin payload is tracked directly in git.
+Codex reads `.agents/plugins/marketplace.json` at the repository root. This file lists `workflow` and sets its source path to `./plugins/workflow`.
+Git tracks the plugin files directly, so installation does not require a build.
 
 Codex marketplace commands target the marketplace name directly, so the upgrade
 command uses `filip-stack` rather than a `plugin@marketplace` identifier.
 
-Updates are automatic: when a new version is released, run:
+To install a released update, run:
 
 ```sh
 codex plugin marketplace upgrade filip-stack
@@ -85,7 +82,7 @@ plugins/*/.codex-plugin/plugin.json
 
 ## Versioning
 
-Versioning is automated via semantic-release on every push to `main`.
+Semantic-release manages versions after each push to `main`.
 Commit messages follow [Conventional Commits](https://www.conventionalcommits.org/):
 
 | Commit prefix | Version bump |
@@ -94,50 +91,48 @@ Commit messages follow [Conventional Commits](https://www.conventionalcommits.or
 | `feat:` | minor |
 | `feat!:` or `BREAKING CHANGE:` | major |
 
-Commit messages are validated locally by commitlint via the lefthook `commit-msg` hook.
-On merge to `main`, CI bumps `package.json`, stamps the version into
-`plugins/*/.claude-plugin/plugin.json`,
-`plugins/*/.codex-plugin/plugin.json`,
-`.claude-plugin/marketplace.json`, and `.agents/plugins/marketplace.json`,
-and creates a GitHub release. No manual version commands needed.
+The lefthook `commit-msg` hook runs commitlint against each local commit message.
+After a merge to `main`, CI updates `package.json`, both plugin manifests, and both marketplace registries.
+It then creates a GitHub release. You do not need to run version commands.
 
 ## Included Skills
 
 The `workflow` plugin includes:
 
-- `coordinator` — main engineering workflow skill with explicit Plan Coordination and Implementation Coordination flows
-- `minimal-code` — default implementation posture for small, readable, low-ceremony changes. Reuses existing code first, prefers platform and standard-library features before dependencies, avoids speculative abstractions and scaffolding, keeps explanations concise, and adds useful JSDoc to shared or non-obvious utility functions without trading away correctness or verification.
-- `review-cycle` — final acceptance gate for scope drift, test artifacts, metadata preservation, verification, and separate critic coverage after meaningful edits and before final response, commit, PR, completion claim, or broad verification
-- `simplification-review` — analyze-first simplification, cleanup, reuse, efficiency, and maintainability review skill scoped to local changes, untracked files, branch diff, or an explicit area. Uses Fallow as the primary deterministic analysis engine for supported JS/TS/Vue/Nest, dead-code, duplication, health, dependency, and CSS/SCSS/CSS Module cleanup signals.
+- `coordinator`: routes work through Planning, Investigation, or authorized Implementation
+- `field-guide`: reads local project and shared guidance and records lessons from committed code-review corrections
+- `minimal-code`: guides small, readable changes with little ceremony. It favors existing code and platform features over new abstractions and dependencies. It adds JSDoc only to shared or non-obvious utilities.
+- `review-cycle`: reviews the final diff and evidence, ensures meaningful work receives one proportionate independent review tier, drives required revisions, and verifies the accepted result
+- `simplification-review`: checks scoped code for behavior-preserving simplification, reuse, efficiency, and cleanup. It uses Fallow first for supported code and styles.
 
-The coordinator guidance is intentionally proportional: use Plan Coordination for plan-only work, use Implementation Coordination for approved changes with `minimal-code` as the default implementation lens, keep bounded mechanical changes local when possible, honor explicit subagent or role-based workflow requests, review meaningful edits with a separate read-only critic before acceptance, and finish meaningful edits with `review-cycle`.
-Use `simplification-review` for broad natural-language requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, finding dead or unused code, removing redundant tests or styles, checking efficiency, or validating cleanup after generated code. It reviews `git diff` plus `git status --short` first, then `git diff origin/main`, and asks for scope only when neither local nor branch changes produce a usable surface. The skill works through the Fallow CLI by default; Fallow MCP is optional when already available.
+The coordinator loads detailed guidance only for the selected route. Planning can produce artifacts. It can update an external branch ledger when explicitly requested for an established branch. Investigation gathers evidence and presents a fix path. It enters Implementation only with separate authority. Implementation uses `minimal-code` and selects one review tier. After meaningful edits, `review-cycle` confirms that review or invokes the missing tier before acceptance.
 
-The `minimal-code` skill is inspired by [Ponytail](https://github.com/DietrichGebert/ponytail)'s minimalism posture, but the workflow plugin uses original local guidance rather than vendored upstream text. Ponytail is MIT licensed. This skill has no lifecycle hooks or always-on injection; broad use comes from skill metadata and coordinator routing.
+Named-ticket end-to-end authority also permits branch setup, task commits, push, and a draft pull request. Review feedback does not inherit that authority from earlier work.
+
+The field guide stores untracked data at `~/.field-guide`. It reads only relevant indexed guidance. It records a lesson only after a code-review correction has a commit. Project guidance stays with its repository. Shared guidance requires a general user preference or committed evidence from at least two project guides.
+
+The field-guide utility provides `init`, `paths`, and `validate` commands. These commands preserve existing guide content and validate repository and commit evidence.
+
+Use `simplification-review` for broad requests about simpler code, reuse, dead code, redundant tests or styles, efficiency, or cleanup. It checks local tracked and untracked changes before the branch diff. It asks for a scope when neither diff provides one. The skill uses the Fallow CLI by default. The Fallow MCP interface remains optional.
+
+The `minimal-code` skill uses original local guidance inspired by [Ponytail](https://github.com/DietrichGebert/ponytail). It does not copy upstream text. Ponytail uses the MIT license. Skill metadata and coordinator routing make `minimal-code` widely available without lifecycle hooks or always-on injection.
 
 ## Companion Plugin
 
-`workflow` works best with Superpowers installed because coordinator routes pure written plans and some execution workflows to `superpowers:*` skills when they are available.
+When Superpowers is available, `workflow` uses `superpowers:receiving-code-review` for external review comments. The coordinator then verifies each comment against the code and contract.
 
-If Superpowers is not installed, coordinator should state:
-
-```text
-Superpowers is not available; falling back to default planning behaviour.
-```
-
-It then continues with the closest safe default workflow and must not claim that a Superpowers workflow was used.
+Without Superpowers, the coordinator still verifies the feedback and selects a correction path by risk. It must not claim that it used Superpowers.
 
 ## CI
 
-- **validate** — runs on all PRs and pushes: plugin manifest validation
-- **release** — runs on push to `main` after validate: semantic-release bumps version,
-  stamps plugin manifests, commits back, creates GitHub release
+- **validate**: runs plugin manifest validation for each pull request and push
+- **release**: runs after validation on `main`, updates versions and manifests, commits the result, and creates a GitHub release
 
-There is no separate Pages deployment workflow. Claude installs directly from this GitHub repo as a git-based marketplace.
+There is no separate Pages deployment workflow. Claude installs directly from this GitHub repository as a Git-based marketplace.
 
 ## Development
 
 ```sh
 pnpm validate-plugins
-pnpm check          # validate plugin manifests
+pnpm check          # field-guide tests plus plugin manifest validation
 ```

@@ -1,7 +1,7 @@
 interface:
   display_name: "Review Cycle"
-  short_description: "Gate meaningful edits with final diff and evidence review"
-  default_prompt: "Use $workflow:review-cycle after meaningful file edits and before final response, commit, PR, or broad verification as the main-thread final diff and evidence gate. Inspect scope, complexity, test artifacts, public metadata, and verification, and confirm the coordinator used one proportionate review tier; do not add a third reviewer or rerun review unless a revision materially changed the reviewed surface or risk."
+  short_description: "Review meaningful edits through acceptance and verification"
+  default_prompt: "Use $workflow:review-cycle after meaningful edits and before a final response, commit, pull request, or broad verification. Inspect the current diff and evidence. Ensure one proportionate independent review tier: reuse a completed review that still covers the diff and risk; otherwise use a runtime-native standard review, the standard reviewer template when native review is unavailable, or an adversarial critic for higher-risk work. Apply valid findings, repeat review only when a material revision invalidates its coverage or changes the risk, and run affected verification."
 
 policy:
   allow_implicit_invocation: true
