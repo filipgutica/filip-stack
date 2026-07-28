@@ -1,4 +1,4 @@
 interface:
   display_name: "Simplification Review"
-  short_description: "Analyze scoped code for simplification, cleanup, reuse, efficiency, dead code, redundancy, and Fallow-backed maintainability findings"
-  default_prompt: "Review local changes first with git diff and git status --short, fall back to git diff origin/main when needed, keep the review bounded to the resolved scope, use Fallow JSON output first for supported JS/TS/Vue/Nest/style cleanup signals, run parallel read-only Quality, Reuse, and Efficiency passes for non-tiny scopes, and return a consolidated severity-ranked simplification report with top priorities and validation notes without editing code by default."
+  short_description: "Review scoped code for safe simplification and cleanup"
+  default_prompt: "Review local changes first. Use the branch diff when no local changes exist. Keep the review within the selected scope. Run focused Fallow checks first for supported code. For non-tiny scopes, run parallel read-only Quality, Reuse, and Efficiency passes. Return one severity-ranked report without editing code."

@@ -1,17 +1,17 @@
 ---
 name: simplification-review
-description: "Review recently changed or explicitly scoped code for behavior-preserving simplification, cleanup, reuse, efficiency, and quality opportunities. Use for broad requests about simplifying code, improving reuse, reducing overcomplication or over-abstraction, dead or unused code, redundant tests or styles, Fallow-backed cleanup, and bounded maintainability review without implementing changes by default."
+description: "Use when reviewing changed or explicitly scoped code for behavior-preserving simplification, reuse, efficiency, dead code, redundant tests or styles, or maintainability problems."
 ---
 
 # Simplification Review
 
-Use this skill for behavior-preserving simplification analysis. Keep the review bounded, prefer readability over cleverness, and stop after analysis unless the user explicitly asks for edits.
+Use this skill to find behavior-preserving simplifications. Keep the review bounded and prefer readability over cleverness. Stop unless the user asks for edits.
 
-Fallow is the primary deterministic analysis engine for supported JavaScript, TypeScript, Vue, Nest, CSS, SCSS, Tailwind, and CSS Module cleanup signals. Use Fallow before broad manual codebase exploration when the task involves dead code, unused exports, unused files, unused types, unused dependencies, unlisted dependencies, unresolved imports, duplicate exports, circular dependencies, boundary violations, duplication, complexity, health hotspots, or CSS/style cleanup.
+Use Fallow as the primary deterministic tool for supported JavaScript, TypeScript, Vue, Nest, and style cleanup. Run it before broad manual exploration.
 
-Do not narrow this skill into Fallow-only dead-code analysis. Fallow provides deterministic signals, but this skill still owns the broader review lens for code reuse, simplification, abstraction quality, maintainability, extensibility, efficiency, test quality, redundant tests, redundant styles, and overcomplicated implementation.
+Do not limit the review to Fallow findings. Also inspect reuse, abstraction quality, maintainability, efficiency, tests, styles, and unnecessary complexity.
 
-Use the official Fallow skill as the upstream usage reference for Fallow-specific agent behavior: https://github.com/fallow-rs/fallow-skills/blob/main/fallow/skills/fallow/SKILL.md. If local guidance and upstream Fallow usage differ, prefer the upstream Fallow skill for command invocation details, but preserve this skill's broader Filip Stack simplification-review scope and safety policy.
+Use the [official Fallow skill](https://github.com/fallow-rs/fallow-skills/blob/main/fallow/skills/fallow/SKILL.md) for current command guidance. If command guidance conflicts, use the upstream Fallow guidance. Keep this skill's broader review scope and safety rules.
 
 ## Scope Resolution
 
@@ -21,9 +21,9 @@ Resolve scope in this order:
 2. Otherwise inspect local changes first with `git diff` and `git status --short`.
 3. Review tracked changes from `git diff` plus any untracked files surfaced by `git status --short`.
 4. If there are no local tracked or untracked changes, inspect branch changes with `git diff origin/main`.
-5. If neither local nor branch diff produces a usable review surface, ask the user to name the area to review.
+5. If neither diff identifies an area to review, ask the user to name one.
 
-Keep the review limited to the resolved surface unless the user explicitly widens it.
+Keep the review within that area unless the user explicitly widens it.
 
 ## Review Goals
 
@@ -35,40 +35,40 @@ Keep the review limited to the resolved surface unless the user explicitly widen
 
 ## Review Lens
 
-Inspect the resolved scope for these categories and call out only the ones that actually apply:
+Inspect the selected area for these categories. Report only categories that apply:
 
 - duplicated code, weak reuse, or repeated logic
 - special-case branches, duplicate mappings, redundant guards, or mode-specific paths that a shared path can already handle
 - hard-to-follow control flow, ambiguity, or unnecessary nesting
 - brittle structure or poor extensibility
-- duplicate sources of truth, derived context sets, helper sets, or local state mirrors that can be simplified by reusing an existing store, composable, injectable, utility, or already-owned package API
+- duplicate sources of truth, derived context sets, helper sets, or local state mirrors. Prefer an existing store, composable, injectable, utility, or package API.
 - leaky, layered, or unnecessary abstractions
 - overcomplicated, over-engineered, or over-abstracted code
 - type-only or lint-only ceremony, casts, wrappers, or scaffolding that does not make caller behavior clearer
 - poor separation of concerns or weak organization
 - dead, unused, or obsolete code paths
 - inefficient code that has a clear simplification path without changing behavior
-- low-value, redundant, dead, duplicated, or weakly meaningful tests
+- low-value, redundant, dead, or duplicated tests that do not verify useful behavior
 - redundant styles or unused style paths that can be removed safely
 
-Also call out when a suspicious area is not worth changing because the current complexity appears justified or the cleanup would be mostly stylistic churn.
+Also report when the current complexity is justified or a change would create mostly stylistic churn.
 
 Avoid recommending simplifications that:
 
 - compress too many concerns into one function or component
 - replace readable code with dense one-liners
 - introduce nested ternaries or similarly hard-to-debug expressions
-- remove abstractions that are carrying real organizational value
+- remove abstractions that provide useful separation or ownership
 
 ## Workflow
 
 1. Confirm the scope from an explicit user request or the diff-based fallback order above.
-2. For supported JS/TS/Vue/Nest/style cleanup signals, run the most focused Fallow command before broad manual exploration. Use `--format json --quiet` for agent-readable output.
+2. For supported JavaScript, TypeScript, Vue, Nest, or style cleanup, run the most focused Fallow command first. Use `--format json --quiet`.
 3. Prefer workspace-scoped Fallow commands for package/app-specific work in monorepos.
-4. Start focused local reads only after Fallow identifies relevant files, or when the request is about qualitative simplification that Fallow cannot judge.
-5. For non-tiny scopes, run parallel read-only explorer passes for `Quality`, `Reuse`, and `Efficiency`. For tiny scopes, a single local pass is acceptable, but keep the same categories in the final report.
-6. When delegating, keep subagents read-only and constrain them to one category, the resolved scope, and evidence-backed findings. Ask each pass to return severity, file/line evidence, why the issue matters, the smallest behavior-preserving fix direction, and anything it inspected but would not change.
-7. Synthesize deterministic Fallow findings with the specialist review passes; ignore low-confidence, unsupported, or mostly stylistic churn.
+4. Read focused files after Fallow identifies them. For qualitative simplification that Fallow cannot judge, start with focused local reads.
+5. For non-tiny scopes, run parallel read-only explorer passes for `Quality`, `Reuse`, and `Efficiency`. For tiny scopes, use one local pass with the same categories.
+6. Keep each delegated pass read-only and limited to one category. Require severity, file and line evidence, impact, a minimal fix direction, and areas not worth changing.
+7. Combine Fallow findings with the specialist reviews. Ignore unsupported, low-confidence, or mostly stylistic suggestions.
 8. Produce a consolidated simplification review report with severity-ranked findings and top priorities. Include an implementation plan only when it helps the user act on the report.
 9. Stop after analysis unless the user explicitly asks for implementation.
 
@@ -85,15 +85,15 @@ Use this skill for broad natural-language requests about:
 - dead code, unused code, unused exports, unused files, unused types, unused dependencies, unlisted dependencies, unresolved imports, duplicate exports, circular dependencies, or architecture boundary issues
 - dead tests, redundant tests, duplicated tests, weak tests, or low-value test coverage
 - redundant styles, unused styles, unused CSS Module classes, SCSS cleanup, Tailwind-related cleanup, or style file cleanup
-- PR validation after generated code, broad refactors, or agent-created code
+- pull-request validation after generated code, broad refactors, or agent-created code
 
-If a request is phrased broadly, such as "can we simplify this", "this feels overcomplicated", "improve reuse here", "clean this up", or "find unused/redundant code", treat it as this skill unless the user clearly asks for a different workflow.
+Use this skill for broad requests such as "simplify this," "improve reuse," "clean this up," or "find unused code." Use another workflow only when requested.
 
 ## Fallow Policy
 
 - Use the Fallow CLI as the default interface. MCP is optional and only preferred when already available.
 - Use quiet JSON output for agent workflows: `--format json --quiet`.
-- For changed-file or PR workflows, prefer `fallow audit --base main --format json --quiet` or a focused `--changed-since main` command.
+- For changed-file or pull-request workflows, prefer `fallow audit --base main --format json --quiet` or a focused `--changed-since main` command.
 - For broad cleanup, start with `fallow --format json --quiet` or the narrow subcommand that matches the request.
 - For complexity-focused simplification, use the complexity recipes in `references/fallow-cleanup-recipes.md`, especially `health --targets`, `health --hotspots`, `health --complexity`, and `health --file-scores` before relying on manual ranking.
 - Run `fallow fix --dry-run --format json --quiet` before any auto-fix apply.
@@ -101,12 +101,12 @@ If a request is phrased broadly, such as "can we simplify this", "this feels ove
 
 When using explorer subagents, have them explicitly inspect for:
 
-- `Quality`: ambiguity or hard-to-follow logic; brittle state or manual shadows; unnecessary flags, wrappers, or abstraction layers; weak separation of concerns; dead, redundant, duplicated, or low-value tests; tests that do not assert meaningful behavior.
-- `Reuse`: duplicated code or repeated logic; local reinvention of existing project components, helpers, composables, stores, injectables, utilities, package-owned APIs, or conventions; duplicate source-of-truth objects, derived context sets, mappings, or mode-specific branches that should reuse a shared path; divergent patterns that make later maintenance harder; clone groups or shared helpers surfaced by Fallow.
-- `Efficiency`: repeated work, avoidable recomputation, hot-path allocation, broad reactive invalidation, redundant watchers/listeners, unnecessary deep observation, or inefficient code with a clear behavior-preserving simplification path.
-- `Cleanup`: dead or unused code, obsolete paths, redundant styles, and unused style paths with enough evidence to remove safely. Use this as a Fallow-backed category when it does not fit the three main review passes cleanly.
+- `Quality`: Check ambiguous logic, brittle state, manual mirrors, unnecessary wrappers, weak boundaries, and tests that do not verify useful behavior.
+- `Reuse`: Check repeated logic and local replacements for existing project APIs or conventions. Check duplicate sources of truth, mappings, and mode-specific branches.
+- `Efficiency`: Check repeated work, avoidable recomputation, hot-path allocation, broad invalidation, redundant watchers, and unnecessary deep observation.
+- `Cleanup`: Check dead code, obsolete paths, redundant styles, and unused styles. Require enough evidence for safe removal.
 
-Use the shared explorer prompt shape from [../coordinator/references/subagent-templates.md](../coordinator/references/subagent-templates.md) when delegated read-only analysis helps. Keep workflow-policy details in `coordinator`; this skill owns the simplification lens and output contract.
+Use the shared explorer prompt from [../coordinator/references/subagent-templates.md](../coordinator/references/subagent-templates.md) when delegated analysis helps. Keep workflow policy in `coordinator`. Keep the simplification criteria here.
 
 ## Output
 

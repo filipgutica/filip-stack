@@ -1,6 +1,6 @@
 interface:
   display_name: "Field Guide"
   short_description: "Consult and maintain review-derived guidance"
-  default_prompt: "Use $workflow:field-guide to consult or record committed review-derived engineering guidance."
+  default_prompt: "Use $workflow:field-guide to consult relevant preferences. Record guidance only after a code-review correction has a commit."
 policy:
   allow_implicit_invocation: true

@@ -1,11 +1,11 @@
 ---
 name: field-guide
-description: "Use when meaningful code work should consult past coding preferences or project patterns, or after an addressed code-review correction has been committed and its durable learning must be recorded."
+description: "Use when code or review work should consult past preferences, or when a committed code-review correction should become durable guidance."
 ---
 
 # Field Guide
 
-Use a layered local guide to retrieve relevant engineering preferences without loading full review history, and to turn committed review corrections into traceable project or shared guidance.
+Use the layered local guide to find relevant engineering preferences without loading the complete review history. Record committed review corrections as project or shared guidance.
 
 The guide is local and untracked at `~/.field-guide` by default. Current user instructions and repository contracts always outrank it.
 
@@ -14,7 +14,7 @@ The guide is local and untracked at `~/.field-guide` by default. Current user in
 For meaningful code or review work:
 
 1. Run `node scripts/field-guide.mjs paths --repo-root <git-root>` from this skill directory.
-2. If the returned root or project index exists, read it.
+2. Read each returned root or project index that exists.
 3. Follow only links relevant to the current change. Do not bulk-load review records.
 4. Apply guidance in this order:
    - current user request
@@ -28,7 +28,7 @@ Do not initialize a guide merely to consult it.
 
 ## Capture a Committed Review Learning
 
-Capture only after code-review feedback produced an addressed correction and the correction commit exists. No correction commit means no field-guide entry.
+Capture a lesson only after code-review feedback causes a correction and that correction has a commit. Without that commit, create no field-guide entry.
 
 1. Resolve the full commit hash and confirm it names a commit in the current repository.
 2. Run `node scripts/field-guide.mjs init --repo-root <git-root>`.
@@ -36,7 +36,7 @@ Capture only after code-review feedback produced an addressed correction and the
 4. Link the record from the project `init.md` with a one-line description.
 5. Distill the reusable lesson into the project `patterns.md`.
 6. Promote it to `shared/` using the evidence shape in the storage reference only when:
-   - the user explicitly states that it is a general preference; or
+   - the user explicitly states that it is a general preference, or
    - committed records from at least two project guides support the same lesson.
 7. Update every affected `init.md`, then run `node scripts/field-guide.mjs validate --repo-root <git-root>`.
 

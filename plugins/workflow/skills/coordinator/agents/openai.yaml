@@ -1,6 +1,6 @@
 interface:
   display_name: "Coordinator"
-  short_description: "Route engineering work by authority and evidence"
-  default_prompt: "Use $workflow:coordinator to route engineering work through Planning, Investigation, or explicitly authorized Implementation. Planning may use a user-involved external branch ledger only when explicitly requested for an established branch; it cannot edit source, commit, or publish. Investigation follows explore, hypothesize, focused repro, validate or revise, then present. Implementation uses a bounded goal-evidence-risk-review-verify cycle and $workflow:review-cycle; branch ledgers, task commits, push, and draft PRs require explicit named-ticket end-to-end authority."
+  short_description: "Route engineering work by type and authority"
+  default_prompt: "Use $workflow:coordinator to route engineering work through Planning, Investigation, or authorized Implementation. Planning can update an external branch ledger only when the user explicitly requests it for an established branch. It cannot edit source, commit, or publish. Investigation gathers evidence and presents a fix path. Implementation uses a bounded review and verification cycle. Branch setup, task commits, push, and draft pull requests require named-ticket end-to-end authority."
 policy:
   allow_implicit_invocation: true
