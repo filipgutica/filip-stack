@@ -5,11 +5,11 @@ description: Use after meaningful file edits and before final responses, complet
 
 # Review Cycle
 
-Use this after meaningful file edits and before completion claims. Review the diff before broad verification when the review can still change the code. After fixes, run the narrowest credible checks. Do not use it for read-only work, planning, status updates, or trivial text responses.
+Use this after meaningful file edits and before completion claims. Review the diff and ensure that the work receives one proportionate independent review tier before broad verification. After fixes, run the narrowest credible checks. Do not use it for read-only work, planning, status updates, or trivial text responses.
 
 ## Goal
 
-Catch obvious mistakes before final response with a focused main-thread diff and evidence pass:
+Catch mistakes before final response with a focused main-thread diff, one proportionate independent review tier, and current verification evidence:
 
 - Did the diff solve the user's actual request?
 - Did the work stay within scope?
@@ -35,7 +35,13 @@ Catch obvious mistakes before final response with a focused main-thread diff and
    - When only pure or trivial work separates repeated guards, reorder prerequisites and combine the guards. Keep separate guards only at a real boundary.
    - Treat comments about unusual sequencing as a reason to simplify first. Keep them only for unavoidable constraints.
 5. For public docs, DTOs, schemas, generated types, and API-facing metadata, confirm that the change preserves existing information. Check descriptions, annotations, decorators, examples, and compatibility details unless the task changes them.
-6. Map the change to verification evidence:
+6. Select or confirm one review tier before broad verification:
+   - Use no independent reviewer only for a tiny mechanical, low-risk, non-behavioral fast path with clear scope and strong targeted checks.
+   - For routine meaningful work, prefer the runtime's native or default code-review capability when it can inspect the actual diff and evidence and return a review result. Otherwise, use one read-only standard reviewer with the coordinator's standard reviewer template.
+   - For high-risk, ambiguous, security, contract, concurrency, or broad work, use one read-only adversarial critic with the coordinator's critic template.
+   - If the selected review already covered the current diff and risk, do not add another reviewer.
+7. Run the selected review when it is missing, then apply valid findings. Repeat that review only when a revision materially changes the reviewed surface or risk. If the risk increases, select the stronger tier before acceptance.
+8. Map the accepted change to verification evidence:
    - type checks, lint, style checks, and applicable tests when relevant
    - smallest causal regression test first for bug fixes or narrow changes
    - Fallow for supported JS/TS/Vue changes when appropriate
@@ -43,19 +49,18 @@ Catch obvious mistakes before final response with a focused main-thread diff and
    - schema/validation and a dry-run when supported for config or workflow changes
    - configured docs validation, or focused diff review for docs-only work
    - explicit "not applicable" notes only when a check genuinely does not fit, including replacement evidence for a meaningful unavailable check
-7. Run missing narrow verification when feasible.
-8. Confirm that the coordinator selected and completed the correct review tier. This gate does not add another reviewer. Repeat independent review only after a material change to the reviewed area or risk.
-9. Fix issues found by the review cycle before final response, or report the blocker clearly.
+9. Run missing narrow verification when feasible. Re-run checks affected by review corrections.
+10. Fix issues found by the review cycle before final response, or report the blocker clearly.
 
 ## Review-Tier Evidence
 
-The coordinator chooses one proportionate review tier before this gate:
+The review cycle ensures that the current diff receives one proportionate review tier. The coordinator can complete that review before this gate. If it did not, this skill invokes the missing tier:
 
-- no independent reviewer for a tiny mechanical fast path with clear scope and strong targeted checks
-- one standard reviewer for routine meaningful work
+- no independent reviewer for a tiny mechanical, low-risk, non-behavioral fast path with clear scope and strong targeted checks
+- one runtime-native review or read-only standard reviewer for routine meaningful work
 - one adversarial critic for high-risk, ambiguous, security, contract, concurrency, or broad work.
 
-Do not stack a standard reviewer and critic by default. If the host lacks the selected role, document the limit and strengthen the main-thread evidence. Review Cycle checks that decision and the current diff. It does not replace the selected review.
+A runtime-native review satisfies the standard tier only when it independently inspects the actual diff and evidence and returns findings or an explicit no-finding result. If it cannot, treat it as unavailable and use the standard reviewer template. Do not stack a standard reviewer and critic by default. Escalate to the critic only when the risk changes or the standard review exposes a higher-risk concern. If the host lacks the selected capability or role, document the limit and strengthen the main-thread evidence.
 
 ## Output Guidance
 

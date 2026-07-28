@@ -46,12 +46,12 @@ flowchart TD
 
 1. **Define the bounded change.** State the goal, evidence, scope, behavior risk, contract risk, assumptions, and narrowest credible verification. For code, use focused tests and relevant type, lint, and style checks. Check consumers after shared export changes. Use supported schema checks and dry-runs for configuration or workflow changes. Use configured validation or a focused diff review for documentation. Explain omitted checks and provide replacement evidence. Explore locally first. Use read-only exploration only for material unknowns.
 2. **Choose ownership and review tier.** Keep tightly related work local or assign a separate, bounded worker scope. Choose exactly one independent review tier for meaningful work:
-   - **Routine meaningful work:** one standard reviewer.
-   - **Higher-risk or broad work:** one adversarial critic. This includes ambiguous, security, contract, or concurrency risk.
+   - **Routine meaningful work:** prefer the runtime's native or default code-review capability when it can inspect the actual diff and evidence and return a review result. Otherwise, use one read-only standard reviewer with the standard reviewer template.
+   - **Higher-risk or broad work:** use one read-only adversarial critic with the critic template. This includes ambiguous, security, contract, or concurrency risk.
    Do not automatically stack a reviewer and critic.
 3. **Execute.** Make the bounded change. Workers report changed files, verification, deviations, and blockers. They do not accept their own work.
 4. **Review and revise.** Run the selected review and apply valid findings. Repeat the review only after a material change to the reviewed area or risk.
-5. **Verify and gate.** Run the narrowest credible checks for the affected area. Invoke `$workflow:review-cycle` after meaningful edits as the main-thread diff and evidence gate. It does not add a third reviewer and does not automatically repeat independent review.
+5. **Verify and gate.** Run the narrowest credible checks for the affected area. Invoke `$workflow:review-cycle` after meaningful edits. It confirms the completed review or invokes the missing tier, applies valid findings, and does not duplicate a review that still covers the current surface and risk.
 6. **Handoff.** Report the result, evidence, omissions, and residual risk. Commit only when the request authorizes it.
 
 ## Explicit Named-Ticket End-to-End Route
@@ -109,7 +109,7 @@ For external review comments, invoke `$superpowers:receiving-code-review` when a
 
 - **Explorer:** read-only discovery for specific unanswered questions. It cannot edit or accept work.
 - **Worker:** owns a separate bounded implementation area. It cannot widen scope or accept its own work.
-- **Standard reviewer:** independently checks a routine meaningful diff against its goal, evidence, scope, and verification.
+- **Standard reviewer:** the runtime's native or default code-review capability when it can inspect the actual diff and evidence and return a review result, or a read-only reviewer using the standard template. It independently checks a routine meaningful diff against its goal, evidence, scope, and verification.
 - **Adversarial critic:** read-only challenge of high-risk or ambiguous plans, diffs, worker output, and verification claims. Use the critic template's objection pass.
 - **Main thread:** selects the route and tier, integrates results, runs the review-cycle gate, and accepts the result.
 

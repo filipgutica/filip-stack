@@ -153,4 +153,4 @@ Rules:
 - Review-only: use read-only roles only when more evidence is needed. Keep acceptance and final findings in the main thread.
 - Review feedback: apply `$superpowers:receiving-code-review` when available, verify the feedback, then choose the fast path or a bounded cycle by risk. Feedback does not authorize publish actions.
 - Named-ticket end-to-end: only explicit authority permits branch setup, per-task commits, push, and a draft pull request. Use the ledger and one bounded coordinator cycle per task.
-- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread diff and evidence gate. It adds no reviewer. Repeat independent review only after material changes to the reviewed area or risk.
+- Final review cycle: after meaningful edits, run `$workflow:review-cycle` as the main-thread acceptance gate. It confirms the completed review or invokes the missing tier. It does not duplicate a review that still covers the current surface and risk.
