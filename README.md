@@ -14,11 +14,11 @@ The `workflow` plugin provides five skills:
 - `minimal-code` favors small, readable changes and existing code over new
   abstractions and dependencies. It adds JSDoc only to shared, exported, or
   non-obvious utilities.
-- `review-cycle` reviews the final diff and verification evidence. It drives
-  required revisions and makes sure that meaningful work receives a
-  proportionate independent review.
-- `simplification-review` checks scoped code for safe simplification, reuse,
-  efficiency, and cleanup. It uses Fallow first for supported code and styles.
+- `review-cycle` accepts the final diff, review coverage, and verification
+  evidence. It runs a missing standard or adversarial review when required.
+- `simplification-review` audits Minimality, Reuse, Ownership, Complexity, and
+  Cleanup. Use it directly or when an implementation has material
+  simplification risk. It uses Fallow first for supported code and styles.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
@@ -111,13 +111,13 @@ The coordinator loads detailed guidance only for its selected route:
 - Planning can create artifacts and can update an external branch ledger when
   explicitly requested for an established branch.
 - Investigation gathers evidence and presents a fix path.
-- Implementation requires separate authority. It uses `minimal-code`, selects
+- Implementation requires implementation authority. It uses `minimal-code`, selects
   one review tier, and runs `review-cycle` after meaningful edits. The review
   cycle confirms the completed review or invokes the missing tier.
 
 Named-ticket end-to-end authority also permits branch setup, task commits, push,
-and a draft pull request. Review feedback does not inherit that authority from
-earlier work.
+and a draft pull request. Review feedback does not grant implementation or
+publishing authority.
 
 ### Field guide
 
@@ -132,12 +132,13 @@ validate repository and commit evidence.
 
 ### Simplification review
 
-Use `simplification-review` for broad requests about simpler code, reuse, dead
-code, redundant tests or styles, efficiency, or cleanup. It checks local tracked
-and untracked changes before the branch diff. If neither diff provides a scope,
-the skill asks for one.
+Use `simplification-review` directly to find simplification opportunities. The
+coordinator can also use it when a change has material duplication, reuse,
+ownership, or complexity risk. The skill is read-only and does not replace an
+independent review tier.
 
-The skill uses the Fallow CLI by default. The Fallow MCP interface is optional.
+The skill audits Minimality, Reuse, Ownership, Complexity, and Cleanup. It uses
+the Fallow CLI by default. The Fallow MCP interface is optional.
 
 ### Companion plugin
 

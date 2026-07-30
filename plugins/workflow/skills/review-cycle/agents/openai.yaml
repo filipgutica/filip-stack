@@ -1,7 +1,12 @@
 interface:
   display_name: "Review Cycle"
   short_description: "Review meaningful edits through acceptance and verification"
-  default_prompt: "Use $workflow:review-cycle after meaningful edits and before a final response, commit, pull request, or broad verification. Inspect the current diff and evidence. Ensure one proportionate independent review tier: reuse a completed review that still covers the diff and risk; otherwise use a runtime-native standard review, the standard reviewer template when native review is unavailable, or an adversarial critic for higher-risk work. Apply valid findings, repeat review only when a material revision invalidates its coverage or changes the risk, and run affected verification."
+  default_prompt: >-
+    Use $workflow:review-cycle after meaningful edits. Inspect the current diff,
+    review coverage, and verification evidence. Reuse a completed review while
+    it covers the diff and risk. Run a missing standard or adversarial review.
+    Repeat review only after a material coverage or risk change. Apply valid
+    findings and rerun affected checks.
 
 policy:
   allow_implicit_invocation: true

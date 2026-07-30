@@ -1,6 +1,6 @@
-# Planning Flow
+# Planning flow
 
-Use this route for Plan Mode, plan-only discussion, or written planning artifacts. It grants no implementation authority.
+Use this route for Plan Mode, plan-only discussion, or written planning artifacts. This route grants no implementation authority.
 
 ```mermaid
 flowchart LR
@@ -11,19 +11,22 @@ flowchart LR
     Ledger --> Present
 ```
 
-## Ordinary Planning
+## Ordinary planning
 
-- Discuss options or produce an artifact such as a plan, ticket draft, ERD, or other written deliverable.
-- Gather bounded read-only evidence when it materially improves the artifact. Do not delegate implementation.
-- Draft, create, or modify a ticket only when the request grants ticket-writing authority.
-- State material assumptions, risks, and open decisions. Planning ends with the artifact or discussion. It does not enter implementation automatically.
+1. Discuss options or produce the requested planning artifact.
+2. Gather bounded read-only evidence when it improves the artifact.
+3. Use ticket-writing authority before you create or change a ticket.
+4. State material assumptions, risks, and open decisions.
+5. End with the artifact or discussion.
 
-## User-Involved Branch-Ledger Planning
+## User-involved branch-ledger planning
 
-Use [branch-task-ledger.md](branch-task-ledger.md) only when the user asks to plan with a branch ledger on an established branch. Keep the user involved in task boundaries, intended commits, and material decisions.
+Use [branch-task-ledger.md](branch-task-ledger.md) only when the user requests an external ledger for an established branch.
 
-- Confirm the live repository root and current branch before creating or resuming the external ledger.
-- This route may create or update the external ledger. It cannot create or switch branches, edit repository files, commit, push, open a pull request, or publish.
-- Do not create or refresh a repository-local ledger pointer in this route.
-- Record proposed bounded tasks, expected outcomes, verification, and risks. Tasks remain `[ ]` until an explicitly authorized implementation route completes and commits them.
-- A later implementation request must grant its own authority. Only explicit named-ticket end-to-end authority enables the automatic per-task commit and publish loop.
+1. Confirm the live repository root and branch.
+2. Create or update only the external ledger.
+3. Keep every proposed task marked `[ ]`.
+4. Record task boundaries, expected outcomes, verification, and risks.
+5. Request new authority before implementation.
+
+Manual ledger planning cannot create or switch branches. It cannot edit repository files, commit, or publish.

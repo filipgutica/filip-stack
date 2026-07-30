@@ -1,6 +1,11 @@
 interface:
   display_name: "Coordinator"
   short_description: "Route engineering work by type and authority"
-  default_prompt: "Use $workflow:coordinator to route engineering work through Planning, Investigation, or authorized Implementation. Planning can update an external branch ledger only when the user explicitly requests it for an established branch. It cannot edit source, commit, or publish. Investigation gathers evidence and presents a fix path. Implementation uses a bounded review and verification cycle. Branch setup, task commits, push, and draft pull requests require named-ticket end-to-end authority."
+  default_prompt: >-
+    Use $workflow:coordinator to route work through Planning, Investigation, or
+    authorized Implementation. Planning and Investigation are read-only for
+    repository files. Review feedback does not grant implementation or
+    publishing authority. Named-ticket end-to-end authority permits branch
+    setup, task commits, push, and a draft pull request.
 policy:
   allow_implicit_invocation: true

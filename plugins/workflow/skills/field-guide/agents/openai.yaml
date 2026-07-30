@@ -1,6 +1,8 @@
 interface:
   display_name: "Field Guide"
   short_description: "Consult and maintain review-derived guidance"
-  default_prompt: "Use $workflow:field-guide to consult relevant preferences. Record guidance only after a code-review correction has a commit."
+  default_prompt: >-
+    Use $workflow:field-guide to consult indexed guidance. Create a review
+    record only after review feedback causes a committed correction.
 policy:
   allow_implicit_invocation: true
