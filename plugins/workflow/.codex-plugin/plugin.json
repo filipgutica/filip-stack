@@ -1,6 +1,6 @@
 {
   "name": "workflow",
-  "version": "1.7.0",
+  "version": "1.8.0",
   "description": "Coordinator routing, minimal-code implementation, indexed field guidance, final review acceptance, and Fallow-backed simplification audits.",
   "author": {
     "name": "Filip Gutica"

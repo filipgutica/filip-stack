@@ -1,3 +1,10 @@
+# [1.8.0](https://github.com/filipgutica/filip-stack/compare/v1.7.0...v1.8.0) (2026-07-31)
+
+
+### Features
+
+* **workflow:** redesign skill instructions ([22290f2](https://github.com/filipgutica/filip-stack/commit/22290f22d736d2fb8f84d3e56747e0752afb2074))
+
 # [1.7.0](https://github.com/filipgutica/filip-stack/compare/v1.6.0...v1.7.0) (2026-07-28)
 
 
