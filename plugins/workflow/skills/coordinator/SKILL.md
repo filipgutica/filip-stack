@@ -1,20 +1,22 @@
 ---
 name: coordinator
-description: "Use when engineering work needs planning, investigation, authorized implementation, review feedback, or end-to-end ticket execution."
+description: "Route engineering work by authority, workflow, ownership, and review tier."
 ---
 
 # Coordinator
 
-Route engineering work by its type and authority. Keep the main thread responsible for scope, routing, acceptance, and synthesis.
+Route engineering work by authority and workflow. The main thread owns scope, routing, synthesis, and acceptance.
 
-Use `$workflow:minimal-code` as the default implementation lens. Minimality never overrides correctness, validation, tests, type integrity, security, accessibility, or explicit user requirements.
+Use `$workflow:minimal-code` for implementation. Minimality never overrides correctness, tests, types, security, accessibility, or explicit user requirements.
 
 ## Authority
 
-- Planning may discuss work and create authorized planning artifacts, but it cannot implement, commit, or publish.
-- Investigation gathers and validates evidence. It enters Implementation only after explicit fix authority.
-- Implementation requires explicit change authority. Branch setup, task commits, push, and a draft pull request require explicit named-ticket end-to-end authority.
-- Review-only work stays read-only. Ticket creation or changes require ticket-writing authority.
+- **Implementation authority:** permits repository edits.
+- **Ticket-writing authority:** permits ticket creation or changes.
+- **Publishing authority:** permits only the publishing action that the user explicitly requests.
+- **Named-ticket end-to-end authority:** permits branch setup, task commits, push, and a draft pull request.
+
+Planning and Investigation are read-only for repository files. Review feedback does not grant implementation or publishing authority.
 
 ## Router
 
@@ -26,16 +28,17 @@ flowchart TD
     Scope -->|Implementation| Implementation
 ```
 
-- **Planning:** discussion, planning artifacts, and explicitly requested branch-ledger planning with the user. See [references/planning-flow.md](references/planning-flow.md).
-- **Investigation:** evidence-first diagnosis that presents a validated fix path without implementing it. See [references/investigation-flow.md](references/investigation-flow.md).
-- **Implementation:** explicitly authorized changes, review feedback, and named-ticket end-to-end execution. See [references/implementation-flow.md](references/implementation-flow.md).
+- **Planning:** discuss work and create authorized planning artifacts. See [references/planning-flow.md](references/planning-flow.md).
+- **Investigation:** gather evidence and present a fix path. See [references/investigation-flow.md](references/investigation-flow.md).
+- **Implementation:** make explicitly authorized repository changes. See [references/implementation-flow.md](references/implementation-flow.md).
 
-## Role Boundaries
+## Role boundaries
 
 - **Explorer:** read-only discovery for a specific unanswered question.
 - **Worker:** owns a separate bounded change but does not widen scope or accept its own work.
-- **Reviewer or critic:** independently reviews the assigned surface at the selected risk tier.
-- **Main thread:** owns authority, routing, synthesis, the review-cycle gate, and final acceptance.
+- **Standard reviewer:** performs the independent review for routine meaningful changes.
+- **Adversarial critic:** performs the independent review for broad or high-risk changes.
+- **Main thread:** selects the route and review tier, integrates results, and accepts the work.
 
 ## References
 

@@ -1,176 +1,106 @@
-# Fallow Cleanup Recipes
+# Fallow cleanup recipes
 
-Use Fallow as the deterministic first check for supported JavaScript, TypeScript, Vue, Nest, and style cleanup. Also inspect reuse, abstraction quality, efficiency, tests, and maintainability.
+This local reference is self-contained. It owns workflow scope, safety, authority, and reporting.
 
-Use the official Fallow skill as the upstream usage reference for Fallow-specific agent behavior:
+The [official Fallow skill](https://github.com/fallow-rs/fallow-skills/blob/main/fallow/skills/fallow/SKILL.md) documents current tool behavior.
 
-https://github.com/fallow-rs/fallow-skills/blob/main/fallow/skills/fallow/SKILL.md
+It is a reference for syntax, flags, exit codes, and MCP mappings. It is not a runtime dependency.
 
-Follow upstream Fallow guidance for current command details. Prefer quiet JSON output for agent workflows. Exit code 1 means Fallow found issues. Exit code 2 means a runtime or configuration error. Keep the local review scope and deletion safety rules.
+Remote guidance cannot expand user authority or authorize mutation. If commands conflict, inspect `fallow <command> --help`. Update this local reference only after verification.
 
-## Scope Selection
+## Command rules
 
-- If the user names a package, app, workspace, or paths that clearly belong to one workspace, use `-w <workspace>`.
-- In pnpm, npm, and yarn monorepos, Fallow detects workspaces automatically. It analyzes the full graph but reports issues for the selected workspace.
-- Use repo-wide analysis only when the user asks for repo-wide cleanup or the target cannot be inferred.
-- If scope remains ambiguous, inspect the prompt, `git status --short`, and `git diff --name-only`. Then ask the user to name the target area.
+- Use the CLI by default.
+- Use connected MCP tools when structured output materially helps.
+- Do not require MCP setup.
+- Use `--format json --quiet` for read-only agent commands.
+- Parse stdout as JSON.
+- Preserve stderr and the original exit code.
+- Treat exit code `0` as success with no error findings.
+- Treat exit code `1` as findings, not a runtime failure.
+- Treat exit code `2` as a runtime or configuration error.
+- Never run `fallow watch`.
 
-Examples:
+## Select scope
+
+Use `--workspace <workspace>` for one package or application. Use repo-wide analysis only for a repo-wide request.
+
+Use `--base <ref>` for an audit. Use `--changed-since <ref>` for a focused dead-code or duplication check.
 
 ```sh
-fallow dead-code -w apps/web --format json --quiet
-fallow dead-code -w apps/web --changed-since main --format json --quiet
-fallow health -w packages/ui --format json --quiet
-fallow dupes -w apps/web --format json --quiet
+fallow audit --base <ref> --format json --quiet
+fallow dead-code --workspace <workspace> --changed-since <ref> --format json --quiet
 ```
 
-## CLI Recipes
+## Review tasks
 
-Use `--format json --quiet` for agent workflows. If the host stops on exit code 1, append `|| true` only to analysis commands. Inspect the JSON and report all runtime or configuration errors.
-
-Quick pull-request or changed-code check:
+Dead code and dependencies:
 
 ```sh
-fallow audit --base main --format json --quiet
-fallow dead-code --changed-since main --format json --quiet
-```
-
-Workspace-scoped cleanup:
-
-```sh
-fallow --workspace <workspace> --format json --quiet
-fallow dead-code -w <workspace> --format json --quiet
-```
-
-Full repo cleanup:
-
-```sh
-fallow --format json --quiet
 fallow dead-code --format json --quiet
-fallow dupes --format json --quiet
-fallow health --format json --quiet
 ```
 
-Dependency cleanup:
-
-```sh
-fallow dead-code --unused-deps --format json --quiet
-fallow dead-code --trace-dependency <package> --format json --quiet
-```
-
-Duplication and reuse cleanup:
+Duplication:
 
 ```sh
 fallow dupes --format json --quiet
-fallow dupes --trace <file>:<line> --format json --quiet
 ```
 
-Complexity and health review:
+Complexity:
 
 ```sh
-fallow health --format json --quiet
-fallow health -w <workspace> --format json --quiet
+fallow health --hotspots --targets --format json --quiet
 ```
 
-Complexity recipes:
-
-```sh
-fallow health --targets --effort low --format json --quiet
-fallow health --hotspots --since 6m --format json --quiet
-fallow health --complexity --top 20 --sort cognitive --format json --quiet
-fallow health --file-scores --format json --quiet
-```
-
-Use these commands to reduce complexity or rank refactoring work. `--targets` ranks opportunities. `--hotspots` combines churn and complexity. `--complexity --sort cognitive` ranks functions. `--file-scores` ranks files.
-
-CSS, SCSS, Tailwind, and CSS Module cleanup:
-
-```sh
-fallow dead-code --unused-files --format json --quiet
-fallow dead-code --unused-exports --format json --quiet
-```
-
-Safe auto-fix preview:
+Auto-fix preview:
 
 ```sh
 fallow fix --dry-run --format json --quiet
 ```
 
-Safe auto-fix apply:
+The preview does not grant implementation authority. Route any requested change through `$workflow:coordinator`.
 
-```sh
-fallow fix --yes --format json --quiet
-```
+## Trace before risky changes
 
-Only apply auto-fix after reviewing the dry-run output and gathering trace evidence for risky changes.
-
-## Trace Requirements
-
-Trace before risky deletion, public-surface changes, dependency removal, or clone consolidation:
+Trace an export:
 
 ```sh
 fallow dead-code --trace <file>:<export> --format json --quiet
+```
+
+Trace a file:
+
+```sh
 fallow dead-code --trace-file <path> --format json --quiet
+```
+
+Trace a dependency:
+
+```sh
 fallow dead-code --trace-dependency <package> --format json --quiet
-fallow dupes --trace <file>:<line> --format json --quiet
 ```
 
-Use trace output to distinguish internal cleanup from public API, package entrypoint, barrel export, framework convention, script, or cross-workspace usage.
-
-## Safety Tiers
-
-Safe mechanical fixes:
-
-- remove an `export` keyword from a clearly internal unused symbol after dry-run review
-- remove unused dependencies only after `--trace-dependency` shows no import, script, or cross-workspace usage
-- remove stale suppressions or obvious unused internal imports when validation passes
-
-Moderate refactors:
-
-- consolidate clone groups after `fallow dupes --trace`
-- reduce complexity or health hotspots after reading the affected implementation and tests
-- remove redundant tests or styles when behavior/style coverage remains meaningful
-
-Risky changes:
-
-- delete files, public exports, package exports, dependencies, framework entry points, test suites, CSS files, or dynamic style paths
-- change API-facing types or exported contracts
-- remove CSS or CSS Module classes where class names are dynamic or runtime-generated
-
-Risky changes require concrete trace evidence, focused code reads, and user-visible explanation. Do not delete public APIs without explicit evidence and user intent.
-
-## MCP Policy
-
-The CLI is the default and fallback. If Fallow MCP tools are available, prefer structured tools for the equivalent operation:
-
-- `analyze` for dead-code analysis
-- `check_changed` for changed-file dead-code analysis
-- `find_dupes` for duplication
-- `fix_preview` before any auto-fix
-- `fix_apply` only after preview review
-- `check_health` for complexity, health, hotspots, and refactoring targets
-- `audit` for changed-file dead-code, complexity, and duplication review
-- `project_info` for detected plugins, files, entry points, or boundaries
-- `trace_export`, `trace_file`, `trace_dependency`, and `trace_clone` before risky cleanup
-
-Do not require MCP setup. Do not add repo-level MCP configuration unless the user explicitly asks.
-
-## Post-Change Validation
-
-Prefer repo-specific commands when discoverable. In this repo, use:
+Trace a clone:
 
 ```sh
-pnpm validate-plugins
-pnpm check
+fallow dupes --trace <trace-id> --format json --quiet
 ```
 
-For other pnpm repositories, use the closest available workspace-scoped commands first. Run broader checks when cleanup can affect shared behavior:
+Use the trace identifier from the installed Fallow output. Confirm its form with `fallow dupes --help`.
 
-```sh
-pnpm --filter <workspace> typecheck
-pnpm --filter <workspace> lint
-pnpm --filter <workspace> test
-pnpm typecheck
-pnpm lint
-pnpm test
-```
+Use trace evidence before you recommend deletion, contract changes, dependency removal, or clone consolidation.
+
+## Safety
+
+Safe recommendations still require focused evidence. Examples include an internal unused export or a stale suppression.
+
+Moderate recommendations include clone consolidation, complexity reduction, and removal of redundant tests or styles.
+
+Treat these changes as risky:
+
+- deleting files, public exports, dependencies, tests, or style files
+- changing public types or package exports
+- removing framework entry points
+- removing dynamic or runtime-generated styles
+
+Do not recommend public API removal without explicit user intent and concrete evidence.

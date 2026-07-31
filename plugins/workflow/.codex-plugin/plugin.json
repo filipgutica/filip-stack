@@ -1,7 +1,7 @@
 {
   "name": "workflow",
   "version": "1.7.0",
-  "description": "Coordinator routing, minimal-code posture, layered review field guide, final review cycle, and Fallow-backed simplification review for engineering workflow. Works best with Superpowers installed.",
+  "description": "Coordinator routing, minimal-code implementation, indexed field guidance, final review acceptance, and Fallow-backed simplification audits.",
   "author": {
     "name": "Filip Gutica"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Workflow",
     "shortDescription": "Coordinator routing, minimal code, field guide, review cycle, and simplification review.",
-    "longDescription": "Route engineering work through focused planning, investigation, and implementation flows; use a minimal-code posture for small readable changes; consult and maintain a layered local field guide for committed review learning; apply a proportional final review cycle; and use Fallow-backed simplification review for cleanup and maintainability analysis. Works best with Superpowers installed and falls back clearly when Superpowers is unavailable.",
+    "longDescription": "Route work through Planning, Investigation, and authorized Implementation. Use minimal-code for the smallest correct change. Consult indexed field guidance and record committed review corrections. Use review-cycle for final acceptance. Use simplification-review directly or for material minimality, reuse, ownership, complexity, or cleanup risk.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
@@ -21,7 +21,7 @@
       "Use $workflow:minimal-code as the default implementation lens for small, readable, low-ceremony changes.",
       "Use $workflow:field-guide to consult project guidance or record committed review-derived learning.",
       "Use $workflow:review-cycle after meaningful edits as the final diff-and-evidence acceptance gate.",
-      "Use $workflow:simplification-review for scoped simplification review."
+      "Use $workflow:simplification-review for standalone or risk-based, read-only simplification audits."
     ]
   }
 }

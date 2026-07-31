@@ -1,4 +1,9 @@
 interface:
   display_name: "Simplification Review"
   short_description: "Review scoped code for safe simplification and cleanup"
-  default_prompt: "Review local changes first. Use the branch diff when no local changes exist. Keep the review within the selected scope. Run focused Fallow checks first for supported code. For non-tiny scopes, run parallel read-only Quality, Reuse, and Efficiency passes. Return one severity-ranked report without editing code."
+  default_prompt: >-
+    Use $workflow:simplification-review for a standalone or risk-based,
+    read-only audit. Review Minimality, Reuse, Ownership, Complexity, and
+    Cleanup. Run a focused Fallow check first for supported code. Return one
+    severity-ranked report. Do not edit code or replace the selected independent
+    review tier.

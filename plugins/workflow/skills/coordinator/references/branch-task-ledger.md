@@ -1,20 +1,31 @@
-# Branch Task Ledger
+# Branch task ledger
 
-Use this reference for named-ticket end-to-end execution or requested manual planning on an established branch. The ledger stays outside the repository to avoid tracked planning files.
+Use this reference for named-ticket end-to-end work or requested ledger planning. The external ledger stays outside the repository.
 
-Manual planning may create or update the external ledger. It cannot create or switch branches, edit repository files, commit, push, open a pull request, or publish. Do not create or refresh a repository-local pointer during manual planning.
+Manual planning can create or update only the external ledger. Do not create a repository pointer during manual planning.
 
-## Locate or Create the Ledger
+## Locate or create the ledger
 
-1. Read the live git root, current branch, and repository name. Use `git rev-parse --show-toplevel` and `git branch --show-current`. For detached HEAD, use a short commit hash with a detached marker.
-2. Use `~/.project-tasks/<repo-slug>/<branch-slug>/TASKS.md`. Replace `/` and other non-portable branch characters in the slug. If the path belongs to another root or branch, add a short stable root hash.
-3. Before scanning, check `<git-root>/TASKS.md`. If that path is occupied, check `<git-root>/.task-ledger`. Treat the pointer as a candidate path. Validate the ledger metadata against the live root and branch.
-4. Only during named-ticket end-to-end execution, add the pointer path to `git rev-parse --git-path info/exclude`. Never edit `.gitignore` or stage the pointer. Rewrite the pointer file when the active ledger changes. Refresh it after a branch switch.
-5. Search `~/.project-tasks/<repo-slug>/` for a ledger whose metadata matches the current root and branch before creating a new one.
+1. Read the live git root with `git rev-parse --show-toplevel`.
+2. Read the current branch with `git branch --show-current`.
+3. Read the repository name.
+4. Use a short commit hash with a detached marker for detached HEAD.
+5. Select `~/.project-tasks/<repo-slug>/<branch-slug>/TASKS.md`.
+6. Replace non-portable branch characters in the slug.
+7. Add a short root hash when the path can identify multiple roots.
+8. Check `<git-root>/TASKS.md` for an existing pointer.
+9. Check `<git-root>/.task-ledger` when the first pointer path is occupied.
+10. Validate candidate ledger metadata against the live root and branch.
+11. Search the repository task directory before you create a ledger.
+12. Add the pointer to the Git exclude file only during named-ticket end-to-end work.
+13. Never edit `.gitignore` or stage the pointer.
+14. Refresh the pointer after the active ledger or branch changes.
 
-## Ledger Shape
+## Ledger shape
 
-Add a title and metadata block. Include the creation date, repository, absolute git root, working directory, branch, task directory, and pointer path. During manual planning, set the pointer path to `none`. Then add Context, Goal, Non-goals, Success Criteria, and one top-level task per intended commit.
+Add a title and metadata block. Include the date, repository, git root, working directory, branch, task directory, and pointer path.
+
+Set the pointer path to `none` during manual planning. Add Context, Goal, Non-goals, Success Criteria, and one task per intended commit.
 
 ```md
 ## Task 1: [ ] <title>
@@ -41,7 +52,7 @@ Add a title and metadata block. Include the creation date, repository, absolute 
 
 Use `[ ]` for incomplete, `[x]` only for complete and committed, and `[!]` only for a concrete blocker. Include branch-level verification and deferred work when relevant.
 
-## Completion and Commit Discipline
+## Completion and commit discipline
 
 - In manual planning, use the ledger to propose bounded tasks with the user. Keep every task `[ ]`. A task does not grant implementation or commit authority.
 - In explicit named-ticket end-to-end execution, one top-level task equals one bounded coordinator cycle and one Conventional Commit.

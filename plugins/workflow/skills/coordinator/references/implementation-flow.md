@@ -1,80 +1,67 @@
-# Implementation Flow
+# Implementation flow
 
-Use this route only when the user explicitly authorizes implementation. Examples include “implement this plan,” “execute this,” or “make these changes.” Implementing an existing ticket does not authorize publishing.
+Use this route for authorized repository changes. Read-only review-feedback inspection does not require implementation authority.
 
-```mermaid
-flowchart TD
-    Authority["Explicit implementation authority"]
-    Authority -->|local, low-risk, clear scope, and no behavior change| FastPath["Fast path"]
-    Authority -->|meaningful implementation| BoundedCycle["Bounded Coordinator Cycle"]
-    Authority -->|explicit named-ticket end-to-end authority| TicketE2E["Explicit Named-Ticket End-to-End Route"]
-    Authority -->|external code-review comments| ReviewFeedback["Review Feedback Route"]
-    ReviewFeedback -->|isolated low-risk correction| FastPath
-    ReviewFeedback -->|material or uncertain correction| BoundedCycle
-    TicketE2E -->|each ledger task| BoundedCycle
-```
+## Select the path
 
-## Authority and Fast Path
+- Use the **fast path** for a tiny, mechanical, low-risk, non-behavioral change.
+- Use the **bounded cycle** for every meaningful change.
+- Use the **named-ticket route** only with named-ticket end-to-end authority.
+- Use the **review-feedback route** to inspect feedback or make authorized corrections.
 
-- Use the fast path only for an obviously local, low-risk, non-behavioral edit with clear scope. Make the edit, run a targeted check, and complete the review-cycle gate. No independent reviewer is required.
-- Meaningful implementation follows the bounded coordinator cycle below.
-- Review-only remains read-only. Simplification analysis routes to `$workflow:simplification-review`.
-- Drafting, creating, or modifying a ticket requires ticket-writing authority. Executing an existing named ticket end-to-end has the additional authority requirements below.
+Review-only work stays read-only. Route standalone simplification analysis to `$workflow:simplification-review`.
 
-## Bounded Coordinator Cycle
+## Fast path
 
-```mermaid
-flowchart TD
-    Establish["1. Define the bounded change"] --> Choose["2. Choose ownership and review tier"]
-    Choose --> Tier{"Selected review tier"}
-    Tier -->|routine meaningful work| Standard["Standard reviewer selected"]
-    Tier -->|higher-risk or broad work| Adversarial["Adversarial critic selected"]
-    Standard --> Execute["3. Execute"]
-    Adversarial --> Execute
-    Execute --> Review["4. Run the selected review"]
-    Review --> ReviewResult{"Valid finding?"}
-    ReviewResult -->|yes| Revise["4. Incorporate valid findings"]
-    ReviewResult -->|no| Verify["5. Run narrow verification"]
-    Revise --> Changed{"Reviewed surface or risk materially changed?"}
-    Changed -->|yes| Review
-    Changed -->|no| Verify
-    Verify --> Gate["5. workflow:review-cycle gate"]
-    Gate --> GateResult{"Gate issue?"}
-    GateResult -->|yes| Revise
-    GateResult -->|no| Handoff["6. Handoff"]
-```
+1. Confirm the narrow scope.
+2. Make the edit.
+3. Run one targeted check.
+4. Complete the review cycle.
+5. Report the result.
 
-1. **Define the bounded change.** State the goal, evidence, scope, behavior risk, contract risk, assumptions, and narrowest credible verification. For code, use focused tests and relevant type, lint, and style checks. Check consumers after shared export changes. Use supported schema checks and dry-runs for configuration or workflow changes. Use configured validation or a focused diff review for documentation. Explain omitted checks and provide replacement evidence. Explore locally first. Use read-only exploration only for material unknowns.
-2. **Choose ownership and review tier.** Keep tightly related work local or assign a separate, bounded worker scope. Choose exactly one independent review tier for meaningful work:
-   - **Routine meaningful work:** prefer the runtime's native or default code-review capability when it can inspect the actual diff and evidence and return a review result. Otherwise, use one read-only standard reviewer with the standard reviewer template.
-   - **Higher-risk or broad work:** use one read-only adversarial critic with the critic template. This includes ambiguous, security, contract, or concurrency risk.
-   Do not automatically stack a reviewer and critic.
-3. **Execute.** Make the bounded change. Workers report changed files, verification, deviations, and blockers. They do not accept their own work.
-4. **Review and revise.** Run the selected review and apply valid findings. Repeat the review only after a material change to the reviewed area or risk.
-5. **Verify and gate.** Run the narrowest credible checks for the affected area. Invoke `$workflow:review-cycle` after meaningful edits. It confirms the completed review or invokes the missing tier, applies valid findings, and does not duplicate a review that still covers the current surface and risk.
-6. **Handoff.** Report the result, evidence, omissions, and residual risk. Commit only when the request authorizes it.
+The fast path does not require an independent review.
 
-## Explicit Named-Ticket End-to-End Route
+## Bounded cycle
 
-Use this route only with explicit named-ticket end-to-end authority, such as “execute ticket ABC-123 end-to-end.” This authority includes branch setup, task commits, push, and a draft pull request. Equivalent wording must be equally clear. Do not add routine user checkpoints. Stop only for blockers or material scope decisions.
+1. Confirm implementation authority.
+2. Define the goal, evidence, scope, risks, assumptions, and verification.
+3. Select ownership and one independent review tier.
+4. Apply `$workflow:minimal-code`.
+5. Run focused checks that provide review evidence.
+6. Run `$workflow:simplification-review` when duplication, reuse, ownership, or complexity risk is material.
+7. Run the selected independent review.
+8. Apply valid findings.
+9. Rerun checks affected by the corrections.
+10. Run `$workflow:review-cycle`.
+11. Report the result, evidence, omissions, and residual risk.
 
-```mermaid
-flowchart TD
-    Branch["1. Create or confirm the working branch"] --> Ledger["2. Create or resume the branch ledger"]
-    Ledger --> Task["3. Next ledger task"]
-    Task --> Cycle["Run one Bounded Coordinator Cycle"]
-    Cycle --> Commit["Commit and update the ledger"]
-    Commit --> Remaining{"More ledger tasks?"}
-    Remaining -->|yes| Task
-    Remaining -->|no| Checks["4. Run branch-level checks"]
-    Checks -->|correction required| Task
-    Checks -->|pass| Publish["4. Push and open a draft pull request"]
-```
+Keep tightly related work in the main thread. Give a worker one separate, bounded implementation area.
 
-1. Create or confirm the working branch and establish the ticket goal, success criteria, non-goals, and verification.
-2. Create or resume the branch ledger using [branch-task-ledger.md](branch-task-ledger.md). Break the work into bounded tasks before implementation.
-3. For each task, run one bounded coordinator cycle. Make one Conventional Commit after its review-cycle gate and verification pass, then update the ledger only after the commit exists.
-4. After all tasks, run branch-level checks. If a check requires a correction, add or resume a bounded ledger task and repeat step 3. When the checks pass, push and open a draft pull request with this exact body shape:
+### Review tiers
+
+- Use a **standard review** for routine meaningful changes.
+- Use an **adversarial review** for broad or high-risk changes.
+- Use one tier. Do not stack tiers unless the risk changes.
+
+A standard reviewer can be a native review capability or a read-only reviewer. It must inspect the actual diff and evidence.
+
+Use an adversarial critic for ambiguity, security, public contracts, concurrency, or broad changes.
+
+## Named-ticket end-to-end route
+
+Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, task commits, push, and a draft pull request.
+
+1. Confirm or create the working branch.
+2. Define the ticket goal, success criteria, non-goals, and verification.
+3. Create or resume the external ledger from [branch-task-ledger.md](branch-task-ledger.md).
+4. Run one bounded cycle for each ledger task.
+5. Commit the task after its review cycle and verification pass.
+6. Add the commit to the ledger.
+7. Mark the task `[x]`.
+8. Run branch-level checks after all tasks are complete.
+9. Create a correction task when a branch check fails.
+10. Push the branch after all checks pass.
+11. Open a draft pull request with this body:
 
 ```md
 ## Summary
@@ -86,31 +73,27 @@ Closes <ticket>
 - <change>
 ```
 
-Humanize prose when appropriate, but preserve the headings and shape. Publish only when the current request grants publishing authority.
+Preserve the headings and shape. Perform only the publishing actions that the current request authorizes.
 
-## Review Feedback Route
+## Review-feedback route
 
-```mermaid
-flowchart TD
-    Feedback["External code-review comments"] --> Receive["Invoke superpowers:receiving-code-review when available"]
-    Receive --> Evaluate["Verify feedback against the code and contract"]
-    Evaluate --> Risk{"Correction risk"}
-    Risk -->|isolated and low-risk| FastPath["Fast path"]
-    Risk -->|material or uncertain| BoundedCycle["Bounded Coordinator Cycle"]
-    FastPath --> Commit{"Correction commit exists?"}
-    BoundedCycle --> Commit
-    Commit -->|yes| FieldGuide["Record learning with workflow:field-guide"]
-    Commit -->|no| NoEntry["Create no field-guide entry"]
-```
+Review feedback can be inspected without implementation authority. Corrections require implementation authority.
 
-For external review comments, invoke `$superpowers:receiving-code-review` when available. Verify each comment against the code and contract. Use the fast path for an isolated, low-risk correction. Use a bounded coordinator cycle for a material or uncertain correction. After a correction commit exists, invoke `$workflow:field-guide` to record the lesson. Without a correction commit, create no field-guide entry. Review feedback inherits no branch, commit, push, or pull-request authority unless the current request grants it.
+1. Invoke `$superpowers:receiving-code-review` when it is available.
+2. Verify each comment against the code and contract.
+3. Stop after inspection when the request grants no implementation authority.
+4. Use the fast path for an authorized, isolated, low-risk correction.
+5. Use a bounded cycle for an authorized, material, or uncertain correction.
+6. Record a field-guide lesson only after the correction has a commit.
 
-## Role Boundaries
+Review feedback does not grant branch, commit, push, or pull-request authority.
 
-- **Explorer:** read-only discovery for specific unanswered questions. It cannot edit or accept work.
-- **Worker:** owns a separate bounded implementation area. It cannot widen scope or accept its own work.
-- **Standard reviewer:** the runtime's native or default code-review capability when it can inspect the actual diff and evidence and return a review result, or a read-only reviewer using the standard template. It independently checks a routine meaningful diff against its goal, evidence, scope, and verification.
-- **Adversarial critic:** read-only challenge of high-risk or ambiguous plans, diffs, worker output, and verification claims. Use the critic template's objection pass.
-- **Main thread:** selects the route and tier, integrates results, runs the review-cycle gate, and accepts the result.
+## Roles
 
-Use model tiers according to current host policy. Use efficient tiers for bounded exploration and routine work. Use stronger tiers for synthesis, high-risk review, ambiguous investigation, public contracts, and broad worker output. Do not specify vendor models or tool signatures here.
+- **Explorer:** answers one bounded question without editing or accepting work.
+- **Worker:** owns one bounded implementation area without accepting its own work.
+- **Standard reviewer:** reviews a routine meaningful change.
+- **Adversarial critic:** challenges a broad or high-risk change.
+- **Main thread:** selects the route and tier, integrates results, and accepts the work.
+
+Follow the host policy for model and tool selection. Do not require vendor-specific models or tool signatures.
