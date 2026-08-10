@@ -1,0 +1,7 @@
+interface:
+  display_name: "Brainstorming"
+  short_description: "Clarify a problem before designing a solution"
+  default_prompt: "Use $workflow:brainstorming to clarify the problem and compare bounded solution options."
+
+policy:
+  allow_implicit_invocation: true

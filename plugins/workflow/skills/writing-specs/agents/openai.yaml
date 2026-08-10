@@ -1,0 +1,7 @@
+interface:
+  display_name: "Writing Specs"
+  short_description: "Create decision-complete engineering specifications"
+  default_prompt: "Use $workflow:writing-specs to turn this approved direction into a decision-complete specification."
+
+policy:
+  allow_implicit_invocation: true

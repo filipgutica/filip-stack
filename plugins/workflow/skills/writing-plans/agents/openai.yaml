@@ -1,0 +1,7 @@
+interface:
+  display_name: "Writing Plans"
+  short_description: "Create decision-ready engineering implementation plans"
+  default_prompt: "Use $workflow:writing-plans to create an implementation plan from this request and repository evidence."
+
+policy:
+  allow_implicit_invocation: true

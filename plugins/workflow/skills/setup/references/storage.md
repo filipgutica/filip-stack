@@ -6,6 +6,10 @@ Use one external project root for specifications, tickets, branch ledgers, and f
 ~/.engineering-workflow/<repo-id>/
 ├── config.json
 ├── specs/
+│   └── <topic>/
+│       ├── BRAINSTORM.md
+│       ├── PLAN.md
+│       └── SPEC.md
 ├── tickets/
 ├── branches/
 │   └── <branch>/TASKS.md
@@ -32,6 +36,8 @@ The configuration has this shape:
 ```
 
 `ticketBackend` can be `local` or `jira`. The value selects storage behavior. It does not grant Jira publishing authority.
+
+Create only the artifacts that the user requests. The files in one topic directory can share context without duplicating their full contents.
 
 ## Legacy migration
 
