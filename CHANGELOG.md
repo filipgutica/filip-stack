@@ -1,3 +1,25 @@
+# [1.9.0](https://github.com/filipgutica/filip-stack/compare/v1.8.0...v1.9.0) (2026-08-10)
+
+
+### Bug Fixes
+
+* **workflow:** harden ledger migration safety ([55defcc](https://github.com/filipgutica/filip-stack/commit/55defccdb20852bf51ccb0b9127b4d23e40d6958))
+
+
+### Features
+
+* **workflow:** add branch task planner skill ([a4efbce](https://github.com/filipgutica/filip-stack/commit/a4efbcea0b3b4c9f4e83bfb631dc8c5799abcb3d))
+* **workflow:** add curated engineering adaptations ([0fa05b8](https://github.com/filipgutica/filip-stack/commit/0fa05b8ac055667f8052cd61172cc4a9722bbc65))
+* **workflow:** add external artifact storage ([2340c68](https://github.com/filipgutica/filip-stack/commit/2340c684dc0bc2918dfb62934a44f3dc7a7feaf7))
+* **workflow:** add implementation and review guidance ([a7f352d](https://github.com/filipgutica/filip-stack/commit/a7f352db0a6869fcf68151110f7fda40f4da435c))
+* **workflow:** add implementation constraints ([de57952](https://github.com/filipgutica/filip-stack/commit/de579520129a681e5092bf9398d5b10a1c5f9f32))
+* **workflow:** add planning and writing skills ([0ec8d8f](https://github.com/filipgutica/filip-stack/commit/0ec8d8f9867903c9affb27722dcdfd836bd7de3c))
+* **workflow:** add PR description guidance ([1f3d6a2](https://github.com/filipgutica/filip-stack/commit/1f3d6a249b15db290ebdda3f796747255c129dd8))
+* **workflow:** add ticket hierarchy guidance ([1c784a6](https://github.com/filipgutica/filip-stack/commit/1c784a6e2dbf99bd8a73b02bed3d79e7ca1234af))
+* **workflow:** adopt ERD specification format ([d1cf969](https://github.com/filipgutica/filip-stack/commit/d1cf9696777186c7063f97c2b5976f754c87afad))
+* **workflow:** integrate engineering lifecycle routes ([b10a737](https://github.com/filipgutica/filip-stack/commit/b10a737ebeb848f43cb44fa297f579aefbed41ca))
+* **workflow:** package engineering workflow suite ([1e41cc4](https://github.com/filipgutica/filip-stack/commit/1e41cc4fb1c17e2c7bd780339251c93fecb1f92d))
+
 # [1.8.0](https://github.com/filipgutica/filip-stack/compare/v1.7.0...v1.8.0) (2026-07-31)
 
 
