@@ -63,19 +63,9 @@ Use this route only with explicit named-ticket end-to-end authority. This author
 10. Run branch-level checks after all tasks are complete.
 11. If a branch check fails, create a correction task and return to step 5.
 12. Push the branch only after all branch-level checks pass.
-13. Open a draft pull request with this body:
+13. Invoke `$workflow:writing-pr-descriptions` to prepare the body. Open the draft pull request with that final body.
 
-```md
-## Summary
-Closes <ticket>
-
-<concise summary>
-
-## Changes
-- <change>
-```
-
-Preserve the headings and shape. Perform only the publishing actions that the current request authorizes.
+Perform only the publishing actions that the current request authorizes.
 
 ## Review-feedback route
 
