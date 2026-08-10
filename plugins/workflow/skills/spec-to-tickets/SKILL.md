@@ -16,17 +16,20 @@ Decompose a decision-complete specification into the smallest independently owne
 
 ## Decomposition
 
-1. Create one ticket per independently reviewable outcome or owner boundary.
-2. State dependencies only when sequencing is necessary.
-3. Give each ticket a concrete goal, bounded work, acceptance criteria, non-goals, and focused testing.
-4. Use `$workflow:writing-tickets` for the ticket wording and its execution-ready evidence gate.
-5. Keep shared behavior, migration, rollout, and verification ownership explicit rather than duplicating it across tickets.
+1. Search for an existing epic and related tracker tickets before drafting new tickets.
+2. Use one epic for the decision-complete specification or ERD. Reuse the verified epic or draft a new epic when none exists. Link it to the source document.
+3. Create one story per independently reviewable outcome or owner boundary. Make each story a child of the epic.
+4. Link verified blocking, sequencing, superseding, duplicate, and related relationships.
+5. Use a subtask only when part of a complex story needs separate ownership, sequencing, or verification.
+6. Give each story or subtask a concrete goal, bounded work, acceptance criteria, non-goals, and focused testing.
+7. Use `$workflow:writing-tickets` for the ticket wording and its execution-ready evidence gate.
+8. Keep shared behavior, migration, rollout, and verification ownership explicit rather than duplicating it across tickets.
 
 ## Backends and authority
 
 Read the repository configuration described in [Engineering Workflow storage](../setup/references/storage.md).
 
 - For the `local` backend, return drafts in the conversation by default. Require ticket-writing authority and an explicit request to persist Markdown tickets under `~/.engineering-workflow/<repo-id>/tickets/<topic>/`.
-- For the `jira` backend, draft the tickets first. Do not create, update, transition, comment on, or otherwise write Jira tickets without explicit publishing authority from the user. The configured backend and ticket-writing authority do not grant Jira publishing authority.
+- For the `jira` backend, draft the tickets first. Do not create, update, transition, comment on, assign parents, or add relationships without explicit publishing authority from the user. The configured backend and ticket-writing authority do not grant Jira publishing authority.
 
 Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or return the ticket drafts in the conversation.

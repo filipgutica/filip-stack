@@ -13,19 +13,33 @@ Write the smallest ticket that lets an engineer complete the required work corre
 
 1. Confirm the outcome, compatibility constraints, scope boundaries, and selected design. Confirm authorization only before editing a live ticket.
 2. Read the current ticket and inspect the relevant code, PRs, or documentation. Preserve user revisions and exact contract names.
-3. Inspect enough of the current behavior to substantiate each instruction. Trace end to end only when ownership or flow is unclear. Do not infer work from naming symmetry, architectural preference, or nearby code.
-4. For each proposed instruction, identify its evidence, required outcome, owner, necessity, and completion signal. Treat unverified user-supplied claims as assumptions, not proof of current behavior.
-5. Remove anything unsupported or unnecessary to the ticket's required outcome.
-6. Select the ticket type, draft with the matching template below, run the critic pass, and revise until it passes.
-7. Edit a live ticket only when authorized. If asked to review, report without editing.
+3. Search the tracker for the correct parent, existing children, dependencies, and related tickets. Verify each ticket key, URL, and relationship direction.
+4. Inspect enough of the current behavior to substantiate each instruction. Trace end to end only when ownership or flow is unclear. Do not infer work from naming symmetry, architectural preference, or nearby code.
+5. For each proposed instruction, identify its evidence, required outcome, owner, necessity, and completion signal. Treat unverified user-supplied claims as assumptions, not proof of current behavior.
+6. Remove anything unsupported or unnecessary to the ticket's required outcome.
+7. Select the ticket type, draft with the matching template below, run the critic pass, and revise until it passes.
+8. Edit a live ticket only when authorized. If asked to review, report without editing.
 
 ## Execution-ready gate
 
 Before drafting implementation steps, verify the current location, behavior, and owner for each proposed change. If any is missing, return an **Evidence needed before this is execution-ready** brief containing only confirmed decisions and missing evidence. Do not disguise `identify`, `inspect`, or `confirm` tasks as implementation work. For an explicitly requested discovery ticket, make the evidence or decision its deliverable.
 
+## Ticket hierarchy and relationships
+
+Use the tracker hierarchy and relationship types supported by the target project.
+
+- **Epic:** Use one epic for a decision-complete specification or ERD. Reuse its verified epic or draft a new epic when none exists. Link the epic to the source document.
+- **Story:** Put each independently reviewable outcome under the verified parent epic. Do not create an orphan story when its specification or ERD has an epic.
+- **Subtask:** Use a subtask for a bounded part of a complex story when it needs separate ownership, sequencing, or verification. Keep ordinary implementation steps in the parent story.
+- **Relationships:** Link each relevant verified ticket that blocks or is blocked by the current ticket. Also link tickets that precede, follow, supersede, or are superseded by it. Link duplicates and material relations. Use the exact relationship and direction that the tracker supports.
+
+Include each relevant ticket key and verified link in the draft. Verify the project, issue type, parent, and relationship direction before publication. If the correct parent or relationship is unclear, add it to the evidence gap instead of guessing.
+
+Drafting a hierarchy or relationship does not grant authority to change the tracker. Create the parent, assign children, and add ticket links only with explicit publishing authority.
+
 ## Ticket templates
 
-Use the matching template and keep its sections in the listed order. Do not combine Story and Bug templates unless the user explicitly requests it.
+Use the matching template and keep its sections in the listed order. Do not combine ticket templates unless the user explicitly requests it.
 
 Render every template section as an exact level-two Markdown heading (`## Section name`), never as a bold inline label. In **Observed behaviour**, use a numbered list for two or more sequential reproduction steps; prose is fine for a single-step observation. In **Suspected root cause**, use a bulleted list for more than one contributing fact; one fact can stay as a sentence. In **Testing**, use a bulleted list for more than one verification item; one item can stay as a sentence. Apply the **Code references** rules below within both prose and lists.
 
@@ -36,6 +50,14 @@ Render every template section as an exact level-two Markdown heading (`## Sectio
 - `## Acceptance criteria` — observable outcomes, not repeated implementation steps.
 - `## Non-goals` — only likely sources of scope drift.
 - `## Testing` — follow explicit testing constraints. Otherwise, update coverage in proportion to changed behavior and risk.
+
+### Epic
+
+- `## Goal` — state the cross-story outcome from the specification or ERD.
+- `## Source specification` — link the decision-complete source document.
+- `## Stories` — list the verified child stories in dependency order.
+- `## Acceptance criteria` — state the observable outcome that closes the epic.
+- `## Non-goals` — only likely sources of scope drift.
 
 ### Bug
 
@@ -64,6 +86,8 @@ For every instruction, ask:
 - **Necessity:** Which required outcome or testing expectation fails if it is omitted?
 - **Clarity:** Does it have one reasonable interpretation?
 - **Ownership:** Does the named component own the behavior?
+- **Hierarchy:** Does the ticket use the correct project, issue type, and verified parent? Does a subtask need separate ownership, sequencing, or verification?
+- **Relationships:** Are relevant tickets linked with verified keys, URLs, relationship types, and directions?
 - **Consistency:** Does it preserve the selected design and terminology?
 - **Duplication:** Is it stated elsewhere?
 - **Scope:** Is it required work rather than cleanup or future-proofing?
@@ -84,5 +108,7 @@ Revise when the ticket:
 - mixes investigation, implementation, rollout, and acceptance;
 - broadens tests beyond changed behavior;
 - uses the wrong template or changes its section order;
+- creates a story outside its verified epic, or uses a subtask for an ordinary implementation step;
+- omits a relevant verified ticket link, or invents a parent or relationship;
 - omits a verified GitHub file link from the first reference to a code entity or from any filename or file path occurrence, or uses a local filesystem path;
 - changes user-authored text outside the requested scope.
