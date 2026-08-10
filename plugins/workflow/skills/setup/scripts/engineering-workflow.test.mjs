@@ -10,8 +10,8 @@ const script = fileURLToPath(new URL('./engineering-workflow.mjs', import.meta.u
 
 const git = (repoRoot, ...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim()
 
-const createRepo = ({ parent, remote = 'git@github.com:example/repository.git' }) => {
-  const repoRoot = join(parent, 'repo')
+const createRepo = ({ parent, name = 'repo', remote = 'git@github.com:example/repository.git' }) => {
+  const repoRoot = join(parent, name)
   execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
   git(repoRoot, 'config', 'user.name', 'Engineering Workflow Test')
   git(repoRoot, 'config', 'user.email', 'workflow@example.test')
@@ -23,8 +23,12 @@ const createRepo = ({ parent, remote = 'git@github.com:example/repository.git' }
   return repoRoot
 }
 
+const runRaw = ({ command, args = [] }) => (
+  spawnSync(process.execPath, [script, command, ...args], { encoding: 'utf8' })
+)
+
 const run = ({ command, args = [], expectStatus = 0 }) => {
-  const result = spawnSync(process.execPath, [script, command, ...args], { encoding: 'utf8' })
+  const result = runRaw({ command, args })
   assert.equal(result.status, expectStatus, result.stderr)
   return JSON.parse(result.stdout)
 }
@@ -68,11 +72,10 @@ test('init rejects a workflow root inside the repository', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-repo-root-'))
   const repoRoot = createRepo({ parent: root })
   const workflowRoot = join(repoRoot, 'artifacts')
-  const result = spawnSync(
-    process.execPath,
-    [script, 'init', '--repo-root', repoRoot, '--workflow-root', workflowRoot],
-    { encoding: 'utf8' },
-  )
+  const result = runRaw({
+    command: 'init',
+    args: ['--repo-root', repoRoot, '--workflow-root', workflowRoot],
+  })
 
   assert.equal(result.status, 1)
   assert.match(result.stderr, /must be outside the repository/)
@@ -90,11 +93,10 @@ test('init validates project ownership before creating artifact directories', ()
   mkdirSync(paths.projectRoot, { recursive: true })
   writeFileSync(paths.configFile, '{"repository":{"identity":"remote:example.test/other/repo"}}\n')
 
-  const result = spawnSync(
-    process.execPath,
-    [script, 'init', '--repo-root', repoRoot, '--workflow-root', workflowRoot],
-    { encoding: 'utf8' },
-  )
+  const result = runRaw({
+    command: 'init',
+    args: ['--repo-root', repoRoot, '--workflow-root', workflowRoot],
+  })
 
   assert.equal(result.status, 1)
   assert.match(result.stderr, /belongs to remote:example\.test\/other\/repo/)
@@ -106,33 +108,45 @@ test('init validates project ownership before creating artifact directories', ()
 
 test('legacy migration is dry-run by default and verifies copied ledgers', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-migrate-'))
+  const repoRoot = createRepo({ parent: root })
+  const otherRepoRoot = createRepo({
+    parent: root,
+    name: 'other-repo',
+    remote: 'git@github.com:example/other-repository.git',
+  })
   const sourceRoot = join(root, 'legacy')
   const workflowRoot = join(root, 'workflow')
-  const source = join(sourceRoot, 'example-repo', 'feat-example', 'TASKS.md')
-  mkdirSync(join(sourceRoot, 'example-repo', 'feat-example'), { recursive: true })
-  writeFileSync(source, '# Tasks\n')
-  const args = ['--source-root', sourceRoot, '--workflow-root', workflowRoot]
+  const source = join(sourceRoot, 'legacy-name', 'feat-example', 'TASKS.md')
+  const otherSource = join(sourceRoot, 'other-name', 'feat-example', 'TASKS.md')
+  mkdirSync(join(sourceRoot, 'legacy-name', 'feat-example'), { recursive: true })
+  mkdirSync(join(sourceRoot, 'other-name', 'feat-example'), { recursive: true })
+  writeFileSync(source, `# Tasks\n\n- Git root: \`${repoRoot}\`\n- Branch: \`feat/example\`\n`)
+  writeFileSync(otherSource, `# Other\n\nGit root: ${otherRepoRoot}\nBranch: feat/example\n`)
+  const args = [
+    '--source-root', sourceRoot,
+    '--workflow-root', workflowRoot,
+    '--repo-root', repoRoot,
+    '--branch', 'feat/example',
+  ]
 
   const dryRun = run({ command: 'migrate-ledgers', args })
   assert.equal(dryRun.mode, 'dry-run')
   assert.equal(dryRun.copied.length, 1)
+  assert.equal(dryRun.copied[0].target, 'github.com-example-repository/branches/feat-example/TASKS.md')
   assert.equal(existsSync(join(workflowRoot, dryRun.copied[0].target)), false)
 
   const applied = run({ command: 'migrate-ledgers', args: [...args, '--apply'] })
   assert.equal(applied.copied.length, 1)
   const target = join(workflowRoot, applied.copied[0].target)
-  assert.equal(readFileSync(target, 'utf8'), '# Tasks\n')
+  assert.ok(readFileSync(target).equals(readFileSync(source)))
 
   const repeated = run({ command: 'migrate-ledgers', args: [...args, '--apply'] })
   assert.equal(repeated.matching.length, 1)
   assert.equal(repeated.copied.length, 0)
 
   writeFileSync(target, '# Different\n')
-  const secondSource = join(sourceRoot, 'second-repo', 'feat-new', 'TASKS.md')
-  mkdirSync(join(sourceRoot, 'second-repo', 'feat-new'), { recursive: true })
-  writeFileSync(secondSource, '# Second\n')
   const conflict = run({ command: 'migrate-ledgers', args: [...args, '--apply'], expectStatus: 2 })
   assert.equal(conflict.conflicts.length, 1)
   assert.equal(conflict.copied.length, 0)
-  assert.equal(existsSync(join(workflowRoot, 'second-repo', 'branches', 'feat-new', 'TASKS.md')), false)
+  assert.equal(existsSync(join(workflowRoot, 'github.com-example-other-repository')), false)
 })

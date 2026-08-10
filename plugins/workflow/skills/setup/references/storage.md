@@ -53,4 +53,6 @@ to:
 ~/.engineering-workflow/<repo>/branches/<branch>/TASKS.md
 ```
 
-Copy files first. Compare the source and target bytes. Preserve matching targets. Stop on a target with different content. Do not delete `~/.project-tasks` during the copy operation.
+Read the Git root and branch from each legacy ledger. Resolve the target repository identity from that live Git root. Do not use the legacy directory name as the new repository identity.
+
+For an interactive migration, require `--repo-root` and `--branch` to limit the operation. Copy files first. Compare the source and target bytes. Preserve matching targets. Stop on a target with different content. Do not delete `~/.project-tasks` during the copy operation.

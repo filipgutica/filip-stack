@@ -1,0 +1,7 @@
+interface:
+  display_name: "Using Git Worktrees"
+  short_description: "Create authorized isolated Git workspaces safely"
+  default_prompt: "Use $workflow:using-git-worktrees to inspect or create an authorized isolated workspace."
+
+policy:
+  allow_implicit_invocation: false

@@ -174,22 +174,101 @@ const legacyLedgers = (sourceRoot) => {
   return ledgers.sort((left, right) => left.source.localeCompare(right.source))
 }
 
-const migrateLedgers = ({ sourceRoot: inputSourceRoot, workflowRoot: inputWorkflowRoot, apply }) => {
+const metadataValue = ({ content, label }) => {
+  const match = content.match(
+    new RegExp('^[> ]*(?:- )?' + label + ':\\s*(?:`([^`]+)`|(.+?))\\s*$', 'm'),
+  )
+  return match?.[1] || match?.[2]?.trim() || ''
+}
+
+const legacyMetadata = (ledgerFile) => {
+  const content = readFileSync(ledgerFile, 'utf8')
+  return {
+    gitRoot: metadataValue({ content, label: 'Git root' }),
+    branch: metadataValue({ content, label: 'Branch' }),
+  }
+}
+
+const resolveMigrationCandidate = ({
+  ledger,
+  sourceRoot,
+  workflowRoot,
+  scopedRepositoryRoot,
+  inputBranch,
+}) => {
+  const source = relative(sourceRoot, ledger.source)
+  const metadata = legacyMetadata(ledger.source)
+  if (!metadata.gitRoot || !metadata.branch) {
+    return { status: 'conflict', entry: { source, reason: 'missing Git root or Branch metadata' } }
+  }
+
+  let paths
+  try {
+    paths = repositoryPaths({ repoRoot: metadata.gitRoot, workflowRoot, branch: metadata.branch })
+  } catch (error) {
+    return { status: 'conflict', entry: { source, reason: error.message } }
+  }
+
+  if (scopedRepositoryRoot && paths.repositoryRoot !== scopedRepositoryRoot) {
+    return { status: 'skipped', entry: { source, reason: 'different repository' } }
+  }
+  if (inputBranch && metadata.branch !== inputBranch) {
+    return { status: 'skipped', entry: { source, reason: 'different branch' } }
+  }
+
+  return {
+    status: 'candidate',
+    entry: { source, target: relative(workflowRoot, paths.ledgerFile) },
+    absoluteSource: ledger.source,
+    absoluteTarget: paths.ledgerFile,
+  }
+}
+
+const migrateLedgers = ({
+  sourceRoot: inputSourceRoot,
+  workflowRoot: inputWorkflowRoot,
+  repoRoot: inputRepoRoot,
+  branch: inputBranch,
+  apply,
+}) => {
   const sourceRoot = resolve(inputSourceRoot || join(homedir(), '.project-tasks'))
   const workflowRoot = workflowRootFor(inputWorkflowRoot)
-  const result = { sourceRoot, workflowRoot, mode: apply ? 'apply' : 'dry-run', copied: [], matching: [], conflicts: [] }
+  const scopedRepositoryRoot = inputRepoRoot
+    ? repositoryPaths({ repoRoot: inputRepoRoot, workflowRoot, branch: inputBranch }).repositoryRoot
+    : ''
+  const result = {
+    sourceRoot,
+    workflowRoot,
+    mode: apply ? 'apply' : 'dry-run',
+    copied: [],
+    matching: [],
+    conflicts: [],
+    skipped: [],
+  }
   const missing = []
 
   for (const ledger of legacyLedgers(sourceRoot)) {
-    const target = join(workflowRoot, slugify(ledger.repository), 'branches', slugify(ledger.branch), 'TASKS.md')
-    const relativeSource = relative(sourceRoot, ledger.source)
-    const entry = { source: relativeSource, target: relative(workflowRoot, target) }
-    if (existsSync(target)) {
-      if (readFileSync(target).equals(readFileSync(ledger.source))) result.matching.push(entry)
-      else result.conflicts.push(entry)
+    const candidate = resolveMigrationCandidate({
+      ledger,
+      sourceRoot,
+      workflowRoot,
+      scopedRepositoryRoot,
+      inputBranch,
+    })
+    if (candidate.status !== 'candidate') {
+      result[candidate.status === 'conflict' ? 'conflicts' : 'skipped'].push(candidate.entry)
       continue
     }
-    missing.push({ ...entry, absoluteSource: ledger.source, absoluteTarget: target })
+
+    if (existsSync(candidate.absoluteTarget)) {
+      if (readFileSync(candidate.absoluteTarget).equals(readFileSync(candidate.absoluteSource))) {
+        result.matching.push(candidate.entry)
+      } else {
+        result.conflicts.push(candidate.entry)
+      }
+      continue
+    }
+    missing.push(candidate)
   }
 
   if (result.conflicts.length > 0) {
@@ -205,7 +284,7 @@ const migrateLedgers = ({ sourceRoot: inputSourceRoot, workflowRoot: inputWorkfl
         fail(`Verification failed for ${entry.absoluteTarget}`)
       }
     }
-    result.copied.push({ source: entry.source, target: entry.target })
+    result.copied.push(entry.entry)
   }
 
   return result
@@ -217,6 +296,8 @@ try {
     console.log(JSON.stringify(migrateLedgers({
       sourceRoot: options['source-root'],
       workflowRoot: options['workflow-root'],
+      repoRoot: options['repo-root'],
+      branch: options.branch,
       apply: options.apply,
     }), null, 2))
   } else {

@@ -46,3 +46,5 @@ Do not turn a specification into implementation steps. Use `$workflow:writing-pl
 Return the specification in the conversation by default. Write `~/.engineering-workflow/<repo-id>/specs/<topic>/SPEC.md` only when the user explicitly requests a persisted external artifact.
 
 Use [Engineering Workflow storage](../setup/references/storage.md) for an authorized write. Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or deliver the specification in the conversation.
+
+Read [upstream.md](references/upstream.md) for source pins and local adaptation decisions.

@@ -16,12 +16,12 @@ Use the bundled utility:
 ```sh
 node <skill-directory>/scripts/engineering-workflow.mjs paths --repo-root <path>
 node <skill-directory>/scripts/engineering-workflow.mjs init --repo-root <path> --ticket-backend <local|jira>
-node <skill-directory>/scripts/engineering-workflow.mjs migrate-ledgers --source-root <path>
+node <skill-directory>/scripts/engineering-workflow.mjs migrate-ledgers --repo-root <path> --branch <branch> --source-root <path>
 ```
 
 `paths` is read-only. `init` creates missing directories and `config.json`. It preserves a valid existing configuration.
 
-`migrate-ledgers` is a dry run unless the command includes `--apply`. It copies legacy ledgers and verifies each copy. It never deletes the source tree.
+`migrate-ledgers` is a dry run unless the command includes `--apply`. Use `--repo-root` and `--branch` to limit an interactive migration. It reads each ledger's Git root and branch metadata, copies matching ledgers to the resolved project root, and verifies each copy. It never deletes the source tree.
 
 Use `--workflow-root <path>` only for an explicit alternate root or an isolated test. The default is `~/.engineering-workflow`.
 

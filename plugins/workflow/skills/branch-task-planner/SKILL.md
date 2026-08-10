@@ -18,11 +18,14 @@ Do not infer named-ticket end-to-end authority from a ticket reference or an exi
 
 1. Read the live Git root and current branch.
 2. Stop if direct invocation has no established branch.
-3. Use `~/.project-tasks/<repo-slug>/<branch-slug>/TASKS.md`.
+3. Use `$workflow:setup` path resolution for `~/.engineering-workflow/<repo-id>/branches/<branch-slug>/TASKS.md`.
 4. Replace non-portable branch characters in the slug.
 5. Add a short root hash if the path can identify multiple roots.
-6. Search the task directory before creating a ledger.
-7. Validate ledger metadata against the live root and branch.
+6. Search the resolved task directory before creating a ledger.
+7. Check the matching legacy path under `~/.project-tasks` before creating a new ledger.
+8. If only the legacy ledger exists, run the setup migration with `--repo-root` and `--branch` before continuing.
+9. Require explicit setup or migration authority for that operation. Stop and request it when absent.
+10. Validate ledger metadata against the live root and branch.
 
 For detached HEAD during named-ticket execution, use the short commit hash with a detached marker until the coordinator creates the authorized branch.
 

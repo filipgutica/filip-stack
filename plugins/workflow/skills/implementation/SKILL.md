@@ -32,3 +32,5 @@ Record the items that apply:
 - any test-first exception and its replacement evidence
 
 This skill does not grant commit, branch, push, pull-request, or publishing authority.
+
+Read [upstream.md](references/upstream.md) for source pins and local adaptation decisions.
