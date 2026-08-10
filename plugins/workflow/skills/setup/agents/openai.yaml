@@ -1,0 +1,7 @@
+interface:
+  display_name: "Engineering Workflow Setup"
+  short_description: "Configure external engineering workflow storage"
+  default_prompt: "Use $workflow:setup to configure external engineering workflow storage for this repository."
+
+policy:
+  allow_implicit_invocation: false
