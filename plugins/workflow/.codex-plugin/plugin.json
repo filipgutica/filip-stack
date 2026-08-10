@@ -1,15 +1,15 @@
 {
   "name": "workflow",
   "version": "1.8.0",
-  "description": "Coordinator routing, minimal-code implementation, indexed field guidance, final review acceptance, and Fallow-backed simplification audits.",
+  "description": "Coordinator routing, branch task planning, minimal-code implementation, indexed field guidance, final review acceptance, and Fallow-backed simplification audits.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Workflow",
-    "shortDescription": "Coordinator routing, minimal code, field guide, review cycle, and simplification review.",
-    "longDescription": "Route work through Planning, Investigation, and authorized Implementation. Use minimal-code for the smallest correct change. Consult indexed field guidance and record committed review corrections. Use review-cycle for final acceptance. Use simplification-review directly or for material minimality, reuse, ownership, complexity, or cleanup risk.",
+    "shortDescription": "Coordinator routing, branch task planning, minimal code, field guide, review cycle, and simplification review.",
+    "longDescription": "Route work through Planning, Investigation, and authorized Implementation. Create external branch task ledgers through branch-task-planner. Use minimal-code for the smallest correct change. Consult indexed field guidance and record committed review corrections. Use review-cycle for final acceptance. Use simplification-review directly or for material minimality, reuse, ownership, complexity, or cleanup risk.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
@@ -18,6 +18,7 @@
     ],
     "defaultPrompt": [
       "Use $workflow:coordinator to route planning, investigation, and authorized implementation.",
+      "Use $workflow:branch-task-planner to interactively create or modify an external branch task ledger.",
       "Use $workflow:minimal-code as the default implementation lens for small, readable, low-ceremony changes.",
       "Use $workflow:field-guide to consult project guidance or record committed review-derived learning.",
       "Use $workflow:review-cycle after meaningful edits as the final diff-and-evidence acceptance gate.",

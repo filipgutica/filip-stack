@@ -32,6 +32,8 @@ flowchart TD
 - **Investigation:** gather evidence and present a fix path. See [references/investigation-flow.md](references/investigation-flow.md).
 - **Implementation:** make explicitly authorized repository changes. See [references/implementation-flow.md](references/implementation-flow.md).
 
+Use `$workflow:branch-task-planner` to create or maintain an external branch task ledger.
+
 ## Role boundaries
 
 - **Explorer:** read-only discovery for a specific unanswered question.
@@ -46,4 +48,3 @@ flowchart TD
 - [Investigation flow](references/investigation-flow.md)
 - [Implementation flow](references/implementation-flow.md)
 - [Prompt templates](references/subagent-templates.md)
-- [Branch ledger](references/branch-task-ledger.md)

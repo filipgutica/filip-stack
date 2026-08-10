@@ -5,8 +5,10 @@ the shared `workflow` plugin directly from this GitHub repository.
 
 ## What the workflow plugin includes
 
-The `workflow` plugin provides five skills:
+The `workflow` plugin provides six skills:
 
+- `branch-task-planner` interactively creates or modifies an external branch
+  task ledger. Direct invocation is planning-only.
 - `coordinator` routes work through Planning, Investigation, or authorized
   Implementation.
 - `field-guide` reads local guidance and records lessons from committed
@@ -29,7 +31,7 @@ Both the Claude and Codex marketplaces distribute this plugin. The separate
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
-  skills/                  coordinator, field-guide, minimal-code, review-cycle, and simplification-review skills
+  skills/                  branch-task-planner, coordinator, field-guide, minimal-code, review-cycle, and simplification-review skills
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
@@ -108,16 +110,18 @@ plugins/*/.codex-plugin/plugin.json
 
 The coordinator loads detailed guidance only for its selected route:
 
-- Planning can create artifacts and can update an external branch ledger when
-  explicitly requested for an established branch.
+- Planning can invoke `branch-task-planner` to create or modify only an external
+  branch ledger for an established branch.
 - Investigation gathers evidence and presents a fix path.
 - Implementation requires implementation authority. It uses `minimal-code`, selects
   one review tier, and runs `review-cycle` after meaningful edits. The review
   cycle confirms the completed review or invokes the missing tier.
 
 Named-ticket end-to-end authority also permits branch setup, task commits, push,
-and a draft pull request. Review feedback does not grant implementation or
-publishing authority.
+and a draft pull request. For each ledger task, the coordinator uses one bounded
+sub-plan, implementation, verification, independent review, `review-cycle`, and
+commit cycle. Review feedback does not grant implementation or publishing
+authority.
 
 ### Field guide
 

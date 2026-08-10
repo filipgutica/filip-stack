@@ -1,0 +1,10 @@
+interface:
+  display_name: "Branch Task Planner"
+  short_description: "Create and maintain an external branch task ledger"
+  default_prompt: >-
+    Use $workflow:branch-task-planner to interactively create or update an
+    external task ledger for the current established branch without changing
+    repository state.
+
+policy:
+  allow_implicit_invocation: true

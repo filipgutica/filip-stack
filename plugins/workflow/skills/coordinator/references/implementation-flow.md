@@ -52,16 +52,18 @@ Use an adversarial critic for ambiguity, security, public contracts, concurrency
 Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, task commits, push, and a draft pull request.
 
 1. Confirm or create the working branch.
-2. Define the ticket goal, success criteria, non-goals, and verification.
-3. Create or resume the external ledger from [branch-task-ledger.md](branch-task-ledger.md).
-4. Run one bounded cycle for each ledger task.
-5. Commit the task after its review cycle and verification pass.
-6. Add the commit to the ledger.
-7. Mark the task `[x]`.
-8. Run branch-level checks after all tasks are complete.
-9. Create a correction task when a branch check fails.
-10. Push the branch after all checks pass.
-11. Open a draft pull request with this body:
+2. Read the ticket context and relevant repository evidence.
+3. Define the ticket goal, success criteria, non-goals, and verification.
+4. Invoke `$workflow:branch-task-planner` in named-ticket end-to-end mode to create or resume the external ledger.
+5. For each ledger task, define its bounded sub-plan.
+6. Run one bounded cycle for the task: implementation, verification, independent review, corrections, and review-cycle acceptance.
+7. Commit the accepted task.
+8. Use `$workflow:branch-task-planner` to add the commit to the ledger and mark the task `[x]`.
+9. Repeat the sub-plan, implementation, review, and commit cycle for the next task.
+10. Run branch-level checks after all tasks are complete.
+11. If a branch check fails, create a correction task and return to step 5.
+12. Push the branch only after all branch-level checks pass.
+13. Open a draft pull request with this body:
 
 ```md
 ## Summary

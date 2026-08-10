@@ -21,12 +21,9 @@ flowchart LR
 
 ## User-involved branch-ledger planning
 
-Use [branch-task-ledger.md](branch-task-ledger.md) only when the user requests an external ledger for an established branch.
+Use `$workflow:branch-task-planner` only when the user requests an external ledger for an established branch.
 
-1. Confirm the live repository root and branch.
-2. Create or update only the external ledger.
-3. Keep every proposed task marked `[ ]`.
-4. Record task boundaries, expected outcomes, verification, and risks.
-5. Request new authority before implementation.
+1. Invoke `$workflow:branch-task-planner` in direct-invocation mode.
+2. Request new authority before implementation.
 
 Manual ledger planning cannot create or switch branches. It cannot edit repository files, commit, or publish.
