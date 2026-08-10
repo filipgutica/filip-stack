@@ -10,7 +10,7 @@ Implement one bounded change with evidence. The coordinator owns authority, scop
 ## Workflow
 
 1. Confirm implementation authority and the bounded outcome.
-2. Read the relevant code, tests, contracts, and repository guidance.
+2. Read the relevant code, tests, contracts, repository guidance, and [engineering constraints](references/engineering-constraints.md).
 3. For new or corrected behavior, select the smallest targeted test that observes the requested outcome.
 4. For a behavior-preserving refactor, run focused existing coverage before the change.
 5. Apply the correct path in [test-driven-development.md](references/test-driven-development.md).
