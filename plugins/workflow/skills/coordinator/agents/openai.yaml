@@ -6,6 +6,7 @@ interface:
     authorized Implementation. Planning and Investigation are read-only for
     repository files. Review feedback does not grant implementation or
     publishing authority. Named-ticket end-to-end authority permits branch
-    setup, task commits, push, and a draft pull request.
+    setup, external ledger maintenance, task commits, push, and a draft pull
+    request.
 policy:
   allow_implicit_invocation: true

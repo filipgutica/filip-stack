@@ -35,3 +35,5 @@ If feedback conflicts with a prior user decision or requires a public contract c
 - Record a `$workflow:field-guide` lesson only after an accepted correction has a commit.
 
 Use [evaluation.md](references/evaluation.md) when several comments need a structured report.
+
+Read [upstream.md](references/upstream.md) for provenance and local adaptation decisions.

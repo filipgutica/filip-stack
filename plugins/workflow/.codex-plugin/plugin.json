@@ -1,15 +1,15 @@
 {
   "name": "workflow",
   "version": "1.8.0",
-  "description": "Coordinator routing, branch task planning, minimal-code implementation, indexed field guidance, final review acceptance, and Fallow-backed simplification audits.",
+  "description": "Engineering guidance for planning, specifications, tickets, implementation, debugging, review, and ledger-backed execution.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
-    "displayName": "Workflow",
-    "shortDescription": "Coordinator routing, branch task planning, minimal code, field guide, review cycle, and simplification review.",
-    "longDescription": "Route work through Planning, Investigation, and authorized Implementation. Create external branch task ledgers through branch-task-planner. Use minimal-code for the smallest correct change. Consult indexed field guidance and record committed review corrections. Use review-cycle for final acceptance. Use simplification-review directly or for material minimality, reuse, ownership, complexity, or cleanup risk.",
+    "displayName": "Engineering Workflow",
+    "shortDescription": "Plan, specify, implement, review, and execute engineering work.",
+    "longDescription": "Move engineering work from brainstorming through specifications, plans, and tickets. Execute authorized changes with proportional test-first implementation, systematic debugging, focused review, and minimal code. Use external branch task ledgers for one bounded implementation, review, and commit cycle per task. Consult the field guide for durable local guidance.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
@@ -17,12 +17,12 @@
       "Write"
     ],
     "defaultPrompt": [
-      "Use $workflow:coordinator to route planning, investigation, and authorized implementation.",
-      "Use $workflow:branch-task-planner to interactively create or modify an external branch task ledger.",
-      "Use $workflow:minimal-code as the default implementation lens for small, readable, low-ceremony changes.",
-      "Use $workflow:field-guide to consult project guidance or record committed review-derived learning.",
-      "Use $workflow:review-cycle after meaningful edits as the final diff-and-evidence acceptance gate.",
-      "Use $workflow:simplification-review for standalone or risk-based, read-only simplification audits."
+      "Use $workflow:coordinator to route planning, investigation, authorized implementation, and named-ticket end-to-end execution.",
+      "Use the planning and writing skills for brainstorming, specifications, plans, ticket decomposition, ticket writing, and technical prose.",
+      "Use $workflow:implementation for proportional test-first evidence with $workflow:minimal-code, and use $workflow:systematic-debugging for failures and unexpected behavior.",
+      "Use $workflow:receiving-code-review to verify review feedback and $workflow:review-cycle to accept the final diff and evidence.",
+      "Use $workflow:branch-task-planner when explicitly requested or when named-ticket end-to-end execution requires an external ledger.",
+      "Use $workflow:field-guide for durable guidance and $workflow:simplification-review for focused, read-only cleanup audits."
     ]
   }
 }
