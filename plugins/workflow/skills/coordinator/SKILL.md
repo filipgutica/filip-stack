@@ -16,7 +16,7 @@ Use `$workflow:minimal-code` for implementation. Minimality never overrides corr
 - **Setup or migration authority:** an explicit user request to configure or migrate Engineering Workflow storage permits only the requested setup or migration operation.
 - **Ticket-writing authority:** permits ticket creation or changes.
 - **Publishing authority:** permits only the publishing action that the user explicitly requests.
-- **Named-ticket end-to-end authority:** permits branch setup, creation and maintenance of the required external branch task ledger, task commits, push, and a draft pull request.
+- **Named-ticket end-to-end authority:** permits branch setup, creation and maintenance of the required external branch task ledger, its local pointer, and its Git exclude entry, plus task commits, push, and a draft pull request.
 
 Planning and Investigation are read-only for repository files. Review feedback does not grant implementation or publishing authority.
 

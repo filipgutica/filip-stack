@@ -42,11 +42,42 @@ test('paths resolves external project, ledger, and worktree locations', () => {
     args: ['--repo-root', repoRoot, '--workflow-root', workflowRoot],
   })
 
-  assert.equal(paths.repositoryId, 'github.com-example-repository')
+  assert.match(paths.repositoryId, /^github\.com-example-repository-[0-9a-f]{8}$/)
   assert.equal(paths.branch, 'feat/example')
-  assert.equal(paths.ledgerFile, join(paths.workflowRoot, paths.repositoryId, 'branches', 'feat-example', 'TASKS.md'))
-  assert.equal(paths.worktreeRoot, join(paths.workflowRoot, paths.repositoryId, 'worktrees', 'feat-example'))
+  assert.match(paths.branchId, /^feat-example-[0-9a-f]{8}$/)
+  assert.equal(paths.ledgerFile, join(paths.workflowRoot, paths.repositoryId, 'branches', paths.branchId, 'TASKS.md'))
+  assert.equal(paths.worktreeRoot, join(paths.workflowRoot, paths.repositoryId, 'worktrees', paths.branchId))
   assert.equal(existsSync(workflowRoot), false)
+})
+
+test('paths disambiguates repository and branch slug collisions', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-collisions-'))
+  const workflowRoot = join(root, 'workflow')
+  const firstRepoRoot = createRepo({
+    parent: root,
+    name: 'first',
+    remote: 'git@github.com:example/a-b/c.git',
+  })
+  const secondRepoRoot = createRepo({
+    parent: root,
+    name: 'second',
+    remote: 'git@github.com:example/a/b-c.git',
+  })
+  git(firstRepoRoot, 'branch', '-m', 'feat/a-b')
+  git(secondRepoRoot, 'branch', '-m', 'feat/a/b')
+
+  const first = run({
+    command: 'paths',
+    args: ['--repo-root', firstRepoRoot, '--workflow-root', workflowRoot],
+  })
+  const second = run({
+    command: 'paths',
+    args: ['--repo-root', secondRepoRoot, '--workflow-root', workflowRoot],
+  })
+
+  assert.notEqual(first.repositoryId, second.repositoryId)
+  assert.notEqual(first.branchId, second.branchId)
+  assert.notEqual(first.ledgerFile, second.ledgerFile)
 })
 
 test('init creates external directories and preserves an existing configuration', () => {
@@ -132,7 +163,10 @@ test('legacy migration is dry-run by default and verifies copied ledgers', () =>
   const dryRun = run({ command: 'migrate-ledgers', args })
   assert.equal(dryRun.mode, 'dry-run')
   assert.equal(dryRun.copied.length, 1)
-  assert.equal(dryRun.copied[0].target, 'github.com-example-repository/branches/feat-example/TASKS.md')
+  assert.match(
+    dryRun.copied[0].target,
+    /^github\.com-example-repository-[0-9a-f]{8}\/branches\/feat-example-[0-9a-f]{8}\/TASKS\.md$/,
+  )
   assert.equal(existsSync(join(workflowRoot, dryRun.copied[0].target)), false)
 
   const applied = run({ command: 'migrate-ledgers', args: [...args, '--apply'] })
@@ -149,4 +183,80 @@ test('legacy migration is dry-run by default and verifies copied ledgers', () =>
   assert.equal(conflict.conflicts.length, 1)
   assert.equal(conflict.copied.length, 0)
   assert.equal(existsSync(join(workflowRoot, 'github.com-example-other-repository')), false)
+})
+
+test('legacy migration dry-run reports valid candidates alongside conflicts', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-mixed-migrate-'))
+  const repoRoot = createRepo({ parent: root })
+  const sourceRoot = join(root, 'legacy')
+  const workflowRoot = join(root, 'workflow')
+  const candidateSource = join(sourceRoot, 'candidate', 'feat-example', 'TASKS.md')
+  const staleSource = join(sourceRoot, 'stale', 'feat-stale', 'TASKS.md')
+  mkdirSync(join(sourceRoot, 'candidate', 'feat-example'), { recursive: true })
+  mkdirSync(join(sourceRoot, 'stale', 'feat-stale'), { recursive: true })
+  writeFileSync(candidateSource, `# Candidate\n\nGit root: ${repoRoot}\nBranch: feat/example\n`)
+  writeFileSync(staleSource, `# Stale\n\nGit root: ${join(root, 'missing')}\nBranch: feat/stale\n`)
+  const args = ['--source-root', sourceRoot, '--workflow-root', workflowRoot]
+
+  const dryRun = run({ command: 'migrate-ledgers', args, expectStatus: 2 })
+  assert.equal(dryRun.copied.length, 1)
+  assert.equal(dryRun.conflicts.length, 1)
+  assert.equal(existsSync(join(workflowRoot, dryRun.copied[0].target)), false)
+
+  const applied = run({
+    command: 'migrate-ledgers',
+    args: [...args, '--repo-root', repoRoot, '--branch', 'feat/example', '--apply'],
+    expectStatus: 2,
+  })
+  assert.equal(applied.copied.length, 0)
+  assert.equal(applied.conflicts.length, 1)
+  assert.equal(existsSync(join(workflowRoot, dryRun.copied[0].target)), false)
+})
+
+test('legacy migration rejects an unscoped apply', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-unscoped-migrate-'))
+  const repoRoot = createRepo({ parent: root })
+  const sourceRoot = join(root, 'legacy')
+  const workflowRoot = join(root, 'workflow')
+  const source = join(sourceRoot, 'candidate', 'feat-example', 'TASKS.md')
+  mkdirSync(join(sourceRoot, 'candidate', 'feat-example'), { recursive: true })
+  writeFileSync(source, `# Candidate\n\nGit root: ${repoRoot}\nBranch: feat/example\n`)
+
+  const result = runRaw({
+    command: 'migrate-ledgers',
+    args: ['--source-root', sourceRoot, '--workflow-root', workflowRoot, '--apply'],
+  })
+
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /--apply requires --repo-root and --branch/)
+  assert.equal(existsSync(workflowRoot), false)
+})
+
+test('legacy migration rejects duplicate target ledgers before apply', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-duplicate-migrate-'))
+  const repoRoot = createRepo({ parent: root })
+  const sourceRoot = join(root, 'legacy')
+  const workflowRoot = join(root, 'workflow')
+  const firstSource = join(sourceRoot, 'first', 'feat-example', 'TASKS.md')
+  const secondSource = join(sourceRoot, 'second', 'feat-example', 'TASKS.md')
+  mkdirSync(join(sourceRoot, 'first', 'feat-example'), { recursive: true })
+  mkdirSync(join(sourceRoot, 'second', 'feat-example'), { recursive: true })
+  writeFileSync(firstSource, `# First\n\nGit root: ${repoRoot}\nBranch: feat/example\n`)
+  writeFileSync(secondSource, `# Second\n\nGit root: ${repoRoot}\nBranch: feat/example\n`)
+  const args = [
+    '--source-root', sourceRoot,
+    '--workflow-root', workflowRoot,
+    '--repo-root', repoRoot,
+    '--branch', 'feat/example',
+  ]
+
+  const dryRun = run({ command: 'migrate-ledgers', args, expectStatus: 2 })
+  assert.equal(dryRun.copied.length, 0)
+  assert.equal(dryRun.conflicts.length, 1)
+  assert.match(dryRun.conflicts[0].reason, /same target/)
+
+  const applied = run({ command: 'migrate-ledgers', args: [...args, '--apply'], expectStatus: 2 })
+  assert.equal(applied.copied.length, 0)
+  assert.equal(applied.conflicts.length, 1)
+  assert.equal(existsSync(join(workflowRoot, dryRun.conflicts[0].target)), false)
 })

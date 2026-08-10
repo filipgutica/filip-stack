@@ -49,7 +49,7 @@ Use an adversarial critic for ambiguity, security, public contracts, concurrency
 
 ## Named-ticket end-to-end route
 
-Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, creation and maintenance of the required external branch task ledger, task commits, push, and a draft pull request.
+Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, creation and maintenance of the required external branch task ledger, its local pointer, and its Git exclude entry, plus task commits, push, and a draft pull request.
 
 1. Confirm or create the working branch. Use `$workflow:using-git-worktrees` only with explicit worktree authority or when this named-ticket route requires isolation.
 2. Read the ticket context and relevant repository evidence.

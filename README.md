@@ -134,12 +134,13 @@ Planning artifacts and branch task ledgers stay outside repositories under:
 ~/.engineering-workflow/<repo-id>/
 ```
 
-The repository ID comes from the normalized `origin` URL. A repository without
-an `origin` uses its name and a short hash of the Git common directory. The
-storage tree holds repository configuration, specifications, plans, local ticket
-drafts, and branch task ledgers. The `setup` skill initializes the tree and can
-copy legacy ledgers from `~/.project-tasks`. Migration is conflict-safe and does
-not delete the source.
+The repository ID uses a readable slug of the normalized `origin` URL plus a
+short stable hash. A repository without an `origin` uses its name and a short
+hash of the Git common directory. Branch directories also include a short stable
+hash to prevent slug collisions. The storage tree holds repository
+configuration, specifications, plans, local ticket drafts, and branch task
+ledgers. The `setup` skill initializes the tree and can copy legacy ledgers from
+`~/.project-tasks`. Migration is conflict-safe and does not delete the source.
 
 Plans, specifications, and local ticket drafts return in the conversation by
 default. Writing them to external storage requires an explicit request. Direct

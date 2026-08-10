@@ -15,7 +15,8 @@ Inspect worktree state without authority. Require explicit worktree authority be
 3. Use a host-native worktree tool when it exists and owns workspace lifecycle.
 4. Otherwise, inspect existing repository and user worktree conventions.
 5. When no convention exists, use the fallback from `$workflow:setup`:
-   `~/.engineering-workflow/<repo-id>/worktrees/<branch>/`.
+   `~/.engineering-workflow/<repo-id>/worktrees/<branch-id>/`. Consume the
+   returned IDs instead of reconstructing their slugs or stable hashes.
 6. Resolve and validate the exact target before `git worktree add`.
 7. Confirm the branch and clean baseline after creation.
 

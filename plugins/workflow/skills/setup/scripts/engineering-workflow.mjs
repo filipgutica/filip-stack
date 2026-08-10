@@ -32,6 +32,10 @@ const slugify = (value) => (
     || 'repository'
 )
 
+const shortHash = (value) => createHash('sha256').update(value).digest('hex').slice(0, 8)
+
+const stableId = (value) => `${slugify(value)}-${shortHash(value)}`
+
 const normalizeRemote = (remote) => {
   if (!remote) return ''
   const scpStyle = remote.match(/^[^@]+@([^:]+):(.+)$/)
@@ -89,13 +93,12 @@ const repositoryPaths = ({ repoRoot: inputRoot, workflowRoot: inputWorkflowRoot,
   const origin = git({ repoRoot: repositoryRoot, args: ['remote', 'get-url', 'origin'], optional: true })
   const normalizedRemote = normalizeRemote(origin)
   const identity = normalizedRemote ? `remote:${normalizedRemote}` : `common-dir:${commonDir}`
-  const fallbackHash = createHash('sha256').update(commonDir).digest('hex').slice(0, 8)
   const repositoryId = normalizedRemote
-    ? slugify(normalizedRemote)
-    : `${slugify(basename(repositoryRoot))}-${fallbackHash}`
+    ? stableId(normalizedRemote)
+    : `${slugify(basename(repositoryRoot))}-${shortHash(commonDir)}`
   const branch = inputBranch || git({ repoRoot: repositoryRoot, args: ['branch', '--show-current'] })
     || `detached-${git({ repoRoot: repositoryRoot, args: ['rev-parse', '--short', 'HEAD'] })}`
-  const branchId = slugify(branch)
+  const branchId = stableId(branch)
   const workflowRoot = workflowRootFor(inputWorkflowRoot)
   const workflowRelative = relative(repositoryRoot, workflowRoot)
   if (workflowRelative === '' || (!workflowRelative.startsWith('..') && !isAbsolute(workflowRelative))) {
@@ -224,6 +227,29 @@ const resolveMigrationCandidate = ({
   }
 }
 
+const uniqueMigrationCandidates = ({ candidates, conflicts }) => {
+  const candidatesByTarget = new Map()
+  for (const candidate of candidates) {
+    const group = candidatesByTarget.get(candidate.absoluteTarget) || []
+    group.push(candidate)
+    candidatesByTarget.set(candidate.absoluteTarget, group)
+  }
+
+  const unique = []
+  for (const group of candidatesByTarget.values()) {
+    if (group.length === 1) {
+      unique.push(group[0])
+      continue
+    }
+    conflicts.push({
+      sources: group.map((candidate) => candidate.entry.source),
+      target: group[0].entry.target,
+      reason: 'multiple legacy ledgers resolve to the same target',
+    })
+  }
+  return unique
+}
+
 const migrateLedgers = ({
   sourceRoot: inputSourceRoot,
   workflowRoot: inputWorkflowRoot,
@@ -231,6 +257,9 @@ const migrateLedgers = ({
   branch: inputBranch,
   apply,
 }) => {
+  if (apply && (!inputRepoRoot || !inputBranch)) {
+    fail('--apply requires --repo-root and --branch')
+  }
   const sourceRoot = resolve(inputSourceRoot || join(homedir(), '.project-tasks'))
   const workflowRoot = workflowRootFor(inputWorkflowRoot)
   const scopedRepositoryRoot = inputRepoRoot
@@ -271,18 +300,22 @@ const migrateLedgers = ({
     missing.push(candidate)
   }
 
-  if (result.conflicts.length > 0) {
-    process.exitCode = 2
+  const candidates = uniqueMigrationCandidates({ candidates: missing, conflicts: result.conflicts })
+
+  if (!apply) {
+    result.copied.push(...candidates.map((entry) => entry.entry))
+  }
+
+  if (result.conflicts.length > 0 || !apply) {
+    if (result.conflicts.length > 0) process.exitCode = 2
     return result
   }
 
-  for (const entry of missing) {
-    if (apply) {
-      mkdirSync(resolve(entry.absoluteTarget, '..'), { recursive: true })
-      copyFileSync(entry.absoluteSource, entry.absoluteTarget)
-      if (!readFileSync(entry.absoluteTarget).equals(readFileSync(entry.absoluteSource))) {
-        fail(`Verification failed for ${entry.absoluteTarget}`)
-      }
+  for (const entry of candidates) {
+    mkdirSync(resolve(entry.absoluteTarget, '..'), { recursive: true })
+    copyFileSync(entry.absoluteSource, entry.absoluteTarget)
+    if (!readFileSync(entry.absoluteTarget).equals(readFileSync(entry.absoluteSource))) {
+      fail(`Verification failed for ${entry.absoluteTarget}`)
     }
     result.copied.push(entry.entry)
   }
