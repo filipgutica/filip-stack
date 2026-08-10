@@ -60,6 +60,7 @@ Ownership:
 Requirements:
 - preserve behavior unless stated otherwise
 - follow the approved plan or fix path
+- apply $workflow:implementation
 - keep the diff minimal
 - report any blocker or required deviation before widening scope
 
@@ -71,6 +72,7 @@ Deliverable:
 - summary of changes
 - files changed
 - validation run
+- self-review findings and corrections
 - known limitations or blockers
 ```
 

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Writing Skills"
+  short_description: "Create and test focused agent skills"
+  default_prompt: "Use $workflow:writing-skills to create or revise this skill with proportional evaluation."
+
+policy:
+  allow_implicit_invocation: true

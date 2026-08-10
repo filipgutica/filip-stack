@@ -5,7 +5,7 @@ Use this route for Plan Mode, plan-only discussion, or written planning artifact
 ```mermaid
 flowchart LR
     Request["Plan Mode or plan-only request"]
-    Request --> Ordinary["Ordinary Planning"]
+    Request --> Ordinary["Discussion or artifact"]
     Request --> Ledger["User-Involved Branch-Ledger Planning"]
     Ordinary --> Present["Present discussion or artifact"]
     Ledger --> Present
@@ -13,20 +13,24 @@ flowchart LR
 
 ## Ordinary planning
 
-1. Discuss options or produce the requested planning artifact.
-2. Gather bounded read-only evidence when it improves the artifact.
-3. Use ticket-writing authority before you create or change a ticket.
-4. State material assumptions, risks, and open decisions.
-5. End with the artifact or discussion.
+1. Gather bounded read-only evidence before asking for discoverable facts.
+2. Select only the route needed for the user's requested output:
+   - Use `$workflow:brainstorming` to clarify an ambiguous request or compare design options.
+   - Use `$workflow:grill-me` when the user asks to stress-test a direction.
+   - Use `$workflow:writing-specs` when the user requests a decision-complete product or technical specification.
+   - Use `$workflow:writing-plans` when the user requests a file-specific implementation plan.
+   - Use `$workflow:spec-to-tickets` only when the user explicitly requests ticket decomposition from a decision-complete specification.
+   - Use `$workflow:writing-tickets` when the user requests ticket drafting, creation, changes, or an execution-ready review.
+3. Require ticket-writing authority before ticket creation or changes.
+4. Persist a plan, specification, brainstorm note, or local ticket draft only when the user explicitly requests that named external artifact. That request grants external-artifact authority only for the requested write.
+5. State material assumptions, risks, and open decisions.
+6. End with the requested artifact or discussion. Do not continue into a different artifact type without a user request.
 
 ## User-involved branch-ledger planning
 
-Use [branch-task-ledger.md](branch-task-ledger.md) only when the user requests an external ledger for an established branch.
+Use `$workflow:branch-task-planner` only when the user requests an external ledger for an established branch.
 
-1. Confirm the live repository root and branch.
-2. Create or update only the external ledger.
-3. Keep every proposed task marked `[ ]`.
-4. Record task boundaries, expected outcomes, verification, and risks.
-5. Request new authority before implementation.
+1. Invoke `$workflow:branch-task-planner` in direct-invocation mode.
+2. Request new authority before implementation.
 
 Manual ledger planning cannot create or switch branches. It cannot edit repository files, commit, or publish.

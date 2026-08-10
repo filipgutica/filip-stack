@@ -1,0 +1,7 @@
+interface:
+  display_name: "Subagent-Driven Development"
+  short_description: "Route a plan through bounded agent task cycles"
+  default_prompt: "Use $workflow:subagent-driven-development to execute this approved plan through coordinator task cycles."
+
+policy:
+  allow_implicit_invocation: false

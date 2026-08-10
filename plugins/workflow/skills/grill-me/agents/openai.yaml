@@ -1,0 +1,7 @@
+interface:
+  display_name: "Grill Me"
+  short_description: "Stress-test plans and expose unresolved decisions"
+  default_prompt: "Use $workflow:grill-me to challenge this plan one decision at a time."
+
+policy:
+  allow_implicit_invocation: true

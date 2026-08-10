@@ -1,0 +1,7 @@
+interface:
+  display_name: "Writing PR Descriptions"
+  short_description: "Write concise, consistent pull request bodies"
+  default_prompt: "Use $workflow:writing-pr-descriptions to draft this pull request description."
+
+policy:
+  allow_implicit_invocation: true
