@@ -45,4 +45,4 @@ For every bounded subtask, name the files, expected outcome, and verification si
 
 Return the plan in the conversation by default. Write `~/.engineering-workflow/<repo-id>/specs/<topic>/PLAN.md` only when the user explicitly requests a persisted external artifact.
 
-Use [Engineering Workflow storage](../setup/references/storage.md) for an authorized write. Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or deliver the plan in the conversation.
+The explicit request grants external-artifact authority only for that plan write. Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or deliver the plan in the conversation.

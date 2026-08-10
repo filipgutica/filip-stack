@@ -1,6 +1,7 @@
 ---
 name: setup
 description: "Use when a user explicitly asks to configure, inspect, or migrate external Engineering Workflow artifact storage for a Git repository."
+disable-model-invocation: true
 ---
 
 # Engineering Workflow setup

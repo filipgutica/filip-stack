@@ -16,7 +16,7 @@ Turn an ambiguous request into a bounded, evidence-based direction. Explore only
 5. Ask one focused question at a time for decisions that require user judgment.
 6. Stop when the direction, constraints, and unresolved decisions are explicit.
 
-Do not design unrequested extensions or begin implementation. If the request needs an executable record, create a concise brainstorm note only with authority to write external artifacts.
+Do not design unrequested extensions or begin implementation. Create a concise brainstorm note only when the user explicitly requests that external artifact; the request grants authority only for that write.
 
 ## External artifacts
 

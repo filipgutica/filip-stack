@@ -1,6 +1,7 @@
 ---
 name: spec-to-tickets
 description: "Use when a decision-complete engineering specification must be decomposed into small, owned, independently verifiable local Markdown or Jira tickets."
+disable-model-invocation: true
 ---
 
 # Spec to Tickets

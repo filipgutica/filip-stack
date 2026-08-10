@@ -1,6 +1,7 @@
 ---
 name: branch-task-planner
 description: "Use when a user requests an external branch task ledger or named-ticket end-to-end execution needs branch-scoped task tracking."
+disable-model-invocation: true
 ---
 
 # Branch task planner
@@ -30,6 +31,8 @@ Do not infer named-ticket end-to-end authority from a ticket reference or an exi
 For detached HEAD during named-ticket execution, use the short commit hash with a detached marker until the coordinator creates the authorized branch.
 
 ## Direct invocation
+
+The user's explicit request to create or modify a branch task ledger grants external-artifact authority only for that ledger write.
 
 1. Gather the request and bounded read-only evidence.
 2. Propose task boundaries in the conversation.
