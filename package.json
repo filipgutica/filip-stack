@@ -12,8 +12,9 @@
     "stamp-version": "node scripts/stamp-version.mjs",
     "test:engineering-workflow": "node --test plugins/workflow/skills/setup/scripts/engineering-workflow.test.mjs",
     "test:field-guide": "node --test plugins/workflow/skills/field-guide/scripts/field-guide.test.mjs",
+    "test:writing-specs": "node plugins/workflow/skills/writing-specs/scripts/validate-contract.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "check": "pnpm test:engineering-workflow && pnpm test:field-guide && pnpm validate-plugins"
+    "check": "pnpm test:engineering-workflow && pnpm test:field-guide && pnpm test:writing-specs && pnpm validate-plugins"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

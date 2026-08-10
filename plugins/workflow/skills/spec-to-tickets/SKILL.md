@@ -10,7 +10,7 @@ Decompose a decision-complete specification into the smallest independently owne
 
 ## Preconditions
 
-- Confirm that the specification is decision-complete. Return unresolved decisions instead of creating tickets from assumptions.
+- Reject a `Draft` specification or ERD, and any specification or ERD with unresolved Gates. Return the blocking Gates and create no tickets. For a `Ready` specification or ERD, confirm that each Gate resolution is propagated through the component changes and task order.
 - Identify each owner, dependency, contract boundary, and verification signal from the specification and repository evidence.
 - Do not create a ticket for cleanup, investigation, or future work unless the specification requires it.
 

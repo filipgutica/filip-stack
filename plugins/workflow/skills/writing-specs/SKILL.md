@@ -1,49 +1,40 @@
 ---
 name: writing-specs
-description: "Use when a user needs a decision-complete engineering specification for approved product or technical work before implementation or ticket decomposition."
+description: "Use when a user needs an engineering specification or ERD for product or technical work before implementation, review, or ticket decomposition."
 ---
 
-# Writing Specs
+# Writing Specs and ERDs
 
-Write a specification that fixes the decisions needed to implement and verify the requested work. A spec is decision-complete when an engineer does not need to choose behavior, ownership, compatibility, or verification criteria that affect the result.
+Treat specification and engineering requirements document (ERD) as interchangeable terms. Separate settled decisions from unresolved ones. An ERD is `Ready` only when no unresolved gate blocks its component changes. Otherwise, it is `Draft`.
 
 ## Workflow
 
-1. Confirm the problem, intended outcome, constraints, and selected direction.
-2. Inspect the current repository surface for existing contracts, owners, and tests.
-3. Record the behavior, scope boundaries, interfaces, data or state changes, failure handling, rollout or migration needs, and verification.
-4. Resolve every material implementation decision. If a decision needs user judgment, present the options and stop before calling the spec complete.
-5. Separate confirmed facts from assumptions and open questions.
+1. Read [erd-format.md](references/erd-format.md) before drafting or updating an ERD.
+2. Confirm the problem, intended outcome, constraints, prior milestone, and known non-goals.
+3. Inspect the current repository surface for contracts, owners, code pointers, tests, and existing decisions.
+4. Record only supported facts. Use `TBD` for unknown metadata, options, repositories, links, diagrams, interfaces, tests, or requirements.
+5. Classify every unresolved decision. Make it a Gate when it blocks listed component work. Otherwise, make it an Open Question.
+6. Put an observable outcome and verification signal in each component deliverable or high-level task.
+7. After a gate resolves, search the ERD for its number and name. Update the Gates summary, Context, Component changes, Order of Operations, and Open Questions before marking the edit complete.
+8. Apply the final plain-language proofreading pass only after the structure and facts are correct.
 
 ## Quality bar
 
-Make the specification concrete enough to decompose into owned tickets. Use observable behavior and stable terms. Name the owner of each cross-boundary change. Do not include placeholders such as `TBD`, implied defaults, or optional alternatives for material decisions.
+Copy the required headings from [erd-format.md](references/erd-format.md). Keep design points grouped by concern and component changes grouped by repository. Mark a repository's work as conditional when it depends on an unresolved gate.
 
-Use these headings when they apply:
+Do not add a likely component, interface, behavior, option, or test. Put missing information in a Gate, an Open Question, or `TBD`. Keep each component entry limited to the outcome supported by the request or repository evidence.
 
-```md
-# <title>
+For a new ERD, use the current date. Use supported facts for Author, Version, and ticket link. Otherwise, write `TBD`. Set Status to `Draft` while any gate is unresolved. Set it to `Ready` only after all blocking gates are resolved and propagated.
 
-## Context
-## Goal
-## Non-goals
-## User-visible behavior
-## Technical design
-## Interfaces and data
-## Failure modes
-## Migration and rollout
-## Acceptance criteria
-## Verification
-## Risks / assumptions / open questions
-```
+Link each code pointer to the exact ref that currently contains the code. Use `blob/main/...` after a referenced change merges. Update every stale feature-branch link and remove obsolete `unmerged` qualifiers.
 
-Omit an inapplicable interface, migration, or rollout section. Do not omit a section that contains a material decision.
+An unresolved gate makes the ERD a reviewable draft, not a decision-complete implementation input. Do not route it to `$workflow:spec-to-tickets` until every gate is resolved. Metadata `TBD` values and non-blocking Open Questions do not by themselves prevent `Ready` status.
 
-Do not turn a specification into implementation steps. Use `$workflow:writing-plans` for a file-level execution plan and `$workflow:spec-to-tickets` only after the specification is decision-complete.
+Do not turn the ERD into a file-level implementation plan. Use `$workflow:writing-plans` for that purpose.
 
 ## External artifacts
 
-Return the specification in the conversation by default. Write `~/.engineering-workflow/<repo-id>/specs/<topic>/SPEC.md` only when the user explicitly requests a persisted external artifact.
+Return the specification or ERD in the conversation by default. Write `~/.engineering-workflow/<repo-id>/specs/<topic>/SPEC.md` only when the user explicitly requests a persisted external artifact.
 
 The explicit request grants external-artifact authority only for that specification write. Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or deliver the specification in the conversation.
 

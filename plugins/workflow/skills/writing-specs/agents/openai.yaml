@@ -1,7 +1,7 @@
 interface:
-  display_name: "Writing Specs"
-  short_description: "Create decision-complete engineering specifications"
-  default_prompt: "Use $workflow:writing-specs to turn this approved direction into a decision-complete specification."
+  display_name: "Writing Specs / ERDs"
+  short_description: "Create engineering specifications and ERDs"
+  default_prompt: "Use $workflow:writing-specs to create or update this engineering specification or ERD."
 
 policy:
   allow_implicit_invocation: true
