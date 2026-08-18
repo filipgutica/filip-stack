@@ -1,3 +1,16 @@
+# [1.10.0](https://github.com/filipgutica/filip-stack/compare/v1.9.0...v1.10.0) (2026-08-18)
+
+
+### Bug Fixes
+
+* **workflow:** allow authorized walkthrough corrections ([d713805](https://github.com/filipgutica/filip-stack/commit/d7138051850dc87bbe4bbd9d019799d20d65ce7b))
+
+
+### Features
+
+* **workflow:** add interactive walkthrough skill ([b664156](https://github.com/filipgutica/filip-stack/commit/b664156c96d710e1a0f9e6fbf27dea5e58f65683))
+* **workflow:** define topics and ticket backends ([aa206c0](https://github.com/filipgutica/filip-stack/commit/aa206c0b649f1b353ff99274ce7fefaacebf698f))
+
 # [1.9.0](https://github.com/filipgutica/filip-stack/compare/v1.8.0...v1.9.0) (2026-08-10)
 
 
