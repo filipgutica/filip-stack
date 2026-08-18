@@ -26,6 +26,8 @@ Do not add a likely component, interface, behavior, option, or test. Put missing
 
 For a new ERD, use the current date. Use supported facts for Author, Version, and ticket link. Otherwise, write `TBD`. Set Status to `Draft` while any gate is unresolved. Set it to `Ready` only after all blocking gates are resolved and propagated.
 
+When `$workflow:spec-to-tickets` verifies an external parent issue, prepare a metadata link with its system, ID, and URL. Require explicit external-artifact authority for the local source before changing its `Ticket` metadata. Without that authority, return the proposed link in the conversation. Do not require the external parent to link back to the local file.
+
 Link each code pointer to the exact ref that currently contains the code. Use `blob/main/...` after a referenced change merges. Update every stale feature-branch link and remove obsolete `unmerged` qualifiers.
 
 An unresolved gate makes the ERD a reviewable draft, not a decision-complete implementation input. Do not route it to `$workflow:spec-to-tickets` until every gate is resolved. Metadata `TBD` values and non-blocking Open Questions do not by themselves prevent `Ready` status.
@@ -34,8 +36,12 @@ Do not turn the ERD into a file-level implementation plan. Use `$workflow:writin
 
 ## External artifacts
 
-Return the specification or ERD in the conversation by default. Write `~/.engineering-workflow/<repo-id>/specs/<topic>/SPEC.md` only when the user explicitly requests a persisted external artifact.
+Return the specification or ERD in the conversation by default. Persist it only when the user explicitly requests an external artifact.
 
-The explicit request grants external-artifact authority only for that specification write. Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or deliver the specification in the conversation.
+Write the specification under an active topic at `~/.engineering-workflow/<repo-id>/specs/<topic-id>/SPEC.md`. The request grants external-artifact authority only for that write.
+
+Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` or `topics.json` manually. Use the setup utility to validate topics.
+
+If storage or the topic is not configured, use `$workflow:setup` with explicit setup authority. Without that authority, deliver the specification in the conversation.
 
 Read [upstream.md](references/upstream.md) for source pins and local adaptation decisions.

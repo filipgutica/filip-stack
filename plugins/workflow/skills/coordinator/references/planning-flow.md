@@ -23,8 +23,10 @@ flowchart LR
    - Use `$workflow:writing-tickets` when the user requests ticket drafting, creation, changes, or an execution-ready review.
 3. Require ticket-writing authority before ticket creation or changes.
 4. Persist a plan, specification, brainstorm note, or local ticket draft only when the user explicitly requests that named external artifact. That request grants external-artifact authority only for the requested write.
-5. State material assumptions, risks, and open decisions.
-6. End with the requested artifact or discussion. Do not continue into a different artifact type without a user request.
+5. For a persisted topic-scoped artifact under Engineering Workflow storage, use the read-only `topics` command to discover or validate its active topic. A standalone Jira or GitHub issue does not require a topic.
+6. If the topic does not exist, require setup authority before `init-topic`. Artifact authority alone cannot initialize a topic.
+7. State material assumptions, risks, and open decisions.
+8. End with the requested artifact or discussion. Do not continue into a different artifact type without a user request.
 
 ## User-involved branch-ledger planning
 

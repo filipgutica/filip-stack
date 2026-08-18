@@ -14,14 +14,17 @@ Its skills are grouped by purpose:
 - **Implementation and debugging:** `implementation`, `minimal-code`,
   `systematic-debugging`, `using-git-worktrees`, and
   `subagent-driven-development`.
-- **Review and improvement:** `receiving-code-review`, `review-cycle`,
-  `simplification-review`, and `field-guide`.
+- **Review and improvement:** `walkthrough`, `receiving-code-review`,
+  `review-cycle`, `simplification-review`, and `field-guide`.
 - **Coordination and state:** `coordinator`, `branch-task-planner`, and `setup`.
 
 `setup`, `branch-task-planner`, `spec-to-tickets`, `using-git-worktrees`, and
 `subagent-driven-development` are manual-only. They run only when the user
 explicitly requests them or an explicitly authorized coordinator route requires
 them.
+
+`walkthrough` is manual-only. It explains and reviews selected changes without
+granting authority to modify them.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.

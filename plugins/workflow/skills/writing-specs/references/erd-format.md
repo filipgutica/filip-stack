@@ -59,6 +59,8 @@ Do not generate likely options, components, interfaces, behaviors, owners, tests
 
 Use the current date for a new ERD. Preserve supported metadata when editing. Do not infer the author from Git configuration, create an initial version, or derive a ticket from a branch name.
 
+Set `Ticket` to a Markdown link whose label includes the external system and verified parent ID. For example, use `[Jira MA-1234](https://example.atlassian.net/browse/MA-1234)` or `[GitHub #456](https://github.com/example/repository/issues/456)`. Use the verified external parent URL as the target. Write `TBD` until the parent exists and its ID and URL are verified. This link points from the local ERD to the external parent. Do not require the external parent to link back to the local file.
+
 ### Intro
 
 Write one paragraph. State what the ERD covers and what prior ERD or pull request it builds on. State only supported non-goals. Write `Out of scope: TBD` when the source provides none. Use `TBD` for an unavailable prior-artifact link.
