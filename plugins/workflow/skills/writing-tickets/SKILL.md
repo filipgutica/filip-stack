@@ -1,6 +1,6 @@
 ---
 name: writing-tickets
-description: Use when drafting, rewriting, enriching, or reviewing engineering Jira tickets, implementation tickets, backlog items, acceptance criteria, rollout steps, or repository-specific work instructions.
+description: Use when drafting, rewriting, enriching, or reviewing engineering Jira tickets, GitHub issues, implementation tickets, backlog items, acceptance criteria, rollout steps, or repository-specific work instructions.
 ---
 
 # Writing Tickets
@@ -28,14 +28,24 @@ Before drafting implementation steps, verify the current location, behavior, and
 
 Use the tracker hierarchy and relationship types supported by the target project.
 
-- **Epic:** Use one epic for a decision-complete specification or ERD. Reuse its verified epic or draft a new epic when none exists. Link the epic to the source document.
-- **Story:** Put each independently reviewable outcome under the verified parent epic. Do not create an orphan story when its specification or ERD has an epic.
+- **External parent:** Use one tracker-supported parent for a decision-complete specification or ERD. Reuse a verified epic or parent issue. Draft one if none exists. After verification, prepare a metadata link with the system, ID, and URL. Require explicit external-artifact authority for the local source before changing its `Ticket` metadata. Without that authority, return the proposed link in the conversation. Do not require the external parent to link back to the local file.
+- **Story or issue:** Put each independently reviewable outcome under the verified external parent when the tracker supports hierarchy. Do not create an orphan child when its specification or ERD has a parent.
 - **Subtask:** Use a subtask for a bounded part of a complex story when it needs separate ownership, sequencing, or verification. Keep ordinary implementation steps in the parent story.
 - **Relationships:** Link each relevant verified ticket that blocks or is blocked by the current ticket. Also link tickets that precede, follow, supersede, or are superseded by it. Link duplicates and material relations. Use the exact relationship and direction that the tracker supports.
 
 Include each relevant ticket key and verified link in the draft. Verify the project, issue type, parent, and relationship direction before publication. If the correct parent or relationship is unclear, add it to the evidence gap instead of guessing.
 
 Drafting a hierarchy or relationship does not grant authority to change the tracker. Create the parent, assign children, and add ticket links only with explicit publishing authority.
+
+## Local ticket links
+
+This section applies only to canonical local Markdown tickets. For a Jira or GitHub backend, the external issue is canonical. Do not create a mirrored local ticket file or local status.
+
+Keep the stable local filename when a local Markdown ticket maps to external work. Do not add the external ID to the filename.
+
+Store each verified external ID and URL in the `externalLinks` frontmatter from [Engineering Workflow storage](../setup/references/storage.md). Do not add speculative links or external status.
+
+The lifecycle directory remains the authoritative local status. An external link does not grant authority to create, update, or transition external work.
 
 ## Ticket templates
 
@@ -51,12 +61,11 @@ Render every template section as an exact level-two Markdown heading (`## Sectio
 - `## Non-goals` — only likely sources of scope drift.
 - `## Testing` — follow explicit testing constraints. Otherwise, update coverage in proportion to changed behavior and risk.
 
-### Epic
+### External parent
 
-- `## Goal` — state the cross-story outcome from the specification or ERD.
-- `## Source specification` — link the decision-complete source document.
-- `## Stories` — list the verified child stories in dependency order.
-- `## Acceptance criteria` — state the observable outcome that closes the epic.
+- `## Goal` — state the outcome shared by the child tickets.
+- `## Children` — list the verified child tickets in dependency order.
+- `## Acceptance criteria` — state the observable outcome that closes the parent.
 - `## Non-goals` — only likely sources of scope drift.
 
 ### Bug

@@ -20,9 +20,11 @@ Do not design unrequested extensions or begin implementation. Create a concise b
 
 ## External artifacts
 
-Use the established repository identity and storage rules in [Engineering Workflow storage](../setup/references/storage.md). Store a requested note at `~/.engineering-workflow/<repo-id>/specs/<topic>/BRAINSTORM.md`.
+Use the repository identity and rules in [Engineering Workflow storage](../setup/references/storage.md). Store a requested note under an active topic at `~/.engineering-workflow/<repo-id>/specs/<topic-id>/BRAINSTORM.md`.
 
-Do not create or change `config.json` manually. If storage is not configured, use `$workflow:setup` with explicit setup authority or return the note in the conversation.
+Do not create or change `config.json` or `topics.json` manually. Use the setup utility to discover or validate topics.
+
+If storage or the topic is not configured, use `$workflow:setup` with explicit setup authority. Without that authority, return the note in the conversation.
 
 ## Exit criteria
 
