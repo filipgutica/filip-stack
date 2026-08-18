@@ -12,7 +12,9 @@ Help the user understand and review a change through an interactive, evidence-ba
 
 This skill is read-only. Do not edit files, commit, push, publish, or change external state.
 
-Review findings do not grant implementation authority. If the user requests a correction, route it through `$workflow:coordinator`.
+A concern, question, or proposal does not grant implementation authority.
+
+If the user explicitly requests a bounded correction, use the authorized correction cycle below. The implementation cycle runs outside this read-only skill.
 
 ## Select the source
 
@@ -52,6 +54,20 @@ For each slice:
 Adjust the depth when the user asks to skip, expand, or revisit a slice. Keep a conversational coverage list of completed and remaining slices.
 
 If the user raises a concern, verify it against the live code and contract before classifying it. Classify it as valid, invalid, already addressed, out of scope, or blocked by missing evidence.
+
+## Authorized correction cycle
+
+If the user explicitly requests a bounded correction during the walkthrough:
+
+1. Pause the walkthrough.
+2. Record the current slice and coverage state.
+3. Route the correction through `$workflow:coordinator`.
+4. Complete the authorized implementation, verification, and review cycle.
+5. Refresh the selected diff and coverage map.
+6. Revisit each changed or superseded slice.
+7. Resume the walkthrough from the updated evidence.
+
+If the correction expands the agreed scope or changes a public contract, confirm that authority before implementation.
 
 ## Writing rules
 

@@ -72,4 +72,4 @@ When the user challenges a decision:
 4. Classify the concern.
 5. Explain the effect on the remaining walkthrough.
 
-Do not implement a valid finding during the walkthrough. Ask for explicit implementation authority after the review session.
+Do not implement a valid finding inside the read-only walkthrough. If the user explicitly authorizes a correction, pause and use the authorized correction cycle in `SKILL.md`.
