@@ -1,0 +1,7 @@
+interface:
+  display_name: "Walkthrough"
+  short_description: "Review code changes interactively, one verified slice at a time"
+  default_prompt: "Use $workflow:walkthrough to explain and review these changes interactively."
+
+policy:
+  allow_implicit_invocation: false
