@@ -34,9 +34,49 @@ readable guidance and evidence surface. JSON stores identity, lifecycle,
 evidence, and retrieval metadata that Markdown links cannot enforce. The
 utility validates both layers and never replaces malformed state.
 
+After the first submission, `memory.md` contains the indexed canonical record.
+It includes readable guidance and one complete JSON block with evidence,
+pointers, source keys, transitions, and timestamps. `memory.json` is a validated
+machine cache. The utility writes canonical Markdown before it replaces the
+cache. A cache write failure cannot remove the new canonical record. Validation
+reports a stale cache or a changed readable view.
+
 Use `migrate` to preview creation of `memory.json`. Add `--apply` to create the
 empty versioned store. Migration preserves all Markdown indexes, patterns, and
 review records.
+
+## Observation submissions
+
+Use `submit --input <json-file>` after migration. The input must follow
+`schemas/submission-v1.schema.json`. The agent decides whether an observation is
+clear enough to submit. The utility owns all behavior after submission.
+
+The utility normalizes Unicode, case, whitespace, and terminal punctuation for
+exact fingerprints. It never creates two records with the same scope, subject,
+and normalized learning. A repeated source returns `duplicate-evidence`. A new
+independent source reinforces the existing record.
+
+An explicit user preference becomes active immediately. An inferred project
+record becomes active after two independent evidence events. An inferred shared
+record also needs evidence from two repository identities and `generic: true`.
+Confidence is audit metadata. It does not count as evidence.
+
+Evidence pointers use a closed allowlist:
+
+- `conversation`: client, thread ID, one optional message or turn ID, and one optional safe URL.
+- `review`: provider, repository identity, pull-request number, comment ID, and one optional safe URL.
+- `commit`: repository identity and one full lowercase commit hash.
+- `local-artifact`: repository identity, repository-relative path, optional heading, and SHA-256 content digest.
+- `manual`: one short source label.
+
+The utility derives source keys. Inputs cannot set evidence IDs or source keys.
+Manual evidence and conversation evidence without an occurrence ID do not count
+for promotion. URLs must use HTTPS. They cannot contain user information,
+queries, local hosts, or IP hosts. Only review URLs can contain fragments.
+
+Guidance can include one sanitized pattern and one sanitized antipattern. Each
+example must identify its language and contain at most 40 lines. Both examples
+can contain at most 6 KB of UTF-8 text.
 
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.

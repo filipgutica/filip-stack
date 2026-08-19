@@ -47,6 +47,218 @@ const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false })
   return JSON.parse(result.stdout)
 }
 
+const submit = ({ repoRoot, guideRoot, input, expectFailure = false }) => {
+  const inputFile = join(guideRoot, `submission-${Math.random().toString(16).slice(2)}.json`)
+  writeFileSync(inputFile, `${JSON.stringify(input)}\n`)
+  return run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input', inputFile],
+    expectFailure,
+  })
+}
+
+const initializeMemory = ({ repoRoot, guideRoot }) => {
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
+  return paths
+}
+
+const conversationSubmission = ({ learning, turnId, scope = 'project', explicitPreference, generic }) => ({
+  schemaVersion: 1,
+  decision: 'capture',
+  confidence: 'high',
+  scope,
+  subjectKey: 'testing',
+  learning,
+  ...(explicitPreference === undefined ? {} : { explicitPreference }),
+  ...(generic === undefined ? {} : { generic }),
+  evidence: {
+    summary: `The user repeated the testing preference in ${turnId}.`,
+    pointers: [{ kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId }],
+  },
+})
+
+test('submit activates an explicit preference and stores sanitized examples', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-explicit-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/explicit.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({
+    learning: 'Prefer parameter objects for configuration inputs.',
+    turnId: 'turn-1',
+    scope: 'shared',
+    explicitPreference: true,
+  })
+  input.examples = [
+    { kind: 'pattern', language: 'ts', code: 'const load = ({ path }: { path: string }) => path' },
+    { kind: 'antipattern', language: 'ts', code: 'const load = (path: string, retry: boolean) => path' },
+  ]
+
+  const submitted = submit({ repoRoot, guideRoot, input })
+  assert.equal(submitted.result.outcome, 'created')
+  assert.equal(submitted.result.status, 'active')
+  assert.match(submitted.result.evidenceId, /^evidence:v1:/)
+  assert.match(submitted.result.sourceKeys[0], /^source:v1:[0-9a-f]{64}$/)
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance[0].examples.length, 2)
+  const markdown = readFileSync(paths.memoryIndexFile, 'utf8')
+  assert.match(markdown, /Prefer parameter objects/)
+  assert.match(markdown, /The user repeated the testing preference/)
+  assert.match(markdown, /source:v1:/)
+  assert.match(markdown, /explicit-preference/)
+  assert.match(readFileSync(paths.rootIndex, 'utf8'), /\]\(memory\.md\)/)
+  const reinforcement = conversationSubmission({
+    learning: 'Prefer parameter objects for configuration inputs.',
+    turnId: 'turn-2',
+    scope: 'shared',
+  })
+  assert.equal(submit({ repoRoot, guideRoot, input: reinforcement }).result.status, 'active')
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('submit recovers a stale JSON cache from canonical Markdown', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-cache-recovery-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/cache.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'First canonical record.', turnId: 'turn-1' }) })
+  writeFileSync(paths.memoryFile, `${JSON.stringify({ schemaVersion: 1, revision: 0, guidance: [], evidence: [] }, null, 2)}\n`)
+
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Second canonical record.', turnId: 'turn-2' }) })
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance.length, 2)
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('submit deduplicates one event and promotes a project candidate after a second event', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-reinforce-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/reinforce.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const firstInput = conversationSubmission({ learning: 'Verify keyboard behavior.', turnId: 'turn-1' })
+
+  const first = submit({ repoRoot, guideRoot, input: firstInput })
+  assert.equal(first.result.status, 'candidate')
+  assert.equal(first.result.independentEvidenceCount, 1)
+  const duplicate = submit({ repoRoot, guideRoot, input: firstInput })
+  assert.equal(duplicate.result.outcome, 'duplicate-evidence')
+  assert.equal(duplicate.result.independentEvidenceCount, 1)
+
+  const second = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: ' verify   keyboard behavior! ', turnId: 'turn-2' }),
+  })
+  assert.equal(second.result.outcome, 'promoted')
+  assert.equal(second.result.previousStatus, 'candidate')
+  assert.equal(second.result.status, 'active')
+  assert.equal(second.result.independentEvidenceCount, 2)
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance.length, 1)
+  assert.equal(memory.evidence.length, 2)
+})
+
+test('manual evidence deduplicates but does not satisfy promotion thresholds', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-manual-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/manual.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({ learning: 'Keep helpers small.', turnId: 'unused' })
+  input.evidence = { summary: 'A manual local note.', pointers: [{ kind: 'manual', sourceLabel: 'local note one' }] }
+  const first = submit({ repoRoot, guideRoot, input })
+  input.evidence = { summary: 'Another manual local note.', pointers: [{ kind: 'manual', sourceLabel: 'local note two' }] }
+  const second = submit({ repoRoot, guideRoot, input })
+  assert.equal(first.result.independentEvidenceCount, 0)
+  assert.equal(second.result.independentEvidenceCount, 0)
+  assert.equal(second.result.status, 'candidate')
+})
+
+test('shared inferred guidance activates only after evidence from two repositories', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-shared-'))
+  const guideRoot = join(root, 'guide')
+  const firstRepo = createRepo({ parent: root, name: 'first', remote: 'git@github.com:one/shared.git' })
+  const secondRepo = createRepo({ parent: root, name: 'second', remote: 'git@github.com:two/shared.git' })
+  initializeMemory({ repoRoot: firstRepo, guideRoot })
+  run({ command: 'init', repoRoot: secondRepo, guideRoot })
+  const first = submit({
+    repoRoot: firstRepo,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Keep PR descriptions concise.', turnId: 'turn-1', scope: 'shared', generic: true }),
+  })
+  const second = submit({
+    repoRoot: secondRepo,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Keep PR descriptions concise.', turnId: 'turn-2', scope: 'shared' }),
+  })
+  assert.equal(first.result.status, 'candidate')
+  assert.equal(second.result.status, 'active')
+  assert.equal(second.result.promotionReason, 'multi-project-evidence-threshold')
+})
+
+test('exact matching uses canonical Unicode normalization without compatibility folding', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-unicode-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/unicode.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Keep the ﬀ token.', turnId: 'turn-1' }) })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Keep the ff token.', turnId: 'turn-2' }) })
+  assert.equal(JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance.length, 2)
+})
+
+test('submit rejects pointer fields and unsafe pointer values as a whole', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-pointer-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/pointer.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const cases = [
+    [{ kind: 'conversation', client: 'codex', threadId: 'thread', turnId: 'turn', transcript: 'raw' }, /unsupported field: transcript/],
+    [{ kind: 'conversation', client: 'codex', threadId: 'thread', turnId: 'turn', url: 'https://example.com/thread?secret=value' }, /query string/],
+    [{ kind: 'local-artifact', repositoryIdentity: paths.identity, path: '/Users/example/code.ts', contentDigest: `sha256:${'a'.repeat(64)}` }, /repository-relative/],
+  ]
+  for (const [pointer, expected] of cases) {
+    const input = conversationSubmission({ learning: 'Reject unsafe pointers.', turnId: 'turn' })
+    input.evidence.pointers = [pointer]
+    const result = submit({ repoRoot, guideRoot, input, expectFailure: true })
+    assert.match(result.stderr, expected)
+  }
+  assert.deepEqual(JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance, [])
+})
+
+test('submit fails closed when pointers map to different evidence events', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-source-conflict-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/source-conflict.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'First learning.', turnId: 'turn-1' }) })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Second learning.', turnId: 'turn-2' }) })
+  const input = conversationSubmission({ learning: 'Third learning.', turnId: 'unused' })
+  input.evidence.pointers = [
+    { kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId: 'turn-1' },
+    { kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId: 'turn-2' },
+  ]
+  const result = submit({ repoRoot, guideRoot, input, expectFailure: true })
+  assert.match(result.stderr, /conflicting-source-events/)
+})
+
+test('submit refuses concurrent writers without changing memory', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-lock-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/lock.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const before = readFileSync(paths.memoryFile, 'utf8')
+  writeFileSync(paths.memoryLockFile, 'held\n')
+  const result = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Do not race writers.', turnId: 'turn-1' }),
+    expectFailure: true,
+  })
+  assert.match(result.stderr, /locked by another writer/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), before)
+})
+
 test('migrate previews and creates a versioned store without changing legacy reviews', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-migrate-'))
   const repoRoot = createRepo({
@@ -103,7 +315,7 @@ test('validate rejects malformed memory state without replacing it', () => {
   const nested = '{"schemaVersion":1,"revision":0,"guidance":[null],"evidence":[]}\n'
   writeFileSync(paths.memoryFile, nested)
   const nestedResult = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
-  assert.match(nestedResult.stderr, /guidance records are not supported before schema expansion/)
+  assert.match(nestedResult.stderr, /guidance record must be an object/)
   assert.equal(readFileSync(paths.memoryFile, 'utf8'), nested)
 })
 
