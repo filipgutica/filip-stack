@@ -121,6 +121,20 @@ Use `retrieve --evidence-for <guidance-id>` only for an explicit provenance or
 conflict check. Evidence expansion returns at most two whole records and 6 KB.
 The result follows `schemas/retrieval-v1.schema.json`.
 
+## Audit and maintenance
+
+Use `audit` for a manual read-only inspection. It reports validation errors,
+candidates that already meet evidence thresholds, unresolved refinements and
+contradictions, broken local or commit pointers, orphan evidence, and oversized
+records. It does not fetch stored URLs. It does not use record age as an archive
+signal, and it does not change files.
+
+Use `maintain --input <json-file>` for explicit archive maintenance. The input
+follows `schemas/maintenance-v1.schema.json` and names each target ID. Only
+candidate, superseded, or withdrawn records can be archived. The default is a
+dry run. Apply requires the preview token from the same canonical store state.
+Maintenance does not repair malformed state automatically.
+
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
 

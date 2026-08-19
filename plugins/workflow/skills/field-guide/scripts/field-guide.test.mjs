@@ -626,6 +626,107 @@ test('retrieve rejects conflicting normal and evidence modes', () => {
   assert.match(result.stderr, /cannot be combined/)
 })
 
+test('audit is read-only and reports unresolved relationships and broken local pointers', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-audit-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/audit.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const originalInput = conversationSubmission({ learning: 'Keep the old rule.', turnId: 'unused', explicitPreference: true })
+  originalInput.evidence = {
+    summary: 'A local artifact was the preference source.',
+    pointers: [{
+      kind: 'local-artifact',
+      repositoryIdentity: paths.identity,
+      path: 'missing-preference.md',
+      contentDigest: `sha256:${'a'.repeat(64)}`,
+    }],
+  }
+  const original = submit({ repoRoot, guideRoot, input: originalInput }).result
+  const contradictionInput = conversationSubmission({ learning: 'Use the new rule.', turnId: 'turn-2' })
+  contradictionInput.relationship = { kind: 'contradicts', targetId: original.targetId }
+  submit({ repoRoot, guideRoot, input: contradictionInput })
+  const before = {
+    root: readFileSync(paths.rootIndex, 'utf8'),
+    markdown: readFileSync(paths.memoryIndexFile, 'utf8'),
+    json: readFileSync(paths.memoryFile, 'utf8'),
+  }
+
+  const result = run({ command: 'audit', repoRoot, guideRoot }).result
+  assert.equal(result.mode, 'audit')
+  assert.equal(result.unresolvedRelationships.length, 1)
+  assert.deepEqual(result.brokenPointers.map(({ problem }) => problem), ['missing-local-artifact'])
+  assert.equal(readFileSync(paths.rootIndex, 'utf8'), before.root)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), before.markdown)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), before.json)
+})
+
+test('maintain previews archive without writes and requires its current token to apply', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-maintain-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/maintain.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const candidate = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Archive this candidate.', turnId: 'turn-1' }),
+  }).result
+  const active = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Keep this active.', turnId: 'turn-2', explicitPreference: true }),
+  }).result
+  const input = {
+    schemaVersion: 1,
+    action: 'archive',
+    targetIds: [candidate.targetId],
+    reason: 'The user approved archival after audit.',
+  }
+  const before = readFileSync(paths.memoryIndexFile, 'utf8')
+  const preview = runInputCommand({ command: 'maintain', repoRoot, guideRoot, input }).result
+  assert.equal(preview.applied, false)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), before)
+  const activeResult = runInputCommand({
+    command: 'maintain',
+    repoRoot,
+    guideRoot,
+    input: { ...input, targetIds: [active.targetId] },
+    expectFailure: true,
+  })
+  assert.match(activeResult.stderr, /archive requires an inactive target/)
+  const stale = runInputCommand({
+    command: 'maintain',
+    repoRoot,
+    guideRoot,
+    input: { ...input, apply: true, previewToken: 'maintenance-preview:v1:stale' },
+    expectFailure: true,
+  })
+  assert.match(stale.stderr, /current dry-run previewToken/)
+  const changedReason = runInputCommand({
+    command: 'maintain',
+    repoRoot,
+    guideRoot,
+    input: {
+      ...input,
+      reason: 'A different immutable reason.',
+      apply: true,
+      previewToken: preview.previewToken,
+    },
+    expectFailure: true,
+  })
+  assert.match(changedReason.stderr, /current dry-run previewToken/)
+  const applied = runInputCommand({
+    command: 'maintain',
+    repoRoot,
+    guideRoot,
+    input: { ...input, apply: true, previewToken: preview.previewToken },
+  }).result
+  assert.equal(applied.applied, true)
+  assert.equal(
+    JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance.find(({ id }) => id === candidate.targetId).status,
+    'archived',
+  )
+})
+
 test('migrate previews and creates a versioned store without changing legacy reviews', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-migrate-'))
   const repoRoot = createRepo({

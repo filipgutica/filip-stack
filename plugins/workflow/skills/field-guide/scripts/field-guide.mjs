@@ -35,7 +35,7 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['delete', 'init', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
+const commands = new Set(['audit', 'delete', 'init', 'maintain', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -68,7 +68,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <delete|init|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
+    fail('Usage: field-guide.mjs <audit|delete|init|maintain|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -479,7 +479,6 @@ const validateMemory = (memory) => {
         'candidate->archived',
         'active->superseded',
         'active->withdrawn',
-        'active->archived',
         'superseded->archived',
         'withdrawn->archived',
       ])
@@ -1252,6 +1251,184 @@ const retrieve = ({ paths, subjectKey, query, evidenceFor }) => {
     : retrieveGuidance({ memory, paths, subjectKey, query })
 }
 
+const pointerProblem = ({ pointer, paths }) => {
+  if (pointer.kind === 'commit' && pointer.repositoryIdentity === paths.identity) {
+    const resolved = git({
+      repoRoot: paths.repositoryRoot,
+      args: ['rev-parse', '--verify', `${pointer.commit}^{commit}`],
+      optional: true,
+    })
+    if (resolved !== pointer.commit) return 'unknown-commit'
+  }
+  if (pointer.kind === 'local-artifact' && pointer.repositoryIdentity === paths.identity) {
+    const artifactPath = resolve(paths.repositoryRoot, pointer.path)
+    if (!existsSync(artifactPath)) return 'missing-local-artifact'
+    let digest
+    try {
+      digest = `sha256:${createHash('sha256').update(readFileSync(artifactPath)).digest('hex')}`
+    } catch {
+      return 'unreadable-local-artifact'
+    }
+    if (digest !== pointer.contentDigest) return 'local-artifact-digest-mismatch'
+  }
+  return null
+}
+
+const audit = (paths) => {
+  const validationErrors = []
+  try {
+    validate(paths)
+  } catch (error) {
+    validationErrors.push(error.message)
+  }
+  let memory
+  try {
+    memory = readMemory(paths) ?? emptyMemory()
+  } catch (error) {
+    return {
+      mode: 'audit',
+      validationErrors: [...validationErrors, error.message],
+      staleCandidates: [],
+      unresolvedRelationships: [],
+      brokenPointers: [],
+      duplicateCandidates: [],
+      orphanEvidence: [],
+      oversizedRecords: [],
+      recommendations: ['Repair malformed canonical state before other maintenance.'],
+    }
+  }
+  const staleCandidates = memory.guidance
+    .filter((guidance) => guidance.status === 'candidate')
+    .filter((guidance) => (
+      (guidance.scope.kind === 'project' && evidenceCountFor({ guidance, memory }) >= 2)
+        || (guidance.scope.kind === 'shared'
+          && guidance.generic === true
+          && repositoryCountFor({ guidance, memory }) >= 2)
+    ))
+    .map(({ id }) => id)
+  const unresolvedRelationships = memory.guidance
+    .filter((guidance) => (
+      guidance.status === 'candidate'
+        && ['refines', 'contradicts'].includes(guidance.relationship?.kind)
+    ))
+    .map(({ id, relationship }) => ({ id, ...relationship }))
+  const brokenPointers = memory.evidence.flatMap((evidence) => (
+    evidence.pointers.flatMap((pointer, pointerIndex) => {
+      const problem = pointerProblem({ pointer, paths })
+      return problem ? [{ evidenceId: evidence.id, pointerIndex, problem }] : []
+    })
+  ))
+  const duplicateCandidates = []
+  const referencedEvidence = new Set(memory.guidance.flatMap(({ evidenceIds }) => evidenceIds))
+  const orphanEvidence = memory.evidence
+    .filter(({ id }) => !referencedEvidence.has(id))
+    .map(({ id }) => id)
+  const oversizedRecords = [
+    ...memory.guidance
+      .filter((record) => byteLength(JSON.stringify(record)) > 6144)
+      .map(({ id }) => ({ kind: 'guidance', id })),
+    ...memory.evidence
+      .filter((record) => byteLength(JSON.stringify(record)) > 6144)
+      .map(({ id }) => ({ kind: 'evidence', id })),
+  ]
+  const recommendations = []
+  if (validationErrors.length > 0) recommendations.push('Repair index or cache validation errors.')
+  if (staleCandidates.length > 0) recommendations.push('Review candidates that already meet promotion evidence thresholds.')
+  if (unresolvedRelationships.length > 0) recommendations.push('Confirm or reject unresolved refinements and contradictions.')
+  if (brokenPointers.length > 0) recommendations.push('Review broken local or commit pointers. Do not fetch stored URLs automatically.')
+  if (orphanEvidence.length > 0) recommendations.push('Remove orphan evidence only through an approved maintenance apply.')
+  if (oversizedRecords.length > 0) recommendations.push('Reduce oversized records without truncating them during retrieval.')
+  return {
+    mode: 'audit',
+    validationErrors,
+    staleCandidates,
+    unresolvedRelationships,
+    brokenPointers,
+    duplicateCandidates,
+    orphanEvidence,
+    oversizedRecords,
+    recommendations,
+  }
+}
+
+const validateMaintenanceInput = (input) => {
+  assertObject({ value: input, label: 'maintenance input' })
+  assertClosedFields({
+    value: input,
+    fields: ['schemaVersion', 'action', 'targetIds', 'reason', 'apply', 'previewToken'],
+    label: 'maintenance input',
+  })
+  if (input.schemaVersion !== 1) fail('maintenance schemaVersion must be 1')
+  if (input.action !== 'archive') fail('maintenance action must be archive')
+  if (!Array.isArray(input.targetIds)
+    || input.targetIds.length === 0
+    || new Set(input.targetIds).size !== input.targetIds.length
+    || input.targetIds.some((id) => !guidanceIdPattern.test(id))) {
+    fail('maintenance targetIds must be a non-empty unique guidance ID array')
+  }
+  requireString({ value: input.reason, label: 'maintenance reason', maxBytes: 512 })
+  if (input.apply !== undefined && typeof input.apply !== 'boolean') fail('maintenance apply must be boolean')
+  if (input.previewToken !== undefined) {
+    requireString({ value: input.previewToken, label: 'maintenance previewToken', maxBytes: 128, noWhitespace: true })
+  }
+  return input
+}
+
+const maintenancePreviewToken = ({ memory, input }) => (
+  hashIdentity({
+    prefix: 'maintenance-preview',
+    values: [1, input.action, input.targetIds, input.reason, createHash('sha256').update(JSON.stringify(memory)).digest('hex')],
+  })
+)
+
+const maintainUnlocked = ({ paths, inputPath }) => {
+  validate(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  const input = validateMaintenanceInput(readJsonInput(inputPath))
+  const targets = input.targetIds.map((id) => {
+    const target = memory.guidance.find((guidance) => guidance.id === id)
+    if (!target) fail(`maintenance target does not exist: ${id}`)
+    if (!['candidate', 'superseded', 'withdrawn'].includes(target.status)) {
+      fail(`archive requires an inactive target: ${id}`)
+    }
+    return target
+  })
+  const previewToken = maintenancePreviewToken({ memory, input })
+  if (input.apply !== true) {
+    return {
+      outcome: 'maintenance-preview',
+      action: input.action,
+      targetIds: input.targetIds,
+      previewToken,
+      applied: false,
+    }
+  }
+  if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
+  const now = new Date().toISOString()
+  for (const target of targets) {
+    appendTransition({
+      guidance: target,
+      to: 'archived',
+      reason: input.reason,
+      source: 'maintenance',
+      now,
+    })
+  }
+  const nextMemory = { ...memory, revision: memory.revision + 1 }
+  writeMemoryViews({ paths, memory: nextMemory })
+  return {
+    outcome: 'maintained',
+    action: input.action,
+    targetIds: input.targetIds,
+    applied: true,
+  }
+}
+
+const maintain = ({ paths, inputPath }) => (
+  withMemoryLock({ paths, action: () => maintainUnlocked({ paths, inputPath }) })
+)
+
 const initialize = (paths) => {
   mkdirSync(paths.sharedRoot, { recursive: true })
   mkdirSync(paths.reviewsRoot, { recursive: true })
@@ -1525,8 +1702,10 @@ const main = () => {
 
   let migration
   let result
+  if (command === 'audit') result = audit(paths)
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
+  if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
   if (command === 'migrate') migration = migrate({ paths, apply: options.apply === true })
   if (command === 'retrieve') result = retrieve({
     paths,
