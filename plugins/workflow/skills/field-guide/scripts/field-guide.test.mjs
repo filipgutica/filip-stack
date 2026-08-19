@@ -2,6 +2,7 @@ import { execFileSync, spawnSync } from 'node:child_process'
 import {
   appendFileSync,
   existsSync,
+  mkdirSync,
   mkdtempSync,
   readFileSync,
   writeFileSync,
@@ -71,6 +72,24 @@ test('init creates an indexed guide and preserves existing content', () => {
 
   const resolved = run({ command: 'paths', repoRoot, guideRoot })
   assert.equal(resolved.projectRoot, paths.projectRoot)
+})
+
+test('validate ignores optional Obsidian vault metadata', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-obsidian-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/obsidian-repo.git',
+  })
+  const guideRoot = join(root, 'guide')
+  run({ command: 'init', repoRoot, guideRoot })
+
+  const obsidianRoot = join(guideRoot, '.obsidian')
+  mkdirSync(join(obsidianRoot, 'plugins', 'audit-view'), { recursive: true })
+  writeFileSync(join(obsidianRoot, 'workspace.json'), '{}\n')
+  writeFileSync(join(obsidianRoot, 'plugins', 'audit-view', 'README.md'), '# Client metadata\n')
+
+  run({ command: 'validate', repoRoot, guideRoot })
 })
 
 test('worktrees with the same origin resolve to one project guide', () => {

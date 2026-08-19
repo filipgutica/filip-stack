@@ -150,6 +150,21 @@ New local tickets start in `todo/`. Ticket creation, linking, transition, reasso
 
 ## Compatibility
 
+### Obsidian audit view
+
+You can open `~/.engineering-workflow` or one `<repo-id>` directory as an
+Obsidian vault. The `.obsidian/` directory at either storage root contains
+optional client settings. Workflow commands ignore and preserve that directory.
+
+Treat `.obsidian/` as disposable client state. Do not store topics, ticket
+status, specifications, plans, ledgers, schemas, or agent instructions there.
+Workflow commands must work without Obsidian and must not read `.obsidian/` as
+artifact context.
+
+Do not create a vault inside a topic, ticket lifecycle, branch, or worktree
+directory. Those directories have narrower ownership contracts. Exclude
+`worktrees/` from Obsidian indexing when the selected vault contains it.
+
 Do not move existing specs or tickets automatically. Topic listing reports topic directories that do not have registry entries.
 
 Topic initialization can adopt an existing specs directory without changing its files. It can adopt tickets only when they already follow the lifecycle and filename contracts.

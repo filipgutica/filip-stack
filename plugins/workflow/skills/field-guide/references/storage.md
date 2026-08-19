@@ -10,6 +10,7 @@ Use these terms:
 
 ```text
 ~/.field-guide/
+├── .obsidian/          # Optional client-owned vault settings
 ├── init.md
 ├── shared/
 └── projects/
@@ -26,6 +27,21 @@ Every Markdown file below the guide root must be reachable from the nearest inde
 - Root `init.md` links each shared topic and project `init.md`, with a one-line description.
 - Project `init.md` links `patterns.md` and every review record, with a one-line description.
 - Keep indexes concise. Do not copy the linked file contents into the index.
+
+The optional `.obsidian/` directory is not part of the index contract. Field-guide
+commands ignore all files below it.
+
+## Obsidian compatibility
+
+You can open `~/.field-guide` as an Obsidian vault for read-only inspection and
+manual audits. Obsidian stores vault settings under `.obsidian/`.
+
+Treat `.obsidian/` as disposable client state. Do not store guidance, evidence,
+schemas, or agent instructions there. Field-guide commands must work without
+Obsidian and must not read `.obsidian/` during guidance retrieval.
+
+Obsidian links, plugins, properties, and views are optional. They must not define
+field-guide identity, lifecycle, validation, or retrieval behavior.
 
 ## Review record
 

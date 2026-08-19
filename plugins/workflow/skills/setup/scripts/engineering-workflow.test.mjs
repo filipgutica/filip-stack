@@ -153,6 +153,61 @@ test('init creates external directories, reuses matching configuration, and reje
   assert.equal(readFileSync(paths.configFile, 'utf8'), configured)
 })
 
+test('workflow commands preserve optional Obsidian metadata at storage roots', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-obsidian-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  const paths = initializeWorkflow({ repoRoot, workflowRoot })
+  const sharedVaultConfig = join(workflowRoot, '.obsidian', 'workspace.json')
+  const projectVaultConfig = join(paths.projectRoot, '.obsidian', 'workspace.json')
+  mkdirSync(join(workflowRoot, '.obsidian'), { recursive: true })
+  mkdirSync(join(paths.projectRoot, '.obsidian'), { recursive: true })
+  writeFileSync(sharedVaultConfig, '{"scope":"shared"}\n')
+  writeFileSync(projectVaultConfig, '{"scope":"project"}\n')
+
+  run({
+    command: 'init-topic',
+    args: [
+      '--repo-root', repoRoot,
+      '--workflow-root', workflowRoot,
+      '--topic-id', 'obsidian-audit',
+      '--title', 'Obsidian audit',
+    ],
+  })
+  run({
+    command: 'topics',
+    args: ['--repo-root', repoRoot, '--workflow-root', workflowRoot],
+  })
+
+  assert.equal(readFileSync(sharedVaultConfig, 'utf8'), '{"scope":"shared"}\n')
+  assert.equal(readFileSync(projectVaultConfig, 'utf8'), '{"scope":"project"}\n')
+})
+
+test('init-topic rejects Obsidian metadata inside a ticket topic', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-ticket-vault-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  const paths = initializeWorkflow({ repoRoot, workflowRoot })
+  const ticketVaultRoot = join(paths.ticketsRoot, 'topic-one', '.obsidian')
+  mkdirSync(ticketVaultRoot, { recursive: true })
+  writeFileSync(join(ticketVaultRoot, 'workspace.json'), '{}\n')
+
+  const result = runRaw({
+    command: 'init-topic',
+    args: [
+      '--repo-root', repoRoot,
+      '--workflow-root', workflowRoot,
+      '--topic-id', 'topic-one',
+      '--title', 'Topic one',
+    ],
+  })
+
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /unexpected ticket topic entry \.obsidian/)
+  assert.equal(existsSync(paths.topicsFile), false)
+  assert.equal(readFileSync(join(ticketVaultRoot, 'workspace.json'), 'utf8'), '{}\n')
+})
+
 test('init accepts github and rejects unsupported ticket backends', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-github-backend-'))
   const repoRoot = createRepo({ parent: root })
