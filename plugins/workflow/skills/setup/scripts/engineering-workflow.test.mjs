@@ -33,7 +33,7 @@ const run = ({ command, args = [], expectStatus = 0 }) => {
   return JSON.parse(result.stdout)
 }
 
-test('paths resolves external project, ledger, and worktree locations', () => {
+test('paths resolves external project and ledger locations without worktree storage', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-paths-'))
   const repoRoot = createRepo({ parent: root })
   const workflowRoot = join(root, 'workflow')
@@ -46,7 +46,8 @@ test('paths resolves external project, ledger, and worktree locations', () => {
   assert.equal(paths.branch, 'feat/example')
   assert.match(paths.branchId, /^feat-example-[0-9a-f]{8}$/)
   assert.equal(paths.ledgerFile, join(paths.workflowRoot, paths.repositoryId, 'branches', paths.branchId, 'TASKS.md'))
-  assert.equal(paths.worktreeRoot, join(paths.workflowRoot, paths.repositoryId, 'worktrees', paths.branchId))
+  assert.equal('worktreesRoot' in paths, false)
+  assert.equal('worktreeRoot' in paths, false)
   assert.equal(existsSync(workflowRoot), false)
 })
 
@@ -104,7 +105,7 @@ test('init creates external directories, reuses matching configuration, and reje
   assert.ok(existsSync(paths.specsRoot))
   assert.ok(existsSync(paths.ticketsRoot))
   assert.ok(existsSync(paths.branchesRoot))
-  assert.ok(existsSync(paths.worktreesRoot))
+  assert.equal(existsSync(join(paths.projectRoot, 'worktrees')), false)
   const configured = readFileSync(paths.configFile, 'utf8')
 
   run({ command: 'init', args })
@@ -151,6 +152,61 @@ test('init creates external directories, reuses matching configuration, and reje
   assert.equal(baseUrlConflict.status, 1)
   assert.match(baseUrlConflict.stderr, /external ticket system conflicts with the existing project configuration/)
   assert.equal(readFileSync(paths.configFile, 'utf8'), configured)
+})
+
+test('workflow commands preserve optional Obsidian metadata at storage roots', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-obsidian-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  const paths = initializeWorkflow({ repoRoot, workflowRoot })
+  const sharedVaultConfig = join(workflowRoot, '.obsidian', 'workspace.json')
+  const projectVaultConfig = join(paths.projectRoot, '.obsidian', 'workspace.json')
+  mkdirSync(join(workflowRoot, '.obsidian'), { recursive: true })
+  mkdirSync(join(paths.projectRoot, '.obsidian'), { recursive: true })
+  writeFileSync(sharedVaultConfig, '{"scope":"shared"}\n')
+  writeFileSync(projectVaultConfig, '{"scope":"project"}\n')
+
+  run({
+    command: 'init-topic',
+    args: [
+      '--repo-root', repoRoot,
+      '--workflow-root', workflowRoot,
+      '--topic-id', 'obsidian-audit',
+      '--title', 'Obsidian audit',
+    ],
+  })
+  run({
+    command: 'topics',
+    args: ['--repo-root', repoRoot, '--workflow-root', workflowRoot],
+  })
+
+  assert.equal(readFileSync(sharedVaultConfig, 'utf8'), '{"scope":"shared"}\n')
+  assert.equal(readFileSync(projectVaultConfig, 'utf8'), '{"scope":"project"}\n')
+})
+
+test('init-topic rejects Obsidian metadata inside a ticket topic', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-ticket-vault-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  const paths = initializeWorkflow({ repoRoot, workflowRoot })
+  const ticketVaultRoot = join(paths.ticketsRoot, 'topic-one', '.obsidian')
+  mkdirSync(ticketVaultRoot, { recursive: true })
+  writeFileSync(join(ticketVaultRoot, 'workspace.json'), '{}\n')
+
+  const result = runRaw({
+    command: 'init-topic',
+    args: [
+      '--repo-root', repoRoot,
+      '--workflow-root', workflowRoot,
+      '--topic-id', 'topic-one',
+      '--title', 'Topic one',
+    ],
+  })
+
+  assert.equal(result.status, 1)
+  assert.match(result.stderr, /unexpected ticket topic entry \.obsidian/)
+  assert.equal(existsSync(paths.topicsFile), false)
+  assert.equal(readFileSync(join(ticketVaultRoot, 'workspace.json'), 'utf8'), '{}\n')
 })
 
 test('init accepts github and rejects unsupported ticket backends', () => {
@@ -282,7 +338,14 @@ test('init validates project ownership before creating artifact directories', ()
   assert.equal(existsSync(paths.specsRoot), false)
   assert.equal(existsSync(paths.ticketsRoot), false)
   assert.equal(existsSync(paths.branchesRoot), false)
-  assert.equal(existsSync(paths.worktreesRoot), false)
+  assert.equal(existsSync(join(paths.projectRoot, 'worktrees')), false)
+})
+
+test('worktree fallback stays under the user code directory', () => {
+  const skill = readFileSync(new URL('../../using-git-worktrees/SKILL.md', import.meta.url), 'utf8')
+
+  assert.match(skill, /~\/code\/worktrees\/<project>\/<worktree-name>\//)
+  assert.doesNotMatch(skill, /\.engineering-workflow\/<repo-id>\/worktrees/)
 })
 
 test('configure-ticket-system adds one idempotent project association and rejects conflicts', () => {

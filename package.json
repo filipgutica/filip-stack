@@ -12,12 +12,13 @@
     "stamp-version": "node scripts/stamp-version.mjs",
     "test:engineering-workflow": "node --test plugins/workflow/skills/setup/scripts/engineering-workflow.test.mjs",
     "test:field-guide": "node --test plugins/workflow/skills/field-guide/scripts/field-guide.test.mjs",
+    "test:field-guide-contract": "node plugins/workflow/skills/field-guide/scripts/validate-contract.mjs",
     "test:pr-descriptions": "node plugins/workflow/skills/writing-pr-descriptions/scripts/validate-contract.mjs",
     "test:walkthrough": "node plugins/workflow/skills/walkthrough/scripts/validate-contract.mjs",
     "test:writing-specs": "node plugins/workflow/skills/writing-specs/scripts/validate-contract.mjs",
     "test:writing-tickets": "node plugins/workflow/skills/writing-tickets/scripts/validate-contract.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "check": "pnpm test:engineering-workflow && pnpm test:field-guide && pnpm test:pr-descriptions && pnpm test:walkthrough && pnpm test:writing-specs && pnpm test:writing-tickets && pnpm validate-plugins"
+    "check": "pnpm test:engineering-workflow && pnpm test:field-guide && pnpm test:field-guide-contract && pnpm test:pr-descriptions && pnpm test:walkthrough && pnpm test:writing-specs && pnpm test:writing-tickets && pnpm validate-plugins"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -25,6 +26,7 @@
     "@semantic-release/changelog": "^6.0.3",
     "@semantic-release/exec": "^6.0.3",
     "@semantic-release/git": "^10.0.1",
+    "ajv": "^8.18.0",
     "lefthook": "^1.11.13",
     "semantic-release": "^24.2.5"
   }

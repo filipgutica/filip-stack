@@ -1,0 +1,218 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/workflow/field-guide/memory-v1.schema.json",
+  "title": "Field-guide memory store version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "revision", "guidance", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "guidance": { "type": "array", "items": { "$ref": "#/$defs/guidance" } },
+    "evidence": { "type": "array", "items": { "$ref": "#/$defs/evidence" } }
+  },
+  "$defs": {
+    "opaqueId": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^\\S+$",
+      "allOf": [{ "$ref": "#/$defs/safeText" }]
+    },
+    "safeText": {
+      "type": "string",
+      "not": {
+        "anyOf": [
+          { "pattern": "/(?:Users|home)/[^/\\s]+/" },
+          { "pattern": "[A-Za-z]:\\\\Users\\\\[^\\\\\\s]+\\\\" },
+          { "pattern": "[Hh][Tt][Tt][Pp][Ss]://[^\\s?]+\\?" },
+          { "pattern": "%[0-9A-Fa-f]{2}" },
+          { "pattern": "-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----" },
+          { "pattern": "(?:github_pat_|gh[pousr]_|AKIA)[A-Za-z0-9_]{12,}" },
+          { "pattern": "sk-[A-Za-z0-9_-]{20,}" },
+          { "pattern": "(?:[Pp][Aa][Ss][Ss][Ww][Oo][Rr][Dd]|[Pp][Aa][Ss][Ss][Ww][Dd]|[Aa][Cc][Cc][Ee][Ss][Ss][_-]?[Tt][Oo][Kk][Ee][Nn]|[Aa][Pp][Ii][_-]?[Kk][Ee][Yy]|[Cc][Ll][Ii][Ee][Nn][Tt][_-]?[Ss][Ee][Cc][Rr][Ee][Tt])\\s*[:=]\\s*[^\\s,;]+" },
+          { "pattern": "^(?:[Uu][Ss][Ee][Rr]|[Aa][Ss][Ss][Ii][Ss][Tt][Aa][Nn][Tt]|[Ss][Yy][Ss][Tt][Ee][Mm]):\\s+" },
+          { "pattern": "<(?:[Uu][Ss][Ee][Rr]|[Aa][Ss][Ss][Ii][Ss][Tt][Aa][Nn][Tt]|[Ss][Yy][Ss][Tt][Ee][Mm])>|[Bb][Ee][Gg][Ii][Nn] (?:[Rr][Aa][Ww] )?[Pp][Rr][Oo][Mm][Pp][Tt]" }
+        ]
+      }
+    },
+    "conversationUrl": {
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]://(?![^/?#]*@)(?!localhost(?:[:/]|$))(?![^/?#]*\\.local(?:[:/]|$))(?!\\[?[0-9A-Fa-f:.]+\\]?(?:[:/]|$))[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?::[0-9]{1,5})?(?:/[^%?#]*)?$"
+    },
+    "reviewUrl": {
+      "type": "string",
+      "maxLength": 2048,
+      "pattern": "^[Hh][Tt][Tt][Pp][Ss]://(?![^/?#]*@)(?!localhost(?:[:/]|$))(?![^/?#]*\\.local(?:[:/]|$))(?!\\[?[0-9A-Fa-f:.]+\\]?(?:[:/]|$))[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?(?:\\.[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?)+(?::[0-9]{1,5})?(?:/[^%?#]*)?(?:#[^%?]*)?$"
+    },
+    "scope": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind"],
+          "properties": { "kind": { "const": "shared" } }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["kind", "repositoryIdentity"],
+          "properties": {
+            "kind": { "const": "project" },
+            "repositoryIdentity": { "$ref": "#/$defs/opaqueId", "maxLength": 1024 }
+          }
+        }
+      ]
+    },
+    "relationship": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "targetId"],
+      "properties": {
+        "kind": { "enum": ["reinforces", "refines", "contradicts"] },
+        "targetId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" }
+      }
+    },
+    "example": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "language", "code"],
+      "properties": {
+        "kind": { "enum": ["pattern", "antipattern"] },
+        "language": { "$ref": "#/$defs/opaqueId", "maxLength": 64 },
+        "code": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 6144 }
+      }
+    },
+    "transition": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["from", "to", "reason", "source", "at"],
+      "properties": {
+        "from": { "type": ["string", "null"], "enum": [null, "candidate", "active", "superseded", "withdrawn", "archived"] },
+        "to": { "enum": ["candidate", "active", "superseded", "withdrawn", "archived"] },
+        "reason": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 512 },
+        "source": { "$ref": "#/$defs/opaqueId", "maxLength": 128 },
+        "at": { "type": "string", "format": "date-time" },
+        "replacementId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" }
+      }
+    },
+    "guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "fingerprint", "scope", "subjectKey", "learning", "status", "confidence", "examples", "evidenceIds", "independentEvidenceCount", "transitions", "createdAt", "updatedAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+        "fingerprint": { "type": "string", "pattern": "^fingerprint:v1:[0-9a-f]{64}$" },
+        "scope": { "$ref": "#/$defs/scope" },
+        "subjectKey": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "linkedSubjects": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "learning": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 4096 },
+        "status": { "enum": ["candidate", "active", "superseded", "withdrawn", "archived"] },
+        "confidence": { "enum": ["low", "medium", "high"] },
+        "generic": { "type": "boolean" },
+        "relationship": { "$ref": "#/$defs/relationship" },
+        "examples": { "type": "array", "maxItems": 2, "items": { "$ref": "#/$defs/example" } },
+        "evidenceIds": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^evidence:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" } },
+        "independentEvidenceCount": { "type": "integer", "minimum": 0 },
+        "transitions": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/transition" } },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" }
+      }
+    },
+    "pointer": {
+      "oneOf": [
+        { "$ref": "#/$defs/conversationPointer" },
+        { "$ref": "#/$defs/reviewPointer" },
+        { "$ref": "#/$defs/commitPointer" },
+        { "$ref": "#/$defs/localArtifactPointer" },
+        { "$ref": "#/$defs/manualPointer" }
+      ]
+    },
+    "conversationPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "client", "threadId"],
+      "properties": {
+        "kind": { "const": "conversation" },
+        "client": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "threadId": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "messageId": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "turnId": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "url": { "$ref": "#/$defs/conversationUrl" }
+      },
+      "not": { "required": ["messageId", "turnId"] }
+    },
+    "reviewPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "provider", "repositoryIdentity", "pullRequestNumber", "commentId"],
+      "properties": {
+        "kind": { "const": "review" },
+        "provider": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "repositoryIdentity": { "$ref": "#/$defs/opaqueId", "maxLength": 1024 },
+        "pullRequestNumber": { "type": "integer", "minimum": 1 },
+        "commentId": { "$ref": "#/$defs/opaqueId", "maxLength": 256 },
+        "url": { "$ref": "#/$defs/reviewUrl" }
+      }
+    },
+    "commitPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "repositoryIdentity", "commit"],
+      "properties": {
+        "kind": { "const": "commit" },
+        "repositoryIdentity": { "$ref": "#/$defs/opaqueId", "maxLength": 1024 },
+        "commit": { "type": "string", "pattern": "^[0-9a-f]{40}$" }
+      }
+    },
+    "localArtifactPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "repositoryIdentity", "path", "contentDigest"],
+      "properties": {
+        "kind": { "const": "local-artifact" },
+        "repositoryIdentity": { "$ref": "#/$defs/opaqueId", "maxLength": 1024 },
+        "path": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 1024,
+          "pattern": "^(?!/)(?![A-Za-z]:[\\\\/])[\\s\\S]+$",
+          "allOf": [
+            { "$ref": "#/$defs/safeText" },
+            { "not": { "pattern": "(?:^|/)\\.\\.(?:/|$)" } }
+          ]
+        },
+        "heading": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 256 },
+        "contentDigest": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+      }
+    },
+    "manualPointer": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["kind", "sourceLabel"],
+      "properties": {
+        "kind": { "const": "manual" },
+        "sourceLabel": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 512 }
+      }
+    },
+    "evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "summary", "pointers", "sourceKeys", "countsForPromotion", "createdAt"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^evidence:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$" },
+        "summary": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 512 },
+        "pointers": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/pointer" } },
+        "sourceKeys": { "type": "array", "uniqueItems": true, "items": { "type": "string", "pattern": "^source:v1:[0-9a-f]{64}$" } },
+        "countsForPromotion": { "type": "boolean" },
+        "repositoryIdentity": { "$ref": "#/$defs/opaqueId", "maxLength": 1024 },
+        "createdAt": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

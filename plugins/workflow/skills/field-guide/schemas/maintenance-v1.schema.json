@@ -1,0 +1,47 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/workflow/field-guide/maintenance-v1.schema.json",
+  "title": "Field-guide maintenance input version 1",
+  "oneOf": [
+    {
+      "$ref": "#/$defs/common",
+      "required": ["targetIds"],
+      "properties": {
+        "action": { "const": "archive" },
+        "targetIds": {
+          "type": "array",
+          "minItems": 1,
+          "uniqueItems": true,
+          "items": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" }
+        }
+      }
+    },
+    {
+      "$ref": "#/$defs/common",
+      "properties": { "action": { "const": "repair-cache" } },
+      "not": { "required": ["targetIds"] }
+    }
+  ],
+  "$defs": {
+    "common": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "action", "reason"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "action": { "enum": ["archive", "repair-cache"] },
+        "targetIds": { "type": "array" },
+        "reason": { "$ref": "memory-v1.schema.json#/$defs/safeText", "minLength": 1, "maxLength": 512 },
+        "apply": { "type": "boolean" },
+        "previewToken": { "type": "string", "pattern": "^maintenance-preview:v1:[0-9a-f]{64}$" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "apply": { "const": true } }, "required": ["apply"] },
+          "then": { "required": ["previewToken"] },
+          "else": { "not": { "required": ["previewToken"] } }
+        }
+      ]
+    }
+  }
+}

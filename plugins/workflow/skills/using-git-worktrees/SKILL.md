@@ -14,13 +14,16 @@ Inspect worktree state without authority. Require explicit worktree authority be
 2. If the current checkout is a linked worktree and not a submodule, reuse it.
 3. Use a host-native worktree tool when it exists and owns workspace lifecycle.
 4. Otherwise, inspect existing repository and user worktree conventions.
-5. When no convention exists, use the fallback from `$workflow:setup`:
-   `~/.engineering-workflow/<repo-id>/worktrees/<branch-id>/`. Consume the
-   returned IDs instead of reconstructing their slugs or stable hashes.
+5. When no convention exists, use
+   `~/code/worktrees/<project>/<worktree-name>/`. Use the repository root name
+   for `<project>`. Choose a concise, unique `<worktree-name>` from the target
+   branch, normally its final path component. Create the `<project>` parent only
+   as part of an authorized worktree-creation operation.
 6. Resolve and validate the exact target before `git worktree add`.
 7. Confirm the branch and clean baseline after creation.
 
-Do not create repo-local `.worktrees` or `worktrees` directories as a fallback. Do not edit `.gitignore`. Do not install dependencies automatically.
+Do not create worktrees under `.engineering-workflow` or inside the repository.
+Do not edit `.gitignore`. Do not install dependencies automatically.
 
 Run only the setup and baseline commands required by the repository and current task. Use the repository-pinned package manager. Report a failing baseline before implementation.
 

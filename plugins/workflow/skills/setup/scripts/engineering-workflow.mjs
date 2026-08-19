@@ -119,8 +119,6 @@ const repositoryPaths = ({ repoRoot: inputRoot, workflowRoot: inputWorkflowRoot,
     branchesRoot: join(projectRoot, 'branches'),
     branchRoot: join(projectRoot, 'branches', branchId),
     ledgerFile: join(projectRoot, 'branches', branchId, 'TASKS.md'),
-    worktreesRoot: join(projectRoot, 'worktrees'),
-    worktreeRoot: join(projectRoot, 'worktrees', branchId),
     repositoryId,
     repositoryRoot,
     branch,
@@ -426,7 +424,6 @@ const initialize = ({ paths, ticketBackend, project: inputProject, baseUrl: inpu
     paths.specsRoot,
     paths.ticketsRoot,
     paths.branchesRoot,
-    paths.worktreesRoot,
   ]
   for (const directory of directories) mkdirSync(directory, { recursive: true })
 
