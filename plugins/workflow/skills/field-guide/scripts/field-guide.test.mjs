@@ -59,10 +59,26 @@ const submit = ({ repoRoot, guideRoot, input, expectFailure = false }) => {
   })
 }
 
+const runInputCommand = ({ command, repoRoot, guideRoot, input, expectFailure = false }) => {
+  const inputFile = join(guideRoot, `${command}-${Math.random().toString(16).slice(2)}.json`)
+  writeFileSync(inputFile, `${JSON.stringify(input)}\n`)
+  return run({ command, repoRoot, guideRoot, args: ['--input', inputFile], expectFailure })
+}
+
 const initializeMemory = ({ repoRoot, guideRoot }) => {
   const paths = run({ command: 'init', repoRoot, guideRoot })
   run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
   return paths
+}
+
+const replaceCanonicalMemoryJson = ({ paths, memory }) => {
+  const marker = '<!-- field-guide-memory-json:v1 -->\n```json\n'
+  const markdown = readFileSync(paths.memoryIndexFile, 'utf8')
+  const start = markdown.lastIndexOf(marker) + marker.length
+  const end = markdown.indexOf('\n```', start)
+  const serialized = JSON.stringify(memory, null, 2)
+  writeFileSync(paths.memoryIndexFile, `${markdown.slice(0, start)}${serialized}${markdown.slice(end)}`)
+  writeFileSync(paths.memoryFile, `${serialized}\n`)
 }
 
 const conversationSubmission = ({ learning, turnId, scope = 'project', explicitPreference, generic }) => ({
@@ -257,6 +273,214 @@ test('submit refuses concurrent writers without changing memory', () => {
   })
   assert.match(result.stderr, /locked by another writer/)
   assert.equal(readFileSync(paths.memoryFile, 'utf8'), before)
+})
+
+test('a confirmed contradiction supersedes active guidance and activates its replacement', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-supersede-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/supersede.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const original = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Extract every helper.', turnId: 'turn-1', explicitPreference: true }),
+  }).result
+  const replacementInput = conversationSubmission({ learning: 'Keep clear single-use code inline.', turnId: 'turn-2' })
+  replacementInput.relationship = { kind: 'contradicts', targetId: original.targetId }
+  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result
+  assert.equal(replacement.status, 'candidate')
+
+  const unconfirmed = runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'supersede',
+      targetId: original.targetId,
+      replacementId: replacement.targetId,
+      reason: 'No confirmation was recorded.',
+      source: 'agent',
+    },
+    expectFailure: true,
+  })
+  assert.match(unconfirmed.stderr, /confirmed: true/)
+
+  const unrelated = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'An unrelated candidate.', turnId: 'turn-3' }),
+  }).result
+  const unlinked = runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'supersede',
+      targetId: original.targetId,
+      replacementId: unrelated.targetId,
+      confirmed: true,
+      reason: 'The user confirmed a different correction.',
+      source: 'user-confirmation',
+    },
+    expectFailure: true,
+  })
+  assert.match(unlinked.stderr, /linked refinement or contradiction/)
+
+  const transitioned = runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'supersede',
+      targetId: original.targetId,
+      replacementId: replacement.targetId,
+      confirmed: true,
+      reason: 'The user confirmed the same-scope correction.',
+      source: 'user-confirmation',
+    },
+  })
+  assert.equal(transitioned.result.status, 'superseded')
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance.find(({ id }) => id === replacement.targetId).status, 'active')
+  assert.equal(memory.guidance.find(({ id }) => id === original.targetId).transitions.at(-1).replacementId, replacement.targetId)
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('undo is reversible history and permanent deletion requires a current preview', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-delete-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/delete.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const sharedPointer = { kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId: 'turn-1' }
+  const firstInput = conversationSubmission({ learning: 'First preference.', turnId: 'unused', explicitPreference: true })
+  firstInput.evidence.pointers = [sharedPointer]
+  const secondInput = conversationSubmission({ learning: 'Second preference.', turnId: 'unused', explicitPreference: true })
+  secondInput.evidence.pointers = [sharedPointer]
+  const first = submit({ repoRoot, guideRoot, input: firstInput }).result
+  const second = submit({ repoRoot, guideRoot, input: secondInput }).result
+  assert.equal(first.evidenceId, second.evidenceId)
+
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'undo',
+      targetId: first.targetId,
+      reason: 'The user undid this learning.',
+      source: 'user',
+    },
+  })
+  const deleteInput = { schemaVersion: 1, targetId: first.targetId }
+  const preview = runInputCommand({ command: 'delete', repoRoot, guideRoot, input: deleteInput }).result
+  assert.equal(preview.applied, false)
+  assert.deepEqual(preview.removedEvidenceIds, [])
+  const editedMemory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  editedMemory.evidence[0].summary = 'The user edited this valid canonical summary.'
+  replaceCanonicalMemoryJson({ paths, memory: editedMemory })
+  const rejected = runInputCommand({
+    command: 'delete',
+    repoRoot,
+    guideRoot,
+    input: { ...deleteInput, apply: true, previewToken: preview.previewToken },
+    expectFailure: true,
+  })
+  assert.match(rejected.stderr, /current dry-run previewToken/)
+  const refreshedPreview = runInputCommand({ command: 'delete', repoRoot, guideRoot, input: deleteInput }).result
+  const applied = runInputCommand({
+    command: 'delete',
+    repoRoot,
+    guideRoot,
+    input: { ...deleteInput, apply: true, previewToken: refreshedPreview.previewToken },
+  }).result
+  assert.equal(applied.applied, true)
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance.some(({ id }) => id === first.targetId), false)
+  assert.equal(memory.guidance.some(({ id }) => id === second.targetId), true)
+  assert.equal(memory.evidence.some(({ id }) => id === first.evidenceId), true)
+})
+
+test('semantic submissions reject inactive relationship targets', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-inactive-target-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/inactive.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const target = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Old preference.', turnId: 'turn-1', explicitPreference: true }),
+  }).result
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: { schemaVersion: 1, action: 'withdraw', targetId: target.targetId, reason: 'Retired.', source: 'user' },
+  })
+  const input = conversationSubmission({ learning: 'A refinement.', turnId: 'turn-2' })
+  input.relationship = { kind: 'refines', targetId: target.targetId }
+  const result = submit({ repoRoot, guideRoot, input, expectFailure: true })
+  assert.match(result.stderr, /relationship target must be candidate or active/)
+})
+
+test('validate rejects illegal lifecycle edges before replacing canonical state', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-illegal-lifecycle-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/illegal-lifecycle.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'An active preference.', turnId: 'turn-1', explicitPreference: true }),
+  })
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  memory.guidance[0].transitions.push({
+    from: 'active',
+    to: 'candidate',
+    reason: 'Invalid manual edit.',
+    source: 'manual-edit',
+    at: new Date().toISOString(),
+  })
+  memory.guidance[0].status = 'candidate'
+  replaceCanonicalMemoryJson({ paths, memory })
+
+  const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(result.stderr, /illegal lifecycle transition: active->candidate/)
+})
+
+test('validate rejects superseded history without linked replacement provenance', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-unlinked-history-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/unlinked-history.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const first = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'First active preference.', turnId: 'turn-1', explicitPreference: true }),
+  }).result
+  const second = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Second active preference.', turnId: 'turn-2', explicitPreference: true }),
+  }).result
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  const target = memory.guidance.find(({ id }) => id === first.targetId)
+  target.transitions.push({
+    from: 'active',
+    to: 'superseded',
+    reason: 'Invalid manual replacement.',
+    source: 'manual-edit',
+    at: new Date().toISOString(),
+    replacementId: second.targetId,
+  })
+  target.status = 'superseded'
+  replaceCanonicalMemoryJson({ paths, memory })
+
+  const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(result.stderr, /requires a linked refinement or contradiction/)
 })
 
 test('migrate previews and creates a versioned store without changing legacy reviews', () => {

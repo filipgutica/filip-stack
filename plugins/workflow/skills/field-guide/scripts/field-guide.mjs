@@ -35,7 +35,7 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['init', 'migrate', 'paths', 'submit', 'validate'])
+const commands = new Set(['delete', 'init', 'migrate', 'paths', 'submit', 'transition', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -65,7 +65,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <init|migrate|paths|submit|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--apply]')
+    fail('Usage: field-guide.mjs <delete|init|migrate|paths|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--apply]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -402,6 +402,9 @@ const validateGuidanceRecord = (guidance) => {
     requireString({ value: transition.source, label: 'transition source', maxBytes: 128, noWhitespace: true })
     requireTimestamp({ value: transition.at, label: 'transition at' })
     if (transition.replacementId !== undefined && !guidanceIdPattern.test(transition.replacementId)) fail('invalid transition replacementId')
+    if ((transition.to === 'superseded') !== Boolean(transition.replacementId)) {
+      fail('replacementId is required only for a superseded transition')
+    }
   }
   requireTimestamp({ value: guidance.createdAt, label: 'guidance createdAt' })
   requireTimestamp({ value: guidance.updatedAt, label: 'guidance updatedAt' })
@@ -456,8 +459,43 @@ const validateMemory = (memory) => {
     for (let index = 0; index < guidance.transitions.length; index += 1) {
       const expectedFrom = index === 0 ? null : guidance.transitions[index - 1].to
       if (guidance.transitions[index].from !== expectedFrom) fail(`${guidance.id} has a broken transition chain`)
+      const edge = `${expectedFrom ?? 'null'}->${guidance.transitions[index].to}`
+      const allowedEdges = new Set([
+        'null->candidate',
+        'null->active',
+        'candidate->active',
+        'candidate->withdrawn',
+        'candidate->archived',
+        'active->superseded',
+        'active->withdrawn',
+        'active->archived',
+        'superseded->archived',
+        'withdrawn->archived',
+      ])
+      if (!allowedEdges.has(edge)) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
     }
     if (guidance.transitions.at(-1).to !== guidance.status) fail(`${guidance.id} status does not match its transition history`)
+    for (const transition of guidance.transitions.filter(({ to }) => to === 'superseded')) {
+      const replacement = memory.guidance.find(({ id }) => id === transition.replacementId)
+      if (!replacement
+        || !sameScope(guidance.scope, replacement.scope)
+        || guidance.subjectKey !== replacement.subjectKey
+        || !replacement.relationship
+        || !['refines', 'contradicts'].includes(replacement.relationship.kind)
+        || replacement.relationship.targetId !== guidance.id) {
+        fail(`${guidance.id} superseded transition requires a linked refinement or contradiction`)
+      }
+    }
+    if (guidance.status === 'superseded') {
+      const replacementId = guidance.transitions.at(-1).replacementId
+      const replacement = memory.guidance.find(({ id }) => id === replacementId)
+      if (!replacement) {
+        fail(`${guidance.id} superseded transition requires an existing replacement`)
+      }
+      if (replacement.status !== 'active' || !sameScope(guidance.scope, replacement.scope) || guidance.subjectKey !== replacement.subjectKey) {
+        fail(`${guidance.id} superseded replacement must be active with the same scope and subject`)
+      }
+    }
     if (guidance.relationship) {
       const target = memory.guidance.find(({ id }) => id === guidance.relationship.targetId)
       if (!target) fail(`${guidance.id} references missing relationship target`)
@@ -757,6 +795,7 @@ const writeTextAtomically = ({ path, content }) => {
 }
 
 const writeMemoryViews = ({ paths, memory }) => {
+  validateMemory(memory)
   const current = readMemory(paths) ?? emptyMemory()
   if (!existsSync(paths.memoryIndexFile)) {
     writeTextAtomically({ path: paths.memoryIndexFile, content: renderMemoryIndex(current) })
@@ -877,6 +916,175 @@ const submitObservationUnlocked = ({ paths, inputPath }) => {
 
 const submitObservation = ({ paths, inputPath }) => (
   withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath }) })
+)
+
+const appendTransition = ({ guidance, to, reason, source, now, replacementId }) => {
+  guidance.transitions.push({
+    from: guidance.status,
+    to,
+    reason,
+    source,
+    at: now,
+    ...(replacementId ? { replacementId } : {}),
+  })
+  guidance.status = to
+  guidance.updatedAt = now
+}
+
+const validateTransitionInput = (input) => {
+  assertObject({ value: input, label: 'transition input' })
+  assertClosedFields({
+    value: input,
+    fields: ['schemaVersion', 'action', 'targetId', 'replacementId', 'confirmed', 'reason', 'source'],
+    label: 'transition input',
+  })
+  if (input.schemaVersion !== 1) fail('transition schemaVersion must be 1')
+  if (!['activate', 'supersede', 'undo', 'withdraw'].includes(input.action)) {
+    fail('transition action is invalid')
+  }
+  if (!guidanceIdPattern.test(input.targetId)) fail('transition targetId is invalid')
+  requireString({ value: input.reason, label: 'transition reason', maxBytes: 512 })
+  requireString({ value: input.source, label: 'transition source', maxBytes: 128, noWhitespace: true })
+  if (input.action === 'supersede') {
+    if (!guidanceIdPattern.test(input.replacementId)) fail('supersede requires a valid replacementId')
+    if (input.confirmed !== true) fail('supersede requires confirmed: true')
+  } else if (input.replacementId !== undefined) {
+    fail('replacementId is only valid for supersede')
+  } else if (input.confirmed !== undefined) {
+    fail('confirmed is only valid for supersede')
+  }
+  return input
+}
+
+const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  const input = validateTransitionInput(readJsonInput(inputPath))
+  const target = memory.guidance.find(({ id }) => id === input.targetId)
+  if (!target) fail('transition target does not exist')
+  const now = new Date().toISOString()
+
+  if (input.action === 'activate') {
+    if (target.status !== 'candidate') fail('activate requires a candidate target')
+    appendTransition({ guidance: target, to: 'active', reason: input.reason, source: input.source, now })
+  }
+
+  if (input.action === 'withdraw' || input.action === 'undo') {
+    if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
+    appendTransition({ guidance: target, to: 'withdrawn', reason: input.reason, source: input.source, now })
+  }
+
+  if (input.action === 'supersede') {
+    if (target.status !== 'active') fail('supersede requires an active target')
+    const replacement = memory.guidance.find(({ id }) => id === input.replacementId)
+    if (!replacement) fail('supersede replacement does not exist')
+    if (replacement.id === target.id) fail('guidance cannot supersede itself')
+    if (!['candidate', 'active'].includes(replacement.status)) fail('supersede replacement must be candidate or active')
+    if (!sameScope(target.scope, replacement.scope) || target.subjectKey !== replacement.subjectKey) {
+      fail('supersede replacement must use the same scope and subjectKey')
+    }
+    if (!replacement.relationship
+      || !['refines', 'contradicts'].includes(replacement.relationship.kind)
+      || replacement.relationship.targetId !== target.id) {
+      fail('supersede replacement must be a linked refinement or contradiction')
+    }
+    if (replacement.status === 'candidate') {
+      appendTransition({ guidance: replacement, to: 'active', reason: input.reason, source: input.source, now })
+    }
+    appendTransition({
+      guidance: target,
+      to: 'superseded',
+      reason: input.reason,
+      source: input.source,
+      now,
+      replacementId: replacement.id,
+    })
+  }
+
+  const nextMemory = { ...memory, revision: memory.revision + 1 }
+  writeMemoryViews({ paths, memory: nextMemory })
+  return {
+    outcome: input.action,
+    targetId: target.id,
+    status: target.status,
+    ...(input.replacementId ? { replacementId: input.replacementId } : {}),
+  }
+}
+
+const transitionGuidance = ({ paths, inputPath }) => (
+  withMemoryLock({ paths, action: () => transitionGuidanceUnlocked({ paths, inputPath }) })
+)
+
+const deletionPreviewToken = ({ memory, targetId }) => (
+  hashIdentity({
+    prefix: 'delete-preview',
+    values: [1, memory.revision, targetId, createHash('sha256').update(JSON.stringify(memory)).digest('hex')],
+  })
+)
+
+const validateDeleteInput = (input) => {
+  assertObject({ value: input, label: 'delete input' })
+  assertClosedFields({
+    value: input,
+    fields: ['schemaVersion', 'targetId', 'apply', 'previewToken'],
+    label: 'delete input',
+  })
+  if (input.schemaVersion !== 1) fail('delete schemaVersion must be 1')
+  if (!guidanceIdPattern.test(input.targetId)) fail('delete targetId is invalid')
+  if (input.apply !== undefined && typeof input.apply !== 'boolean') fail('delete apply must be boolean')
+  if (input.previewToken !== undefined) {
+    requireString({ value: input.previewToken, label: 'delete previewToken', maxBytes: 128, noWhitespace: true })
+  }
+  return input
+}
+
+const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
+  validate(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  const input = validateDeleteInput(readJsonInput(inputPath))
+  const target = memory.guidance.find(({ id }) => id === input.targetId)
+  if (!target) fail('delete target does not exist')
+  if (!['withdrawn', 'archived'].includes(target.status)) {
+    fail('permanent deletion requires a withdrawn or archived target')
+  }
+  if (memory.guidance.some((guidance) => (
+    guidance.relationship?.targetId === target.id
+      || guidance.transitions.some(({ replacementId }) => replacementId === target.id)
+  ))) {
+    fail('permanent deletion target is referenced by another guidance record')
+  }
+  const remainingGuidance = memory.guidance.filter(({ id }) => id !== target.id)
+  const referencedEvidence = new Set(remainingGuidance.flatMap(({ evidenceIds }) => evidenceIds))
+  const removedEvidenceIds = target.evidenceIds.filter((id) => !referencedEvidence.has(id))
+  const previewToken = deletionPreviewToken({ memory, targetId: target.id })
+  if (input.apply !== true) {
+    return {
+      outcome: 'delete-preview',
+      targetId: target.id,
+      removedEvidenceIds,
+      previewToken,
+      applied: false,
+    }
+  }
+  if (input.previewToken !== previewToken) fail('delete apply requires the current dry-run previewToken')
+  const nextMemory = {
+    ...memory,
+    revision: memory.revision + 1,
+    guidance: remainingGuidance,
+    evidence: memory.evidence.filter(({ id }) => !removedEvidenceIds.includes(id)),
+  }
+  writeMemoryViews({ paths, memory: nextMemory })
+  return {
+    outcome: 'deleted',
+    targetId: target.id,
+    removedEvidenceIds,
+    applied: true,
+  }
+}
+
+const deleteGuidance = ({ paths, inputPath }) => (
+  withMemoryLock({ paths, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
 )
 
 const initialize = (paths) => {
@@ -1152,9 +1360,11 @@ const main = () => {
 
   let migration
   let result
+  if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'migrate') migration = migrate({ paths, apply: options.apply === true })
   if (command === 'submit') result = submitObservation({ paths, inputPath: options.input })
+  if (command === 'transition') result = transitionGuidance({ paths, inputPath: options.input })
   if (command === 'validate') validate(paths)
 
   process.stdout.write(`${JSON.stringify({ ...paths, ...(migration ? { migration } : {}), ...(result ? { result } : {}) }, null, 2)}\n`)

@@ -78,6 +78,26 @@ Guidance can include one sanitized pattern and one sanitized antipattern. Each
 example must identify its language and contain at most 40 lines. Both examples
 can contain at most 6 KB of UTF-8 text.
 
+## Lifecycle
+
+Guidance uses `candidate`, `active`, `superseded`, `withdrawn`, and `archived`.
+Each change appends an immutable transition. Normal guidance retrieval can use
+only `active` records.
+
+Use `transition --input <json-file>` for an explicit lifecycle decision. The
+input follows `schemas/lifecycle-v1.schema.json`. A confirmed correction can
+supersede one active record with a same-scope, same-subject
+replacement. The command activates a candidate replacement and stores its ID on
+the superseded transition. `undo` and `withdraw` preserve evidence and move the
+target to `withdrawn`. Archive uses the maintenance dry-run path. Age never
+causes archive.
+
+Use `delete --input <json-file>` for permanent deletion. The target must be
+`withdrawn` or `archived`. The first call returns a preview token and the orphan
+evidence IDs that would be removed. Apply requires the same token at the same
+store revision. The utility rejects referenced targets and preserves evidence
+that another record uses.
+
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
 
