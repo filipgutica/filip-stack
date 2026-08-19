@@ -169,9 +169,9 @@ validation commands. It preserves existing review records and validates typed
 evidence.
 
 You can also open `~/.engineering-workflow` or one repository directory as an
-Obsidian vault to audit planning artifacts. Exclude `worktrees/` from indexing.
-Do not create vaults inside topic, ticket lifecycle, branch, or worktree
-directories.
+Obsidian vault to audit planning artifacts. Git worktrees live separately under
+`~/code/worktrees/<project>/`. Do not create vaults inside topic, ticket
+lifecycle, or branch directories.
 
 ### Simplification review
 

@@ -1,6 +1,6 @@
 # Engineering Workflow storage
 
-Use one external project root for specifications, tickets, branch ledgers, and fallback worktrees.
+Use one external project root for specifications, tickets, and branch ledgers.
 
 ```text
 ~/.engineering-workflow/<repo-id>/
@@ -16,10 +16,8 @@ Use one external project root for specifications, tickets, branch ledgers, and f
 │       ├── todo/
 │       ├── in-progress/
 │       └── done/
-├── branches/
-│   └── <branch-id>/TASKS.md
-└── worktrees/
-    └── <branch-id>/
+└── branches/
+    └── <branch-id>/TASKS.md
 ```
 
 Derive `<repo-id>` from a readable slug of the normalized `origin` URL plus a short stable hash. If a repository has no `origin`, use the repository name and a short hash of the Git common directory.
@@ -161,9 +159,11 @@ status, specifications, plans, ledgers, schemas, or agent instructions there.
 Workflow commands must work without Obsidian and must not read `.obsidian/` as
 artifact context.
 
-Do not create a vault inside a topic, ticket lifecycle, branch, or worktree
-directory. Those directories have narrower ownership contracts. Exclude
-`worktrees/` from Obsidian indexing when the selected vault contains it.
+Do not create a vault inside a topic, ticket lifecycle, or branch directory.
+Those directories have narrower ownership contracts.
+
+Git worktrees are not Engineering Workflow artifacts. Store fallback worktrees
+under `~/code/worktrees/<project>/`, outside this storage root.
 
 Do not move existing specs or tickets automatically. Topic listing reports topic directories that do not have registry entries.
 

@@ -33,7 +33,7 @@ const run = ({ command, args = [], expectStatus = 0 }) => {
   return JSON.parse(result.stdout)
 }
 
-test('paths resolves external project, ledger, and worktree locations', () => {
+test('paths resolves external project and ledger locations without worktree storage', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-paths-'))
   const repoRoot = createRepo({ parent: root })
   const workflowRoot = join(root, 'workflow')
@@ -46,7 +46,8 @@ test('paths resolves external project, ledger, and worktree locations', () => {
   assert.equal(paths.branch, 'feat/example')
   assert.match(paths.branchId, /^feat-example-[0-9a-f]{8}$/)
   assert.equal(paths.ledgerFile, join(paths.workflowRoot, paths.repositoryId, 'branches', paths.branchId, 'TASKS.md'))
-  assert.equal(paths.worktreeRoot, join(paths.workflowRoot, paths.repositoryId, 'worktrees', paths.branchId))
+  assert.equal('worktreesRoot' in paths, false)
+  assert.equal('worktreeRoot' in paths, false)
   assert.equal(existsSync(workflowRoot), false)
 })
 
@@ -104,7 +105,7 @@ test('init creates external directories, reuses matching configuration, and reje
   assert.ok(existsSync(paths.specsRoot))
   assert.ok(existsSync(paths.ticketsRoot))
   assert.ok(existsSync(paths.branchesRoot))
-  assert.ok(existsSync(paths.worktreesRoot))
+  assert.equal(existsSync(join(paths.projectRoot, 'worktrees')), false)
   const configured = readFileSync(paths.configFile, 'utf8')
 
   run({ command: 'init', args })
@@ -337,7 +338,14 @@ test('init validates project ownership before creating artifact directories', ()
   assert.equal(existsSync(paths.specsRoot), false)
   assert.equal(existsSync(paths.ticketsRoot), false)
   assert.equal(existsSync(paths.branchesRoot), false)
-  assert.equal(existsSync(paths.worktreesRoot), false)
+  assert.equal(existsSync(join(paths.projectRoot, 'worktrees')), false)
+})
+
+test('worktree fallback stays under the user code directory', () => {
+  const skill = readFileSync(new URL('../../using-git-worktrees/SKILL.md', import.meta.url), 'utf8')
+
+  assert.match(skill, /~\/code\/worktrees\/<project>\/<worktree-name>\//)
+  assert.doesNotMatch(skill, /\.engineering-workflow\/<repo-id>\/worktrees/)
 })
 
 test('configure-ticket-system adds one idempotent project association and rejects conflicts', () => {
