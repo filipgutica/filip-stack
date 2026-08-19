@@ -72,6 +72,12 @@
         "fingerprint": { "type": "string", "pattern": "^fingerprint:v1:[0-9a-f]{64}$" },
         "scope": { "$ref": "#/$defs/scope" },
         "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "linkedSubjects": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
         "learning": { "type": "string", "minLength": 1, "maxLength": 4096 },
         "status": { "enum": ["candidate", "active", "superseded", "withdrawn", "archived"] },
         "confidence": { "enum": ["low", "medium", "high"] },

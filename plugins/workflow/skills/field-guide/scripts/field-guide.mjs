@@ -35,11 +35,14 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['delete', 'init', 'migrate', 'paths', 'submit', 'transition', 'validate'])
+const commands = new Set(['delete', 'init', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
   ['--input', 'input'],
+  ['--subject', 'subject'],
+  ['--query', 'query'],
+  ['--evidence-for', 'evidence-for'],
 ])
 const flagNames = new Map([['--apply', 'apply']])
 
@@ -65,7 +68,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <delete|init|migrate|paths|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--apply]')
+    fail('Usage: field-guide.mjs <delete|init|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -363,13 +366,21 @@ const validateGuidanceRecord = (guidance) => {
   assertObject({ value: guidance, label: 'guidance record' })
   assertClosedFields({
     value: guidance,
-    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'learning', 'status', 'confidence', 'generic', 'relationship', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'createdAt', 'updatedAt'],
+    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'status', 'confidence', 'generic', 'relationship', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'createdAt', 'updatedAt'],
     label: 'guidance record',
   })
   if (!guidanceIdPattern.test(guidance.id)) fail('guidance record has invalid id')
   if (!fingerprintPattern.test(guidance.fingerprint)) fail('guidance record has invalid fingerprint')
   validateScope(guidance.scope)
   if (!portableKey.test(guidance.subjectKey)) fail('guidance subjectKey must be a portable slug')
+  if (byteLength(guidance.subjectKey) > 128) fail('guidance subjectKey exceeds 128 UTF-8 bytes')
+  const linkedSubjects = guidance.linkedSubjects ?? []
+  if (!Array.isArray(linkedSubjects)
+    || linkedSubjects.length > 16
+    || new Set(linkedSubjects).size !== linkedSubjects.length
+    || linkedSubjects.some((subject) => !portableKey.test(subject) || byteLength(subject) > 128)) {
+    fail('guidance linkedSubjects must be unique portable slugs')
+  }
   requireString({ value: guidance.learning, label: 'guidance learning', maxBytes: 4096 })
   if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(guidance.status)) {
     fail(`guidance record has invalid status: ${guidance.status}`)
@@ -653,7 +664,7 @@ const validateSubmission = ({ submission, paths }) => {
   assertObject({ value: submission, label: 'submission' })
   assertClosedFields({
     value: submission,
-    fields: ['schemaVersion', 'decision', 'confidence', 'scope', 'subjectKey', 'learning', 'relationship', 'reason', 'explicitPreference', 'generic', 'examples', 'evidence'],
+    fields: ['schemaVersion', 'decision', 'confidence', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'relationship', 'reason', 'explicitPreference', 'generic', 'examples', 'evidence'],
     label: 'submission',
   })
   if (submission.schemaVersion !== 1) fail('submission schemaVersion must be 1')
@@ -661,6 +672,14 @@ const validateSubmission = ({ submission, paths }) => {
   if (!['low', 'medium', 'high'].includes(submission.confidence)) fail('submission confidence is invalid')
   if (!['project', 'shared'].includes(submission.scope)) fail('submission scope is invalid')
   if (!portableKey.test(submission.subjectKey)) fail('submission subjectKey must be a portable slug')
+  if (byteLength(submission.subjectKey) > 128) fail('submission subjectKey exceeds 128 UTF-8 bytes')
+  const linkedSubjects = submission.linkedSubjects ?? []
+  if (!Array.isArray(linkedSubjects)
+    || linkedSubjects.length > 16
+    || new Set(linkedSubjects).size !== linkedSubjects.length
+    || linkedSubjects.some((subject) => !portableKey.test(subject) || byteLength(subject) > 128)) {
+    fail('submission linkedSubjects must be unique portable slugs')
+  }
   requireString({ value: submission.learning, label: 'submission learning', maxBytes: 4096 })
   if (!normalizeLearning(submission.learning)) fail('submission learning must contain meaningful text')
   if (submission.reason !== undefined) requireString({ value: submission.reason, label: 'submission reason', maxBytes: 512 })
@@ -687,6 +706,7 @@ const validateSubmission = ({ submission, paths }) => {
   return {
     ...submission,
     scope: scopeFromSubmission({ scope: submission.scope, paths }),
+    linkedSubjects,
     examples: submission.examples ?? [],
     evidence: { ...submission.evidence, pointers },
   }
@@ -776,6 +796,9 @@ const renderMemoryIndex = (memory) => {
       + `- Status: \`${record.status}\`\n`
       + `- Scope: \`${scopeIdentity(record.scope)}\`\n`
       + `- Subject: \`${record.subjectKey}\`\n`
+      + (record.linkedSubjects
+        ? `- Linked subjects: ${record.linkedSubjects.map((subject) => `\`${subject}\``).join(', ') || 'none'}\n`
+        : '')
       + `- Evidence: ${record.evidenceIds.map((id) => `\`${id}\``).join(', ') || 'none'}\n\n`
       + `${record.learning}${examples}\n`
   })
@@ -869,6 +892,7 @@ const submitObservationUnlocked = ({ paths, inputPath }) => {
       fingerprint,
       scope: submission.scope,
       subjectKey: submission.subjectKey,
+      linkedSubjects: submission.linkedSubjects,
       learning: submission.learning,
       status: 'candidate',
       confidence: submission.confidence,
@@ -884,6 +908,7 @@ const submitObservationUnlocked = ({ paths, inputPath }) => {
     memory.guidance.push(guidance)
   }
   if (submission.generic === true) guidance.generic = true
+  guidance.linkedSubjects = [...new Set([...(guidance.linkedSubjects ?? []), ...submission.linkedSubjects])].sort()
   guidance.evidenceIds.push(evidence.id)
   guidance.independentEvidenceCount = evidenceCountFor({ guidance, memory })
   guidance.updatedAt = now
@@ -1086,6 +1111,146 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
 const deleteGuidance = ({ paths, inputPath }) => (
   withMemoryLock({ paths, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
 )
+
+const fitWholeRecords = ({ records, maxRecords, maxBytes }) => {
+  const included = []
+  for (const record of records) {
+    const nextBytes = byteLength(JSON.stringify([...included, record]))
+    if (included.length >= maxRecords || nextBytes > maxBytes) continue
+    included.push(record)
+  }
+  return {
+    records: included,
+    bytes: byteLength(JSON.stringify(included)),
+    omittedCount: records.length - included.length,
+  }
+}
+
+const retrievalRecord = ({ guidance, match }) => ({
+  id: guidance.id,
+  scope: guidance.scope,
+  subjectKey: guidance.subjectKey,
+  linkedSubjects: guidance.linkedSubjects ?? [],
+  learning: guidance.learning,
+  status: guidance.status,
+  examples: guidance.examples,
+  updatedAt: guidance.updatedAt,
+  match,
+})
+
+const queryTerms = (query) => (
+  new Set(
+    normalizeLearning(query ?? '')
+      .split(/[^\p{L}\p{N}]+/u)
+      .filter((term) => term.length >= 3),
+  )
+)
+
+const retrieveEvidence = ({ memory, guidanceId }) => {
+  if (!guidanceIdPattern.test(guidanceId)) fail('--evidence-for must be a valid guidance ID')
+  const guidance = memory.guidance.find(({ id }) => id === guidanceId)
+  if (!guidance) fail('evidence target does not exist')
+  const records = guidance.evidenceIds
+    .map((id) => memory.evidence.find((evidence) => evidence.id === id))
+    .filter(Boolean)
+    .sort((left, right) => left.createdAt.localeCompare(right.createdAt) || left.id.localeCompare(right.id))
+  const fitted = fitWholeRecords({ records, maxRecords: 2, maxBytes: 6144 })
+  return {
+    mode: 'evidence',
+    guidanceId,
+    evidence: fitted.records,
+    bytes: fitted.bytes,
+    omittedCount: fitted.omittedCount,
+    limits: { maxRecords: 2, maxBytes: 6144 },
+  }
+}
+
+const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
+  if (!portableKey.test(subjectKey ?? '') || byteLength(subjectKey) > 128) {
+    fail('--subject must be a portable subject key')
+  }
+  if (query !== undefined) requireString({ value: query, label: 'retrieval query', maxBytes: 1024 })
+  const active = memory.guidance.filter(({ status }) => status === 'active')
+  const relevantActive = active.filter(({ scope }) => (
+    scope.kind === 'shared' || scope.repositoryIdentity === paths.identity
+  ))
+  const exactSubject = relevantActive.filter(({ subjectKey: recordSubject }) => recordSubject === subjectKey)
+  const projectExactLearning = new Set(
+    exactSubject
+      .filter(({ scope }) => scope.kind === 'project' && scope.repositoryIdentity === paths.identity)
+      .map(({ learning }) => normalizeLearning(learning)),
+  )
+  const effectiveExactSubject = exactSubject.filter((guidance) => !(
+    guidance.scope.kind === 'shared' && projectExactLearning.has(normalizeLearning(guidance.learning))
+  ))
+  const linkedSubjects = [...new Set(effectiveExactSubject.flatMap((record) => record.linkedSubjects ?? []))].sort()
+  const terms = queryTerms(query)
+  const ranked = []
+  for (const guidance of relevantActive) {
+    if (guidance.scope.kind === 'shared'
+      && guidance.subjectKey === subjectKey
+      && projectExactLearning.has(normalizeLearning(guidance.learning))) continue
+    let rank
+    let match
+    if (guidance.subjectKey === subjectKey) {
+      rank = guidance.scope.kind === 'project' ? 0 : 1
+      match = guidance.scope.kind === 'project' ? 'project-subject' : 'shared-subject'
+    } else if (linkedSubjects.includes(guidance.subjectKey)) {
+      rank = 2
+      match = 'linked-subject'
+    } else {
+      const normalized = normalizeLearning(guidance.learning)
+      if (terms.size === 0 || ![...terms].some((term) => normalized.includes(term))) continue
+      rank = 3
+      match = 'applicability'
+    }
+    ranked.push({ guidance, rank, match })
+  }
+  ranked.sort((left, right) => (
+    left.rank - right.rank
+      || (left.guidance.scope.kind === right.guidance.scope.kind
+        ? 0
+        : (left.guidance.scope.kind === 'project' ? -1 : 1))
+      || right.guidance.updatedAt.localeCompare(left.guidance.updatedAt)
+      || left.guidance.id.localeCompare(right.guidance.id)
+  ))
+  const records = ranked.map(({ guidance, match }) => retrievalRecord({ guidance, match }))
+  const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
+  const routingCandidates = linkedSubjects.map((linkedSubject) => ({ subjectKey: linkedSubject }))
+  const routingFit = fitWholeRecords({ records: routingCandidates, maxRecords: 16, maxBytes: 1800 })
+  const routing = {
+    projectKey: paths.projectKey,
+    subjectKey,
+    linkedSubjects: routingFit.records.map(({ subjectKey: linkedSubject }) => linkedSubject),
+    omittedLinkedSubjectCount: routingFit.omittedCount,
+  }
+  const routingBytes = byteLength(JSON.stringify(routing))
+  if (routingBytes > 2048) fail('routing index exceeds 2048 UTF-8 bytes')
+  return {
+    mode: 'guidance',
+    routing,
+    routingBytes,
+    guidance: fitted.records,
+    bytes: fitted.bytes,
+    omittedCount: fitted.omittedCount,
+    limits: {
+      routingMaxBytes: 2048,
+      guidanceMaxRecords: 5,
+      guidanceMaxBytes: 6144,
+      normalEvidenceRecords: 0,
+    },
+  }
+}
+
+const retrieve = ({ paths, subjectKey, query, evidenceFor }) => {
+  const memory = readMemory(paths) ?? emptyMemory()
+  if (evidenceFor && (subjectKey !== undefined || query !== undefined)) {
+    fail('--evidence-for cannot be combined with --subject or --query')
+  }
+  return evidenceFor
+    ? retrieveEvidence({ memory, guidanceId: evidenceFor })
+    : retrieveGuidance({ memory, paths, subjectKey, query })
+}
 
 const initialize = (paths) => {
   mkdirSync(paths.sharedRoot, { recursive: true })
@@ -1363,6 +1528,12 @@ const main = () => {
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'migrate') migration = migrate({ paths, apply: options.apply === true })
+  if (command === 'retrieve') result = retrieve({
+    paths,
+    subjectKey: options.subject,
+    query: options.query,
+    evidenceFor: options['evidence-for'],
+  })
   if (command === 'submit') result = submitObservation({ paths, inputPath: options.input })
   if (command === 'transition') result = transitionGuidance({ paths, inputPath: options.input })
   if (command === 'validate') validate(paths)

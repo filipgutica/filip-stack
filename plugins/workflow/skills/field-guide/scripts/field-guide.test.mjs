@@ -81,6 +81,18 @@ const replaceCanonicalMemoryJson = ({ paths, memory }) => {
   writeFileSync(paths.memoryFile, `${serialized}\n`)
 }
 
+const retrieve = ({ repoRoot, guideRoot, subject = 'testing', query, evidenceFor }) => (
+  run({
+    command: 'retrieve',
+    repoRoot,
+    guideRoot,
+    args: [
+      ...(evidenceFor ? ['--evidence-for', evidenceFor] : ['--subject', subject]),
+      ...(query ? ['--query', query] : []),
+    ],
+  }).result
+)
+
 const conversationSubmission = ({ learning, turnId, scope = 'project', explicitPreference, generic }) => ({
   schemaVersion: 1,
   decision: 'capture',
@@ -481,6 +493,137 @@ test('validate rejects superseded history without linked replacement provenance'
 
   const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
   assert.match(result.stderr, /requires a linked refinement or contradiction/)
+})
+
+test('retrieve ranks active project, shared, linked, and applicable guidance without evidence', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const projectInput = conversationSubmission({ learning: 'Use project test helpers.', turnId: 'turn-1', explicitPreference: true })
+  projectInput.linkedSubjects = ['accessibility']
+  submit({ repoRoot, guideRoot, input: projectInput })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Use shared test names.', turnId: 'turn-2', scope: 'shared', explicitPreference: true }),
+  })
+  const overriddenSharedInput = conversationSubmission({
+    learning: 'Use project test helpers.',
+    turnId: 'turn-3',
+    scope: 'shared',
+    explicitPreference: true,
+  })
+  overriddenSharedInput.linkedSubjects = ['security']
+  submit({ repoRoot, guideRoot, input: overriddenSharedInput })
+  const linkedInput = conversationSubmission({ learning: 'Check focus order.', turnId: 'turn-4', explicitPreference: true })
+  linkedInput.subjectKey = 'accessibility'
+  submit({ repoRoot, guideRoot, input: linkedInput })
+  const applicableInput = conversationSubmission({ learning: 'Review keyboard coverage.', turnId: 'turn-5', explicitPreference: true })
+  applicableInput.subjectKey = 'review'
+  submit({ repoRoot, guideRoot, input: applicableInput })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Candidate must stay hidden.', turnId: 'turn-6' }) })
+  const otherRepo = createRepo({ parent: root, name: 'other', remote: 'git@github.com:other/retrieve.git' })
+  run({ command: 'init', repoRoot: otherRepo, guideRoot })
+  const otherProjectInput = conversationSubmission({ learning: 'Other project guidance.', turnId: 'turn-7', explicitPreference: true })
+  otherProjectInput.linkedSubjects = ['security']
+  submit({ repoRoot: otherRepo, guideRoot, input: otherProjectInput })
+
+  const result = retrieve({ repoRoot, guideRoot, query: 'keyboard behavior' })
+  assert.deepEqual(result.guidance.map(({ match }) => match), [
+    'project-subject',
+    'shared-subject',
+    'linked-subject',
+    'applicability',
+  ])
+  assert.equal(result.guidance.some(({ learning }) => learning.includes('Candidate')), false)
+  assert.equal(result.guidance.filter(({ learning }) => learning === 'Use project test helpers.').length, 1)
+  assert.equal(result.routing.linkedSubjects.includes('security'), false)
+  assert.equal(JSON.stringify(result.guidance).includes('evidenceId'), false)
+  assert.ok(result.routingBytes <= 2048)
+  assert.ok(result.bytes <= 6144)
+})
+
+test('retrieve enforces whole-record count and byte budgets', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-budget-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-budget.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  for (let index = 0; index < 7; index += 1) {
+    submit({
+      repoRoot,
+      guideRoot,
+      input: conversationSubmission({ learning: `Active testing preference ${index}.`, turnId: `turn-${index}`, explicitPreference: true }),
+    })
+  }
+  const result = retrieve({ repoRoot, guideRoot })
+  assert.equal(result.guidance.length, 5)
+  assert.equal(result.omittedCount, 2)
+  assert.ok(result.bytes <= 6144)
+})
+
+test('explicit evidence expansion returns at most two complete records within six kilobytes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-evidence-retrieve-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/evidence-retrieve.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const learning = 'Keep evidence out of normal retrieval.'
+  const created = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning, turnId: 'turn-1', explicitPreference: true }),
+  }).result
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning, turnId: 'turn-2' }) })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning, turnId: 'turn-3' }) })
+
+  const result = retrieve({ repoRoot, guideRoot, evidenceFor: created.targetId })
+  assert.equal(result.evidence.length, 2)
+  assert.equal(result.omittedCount, 1)
+  assert.ok(result.bytes <= 6144)
+  assert.ok(result.evidence.every((evidence) => evidence.pointers.length === 1))
+})
+
+test('retrieve accepts version 1 records that predate linked subjects', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-compatibility-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-compatibility.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'A version one preference.', turnId: 'turn-1', explicitPreference: true }),
+  })
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  delete memory.guidance[0].linkedSubjects
+  replaceCanonicalMemoryJson({ paths, memory })
+  writeFileSync(
+    paths.memoryIndexFile,
+    readFileSync(paths.memoryIndexFile, 'utf8').replace('- Linked subjects: none\n', ''),
+  )
+
+  run({ command: 'validate', repoRoot, guideRoot })
+  const result = retrieve({ repoRoot, guideRoot })
+  assert.deepEqual(result.guidance[0].linkedSubjects, [])
+})
+
+test('retrieve rejects conflicting normal and evidence modes', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-mode-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-mode.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const created = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'One mode per request.', turnId: 'turn-1', explicitPreference: true }),
+  }).result
+  const result = run({
+    command: 'retrieve',
+    repoRoot,
+    guideRoot,
+    args: ['--evidence-for', created.targetId, '--subject', 'testing'],
+    expectFailure: true,
+  })
+  assert.match(result.stderr, /cannot be combined/)
 })
 
 test('migrate previews and creates a versioned store without changing legacy reviews', () => {

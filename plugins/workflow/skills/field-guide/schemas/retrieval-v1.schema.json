@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/workflow/field-guide/retrieval-v1.schema.json",
+  "title": "Field-guide retrieval result version 1",
+  "oneOf": [
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "routing", "routingBytes", "guidance", "bytes", "omittedCount", "limits"],
+      "properties": {
+        "mode": { "const": "guidance" },
+        "routing": { "$ref": "#/$defs/routing" },
+        "routingBytes": { "type": "integer", "maximum": 2048 },
+        "guidance": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/guidance" } },
+        "bytes": { "type": "integer", "maximum": 6144 },
+        "omittedCount": { "type": "integer", "minimum": 0 },
+        "limits": { "$ref": "#/$defs/guidanceLimits" }
+      }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "guidanceId", "evidence", "bytes", "omittedCount", "limits"],
+      "properties": {
+        "mode": { "const": "evidence" },
+        "guidanceId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+        "evidence": { "type": "array", "maxItems": 2, "items": { "$ref": "memory-v1.schema.json#/$defs/evidence" } },
+        "bytes": { "type": "integer", "maximum": 6144 },
+        "omittedCount": { "type": "integer", "minimum": 0 },
+        "limits": { "$ref": "#/$defs/evidenceLimits" }
+      }
+    }
+  ],
+  "$defs": {
+    "routing": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["projectKey", "subjectKey", "linkedSubjects", "omittedLinkedSubjectCount"],
+      "properties": {
+        "projectKey": { "type": "string" },
+        "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "linkedSubjects": {
+          "type": "array",
+          "maxItems": 16,
+          "uniqueItems": true,
+          "items": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
+        },
+        "omittedLinkedSubjectCount": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "guidance": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "scope", "subjectKey", "linkedSubjects", "learning", "status", "examples", "updatedAt", "match"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+        "scope": { "$ref": "memory-v1.schema.json#/$defs/scope" },
+        "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "linkedSubjects": { "type": "array", "items": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" } },
+        "learning": { "type": "string" },
+        "status": { "const": "active" },
+        "examples": { "type": "array", "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "match": { "enum": ["project-subject", "shared-subject", "linked-subject", "applicability"] }
+      }
+    },
+    "guidanceLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["routingMaxBytes", "guidanceMaxRecords", "guidanceMaxBytes", "normalEvidenceRecords"],
+      "properties": {
+        "routingMaxBytes": { "const": 2048 },
+        "guidanceMaxRecords": { "const": 5 },
+        "guidanceMaxBytes": { "const": 6144 },
+        "normalEvidenceRecords": { "const": 0 }
+      }
+    },
+    "evidenceLimits": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["maxRecords", "maxBytes"],
+      "properties": {
+        "maxRecords": { "const": 2 },
+        "maxBytes": { "const": 6144 }
+      }
+    }
+  }
+}

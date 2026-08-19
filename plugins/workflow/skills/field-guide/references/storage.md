@@ -98,6 +98,29 @@ evidence IDs that would be removed. Apply requires the same token at the same
 store revision. The utility rejects referenced targets and preserves evidence
 that another record uses.
 
+## Bounded retrieval
+
+Use `retrieve --subject <subject-key>` after the task scope is known. Add
+`--query <text>` for a concrete applicability match. Retrieval returns only
+active guidance and ranks it in this order:
+
+1. Current-project guidance for the requested subject.
+2. Shared guidance for the requested subject.
+3. Current-project or shared guidance from linked subjects.
+4. Other active guidance that matches the query text.
+
+A current-project record suppresses an identical shared statement. Candidates
+and records for other repositories are excluded. Confidence and evidence count
+do not affect rank. Updated time breaks ties after scope and subject rank.
+
+Routing output is at most 2 KB. Normal output contains at most five whole
+guidance records and 6 KB. It contains no evidence records or transition
+history. The utility never truncates a record. It reports the number omitted.
+
+Use `retrieve --evidence-for <guidance-id>` only for an explicit provenance or
+conflict check. Evidence expansion returns at most two whole records and 6 KB.
+The result follows `schemas/retrieval-v1.schema.json`.
+
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
 
