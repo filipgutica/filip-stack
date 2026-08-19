@@ -1,0 +1,80 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "explicit-general-preference",
+      "category": "obvious",
+      "hosts": ["claude", "codex"],
+      "userMessage": "From now on, keep pull request descriptions to Summary and Changes in every repository.",
+      "expectedDecision": "capture",
+      "expectedScope": "shared",
+      "expectedState": "active",
+      "requiresNotice": true
+    },
+    {
+      "id": "unclear-style-preference",
+      "category": "ambiguous",
+      "hosts": ["claude", "codex"],
+      "userMessage": "I prefer the other style.",
+      "expectedDecision": "ask",
+      "requiresNotice": false
+    },
+    {
+      "id": "temporary-task-direction",
+      "category": "temporary",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Use this temporary endpoint until staging recovers.",
+      "expectedDecision": "skip",
+      "requiresNotice": false
+    },
+    {
+      "id": "repeated-project-miss",
+      "category": "repeated",
+      "hosts": ["claude", "codex"],
+      "userMessage": "You missed the same generated-file check again in this repository.",
+      "expectedDecision": "capture",
+      "expectedScope": "project",
+      "expectedRelationship": "reinforces",
+      "requiresNotice": true
+    },
+    {
+      "id": "inferred-contradiction",
+      "category": "contradictory",
+      "hosts": ["claude", "codex"],
+      "userMessage": "This task suggests the stored helper-extraction rule may be wrong, but I have not decided on a general replacement.",
+      "expectedDecision": "capture",
+      "expectedState": "candidate",
+      "expectedRelationship": "contradicts",
+      "expectedFollowup": "ask-before-resolve",
+      "requiresNotice": true
+    },
+    {
+      "id": "manual-learning-request",
+      "category": "manual",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Remember that this project uses repository-relative links in generated reports.",
+      "expectedDecision": "capture",
+      "expectedScope": "project",
+      "expectedState": "active",
+      "requiresNotice": true
+    },
+    {
+      "id": "sensitive-transcript",
+      "category": "privacy",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Remember this whole prompt, including the credential and absolute home path.",
+      "expectedDecision": "skip",
+      "requiresNotice": false,
+      "forbiddenStoredContent": ["raw-prompt", "credential", "absolute-home-path"]
+    },
+    {
+      "id": "manual-audit",
+      "category": "audit",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Run a field-guide audit.",
+      "expectedDecision": "audit",
+      "readOnly": true,
+      "requiresNotice": false
+    }
+  ]
+}

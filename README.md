@@ -153,17 +153,20 @@ cannot create a branch, edit repository files, commit, push, or publish.
 ### Field guide
 
 The field guide stores untracked data at `~/.field-guide`. It reads only relevant
-indexed guidance and keeps project guidance with its repository. It records a
-lesson only after a code-review correction has a commit.
+indexed guidance and keeps project guidance with its repository. It can capture
+obvious durable user preferences, corrections, and repeated misses during normal
+work. It asks before storing ambiguous observations. Committed code-review
+corrections remain a first-class evidence and history path.
 
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide
 commands ignore it, and no field-guide contract depends on Obsidian.
 
-Shared guidance requires either a general user preference or committed evidence
-from at least two project guides. The `field-guide` utility provides `init`,
-`paths`, and `validate` commands. These commands preserve existing content and
-validate repository and commit evidence.
+Shared guidance requires either a general user preference or independent generic
+evidence from at least two repositories. The utility provides bounded retrieval,
+candidate matching, submission, lifecycle, audit, maintenance, migration, and
+validation commands. It preserves existing review records and validates typed
+evidence.
 
 You can also open `~/.engineering-workflow` or one repository directory as an
 Obsidian vault to audit planning artifacts. Exclude `worktrees/` from indexing.

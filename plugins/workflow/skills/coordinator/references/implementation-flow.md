@@ -76,7 +76,7 @@ Review feedback can be inspected without implementation authority. Corrections r
 3. Stop after inspection when the request grants no implementation authority.
 4. Use the fast path for an authorized, isolated, low-risk correction.
 5. Use a bounded cycle for an authorized, material, or uncertain correction.
-6. Record a field-guide lesson only after the correction has a commit.
+6. Record commit-backed field-guide evidence only after the correction has a commit. Field-guide can separately capture an explicit durable preference through its observation path.
 
 Review feedback does not grant branch, commit, push, or pull-request authority.
 

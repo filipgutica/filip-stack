@@ -29,6 +29,26 @@
         "omittedCount": { "type": "integer", "minimum": 0 },
         "limits": { "$ref": "#/$defs/evidenceLimits" }
       }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "candidates", "bytes", "omittedCount", "limits"],
+      "properties": {
+        "mode": { "const": "candidates" },
+        "candidates": { "type": "array", "maxItems": 10, "items": { "$ref": "#/$defs/candidate" } },
+        "bytes": { "type": "integer", "maximum": 6144 },
+        "omittedCount": { "type": "integer", "minimum": 0 },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxRecords", "maxBytes"],
+          "properties": {
+            "maxRecords": { "const": 10 },
+            "maxBytes": { "const": 6144 }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -62,6 +82,20 @@
         "examples": { "type": "array", "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
         "updatedAt": { "type": "string", "format": "date-time" },
         "match": { "enum": ["project-subject", "shared-subject", "linked-subject", "applicability"] }
+      }
+    },
+    "candidate": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "status", "scope", "subjectKey", "learning", "examples"],
+      "properties": {
+        "id": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+        "status": { "enum": ["candidate", "active"] },
+        "scope": { "$ref": "memory-v1.schema.json#/$defs/scope" },
+        "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "learning": { "type": "string" },
+        "examples": { "type": "array", "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
+        "relationship": { "$ref": "memory-v1.schema.json#/$defs/relationship" }
       }
     },
     "guidanceLimits": {

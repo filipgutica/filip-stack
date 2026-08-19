@@ -22,7 +22,7 @@
       "Use $workflow:implementation for proportional test-first evidence with $workflow:minimal-code, and use $workflow:systematic-debugging for failures and unexpected behavior.",
       "Use $workflow:receiving-code-review to verify review feedback and $workflow:review-cycle to accept the final diff and evidence.",
       "Use $workflow:branch-task-planner when explicitly requested or when named-ticket end-to-end execution requires an external ledger.",
-      "Use $workflow:field-guide for durable guidance and $workflow:simplification-review for focused, read-only cleanup audits."
+      "Use $workflow:field-guide to consult and capture durable guidance, and use $workflow:simplification-review for focused, read-only cleanup audits."
     ]
   }
 }

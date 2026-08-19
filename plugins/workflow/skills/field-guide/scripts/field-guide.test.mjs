@@ -243,6 +243,10 @@ test('submit rejects pointer fields and unsafe pointer values as a whole', () =>
   const cases = [
     [{ kind: 'conversation', client: 'codex', threadId: 'thread', turnId: 'turn', transcript: 'raw' }, /unsupported field: transcript/],
     [{ kind: 'conversation', client: 'codex', threadId: 'thread', turnId: 'turn', url: 'https://example.com/thread?secret=value' }, /query string/],
+    [{ kind: 'conversation', client: 'codex', threadId: `ghp_${'a'.repeat(24)}`, turnId: 'turn' }, /forbidden credential token/],
+    [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: `https://github.com/example/repo/pull/1#ghp_${'a'.repeat(24)}` }, /forbidden credential token/],
+    [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: `https://sk-${'a'.repeat(24)}.example.com/pull/1#comment` }, /forbidden credential token/],
+    [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: 'https://github.com/%252FUsers%252Fexample%252Fsecret/pull/1#comment' }, /forbidden absolute home-directory path/],
     [{ kind: 'local-artifact', repositoryIdentity: paths.identity, path: '/Users/example/code.ts', contentDigest: `sha256:${'a'.repeat(64)}` }, /repository-relative/],
   ]
   for (const [pointer, expected] of cases) {
@@ -252,6 +256,33 @@ test('submit rejects pointer fields and unsafe pointer values as a whole', () =>
     assert.match(result.stderr, expected)
   }
   assert.deepEqual(JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance, [])
+})
+
+test('submit fails closed on high-signal sensitive text', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-sensitive-text-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/sensitive-text.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const initial = readFileSync(paths.memoryFile, 'utf8')
+  const unsafeValues = [
+    'Read /Users/example/private/notes.md before coding.',
+    'Use https://example.com/thread?token=secret as evidence.',
+    'api_key=not-a-real-key',
+    'User: retain this raw transcript.',
+    '-----BEGIN PRIVATE KEY-----',
+  ]
+
+  for (const [index, learning] of unsafeValues.entries()) {
+    const result = submit({
+      repoRoot,
+      guideRoot,
+      input: conversationSubmission({ learning, turnId: `turn-${index}` }),
+      expectFailure: true,
+    })
+    assert.match(result.stderr, /contains a forbidden/)
+    assert.equal(readFileSync(paths.memoryFile, 'utf8'), initial)
+    assert.equal(existsSync(paths.memoryIndexFile), false)
+  }
 })
 
 test('submit fails closed when pointers map to different evidence events', () => {
@@ -624,6 +655,33 @@ test('retrieve rejects conflicting normal and evidence modes', () => {
     expectFailure: true,
   })
   assert.match(result.stderr, /cannot be combined/)
+})
+
+test('candidates returns bounded active and candidate records for semantic matching', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-candidates-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/candidates.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Candidate guidance.', turnId: 'turn-1' }) })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Active guidance.', turnId: 'turn-2', explicitPreference: true }),
+  })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Shared guidance.', turnId: 'turn-3', scope: 'shared', explicitPreference: true }),
+  })
+  const result = run({
+    command: 'candidates',
+    repoRoot,
+    guideRoot,
+    args: ['--subject', 'testing', '--scope', 'project'],
+  }).result
+  assert.deepEqual(result.candidates.map(({ status }) => status).sort(), ['active', 'candidate'])
+  assert.equal(JSON.stringify(result.candidates).includes('evidenceId'), false)
+  assert.ok(result.bytes <= 6144)
 })
 
 test('audit is read-only and reports unresolved relationships and broken local pointers', () => {

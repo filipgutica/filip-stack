@@ -35,7 +35,7 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['audit', 'delete', 'init', 'maintain', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
+const commands = new Set(['audit', 'candidates', 'delete', 'init', 'maintain', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -43,6 +43,7 @@ const optionNames = new Map([
   ['--subject', 'subject'],
   ['--query', 'query'],
   ['--evidence-for', 'evidence-for'],
+  ['--scope', 'scope'],
 ])
 const flagNames = new Map([['--apply', 'apply']])
 
@@ -68,7 +69,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <audit|delete|init|maintain|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
+    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -217,6 +218,30 @@ const requireString = ({ value, label, maxBytes, nonEmpty = true, noWhitespace =
   return value
 }
 
+const unsafePersistedTextPatterns = [
+  { pattern: /\/(?:Users|home)\/[^/\s]+\//u, reason: 'absolute home-directory path' },
+  { pattern: /[A-Za-z]:\\Users\\[^\\\s]+\\/u, reason: 'absolute home-directory path' },
+  { pattern: /https:\/\/[^\s?]+\?[^\s]*/iu, reason: 'URL query string' },
+  { pattern: /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/u, reason: 'private key' },
+  { pattern: /\b(?:github_pat_|gh[pousr]_|AKIA)[A-Za-z0-9_]{12,}\b/u, reason: 'credential token' },
+  { pattern: /\bsk-[A-Za-z0-9_-]{20,}\b/u, reason: 'credential token' },
+  { pattern: /\b(?:password|passwd|access[_-]?token|api[_-]?key|client[_-]?secret)\s*[:=]\s*[^\s,;]+/iu, reason: 'credential assignment' },
+  { pattern: /^(?:user|assistant|system):\s+/imu, reason: 'raw transcript marker' },
+  { pattern: /<(?:user|assistant|system)>|BEGIN (?:RAW )?PROMPT/iu, reason: 'raw prompt marker' },
+]
+
+const assertSafePersistedText = ({ value, label }) => {
+  for (const { pattern, reason } of unsafePersistedTextPatterns) {
+    if (pattern.test(value)) fail(`${label} contains a forbidden ${reason}`)
+  }
+}
+
+const requireSafePersistedString = (options) => {
+  const value = requireString(options)
+  assertSafePersistedText({ value, label: options.label })
+  return value
+}
+
 const requireTimestamp = ({ value, label }) => {
   requireString({ value, label, maxBytes: 64 })
   if (Number.isNaN(Date.parse(value)) || new Date(value).toISOString() !== value) {
@@ -243,8 +268,19 @@ const validateSafeUrl = ({ value, kind }) => {
   if (labels.length < 2 || labels.some((label) => (
     !label || label.length > 63 || !/^[a-z0-9](?:[a-z0-9-]*[a-z0-9])?$/u.test(label)
   ))) fail(`${kind} URL host must be a DNS name`)
+  assertSafePersistedText({ value: host, label: `${kind} URL host` })
   if (kind !== 'review' && parsed.hash) fail(`${kind} URL must not contain a fragment`)
   if (parsed.hash && byteLength(parsed.hash.slice(1)) > 256) fail('review URL fragment exceeds 256 UTF-8 bytes')
+  let decodedPathAndFragment = `${parsed.pathname}${parsed.hash}`
+  for (let depth = 0; /%[0-9a-f]{2}/iu.test(decodedPathAndFragment); depth += 1) {
+    if (depth === 5) fail(`${kind} URL contains excessive nested percent encoding`)
+    try {
+      decodedPathAndFragment = decodeURIComponent(decodedPathAndFragment)
+    } catch {
+      fail(`${kind} URL contains invalid percent encoding`)
+    }
+  }
+  assertSafePersistedText({ value: decodedPathAndFragment, label: `${kind} URL` })
   return parsed.href
 }
 
@@ -263,42 +299,44 @@ const validatePointer = (pointer) => {
   assertClosedFields({ value: pointer, fields, label: `${pointer.kind} pointer` })
 
   if (pointer.kind === 'conversation') {
-    requireString({ value: pointer.client, label: 'conversation client', maxBytes: 256, noWhitespace: true })
-    requireString({ value: pointer.threadId, label: 'conversation threadId', maxBytes: 256, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.client, label: 'conversation client', maxBytes: 256, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.threadId, label: 'conversation threadId', maxBytes: 256, noWhitespace: true })
     if (pointer.messageId !== undefined && pointer.turnId !== undefined) {
       fail('conversation pointer must use only one of messageId or turnId')
     }
     for (const field of ['messageId', 'turnId']) {
       if (pointer[field] !== undefined) {
-        requireString({ value: pointer[field], label: `conversation ${field}`, maxBytes: 256, noWhitespace: true })
+        requireSafePersistedString({ value: pointer[field], label: `conversation ${field}`, maxBytes: 256, noWhitespace: true })
       }
     }
     if (pointer.url !== undefined) pointer.url = validateSafeUrl({ value: pointer.url, kind: 'conversation' })
   }
 
   if (pointer.kind === 'review') {
-    requireString({ value: pointer.provider, label: 'review provider', maxBytes: 256, noWhitespace: true })
-    requireString({ value: pointer.repositoryIdentity, label: 'review repositoryIdentity', maxBytes: 1024, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.provider, label: 'review provider', maxBytes: 256, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.repositoryIdentity, label: 'review repositoryIdentity', maxBytes: 1024, noWhitespace: true })
     if (!Number.isSafeInteger(pointer.pullRequestNumber) || pointer.pullRequestNumber <= 0) {
       fail('review pullRequestNumber must be a positive integer')
     }
-    requireString({ value: pointer.commentId, label: 'review commentId', maxBytes: 256, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.commentId, label: 'review commentId', maxBytes: 256, noWhitespace: true })
     if (pointer.url !== undefined) pointer.url = validateSafeUrl({ value: pointer.url, kind: 'review' })
   }
 
   if (pointer.kind === 'commit') {
-    requireString({ value: pointer.repositoryIdentity, label: 'commit repositoryIdentity', maxBytes: 1024, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.repositoryIdentity, label: 'commit repositoryIdentity', maxBytes: 1024, noWhitespace: true })
     if (!/^[0-9a-f]{40}$/.test(pointer.commit)) fail('commit pointer requires a full lowercase commit hash')
   }
 
   if (pointer.kind === 'local-artifact') {
-    requireString({ value: pointer.repositoryIdentity, label: 'artifact repositoryIdentity', maxBytes: 1024, noWhitespace: true })
+    requireSafePersistedString({ value: pointer.repositoryIdentity, label: 'artifact repositoryIdentity', maxBytes: 1024, noWhitespace: true })
     requireString({ value: pointer.path, label: 'artifact path', maxBytes: 1024 })
     if (isAbsolute(pointer.path) || pointer.path.split('/').includes('..')) {
       fail('artifact path must be repository-relative without .. segments')
     }
+    assertSafePersistedText({ value: pointer.path, label: 'artifact path' })
     if (pointer.heading !== undefined) {
       requireString({ value: pointer.heading, label: 'artifact heading', maxBytes: 256 })
+      assertSafePersistedText({ value: pointer.heading, label: 'artifact heading' })
     }
     if (!/^sha256:[0-9a-f]{64}$/.test(pointer.contentDigest)) {
       fail('artifact contentDigest must be a lowercase SHA-256 digest')
@@ -307,6 +345,7 @@ const validatePointer = (pointer) => {
 
   if (pointer.kind === 'manual') {
     requireString({ value: pointer.sourceLabel, label: 'manual sourceLabel', maxBytes: 512 })
+    assertSafePersistedText({ value: pointer.sourceLabel, label: 'manual sourceLabel' })
   }
   return pointer
 }
@@ -334,6 +373,7 @@ const validateExamples = (examples = []) => {
     kinds.add(example.kind)
     requireString({ value: example.language, label: 'example language', maxBytes: 64, noWhitespace: true })
     requireString({ value: example.code, label: 'example code', maxBytes: 6144, allowNewlines: true })
+    assertSafePersistedText({ value: example.code, label: 'example code' })
     if (example.code.split('\n').length > 40) fail('guidance example exceeds 40 lines')
     totalBytes += byteLength(example.code)
   }
@@ -349,6 +389,7 @@ const validateEvidenceRecord = (evidence) => {
   })
   if (!evidenceIdPattern.test(evidence.id)) fail('evidence record has invalid id')
   requireString({ value: evidence.summary, label: 'evidence summary', maxBytes: 512 })
+  assertSafePersistedText({ value: evidence.summary, label: 'evidence summary' })
   if (!Array.isArray(evidence.pointers) || evidence.pointers.length === 0) fail('evidence pointers must be a non-empty array')
   evidence.pointers.forEach(validatePointer)
   if (!Array.isArray(evidence.sourceKeys) || new Set(evidence.sourceKeys).size !== evidence.sourceKeys.length) {
@@ -382,6 +423,7 @@ const validateGuidanceRecord = (guidance) => {
     fail('guidance linkedSubjects must be unique portable slugs')
   }
   requireString({ value: guidance.learning, label: 'guidance learning', maxBytes: 4096 })
+  assertSafePersistedText({ value: guidance.learning, label: 'guidance learning' })
   if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(guidance.status)) {
     fail(`guidance record has invalid status: ${guidance.status}`)
   }
@@ -411,6 +453,8 @@ const validateGuidanceRecord = (guidance) => {
     if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.to)) fail('invalid transition to status')
     requireString({ value: transition.reason, label: 'transition reason', maxBytes: 512 })
     requireString({ value: transition.source, label: 'transition source', maxBytes: 128, noWhitespace: true })
+    assertSafePersistedText({ value: transition.reason, label: 'transition reason' })
+    assertSafePersistedText({ value: transition.source, label: 'transition source' })
     requireTimestamp({ value: transition.at, label: 'transition at' })
     if (transition.replacementId !== undefined && !guidanceIdPattern.test(transition.replacementId)) fail('invalid transition replacementId')
     if ((transition.to === 'superseded') !== Boolean(transition.replacementId)) {
@@ -680,8 +724,12 @@ const validateSubmission = ({ submission, paths }) => {
     fail('submission linkedSubjects must be unique portable slugs')
   }
   requireString({ value: submission.learning, label: 'submission learning', maxBytes: 4096 })
+  assertSafePersistedText({ value: submission.learning, label: 'submission learning' })
   if (!normalizeLearning(submission.learning)) fail('submission learning must contain meaningful text')
-  if (submission.reason !== undefined) requireString({ value: submission.reason, label: 'submission reason', maxBytes: 512 })
+  if (submission.reason !== undefined) {
+    requireString({ value: submission.reason, label: 'submission reason', maxBytes: 512 })
+    assertSafePersistedText({ value: submission.reason, label: 'submission reason' })
+  }
   if (submission.explicitPreference !== undefined && typeof submission.explicitPreference !== 'boolean') fail('explicitPreference must be boolean')
   if (submission.generic !== undefined && typeof submission.generic !== 'boolean') fail('generic must be boolean')
   if (submission.relationship !== undefined) {
@@ -694,6 +742,7 @@ const validateSubmission = ({ submission, paths }) => {
   assertObject({ value: submission.evidence, label: 'submission evidence' })
   assertClosedFields({ value: submission.evidence, fields: ['summary', 'pointers'], label: 'submission evidence' })
   requireString({ value: submission.evidence.summary, label: 'evidence summary', maxBytes: 512 })
+  assertSafePersistedText({ value: submission.evidence.summary, label: 'evidence summary' })
   if (!Array.isArray(submission.evidence.pointers) || submission.evidence.pointers.length === 0) {
     fail('submission evidence pointers must be a non-empty array')
   }
@@ -1251,6 +1300,39 @@ const retrieve = ({ paths, subjectKey, query, evidenceFor }) => {
     : retrieveGuidance({ memory, paths, subjectKey, query })
 }
 
+const candidateMatches = ({ paths, subjectKey, scope: scopeKind }) => {
+  if (!portableKey.test(subjectKey ?? '') || byteLength(subjectKey) > 128) {
+    fail('--subject must be a portable subject key')
+  }
+  if (!['project', 'shared'].includes(scopeKind)) fail('--scope must be project or shared')
+  const memory = readMemory(paths) ?? emptyMemory()
+  const records = memory.guidance
+    .filter((guidance) => (
+      ['candidate', 'active'].includes(guidance.status)
+        && guidance.subjectKey === subjectKey
+        && guidance.scope.kind === scopeKind
+        && (scopeKind === 'shared' || guidance.scope.repositoryIdentity === paths.identity)
+    ))
+    .sort((left, right) => left.id.localeCompare(right.id))
+    .map((guidance) => ({
+      id: guidance.id,
+      status: guidance.status,
+      scope: guidance.scope,
+      subjectKey: guidance.subjectKey,
+      learning: guidance.learning,
+      examples: guidance.examples,
+      ...(guidance.relationship ? { relationship: guidance.relationship } : {}),
+    }))
+  const fitted = fitWholeRecords({ records, maxRecords: 10, maxBytes: 6144 })
+  return {
+    mode: 'candidates',
+    candidates: fitted.records,
+    bytes: fitted.bytes,
+    omittedCount: fitted.omittedCount,
+    limits: { maxRecords: 10, maxBytes: 6144 },
+  }
+}
+
 const pointerProblem = ({ pointer, paths }) => {
   if (pointer.kind === 'commit' && pointer.repositoryIdentity === paths.identity) {
     const resolved = git({
@@ -1703,6 +1785,11 @@ const main = () => {
   let migration
   let result
   if (command === 'audit') result = audit(paths)
+  if (command === 'candidates') result = candidateMatches({
+    paths,
+    subjectKey: options.subject,
+    scope: options.scope,
+  })
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'maintain') result = maintain({ paths, inputPath: options.input })

@@ -1,8 +1,10 @@
 interface:
   display_name: "Field Guide"
-  short_description: "Consult and maintain review-derived guidance"
+  short_description: "Learn durable coding preferences and corrections"
   default_prompt: >-
-    Use $workflow:field-guide to consult indexed guidance. Create a review
-    record only after review feedback causes a committed correction.
+    Use $workflow:field-guide to retrieve bounded guidance and capture obvious
+    durable preferences, corrections, repeated misses, and manual learning
+    requests. Ask before storing ambiguous observations. Keep committed review
+    evidence as a first-class history path.
 policy:
   allow_implicit_invocation: true

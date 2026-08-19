@@ -51,6 +51,11 @@ Use `submit --input <json-file>` after migration. The input must follow
 `schemas/submission-v1.schema.json`. The agent decides whether an observation is
 clear enough to submit. The utility owns all behavior after submission.
 
+Run `candidates --subject <subject-key> --scope <project|shared>` before
+submission. It returns at most ten active or candidate records from the same
+scope and subject, with a 6 KB limit and no evidence. Use this bounded set for
+semantic duplicate and relationship decisions.
+
 The utility normalizes Unicode, case, whitespace, and terminal punctuation for
 exact fingerprints. It never creates two records with the same scope, subject,
 and normalized learning. A repeated source returns `duplicate-evidence`. A new
@@ -60,6 +65,11 @@ An explicit user preference becomes active immediately. An inferred project
 record becomes active after two independent evidence events. An inferred shared
 record also needs evidence from two repository identities and `generic: true`.
 Confidence is audit metadata. It does not count as evidence.
+
+An explicit confirmed correction can supersede active guidance through
+`transition`. The replacement must link to the target with `refines` or
+`contradicts`. An inferred contradiction remains a linked candidate until the
+user confirms how to resolve it.
 
 Evidence pointers use a closed allowlist:
 
@@ -77,6 +87,11 @@ queries, local hosts, or IP hosts. Only review URLs can contain fragments.
 Guidance can include one sanitized pattern and one sanitized antipattern. Each
 example must identify its language and contain at most 40 lines. Both examples
 can contain at most 6 KB of UTF-8 text.
+
+Submissions fail closed on high-signal secrets and unsafe source content. The
+guard rejects credential assignments, common token formats, private-key
+markers, transcript or prompt markers, URL query strings, and absolute home
+paths. This structural guard does not replace the agent's semantic redaction.
 
 ## Lifecycle
 
