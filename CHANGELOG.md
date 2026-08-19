@@ -1,3 +1,21 @@
+# [1.11.0](https://github.com/filipgutica/filip-stack/compare/v1.10.0...v1.11.0) (2026-08-19)
+
+
+### Bug Fixes
+
+* **field-guide:** close maintenance contracts ([e3b6f7d](https://github.com/filipgutica/filip-stack/commit/e3b6f7d92552c9695ae63dccd5db20895ae4c0e7))
+* **workflow:** separate fallback worktrees ([bc76acf](https://github.com/filipgutica/filip-stack/commit/bc76acf9fab87f40daafc53473e73a88c203ad76))
+
+
+### Features
+
+* **field-guide:** add versioned memory migration ([20982c6](https://github.com/filipgutica/filip-stack/commit/20982c6f3495c358d14e808bfe6bbd3cd14ea2bf))
+* **field-guide:** audit and maintain memory ([26d44de](https://github.com/filipgutica/filip-stack/commit/26d44de0626eecf1c2c32ecaaf4de93e61d0ea38))
+* **field-guide:** bound guidance retrieval ([4da7e50](https://github.com/filipgutica/filip-stack/commit/4da7e50a1c5543d7f667801078f95357c04ac6fa))
+* **field-guide:** capture durable observations ([a125f6d](https://github.com/filipgutica/filip-stack/commit/a125f6d4899ebaa8d41c5388e5a9bc04759bd48e))
+* **field-guide:** manage guidance lifecycle ([d0d0d9f](https://github.com/filipgutica/filip-stack/commit/d0d0d9fd1dada0498166e89bf086e6868899d53b))
+* **field-guide:** route durable learning ([931edaf](https://github.com/filipgutica/filip-stack/commit/931edafdf943f9aa197a735eda661227aad504d4))
+
 # [1.10.0](https://github.com/filipgutica/filip-stack/compare/v1.9.0...v1.10.0) (2026-08-18)
 
 
