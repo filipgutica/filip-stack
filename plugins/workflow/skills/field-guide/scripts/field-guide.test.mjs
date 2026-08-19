@@ -246,7 +246,7 @@ test('submit rejects pointer fields and unsafe pointer values as a whole', () =>
     [{ kind: 'conversation', client: 'codex', threadId: `ghp_${'a'.repeat(24)}`, turnId: 'turn' }, /forbidden credential token/],
     [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: `https://github.com/example/repo/pull/1#ghp_${'a'.repeat(24)}` }, /forbidden credential token/],
     [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: `https://sk-${'a'.repeat(24)}.example.com/pull/1#comment` }, /forbidden credential token/],
-    [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: 'https://github.com/%252FUsers%252Fexample%252Fsecret/pull/1#comment' }, /forbidden absolute home-directory path/],
+    [{ kind: 'review', provider: 'github', repositoryIdentity: paths.identity, pullRequestNumber: 1, commentId: 'comment', url: 'https://github.com/%252FUsers%252Fexample%252Fsecret/pull/1#comment' }, /must not contain percent encoding/],
     [{ kind: 'local-artifact', repositoryIdentity: paths.identity, path: '/Users/example/code.ts', contentDigest: `sha256:${'a'.repeat(64)}` }, /repository-relative/],
   ]
   for (const [pointer, expected] of cases) {
@@ -268,6 +268,8 @@ test('submit fails closed on high-signal sensitive text', () => {
     'Read /Users/example/private/notes.md before coding.',
     'Use https://example.com/thread?token=secret as evidence.',
     'api_key=not-a-real-key',
+    'PASSWORD=not-a-real-secret',
+    'Read https://example.com/%252FUsers%252Fexample%252Fprivate.md.',
     'User: retain this raw transcript.',
     '-----BEGIN PRIVATE KEY-----',
   ]
@@ -736,21 +738,13 @@ test('maintain previews archive without writes and requires its current token to
   const input = {
     schemaVersion: 1,
     action: 'archive',
-    targetIds: [candidate.targetId],
+    targetIds: [candidate.targetId, active.targetId],
     reason: 'The user approved archival after audit.',
   }
   const before = readFileSync(paths.memoryIndexFile, 'utf8')
   const preview = runInputCommand({ command: 'maintain', repoRoot, guideRoot, input }).result
   assert.equal(preview.applied, false)
   assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), before)
-  const activeResult = runInputCommand({
-    command: 'maintain',
-    repoRoot,
-    guideRoot,
-    input: { ...input, targetIds: [active.targetId] },
-    expectFailure: true,
-  })
-  assert.match(activeResult.stderr, /archive requires an inactive target/)
   const stale = runInputCommand({
     command: 'maintain',
     repoRoot,
@@ -783,6 +777,50 @@ test('maintain previews archive without writes and requires its current token to
     JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance.find(({ id }) => id === candidate.targetId).status,
     'archived',
   )
+  assert.equal(
+    JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance.find(({ id }) => id === active.targetId).status,
+    'archived',
+  )
+})
+
+test('maintain previews and repairs only the derived JSON cache', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-repair-cache-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/repair-cache.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Keep canonical repair guidance.', turnId: 'turn-1', explicitPreference: true }),
+  })
+  const canonical = readFileSync(paths.memoryIndexFile, 'utf8')
+  writeFileSync(paths.memoryFile, `${JSON.stringify({ schemaVersion: 1, revision: 0, guidance: [], evidence: [] }, null, 2)}\n`)
+  const staleCache = readFileSync(paths.memoryFile, 'utf8')
+  const input = {
+    schemaVersion: 1,
+    action: 'repair-cache',
+    reason: 'Rebuild the derived cache from validated canonical memory.',
+  }
+  const preview = runInputCommand({ command: 'maintain', repoRoot, guideRoot, input }).result
+  assert.equal(preview.cacheState, 'stale')
+  assert.equal(preview.applied, false)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), staleCache)
+  const applied = runInputCommand({
+    command: 'maintain',
+    repoRoot,
+    guideRoot,
+    input: { ...input, apply: true, previewToken: preview.previewToken },
+  }).result
+  assert.equal(applied.applied, true)
+  assert.equal(JSON.parse(readFileSync(paths.memoryFile, 'utf8')).guidance.length, 1)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), canonical)
+  run({ command: 'validate', repoRoot, guideRoot })
+
+  const validCache = readFileSync(paths.memoryFile, 'utf8')
+  writeFileSync(paths.memoryIndexFile, canonical.replace('"schemaVersion": 1,', '"schemaVersion": 1,\n  "unexpected": true,'))
+  const malformed = runInputCommand({ command: 'maintain', repoRoot, guideRoot, input, expectFailure: true })
+  assert.match(malformed.stderr, /unsupported field: unexpected/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), validCache)
 })
 
 test('migrate previews and creates a versioned store without changing legacy reviews', () => {

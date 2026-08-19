@@ -205,7 +205,7 @@ const hasControlCharacters = ({ value, allowNewlines }) => (
 const portableKey = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const sourceKeyPattern = /^source:v1:[0-9a-f]{64}$/
 const fingerprintPattern = /^fingerprint:v1:[0-9a-f]{64}$/
-const evidenceIdPattern = /^evidence:v1:[0-9a-f-]{36}$/
+const evidenceIdPattern = /^evidence:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const guidanceIdPattern = /^guidance:v1:[0-9a-f]{64}$/
 
 const requireString = ({ value, label, maxBytes, nonEmpty = true, noWhitespace = false, allowNewlines = false }) => {
@@ -222,6 +222,7 @@ const unsafePersistedTextPatterns = [
   { pattern: /\/(?:Users|home)\/[^/\s]+\//u, reason: 'absolute home-directory path' },
   { pattern: /[A-Za-z]:\\Users\\[^\\\s]+\\/u, reason: 'absolute home-directory path' },
   { pattern: /https:\/\/[^\s?]+\?[^\s]*/iu, reason: 'URL query string' },
+  { pattern: /%[0-9a-f]{2}/iu, reason: 'percent-encoded source text' },
   { pattern: /-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----/u, reason: 'private key' },
   { pattern: /\b(?:github_pat_|gh[pousr]_|AKIA)[A-Za-z0-9_]{12,}\b/u, reason: 'credential token' },
   { pattern: /\bsk-[A-Za-z0-9_-]{20,}\b/u, reason: 'credential token' },
@@ -271,16 +272,11 @@ const validateSafeUrl = ({ value, kind }) => {
   assertSafePersistedText({ value: host, label: `${kind} URL host` })
   if (kind !== 'review' && parsed.hash) fail(`${kind} URL must not contain a fragment`)
   if (parsed.hash && byteLength(parsed.hash.slice(1)) > 256) fail('review URL fragment exceeds 256 UTF-8 bytes')
-  let decodedPathAndFragment = `${parsed.pathname}${parsed.hash}`
-  for (let depth = 0; /%[0-9a-f]{2}/iu.test(decodedPathAndFragment); depth += 1) {
-    if (depth === 5) fail(`${kind} URL contains excessive nested percent encoding`)
-    try {
-      decodedPathAndFragment = decodeURIComponent(decodedPathAndFragment)
-    } catch {
-      fail(`${kind} URL contains invalid percent encoding`)
-    }
+  const pathAndFragment = `${parsed.pathname}${parsed.hash}`
+  if (/%[0-9a-f]{2}/iu.test(pathAndFragment)) {
+    fail(`${kind} URL must not contain percent encoding`)
   }
-  assertSafePersistedText({ value: decodedPathAndFragment, label: `${kind} URL` })
+  assertSafePersistedText({ value: pathAndFragment, label: `${kind} URL` })
   return parsed.href
 }
 
@@ -523,6 +519,7 @@ const validateMemory = (memory) => {
         'candidate->archived',
         'active->superseded',
         'active->withdrawn',
+        'active->archived',
         'superseded->archived',
         'withdrawn->archived',
       ])
@@ -1441,14 +1438,19 @@ const validateMaintenanceInput = (input) => {
     label: 'maintenance input',
   })
   if (input.schemaVersion !== 1) fail('maintenance schemaVersion must be 1')
-  if (input.action !== 'archive') fail('maintenance action must be archive')
-  if (!Array.isArray(input.targetIds)
-    || input.targetIds.length === 0
-    || new Set(input.targetIds).size !== input.targetIds.length
-    || input.targetIds.some((id) => !guidanceIdPattern.test(id))) {
-    fail('maintenance targetIds must be a non-empty unique guidance ID array')
+  if (!['archive', 'repair-cache'].includes(input.action)) fail('maintenance action must be archive or repair-cache')
+  if (input.action === 'archive') {
+    if (!Array.isArray(input.targetIds)
+      || input.targetIds.length === 0
+      || new Set(input.targetIds).size !== input.targetIds.length
+      || input.targetIds.some((id) => !guidanceIdPattern.test(id))) {
+      fail('archive targetIds must be a non-empty unique guidance ID array')
+    }
+  } else if (input.targetIds !== undefined) {
+    fail('repair-cache must not include targetIds')
   }
   requireString({ value: input.reason, label: 'maintenance reason', maxBytes: 512 })
+  assertSafePersistedText({ value: input.reason, label: 'maintenance reason' })
   if (input.apply !== undefined && typeof input.apply !== 'boolean') fail('maintenance apply must be boolean')
   if (input.previewToken !== undefined) {
     requireString({ value: input.previewToken, label: 'maintenance previewToken', maxBytes: 128, noWhitespace: true })
@@ -1459,20 +1461,56 @@ const validateMaintenanceInput = (input) => {
 const maintenancePreviewToken = ({ memory, input }) => (
   hashIdentity({
     prefix: 'maintenance-preview',
-    values: [1, input.action, input.targetIds, input.reason, createHash('sha256').update(JSON.stringify(memory)).digest('hex')],
+    values: [1, input.action, input.targetIds ?? [], input.reason, createHash('sha256').update(JSON.stringify(memory)).digest('hex')],
   })
 )
 
+const repairCache = ({ paths, input }) => {
+  const memory = readMarkdownMemory(paths)
+  if (!memory) fail('repair-cache requires a valid canonical memory.md record')
+  const cacheBytes = existsSync(paths.memoryFile) ? readFileSync(paths.memoryFile, 'utf8') : null
+  let cacheState = 'missing'
+  if (cacheBytes !== null) {
+    try {
+      cacheState = JSON.stringify(readJsonMemory(paths)) === JSON.stringify(memory) ? 'current' : 'stale'
+    } catch {
+      cacheState = 'invalid'
+    }
+  }
+  const previewToken = hashIdentity({
+    prefix: 'maintenance-preview',
+    values: [1, input.action, input.reason, memory, cacheBytes],
+  })
+  if (input.apply !== true) {
+    return {
+      outcome: 'maintenance-preview',
+      action: input.action,
+      cacheState,
+      previewToken,
+      applied: false,
+    }
+  }
+  if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
+  writeMemoryAtomically({ paths, memory })
+  return {
+    outcome: cacheState === 'current' ? 'maintenance-no-change' : 'maintained',
+    action: input.action,
+    cacheState,
+    applied: true,
+  }
+}
+
 const maintainUnlocked = ({ paths, inputPath }) => {
+  const input = validateMaintenanceInput(readJsonInput(inputPath))
+  if (input.action === 'repair-cache') return repairCache({ paths, input })
   validate(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
-  const input = validateMaintenanceInput(readJsonInput(inputPath))
   const targets = input.targetIds.map((id) => {
     const target = memory.guidance.find((guidance) => guidance.id === id)
     if (!target) fail(`maintenance target does not exist: ${id}`)
-    if (!['candidate', 'superseded', 'withdrawn'].includes(target.status)) {
-      fail(`archive requires an inactive target: ${id}`)
+    if (!['candidate', 'active', 'superseded', 'withdrawn'].includes(target.status)) {
+      fail(`archive requires a non-archived target: ${id}`)
     }
     return target
   })

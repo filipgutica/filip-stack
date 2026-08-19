@@ -10,16 +10,16 @@
     "decision": { "const": "capture" },
     "confidence": { "enum": ["low", "medium", "high"] },
     "scope": { "enum": ["project", "shared"] },
-    "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+    "subjectKey": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
     "linkedSubjects": {
       "type": "array",
       "maxItems": 16,
       "uniqueItems": true,
       "items": { "type": "string", "maxLength": 128, "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" }
     },
-    "learning": { "type": "string", "minLength": 1, "maxLength": 4096 },
+    "learning": { "$ref": "memory-v1.schema.json#/$defs/safeText", "minLength": 1, "maxLength": 4096 },
     "relationship": { "$ref": "memory-v1.schema.json#/$defs/relationship" },
-    "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "reason": { "$ref": "memory-v1.schema.json#/$defs/safeText", "minLength": 1, "maxLength": 512 },
     "explicitPreference": { "type": "boolean" },
     "generic": { "type": "boolean" },
     "examples": { "type": "array", "maxItems": 2, "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
@@ -28,7 +28,7 @@
       "additionalProperties": false,
       "required": ["summary", "pointers"],
       "properties": {
-        "summary": { "type": "string", "minLength": 1, "maxLength": 512 },
+        "summary": { "$ref": "memory-v1.schema.json#/$defs/safeText", "minLength": 1, "maxLength": 512 },
         "pointers": { "type": "array", "minItems": 1, "items": { "$ref": "memory-v1.schema.json#/$defs/pointer" } }
       }
     }

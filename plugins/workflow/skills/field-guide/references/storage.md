@@ -144,11 +144,12 @@ contradictions, broken local or commit pointers, orphan evidence, and oversized
 records. It does not fetch stored URLs. It does not use record age as an archive
 signal, and it does not change files.
 
-Use `maintain --input <json-file>` for explicit archive maintenance. The input
-follows `schemas/maintenance-v1.schema.json` and names each target ID. Only
-candidate, superseded, or withdrawn records can be archived. The default is a
-dry run. Apply requires the preview token from the same canonical store state.
-Maintenance does not repair malformed state automatically.
+Use `maintain --input <json-file>` for explicit archive or cache-repair
+maintenance. The input follows `schemas/maintenance-v1.schema.json`. Archive
+accepts candidate, active, superseded, or withdrawn target IDs. `repair-cache`
+rebuilds only `memory.json` from a valid canonical `memory.md`; it never changes
+malformed canonical data. The default is a dry run. Apply requires the preview
+token from the same canonical store and cache state.
 
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.

@@ -13,8 +13,8 @@
         "targetId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
         "replacementId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
         "confirmed": { "type": "boolean" },
-        "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
-        "source": { "type": "string", "minLength": 1, "maxLength": 128 }
+        "reason": { "$ref": "memory-v1.schema.json#/$defs/safeText", "minLength": 1, "maxLength": 512 },
+        "source": { "$ref": "memory-v1.schema.json#/$defs/opaqueId", "maxLength": 128 }
       },
       "allOf": [
         {
@@ -42,7 +42,7 @@
         "schemaVersion": { "const": 1 },
         "targetId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
         "apply": { "type": "boolean" },
-        "previewToken": { "type": "string" }
+        "previewToken": { "type": "string", "pattern": "^delete-preview:v1:[0-9a-f]{64}$" }
       }
     }
   ]
