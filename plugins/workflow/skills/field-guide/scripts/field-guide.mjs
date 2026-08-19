@@ -5,10 +5,12 @@ import { createHash } from 'node:crypto'
 import {
   appendFileSync,
   existsSync,
+  linkSync,
   mkdirSync,
   readFileSync,
   readdirSync,
   realpathSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { homedir } from 'node:os'
@@ -30,20 +32,28 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['init', 'paths', 'validate'])
+const commands = new Set(['init', 'migrate', 'paths', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
 ])
+const flagNames = new Map([['--apply', 'apply']])
 
 const parseOptions = (args) => {
-  if (args.length % 2 !== 0) fail(`Missing value for ${args.at(-1)}`)
   const options = {}
-  for (let index = 0; index < args.length; index += 2) {
+  for (let index = 0; index < args.length; index += 1) {
     const flag = args[index]
+    const flagName = flagNames.get(flag)
+    if (flagName) {
+      options[flagName] = true
+      continue
+    }
     const optionName = optionNames.get(flag)
     if (!optionName) fail(`Invalid argument: ${flag}`)
-    options[optionName] = args[index + 1]
+    const value = args[index + 1]
+    if (!value || value.startsWith('--')) fail(`Missing value for ${flag}`)
+    options[optionName] = value
+    index += 1
   }
   return options
 }
@@ -51,7 +61,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <init|paths|validate> --repo-root <path> [--guide-root <path>]')
+    fail('Usage: field-guide.mjs <init|migrate|paths|validate> --repo-root <path> [--guide-root <path>] [--apply]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -149,10 +159,69 @@ const resolvePaths = ({ repoRoot: inputRoot, guideRoot: inputGuideRoot }) => {
     projectIndex: join(projectRoot, 'init.md'),
     patternsFile: join(projectRoot, 'patterns.md'),
     reviewsRoot: join(projectRoot, 'reviews'),
+    memoryFile: join(guideRoot, 'memory.json'),
     repositoryName,
     repositoryRoot: gitRoot,
     origin: remote.length > 0 ? remote : null,
     identity,
+  }
+}
+
+const emptyMemory = () => ({
+  schemaVersion: 1,
+  revision: 0,
+  guidance: [],
+  evidence: [],
+})
+
+const assertObject = ({ value, label }) => {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    fail(`${label} must be an object`)
+  }
+}
+
+const assertClosedFields = ({ value, fields, label }) => {
+  for (const key of Object.keys(value)) {
+    if (!fields.includes(key)) fail(`${label} has unsupported field: ${key}`)
+  }
+}
+
+const validateMemory = (memory) => {
+  assertObject({ value: memory, label: 'memory store' })
+  assertClosedFields({
+    value: memory,
+    fields: ['schemaVersion', 'revision', 'guidance', 'evidence'],
+    label: 'memory store',
+  })
+  if (memory.schemaVersion !== 1) fail(`memory store has unsupported schema version: ${memory.schemaVersion}`)
+  if (!Number.isSafeInteger(memory.revision) || memory.revision < 0) {
+    fail('memory store revision must be a non-negative integer')
+  }
+  if (!Array.isArray(memory.guidance)) fail('memory store guidance must be an array')
+  if (!Array.isArray(memory.evidence)) fail('memory store evidence must be an array')
+  if (memory.guidance.length > 0) fail('memory store guidance records are not supported before schema expansion')
+  if (memory.evidence.length > 0) fail('memory store evidence records are not supported before schema expansion')
+  return memory
+}
+
+const readMemory = (paths) => {
+  if (!existsSync(paths.memoryFile)) return null
+  let parsed
+  try {
+    parsed = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  } catch (error) {
+    fail(`memory store is not valid JSON: ${error.message}`)
+  }
+  return validateMemory(parsed)
+}
+
+const createJsonExclusively = ({ path, value }) => {
+  const temporaryPath = `${path}.tmp-${process.pid}`
+  writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx' })
+  try {
+    linkSync(temporaryPath, path)
+  } finally {
+    unlinkSync(temporaryPath)
   }
 }
 
@@ -263,6 +332,16 @@ const requireInitialized = (paths) => {
   const required = [paths.rootIndex, paths.projectIndex, paths.patternsFile, paths.reviewsRoot]
   const missing = required.filter((path) => !existsSync(path))
   if (missing.length > 0) fail(`Field guide is not initialized; missing: ${missing.join(', ')}`)
+}
+
+const migrate = ({ paths, apply }) => {
+  requireInitialized(paths)
+  if (readMemory(paths)) return { action: 'none', applied: false }
+  validate(paths)
+  if (!apply) return { action: 'create-memory-store', applied: false }
+  createJsonExclusively({ path: paths.memoryFile, value: emptyMemory() })
+  readMemory(paths)
+  return { action: 'create-memory-store', applied: true }
 }
 
 const validateIndexedFiles = ({ files, indexPath, indexContent, errors }) => {
@@ -419,6 +498,7 @@ const validate = (paths) => {
   validateReviews({ paths, projectContent, errors })
   validateGuidanceLinks({ paths, reviewFiles, sharedFiles, errors })
   validateSharedPromotions({ sharedFiles, paths, errors })
+  readMemory(paths)
 
   if (errors.length > 0) fail(`Field guide validation failed:\n- ${errors.join('\n- ')}`)
 }
@@ -430,10 +510,12 @@ const main = () => {
     guideRoot: options['guide-root'],
   })
 
+  let migration
   if (command === 'init') initialize(paths)
+  if (command === 'migrate') migration = migrate({ paths, apply: options.apply === true })
   if (command === 'validate') validate(paths)
 
-  process.stdout.write(`${JSON.stringify(paths, null, 2)}\n`)
+  process.stdout.write(`${JSON.stringify({ ...paths, ...(migration ? { migration } : {}) }, null, 2)}\n`)
 }
 
 try {

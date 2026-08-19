@@ -31,10 +31,10 @@ const createRepo = ({ parent, name, remote }) => {
   return repoRoot
 }
 
-const run = ({ command, repoRoot, guideRoot, expectFailure = false }) => {
+const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false }) => {
   const result = spawnSync(
     process.execPath,
-    [script, command, '--repo-root', repoRoot, '--guide-root', guideRoot],
+    [script, command, '--repo-root', repoRoot, '--guide-root', guideRoot, ...args],
     { encoding: 'utf8' },
   )
 
@@ -46,6 +46,90 @@ const run = ({ command, repoRoot, guideRoot, expectFailure = false }) => {
   assert.equal(result.status, 0, result.stderr)
   return JSON.parse(result.stdout)
 }
+
+test('migrate previews and creates a versioned store without changing legacy reviews', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-migrate-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/migrated-repo.git',
+  })
+  const guideRoot = join(root, 'guide')
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  const commit = git(repoRoot, 'rev-parse', 'HEAD')
+  const reviewFile = join(paths.reviewsRoot, 'legacy.md')
+  const review = `# Legacy learning\n\n- Commit: \`${commit}\`\n`
+  writeFileSync(reviewFile, review)
+  appendFileSync(paths.projectIndex, '\n- [Legacy](reviews/legacy.md) — Evidence.\n')
+
+  const preview = run({ command: 'migrate', repoRoot, guideRoot })
+  assert.equal(preview.migration.action, 'create-memory-store')
+  assert.equal(preview.migration.applied, false)
+  assert.equal(existsSync(paths.memoryFile), false)
+
+  const applied = run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
+  assert.equal(applied.migration.applied, true)
+  assert.deepEqual(JSON.parse(readFileSync(paths.memoryFile, 'utf8')), {
+    schemaVersion: 1,
+    revision: 0,
+    guidance: [],
+    evidence: [],
+  })
+  assert.equal(readFileSync(reviewFile, 'utf8'), review)
+  run({ command: 'validate', repoRoot, guideRoot })
+
+  const memory = readFileSync(paths.memoryFile, 'utf8')
+  const repeated = run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
+  assert.equal(repeated.migration.action, 'none')
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), memory)
+})
+
+test('validate rejects malformed memory state without replacing it', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-malformed-memory-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/malformed-memory.git',
+  })
+  const guideRoot = join(root, 'guide')
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  const malformed = '{"schemaVersion":1,"revision":0,"guidance":[],"evidence":[],"extra":true}\n'
+  writeFileSync(paths.memoryFile, malformed)
+
+  const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(result.stderr, /memory store has unsupported field: extra/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), malformed)
+
+  const nested = '{"schemaVersion":1,"revision":0,"guidance":[null],"evidence":[]}\n'
+  writeFileSync(paths.memoryFile, nested)
+  const nestedResult = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(nestedResult.stderr, /guidance records are not supported before schema expansion/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), nested)
+})
+
+test('migrate refuses invalid legacy review evidence', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-invalid-migration-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/invalid-migration.git',
+  })
+  const guideRoot = join(root, 'guide')
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  const reviewFile = join(paths.reviewsRoot, 'broken.md')
+  writeFileSync(reviewFile, '# Broken\n\n- Commit: `0000000000000000000000000000000000000000`\n')
+  appendFileSync(paths.projectIndex, '\n- [Broken](reviews/broken.md) — Evidence.\n')
+
+  const result = run({
+    command: 'migrate',
+    repoRoot,
+    guideRoot,
+    args: ['--apply'],
+    expectFailure: true,
+  })
+  assert.match(result.stderr, /unknown commit/)
+  assert.equal(existsSync(paths.memoryFile), false)
+})
 
 test('init creates an indexed guide and preserves existing content', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-init-'))

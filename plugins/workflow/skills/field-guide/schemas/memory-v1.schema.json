@@ -1,0 +1,14 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/workflow/field-guide/memory-v1.schema.json",
+  "title": "Field-guide memory store version 1",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "revision", "guidance", "evidence"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "revision": { "type": "integer", "minimum": 0 },
+    "guidance": { "type": "array", "maxItems": 0 },
+    "evidence": { "type": "array", "maxItems": 0 }
+  }
+}

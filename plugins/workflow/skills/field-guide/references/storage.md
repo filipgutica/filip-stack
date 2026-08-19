@@ -12,6 +12,7 @@ Use these terms:
 ~/.field-guide/
 ├── .obsidian/          # Optional client-owned vault settings
 ├── init.md
+├── memory.json         # Versioned operational metadata
 ├── shared/
 └── projects/
     └── <repo-key>/
@@ -27,6 +28,15 @@ Every Markdown file below the guide root must be reachable from the nearest inde
 - Root `init.md` links each shared topic and project `init.md`, with a one-line description.
 - Project `init.md` links `patterns.md` and every review record, with a one-line description.
 - Keep indexes concise. Do not copy the linked file contents into the index.
+
+`memory.json` follows `schemas/memory-v1.schema.json`. Markdown remains the
+readable guidance and evidence surface. JSON stores identity, lifecycle,
+evidence, and retrieval metadata that Markdown links cannot enforce. The
+utility validates both layers and never replaces malformed state.
+
+Use `migrate` to preview creation of `memory.json`. Add `--apply` to create the
+empty versioned store. Migration preserves all Markdown indexes, patterns, and
+review records.
 
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
