@@ -2,6 +2,14 @@
 
 Use this policy after an observation appears during normal work. The decision is rule-based, but semantic meaning still requires agent judgment.
 
+## End-of-task evaluation
+
+At the end of meaningful work, decide `capture`, `ask`, or `skip`. Perform this evaluation once for each completed main-agent task.
+
+For `capture`, use bounded candidates before submission. For `ask`, ask one focused question and write nothing. For `skip`, write no memory and return the fixed no-learning notice.
+
+The hook only requests this decision. It does not classify observations or write memory.
+
 ## Capture
 
 Capture when every condition is true:

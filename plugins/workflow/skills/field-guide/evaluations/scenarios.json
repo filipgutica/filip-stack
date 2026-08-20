@@ -75,6 +75,35 @@
       "expectedDecision": "audit",
       "readOnly": true,
       "requiresNotice": false
+    },
+    {
+      "id": "end-task-durable-correction",
+      "category": "obvious",
+      "hosts": ["claude", "codex"],
+      "userMessage": "That fix is right. Always preserve the generated header when this repository rewrites schema files.",
+      "lifecycleEvent": "Stop",
+      "expectedDecision": "capture",
+      "expectedScope": "project",
+      "requiresNotice": true
+    },
+    {
+      "id": "end-task-ambiguous-learning",
+      "category": "ambiguous",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Use the other review format next time.",
+      "lifecycleEvent": "Stop",
+      "expectedDecision": "ask",
+      "requiresNotice": false
+    },
+    {
+      "id": "end-task-no-learning",
+      "category": "temporary",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Show the current branch name.",
+      "lifecycleEvent": "Stop",
+      "expectedDecision": "skip",
+      "expectedCompletion": "Field-guide: no durable learning to save.",
+      "requiresNotice": false
     }
   ]
 }

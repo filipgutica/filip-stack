@@ -9,6 +9,14 @@ Use the local field guide as a small, agent-independent learning layer. Do not l
 
 The guide is local and untracked at `~/.field-guide` by default. Current user instructions, live repository contracts, and current code always outrank stored guidance.
 
+## Automatic lifecycle
+
+Plugin hooks add bounded retrieval guidance at `UserPromptSubmit`. They request exactly one `capture`, `ask`, or `skip` evaluation at `Stop`.
+
+The hooks supply static instructions only. They do not read prompts, transcripts, assistant messages, credentials, proprietary code, or field-guide files.
+
+If a host disables or rejects the hooks, use this skill manually. A hook failure must not block task completion.
+
 ## Retrieve guidance
 
 Retrieve guidance for meaningful planning, implementation, debugging, or review after the repository and subject are known:

@@ -35,6 +35,7 @@ Both the Claude and Codex marketplaces distribute this plugin. The separate
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
+  hooks/                   Shared local lifecycle hooks
   skills/                  Planning, writing, implementation, review, coordination, and setup skills
   THIRD_PARTY_NOTICES.md   License notice for adapted upstream guidance
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
@@ -56,6 +57,8 @@ scripts/                   Stamp and validate scripts
    claude plugin install workflow@filip-stack
    ```
 
+3. Run `/hooks` and confirm that the plugin `UserPromptSubmit` and `Stop` hooks are enabled.
+
 Claude identifies the installed plugin as `workflow@filip-stack`. Run this
 command to update it:
 
@@ -74,6 +77,7 @@ claude plugin update workflow@filip-stack
 2. Restart Codex.
 3. Open the plugin directory.
 4. Install `workflow` from the `filip-stack` marketplace.
+5. Run `/hooks`, review the plugin hooks, and trust the current definition.
 
 Codex upgrades the marketplace instead of an individual plugin. Run this command
 to install marketplace updates:
@@ -81,6 +85,16 @@ to install marketplace updates:
 ```sh
 codex plugin marketplace upgrade filip-stack
 ```
+
+### Automatic field-guide hooks
+
+The packaged hooks support local Claude Code and Codex on macOS and Linux. They do not require global `AGENTS.md` or `CLAUDE.md` instructions.
+
+Codex requires the hook trust step after installation or an upgrade that changes the hooks. Claude remote execution and Windows are not supported.
+
+The hooks fail open. If they are disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
+
+A `skip` evaluation writes no memory. Its continuation returns one short no-learning notice for consistent host behavior.
 
 ## Releases and versioning
 
@@ -175,6 +189,10 @@ indexed guidance and keeps project guidance with its repository. It can capture
 obvious durable user preferences, corrections, and repeated misses during normal
 work. It asks before storing ambiguous observations. Committed code-review
 corrections remain a first-class evidence and history path.
+
+Plugin hooks prompt bounded retrieval and one end-of-task learning evaluation.
+The agent decides `capture`, `ask`, or `skip`. The hook never ingests a transcript
+or writes field-guide data.
 
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide
