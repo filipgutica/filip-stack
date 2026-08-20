@@ -12,7 +12,8 @@ Use these terms:
 ~/.field-guide/
 ├── .obsidian/          # Optional client-owned vault settings
 ├── init.md
-├── memory.json         # Versioned operational metadata
+├── memory.md           # Canonical readable and machine-recorded memory
+├── memory.json         # Validated machine cache
 ├── shared/
 └── projects/
     └── <repo-key>/
@@ -29,25 +30,19 @@ Every Markdown file below the guide root must be reachable from the nearest inde
 - Project `init.md` links `patterns.md` and every review record, with a one-line description.
 - Keep indexes concise. Do not copy the linked file contents into the index.
 
-`memory.json` follows `schemas/memory-v1.schema.json`. Markdown remains the
-readable guidance and evidence surface. JSON stores identity, lifecycle,
-evidence, and retrieval metadata that Markdown links cannot enforce. The
-utility validates both layers and never replaces malformed state.
+`init` creates an empty canonical `memory.md`, links it from the root index, and
+creates `memory.json` as its validated machine cache. Both views follow
+`schemas/memory-v1.schema.json`. Submit observations only after initialization.
 
-After the first submission, `memory.md` contains the indexed canonical record.
-It includes readable guidance and one complete JSON block with evidence,
-pointers, source keys, transitions, and timestamps. `memory.json` is a validated
-machine cache. The utility writes canonical Markdown before it replaces the
-cache. A cache write failure cannot remove the new canonical record. Validation
-reports a stale cache or a changed readable view.
-
-Use `migrate` to preview creation of `memory.json`. Add `--apply` to create the
-empty versioned store. Migration preserves all Markdown indexes, patterns, and
-review records.
+`memory.md` includes readable guidance and one complete JSON block with
+evidence, pointers, source keys, transitions, and timestamps. The utility writes
+canonical Markdown before it replaces the cache. A cache write failure cannot
+remove the new canonical record. Validation reports a missing, stale, or changed
+view and never replaces malformed state.
 
 ## Observation submissions
 
-Use `submit --input <json-file>` after migration. The input must follow
+Use `submit --input <json-file>` after initialization. The input must follow
 `schemas/submission-v1.schema.json`. The agent decides whether an observation is
 clear enough to submit. The utility owns all behavior after submission.
 

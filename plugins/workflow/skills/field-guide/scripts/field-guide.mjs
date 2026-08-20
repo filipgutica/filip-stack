@@ -5,7 +5,6 @@ import { createHash, randomUUID } from 'node:crypto'
 import {
   closeSync,
   existsSync,
-  linkSync,
   mkdirSync,
   openSync,
   readFileSync,
@@ -35,7 +34,7 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['audit', 'candidates', 'delete', 'init', 'maintain', 'migrate', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
+const commands = new Set(['audit', 'candidates', 'delete', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -45,17 +44,10 @@ const optionNames = new Map([
   ['--evidence-for', 'evidence-for'],
   ['--scope', 'scope'],
 ])
-const flagNames = new Map([['--apply', 'apply']])
-
 const parseOptions = (args) => {
   const options = {}
   for (let index = 0; index < args.length; index += 1) {
     const flag = args[index]
-    const flagName = flagNames.get(flag)
-    if (flagName) {
-      options[flagName] = true
-      continue
-    }
     const optionName = optionNames.get(flag)
     if (!optionName) fail(`Invalid argument: ${flag}`)
     const value = args[index + 1]
@@ -69,7 +61,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|migrate|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--apply]')
+    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -587,17 +579,7 @@ const readMarkdownMemory = (paths) => {
   return validateMemory(parsed)
 }
 
-const readMemory = (paths) => readMarkdownMemory(paths) ?? readJsonMemory(paths)
-
-const createJsonExclusively = ({ path, value }) => {
-  const temporaryPath = `${path}.tmp-${process.pid}`
-  writeFileSync(temporaryPath, `${JSON.stringify(value, null, 2)}\n`, { flag: 'wx' })
-  try {
-    linkSync(temporaryPath, path)
-  } finally {
-    unlinkSync(temporaryPath)
-  }
-}
+const readMemory = (paths) => readMarkdownMemory(paths)
 
 const ensureFile = (path, content) => {
   if (!existsSync(path)) writeFileSync(path, content)
@@ -898,7 +880,7 @@ const withMemoryLock = ({ paths, action }) => {
 const submitObservationUnlocked = ({ paths, inputPath }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
   const submission = validateSubmission({ submission: readJsonInput(inputPath), paths })
   const fingerprint = fingerprintFor(submission)
   const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
@@ -1028,7 +1010,7 @@ const validateTransitionInput = (input) => {
 
 const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
   const input = validateTransitionInput(readJsonInput(inputPath))
   const target = memory.guidance.find(({ id }) => id === input.targetId)
   if (!target) fail('transition target does not exist')
@@ -1111,7 +1093,7 @@ const validateDeleteInput = (input) => {
 const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
   validate(paths)
   const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
   const input = validateDeleteInput(readJsonInput(inputPath))
   const target = memory.guidance.find(({ id }) => id === input.targetId)
   if (!target) fail('delete target does not exist')
@@ -1505,7 +1487,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
   if (input.action === 'repair-cache') return repairCache({ paths, input })
   validate(paths)
   const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run migrate --apply first')
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
   const targets = input.targetIds.map((id) => {
     const target = memory.guidance.find((guidance) => guidance.id === id)
     if (!target) fail(`maintenance target does not exist: ${id}`)
@@ -1586,6 +1568,15 @@ const initialize = (paths) => {
     label: 'Project patterns',
     description: 'Current project-specific preferences and anti-patterns.',
   })
+
+  const hasCanonicalMemory = existsSync(paths.memoryIndexFile)
+  const hasMemoryCache = existsSync(paths.memoryFile)
+  if (hasCanonicalMemory !== hasMemoryCache) {
+    if (hasMemoryCache) fail('Field-guide memory has a JSON cache without canonical memory.md')
+    fail('Field-guide memory has canonical memory.md without a JSON cache')
+  }
+  if (!hasCanonicalMemory) writeMemoryViews({ paths, memory: emptyMemory() })
+  validate(paths)
 }
 
 const markdownLinks = (content) => (
@@ -1627,16 +1618,6 @@ const requireInitialized = (paths) => {
   const required = [paths.rootIndex, paths.projectIndex, paths.patternsFile, paths.reviewsRoot]
   const missing = required.filter((path) => !existsSync(path))
   if (missing.length > 0) fail(`Field guide is not initialized; missing: ${missing.join(', ')}`)
-}
-
-const migrate = ({ paths, apply }) => {
-  requireInitialized(paths)
-  if (readMemory(paths)) return { action: 'none', applied: false }
-  validate(paths)
-  if (!apply) return { action: 'create-memory-store', applied: false }
-  createJsonExclusively({ path: paths.memoryFile, value: emptyMemory() })
-  readMemory(paths)
-  return { action: 'create-memory-store', applied: true }
 }
 
 const validateIndexedFiles = ({ files, indexPath, indexContent, errors }) => {
@@ -1794,16 +1775,14 @@ const validate = (paths) => {
   validateGuidanceLinks({ paths, reviewFiles, sharedFiles, errors })
   validateSharedPromotions({ sharedFiles, paths, errors })
   const memory = readMemory(paths)
-  if (memory?.guidance.length > 0) {
-    if (!existsSync(paths.memoryIndexFile)) {
-      errors.push(`${paths.memoryIndexFile} is missing`)
-    } else if (readFileSync(paths.memoryIndexFile, 'utf8') !== renderMemoryIndex(memory)) {
-      errors.push(`${paths.memoryIndexFile} does not match memory.json`)
+  if (!memory) {
+    errors.push(`${paths.memoryIndexFile} is missing or invalid`)
+  } else {
+    if (readFileSync(paths.memoryIndexFile, 'utf8') !== renderMemoryIndex(memory)) {
+      errors.push(`${paths.memoryIndexFile} is not canonical`)
     }
     const memoryLink = relative(dirname(paths.rootIndex), paths.memoryIndexFile).replaceAll('\\', '/')
     if (!rootContent.includes(`](${memoryLink})`)) errors.push(`${paths.memoryIndexFile} is not linked from ${paths.rootIndex}`)
-  }
-  if (existsSync(paths.memoryIndexFile)) {
     const cachedMemory = readJsonMemory(paths)
     if (!cachedMemory || JSON.stringify(cachedMemory) !== JSON.stringify(memory)) {
       errors.push(`${paths.memoryFile} does not match canonical memory.md`)
@@ -1820,7 +1799,6 @@ const main = () => {
     guideRoot: options['guide-root'],
   })
 
-  let migration
   let result
   if (command === 'audit') result = audit(paths)
   if (command === 'candidates') result = candidateMatches({
@@ -1831,7 +1809,6 @@ const main = () => {
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
-  if (command === 'migrate') migration = migrate({ paths, apply: options.apply === true })
   if (command === 'retrieve') result = retrieve({
     paths,
     subjectKey: options.subject,
@@ -1842,7 +1819,7 @@ const main = () => {
   if (command === 'transition') result = transitionGuidance({ paths, inputPath: options.input })
   if (command === 'validate') validate(paths)
 
-  process.stdout.write(`${JSON.stringify({ ...paths, ...(migration ? { migration } : {}), ...(result ? { result } : {}) }, null, 2)}\n`)
+  process.stdout.write(`${JSON.stringify({ ...paths, ...(result ? { result } : {}) }, null, 2)}\n`)
 }
 
 try {

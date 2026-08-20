@@ -45,7 +45,7 @@ Classify an observation as `capture`, `ask`, or `skip`. Read [references/capture
 
 Confidence is audit metadata. It never overrides these rules or evidence thresholds.
 
-An obvious durable observation or an explicit request to remember one authorizes a narrow field-guide write. This authority covers only the initialization, migration, and submission needed under `~/.field-guide`. It does not cover unrelated file changes or raw conversation content.
+An obvious durable observation or an explicit request to remember one authorizes a narrow field-guide write. This authority covers only the initialization and submission needed under `~/.field-guide`. It does not cover unrelated file changes or raw conversation content.
 
 ## Capture or reinforce guidance
 
@@ -59,11 +59,10 @@ Compare the observation with those records. Submit it as new guidance, `reinforc
 
 Do not let conflicting active guidance accumulate. When the user clearly confirms a correction, submit the linked replacement and use `transition` with action `supersede`, `confirmed: true`, and the returned replacement ID. Keep an inferred contradiction as a linked candidate. Ask before resolving it against active guidance.
 
-Initialize or migrate the store when needed, then submit input that follows `schemas/submission-v1.schema.json`:
+Initialize the store when needed, then submit input that follows `schemas/submission-v1.schema.json`:
 
 ```text
 node scripts/field-guide.mjs init --repo-root <git-root>
-node scripts/field-guide.mjs migrate --repo-root <git-root> --apply
 node scripts/field-guide.mjs submit --repo-root <git-root> --input <json-file>
 ```
 
@@ -112,7 +111,6 @@ field-guide.mjs candidates --repo-root <path> --subject <key> --scope <project|s
 field-guide.mjs delete --repo-root <path> --input <json-file>
 field-guide.mjs init --repo-root <path>
 field-guide.mjs maintain --repo-root <path> --input <json-file>
-field-guide.mjs migrate --repo-root <path> [--apply]
 field-guide.mjs paths --repo-root <path>
 field-guide.mjs retrieve --repo-root <path> (--subject <key> [--query <text>] | --evidence-for <guidance-id>)
 field-guide.mjs submit --repo-root <path> --input <json-file>
