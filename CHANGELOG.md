@@ -1,3 +1,10 @@
+# [1.12.0](https://github.com/filipgutica/filip-stack/compare/v1.11.0...v1.12.0) (2026-08-21)
+
+
+### Features
+
+* **workflow:** add topic-first artifact traceability ([c087862](https://github.com/filipgutica/filip-stack/commit/c0878625ab33fdc29c3928655ee4da37dd74545d))
+
 # [1.11.0](https://github.com/filipgutica/filip-stack/compare/v1.10.0...v1.11.0) (2026-08-19)
 
 
