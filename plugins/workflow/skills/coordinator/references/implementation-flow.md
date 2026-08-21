@@ -52,9 +52,9 @@ Use an adversarial critic for ambiguity, security, public contracts, concurrency
 Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, creation and maintenance of the required external branch task ledger, its local pointer, and its Git exclude entry, plus task commits, push, and a draft pull request.
 
 1. Confirm or create the working branch. Use `$workflow:using-git-worktrees` only with explicit worktree authority or when this named-ticket route requires isolation.
-2. Read the ticket context and relevant repository evidence.
+2. Read the ticket context and relevant repository evidence. When the ticket is ambiguous, follow its durable source upstream before deciding scope.
 3. Define the ticket goal, success criteria, non-goals, and verification.
-4. Invoke `$workflow:branch-task-planner` in named-ticket end-to-end mode to create or resume the external ledger.
+4. Invoke `$workflow:branch-task-planner` in named-ticket end-to-end mode to create or resume the external ledger with its Sources block.
 5. For each ledger task, define its bounded sub-plan.
 6. Run one bounded cycle for the task: implementation, verification, independent review, corrections, and review-cycle acceptance.
 7. Commit the accepted task.

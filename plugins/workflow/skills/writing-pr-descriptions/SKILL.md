@@ -24,6 +24,7 @@ Write a concise PR description from the current diff, ticket context, and verifi
 - Explain a non-obvious root cause when it helps a reviewer understand the change.
 - Describe each material change and its reason. Do not narrate files or commits.
 - Preserve ticket, issue, preview, screenshot, and related-PR links that help review the change.
+- Link the source ticket when one exists. Otherwise, retain the highest available shareable source. Do not put a machine-local path in a pull request.
 - Do not invent a ticket, link, test result, risk, or reviewer instruction.
 - Do not add a validation, testing, or checklist section unless the user or repository template requires it.
 - Update stale framing when the PR scope changes.

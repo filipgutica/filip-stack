@@ -134,21 +134,39 @@ grant implementation or publishing authority.
 Planning artifacts and branch task ledgers stay outside repositories under:
 
 ```text
-~/.engineering-workflow/<repo-id>/
+~/.engineering-workflow/
+├── topics/<open|complete|abandoned>/<topic-id>/
+└── repositories/<repo-id>/topics/<open|complete|abandoned>/<topic-id>/
 ```
 
-The repository ID uses a readable slug of the normalized `origin` URL plus a
-short stable hash. A repository without an `origin` uses its name and a short
-hash of the Git common directory. Branch directories also include a short stable
-hash to prevent slug collisions. The storage tree holds repository
-configuration, specifications, plans, local ticket drafts, and branch task
-ledgers. The `setup` skill initializes the tree and can copy legacy ledgers from
-`~/.project-tasks`. Migration is conflict-safe and does not delete the source.
+`TOPIC.md` is the topic registry and navigation entry point. A topic owns its
+specification, plan, local tickets, and grill logs. Repository directories own
+configuration and branch ledgers. One topic or ticket can span repositories.
+Directory names show whether work is open, complete, or abandoned.
 
-Plans, specifications, and local ticket drafts return in the conversation by
-default. Writing them to external storage requires an explicit request. Direct
-`branch-task-planner` use can create or update only the external ledger. It
-cannot create a branch, edit repository files, commit, push, or publish.
+An explicit `writing-specs` invocation writes `SPEC.md` under an open topic by
+default. The topic must be user-identified or the only open topic. When multiple
+open topics exist, the user must choose one. Plans and local ticket drafts need
+an explicit storage request. An explicit `grill-me` invocation creates one
+curated topic log after topic confirmation.
+
+Topic lifecycle commands audit known work, move root and repository topic
+directories together, and preserve acknowledged warnings in `TOPIC.md`. A
+specification uses Draft, Ready, or Implemented independently of topic state.
+The new layout has no repository migration command. A one-time interactive
+local migration occurs after merge and release.
+
+### Durable source links
+
+Only durable, retrievable artifacts are workflow sources. A brainstorm can stay
+ephemeral, so downstream work does not depend on a session link. The first
+persisted specification, plan, ticket, grill log, or ledger can identify
+`Direct request`. Every local artifact links to `TOPIC.md`. Local artifacts use
+relative links to local sources. Jira and GitHub work items
+use verified HTTPS links and never machine-local paths. A ledger records its
+primary work item plus optional specification and plan sources, then maps each
+task to its commit. Artifact levels can be skipped. A multi-repository ticket
+uses one ledger per repository and branch, with the same primary work item.
 
 ### Field guide
 
@@ -168,8 +186,8 @@ candidate matching, submission, lifecycle, audit, maintenance, migration, and
 validation commands. It preserves existing review records and validates typed
 evidence.
 
-You can also open `~/.engineering-workflow` or one repository directory as an
-Obsidian vault to audit planning artifacts. Git worktrees live separately under
+You can also open `~/.engineering-workflow` as an Obsidian vault to audit
+planning artifacts. Git worktrees live separately under
 `~/code/worktrees/<project>/`. Do not create vaults inside topic, ticket
 lifecycle, or branch directories.
 

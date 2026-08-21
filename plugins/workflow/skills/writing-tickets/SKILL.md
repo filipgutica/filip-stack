@@ -43,6 +43,8 @@ This section applies only to canonical local Markdown tickets. For a Jira or Git
 
 Keep the stable local filename when a local Markdown ticket maps to external work. Do not add the external ID to the filename.
 
+For a new local Markdown ticket, include the `topic` and `source` frontmatter from [Engineering Workflow storage](../setup/references/storage.md). Link `topic` to `../../TOPIC.md`. Use `Direct request` when the ticket is the first persisted work artifact. Use a relative link or verified HTTPS link for a durable source. A Jira or GitHub ticket must not link to a machine-local specification or plan.
+
 Store each verified external ID and URL in the `externalLinks` frontmatter from [Engineering Workflow storage](../setup/references/storage.md). Do not add speculative links or external status.
 
 The lifecycle directory remains the authoritative local status. An external link does not grant authority to create, update, or transition external work.
