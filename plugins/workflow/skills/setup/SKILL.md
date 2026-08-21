@@ -29,6 +29,8 @@ node <skill-directory>/scripts/engineering-workflow.mjs reopen-topic --repo-root
 node <skill-directory>/scripts/engineering-workflow.mjs mark-spec-implemented --repo-root <path> --topic-id <id>
 node <skill-directory>/scripts/engineering-workflow.mjs start-grill --repo-root <path> --topic-id <id> --slug <slug>
 node <skill-directory>/scripts/engineering-workflow.mjs update-grill --repo-root <path> --topic-id <id> --log-file <name> --question <text> --recommendation <text> --decision <text> --rationale <text> --next-question <text>
+node <skill-directory>/scripts/engineering-workflow.mjs start-walkthrough --repo-root <path> --topic-id <id> --slug <slug> --source <last-turn|working-tree|branch> [--base-ref <ref>] --next-slice <text>
+node <skill-directory>/scripts/engineering-workflow.mjs update-walkthrough --repo-root <path> --topic-id <id> --log-file <name> --slice <text> --status <covered|changed|unresolved> --summary <text> --evidence <text> --decision <text> --next-slice <text>
 ```
 
 `paths` and `topics` are read-only. `paths --topic-id` resolves the topic state from `TOPIC.md`. Use `--topic-state` only to inspect a proposed path before topic creation.
@@ -58,6 +60,10 @@ Lifecycle commands require a reason. They validate all targets before moving the
 `mark-spec-implemented` is independent of topic state. Use it only after delivery and verification.
 
 An explicit Grill Me invocation uses `start-grill` after topic confirmation. Use `update-grill` after each resolved answer. Resume with `start-grill --log-file <name>`.
+
+An explicit Walkthrough invocation uses `start-walkthrough` after source and topic confirmation. A branch source requires `--base-ref`. Use `update-walkthrough` after each resolved slice. Resume with `start-walkthrough --log-file <name>`.
+
+The agent stores only curated one-line walkthrough fields. The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines.
 
 Use `--workflow-root <path>` only for an explicit alternate root or an isolated test. The default is `~/.engineering-workflow`.
 

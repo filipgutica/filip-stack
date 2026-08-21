@@ -24,7 +24,8 @@ explicitly requests them or an explicitly authorized coordinator route requires
 them.
 
 `walkthrough` is manual-only. It explains and reviews selected changes without
-granting authority to modify them.
+granting authority to modify them. An explicit invocation can save one curated
+walkthrough log under a confirmed topic.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
@@ -154,15 +155,16 @@ Planning artifacts and branch task ledgers stay outside repositories under:
 ```
 
 `TOPIC.md` is the topic registry and navigation entry point. A topic owns its
-specification, plan, local tickets, and grill logs. Repository directories own
-configuration and branch ledgers. One topic or ticket can span repositories.
-Directory names show whether work is open, complete, or abandoned.
+specification, plan, local tickets, grill logs, and walkthrough logs. Repository
+directories own configuration and branch ledgers. One topic or ticket can span
+repositories. Directory names show whether work is open, complete, or abandoned.
 
 An explicit `writing-specs` invocation writes `SPEC.md` under an open topic by
 default. The topic must be user-identified or the only open topic. When multiple
 open topics exist, the user must choose one. Plans and local ticket drafts need
 an explicit storage request. An explicit `grill-me` invocation creates one
-curated topic log after topic confirmation.
+curated topic log after topic confirmation. An explicit `walkthrough` invocation
+creates one curated log with source provenance after source and topic confirmation.
 
 Topic lifecycle commands audit known work, move root and repository topic
 directories together, and preserve acknowledged warnings in `TOPIC.md`. A
@@ -174,10 +176,10 @@ local migration occurs after merge and release.
 
 Only durable, retrievable artifacts are workflow sources. A brainstorm can stay
 ephemeral, so downstream work does not depend on a session link. The first
-persisted specification, plan, ticket, grill log, or ledger can identify
-`Direct request`. Every local artifact links to `TOPIC.md`. Local artifacts use
-relative links to local sources. Jira and GitHub work items
-use verified HTTPS links and never machine-local paths. A ledger records its
+persisted specification, plan, ticket, grill log, walkthrough log, or ledger can
+identify `Direct request`. Every local artifact links to `TOPIC.md`. Local
+artifacts use relative links to local sources. Jira and GitHub work items use
+verified HTTPS links and never machine-local paths. A ledger records its
 primary work item plus optional specification and plan sources, then maps each
 task to its commit. Artifact levels can be skipped. A multi-repository ticket
 uses one ledger per repository and branch, with the same primary work item.

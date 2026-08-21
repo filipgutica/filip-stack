@@ -14,7 +14,9 @@ Use one workflow root for topic artifacts and repository branch ledgers.
 │   │       │   ├── todo/
 │   │       │   ├── in-progress/
 │   │       │   └── done/
-│   │       └── grills/
+│   │       ├── grills/
+│   │           └── <date>-<sequence>-<slug>.md
+│   │       └── walkthroughs/
 │   │           └── <date>-<sequence>-<slug>.md
 │   ├── complete/
 │   └── abandoned/
@@ -31,7 +33,7 @@ Use one workflow root for topic artifacts and repository branch ledgers.
 
 Topic paths show the topic state. A topic uses `open`, `complete`, or `abandoned`. Topic artifacts and repository topic directories must use the same state.
 
-Each topic owns at most one primary `SPEC.md` and one optional `PLAN.md`. It also owns local tickets and grill logs. A topic or ticket can cover work in multiple repositories.
+Each topic owns at most one primary `SPEC.md` and one optional `PLAN.md`. It also owns local tickets, grill logs, and walkthrough logs. A topic or ticket can cover work in multiple repositories.
 
 Each repository owns only its configuration and branch ledgers. A repository appears once under `repositories/`.
 
@@ -102,7 +104,7 @@ The frontmatter permits only the documented fields. Reject missing fields, unkno
 
 The setup utility owns the generated links section between its markers. It preserves the human-written `## Notes` section and all content outside the generated markers.
 
-The generated section links to the specification, plan, local tickets, grill logs, external work, repository directories, and branch ledgers. Run `sync-topic` after an artifact changes.
+The generated section links to the specification, plan, local tickets, grill logs, walkthrough logs, external work, repository directories, and branch ledgers. Run `sync-topic` after an artifact changes.
 
 ## Topic selection and attachment
 
@@ -140,6 +142,7 @@ Use these topic links:
 - `PLAN.md`: `Topic: [TOPIC.md](TOPIC.md)`
 - `tickets/<state>/<file>.md`: `topic: "[TOPIC.md](../../TOPIC.md)"`
 - `grills/<file>.md`: `Topic: [TOPIC.md](../TOPIC.md)`
+- `walkthroughs/<file>.md`: `Topic: [TOPIC.md](../TOPIC.md)`
 - A branch ledger uses the relative path returned by the setup utility.
 
 Do not reconstruct a branch-ledger link or path manually. Use `paths --topic-id <id>` after topic attachment.
@@ -180,6 +183,26 @@ An explicit Grill Me session creates one log after topic confirmation. Use `<dat
 Update the log after each resolved answer. Record the curated question, recommendation, decision, rationale, and next unresolved question. Do not store a raw transcript or hidden reasoning.
 
 Resume an existing session by its log filename. Do not create a second log for the same session.
+
+## Walkthrough logs
+
+An explicit Walkthrough session creates one log after source and topic confirmation. Use `<date>-<sequence>-<slug>.md` under `walkthroughs/`.
+
+Use `start-walkthrough` to record a fixed provenance header. The header records the source, repository ID, branch, base, head, range, and start time.
+
+For a branch source, pass `--base-ref`. The setup utility uses `git merge-base HEAD <base-ref>` for the base. It records `<base>...<head>` as the range.
+
+For a last-turn or working-tree source, the base is `none`. The range is `<source>@<head>`.
+
+The repository field uses the stable repository ID. It does not store a local repository path.
+
+Use `update-walkthrough` after the user resolves a slice. The command appends one curated slice record and replaces the next slice.
+
+Each recorded field must use one line. Do not store a prompt, transcript, response, hidden reasoning, full diff, code excerpt, credential, or local repository path.
+
+The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines. This check cannot identify all sensitive meaning. The agent must curate each field.
+
+Resume an interrupted session with its log filename. The setup utility validates the log before it resumes or appends a slice.
 
 ## Local tickets
 

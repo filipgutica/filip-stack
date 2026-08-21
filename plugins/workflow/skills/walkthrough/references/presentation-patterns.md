@@ -60,7 +60,7 @@ Start with a compact table when the change has several files or concerns.
 | Configuration | `config.ts`, `config.test.ts` | Add the selected backend | Pending |
 | Documentation | `README.md` | Explain the public contract | Pending |
 
-Update the state in conversation as the walkthrough proceeds. Do not persist the map.
+Update the state in conversation as the walkthrough proceeds. Do not copy the full map into the walkthrough log. Persist one curated record after the user resolves a slice.
 
 ## Review findings
 

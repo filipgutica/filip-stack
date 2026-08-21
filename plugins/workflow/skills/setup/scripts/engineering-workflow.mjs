@@ -48,7 +48,8 @@ const normalizeRemote = (remote) => {
 const commands = new Set([
   'paths', 'init', 'topics', 'init-topic', 'attach-topic', 'sync-topic',
   'complete-topic', 'abandon-topic', 'reopen-topic', 'mark-spec-implemented',
-  'start-grill', 'update-grill', 'configure-ticket-system',
+  'start-grill', 'update-grill', 'start-walkthrough', 'update-walkthrough',
+  'configure-ticket-system',
 ])
 const booleanFlags = new Set(['--confirm', '--confirm-warnings'])
 
@@ -194,7 +195,7 @@ const topicArtifactPaths = ({ topicsRoot, repositoryTopicsRoot, topicId, topicSt
   if (!topicId || !topicState) {
     return {
       topicRoot: null, topicFile: null, specFile: null, planFile: null,
-      ticketsRoot: null, grillsRoot: null, repositoryTopicRoot: null,
+      ticketsRoot: null, grillsRoot: null, walkthroughsRoot: null, repositoryTopicRoot: null,
       branchesRoot: null, branchRoot: null, ledgerFile: null,
     }
   }
@@ -206,6 +207,7 @@ const topicArtifactPaths = ({ topicsRoot, repositoryTopicsRoot, topicId, topicSt
     topicRoot, topicFile: join(topicRoot, 'TOPIC.md'),
     specFile: join(topicRoot, 'SPEC.md'), planFile: join(topicRoot, 'PLAN.md'),
     ticketsRoot: join(topicRoot, 'tickets'), grillsRoot: join(topicRoot, 'grills'),
+    walkthroughsRoot: join(topicRoot, 'walkthroughs'),
     repositoryTopicRoot, branchesRoot, branchRoot, ledgerFile: join(branchRoot, 'TASKS.md'),
   }
 }
@@ -455,6 +457,7 @@ const generatedLinks = ({ workflowRoot, topicRoot, manifest }) => {
   add({ label: 'Plan', file: join(topicRoot, 'PLAN.md') })
   for (const file of filesUnder(join(topicRoot, 'tickets'))) add({ label: 'Ticket', file })
   for (const file of filesUnder(join(topicRoot, 'grills'))) add({ label: 'Grill log', file })
+  for (const file of filesUnder(join(topicRoot, 'walkthroughs'))) add({ label: 'Walkthrough log', file })
   for (const repositoryId of manifest.repositories) {
     const repositoryTopicRoot = join(
       workflowRoot, 'repositories', repositoryId, 'topics', manifest.state, manifest.id,
@@ -502,7 +505,9 @@ const listRepositoryTopicDirectories = ({ workflowRoot, topicId }) => {
 
 const topicEntryWarnings = ({ workflowRoot, topicRoot }) => {
   const warnings = []
-  const allowedTopicEntries = new Set(['TOPIC.md', 'SPEC.md', 'PLAN.md', 'tickets', 'grills'])
+  const allowedTopicEntries = new Set([
+    'TOPIC.md', 'SPEC.md', 'PLAN.md', 'tickets', 'grills', 'walkthroughs',
+  ])
   for (const entry of readdirSync(topicRoot, { withFileTypes: true })) {
     if (!allowedTopicEntries.has(entry.name)) {
       warnings.push(`${relative(workflowRoot, join(topicRoot, entry.name))} is not a registered topic artifact`)
@@ -544,6 +549,7 @@ const artifactLinkWarnings = ({ workflowRoot, topicRoot, manifest }) => {
   const topicArtifacts = [
     join(topicRoot, 'SPEC.md'), join(topicRoot, 'PLAN.md'),
     ...filesUnder(join(topicRoot, 'tickets')), ...filesUnder(join(topicRoot, 'grills')),
+    ...filesUnder(join(topicRoot, 'walkthroughs')),
   ]
   for (const file of topicArtifacts) {
     if (pathExists(file) && !artifactHasTopicLink({ artifact: file, topicFile })) {
@@ -786,6 +792,7 @@ const initializeTopic = ({ paths, topicId, title: inputTitle, confirmed }) => {
     mkdirSync(resolved.topicRoot, { recursive: true })
     for (const state of ['todo', 'in-progress', 'done']) mkdirSync(join(resolved.ticketsRoot, state), { recursive: true })
     mkdirSync(resolved.grillsRoot, { recursive: true })
+    mkdirSync(resolved.walkthroughsRoot, { recursive: true })
     mkdirSync(resolved.branchesRoot, { recursive: true })
     writeManifest({
       workflowRoot: paths.workflowRoot, topicRoot: resolved.topicRoot,
@@ -1094,6 +1101,162 @@ const updateGrill = ({
   },
 })
 
+const walkthroughFilePattern = /^(\d{4}-\d{2}-\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
+const walkthroughSources = new Set(['last-turn', 'working-tree', 'branch'])
+const escapePattern = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const unsafeWalkthroughText = /(?:^|\s)(?:\/Users\/|\/home\/|[A-Za-z]:\\|(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{12,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._~+/-]{12,})|```|-----BEGIN [A-Z ]+PRIVATE KEY-----|^(?:User|Assistant|System|Prompt|Transcript):/i
+
+const walkthroughText = ({ name, value }) => {
+  const text = requiredText({ name, value })
+  if (unsafeWalkthroughText.test(text)) fail(`${name} contains unsafe walkthrough content`)
+  return text
+}
+
+const requireOpenWalkthroughTopic = (topic) => {
+  if (topic.state !== 'open') {
+    fail(`topic ${topic.id} must be reopened before changing walkthrough logs`)
+  }
+}
+
+const walkthroughLogFile = ({ root, inputLogFile }) => {
+  if (typeof inputLogFile !== 'string' || basename(inputLogFile) !== inputLogFile
+    || !walkthroughFilePattern.test(inputLogFile)) {
+    fail('--log-file must name an existing walkthrough log for this topic')
+  }
+  const logFile = join(root, inputLogFile)
+  if (!pathExists(logFile)) fail('--log-file must name an existing walkthrough log for this topic')
+  return logFile
+}
+
+const readWalkthroughLog = ({ logFile, topicFile, repositoryId }) => {
+  const content = readFileSync(logFile, 'utf8')
+  const title = basename(logFile).match(walkthroughFilePattern)?.[3]
+  const topicTarget = markdownPath(relative(dirname(logFile), topicFile))
+  const topicLogTarget = markdownPath(relative(dirname(topicFile), logFile))
+  if (!readFileSync(topicFile, 'utf8').includes(`](${topicLogTarget})`)) {
+    fail(`${logFile} is not a valid walkthrough log for this topic`)
+  }
+  const pattern = new RegExp(
+    `^# Walkthrough: ${escapePattern(title)}\\n\\nTopic: \\[TOPIC\\.md\\]\\(${escapePattern(topicTarget)}\\)`
+      + '\\n\\n## Provenance\\n\\n'
+      + '- Source: (last-turn|working-tree|branch)\\n'
+      + '- Repository: ([a-zA-Z0-9._-]+-[0-9a-f]{8})\\n'
+      + '- Branch: (.+)\\n'
+      + '- Base: (none|[0-9a-f]{40})\\n'
+      + '- Head: ([0-9a-f]{40})\\n'
+      + '- Range: (.+)\\n'
+      + '- Started at: (.+)\\n\\n## Slices\\n([\\s\\S]*?)## Next slice\\n\\n(.+)\\n$',
+  )
+  const match = content.match(pattern)
+  if (!match) fail(`${logFile} is not a valid walkthrough log for this topic`)
+  const [, source, repository, branch, base, head, range, startedAt, slices, nextSlice] = match
+  const validBase = source === 'branch' ? base !== 'none' : base === 'none'
+  const expectedRange = source === 'branch' ? `${base}...${head}` : `${source}@${head}`
+  if (repository !== repositoryId || !validTimestamp(startedAt)
+    || !validBase || range !== expectedRange) {
+    fail(`${logFile} is not a valid walkthrough log for this topic`)
+  }
+  const records = []
+  const recordPattern = /^### Slice (\d+)\n\n- Slice: (.+)\n- Status: (covered|changed|unresolved)\n- Summary: (.+)\n- Evidence: (.+)\n- Decision: (.+)\n\n/gm
+  let record
+  while ((record = recordPattern.exec(slices)) !== null) {
+    records.push({
+      number: Number(record[1]), slice: record[2], status: record[3], summary: record[4],
+      evidence: record[5], decision: record[6],
+    })
+  }
+  if (slices.replace(recordPattern, '').trim() !== ''
+    || records.some(({ number }, index) => number !== index + 1)) {
+    fail(`${logFile} is not a valid walkthrough log for this topic`)
+  }
+  return { content, records, source, repository, branch, base, head, range, startedAt, nextSlice }
+}
+
+const startWalkthrough = ({
+  paths, topicId, slug: inputSlug, source, baseRef, nextSlice, logFile: inputLogFile,
+}) => withTopicLock({
+  workflowRoot: paths.workflowRoot,
+  action: () => {
+    const topic = findTopic({ workflowRoot: paths.workflowRoot, topicId })
+    requireRepositoryMembership({ paths, manifest: topic })
+    requireOpenWalkthroughTopic(topic)
+    const resolved = topicPaths({ paths, topic })
+    if (inputLogFile) {
+      const logFile = walkthroughLogFile({ root: resolved.walkthroughsRoot, inputLogFile })
+      readWalkthroughLog({ logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId })
+      return { resumed: true, logFile, topicFile: resolved.topicFile }
+    }
+    const slug = inputSlug?.trim()
+    if (!topicIdPattern.test(slug || '')) fail('--slug must be a lowercase hyphenated ID')
+    if (!walkthroughSources.has(source)) fail('--source must be last-turn, working-tree, or branch')
+    if (source === 'branch' && !baseRef?.trim()) fail('--base-ref is required when --source is branch')
+    if (source !== 'branch' && baseRef !== undefined) fail('--base-ref is only valid when --source is branch')
+    const values = { nextSlice: walkthroughText({ name: 'next-slice', value: nextSlice }) }
+    const branch = walkthroughText({ name: 'branch', value: paths.branch })
+    git({ repoRoot: paths.repositoryRoot, args: ['check-ref-format', '--branch', branch] })
+    const head = git({ repoRoot: paths.repositoryRoot, args: ['rev-parse', 'HEAD'] })
+    const base = source === 'branch'
+      ? git({ repoRoot: paths.repositoryRoot, args: ['merge-base', 'HEAD', baseRef.trim()] })
+      : 'none'
+    const range = source === 'branch' ? `${base}...${head}` : `${source}@${head}`
+    mkdirSync(resolved.walkthroughsRoot, { recursive: true })
+    const date = new Date().toISOString().slice(0, 10)
+    const sequences = filesUnder(resolved.walkthroughsRoot)
+      .map((file) => basename(file).match(walkthroughFilePattern))
+      .filter((match) => match?.[1] === date)
+      .map((match) => Number(match[2]))
+    const sequence = String(Math.max(0, ...sequences) + 1).padStart(2, '0')
+    const logFile = join(resolved.walkthroughsRoot, `${date}-${sequence}-${slug}.md`)
+    const topicLink = markdownPath(relative(dirname(logFile), resolved.topicFile))
+    const startedAt = new Date().toISOString()
+    writeAtomically({
+      file: logFile,
+      content: `# Walkthrough: ${slug}\n\nTopic: [TOPIC.md](${topicLink})\n\n## Provenance\n\n`
+        + `- Source: ${source}\n- Repository: ${paths.repositoryId}\n- Branch: ${branch}\n`
+        + `- Base: ${base}\n- Head: ${head}\n- Range: ${range}\n- Started at: ${startedAt}\n\n`
+        + `## Slices\n\n## Next slice\n\n${values.nextSlice}\n`,
+    })
+    syncTopicUnlocked({ paths, topicId })
+    return { resumed: false, logFile, topicFile: resolved.topicFile, base, head, range }
+  },
+})
+
+const updateWalkthrough = ({
+  paths, topicId, logFile: inputLogFile, slice, status, summary, evidence, decision, nextSlice,
+}) => withTopicLock({
+  workflowRoot: paths.workflowRoot,
+  action: () => {
+    const topic = findTopic({ workflowRoot: paths.workflowRoot, topicId })
+    requireRepositoryMembership({ paths, manifest: topic })
+    requireOpenWalkthroughTopic(topic)
+    const resolved = topicPaths({ paths, topic })
+    const logFile = walkthroughLogFile({ root: resolved.walkthroughsRoot, inputLogFile })
+    const values = {
+      slice: walkthroughText({ name: 'slice', value: slice }),
+      summary: walkthroughText({ name: 'summary', value: summary }),
+      evidence: walkthroughText({ name: 'evidence', value: evidence }),
+      decision: walkthroughText({ name: 'decision', value: decision }),
+      nextSlice: walkthroughText({ name: 'next-slice', value: nextSlice }),
+    }
+    if (!new Set(['covered', 'changed', 'unresolved']).has(status)) {
+      fail('--status must be covered, changed, or unresolved')
+    }
+    const log = readWalkthroughLog({
+      logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+    })
+    const marker = '\n## Next slice\n'
+    const prefix = log.content.slice(0, log.content.indexOf(marker)).replace(/\s*$/, '\n\n')
+    const count = log.records.length + 1
+    writeAtomically({
+      file: logFile,
+      content: `${prefix}### Slice ${count}\n\n- Slice: ${values.slice}\n- Status: ${status}\n- Summary: ${values.summary}\n`
+        + `- Evidence: ${values.evidence}\n- Decision: ${values.decision}\n\n## Next slice\n\n${values.nextSlice}\n`,
+    })
+    syncTopicUnlocked({ paths, topicId })
+    return { logFile, slice: count }
+  },
+})
+
 try {
   const { command, options } = parseArgs(process.argv.slice(2))
   if (command === 'topics') {
@@ -1143,6 +1306,17 @@ try {
         question: options.question, recommendation: options.recommendation,
         decision: options.decision, rationale: options.rationale,
         nextQuestion: options['next-question'],
+      }), null, 2))
+    } else if (command === 'start-walkthrough') {
+      console.log(JSON.stringify(startWalkthrough({
+        paths, topicId: options['topic-id'], slug: options.slug, source: options.source,
+        baseRef: options['base-ref'], nextSlice: options['next-slice'], logFile: options['log-file'],
+      }), null, 2))
+    } else if (command === 'update-walkthrough') {
+      console.log(JSON.stringify(updateWalkthrough({
+        paths, topicId: options['topic-id'], logFile: options['log-file'], slice: options.slice,
+        status: options.status, summary: options.summary, evidence: options.evidence,
+        decision: options.decision, nextSlice: options['next-slice'],
       }), null, 2))
     } else if (command === 'configure-ticket-system') {
       const externalTicketSystem = configureTicketSystem({

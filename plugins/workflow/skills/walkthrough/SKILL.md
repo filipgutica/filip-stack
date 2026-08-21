@@ -10,7 +10,9 @@ Help the user understand and review a change through an interactive, evidence-ba
 
 ## Authority
 
-This skill is read-only. Do not edit files, commit, push, publish, or change external state.
+The walkthrough and repository review are read-only. Do not edit repository files, commit, push, or publish.
+
+An explicit `$workflow:walkthrough` invocation grants external-artifact authority for one walkthrough log under a confirmed topic. It does not grant setup, topic creation, specification, plan, ticket, implementation, or other external-write authority.
 
 A concern, question, or proposal does not grant implementation authority.
 
@@ -25,6 +27,16 @@ Use the source that the user names:
 - **Branch:** Review committed branch changes against a verified merge base. Use the user's base when provided. State the base and comparison range.
 
 If the source is missing or ambiguous, ask one focused question. Do not start the walkthrough until the source is clear.
+
+## Persist the walkthrough
+
+An explicit invocation creates one curated topic log by default. Read [walkthrough-log.md](references/walkthrough-log.md) before the first slice.
+
+Use the setup utility to resolve an existing topic. A durable source or registered external work can select the topic. Otherwise, show open topics and ask the user to select one. Do not infer a topic from the branch name.
+
+Create no log before source and topic confirmation. If setup, topic creation, or repository attachment is required, use `$workflow:setup` only with explicit setup authority. Without that authority, continue in the conversation and state that no walkthrough log was persisted.
+
+Use setup `start-walkthrough` to create the log and record source provenance. For a branch walkthrough, pass the verified base ref. Resume an interrupted walkthrough with `start-walkthrough --log-file <name>`.
 
 ## Prepare the walkthrough
 
@@ -53,6 +65,10 @@ For each slice:
 
 Adjust the depth when the user asks to skip, expand, or revisit a slice. Keep a conversational coverage list of completed and remaining slices.
 
+After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only curated status, summary, evidence, decision, and next-slice fields. Do not store the conversation or full coverage map.
+
+The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines. This check is a backstop. Curate every field before the write.
+
 If the user raises a concern, verify it against the live code and contract before classifying it. Classify it as valid, invalid, already addressed, out of scope, or blocked by missing evidence.
 
 ## Authorized correction cycle
@@ -60,7 +76,7 @@ If the user raises a concern, verify it against the live code and contract befor
 If the user explicitly requests a bounded correction during the walkthrough:
 
 1. Pause the walkthrough.
-2. Record the current slice and coverage state.
+2. Record the current slice and coverage state in the walkthrough log when one exists.
 3. Route the correction through `$workflow:coordinator`.
 4. Complete the authorized implementation, verification, and review cycle.
 5. Refresh the selected diff and coverage map.
@@ -80,6 +96,8 @@ Do not force a visual when plain prose is clearer. Do not repeat the full diff a
 ## Completion
 
 Finish only after the user ends the walkthrough or all slices are covered.
+
+If all slices are covered, update the final resolved slice and set the next slice to `complete`. If the user stops early, preserve the unresolved next slice so the session can resume.
 
 Report:
 
