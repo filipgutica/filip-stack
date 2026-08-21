@@ -200,9 +200,8 @@ commands ignore it, and no field-guide contract depends on Obsidian.
 
 Shared guidance requires either a general user preference or independent generic
 evidence from at least two repositories. The utility provides bounded retrieval,
-candidate matching, submission, lifecycle, audit, maintenance, migration, and
-validation commands. It preserves existing review records and validates typed
-evidence.
+candidate matching, submission, lifecycle, audit, maintenance, and validation
+commands. It preserves existing review records and validates typed evidence.
 
 You can also open `~/.engineering-workflow` as an Obsidian vault to audit
 planning artifacts. Git worktrees live separately under

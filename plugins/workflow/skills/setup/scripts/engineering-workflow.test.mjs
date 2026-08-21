@@ -86,7 +86,7 @@ test('paths resolves topic-owned branch ledger locations', () => {
   assert.equal(
     paths.ledgerFile,
     join(
-      workflowRoot, 'repositories', paths.repositoryId, 'topics', 'open',
+      paths.workflowRoot, 'repositories', paths.repositoryId, 'topics', 'open',
       'workflow-storage', 'branches', paths.branchId, 'TASKS.md',
     ),
   )
@@ -119,7 +119,7 @@ test('init creates the topic-first roots and one repository configuration', () =
   const paths = run({ command: 'init', args })
   const config = JSON.parse(readFileSync(paths.configFile, 'utf8'))
 
-  assert.equal(paths.projectRoot, join(workflowRoot, 'repositories', paths.repositoryId))
+  assert.equal(paths.projectRoot, join(paths.workflowRoot, 'repositories', paths.repositoryId))
   assert.equal(config.ticketBackend, 'jira')
   assert.equal(config.repository.identity, 'remote:github.com/example/repository')
   assert.deepEqual(config.externalTicketSystem, {
