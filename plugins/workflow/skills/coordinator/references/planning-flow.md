@@ -22,11 +22,12 @@ flowchart LR
    - Use `$workflow:spec-to-tickets` only when the user explicitly requests ticket decomposition from a decision-complete specification.
    - Use `$workflow:writing-tickets` when the user requests ticket drafting, creation, changes, or an execution-ready review.
 3. Require ticket-writing authority before ticket creation or changes.
-4. Persist a plan, specification, brainstorm note, or local ticket draft only when the user explicitly requests that named external artifact. That request grants external-artifact authority only for the requested write.
-5. For a persisted topic-scoped artifact under Engineering Workflow storage, use the read-only `topics` command to discover or validate its active topic. A standalone Jira or GitHub issue does not require a topic.
-6. If the topic does not exist, require setup authority before `init-topic`. Artifact authority alone cannot initialize a topic.
-7. State material assumptions, risks, and open decisions.
-8. End with the requested artifact or discussion. Do not continue into a different artifact type without a user request.
+4. An explicit `$workflow:writing-specs` invocation persists its specification by default. A plan or local ticket draft persists only when the user requests that named artifact. An explicit `$workflow:grill-me` invocation persists one curated grill log. Each request grants authority only for its artifact write.
+5. For a persisted local artifact, use `topics` to resolve its open topic. Use a user-identified open topic or the only open topic. If multiple open topics exist, ask for a topic choice. A standalone Jira or GitHub issue does not require a topic.
+6. If the topic does not exist, require setup authority before `init-topic --confirm`. Artifact authority alone cannot initialize a topic.
+7. Each persisted local artifact links to `TOPIC.md`. It also records the nearest durable source or `Direct request`. External tickets use tracker-native hierarchy and links. Do not require a link to an ephemeral brainstorm or session.
+8. State material assumptions, risks, and open decisions.
+9. End with the requested artifact or discussion. Do not continue into a different artifact type without a user request.
 
 ## User-involved branch-ledger planning
 

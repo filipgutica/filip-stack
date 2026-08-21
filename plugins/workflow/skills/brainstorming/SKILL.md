@@ -16,15 +16,11 @@ Turn an ambiguous request into a bounded, evidence-based direction. Explore only
 5. Ask one focused question at a time for decisions that require user judgment.
 6. Stop when the direction, constraints, and unresolved decisions are explicit.
 
-Do not design unrequested extensions or begin implementation. Create a concise brainstorm note only when the user explicitly requests that external artifact; the request grants authority only for that write.
+Do not design unrequested extensions or begin implementation. Brainstorms are conversation-first and can remain ephemeral.
 
 ## External artifacts
 
-Use the repository identity and rules in [Engineering Workflow storage](../setup/references/storage.md). Store a requested note under an active topic at `~/.engineering-workflow/<repo-id>/specs/<topic-id>/BRAINSTORM.md`.
-
-Do not create or change `config.json` or `topics.json` manually. Use the setup utility to discover or validate topics.
-
-If storage or the topic is not configured, use `$workflow:setup` with explicit setup authority. Without that authority, return the note in the conversation.
+Do not create a standalone `BRAINSTORM.md`. Preserve settled rationale in the next specification or plan. Use `$workflow:grill-me` when the user wants a topic-scoped decision log that survives context compaction.
 
 ## Exit criteria
 

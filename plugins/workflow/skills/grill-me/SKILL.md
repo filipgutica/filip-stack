@@ -9,6 +9,8 @@ description: Use when the user wants to stress-test a plan, design, architecture
 
 Interview the user rigorously about a plan or design until the important decisions, assumptions, dependencies, and tradeoffs are explicit. Keep the pressure constructive: the goal is shared understanding, not performance.
 
+An explicit `$workflow:grill-me` invocation creates a curated topic log by default. Read [grill-log.md](references/grill-log.md) before the first question.
+
 ## Interview Loop
 
 - Start from the user's plan, proposal, or design. If there is no concrete artifact yet, ask for the smallest useful statement of the goal, constraints, and intended approach.
@@ -16,6 +18,7 @@ Interview the user rigorously about a plan or design until the important decisio
 - Ask exactly one question at a time unless the user explicitly asks for a checklist.
 - For each question, include a concise recommended answer based on the current evidence. Mark it as an assumption when it depends on missing information.
 - Resolve the current branch before moving to a dependent branch. Use the user's answer to update the next question.
+- After each resolved answer, update the grill log before asking the next question.
 - Challenge vague answers, hidden assumptions, premature abstractions, and missing verification with concrete follow-up questions.
 - Stop when the plan has a coherent path through the major decisions, or when the user asks to stop.
 
@@ -33,6 +36,14 @@ Avoid:
 - Asking the user for facts that are discoverable locally.
 - Asking multiple independent questions in one turn.
 - Turning the interview into a generic checklist detached from the user's actual plan.
+
+## External artifact authority
+
+The explicit invocation grants authority only for one grill log under the confirmed topic. It does not grant repository setup, specification, plan, ticket, or implementation authority.
+
+Use the setup utility to resolve an existing topic. If no durable source selects one, ask the user to select an open topic or confirm a proposed new topic. Create no log before topic confirmation.
+
+If setup or topic creation is required, use `$workflow:setup` only with explicit setup authority. Without that authority, continue in the conversation and state that no grill log was persisted.
 
 ## Question Shape
 

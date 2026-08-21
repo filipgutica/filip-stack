@@ -19,32 +19,34 @@ Do not infer named-ticket end-to-end authority from a ticket reference or an exi
 
 1. Read the live Git root and current branch.
 2. Stop if direct invocation has no established branch.
-3. Use `$workflow:setup` path resolution for `~/.engineering-workflow/<repo-id>/branches/<branch-id>/TASKS.md`.
-4. Consume the returned repository and branch IDs. Do not reconstruct their slugs or stable hashes.
-5. Search the resolved task directory before creating a ledger.
-6. Check the matching legacy path under `~/.project-tasks` before creating a new ledger.
-7. If only the legacy ledger exists, run the setup migration with `--repo-root` and `--branch` before continuing.
-8. Require explicit setup or migration authority for that operation. Stop and request it when absent.
-9. Validate ledger metadata against the live root and branch.
+3. Resolve or confirm the topic before the ledger path.
+4. Check whether the repository is attached to the open topic. If it is not, ask for setup authority, then run `attach-topic --confirm`.
+5. Use `$workflow:setup` path resolution for `~/.engineering-workflow/repositories/<repo-id>/topics/<state>/<topic-id>/branches/<branch-id>/TASKS.md`.
+6. Consume the returned topic, repository, branch IDs, and relative topic link. Do not reconstruct them.
+7. Search the resolved task directory before creating a ledger.
+8. Validate ledger metadata against the live topic, root, and branch.
 
 For detached HEAD during named-ticket execution, use the short commit hash with a detached marker until the coordinator creates the authorized branch.
 
 ## Direct invocation
 
-The user's explicit request to create or modify a branch task ledger grants external-artifact authority only for that ledger write.
+The user's explicit request to create or modify a branch task ledger grants external-artifact authority only for that ledger write. It does not grant authority to attach a repository or change `TOPIC.md`.
 
 1. Gather the request and bounded read-only evidence.
 2. Propose task boundaries in the conversation.
 3. Apply the user's changes to the proposed tasks.
-4. Create or update only the external ledger.
-5. Keep each proposed task marked `[ ]`.
-6. Set the pointer path to `none`.
+4. If attachment is required, ask for setup authority before the ledger write.
+5. Create or update only the external ledger after the repository is attached.
+6. Keep each proposed task marked `[ ]`.
+7. Set the pointer path to `none`.
 
 Do not create or switch branches. Do not edit repository files. Do not create a repository pointer. Do not commit, push, or publish.
 
 ## Named-ticket end-to-end use
 
 Use ticket context and repository evidence to define the ledger.
+
+Read the ledger's Sources block before task planning. If its ticket or plan is ambiguous, follow the durable-source rules in [Engineering Workflow storage](../setup/references/storage.md). Do not rely on an ephemeral brainstorm or conversation session.
 
 1. Create or resume the external ledger.
 2. Use one top-level task for each intended Conventional Commit.
@@ -61,6 +63,19 @@ During this mode, check `<git-root>/TASKS.md` and then `<git-root>/.task-ledger`
 ## Ledger shape
 
 Add a title and metadata block. Include the date, repository, Git root, working directory, branch, task directory, and pointer.
+
+Add this Sources block before Context:
+
+```md
+## Sources
+
+- Topic: [TOPIC.md](<relative-topic-link-from-setup>)
+- Primary work item: [Jira MA-1234](https://example.atlassian.net/browse/MA-1234) or `Direct request`
+- Specification (optional): [SPEC.md](<relative-specification-link-from-setup>)
+- Implementation plan (optional): [PLAN.md](<relative-plan-link-from-setup>)
+```
+
+Use the nearest durable source. Local sources use relative links from setup path resolution. Jira and GitHub sources use verified HTTPS links. A ticket that spans repositories has one ledger per repository and branch. Each ledger can use the same primary work item. Do not add machine-local paths or session links.
 
 Add Context, Goal, Non-goals, Success Criteria, branch checks, and deferred work when relevant. Use this task shape:
 

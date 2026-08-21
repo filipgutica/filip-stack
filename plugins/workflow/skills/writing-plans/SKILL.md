@@ -39,14 +39,16 @@ Use these exact headings, in this order:
 ## Risks / assumptions / open questions
 ```
 
+Start `Context` with `Source: <nearest durable source>` or `Source: Direct request`. A persisted plan adds `Topic: [TOPIC.md](TOPIC.md)` on the next line. Use a relative link for a local source and a verified HTTPS link for Jira or GitHub. Do not use a brainstorm session ID or a machine-local path.
+
 For every bounded subtask, name the files, expected outcome, and verification signal. List files by role under **Files touched**. Put commands that prove the changed behavior under **Verification commands**. Do not describe implementation as authorized when the request is plan-only.
 
 ## External artifacts
 
 Return the plan in the conversation by default. Persist it only when the user explicitly requests an external artifact.
 
-Write the plan under an active topic at `~/.engineering-workflow/<repo-id>/specs/<topic-id>/PLAN.md`. The request grants external-artifact authority only for that write.
+Write the plan beside its specification under an open topic at `~/.engineering-workflow/topics/open/<topic-id>/PLAN.md`. The request grants external-artifact authority only for that write.
 
-Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` or `topics.json` manually. Use the setup utility to validate topics.
+Use [Engineering Workflow storage](../setup/references/storage.md). Do not create or change `config.json` or `TOPIC.md` manually. Use the setup utility to validate topics.
 
 If storage or the topic is not configured, use `$workflow:setup` with explicit setup authority. Without that authority, deliver the plan in the conversation.
