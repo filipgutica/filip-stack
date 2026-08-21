@@ -15,7 +15,7 @@ const promptOutput = {
 
 const stopOutput = {
   decision: 'block',
-  reason: 'This is the single end-of-task Workflow field-guide evaluation. Evaluate the completed task now and decide capture, ask, or skip. For capture, use bounded candidates and deterministic field-guide submission. For ask, ask one focused question and do not write. For skip, write no memory and reply only "Field-guide: no durable learning to save." Do not store transcripts, prompts, credentials, proprietary code, unsafe paths, or existing repository authority.',
+  reason: 'This is the single end-of-task Workflow field-guide evaluation. Evaluate the completed task now and decide capture, ask, or skip. For capture, use bounded candidates and deterministic field-guide submission. For ask, ask one focused question and do not write. For skip, write no memory and reply only "<!-- field-guide: skip -->" so no status notice is visible. Do not store transcripts, prompts, credentials, proprietary code, unsafe paths, or existing repository authority.',
 }
 
 const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home') } = {}) => (

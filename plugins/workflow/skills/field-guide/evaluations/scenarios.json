@@ -102,7 +102,7 @@
       "userMessage": "Show the current branch name.",
       "lifecycleEvent": "Stop",
       "expectedDecision": "skip",
-      "expectedCompletion": "Field-guide: no durable learning to save.",
+      "expectedCompletion": "<!-- field-guide: skip -->",
       "requiresNotice": false
     }
   ]

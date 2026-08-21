@@ -6,7 +6,7 @@ Use this policy after an observation appears during normal work. The decision is
 
 At the end of meaningful work, decide `capture`, `ask`, or `skip`. Perform this evaluation once for each completed main-agent task.
 
-For `capture`, use bounded candidates before submission. For `ask`, ask one focused question and write nothing. For `skip`, write no memory and return the fixed no-learning notice.
+For `capture`, use bounded candidates before submission. For `ask`, ask one focused question and write nothing. For `skip`, write no memory and return only the hidden HTML marker. Do not show a field-guide status.
 
 The hook only requests this decision. It does not classify observations or write memory.
 

@@ -778,7 +778,7 @@ test('walkthrough updates the summary table, appends entries, and derives the ne
     args: [
       ...common, '--log-file', basename(walkthrough.logFile), '--slice', 'Lifecycle contract', '--status', 'covered',
       '--summary', 'The hook requests one evaluation.', '--evidence', 'hooks.json and its adapter.',
-      '--decision', 'Keep the visible skip notice.',
+      '--decision', 'Do not show a skip notice.',
     ],
   })
   assert.equal(updated.slice, 1)
@@ -786,7 +786,7 @@ test('walkthrough updates the summary table, appends entries, and derives the ne
   assert.match(log, /\| Lifecycle contract \| Review the end-of-task evaluation contract\. \| covered \|/)
   assert.match(log, /\| Hook safety \| Review privacy and failure boundaries\. \| unresolved \|/)
   assert.match(log, /## Running log\n\n### Entry 1\n\n- Slice: Lifecycle contract\n- Status: covered/)
-  assert.match(log, /- Decision: Keep the visible skip notice\./)
+  assert.match(log, /- Decision: Do not show a skip notice\./)
   assert.match(log, /## Next slice\n\nHook safety/)
 
   const completed = run({
