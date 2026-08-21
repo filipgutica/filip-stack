@@ -25,7 +25,8 @@ them.
 
 `walkthrough` is manual-only. It explains and reviews selected changes without
 granting authority to modify them. An explicit invocation can save one curated
-walkthrough log under a confirmed topic.
+walkthrough log under a confirmed topic. The log keeps a slice-status table and
+a chronological running log.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.

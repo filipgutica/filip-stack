@@ -36,7 +36,7 @@ Use the setup utility to resolve an existing topic. A durable source or register
 
 Create no log before source and topic confirmation. If setup, topic creation, or repository attachment is required, use `$workflow:setup` only with explicit setup authority. Without that authority, continue in the conversation and state that no walkthrough log was persisted.
 
-Use setup `start-walkthrough` to create the log and record source provenance. For a branch walkthrough, pass the verified base ref. Resume an interrupted walkthrough with `start-walkthrough --log-file <name>`.
+After you build the change map, use setup `start-walkthrough` to create the log. Pass the ordered slice names and brief descriptions with `--slices`. For a branch walkthrough, pass the verified base ref. Resume an interrupted walkthrough with `start-walkthrough --log-file <name>`.
 
 ## Prepare the walkthrough
 
@@ -65,7 +65,9 @@ For each slice:
 
 Adjust the depth when the user asks to skip, expand, or revisit a slice. Keep a conversational coverage list of completed and remaining slices.
 
-After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only curated status, summary, evidence, decision, and next-slice fields. Do not store the conversation or full coverage map.
+The log starts with a summary table. Each row contains a slice name, brief description, and current status. A chronological running log follows the table.
+
+After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only the curated status, summary, evidence, and decision. The utility updates the table, appends the running-log entry, and selects the first unresolved slice. Do not store the conversation or full coverage map.
 
 The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines. This check is a backstop. Curate every field before the write.
 

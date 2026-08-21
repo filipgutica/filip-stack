@@ -190,13 +190,17 @@ An explicit Walkthrough session creates one log after source and topic confirmat
 
 Use `start-walkthrough` to record a fixed provenance header. The header records the source, repository ID, branch, base, head, range, and start time.
 
+Pass `--slices` as a JSON array of ordered `slice` and `description` objects. The command creates a summary table and sets each status to `unresolved`.
+
 For a branch source, pass `--base-ref`. The setup utility uses `git merge-base HEAD <base-ref>` for the base. It records `<base>...<head>` as the range.
 
 For a last-turn or working-tree source, the base is `none`. The range is `<source>@<head>`.
 
 The repository field uses the stable repository ID. It does not store a local repository path.
 
-Use `update-walkthrough` after the user resolves a slice. The command appends one curated slice record and replaces the next slice.
+The running log follows the summary table. Use `update-walkthrough` after the user resolves a slice. The command updates the table row and appends one curated entry.
+
+The command selects the first unresolved table row as the next slice. It selects `complete` only when no unresolved row remains.
 
 Each recorded field must use one line. Do not store a prompt, transcript, response, hidden reasoning, full diff, code excerpt, credential, or local repository path.
 

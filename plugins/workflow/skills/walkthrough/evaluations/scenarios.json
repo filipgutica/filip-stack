@@ -6,6 +6,8 @@
       "userMessage": "Use $workflow:walkthrough for this branch against main.",
       "expectedActivation": true,
       "expectedLog": "create-after-source-and-topic-confirmation",
+      "expectedLogSections": ["provenance", "slice-summary-table", "running-log", "next-slice"],
+      "expectedInitialSliceStatus": "unresolved",
       "expectedProvenance": ["repository", "branch", "base", "head", "range"],
       "repositoryWrite": false
     },
@@ -34,6 +36,7 @@
       "id": "early-stop",
       "userMessage": "Stop the walkthrough here. We did not cover the remaining slices.",
       "expectedLogState": "resumable",
+      "expectedTableState": "remaining-slices-unresolved",
       "expectedNextSlice": "first-unresolved-slice",
       "mustNotMarkComplete": true
     },
