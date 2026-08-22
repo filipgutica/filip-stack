@@ -1,3 +1,20 @@
+# [1.13.0](https://github.com/filipgutica/filip-stack/compare/v1.12.0...v1.13.0) (2026-08-22)
+
+
+### Bug Fixes
+
+* **workflow:** align rebased validation ([905defa](https://github.com/filipgutica/filip-stack/commit/905defad6ef18a7fc605ab452cb8dbf7027d3337))
+* **workflow:** hide field-guide skip notices ([69d076e](https://github.com/filipgutica/filip-stack/commit/69d076e671000cc6e62a727f2d3c758c48605704))
+* **workflow:** make field-guide hooks runtime-safe ([78986eb](https://github.com/filipgutica/filip-stack/commit/78986eba8908c7456e57024458bc7f3936772876))
+* **workflow:** preserve task output on skip ([2781c0e](https://github.com/filipgutica/filip-stack/commit/2781c0ed8b8f7029cf1ea76840fe32d12946c72a))
+* **workflow:** track walkthrough slice progress ([c8a0d1c](https://github.com/filipgutica/filip-stack/commit/c8a0d1cc6d8ab51e66e76c630c131f114d10ecd4))
+
+
+### Features
+
+* **workflow:** automate field-guide learning ([c7ac912](https://github.com/filipgutica/filip-stack/commit/c7ac91292232098d6cf80ea85cc65852b24dbf09))
+* **workflow:** persist walkthrough logs ([0de3422](https://github.com/filipgutica/filip-stack/commit/0de342264ac1a32c671dcd4b1413976c8d82fa58))
+
 # [1.12.0](https://github.com/filipgutica/filip-stack/compare/v1.11.0...v1.12.0) (2026-08-21)
 
 
