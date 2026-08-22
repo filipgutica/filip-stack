@@ -48,7 +48,8 @@ const normalizeRemote = (remote) => {
 const commands = new Set([
   'paths', 'init', 'topics', 'init-topic', 'attach-topic', 'sync-topic',
   'complete-topic', 'abandon-topic', 'reopen-topic', 'mark-spec-implemented',
-  'start-grill', 'update-grill', 'configure-ticket-system',
+  'start-grill', 'update-grill', 'start-walkthrough', 'update-walkthrough',
+  'configure-ticket-system',
 ])
 const booleanFlags = new Set(['--confirm', '--confirm-warnings'])
 
@@ -194,7 +195,7 @@ const topicArtifactPaths = ({ topicsRoot, repositoryTopicsRoot, topicId, topicSt
   if (!topicId || !topicState) {
     return {
       topicRoot: null, topicFile: null, specFile: null, planFile: null,
-      ticketsRoot: null, grillsRoot: null, repositoryTopicRoot: null,
+      ticketsRoot: null, grillsRoot: null, walkthroughsRoot: null, repositoryTopicRoot: null,
       branchesRoot: null, branchRoot: null, ledgerFile: null,
     }
   }
@@ -206,6 +207,7 @@ const topicArtifactPaths = ({ topicsRoot, repositoryTopicsRoot, topicId, topicSt
     topicRoot, topicFile: join(topicRoot, 'TOPIC.md'),
     specFile: join(topicRoot, 'SPEC.md'), planFile: join(topicRoot, 'PLAN.md'),
     ticketsRoot: join(topicRoot, 'tickets'), grillsRoot: join(topicRoot, 'grills'),
+    walkthroughsRoot: join(topicRoot, 'walkthroughs'),
     repositoryTopicRoot, branchesRoot, branchRoot, ledgerFile: join(branchRoot, 'TASKS.md'),
   }
 }
@@ -455,6 +457,7 @@ const generatedLinks = ({ workflowRoot, topicRoot, manifest }) => {
   add({ label: 'Plan', file: join(topicRoot, 'PLAN.md') })
   for (const file of filesUnder(join(topicRoot, 'tickets'))) add({ label: 'Ticket', file })
   for (const file of filesUnder(join(topicRoot, 'grills'))) add({ label: 'Grill log', file })
+  for (const file of filesUnder(join(topicRoot, 'walkthroughs'))) add({ label: 'Walkthrough log', file })
   for (const repositoryId of manifest.repositories) {
     const repositoryTopicRoot = join(
       workflowRoot, 'repositories', repositoryId, 'topics', manifest.state, manifest.id,
@@ -502,7 +505,9 @@ const listRepositoryTopicDirectories = ({ workflowRoot, topicId }) => {
 
 const topicEntryWarnings = ({ workflowRoot, topicRoot }) => {
   const warnings = []
-  const allowedTopicEntries = new Set(['TOPIC.md', 'SPEC.md', 'PLAN.md', 'tickets', 'grills'])
+  const allowedTopicEntries = new Set([
+    'TOPIC.md', 'SPEC.md', 'PLAN.md', 'tickets', 'grills', 'walkthroughs',
+  ])
   for (const entry of readdirSync(topicRoot, { withFileTypes: true })) {
     if (!allowedTopicEntries.has(entry.name)) {
       warnings.push(`${relative(workflowRoot, join(topicRoot, entry.name))} is not a registered topic artifact`)
@@ -544,6 +549,7 @@ const artifactLinkWarnings = ({ workflowRoot, topicRoot, manifest }) => {
   const topicArtifacts = [
     join(topicRoot, 'SPEC.md'), join(topicRoot, 'PLAN.md'),
     ...filesUnder(join(topicRoot, 'tickets')), ...filesUnder(join(topicRoot, 'grills')),
+    ...filesUnder(join(topicRoot, 'walkthroughs')),
   ]
   for (const file of topicArtifacts) {
     if (pathExists(file) && !artifactHasTopicLink({ artifact: file, topicFile })) {
@@ -786,6 +792,7 @@ const initializeTopic = ({ paths, topicId, title: inputTitle, confirmed }) => {
     mkdirSync(resolved.topicRoot, { recursive: true })
     for (const state of ['todo', 'in-progress', 'done']) mkdirSync(join(resolved.ticketsRoot, state), { recursive: true })
     mkdirSync(resolved.grillsRoot, { recursive: true })
+    mkdirSync(resolved.walkthroughsRoot, { recursive: true })
     mkdirSync(resolved.branchesRoot, { recursive: true })
     writeManifest({
       workflowRoot: paths.workflowRoot, topicRoot: resolved.topicRoot,
@@ -1094,6 +1101,271 @@ const updateGrill = ({
   },
 })
 
+const walkthroughFilePattern = /^(\d{4}-\d{2}-\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
+const walkthroughSources = new Set(['last-turn', 'working-tree', 'branch'])
+const walkthroughStatuses = new Set(['covered', 'changed', 'unresolved'])
+const walkthroughSliceKeys = new Set(['slice', 'description'])
+const escapePattern = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+const unsafeWalkthroughText = /\/Users\/|\/home\/|[A-Za-z]:\\|(?:^|\s)(?:(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{12,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._~+/-]{12,})|```|-----BEGIN [A-Z ]+PRIVATE KEY-----|^(?:User|Assistant|System|Prompt|Transcript):/i
+
+const walkthroughText = ({ name, value }) => {
+  const text = requiredText({ name, value })
+  if (unsafeWalkthroughText.test(text)) fail(`${name} contains unsafe walkthrough content`)
+  return text
+}
+
+const walkthroughTableText = ({ name, value }) => {
+  const text = walkthroughText({ name, value })
+  if (text.includes('|')) fail(`--${name} cannot contain a table separator`)
+  return text
+}
+
+const walkthroughSliceName = (value) => {
+  const slice = walkthroughTableText({ name: 'slice', value })
+  if (slice.toLowerCase() === 'complete') fail('--slice cannot use the reserved name complete')
+  return slice
+}
+
+const parseWalkthroughSlice = (entry) => {
+  if (!isObject(entry) || !hasOnlyKeys({ value: entry, keys: walkthroughSliceKeys })
+    || !Object.hasOwn(entry, 'slice') || !Object.hasOwn(entry, 'description')) {
+    fail('--slices entries must contain only slice and description')
+  }
+  return {
+    slice: walkthroughSliceName(entry.slice),
+    description: walkthroughTableText({ name: 'description', value: entry.description }),
+    status: 'unresolved',
+  }
+}
+
+const parseWalkthroughSlices = (input) => {
+  let parsed
+  try {
+    parsed = JSON.parse(input)
+  } catch {
+    fail('--slices must be a JSON array')
+  }
+  if (!Array.isArray(parsed) || parsed.length === 0 || parsed.length > 20) {
+    fail('--slices must contain between 1 and 20 entries')
+  }
+  const slices = parsed.map(parseWalkthroughSlice)
+  if (new Set(slices.map(({ slice }) => slice)).size !== slices.length) {
+    fail('--slices must use unique slice names')
+  }
+  return slices
+}
+
+const walkthroughTable = (slices) => (
+  '| Slice | Description | Status |\n| --- | --- | --- |\n'
+  + slices.map(({ slice, description, status }) => `| ${slice} | ${description} | ${status} |`).join('\n')
+  + '\n'
+)
+
+const walkthroughEntries = (records) => records.map((record, index) => (
+  `### Entry ${index + 1}\n\n- Slice: ${record.slice}\n- Status: ${record.status}\n`
+  + `- Summary: ${record.summary}\n- Evidence: ${record.evidence}\n- Decision: ${record.decision}\n\n`
+)).join('')
+
+const requireOpenWalkthroughTopic = (topic) => {
+  if (topic.state !== 'open') {
+    fail(`topic ${topic.id} must be reopened before changing walkthrough logs`)
+  }
+}
+
+const walkthroughLogFile = ({ root, inputLogFile }) => {
+  if (typeof inputLogFile !== 'string' || basename(inputLogFile) !== inputLogFile
+    || !walkthroughFilePattern.test(inputLogFile)) {
+    fail('--log-file must name an existing walkthrough log for this topic')
+  }
+  const logFile = join(root, inputLogFile)
+  if (!pathExists(logFile)) fail('--log-file must name an existing walkthrough log for this topic')
+  return logFile
+}
+
+const invalidWalkthroughLog = (logFile) => fail(`${logFile} is not a valid walkthrough log for this topic`)
+
+const parseWalkthroughTable = ({ table, logFile }) => {
+  const slices = table.trim().split('\n').slice(2).map((row) => {
+    const match = row.match(/^\| (.+) \| (.+) \| (covered|changed|unresolved) \|$/)
+    if (!match) invalidWalkthroughLog(logFile)
+    return {
+      slice: walkthroughSliceName(match[1]),
+      description: walkthroughTableText({ name: 'description', value: match[2] }),
+      status: match[3],
+    }
+  })
+  if (new Set(slices.map(({ slice }) => slice)).size !== slices.length) invalidWalkthroughLog(logFile)
+  return slices
+}
+
+const parseWalkthroughEntries = ({ entries, slices, logFile }) => {
+  const records = []
+  const pattern = /^### Entry (\d+)\n\n- Slice: (.+)\n- Status: (covered|changed|unresolved)\n- Summary: (.+)\n- Evidence: (.+)\n- Decision: (.+)\n\n/gm
+  let match
+  while ((match = pattern.exec(entries)) !== null) {
+    records.push({
+      number: Number(match[1]),
+      slice: walkthroughText({ name: 'slice', value: match[2] }),
+      status: match[3],
+      summary: walkthroughText({ name: 'summary', value: match[4] }),
+      evidence: walkthroughText({ name: 'evidence', value: match[5] }),
+      decision: walkthroughText({ name: 'decision', value: match[6] }),
+    })
+  }
+  if (entries.replace(pattern, '').trim() !== ''
+    || records.some(({ number, slice }, index) => number !== index + 1
+      || !slices.some((item) => item.slice === slice))) {
+    invalidWalkthroughLog(logFile)
+  }
+  return records
+}
+
+const validateWalkthroughProgress = ({ slices, records, nextSlice, logFile }) => {
+  const latestStatuses = new Map(records.map(({ slice, status }) => [slice, status]))
+  const expectedNextSlice = slices.find(({ status }) => status === 'unresolved')?.slice || 'complete'
+  if (slices.some(({ slice, status }) => status !== (latestStatuses.get(slice) || 'unresolved'))
+    || nextSlice !== expectedNextSlice) {
+    invalidWalkthroughLog(logFile)
+  }
+}
+
+const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
+  const content = readFileSync(logFile, 'utf8')
+  const title = basename(logFile).match(walkthroughFilePattern)?.[3]
+  const topicTarget = markdownPath(relative(dirname(logFile), topicFile))
+  const topicLogTarget = markdownPath(relative(dirname(topicFile), logFile))
+  if (!readFileSync(topicFile, 'utf8').includes(`](${topicLogTarget})`)) {
+    fail(`${logFile} is not a valid walkthrough log for this topic`)
+  }
+  const pattern = new RegExp(
+    `^# Walkthrough: ${escapePattern(title)}\\n\\nTopic: \\[TOPIC\\.md\\]\\(${escapePattern(topicTarget)}\\)`
+      + '\\n\\n## Provenance\\n\\n'
+      + '- Source: (last-turn|working-tree|branch)\\n'
+      + '- Repository: ([a-zA-Z0-9._-]+-[0-9a-f]{8})\\n'
+      + '- Branch: (.+)\\n'
+      + '- Base: (none|[0-9a-f]{40})\\n'
+      + '- Head: ([0-9a-f]{40})\\n'
+      + '- Range: (.+)\\n'
+      + '- Started at: (.+)\\n\\n## Slices\\n\\n'
+      + '(\\| Slice \\| Description \\| Status \\|\\n'
+      + '\\| --- \\| --- \\| --- \\|\\n(?:\\| .+ \\| .+ \\| (?:covered|changed|unresolved) \\|\\n)+)'
+      + '\\n## Running log\\n\\n([\\s\\S]*?)## Next slice\\n\\n(.+)\\n$',
+  )
+  const match = content.match(pattern)
+  if (!match) invalidWalkthroughLog(logFile)
+  const [, source, repository, branch, base, head, range, startedAt, table, entries, nextSlice] = match
+  const validatedBranch = walkthroughText({ name: 'branch', value: branch })
+  git({ repoRoot, args: ['check-ref-format', '--branch', validatedBranch] })
+  const validBase = source === 'branch' ? base !== 'none' : base === 'none'
+  const expectedRange = source === 'branch' ? `${base}...${head}` : `${source}@${head}`
+  if (repository !== repositoryId || !validTimestamp(startedAt)
+    || !validBase || range !== expectedRange) {
+    invalidWalkthroughLog(logFile)
+  }
+  const slices = parseWalkthroughTable({ table, logFile })
+  const records = parseWalkthroughEntries({ entries, slices, logFile })
+  validateWalkthroughProgress({ slices, records, nextSlice, logFile })
+  return {
+    content, slices, records, source, repository, branch: validatedBranch,
+    base, head, range, startedAt, nextSlice,
+  }
+}
+
+const startWalkthrough = ({
+  paths, topicId, slug: inputSlug, source, baseRef, slices: inputSlices, logFile: inputLogFile,
+}) => withTopicLock({
+  workflowRoot: paths.workflowRoot,
+  action: () => {
+    const topic = findTopic({ workflowRoot: paths.workflowRoot, topicId })
+    requireRepositoryMembership({ paths, manifest: topic })
+    requireOpenWalkthroughTopic(topic)
+    const resolved = topicPaths({ paths, topic })
+    if (inputLogFile) {
+      const logFile = walkthroughLogFile({ root: resolved.walkthroughsRoot, inputLogFile })
+      readWalkthroughLog({
+        logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+        repoRoot: paths.repositoryRoot,
+      })
+      return { resumed: true, logFile, topicFile: resolved.topicFile }
+    }
+    const slug = inputSlug?.trim()
+    if (!topicIdPattern.test(slug || '')) fail('--slug must be a lowercase hyphenated ID')
+    if (!walkthroughSources.has(source)) fail('--source must be last-turn, working-tree, or branch')
+    if (source === 'branch' && !baseRef?.trim()) fail('--base-ref is required when --source is branch')
+    if (source !== 'branch' && baseRef !== undefined) fail('--base-ref is only valid when --source is branch')
+    const slices = parseWalkthroughSlices(inputSlices)
+    const branch = walkthroughText({ name: 'branch', value: paths.branch })
+    git({ repoRoot: paths.repositoryRoot, args: ['check-ref-format', '--branch', branch] })
+    const head = git({ repoRoot: paths.repositoryRoot, args: ['rev-parse', 'HEAD'] })
+    const base = source === 'branch'
+      ? git({ repoRoot: paths.repositoryRoot, args: ['merge-base', 'HEAD', baseRef.trim()] })
+      : 'none'
+    const range = source === 'branch' ? `${base}...${head}` : `${source}@${head}`
+    mkdirSync(resolved.walkthroughsRoot, { recursive: true })
+    const date = new Date().toISOString().slice(0, 10)
+    const sequences = filesUnder(resolved.walkthroughsRoot)
+      .map((file) => basename(file).match(walkthroughFilePattern))
+      .filter((match) => match?.[1] === date)
+      .map((match) => Number(match[2]))
+    const sequence = String(Math.max(0, ...sequences) + 1).padStart(2, '0')
+    const logFile = join(resolved.walkthroughsRoot, `${date}-${sequence}-${slug}.md`)
+    const topicLink = markdownPath(relative(dirname(logFile), resolved.topicFile))
+    const startedAt = new Date().toISOString()
+    writeAtomically({
+      file: logFile,
+      content: `# Walkthrough: ${slug}\n\nTopic: [TOPIC.md](${topicLink})\n\n## Provenance\n\n`
+        + `- Source: ${source}\n- Repository: ${paths.repositoryId}\n- Branch: ${branch}\n`
+        + `- Base: ${base}\n- Head: ${head}\n- Range: ${range}\n- Started at: ${startedAt}\n\n`
+        + `## Slices\n\n${walkthroughTable(slices)}\n## Running log\n\n`
+        + `## Next slice\n\n${slices[0].slice}\n`,
+    })
+    syncTopicUnlocked({ paths, topicId })
+    return { resumed: false, logFile, topicFile: resolved.topicFile, base, head, range }
+  },
+})
+
+const updateWalkthrough = ({
+  paths, topicId, logFile: inputLogFile, slice, status, summary, evidence, decision,
+}) => withTopicLock({
+  workflowRoot: paths.workflowRoot,
+  action: () => {
+    const topic = findTopic({ workflowRoot: paths.workflowRoot, topicId })
+    requireRepositoryMembership({ paths, manifest: topic })
+    requireOpenWalkthroughTopic(topic)
+    const resolved = topicPaths({ paths, topic })
+    const logFile = walkthroughLogFile({ root: resolved.walkthroughsRoot, inputLogFile })
+    const values = {
+      slice: walkthroughText({ name: 'slice', value: slice }),
+      summary: walkthroughText({ name: 'summary', value: summary }),
+      evidence: walkthroughText({ name: 'evidence', value: evidence }),
+      decision: walkthroughText({ name: 'decision', value: decision }),
+    }
+    if (!walkthroughStatuses.has(status)) {
+      fail('--status must be covered, changed, or unresolved')
+    }
+    const log = readWalkthroughLog({
+      logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+      repoRoot: paths.repositoryRoot,
+    })
+    const sliceIndex = log.slices.findIndex((item) => item.slice === values.slice)
+    if (sliceIndex === -1) fail('--slice must match a slice in the walkthrough table')
+    const slices = log.slices.map((item, index) => (
+      index === sliceIndex ? { ...item, status } : item
+    ))
+    const records = [...log.records, { ...values, status }]
+    const nextSlice = slices.find((item) => item.status === 'unresolved')?.slice || 'complete'
+    const marker = '\n## Slices\n'
+    const header = log.content.slice(0, log.content.indexOf(marker)).replace(/\s*$/, '')
+    writeAtomically({
+      file: logFile,
+      content: `${header}\n\n## Slices\n\n${walkthroughTable(slices)}\n## Running log\n\n`
+        + `${walkthroughEntries(records)}## Next slice\n\n${nextSlice}\n`,
+    })
+    syncTopicUnlocked({ paths, topicId })
+    return { logFile, slice: records.length, nextSlice }
+  },
+})
+
 try {
   const { command, options } = parseArgs(process.argv.slice(2))
   if (command === 'topics') {
@@ -1143,6 +1415,17 @@ try {
         question: options.question, recommendation: options.recommendation,
         decision: options.decision, rationale: options.rationale,
         nextQuestion: options['next-question'],
+      }), null, 2))
+    } else if (command === 'start-walkthrough') {
+      console.log(JSON.stringify(startWalkthrough({
+        paths, topicId: options['topic-id'], slug: options.slug, source: options.source,
+        baseRef: options['base-ref'], slices: options.slices, logFile: options['log-file'],
+      }), null, 2))
+    } else if (command === 'update-walkthrough') {
+      console.log(JSON.stringify(updateWalkthrough({
+        paths, topicId: options['topic-id'], logFile: options['log-file'], slice: options.slice,
+        status: options.status, summary: options.summary, evidence: options.evidence,
+        decision: options.decision,
       }), null, 2))
     } else if (command === 'configure-ticket-system') {
       const externalTicketSystem = configureTicketSystem({

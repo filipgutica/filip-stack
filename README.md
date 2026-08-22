@@ -24,7 +24,9 @@ explicitly requests them or an explicitly authorized coordinator route requires
 them.
 
 `walkthrough` is manual-only. It explains and reviews selected changes without
-granting authority to modify them.
+granting authority to modify them. An explicit invocation can save one curated
+walkthrough log under a confirmed topic. The log keeps a slice-status table and
+a chronological running log.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
@@ -35,6 +37,7 @@ Both the Claude and Codex marketplaces distribute this plugin. The separate
 plugins/workflow/          Workflow plugin payload shared by Claude and Codex
   .claude-plugin/          Claude plugin manifest
   .codex-plugin/           Codex plugin manifest
+  hooks/                   Shared local lifecycle hooks
   skills/                  Planning, writing, implementation, review, coordination, and setup skills
   THIRD_PARTY_NOTICES.md   License notice for adapted upstream guidance
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
@@ -56,6 +59,8 @@ scripts/                   Stamp and validate scripts
    claude plugin install workflow@filip-stack
    ```
 
+3. Run `/hooks` and confirm that the plugin `UserPromptSubmit` and `Stop` hooks are enabled.
+
 Claude identifies the installed plugin as `workflow@filip-stack`. Run this
 command to update it:
 
@@ -74,6 +79,7 @@ claude plugin update workflow@filip-stack
 2. Restart Codex.
 3. Open the plugin directory.
 4. Install `workflow` from the `filip-stack` marketplace.
+5. Run `/hooks`, review the plugin hooks, and trust the current definition.
 
 Codex upgrades the marketplace instead of an individual plugin. Run this command
 to install marketplace updates:
@@ -81,6 +87,21 @@ to install marketplace updates:
 ```sh
 codex plugin marketplace upgrade filip-stack
 ```
+
+### Automatic field-guide hooks
+
+The packaged hooks support local Claude Code and Codex on macOS and Linux. They do not require global `AGENTS.md` or `CLAUDE.md` instructions.
+
+The local host must have Node.js 20.16 or newer. Git must be on PATH.
+The launcher searches PATH and common macOS and Linux install locations. It also
+searches the default NVM, fnm, Volta, asdf, and mise locations. Set
+`WORKFLOW_NODE` to the executable path for another installation.
+
+Codex requires the hook trust step after installation or an upgrade that changes the hooks. Claude remote execution and Windows are not supported.
+
+The hooks fail open. If they are disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
+
+A `skip` evaluation writes no memory. Its continuation repeats the completed task response without a field-guide notice.
 
 ## Releases and versioning
 
@@ -140,15 +161,16 @@ Planning artifacts and branch task ledgers stay outside repositories under:
 ```
 
 `TOPIC.md` is the topic registry and navigation entry point. A topic owns its
-specification, plan, local tickets, and grill logs. Repository directories own
-configuration and branch ledgers. One topic or ticket can span repositories.
-Directory names show whether work is open, complete, or abandoned.
+specification, plan, local tickets, grill logs, and walkthrough logs. Repository
+directories own configuration and branch ledgers. One topic or ticket can span
+repositories. Directory names show whether work is open, complete, or abandoned.
 
 An explicit `writing-specs` invocation writes `SPEC.md` under an open topic by
 default. The topic must be user-identified or the only open topic. When multiple
 open topics exist, the user must choose one. Plans and local ticket drafts need
 an explicit storage request. An explicit `grill-me` invocation creates one
-curated topic log after topic confirmation.
+curated topic log after topic confirmation. An explicit `walkthrough` invocation
+creates one curated log with source provenance after source and topic confirmation.
 
 Topic lifecycle commands audit known work, move root and repository topic
 directories together, and preserve acknowledged warnings in `TOPIC.md`. A
@@ -160,10 +182,10 @@ local migration occurs after merge and release.
 
 Only durable, retrievable artifacts are workflow sources. A brainstorm can stay
 ephemeral, so downstream work does not depend on a session link. The first
-persisted specification, plan, ticket, grill log, or ledger can identify
-`Direct request`. Every local artifact links to `TOPIC.md`. Local artifacts use
-relative links to local sources. Jira and GitHub work items
-use verified HTTPS links and never machine-local paths. A ledger records its
+persisted specification, plan, ticket, grill log, walkthrough log, or ledger can
+identify `Direct request`. Every local artifact links to `TOPIC.md`. Local
+artifacts use relative links to local sources. Jira and GitHub work items use
+verified HTTPS links and never machine-local paths. A ledger records its
 primary work item plus optional specification and plan sources, then maps each
 task to its commit. Artifact levels can be skipped. A multi-repository ticket
 uses one ledger per repository and branch, with the same primary work item.
@@ -176,15 +198,18 @@ obvious durable user preferences, corrections, and repeated misses during normal
 work. It asks before storing ambiguous observations. Committed code-review
 corrections remain a first-class evidence and history path.
 
+Plugin hooks prompt bounded retrieval and one end-of-task learning evaluation.
+The agent decides `capture`, `ask`, or `skip`. The hook never ingests a transcript
+or writes field-guide data.
+
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide
 commands ignore it, and no field-guide contract depends on Obsidian.
 
 Shared guidance requires either a general user preference or independent generic
 evidence from at least two repositories. The utility provides bounded retrieval,
-candidate matching, submission, lifecycle, audit, maintenance, migration, and
-validation commands. It preserves existing review records and validates typed
-evidence.
+candidate matching, submission, lifecycle, audit, maintenance, and validation
+commands. It preserves existing review records and validates typed evidence.
 
 You can also open `~/.engineering-workflow` as an Obsidian vault to audit
 planning artifacts. Git worktrees live separately under

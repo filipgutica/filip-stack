@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = join(repoRoot, 'plugins')
+const supportedHookEvents = new Set(['Stop', 'UserPromptSubmit'])
 
 let errors = 0
 
@@ -52,6 +53,52 @@ const pathExists = async (path) => {
   }
 }
 
+const validateHookHandler = async ({ handler, event, path, pluginRoot }) => {
+  if (handler?.type !== 'command' || typeof handler.command !== 'string') {
+    fail(`${path} hook event "${event}" must use a command handler`)
+    return
+  }
+  const reference = handler.command.match(/\$\{CLAUDE_PLUGIN_ROOT\}\/([^"\s]+)/)?.[1]
+  if (!reference) {
+    fail(`${path} hook event "${event}" must reference a packaged plugin file`)
+    return
+  }
+  if (!await pathExists(join(pluginRoot, reference))) {
+    fail(`${path} hook event "${event}" references a missing file: "${reference}"`)
+  }
+}
+
+const validateHookGroup = async ({ group, event, path, pluginRoot }) => {
+  if (!group || !Array.isArray(group.hooks) || group.hooks.length === 0) {
+    fail(`${path} hook event "${event}" has an invalid handler group`)
+    return
+  }
+  await Promise.all(group.hooks.map((handler) => (
+    validateHookHandler({ handler, event, path, pluginRoot })
+  )))
+}
+
+const validateHookEvent = async ({ event, groups, path, pluginRoot }) => {
+  if (!supportedHookEvents.has(event)) fail(`${path} has an unsupported hook event: "${event}"`)
+  if (!Array.isArray(groups) || groups.length === 0) {
+    fail(`${path} hook event "${event}" must have at least one group`)
+    return
+  }
+  await Promise.all(groups.map((group) => validateHookGroup({ group, event, path, pluginRoot })))
+}
+
+const validateHooks = async ({ path, pluginRoot }) => {
+  const parsed = await validateJson(path, ['hooks'])
+  if (!parsed) return
+  if (!parsed.hooks || typeof parsed.hooks !== 'object' || Array.isArray(parsed.hooks)) {
+    fail(`${path} has an invalid "hooks" object`)
+    return
+  }
+  await Promise.all(Object.entries(parsed.hooks).map(([event, groups]) => (
+    validateHookEvent({ event, groups, path, pluginRoot })
+  )))
+}
+
 const readDirectoryNames = async (path) => (
   await readdir(path, { withFileTypes: true }).catch((err) => {
     fail(`${path} — ${err.message}`)
@@ -91,7 +138,7 @@ for (const pluginDir of pluginDirs) {
   const hooksDir = join(pluginRoot, 'hooks')
   const hooksFiles = await readdir(hooksDir).catch(() => [])
   for (const hooksFile of hooksFiles.filter((file) => file.endsWith('.json')).sort()) {
-    await validateJson(join(hooksDir, hooksFile), ['hooks'])
+    await validateHooks({ path: join(hooksDir, hooksFile), pluginRoot })
   }
 
   const skillsDir = join(pluginRoot, 'skills')

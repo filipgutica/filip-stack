@@ -60,7 +60,7 @@ Start with a compact table when the change has several files or concerns.
 | Configuration | `config.ts`, `config.test.ts` | Add the selected backend | Pending |
 | Documentation | `README.md` | Explain the public contract | Pending |
 
-Update the state in conversation as the walkthrough proceeds. Do not persist the map.
+Update the state in conversation as the walkthrough proceeds. Store only the slice name, brief description, and status in the log table. Do not store the file list or the full conversational map. Append one curated running-log entry after the user resolves a slice.
 
 ## Review findings
 

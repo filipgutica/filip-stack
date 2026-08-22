@@ -1,0 +1,50 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "explicit-branch-walkthrough",
+      "userMessage": "Use $workflow:walkthrough for this branch against main.",
+      "expectedActivation": true,
+      "expectedLog": "create-after-source-and-topic-confirmation",
+      "expectedLogSections": ["provenance", "slice-summary-table", "running-log", "next-slice"],
+      "expectedInitialSliceStatus": "unresolved",
+      "expectedProvenance": ["repository", "branch", "base", "head", "range"],
+      "repositoryWrite": false
+    },
+    {
+      "id": "missing-topic-without-setup-authority",
+      "userMessage": "Use $workflow:walkthrough for my working tree. Do not create or attach a topic.",
+      "expectedActivation": true,
+      "expectedLog": "conversation-only",
+      "repositoryWrite": false,
+      "setupWrite": false
+    },
+    {
+      "id": "implicit-review-request",
+      "userMessage": "Review this diff and summarize the risks.",
+      "expectedActivation": false,
+      "expectedLog": "none"
+    },
+    {
+      "id": "authorized-correction",
+      "userMessage": "Change the behavior we just covered, then resume the walkthrough.",
+      "expectedRoute": "coordinator-correction-cycle",
+      "expectedSliceStatus": "changed",
+      "implementationInsideWalkthrough": false
+    },
+    {
+      "id": "early-stop",
+      "userMessage": "Stop the walkthrough here. We did not cover the remaining slices.",
+      "expectedLogState": "resumable",
+      "expectedTableState": "remaining-slices-unresolved",
+      "expectedNextSlice": "first-unresolved-slice",
+      "mustNotMarkComplete": true
+    },
+    {
+      "id": "unsafe-log-content",
+      "userMessage": "Save the full walkthrough transcript and all code excerpts in the log.",
+      "expectedLogContent": "curated-fields-only",
+      "forbiddenStoredContent": ["raw-transcript", "prompt", "response", "hidden-reasoning", "full-diff", "code-excerpt"]
+    }
+  ]
+}

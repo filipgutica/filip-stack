@@ -5,6 +5,7 @@ import {
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  unlinkSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -66,9 +67,7 @@ const runInputCommand = ({ command, repoRoot, guideRoot, input, expectFailure = 
 }
 
 const initializeMemory = ({ repoRoot, guideRoot }) => {
-  const paths = run({ command: 'init', repoRoot, guideRoot })
-  run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
-  return paths
+  return run({ command: 'init', repoRoot, guideRoot })
 }
 
 const replaceCanonicalMemoryJson = ({ paths, memory }) => {
@@ -144,6 +143,83 @@ test('submit activates an explicit preference and stores sanitized examples', ()
   })
   assert.equal(submit({ repoRoot, guideRoot, input: reinforcement }).result.status, 'active')
   run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('submit accepts inline JSON without a temporary input file', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-inline-submit-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/inline-submit.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({
+    learning: 'Run focused tests before broad suites.',
+    turnId: 'turn-inline',
+    explicitPreference: true,
+  })
+
+  const result = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', JSON.stringify(input)],
+  }).result
+
+  assert.equal(result.status, 'active')
+  const memory = JSON.parse(readFileSync(join(guideRoot, 'memory.json'), 'utf8'))
+  assert.equal(memory.guidance.find(({ id }) => id === result.targetId).learning, input.learning)
+})
+
+test('commands reject duplicate options instead of overriding fixed paths', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-duplicate-options-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/duplicates.git' })
+  const guideRoot = join(root, 'guide')
+
+  const result = run({
+    command: 'paths',
+    repoRoot,
+    guideRoot,
+    args: ['--guide-root', join(root, 'alternate-guide')],
+    expectFailure: true,
+  })
+
+  assert.match(result.stderr, /Duplicate option: --guide-root/)
+})
+
+test('commands reject conflicting or unsupported inline input options', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-input-options-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/input-options.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({ learning: 'Use one input source.', turnId: 'turn-options' })
+  const inputJson = JSON.stringify(input)
+  const inputFile = join(root, 'submission.json')
+  writeFileSync(inputFile, `${inputJson}\n`)
+
+  const conflicting = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input', inputFile, '--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(conflicting.stderr, /use either --input or --input-json/)
+
+  const duplicateInline = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', inputJson, '--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(duplicateInline.stderr, /Duplicate option: --input-json/)
+
+  const unsupported = run({
+    command: 'paths',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(unsupported.stderr, /--input-json is supported only for submit/)
 })
 
 test('submit recovers a stale JSON cache from canonical Markdown', () => {
@@ -264,6 +340,7 @@ test('submit fails closed on high-signal sensitive text', () => {
   const guideRoot = join(root, 'guide')
   const paths = initializeMemory({ repoRoot, guideRoot })
   const initial = readFileSync(paths.memoryFile, 'utf8')
+  const initialCanonical = readFileSync(paths.memoryIndexFile, 'utf8')
   const unsafeValues = [
     'Read /Users/example/private/notes.md before coding.',
     'Use https://example.com/thread?token=secret as evidence.',
@@ -283,7 +360,7 @@ test('submit fails closed on high-signal sensitive text', () => {
     })
     assert.match(result.stderr, /contains a forbidden/)
     assert.equal(readFileSync(paths.memoryFile, 'utf8'), initial)
-    assert.equal(existsSync(paths.memoryIndexFile), false)
+    assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), initialCanonical)
   }
 })
 
@@ -823,43 +900,6 @@ test('maintain previews and repairs only the derived JSON cache', () => {
   assert.equal(readFileSync(paths.memoryFile, 'utf8'), validCache)
 })
 
-test('migrate previews and creates a versioned store without changing legacy reviews', () => {
-  const root = mkdtempSync(join(tmpdir(), 'field-guide-migrate-'))
-  const repoRoot = createRepo({
-    parent: root,
-    name: 'repo',
-    remote: 'git@github.com:example/migrated-repo.git',
-  })
-  const guideRoot = join(root, 'guide')
-  const paths = run({ command: 'init', repoRoot, guideRoot })
-  const commit = git(repoRoot, 'rev-parse', 'HEAD')
-  const reviewFile = join(paths.reviewsRoot, 'legacy.md')
-  const review = `# Legacy learning\n\n- Commit: \`${commit}\`\n`
-  writeFileSync(reviewFile, review)
-  appendFileSync(paths.projectIndex, '\n- [Legacy](reviews/legacy.md) — Evidence.\n')
-
-  const preview = run({ command: 'migrate', repoRoot, guideRoot })
-  assert.equal(preview.migration.action, 'create-memory-store')
-  assert.equal(preview.migration.applied, false)
-  assert.equal(existsSync(paths.memoryFile), false)
-
-  const applied = run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
-  assert.equal(applied.migration.applied, true)
-  assert.deepEqual(JSON.parse(readFileSync(paths.memoryFile, 'utf8')), {
-    schemaVersion: 1,
-    revision: 0,
-    guidance: [],
-    evidence: [],
-  })
-  assert.equal(readFileSync(reviewFile, 'utf8'), review)
-  run({ command: 'validate', repoRoot, guideRoot })
-
-  const memory = readFileSync(paths.memoryFile, 'utf8')
-  const repeated = run({ command: 'migrate', repoRoot, guideRoot, args: ['--apply'] })
-  assert.equal(repeated.migration.action, 'none')
-  assert.equal(readFileSync(paths.memoryFile, 'utf8'), memory)
-})
-
 test('validate rejects malformed memory state without replacing it', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-malformed-memory-'))
   const repoRoot = createRepo({
@@ -883,7 +923,7 @@ test('validate rejects malformed memory state without replacing it', () => {
   assert.equal(readFileSync(paths.memoryFile, 'utf8'), nested)
 })
 
-test('migrate refuses invalid legacy review evidence', () => {
+test('validate refuses invalid review evidence without changing memory', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-invalid-migration-'))
   const repoRoot = createRepo({
     parent: root,
@@ -896,15 +936,12 @@ test('migrate refuses invalid legacy review evidence', () => {
   writeFileSync(reviewFile, '# Broken\n\n- Commit: `0000000000000000000000000000000000000000`\n')
   appendFileSync(paths.projectIndex, '\n- [Broken](reviews/broken.md) — Evidence.\n')
 
-  const result = run({
-    command: 'migrate',
-    repoRoot,
-    guideRoot,
-    args: ['--apply'],
-    expectFailure: true,
-  })
+  const canonicalMemory = readFileSync(paths.memoryIndexFile, 'utf8')
+  const cachedMemory = readFileSync(paths.memoryFile, 'utf8')
+  const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
   assert.match(result.stderr, /unknown commit/)
-  assert.equal(existsSync(paths.memoryFile), false)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), canonicalMemory)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), cachedMemory)
 })
 
 test('init creates an indexed guide and preserves existing content', () => {
@@ -922,16 +959,86 @@ test('init creates an indexed guide and preserves existing content', () => {
   assert.ok(existsSync(paths.projectIndex))
   assert.ok(existsSync(paths.patternsFile))
   assert.ok(existsSync(paths.reviewsRoot))
+  assert.ok(existsSync(paths.memoryIndexFile))
+  assert.ok(existsSync(paths.memoryFile))
   assert.match(readFileSync(paths.rootIndex, 'utf8'), /\]\(projects\/shared-repo\/init\.md\)/)
+  assert.match(readFileSync(paths.rootIndex, 'utf8'), /\]\(memory\.md\)/)
+  assert.match(readFileSync(paths.memoryIndexFile, 'utf8'), /field-guide-memory-json:v1/)
+  assert.deepEqual(JSON.parse(readFileSync(paths.memoryFile, 'utf8')), {
+    schemaVersion: 1,
+    revision: 0,
+    guidance: [],
+    evidence: [],
+  })
   const projectIndex = readFileSync(paths.projectIndex, 'utf8')
   assert.ok(projectIndex.indexOf('](patterns.md)') < projectIndex.indexOf('## Review evidence'))
 
+  const canonicalMemory = readFileSync(paths.memoryIndexFile, 'utf8')
+  const memoryCache = readFileSync(paths.memoryFile, 'utf8')
   appendFileSync(paths.patternsFile, '\nCustom guidance.\n')
   run({ command: 'init', repoRoot, guideRoot })
   assert.match(readFileSync(paths.patternsFile, 'utf8'), /Custom guidance\./)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), canonicalMemory)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), memoryCache)
 
   const resolved = run({ command: 'paths', repoRoot, guideRoot })
   assert.equal(resolved.projectRoot, paths.projectRoot)
+})
+
+test('init refuses partial or mismatched memory views without replacing them', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-json-only-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/json-only.git',
+  })
+  const guideRoot = join(root, 'guide')
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  const canonical = readFileSync(paths.memoryIndexFile, 'utf8')
+  const cache = readFileSync(paths.memoryFile, 'utf8')
+  if (existsSync(paths.memoryIndexFile)) unlinkSync(paths.memoryIndexFile)
+
+  const missingCanonical = run({ command: 'init', repoRoot, guideRoot, expectFailure: true })
+  assert.match(missingCanonical.stderr, /without canonical memory\.md/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), cache)
+  assert.equal(existsSync(paths.memoryIndexFile), false)
+
+  writeFileSync(paths.memoryIndexFile, canonical)
+  unlinkSync(paths.memoryFile)
+  const missingCache = run({ command: 'init', repoRoot, guideRoot, expectFailure: true })
+  assert.match(missingCache.stderr, /without a JSON cache/)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), canonical)
+
+  const staleCache = cache.replace('"revision": 0', '"revision": 1')
+  writeFileSync(paths.memoryFile, staleCache)
+  const mismatched = run({ command: 'init', repoRoot, guideRoot, expectFailure: true })
+  assert.match(mismatched.stderr, /memory\.json does not match canonical memory\.md/)
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), canonical)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), staleCache)
+})
+
+test('validate rejects a missing canonical or cache memory view', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-missing-memory-view-'))
+  const repoRoot = createRepo({
+    parent: root,
+    name: 'repo',
+    remote: 'git@github.com:example/missing-memory-view.git',
+  })
+  const guideRoot = join(root, 'guide')
+  const paths = run({ command: 'init', repoRoot, guideRoot })
+  const canonical = readFileSync(paths.memoryIndexFile, 'utf8')
+  const cache = readFileSync(paths.memoryFile, 'utf8')
+
+  unlinkSync(paths.memoryFile)
+  const missingCache = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(missingCache.stderr, /memory\.json does not match canonical memory\.md/)
+  writeFileSync(paths.memoryFile, cache)
+
+  unlinkSync(paths.memoryIndexFile)
+  const missingCanonical = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(missingCanonical.stderr, /memory\.md is missing or invalid/)
+  assert.equal(readFileSync(paths.memoryFile, 'utf8'), cache)
+  writeFileSync(paths.memoryIndexFile, canonical)
 })
 
 test('validate ignores optional Obsidian vault metadata', () => {

@@ -15,8 +15,10 @@ const maintenanceSchemaUrl = new URL('../schemas/maintenance-v1.schema.json', im
 const lifecycleSchemaUrl = new URL('../schemas/lifecycle-v1.schema.json', import.meta.url)
 const retrievalSchemaUrl = new URL('../schemas/retrieval-v1.schema.json', import.meta.url)
 const readmeUrl = new URL('../../../../../README.md', import.meta.url)
+const hooksUrl = new URL('../../../hooks/hooks.json', import.meta.url)
+const hookAdapterUrl = new URL('../../../hooks/field-guide-lifecycle.mjs', import.meta.url)
 
-const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, readme] = await Promise.all([
+const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, readme, hooksText, hookAdapter] = await Promise.all([
   readFile(skillUrl, 'utf8'),
   readFile(policyUrl, 'utf8'),
   readFile(storageUrl, 'utf8'),
@@ -28,8 +30,11 @@ const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submis
   readFile(lifecycleSchemaUrl, 'utf8'),
   readFile(retrievalSchemaUrl, 'utf8'),
   readFile(readmeUrl, 'utf8'),
+  readFile(hooksUrl, 'utf8'),
+  readFile(hookAdapterUrl, 'utf8'),
 ])
 const scenarios = JSON.parse(scenariosText)
+const hooks = JSON.parse(hooksText)
 const memorySchema = JSON.parse(memorySchemaText)
 const submissionSchema = JSON.parse(submissionSchemaText)
 const maintenanceSchema = JSON.parse(maintenanceSchemaText)
@@ -48,18 +53,31 @@ assert.match(skill, /Keep an inferred contradiction as a linked candidate/)
 assert.match(skill, /use `transition` with action `supersede`, `confirmed: true`/)
 assert.match(skill, /raw transcripts, prompts, credentials/)
 assert.match(skill, /rejects high-signal secrets and unsafe source text at the write boundary/)
+assert.match(skill, /Plugin hooks add bounded retrieval guidance at `UserPromptSubmit`/)
+assert.match(skill, /request exactly one `capture`, `ask`, or `skip` evaluation at `Stop`/)
+assert.match(skill, /field-guide\.sh/)
+assert.match(skill, /--input-json/)
+assert.doesNotMatch(skill, /node scripts\/field-guide\.mjs/)
 assert.match(policy, /Capture when every condition is true/)
 assert.match(policy, /Ask one focused question/)
 assert.match(policy, /Write nothing while the answer is pending/)
 assert.match(policy, /Skip when any condition is true/)
 assert.match(policy, /Run `candidates` before `submit`/)
 assert.match(policy, /Exact duplicates are deterministic/)
+assert.match(policy, /At the end of meaningful work, decide `capture`, `ask`, or `skip`/)
 assert.match(storage, /review record/i)
 assert.match(metadata, /allow_implicit_invocation: true/)
 assert.match(metadata, /durable preferences, corrections, repeated misses, and manual learning/)
 assert.doesNotMatch(metadata, /only after review feedback/)
 assert.match(readme, /obvious durable user preferences, corrections, and repeated misses/)
+assert.match(readme, /do not require global `AGENTS\.md` or `CLAUDE\.md` instructions/)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
+assert.deepEqual(Object.keys(hooks.hooks).sort(), ['Stop', 'UserPromptSubmit'])
+for (const handlers of Object.values(hooks.hooks)) {
+  assert.match(handlers[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
+}
+assert.match(hookAdapter, /input\.stop_hook_active !== true/)
+assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field-guide/)
 
 assert.equal(scenarios.schemaVersion, 1)
 assert.deepEqual(
@@ -75,6 +93,10 @@ assert.equal(scenarios.scenarios.find(({ category }) => category === 'ambiguous'
 assert.equal(scenarios.scenarios.find(({ category }) => category === 'temporary').expectedDecision, 'skip')
 assert.equal(scenarios.scenarios.find(({ category }) => category === 'privacy').expectedDecision, 'skip')
 assert.equal(scenarios.scenarios.find(({ category }) => category === 'audit').readOnly, true)
+assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-durable-correction').expectedDecision, 'capture')
+assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-ambiguous-learning').expectedDecision, 'ask')
+assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').expectedDecision, 'skip')
+assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').preservesTaskResponse, true)
 
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
 ajv.addSchema(memorySchema)
