@@ -6,7 +6,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/field-guide-lifecycle.mjs\"",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node.sh\" --fail-open \"${CLAUDE_PLUGIN_ROOT}/hooks/field-guide-lifecycle.mjs\"",
             "timeout": 5
           }
         ]
@@ -17,7 +17,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "node \"${CLAUDE_PLUGIN_ROOT}/hooks/field-guide-lifecycle.mjs\"",
+            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node.sh\" --fail-open \"${CLAUDE_PLUGIN_ROOT}/hooks/field-guide-lifecycle.mjs\"",
             "timeout": 5
           }
         ]

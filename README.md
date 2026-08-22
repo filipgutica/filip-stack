@@ -92,6 +92,11 @@ codex plugin marketplace upgrade filip-stack
 
 The packaged hooks support local Claude Code and Codex on macOS and Linux. They do not require global `AGENTS.md` or `CLAUDE.md` instructions.
 
+The local host must have Node.js 20.16 or newer. Git must be on PATH.
+The launcher searches PATH and common macOS and Linux install locations. It also
+searches the default NVM, fnm, Volta, asdf, and mise locations. Set
+`WORKFLOW_NODE` to the executable path for another installation.
+
 Codex requires the hook trust step after installation or an upgrade that changes the hooks. Claude remote execution and Windows are not supported.
 
 The hooks fail open. If they are disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.

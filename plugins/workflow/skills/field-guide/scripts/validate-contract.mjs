@@ -55,6 +55,9 @@ assert.match(skill, /raw transcripts, prompts, credentials/)
 assert.match(skill, /rejects high-signal secrets and unsafe source text at the write boundary/)
 assert.match(skill, /Plugin hooks add bounded retrieval guidance at `UserPromptSubmit`/)
 assert.match(skill, /request exactly one `capture`, `ask`, or `skip` evaluation at `Stop`/)
+assert.match(skill, /field-guide\.sh/)
+assert.match(skill, /--input-json/)
+assert.doesNotMatch(skill, /node scripts\/field-guide\.mjs/)
 assert.match(policy, /Capture when every condition is true/)
 assert.match(policy, /Ask one focused question/)
 assert.match(policy, /Write nothing while the answer is pending/)
@@ -70,6 +73,9 @@ assert.match(readme, /obvious durable user preferences, corrections, and repeate
 assert.match(readme, /do not require global `AGENTS\.md` or `CLAUDE\.md` instructions/)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
 assert.deepEqual(Object.keys(hooks.hooks).sort(), ['Stop', 'UserPromptSubmit'])
+for (const handlers of Object.values(hooks.hooks)) {
+  assert.match(handlers[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
+}
 assert.match(hookAdapter, /input\.stop_hook_active !== true/)
 assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field-guide/)
 

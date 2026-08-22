@@ -145,6 +145,83 @@ test('submit activates an explicit preference and stores sanitized examples', ()
   run({ command: 'validate', repoRoot, guideRoot })
 })
 
+test('submit accepts inline JSON without a temporary input file', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-inline-submit-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/inline-submit.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({
+    learning: 'Run focused tests before broad suites.',
+    turnId: 'turn-inline',
+    explicitPreference: true,
+  })
+
+  const result = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', JSON.stringify(input)],
+  }).result
+
+  assert.equal(result.status, 'active')
+  const memory = JSON.parse(readFileSync(join(guideRoot, 'memory.json'), 'utf8'))
+  assert.equal(memory.guidance.find(({ id }) => id === result.targetId).learning, input.learning)
+})
+
+test('commands reject duplicate options instead of overriding fixed paths', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-duplicate-options-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/duplicates.git' })
+  const guideRoot = join(root, 'guide')
+
+  const result = run({
+    command: 'paths',
+    repoRoot,
+    guideRoot,
+    args: ['--guide-root', join(root, 'alternate-guide')],
+    expectFailure: true,
+  })
+
+  assert.match(result.stderr, /Duplicate option: --guide-root/)
+})
+
+test('commands reject conflicting or unsupported inline input options', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-input-options-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/input-options.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({ learning: 'Use one input source.', turnId: 'turn-options' })
+  const inputJson = JSON.stringify(input)
+  const inputFile = join(root, 'submission.json')
+  writeFileSync(inputFile, `${inputJson}\n`)
+
+  const conflicting = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input', inputFile, '--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(conflicting.stderr, /use either --input or --input-json/)
+
+  const duplicateInline = run({
+    command: 'submit',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', inputJson, '--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(duplicateInline.stderr, /Duplicate option: --input-json/)
+
+  const unsupported = run({
+    command: 'paths',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', inputJson],
+    expectFailure: true,
+  })
+  assert.match(unsupported.stderr, /--input-json is supported only for submit/)
+})
+
 test('submit recovers a stale JSON cache from canonical Markdown', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-cache-recovery-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/cache.git' })

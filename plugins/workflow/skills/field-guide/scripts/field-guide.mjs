@@ -39,6 +39,7 @@ const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
   ['--input', 'input'],
+  ['--input-json', 'input-json'],
   ['--subject', 'subject'],
   ['--query', 'query'],
   ['--evidence-for', 'evidence-for'],
@@ -50,6 +51,7 @@ const parseOptions = (args) => {
     const flag = args[index]
     const optionName = optionNames.get(flag)
     if (!optionName) fail(`Invalid argument: ${flag}`)
+    if (Object.hasOwn(options, optionName)) fail(`Duplicate option: ${flag}`)
     const value = args[index + 1]
     if (!value || value.startsWith('--')) fail(`Missing value for ${flag}`)
     options[optionName] = value
@@ -61,10 +63,12 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>]')
+    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
+  if (options['input-json'] && command !== 'submit') fail('--input-json is supported only for submit')
+  if (options.input && options['input-json']) fail('use either --input or --input-json, not both')
   return { command, options }
 }
 
@@ -626,6 +630,16 @@ const readJsonInput = (inputPath) => {
   }
 }
 
+const readSubmissionInput = ({ inputPath, inputJson }) => {
+  if (inputPath) return readJsonInput(inputPath)
+  if (!inputJson) fail('--input or --input-json is required')
+  try {
+    return JSON.parse(inputJson)
+  } catch (error) {
+    fail(`input is not valid JSON: ${error.message}`)
+  }
+}
+
 const normalizeLearning = (learning) => (
   learning
     .normalize('NFC')
@@ -877,11 +891,11 @@ const withMemoryLock = ({ paths, action }) => {
   }
 }
 
-const submitObservationUnlocked = ({ paths, inputPath }) => {
+const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
-  const submission = validateSubmission({ submission: readJsonInput(inputPath), paths })
+  const submission = validateSubmission({ submission: readSubmissionInput({ inputPath, inputJson }), paths })
   const fingerprint = fingerprintFor(submission)
   const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
   const target = submission.relationship
@@ -966,8 +980,8 @@ const submitObservationUnlocked = ({ paths, inputPath }) => {
   }
 }
 
-const submitObservation = ({ paths, inputPath }) => (
-  withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath }) })
+const submitObservation = ({ paths, inputPath, inputJson }) => (
+  withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
 )
 
 const appendTransition = ({ guidance, to, reason, source, now, replacementId }) => {
@@ -1815,7 +1829,11 @@ const main = () => {
     query: options.query,
     evidenceFor: options['evidence-for'],
   })
-  if (command === 'submit') result = submitObservation({ paths, inputPath: options.input })
+  if (command === 'submit') result = submitObservation({
+    paths,
+    inputPath: options.input,
+    inputJson: options['input-json'],
+  })
   if (command === 'transition') result = transitionGuidance({ paths, inputPath: options.input })
   if (command === 'validate') validate(paths)
 
