@@ -90,7 +90,7 @@ assert.equal(scenarios.scenarios.find(({ category }) => category === 'audit').re
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-durable-correction').expectedDecision, 'capture')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-ambiguous-learning').expectedDecision, 'ask')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').expectedDecision, 'skip')
-assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').expectedCompletion, '<!-- field-guide: skip -->')
+assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').preservesTaskResponse, true)
 
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
 ajv.addSchema(memorySchema)

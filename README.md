@@ -96,7 +96,7 @@ Codex requires the hook trust step after installation or an upgrade that changes
 
 The hooks fail open. If they are disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
 
-A `skip` evaluation writes no memory. Its continuation returns only a hidden HTML marker so Claude does not retry an empty continuation.
+A `skip` evaluation writes no memory. Its continuation repeats the completed task response without a field-guide notice.
 
 ## Releases and versioning
 

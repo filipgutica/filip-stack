@@ -102,7 +102,7 @@
       "userMessage": "Show the current branch name.",
       "lifecycleEvent": "Stop",
       "expectedDecision": "skip",
-      "expectedCompletion": "<!-- field-guide: skip -->",
+      "preservesTaskResponse": true,
       "requiresNotice": false
     }
   ]
