@@ -60,7 +60,7 @@ assert.match(ledger, /`Direct request`/)
 assert.match(ledger, /one top-level task per intended commit/i)
 assert.deepEqual(ledgerSources.match(/^- .+$/gm), [
   '- Topic: [TOPIC.md](<relative-topic-link-from-setup>)',
-  '- Primary work item: [Jira MA-1234](https://example.atlassian.net/browse/MA-1234) or `Direct request`',
+  '- Primary work item: [Jira MA-1234](https://example.atlassian.net/browse/MA-1234), [SPEC.md](<relative-specification-link-from-setup>), [PLAN.md](<relative-plan-link-from-setup>), or `Direct request`',
   '- Specification (optional): [SPEC.md](<relative-specification-link-from-setup>)',
   '- Implementation plan (optional): [PLAN.md](<relative-plan-link-from-setup>)',
 ])
@@ -68,7 +68,7 @@ assert.doesNotMatch(ledgerSources, /file:\/\/|\/Users\/|~\/|session[-_ ]?id/i)
 
 assert.match(planningFlow, /Each persisted local artifact links to `TOPIC\.md`/i)
 assert.match(planningFlow, /External tickets use tracker-native hierarchy and links/i)
-assert.match(implementationFlow, /ticket.*ambiguous.*durable source/i)
+assert.match(implementationFlow, /primary work item.*ambiguous.*durable source/i)
 assert.match(specFormat, /\| Source \|/)
 assert.match(plans, /Start `Context` with `Source: <nearest durable source>`/)
 assert.match(tickets, /local Markdown ticket.*source/i)

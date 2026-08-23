@@ -10,13 +10,24 @@ Implement one bounded change with evidence. The coordinator owns authority, scop
 ## Workflow
 
 1. Confirm implementation authority and the bounded outcome.
-2. Read the relevant code, tests, contracts, repository guidance, and [engineering constraints](references/engineering-constraints.md).
-3. For new or corrected behavior, select the smallest targeted test that observes the requested outcome.
-4. For a behavior-preserving refactor, run focused existing coverage before the change.
-5. Apply the correct path in [test-driven-development.md](references/test-driven-development.md).
-6. Use `$workflow:minimal-code` for the implementation.
-7. Run the focused test and checks affected by the change.
-8. Review the implementation against the requested outcome before independent review.
+2. Confirm the active slice for meaningful work.
+3. Read the relevant code, tests, contracts, repository guidance, and [engineering constraints](references/engineering-constraints.md).
+4. For new or corrected behavior, select the smallest targeted test that observes the requested outcome.
+5. For a behavior-preserving refactor, run focused existing coverage before the change.
+6. Apply the correct path in [test-driven-development.md](references/test-driven-development.md).
+7. Use `$workflow:minimal-code` for the implementation.
+8. Run the focused test and checks affected by the change.
+9. Review the implementation against the requested outcome before independent review.
+
+## Active slice boundary
+
+Stop and return the boundary to the coordinator when the work requires:
+
+- an independent conceptual change
+- a change to the commit or verification boundary
+- a material product or architecture decision
+
+Defer adjacent cleanup, new abstractions, and follow-up work that the active slice does not require. Do not expand the slice silently.
 
 Do not widen scope, change a public contract, add a dependency, or change unrelated tests without explicit need and authority.
 

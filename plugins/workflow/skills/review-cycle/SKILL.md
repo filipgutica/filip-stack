@@ -10,7 +10,9 @@ Use this final acceptance gate after meaningful edits. Do not use it for plannin
 ## Acceptance checks
 
 - Does the diff solve the requested goal?
+- Does the diff match the active slice?
 - Does the diff stay within scope?
+- Does the diff preserve unrelated user changes?
 - Do public contracts, schemas, exports, and metadata remain compatible?
 - Do tests prove the requested behavior without weaker assertions or unrelated churn?
 - Does the diff contain debug code, skipped tests, unsafe casts, or stale comments?
@@ -33,16 +35,25 @@ Use an adversarial critic for ambiguity, security, public contracts, concurrency
 
 1. Run `git status --short`.
 2. Inspect the focused diff.
-3. Remove scope drift, debug artifacts, and unrelated changes.
-4. Confirm the selected review tier.
-5. Reuse a completed review while it covers the current diff and risk.
-6. Run the missing review when no valid review exists.
-7. Apply valid findings.
-8. Repeat review only after a material coverage or risk change.
-9. Map each acceptance claim to current verification evidence.
-10. Run missing checks.
-11. Rerun checks affected by corrections.
-12. Fix remaining issues or report the blocker.
+3. Compare the final diff with the active slice.
+4. Remove scope drift, debug artifacts, and unrelated changes. Preserve unrelated user changes.
+5. Confirm the selected review tier.
+6. Reuse a completed review while it covers the current diff and risk.
+7. Run the missing review when no valid review exists.
+8. Apply valid findings.
+9. Repeat review only after a material coverage or risk change.
+10. Map each acceptance claim to current verification evidence.
+11. Run missing checks.
+12. Rerun checks affected by corrections.
+13. Fix remaining issues or report the blocker.
+
+## User acceptance checkpoint
+
+After a meaningful slice, present the active slice, diff summary, verification evidence, omissions, and residual risk.
+
+The user can accept, revise, inspect, or delegate acceptance. Leave the work uncommitted unless the current authority permits agent acceptance and commit.
+
+Named-work-item end-to-end authority permits agent acceptance only after this review cycle completes. The review cycle does not grant commit authority.
 
 ## Conditional checks
 
@@ -62,4 +73,4 @@ Use completed simplification-review evidence when the coordinator required that 
 
 ## Output
 
-Report the accepted result, verification evidence, material omissions, and residual risk. Add a separate review report only when it helps the user.
+Report the accepted result, verification evidence, material omissions, and residual risk. Include the user acceptance checkpoint when the selected route requires it.

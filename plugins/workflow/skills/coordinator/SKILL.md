@@ -16,9 +16,19 @@ Use `$workflow:minimal-code` for implementation. Minimality never overrides corr
 - **Setup or migration authority:** an explicit user request to configure or migrate Engineering Workflow storage permits only the requested setup or migration operation.
 - **Ticket-writing authority:** permits ticket creation or changes.
 - **Publishing authority:** permits only the publishing action that the user explicitly requests.
-- **Named-ticket end-to-end authority:** permits branch setup, creation and maintenance of the required external branch task ledger, its local pointer, and its Git exclude entry, plus task commits, push, and a draft pull request.
+- **Named-work-item end-to-end authority:** applies to a ticket, specification, or plan. It permits branch setup, required ledger maintenance, bounded commits, push, and a draft pull request.
 
 Planning and Investigation are read-only for repository files. Review feedback does not grant implementation or publishing authority.
+
+## Active slice
+
+For meaningful implementation, state one active slice before edits. Name its outcome, boundary, and verification signal.
+
+Inspect the Git state and preserve unrelated user changes. Keep the slice in the main-thread context and use Git as the worktree record.
+
+Continue without another approval when the work is decision-complete. The fast path does not need a visible active slice.
+
+Evaluate each new prompt against the active slice. Interrupt only for a material scope conflict. Use the prompt rules in the [implementation flow](references/implementation-flow.md).
 
 ## Router
 
@@ -34,7 +44,7 @@ flowchart TD
 - **Investigation:** gather evidence and present a fix path. See [references/investigation-flow.md](references/investigation-flow.md).
 - **Implementation:** make explicitly authorized repository changes. See [references/implementation-flow.md](references/implementation-flow.md).
 
-Use `$workflow:branch-task-planner` when the user explicitly requests an external ledger or explicitly authorizes named-ticket end-to-end execution, which requires one.
+Use `$workflow:branch-task-planner` when the user requests an external ledger or authorizes named-work-item end-to-end execution. That route requires a ledger.
 
 A manual-only skill can be an explicit nested invocation when the selected authorized route requires it. This does not waive the skill's authority checks.
 

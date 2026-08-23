@@ -1,6 +1,6 @@
 ---
 name: branch-task-planner
-description: "Use when a user requests an external branch task ledger or named-ticket end-to-end execution needs branch-scoped task tracking."
+description: "Use when a user requests an external branch task ledger or named-work-item end-to-end execution needs branch-scoped task tracking."
 disable-model-invocation: true
 ---
 
@@ -11,9 +11,9 @@ Maintain an external ledger with one top-level task per intended commit.
 ## Select the authority mode
 
 - **Direct invocation:** Modify only the external ledger for an established branch. This mode is planning-only.
-- **Named-ticket end-to-end:** Require confirmed named-ticket end-to-end authority from `$workflow:coordinator`.
+- **Named-work-item end-to-end:** Require confirmed named-work-item end-to-end authority from `$workflow:coordinator`.
 
-Do not infer named-ticket end-to-end authority from a ticket reference or an existing ledger.
+Do not infer named-work-item end-to-end authority from an artifact reference or an existing ledger.
 
 ## Locate the ledger
 
@@ -26,7 +26,7 @@ Do not infer named-ticket end-to-end authority from a ticket reference or an exi
 7. Search the resolved task directory before creating a ledger.
 8. Validate ledger metadata against the live topic, root, and branch.
 
-For detached HEAD during named-ticket execution, use the short commit hash with a detached marker until the coordinator creates the authorized branch.
+For detached HEAD during named-work-item execution, use the short commit hash with a detached marker until the coordinator creates the authorized branch.
 
 ## Direct invocation
 
@@ -42,9 +42,9 @@ The user's explicit request to create or modify a branch task ledger grants exte
 
 Do not create or switch branches. Do not edit repository files. Do not create a repository pointer. Do not commit, push, or publish.
 
-## Named-ticket end-to-end use
+## Named-work-item end-to-end use
 
-Use ticket context and repository evidence to define the ledger.
+Use the ticket, specification, or plan context and repository evidence to define the ledger.
 
 Read the ledger's Sources block before task planning. If its ticket or plan is ambiguous, follow the durable-source rules in [Engineering Workflow storage](../setup/references/storage.md). Do not rely on an ephemeral brainstorm or conversation session.
 
@@ -70,7 +70,7 @@ Add this Sources block before Context:
 ## Sources
 
 - Topic: [TOPIC.md](<relative-topic-link-from-setup>)
-- Primary work item: [Jira MA-1234](https://example.atlassian.net/browse/MA-1234) or `Direct request`
+- Primary work item: [Jira MA-1234](https://example.atlassian.net/browse/MA-1234), [SPEC.md](<relative-specification-link-from-setup>), [PLAN.md](<relative-plan-link-from-setup>), or `Direct request`
 - Specification (optional): [SPEC.md](<relative-specification-link-from-setup>)
 - Implementation plan (optional): [PLAN.md](<relative-plan-link-from-setup>)
 ```

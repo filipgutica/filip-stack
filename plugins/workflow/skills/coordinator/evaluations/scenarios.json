@@ -1,0 +1,87 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "bounded-specification-direct",
+      "prompt": "Implement this decision-complete specification end to end.",
+      "primaryWorkItem": "specification",
+      "expectedRoute": "named-work-item-end-to-end",
+      "composePlan": false,
+      "createTickets": false
+    },
+    {
+      "id": "specification-to-plan",
+      "prompt": "Make a plan for this broad specification, then execute it end to end.",
+      "primaryWorkItem": "specification",
+      "expectedRoute": "named-work-item-end-to-end",
+      "composePlan": true,
+      "createTickets": false
+    },
+    {
+      "id": "bounded-plan-direct",
+      "prompt": "Implement this bounded plan end to end.",
+      "primaryWorkItem": "plan",
+      "expectedRoute": "named-work-item-end-to-end",
+      "composePlan": false,
+      "createTickets": false
+    },
+    {
+      "id": "named-ticket",
+      "prompt": "Implement MA-1234 end to end.",
+      "primaryWorkItem": "ticket",
+      "expectedRoute": "named-work-item-end-to-end",
+      "composePlan": false,
+      "createTickets": false
+    },
+    {
+      "id": "meaningful-active-slice",
+      "prompt": "Implement the authorized behavior change.",
+      "expectedAction": "state-active-slice",
+      "requiredFields": ["outcome", "boundary", "verification"],
+      "requiresExtraApproval": false
+    },
+    {
+      "id": "mid-slice-status",
+      "prompt": "What is the current status?",
+      "expectedAction": "answer-and-continue",
+      "visibleInterruption": false
+    },
+    {
+      "id": "mid-slice-independent-change",
+      "prompt": "Also refactor the unrelated parser while you are here.",
+      "expectedAction": "recommend-deferral-and-continue",
+      "visibleInterruption": true,
+      "writeDeferredWork": false
+    },
+    {
+      "id": "mid-slice-product-decision",
+      "prompt": "Choose a new public API shape while implementing this.",
+      "expectedAction": "ask-user",
+      "visibleInterruption": true
+    },
+    {
+      "id": "explicit-priority-replacement",
+      "prompt": "Stop this work and switch to the parser fix now.",
+      "expectedAction": "stop-and-show-git-state",
+      "visibleInterruption": true
+    },
+    {
+      "id": "default-acceptance",
+      "prompt": "Implement this specification.",
+      "expectedAction": "present-evidence-and-wait",
+      "commitAllowed": false
+    },
+    {
+      "id": "end-to-end-acceptance",
+      "prompt": "Implement this specification end to end.",
+      "expectedAction": "agent-accepts-after-review-cycle",
+      "commitAllowed": true
+    },
+    {
+      "id": "tiny-fast-path",
+      "prompt": "Fix this typo.",
+      "expectedAction": "fast-path",
+      "requiresVisibleActiveSlice": false
+    }
+  ]
+}

@@ -148,11 +148,17 @@ The coordinator loads detailed guidance only for its selected route:
   test-first evidence and `minimal-code`, selects one review tier, and runs
   `review-cycle` after meaningful edits.
 
-Named-ticket end-to-end authority permits branch setup, external ledger
-maintenance, task commits, push, and a draft pull request. For each ledger task,
-the coordinator uses one bounded sub-plan, implementation, verification,
-independent review, `review-cycle`, and commit cycle. Review feedback does not
-grant implementation or publishing authority.
+Named-work-item end-to-end authority applies to a ticket, specification, or
+plan. It permits branch setup, external ledger maintenance, bounded commits,
+push, and a draft pull request. The coordinator composes a plan when complexity
+requires it. It does not create tickets when the primary work item is already
+self-contained.
+
+For meaningful implementation, the coordinator states one active slice with an
+outcome, boundary, and verification signal. It defers independent work and
+continues the active slice unless the user replaces the priority. Review
+compares the final diff with the active slice before acceptance. Review feedback
+does not grant implementation or publishing authority.
 
 ### External artifacts
 
