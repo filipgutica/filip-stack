@@ -596,10 +596,23 @@ test('grill commands create unique logs, support resume, and persist curated dec
       '--next-question', 'How do lifecycle moves work?',
     ],
   })
+  run({
+    command: 'update-grill',
+    args: [
+      ...common, '--log-file', basename(first.logFile),
+      '--question', 'How do lifecycle moves work?',
+      '--recommendation', 'Move the topic and repository directories together.',
+      '--decision', 'Use one atomic lifecycle transition.',
+      '--rationale', 'It keeps topic and repository state consistent.',
+      '--next-question', 'How are incomplete tasks reported?',
+    ],
+  })
   const log = readFileSync(first.logFile, 'utf8')
   assert.match(log, /### Decision 1/)
   assert.match(log, /- Decision: Use TOPIC\.md\./)
-  assert.match(log, /## Next unresolved question\n\nHow do lifecycle moves work\?/)
+  assert.match(log, /### Decision 2/)
+  assert.match(log, /- Decision: Use one atomic lifecycle transition\./)
+  assert.match(log, /## Next unresolved question\n\nHow are incomplete tasks reported\?/)
   assert.match(readFileSync(topic.paths.topicFile, 'utf8'), /Grill log:/)
 })
 
