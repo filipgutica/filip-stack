@@ -11,7 +11,11 @@ The guide is local and untracked at `~/.field-guide` by default. Current user in
 
 ## Automatic lifecycle
 
-Plugin hooks add bounded retrieval guidance at `UserPromptSubmit`. They request exactly one `capture`, `ask`, or `skip` evaluation at `Stop`.
+Plugin hooks add bounded retrieval and lifecycle guidance at `UserPromptSubmit`. They instruct one `capture`, `ask`, or `skip` evaluation before the final response.
+
+The hooks do not register a `Stop` continuation. Codex cannot silence one. Claude can expose its block reason. End-of-task evaluation is instructed but not enforced.
+
+Read [references/lifecycle-hooks.md](references/lifecycle-hooks.md) for the host selection, visibility, and privacy contract.
 
 The hooks supply static instructions only. They do not read prompts, transcripts, assistant messages, credentials, proprietary code, or field-guide files.
 

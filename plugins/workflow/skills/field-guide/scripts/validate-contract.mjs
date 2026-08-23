@@ -14,11 +14,12 @@ const submissionSchemaUrl = new URL('../schemas/submission-v1.schema.json', impo
 const maintenanceSchemaUrl = new URL('../schemas/maintenance-v1.schema.json', import.meta.url)
 const lifecycleSchemaUrl = new URL('../schemas/lifecycle-v1.schema.json', import.meta.url)
 const retrievalSchemaUrl = new URL('../schemas/retrieval-v1.schema.json', import.meta.url)
+const lifecycleHooksUrl = new URL('../references/lifecycle-hooks.md', import.meta.url)
 const readmeUrl = new URL('../../../../../README.md', import.meta.url)
 const hooksUrl = new URL('../../../hooks/hooks.json', import.meta.url)
 const hookAdapterUrl = new URL('../../../hooks/field-guide-lifecycle.mjs', import.meta.url)
 
-const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, readme, hooksText, hookAdapter] = await Promise.all([
+const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, hookAdapter] = await Promise.all([
   readFile(skillUrl, 'utf8'),
   readFile(policyUrl, 'utf8'),
   readFile(storageUrl, 'utf8'),
@@ -29,6 +30,7 @@ const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submis
   readFile(maintenanceSchemaUrl, 'utf8'),
   readFile(lifecycleSchemaUrl, 'utf8'),
   readFile(retrievalSchemaUrl, 'utf8'),
+  readFile(lifecycleHooksUrl, 'utf8'),
   readFile(readmeUrl, 'utf8'),
   readFile(hooksUrl, 'utf8'),
   readFile(hookAdapterUrl, 'utf8'),
@@ -53,8 +55,10 @@ assert.match(skill, /Keep an inferred contradiction as a linked candidate/)
 assert.match(skill, /use `transition` with action `supersede`, `confirmed: true`/)
 assert.match(skill, /raw transcripts, prompts, credentials/)
 assert.match(skill, /rejects high-signal secrets and unsafe source text at the write boundary/)
-assert.match(skill, /Plugin hooks add bounded retrieval guidance at `UserPromptSubmit`/)
-assert.match(skill, /request exactly one `capture`, `ask`, or `skip` evaluation at `Stop`/)
+assert.match(skill, /Plugin hooks add bounded retrieval and lifecycle guidance at `UserPromptSubmit`/)
+assert.match(skill, /instruct one `capture`, `ask`, or `skip` evaluation before the final response/)
+assert.match(skill, /do not register a `Stop` continuation/)
+assert.match(skill, /End-of-task evaluation is instructed but not enforced/)
 assert.match(skill, /field-guide\.sh/)
 assert.match(skill, /--input-json/)
 assert.doesNotMatch(skill, /node scripts\/field-guide\.mjs/)
@@ -65,19 +69,27 @@ assert.match(policy, /Skip when any condition is true/)
 assert.match(policy, /Run `candidates` before `submit`/)
 assert.match(policy, /Exact duplicates are deterministic/)
 assert.match(policy, /At the end of meaningful work, decide `capture`, `ask`, or `skip`/)
+assert.match(policy, /not enforced by a `Stop` continuation/)
 assert.match(storage, /review record/i)
 assert.match(metadata, /allow_implicit_invocation: true/)
 assert.match(metadata, /durable preferences, corrections, repeated misses, and manual learning/)
 assert.doesNotMatch(metadata, /only after review feedback/)
 assert.match(readme, /obvious durable user preferences, corrections, and repeated misses/)
 assert.match(readme, /do not require global `AGENTS\.md` or `CLAUDE\.md` instructions/)
+assert.match(readme, /does not register a `Stop` continuation/)
+assert.match(readme, /End-of-task evaluation is instructed but not enforced/)
+assert.match(readme, /evaluation is not enforced by a Stop continuation/)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
-assert.deepEqual(Object.keys(hooks.hooks).sort(), ['Stop', 'UserPromptSubmit'])
-for (const handlers of Object.values(hooks.hooks)) {
-  assert.match(handlers[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
-}
-assert.match(hookAdapter, /input\.stop_hook_active !== true/)
+assert.deepEqual(Object.keys(hooks.hooks).sort(), ['UserPromptSubmit'])
+assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
+assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
+assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)
+assert.match(hookAdapter, /if \(input\.hook_event_name === 'Stop'\) return \{\}/)
 assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field-guide/)
+assert.doesNotMatch(hookAdapter, /field-guide\.sh|\/Users\//)
+assert.match(lifecycleHooks, /`PLUGIN_ROOT`/)
+assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
+assert.match(lifecycleHooks, /does not register a `Stop` hook/)
 
 assert.equal(scenarios.schemaVersion, 1)
 assert.deepEqual(
@@ -97,6 +109,10 @@ assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-durable-corre
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-ambiguous-learning').expectedDecision, 'ask')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').expectedDecision, 'skip')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').preservesTaskResponse, true)
+for (const { lifecycleEvent, enforcement, id } of scenarios.scenarios.filter(({ id }) => id.startsWith('end-task-'))) {
+  assert.equal(lifecycleEvent, 'UserPromptSubmit', id)
+  assert.equal(enforcement, 'instructed-not-enforced', id)
+}
 
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
 ajv.addSchema(memorySchema)
