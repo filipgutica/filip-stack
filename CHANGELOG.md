@@ -1,3 +1,10 @@
+## [1.13.1](https://github.com/filipgutica/filip-stack/compare/v1.13.0...v1.13.1) (2026-08-23)
+
+
+### Bug Fixes
+
+* **workflow:** keep field-guide hooks quiet ([6eac314](https://github.com/filipgutica/filip-stack/commit/6eac3144f344d7a8d0752f7988b3b20694bc1b77))
+
 # [1.13.0](https://github.com/filipgutica/filip-stack/compare/v1.12.0...v1.13.0) (2026-08-22)
 
 
