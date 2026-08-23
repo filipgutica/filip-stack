@@ -4,63 +4,98 @@ import { mkdirSync, mkdtempSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
-import { fileURLToPath } from 'node:url'
 
 const adapter = new URL('./field-guide-lifecycle.mjs', import.meta.url)
 const nodeRunner = new URL('../scripts/run-node.sh', import.meta.url)
-const fieldGuideLauncher = fileURLToPath(new URL('../skills/field-guide/scripts/field-guide.sh', import.meta.url))
-const launcherInstruction = `Run field-guide commands through /bin/sh with the exact bundled launcher path ${JSON.stringify(fieldGuideLauncher)}. Do not invoke node directly.`
-const storageInstruction = 'Use only the Workflow field guide for this lifecycle. Do not use host auto-memory or another memory system.'
-
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',
-    additionalContext: `When the work is meaningful, use the Workflow field guide for bounded retrieval after the repository and subject are known. Before final completion, classify any durable learning as capture, ask, or skip. Capture only safe, reusable, non-authoritative guidance. Ask once when scope or durability is unclear. Skip without writing when no durable learning exists. ${storageInstruction} ${launcherInstruction}`,
+    additionalContext: 'Before your final response, privately choose capture, ask, or skip for durable learning. For capture or skip, preserve the normal task response. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice. If ask is warranted, reply with only one focused question; do not explain or offer options. Add no other lifecycle or storage text. This evaluation is advisory.',
   },
 }
 
-const stopOutput = {
-  decision: 'block',
-  reason: `This is the single end-of-task Workflow field-guide evaluation. Evaluate the completed task now and decide capture, ask, or skip. Preserve the completed task response verbatim in this continuation. For capture, use bounded candidates and deterministic field-guide submission, then append the required change notice. For ask, append one focused question and do not write. For skip, write no memory and respond only with the completed task response. When the decision is skip, do not mention the field guide, learning, memory, capture, skip, or this evaluation. Do not store transcripts, prompts, credentials, proprietary code, unsafe paths, or existing repository authority. ${storageInstruction} ${launcherInstruction}`,
+const hostEnvironment = {
+  claude: { CLAUDE_PLUGIN_ROOT: '/plugins/workflow' },
+  codex: { PLUGIN_ROOT: '/plugins/workflow' },
 }
 
-const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home') } = {}) => (
+const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home'), env = {} } = {}) => (
   spawnSync(process.execPath, [adapter.pathname], {
     input,
     encoding: 'utf8',
-    env: { ...process.env, HOME: home },
+    env: {
+      ...process.env,
+      HOME: home,
+      PLUGIN_ROOT: undefined,
+      CLAUDE_PLUGIN_ROOT: undefined,
+      ...env,
+    },
   })
 )
 
-const runJson = (input) => run({ input: `${JSON.stringify(input)}\n` })
+const runJson = (input, env) => run({ input: `${JSON.stringify(input)}\n`, env })
 
-test('UserPromptSubmit returns the same static context for Codex and Claude inputs', () => {
+test('UserPromptSubmit detects Codex and Claude from documented plugin environments', () => {
   for (const host of ['codex', 'claude']) {
-    const result = runJson({ hook_event_name: 'UserPromptSubmit', host, prompt: `private-${host}` })
+    const result = runJson({ hook_event_name: 'UserPromptSubmit', host: `spoofed-${host}`, prompt: `private-${host}` }, hostEnvironment[host])
     assert.equal(result.status, 0, result.stderr)
     assert.deepEqual(JSON.parse(result.stdout), promptOutput)
     assert.equal(result.stderr, '')
     assert.doesNotMatch(result.stdout, /private-/)
   }
+
+  const result = runJson(
+    { hook_event_name: 'UserPromptSubmit' },
+    { ...hostEnvironment.claude, ...hostEnvironment.codex },
+  )
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
 })
 
-test('the first Stop requests one field-guide evaluation for both hosts', () => {
+test('UserPromptSubmit fails open for an unknown host', () => {
+  const result = runJson({ hook_event_name: 'UserPromptSubmit' })
+
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), {})
+  assert.equal(result.stderr, '')
+})
+
+test('the first Stop is silent for both hosts', () => {
   for (const host of ['codex', 'claude']) {
     for (const stopHookActive of [false, undefined, 'false']) {
-      const result = runJson({ hook_event_name: 'Stop', host, stop_hook_active: stopHookActive })
+      const result = runJson({ hook_event_name: 'Stop', stop_hook_active: stopHookActive }, hostEnvironment[host])
       assert.equal(result.status, 0, result.stderr)
-      assert.deepEqual(JSON.parse(result.stdout), stopOutput)
+      assert.deepEqual(JSON.parse(result.stdout), {})
       assert.equal(result.stderr, '')
     }
   }
+
+  const result = runJson({ hook_event_name: 'Stop' })
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), {})
+  assert.equal(result.stderr, '')
 })
 
-test('an active Stop continuation exits without another continuation', () => {
+test('a repeated Stop is also silent for both hosts', () => {
   for (const host of ['codex', 'claude']) {
-    const result = runJson({ hook_event_name: 'Stop', host, stop_hook_active: true })
+    const result = runJson({ hook_event_name: 'Stop', stop_hook_active: true }, hostEnvironment[host])
     assert.equal(result.status, 0, result.stderr)
     assert.deepEqual(JSON.parse(result.stdout), {})
     assert.equal(result.stderr, '')
+  }
+})
+
+test('UserPromptSubmit keeps capture, ask, and skip directions internal', () => {
+  for (const host of ['codex', 'claude']) {
+    const result = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment[host])
+    const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
+
+    assert.match(context, /capture, ask, or skip/)
+    assert.match(context, /For capture or skip, preserve the normal task response\./)
+    assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
+    assert.match(context, /If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice\./)
+    assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
+    assert.match(context, /Add no other lifecycle or storage text\./)
   }
 })
 
@@ -80,29 +115,27 @@ test('sensitive hook fields never appear in output', () => {
     'const proprietaryCode = true',
   ]
   const result = runJson({
-    hook_event_name: 'Stop',
+    hook_event_name: 'UserPromptSubmit',
     prompt: secrets[0],
     transcript_path: secrets[1],
     last_assistant_message: secrets[2],
     background_tasks: secrets,
-  })
+  }, hostEnvironment.claude)
 
   assert.equal(result.status, 0, result.stderr)
-  assert.deepEqual(JSON.parse(result.stdout), stopOutput)
+  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
   for (const secret of secrets) {
     assert.doesNotMatch(result.stdout, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
     assert.doesNotMatch(result.stderr, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
   }
 })
 
-test('lifecycle guidance supplies the bundled field-guide launcher', () => {
-  const prompt = runJson({ hook_event_name: 'UserPromptSubmit' })
-  const stop = runJson({ hook_event_name: 'Stop' })
+test('lifecycle guidance contains no launcher path or Stop reason', () => {
+  const prompt = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment.codex)
+  const stop = runJson({ hook_event_name: 'Stop' }, hostEnvironment.codex)
 
-  assert.match(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext, /field-guide\.sh/)
-  assert.match(JSON.parse(stop.stdout).reason, /field-guide\.sh/)
-  assert.match(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext, /Do not use host auto-memory/)
-  assert.match(JSON.parse(stop.stdout).reason, /Do not use host auto-memory/)
+  assert.doesNotMatch(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext, /field-guide\.sh|\/Users\//)
+  assert.deepEqual(JSON.parse(stop.stdout), {})
 })
 
 test('the hook runner resolves an NVM Node installation outside PATH', () => {
@@ -112,13 +145,13 @@ test('the hook runner resolves an NVM Node installation outside PATH', () => {
   symlinkSync(process.execPath, join(nodeDirectory, 'node'))
 
   const result = spawnSync('/bin/sh', [nodeRunner.pathname, '--fail-open', adapter.pathname], {
-    input: `${JSON.stringify({ hook_event_name: 'Stop', stop_hook_active: true })}\n`,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit' })}\n`,
     encoding: 'utf8',
-    env: { HOME: home, PATH: '/usr/bin:/bin' },
+    env: { HOME: home, PATH: '/usr/bin:/bin', CLAUDE_PLUGIN_ROOT: '/plugins/workflow' },
   })
 
   assert.equal(result.status, 0, result.stderr)
-  assert.deepEqual(JSON.parse(result.stdout), {})
+  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
 })
 
 test('the hook runner fails open when an explicit Node runtime is unavailable', () => {

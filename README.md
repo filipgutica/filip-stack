@@ -59,7 +59,7 @@ scripts/                   Stamp and validate scripts
    claude plugin install workflow@filip-stack
    ```
 
-3. Run `/hooks` and confirm that the plugin `UserPromptSubmit` and `Stop` hooks are enabled.
+3. Run `/hooks` and confirm that the plugin `UserPromptSubmit` hook is enabled.
 
 Claude identifies the installed plugin as `workflow@filip-stack`. Run this
 command to update it:
@@ -99,9 +99,13 @@ searches the default NVM, fnm, Volta, asdf, and mise locations. Set
 
 Codex requires the hook trust step after installation or an upgrade that changes the hooks. Claude remote execution and Windows are not supported.
 
-The hooks fail open. If they are disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
+The hook sends bounded retrieval and lifecycle instructions at `UserPromptSubmit`. It instructs the agent to decide `capture`, `ask`, or `skip` before the final response.
 
-A `skip` evaluation writes no memory. Its continuation repeats the completed task response without a field-guide notice.
+The plugin does not register a `Stop` continuation. Codex cannot silence a Stop continuation. Claude can expose its block reason. End-of-task evaluation is instructed but not enforced.
+
+The hook fails open. If it is disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
+
+The normal task response remains intact for `skip` and `capture`. A `skip` evaluation writes no memory and adds no field-guide notice. A `capture` adds only the concise change notice. An `ask` returns only the focused question.
 
 ## Releases and versioning
 
@@ -198,9 +202,10 @@ obvious durable user preferences, corrections, and repeated misses during normal
 work. It asks before storing ambiguous observations. Committed code-review
 corrections remain a first-class evidence and history path.
 
-Plugin hooks prompt bounded retrieval and one end-of-task learning evaluation.
-The agent decides `capture`, `ask`, or `skip`. The hook never ingests a transcript
-or writes field-guide data.
+The plugin hook instructs bounded retrieval and one end-of-task learning
+evaluation before the final response. The agent decides `capture`, `ask`, or
+`skip`. The evaluation is not enforced by a Stop continuation. The hook never
+ingests a transcript or writes field-guide data.
 
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide

@@ -1,18 +1,7 @@
 {
-  "description": "Prompt bounded field-guide use and request one end-of-task learning evaluation.",
+  "description": "Prompt bounded field-guide use before the final response.",
   "hooks": {
     "UserPromptSubmit": [
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "/bin/sh \"${CLAUDE_PLUGIN_ROOT}/scripts/run-node.sh\" --fail-open \"${CLAUDE_PLUGIN_ROOT}/hooks/field-guide-lifecycle.mjs\"",
-            "timeout": 5
-          }
-        ]
-      }
-    ],
-    "Stop": [
       {
         "hooks": [
           {
