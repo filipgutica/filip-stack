@@ -35,21 +35,31 @@ const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home'), en
 
 const runJson = (input, env) => run({ input: `${JSON.stringify(input)}\n`, env })
 
-test('UserPromptSubmit detects Codex and Claude from documented plugin environments', () => {
-  for (const host of ['codex', 'claude']) {
-    const result = runJson({ hook_event_name: 'UserPromptSubmit', host: `spoofed-${host}`, prompt: `private-${host}` }, hostEnvironment[host])
-    assert.equal(result.status, 0, result.stderr)
-    assert.deepEqual(JSON.parse(result.stdout), promptOutput)
-    assert.equal(result.stderr, '')
-    assert.doesNotMatch(result.stdout, /private-/)
-  }
+test('UserPromptSubmit emits context only for Claude', () => {
+  const claude = runJson(
+    { hook_event_name: 'UserPromptSubmit', host: 'spoofed-claude', prompt: 'private-claude' },
+    hostEnvironment.claude,
+  )
+  assert.equal(claude.status, 0, claude.stderr)
+  assert.deepEqual(JSON.parse(claude.stdout), promptOutput)
+  assert.equal(claude.stderr, '')
+  assert.doesNotMatch(claude.stdout, /private-/)
 
-  const result = runJson(
+  const codex = runJson(
+    { hook_event_name: 'UserPromptSubmit', host: 'spoofed-codex', prompt: 'private-codex' },
+    hostEnvironment.codex,
+  )
+  assert.equal(codex.status, 0, codex.stderr)
+  assert.deepEqual(JSON.parse(codex.stdout), {})
+  assert.equal(codex.stderr, '')
+  assert.doesNotMatch(codex.stdout, /private-/)
+
+  const codexCompatibilityEnvironment = runJson(
     { hook_event_name: 'UserPromptSubmit' },
     { ...hostEnvironment.claude, ...hostEnvironment.codex },
   )
-  assert.equal(result.status, 0, result.stderr)
-  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+  assert.equal(codexCompatibilityEnvironment.status, 0, codexCompatibilityEnvironment.stderr)
+  assert.deepEqual(JSON.parse(codexCompatibilityEnvironment.stdout), {})
 })
 
 test('UserPromptSubmit fails open for an unknown host', () => {
@@ -86,17 +96,15 @@ test('a repeated Stop is also silent for both hosts', () => {
 })
 
 test('UserPromptSubmit keeps capture, ask, and skip directions internal', () => {
-  for (const host of ['codex', 'claude']) {
-    const result = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment[host])
-    const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
+  const result = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment.claude)
+  const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
 
-    assert.match(context, /capture, ask, or skip/)
-    assert.match(context, /For capture or skip, preserve the normal task response\./)
-    assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
-    assert.match(context, /If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice\./)
-    assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
-    assert.match(context, /Add no other lifecycle or storage text\./)
-  }
+  assert.match(context, /capture, ask, or skip/)
+  assert.match(context, /For capture or skip, preserve the normal task response\./)
+  assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
+  assert.match(context, /If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice\./)
+  assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
+  assert.match(context, /Add no other lifecycle or storage text\./)
 })
 
 test('invalid or unknown input fails open', () => {
@@ -131,8 +139,8 @@ test('sensitive hook fields never appear in output', () => {
 })
 
 test('lifecycle guidance contains no launcher path or Stop reason', () => {
-  const prompt = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment.codex)
-  const stop = runJson({ hook_event_name: 'Stop' }, hostEnvironment.codex)
+  const prompt = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment.claude)
+  const stop = runJson({ hook_event_name: 'Stop' }, hostEnvironment.claude)
 
   assert.doesNotMatch(JSON.parse(prompt.stdout).hookSpecificOutput.additionalContext, /field-guide\.sh|\/Users\//)
   assert.deepEqual(JSON.parse(stop.stdout), {})

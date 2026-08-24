@@ -18,8 +18,9 @@ const lifecycleHooksUrl = new URL('../references/lifecycle-hooks.md', import.met
 const readmeUrl = new URL('../../../../../README.md', import.meta.url)
 const hooksUrl = new URL('../../../hooks/hooks.json', import.meta.url)
 const hookAdapterUrl = new URL('../../../hooks/field-guide-lifecycle.mjs', import.meta.url)
+const codexManifestUrl = new URL('../../../.codex-plugin/plugin.json', import.meta.url)
 
-const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, hookAdapter] = await Promise.all([
+const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, hookAdapter, codexManifestText] = await Promise.all([
   readFile(skillUrl, 'utf8'),
   readFile(policyUrl, 'utf8'),
   readFile(storageUrl, 'utf8'),
@@ -34,9 +35,11 @@ const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submis
   readFile(readmeUrl, 'utf8'),
   readFile(hooksUrl, 'utf8'),
   readFile(hookAdapterUrl, 'utf8'),
+  readFile(codexManifestUrl, 'utf8'),
 ])
 const scenarios = JSON.parse(scenariosText)
 const hooks = JSON.parse(hooksText)
+const codexManifest = JSON.parse(codexManifestText)
 const memorySchema = JSON.parse(memorySchemaText)
 const submissionSchema = JSON.parse(submissionSchemaText)
 const maintenanceSchema = JSON.parse(maintenanceSchemaText)
@@ -55,9 +58,10 @@ assert.match(skill, /Keep an inferred contradiction as a linked candidate/)
 assert.match(skill, /use `transition` with action `supersede`, `confirmed: true`/)
 assert.match(skill, /raw transcripts, prompts, credentials/)
 assert.match(skill, /rejects high-signal secrets and unsafe source text at the write boundary/)
-assert.match(skill, /Plugin hooks add bounded retrieval and lifecycle guidance at `UserPromptSubmit`/)
-assert.match(skill, /instruct one `capture`, `ask`, or `skip` evaluation before the final response/)
-assert.match(skill, /do not register a `Stop` continuation/)
+assert.match(skill, /Claude's plugin hook adds bounded lifecycle guidance at `UserPromptSubmit`/)
+assert.match(skill, /instructs one `capture`, `ask`, or `skip` evaluation before the final response/)
+assert.match(skill, /does not register a Codex lifecycle hook/)
+assert.match(skill, /Claude hook does not register a `Stop` continuation/)
 assert.match(skill, /End-of-task evaluation is instructed but not enforced/)
 assert.match(skill, /field-guide\.sh/)
 assert.match(skill, /--input-json/)
@@ -69,18 +73,20 @@ assert.match(policy, /Skip when any condition is true/)
 assert.match(policy, /Run `candidates` before `submit`/)
 assert.match(policy, /Exact duplicates are deterministic/)
 assert.match(policy, /At the end of meaningful work, decide `capture`, `ask`, or `skip`/)
-assert.match(policy, /not enforced by a `Stop` continuation/)
+assert.match(policy, /A `Stop` continuation does not enforce it/)
 assert.match(storage, /review record/i)
 assert.match(metadata, /allow_implicit_invocation: true/)
 assert.match(metadata, /durable preferences, corrections, repeated misses, and manual learning/)
 assert.doesNotMatch(metadata, /only after review feedback/)
 assert.match(readme, /obvious durable user preferences, corrections, and repeated misses/)
-assert.match(readme, /do not require global `AGENTS\.md` or `CLAUDE\.md` instructions/)
+assert.match(readme, /does not register Codex lifecycle hooks/)
+assert.match(readme, /`suppressOutput` is not implemented/)
 assert.match(readme, /does not register a `Stop` continuation/)
 assert.match(readme, /End-of-task evaluation is instructed but not enforced/)
-assert.match(readme, /evaluation is not enforced by a Stop continuation/)
+assert.match(readme, /evaluation is\s+not enforced by a Stop continuation/i)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
 assert.deepEqual(Object.keys(hooks.hooks).sort(), ['UserPromptSubmit'])
+assert.deepEqual(codexManifest.hooks, [])
 assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
 assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
 assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)
@@ -89,7 +95,8 @@ assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field
 assert.doesNotMatch(hookAdapter, /field-guide\.sh|\/Users\//)
 assert.match(lifecycleHooks, /`PLUGIN_ROOT`/)
 assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
-assert.match(lifecycleHooks, /does not register a `Stop` hook/)
+assert.match(lifecycleHooks, /Codex does not register Workflow lifecycle hooks/)
+assert.match(lifecycleHooks, /returns an empty object for direct Stop input/)
 
 assert.equal(scenarios.schemaVersion, 1)
 assert.deepEqual(
@@ -97,7 +104,8 @@ assert.deepEqual(
   new Set(['obvious', 'ambiguous', 'temporary', 'repeated', 'contradictory', 'manual', 'privacy', 'audit']),
 )
 for (const scenario of scenarios.scenarios) {
-  assert.deepEqual(scenario.hosts, ['claude', 'codex'])
+  const expectedHosts = scenario.id.startsWith('end-task-') ? ['claude'] : ['claude', 'codex']
+  assert.deepEqual(scenario.hosts, expectedHosts)
   assert.match(scenario.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   assert.ok(['capture', 'ask', 'skip', 'audit'].includes(scenario.expectedDecision))
 }

@@ -79,7 +79,7 @@
     {
       "id": "end-task-durable-correction",
       "category": "obvious",
-      "hosts": ["claude", "codex"],
+      "hosts": ["claude"],
       "userMessage": "That fix is right. Always preserve the generated header when this repository rewrites schema files.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
@@ -90,7 +90,7 @@
     {
       "id": "end-task-ambiguous-learning",
       "category": "ambiguous",
-      "hosts": ["claude", "codex"],
+      "hosts": ["claude"],
       "userMessage": "Use the other review format next time.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
@@ -100,7 +100,7 @@
     {
       "id": "end-task-no-learning",
       "category": "temporary",
-      "hosts": ["claude", "codex"],
+      "hosts": ["claude"],
       "userMessage": "Show the current branch name.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
