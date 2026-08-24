@@ -17,10 +17,11 @@ const retrievalSchemaUrl = new URL('../schemas/retrieval-v1.schema.json', import
 const lifecycleHooksUrl = new URL('../references/lifecycle-hooks.md', import.meta.url)
 const readmeUrl = new URL('../../../../../README.md', import.meta.url)
 const hooksUrl = new URL('../../../hooks/hooks.json', import.meta.url)
+const codexHooksUrl = new URL('../../../hooks/codex-hooks.json', import.meta.url)
 const hookAdapterUrl = new URL('../../../hooks/field-guide-lifecycle.mjs', import.meta.url)
 const codexManifestUrl = new URL('../../../.codex-plugin/plugin.json', import.meta.url)
 
-const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, hookAdapter, codexManifestText] = await Promise.all([
+const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, codexHooksText, hookAdapter, codexManifestText] = await Promise.all([
   readFile(skillUrl, 'utf8'),
   readFile(policyUrl, 'utf8'),
   readFile(storageUrl, 'utf8'),
@@ -34,11 +35,13 @@ const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submis
   readFile(lifecycleHooksUrl, 'utf8'),
   readFile(readmeUrl, 'utf8'),
   readFile(hooksUrl, 'utf8'),
+  readFile(codexHooksUrl, 'utf8'),
   readFile(hookAdapterUrl, 'utf8'),
   readFile(codexManifestUrl, 'utf8'),
 ])
 const scenarios = JSON.parse(scenariosText)
 const hooks = JSON.parse(hooksText)
+const codexHooks = JSON.parse(codexHooksText)
 const codexManifest = JSON.parse(codexManifestText)
 const memorySchema = JSON.parse(memorySchemaText)
 const submissionSchema = JSON.parse(submissionSchemaText)
@@ -86,7 +89,8 @@ assert.match(readme, /End-of-task evaluation is instructed but not enforced/)
 assert.match(readme, /evaluation is\s+not enforced by a Stop continuation/i)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
 assert.deepEqual(Object.keys(hooks.hooks).sort(), ['UserPromptSubmit'])
-assert.deepEqual(codexManifest.hooks, [])
+assert.equal(codexManifest.hooks, './hooks/codex-hooks.json')
+assert.deepEqual(codexHooks, { hooks: {} })
 assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
 assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
 assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)

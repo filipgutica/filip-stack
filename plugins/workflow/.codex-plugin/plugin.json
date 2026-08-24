@@ -6,7 +6,7 @@
     "name": "Filip Gutica"
   },
   "skills": "./skills",
-  "hooks": [],
+  "hooks": "./hooks/codex-hooks.json",
   "interface": {
     "displayName": "Engineering Workflow",
     "shortDescription": "Plan, specify, implement, review, and execute engineering work.",
