@@ -8,7 +8,8 @@ The adapter does not read conversation data or field-guide files.
 
 ## Host selection
 
-The Codex manifest overrides default hook discovery with an empty hook list.
+The Codex manifest points to an explicit empty hook file. This overrides default
+hook discovery without relying on an empty manifest array.
 The adapter also returns no output when `PLUGIN_ROOT` is present. Codex sets
 both host variables for plugin hook compatibility.
 
