@@ -1,3 +1,16 @@
+# [1.14.0](https://github.com/filipgutica/filip-stack/compare/v1.13.1...v1.14.0) (2026-08-24)
+
+
+### Bug Fixes
+
+* **workflow:** disable visible Codex hooks ([41d9964](https://github.com/filipgutica/filip-stack/commit/41d99648ade4a3a2574105fbf6eac5df2b2919b4))
+* **workflow:** preserve grill log decisions ([be46854](https://github.com/filipgutica/filip-stack/commit/be46854804416f37bb59fa36de431c5b2b966d59))
+
+
+### Features
+
+* **workflow:** enforce active slice discipline ([e4f0e35](https://github.com/filipgutica/filip-stack/commit/e4f0e35c846b9575bfddcea10d054217bf23c54d))
+
 ## [1.13.1](https://github.com/filipgutica/filip-stack/compare/v1.13.0...v1.13.1) (2026-08-23)
 
 
