@@ -9,6 +9,7 @@
   },
   "scripts": {
     "postinstall": "lefthook install",
+    "test:coordinator": "node plugins/workflow/skills/coordinator/scripts/validate-contract.mjs",
     "stamp-version": "node scripts/stamp-version.mjs",
     "test:engineering-workflow": "node --test plugins/workflow/skills/setup/scripts/engineering-workflow.test.mjs",
     "test:source-provenance": "node plugins/workflow/skills/setup/scripts/validate-source-provenance-contract.mjs",
@@ -21,7 +22,7 @@
     "test:writing-specs": "node plugins/workflow/skills/writing-specs/scripts/validate-contract.mjs",
     "test:writing-tickets": "node plugins/workflow/skills/writing-tickets/scripts/validate-contract.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "check": "pnpm test:engineering-workflow && pnpm test:source-provenance && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:field-guide-contract && pnpm test:grill-me && pnpm test:pr-descriptions && pnpm test:walkthrough && pnpm test:writing-specs && pnpm test:writing-tickets && pnpm validate-plugins"
+    "check": "pnpm test:coordinator && pnpm test:engineering-workflow && pnpm test:source-provenance && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:field-guide-contract && pnpm test:grill-me && pnpm test:pr-descriptions && pnpm test:walkthrough && pnpm test:writing-specs && pnpm test:writing-tickets && pnpm validate-plugins"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

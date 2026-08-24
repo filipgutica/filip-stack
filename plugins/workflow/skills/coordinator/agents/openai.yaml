@@ -5,8 +5,8 @@ interface:
     Use $workflow:coordinator to route work through Planning, Investigation, or
     authorized Implementation. Planning and Investigation are read-only for
     repository files. Review feedback does not grant implementation or
-    publishing authority. Named-ticket end-to-end authority permits branch
-    setup, external ledger, local pointer, and Git exclude maintenance, task
-    commits, push, and a draft pull request.
+    publishing authority. Named-work-item end-to-end authority applies to a
+    ticket, specification, or plan. It permits branch setup, ledger and pointer
+    maintenance, bounded commits, push, and a draft pull request.
 policy:
   allow_implicit_invocation: true

@@ -79,7 +79,6 @@ claude plugin update workflow@filip-stack
 2. Restart Codex.
 3. Open the plugin directory.
 4. Install `workflow` from the `filip-stack` marketplace.
-5. Run `/hooks`, review the plugin hooks, and trust the current definition.
 
 Codex upgrades the marketplace instead of an individual plugin. Run this command
 to install marketplace updates:
@@ -88,20 +87,28 @@ to install marketplace updates:
 codex plugin marketplace upgrade filip-stack
 ```
 
-### Automatic field-guide hooks
+### Automatic field-guide hook
 
-The packaged hooks support local Claude Code and Codex on macOS and Linux. They do not require global `AGENTS.md` or `CLAUDE.md` instructions.
+The packaged `UserPromptSubmit` hook supports local Claude Code on macOS and
+Linux. It does not require a global `CLAUDE.md` instruction.
 
 The local host must have Node.js 20.16 or newer. Git must be on PATH.
 The launcher searches PATH and common macOS and Linux install locations. It also
 searches the default NVM, fnm, Volta, asdf, and mise locations. Set
 `WORKFLOW_NODE` to the executable path for another installation.
 
-Codex requires the hook trust step after installation or an upgrade that changes the hooks. Claude remote execution and Windows are not supported.
+Claude remote execution and Windows are not supported.
 
-The hook sends bounded retrieval and lifecycle instructions at `UserPromptSubmit`. It instructs the agent to decide `capture`, `ask`, or `skip` before the final response.
+The Claude hook sends bounded lifecycle instructions at `UserPromptSubmit`. It
+instructs the agent to decide `capture`, `ask`, or `skip` before the final
+response.
 
-The plugin does not register a `Stop` continuation. Codex cannot silence a Stop continuation. Claude can expose its block reason. End-of-task evaluation is instructed but not enforced.
+Workflow does not register Codex lifecycle hooks. Codex shows hook runs and
+injected context, and `suppressOutput` is not implemented. Codex agents use the
+Field Guide through normal skill routing.
+
+The Claude hook does not register a `Stop` continuation. Claude can show its
+block reason. End-of-task evaluation is instructed but not enforced.
 
 The hook fails open. If it is disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
 
@@ -148,11 +155,17 @@ The coordinator loads detailed guidance only for its selected route:
   test-first evidence and `minimal-code`, selects one review tier, and runs
   `review-cycle` after meaningful edits.
 
-Named-ticket end-to-end authority permits branch setup, external ledger
-maintenance, task commits, push, and a draft pull request. For each ledger task,
-the coordinator uses one bounded sub-plan, implementation, verification,
-independent review, `review-cycle`, and commit cycle. Review feedback does not
-grant implementation or publishing authority.
+Named-work-item end-to-end authority applies to a ticket, specification, or
+plan. It permits branch setup, external ledger maintenance, bounded commits,
+push, and a draft pull request. The coordinator composes a plan when complexity
+requires it. It does not create tickets when the primary work item is already
+self-contained.
+
+For meaningful implementation, the coordinator states one active slice with an
+outcome, boundary, and verification signal. It defers independent work and
+continues the active slice unless the user replaces the priority. Review
+compares the final diff with the active slice before acceptance. Review feedback
+does not grant implementation or publishing authority.
 
 ### External artifacts
 
@@ -202,10 +215,11 @@ obvious durable user preferences, corrections, and repeated misses during normal
 work. It asks before storing ambiguous observations. Committed code-review
 corrections remain a first-class evidence and history path.
 
-The plugin hook instructs bounded retrieval and one end-of-task learning
-evaluation before the final response. The agent decides `capture`, `ask`, or
-`skip`. The evaluation is not enforced by a Stop continuation. The hook never
-ingests a transcript or writes field-guide data.
+The Claude plugin hook instructs one end-of-task learning evaluation before the
+final response. The agent decides `capture`, `ask`, or `skip`. The evaluation is
+not enforced by a Stop continuation. Codex uses normal skill routing instead of
+an automatic lifecycle hook. The hook never ingests a transcript or writes
+field-guide data.
 
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide

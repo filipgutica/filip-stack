@@ -1011,7 +1011,7 @@ const readGrillLog = ({ logFile, topicFile }) => {
   )
   const match = content.match(pattern)
   if (!match) fail(`${logFile} is not a valid grill log for this topic`)
-  const decisionPattern = /\n*### Decision \d+\n\n- Question: .+\n- Recommendation: .+\n- Decision: .+\n- Rationale: .+\n/g
+  const decisionPattern = /\n*### Decision \d+\n\n- Question: .+\n- Recommendation: .+\n- Decision: .+\n- Rationale: .+/g
   if (match[1].replace(decisionPattern, '').trim() !== '') {
     fail(`${logFile} is not a valid grill log for this topic`)
   }

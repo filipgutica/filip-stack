@@ -6,10 +6,31 @@ Use this route for authorized repository changes. Read-only review-feedback insp
 
 - Use the **fast path** for a tiny, mechanical, low-risk, non-behavioral change.
 - Use the **bounded cycle** for every meaningful change.
-- Use the **named-ticket route** only with named-ticket end-to-end authority.
+- Use the **named-work-item route** only with named-work-item end-to-end authority.
 - Use the **review-feedback route** to inspect feedback or make authorized corrections.
 
 Review-only work stays read-only. Route standalone simplification analysis to `$workflow:simplification-review`.
+
+## Establish the active slice
+
+Before meaningful edits, inspect the Git state and preserve unrelated user changes. State a compact outcome, boundary, and verification signal.
+
+Continue without another approval when the work is decision-complete. Keep the active slice in the main-thread context. Git owns the worktree record.
+
+The fast path does not need a visible active slice. It still follows the narrow scope and targeted check rules.
+
+### Handle new prompts
+
+| New prompt | Default action | Visible interruption |
+|---|---|---|
+| Explanation or status request | Respond, then continue the active slice. | No |
+| Correction or work required by the active slice | Apply it within the same boundary. | No |
+| Independent state-changing work | Recommend deferral and continue the active slice. | Yes |
+| Commit or verification boundary change | Recommend a separate slice. | Yes |
+| Material product or architecture decision | Ask the user to decide. | Yes |
+| Explicit priority replacement | Stop the slice and show the current Git state. | Yes |
+
+Do not record deferred work until the user selects and authorizes a destination. Do not create a ticket, task, or ledger entry automatically.
 
 ## Fast path
 
@@ -33,7 +54,8 @@ The fast path does not require an independent review.
 8. Apply valid findings.
 9. Rerun checks affected by the corrections.
 10. Run `$workflow:review-cycle`.
-11. Report the result, evidence, omissions, and residual risk.
+11. Present the user acceptance checkpoint unless the selected route grants agent acceptance.
+12. Report the result, evidence, omissions, and residual risk.
 
 Keep tightly related work in the main thread. Give a worker one separate, bounded implementation area.
 
@@ -47,23 +69,29 @@ A standard reviewer can be a native review capability or a read-only reviewer. I
 
 Use an adversarial critic for ambiguity, security, public contracts, concurrency, or broad changes.
 
-## Named-ticket end-to-end route
+## Named-work-item end-to-end route
 
-Use this route only with explicit named-ticket end-to-end authority. This authority permits branch setup, creation and maintenance of the required external branch task ledger, its local pointer, and its Git exclude entry, plus task commits, push, and a draft pull request.
+Use this route only with explicit named-work-item end-to-end authority. The primary work item can be a ticket, specification, or plan.
 
-1. Confirm or create the working branch. Use `$workflow:using-git-worktrees` only with explicit worktree authority or when this named-ticket route requires isolation.
-2. Read the ticket context and relevant repository evidence. When the ticket is ambiguous, follow its durable source upstream before deciding scope.
-3. Define the ticket goal, success criteria, non-goals, and verification.
-4. Invoke `$workflow:branch-task-planner` in named-ticket end-to-end mode to create or resume the external ledger with its Sources block.
-5. For each ledger task, define its bounded sub-plan.
-6. Run one bounded cycle for the task: implementation, verification, independent review, corrections, and review-cycle acceptance.
-7. Commit the accepted task.
-8. Use `$workflow:branch-task-planner` to add the commit to the ledger and mark the task `[x]`.
-9. Repeat the sub-plan, implementation, review, and commit cycle for the next task.
-10. Run branch-level checks after all tasks are complete.
-11. If a branch check fails, create a correction task and return to step 5.
-12. Push the branch only after all branch-level checks pass.
-13. Invoke `$workflow:writing-pr-descriptions` to prepare the body. Open the draft pull request with that final body.
+Choose direct execution or plan composition based on complexity. Do not create individual tickets when the primary work item already defines a bounded outcome.
+
+This authority permits branch setup, required ledger and pointer maintenance, bounded commits, push, and a draft pull request.
+
+1. Confirm or create the working branch. Use `$workflow:using-git-worktrees` only when this route requires isolation.
+2. Read the primary work item and relevant repository evidence. When the primary work item is ambiguous, follow its durable source before deciding scope.
+3. Define the goal, success criteria, non-goals, and verification.
+4. Compose a plan when complexity requires execution decomposition. Do not require tickets for a self-contained specification or plan.
+5. Invoke `$workflow:branch-task-planner` in named-work-item end-to-end mode to create or resume the external ledger.
+6. For each ledger task, define its bounded sub-plan.
+7. Run one bounded cycle for the task: implementation, verification, independent review, corrections, and review-cycle acceptance.
+8. Use agent acceptance after the review cycle. Material product or architecture decisions still return to the user.
+9. Commit the accepted task.
+10. Add the commit to the ledger and mark the task `[x]`.
+11. Repeat the bounded cycle for the next task.
+12. Run branch-level checks after all tasks are complete.
+13. If a branch check fails, create a correction task and return to step 6.
+14. Push the branch only after all branch-level checks pass.
+15. Invoke `$workflow:writing-pr-descriptions` to prepare the body. Open the draft pull request with that final body.
 
 Perform only the publishing actions that the current request authorizes.
 
