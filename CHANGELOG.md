@@ -1,3 +1,10 @@
+## [1.14.1](https://github.com/filipgutica/filip-stack/compare/v1.14.0...v1.14.1) (2026-08-24)
+
+
+### Bug Fixes
+
+* **workflow:** override Codex hook discovery ([e8d0153](https://github.com/filipgutica/filip-stack/commit/e8d015371210e838989d027b67e8bc741d6ee138))
+
 # [1.14.0](https://github.com/filipgutica/filip-stack/compare/v1.13.1...v1.14.0) (2026-08-24)
 
 
