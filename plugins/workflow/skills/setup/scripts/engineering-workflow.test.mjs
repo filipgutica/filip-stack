@@ -708,6 +708,7 @@ test('walkthrough commands create unique logs, resume them, and register manifes
   assert.match(log, /\| Slice \| Description \| Status \|/)
   assert.match(log, /\| Storage design \| Review the topic-owned storage model\. \| unresolved \|/)
   assert.match(log, /\| Validation \| Review deterministic validation and failure behavior\. \| unresolved \|/)
+  assert.match(log, /## Corrections\n\n\| ID \| Slice \| Correction \| Status \|/)
   assert.match(log, /## Running log\n\n## Next slice\n\nStorage design/)
   assert.equal(run({
     command: 'start-walkthrough', args: [...common, '--log-file', basename(first.logFile)],
@@ -818,6 +819,136 @@ test('walkthrough updates the summary table, appends entries, and derives the ne
   assert.match(completeLog, /## Next slice\n\ncomplete/)
 })
 
+test('walkthrough logs corrections and updates their status', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-walkthrough-corrections-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  initializeWorkflow({ repoRoot, workflowRoot })
+  createTopic({ repoRoot, workflowRoot })
+  const common = ['--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one']
+  const walkthrough = run({
+    command: 'start-walkthrough',
+    args: [
+      ...common, '--slug', 'corrections', '--source', 'working-tree',
+      '--slices', walkthroughSlices(['Error handling', 'Review failure behavior.']),
+    ],
+  })
+
+  assert.match(
+    readFileSync(walkthrough.logFile, 'utf8'),
+    /## Corrections\n\n\| ID \| Slice \| Correction \| Status \|/,
+  )
+
+  const terminalCreation = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Error handling', '--status', 'unresolved',
+      '--summary', 'The error path drops context.', '--evidence', 'The catch block.',
+      '--decision', 'Correct the error message.',
+      '--correction', 'Preserve the original error context.', '--correction-status', 'resolved',
+    ],
+  })
+  assert.equal(terminalCreation.status, 1)
+  assert.match(terminalCreation.stderr, /correction-status must be open when creating a correction/)
+
+  const identified = run({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Error handling', '--status', 'unresolved',
+      '--summary', 'The error path drops context.', '--evidence', 'The catch block.',
+      '--decision', 'Correct the error message.',
+      '--correction', 'Preserve the original error context.', '--correction-status', 'open',
+    ],
+  })
+  assert.equal(identified.correctionId, 'C1')
+  assert.match(
+    readFileSync(walkthrough.logFile, 'utf8'),
+    /\| C1 \| Error handling \| Preserve the original error context\. \| open \|/,
+  )
+
+  const openUpdate = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Error handling', '--status', 'unresolved',
+      '--summary', 'The correction remains open.', '--evidence', 'No implementation exists.',
+      '--decision', 'Keep the correction open.',
+      '--correction-id', 'C1', '--correction-status', 'open',
+    ],
+  })
+  assert.equal(openUpdate.status, 1)
+  assert.match(openUpdate.stderr, /correction-status must be resolved or deferred when updating a correction/)
+
+  const resolved = run({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Error handling', '--status', 'changed',
+      '--summary', 'The error now keeps its context.', '--evidence', 'The focused error-path test.',
+      '--decision', 'Accept the correction.',
+      '--correction-id', 'C1', '--correction-status', 'resolved',
+    ],
+  })
+  assert.equal(resolved.correctionId, 'C1')
+  const log = readFileSync(walkthrough.logFile, 'utf8')
+  assert.match(log, /\| C1 \| Error handling \| Preserve the original error context\. \| resolved \|/)
+  assert.doesNotMatch(log, /\| C1 .+ \| open \|/)
+  assert.equal((log.match(/^\| C1 /gm) || []).length, 1)
+
+  const terminalUpdate = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Error handling', '--status', 'changed',
+      '--summary', 'The correction remains resolved.', '--evidence', 'The focused error-path test.',
+      '--decision', 'Keep the correction resolved.',
+      '--correction-id', 'C1', '--correction-status', 'deferred',
+    ],
+  })
+  assert.equal(terminalUpdate.status, 1)
+  assert.match(terminalUpdate.stderr, /correction-id must name an open correction/)
+  assert.equal(readFileSync(walkthrough.logFile, 'utf8'), log)
+})
+
+test('walkthrough resumes legacy logs and adds corrections on the next update', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-walkthrough-legacy-corrections-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  initializeWorkflow({ repoRoot, workflowRoot })
+  createTopic({ repoRoot, workflowRoot })
+  const common = ['--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one']
+  const walkthrough = run({
+    command: 'start-walkthrough',
+    args: [
+      ...common, '--slug', 'legacy', '--source', 'last-turn',
+      '--slices', walkthroughSlices(['Compatibility', 'Review stored log compatibility.']),
+    ],
+  })
+  const current = readFileSync(walkthrough.logFile, 'utf8')
+  const legacy = current.replace(
+    '\n## Corrections\n\n| ID | Slice | Correction | Status |\n| --- | --- | --- | --- |\n',
+    '',
+  )
+  writeFileSync(walkthrough.logFile, legacy)
+
+  assert.equal(run({
+    command: 'start-walkthrough', args: [...common, '--log-file', basename(walkthrough.logFile)],
+  }).resumed, true)
+
+  run({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Compatibility', '--status', 'covered',
+      '--summary', 'The legacy log remains valid.', '--evidence', 'The compatibility test.',
+      '--decision', 'Keep backward compatibility.',
+    ],
+  })
+  assert.match(readFileSync(walkthrough.logFile, 'utf8'), /## Corrections\n\n\| ID \|/)
+})
+
 test('walkthrough commands reject malformed, wrong-topic, unsafe, closed, and multiline updates without writes', () => {
   const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-walkthrough-boundaries-'))
   const repoRoot = createRepo({ parent: root })
@@ -884,6 +1015,42 @@ test('walkthrough commands reject malformed, wrong-topic, unsafe, closed, and mu
     assert.match(unsafe.stderr, /summary contains unsafe walkthrough content/)
     assert.equal(readFileSync(walkthrough.logFile, 'utf8'), original)
   }
+
+  const unsafeCorrection = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...first, '--log-file', basename(walkthrough.logFile), '--slice', 'Safety', '--status', 'unresolved',
+      '--summary', 'A correction is needed.', '--evidence', 'The parser.', '--decision', 'Correct it.',
+      '--correction', 'Read /Users/example/private/file.md.', '--correction-status', 'open',
+    ],
+  })
+  assert.equal(unsafeCorrection.status, 1)
+  assert.match(unsafeCorrection.stderr, /correction contains unsafe walkthrough content/)
+  assert.equal(readFileSync(walkthrough.logFile, 'utf8'), original)
+
+  const missingCorrectionStatus = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...first, '--log-file', basename(walkthrough.logFile), '--slice', 'Safety', '--status', 'unresolved',
+      '--summary', 'A correction is needed.', '--evidence', 'The parser.', '--decision', 'Correct it.',
+      '--correction', 'Preserve the error context.',
+    ],
+  })
+  assert.equal(missingCorrectionStatus.status, 1)
+  assert.match(missingCorrectionStatus.stderr, /correction-status is required/)
+  assert.equal(readFileSync(walkthrough.logFile, 'utf8'), original)
+
+  const unknownCorrection = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...first, '--log-file', basename(walkthrough.logFile), '--slice', 'Safety', '--status', 'unresolved',
+      '--summary', 'Nothing changed.', '--evidence', 'The parser.', '--decision', 'none',
+      '--correction-id', 'C99', '--correction-status', 'resolved',
+    ],
+  })
+  assert.equal(unknownCorrection.status, 1)
+  assert.match(unknownCorrection.stderr, /correction-id must match a correction/)
+  assert.equal(readFileSync(walkthrough.logFile, 'utf8'), original)
 
   const originalFiles = readdirSync(firstTopic.paths.walkthroughsRoot)
   const unsafeBranch = runRaw({

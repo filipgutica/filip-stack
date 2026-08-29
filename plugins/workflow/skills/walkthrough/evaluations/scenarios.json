@@ -6,7 +6,7 @@
       "userMessage": "Use $workflow:walkthrough for this branch against main.",
       "expectedActivation": true,
       "expectedLog": "create-after-source-and-topic-confirmation",
-      "expectedLogSections": ["provenance", "slice-summary-table", "running-log", "next-slice"],
+      "expectedLogSections": ["provenance", "slice-summary-table", "corrections", "running-log", "next-slice"],
       "expectedInitialSliceStatus": "unresolved",
       "expectedProvenance": ["repository", "branch", "base", "head", "range"],
       "repositoryWrite": false
@@ -30,7 +30,15 @@
       "userMessage": "Change the behavior we just covered, then resume the walkthrough.",
       "expectedRoute": "coordinator-correction-cycle",
       "expectedSliceStatus": "changed",
+      "expectedCorrectionStatus": ["open", "resolved"],
       "implementationInsideWalkthrough": false
+    },
+    {
+      "id": "valid-correction-without-implementation-authority",
+      "userMessage": "That is a valid bug, but do not change the code yet.",
+      "expectedCorrectionStatus": "open",
+      "implementationInsideWalkthrough": false,
+      "repositoryWrite": false
     },
     {
       "id": "early-stop",
@@ -38,6 +46,7 @@
       "expectedLogState": "resumable",
       "expectedTableState": "remaining-slices-unresolved",
       "expectedNextSlice": "first-unresolved-slice",
+      "expectedCorrectionState": "preserved",
       "mustNotMarkComplete": true
     },
     {

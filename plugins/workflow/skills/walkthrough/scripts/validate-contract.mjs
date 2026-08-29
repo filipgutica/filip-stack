@@ -8,84 +8,123 @@ const patterns = await readFile(new URL('../references/presentation-patterns.md'
 const log = await readFile(new URL('../references/walkthrough-log.md', import.meta.url), 'utf8')
 const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
 const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
+const setup = await readFile(new URL('../../setup/SKILL.md', import.meta.url), 'utf8')
+const storage = await readFile(new URL('../../setup/references/storage.md', import.meta.url), 'utf8')
 const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
 const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const assertContainsAll = (content, patterns) => {
+  const missing = patterns.filter((pattern) => !pattern.test(content))
+  assert.deepEqual(missing, [])
+}
 
-assert.match(skill, /^name: walkthrough$/m)
-assert.match(skill, /^disable-model-invocation: true$/m)
-assert.match(skill, /last completed agent turn/i)
-assert.match(skill, /working tree/i)
-assert.match(skill, /branch.+merge base/i)
-assert.match(skill, /read-only/i)
-assert.match(skill, /Do not edit repository files, commit, push, or publish/i)
-assert.match(skill, /external-artifact authority for one walkthrough log/i)
-assert.match(skill, /does not grant setup, topic creation, specification, plan, ticket, implementation/i)
-assert.match(skill, /creates one curated topic log by default/i)
-assert.match(skill, /Create no log before source and topic confirmation/i)
-assert.match(skill, /start-walkthrough/)
-assert.match(skill, /update-walkthrough/)
-assert.match(skill, /summary table/i)
-assert.match(skill, /slice name, brief description, and current status/i)
-assert.match(skill, /chronological running log/i)
-assert.match(skill, /selects the first unresolved slice/i)
-assert.match(skill, /after the user resolves a slice/i)
-assert.match(skill, /If the user stops early, preserve the unresolved next slice/i)
-assert.match(skill, /rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines/i)
-assert.match(skill, /one coherent slice at a time/i)
-assert.match(skill, /one focused question/i)
-assert.match(skill, /Pause for the user's response before the next slice/i)
-assert.match(skill, /account for every changed file/i)
-assert.match(skill, /verify.+live code.+before classifying/i)
-assert.match(skill, /implementation authority/i)
-assert.match(skill, /\$workflow:coordinator/)
-assert.match(skill, /concern, question, or proposal does not grant implementation authority/i)
-assert.match(skill, /pause the walkthrough/i)
-assert.match(skill, /record the current slice and coverage state/i)
-assert.match(skill, /complete the authorized implementation, verification, and review cycle/i)
-assert.match(skill, /refresh the selected diff and coverage map/i)
-assert.match(skill, /revisit each changed or superseded slice/i)
-assert.match(skill, /resume the walkthrough/i)
-assert.match(skill, /Humanizer/i)
-assert.match(skill, /\$workflow:ste-writing/)
-assert.match(skill, /presentation-patterns\.md/)
-assert.match(skill, /covered areas and files/i)
-assert.match(skill, /unresolved questions or risks/i)
-assert.match(skill, /verification evidence and limits/i)
+assertContainsAll(skill, [
+  /^name: walkthrough$/m,
+  /^disable-model-invocation: true$/m,
+  /last completed agent turn/i,
+  /working tree/i,
+  /branch.+merge base/i,
+  /read-only/i,
+  /Do not edit repository files, commit, push, or publish/i,
+  /external-artifact authority for one walkthrough log/i,
+  /does not grant setup, topic creation, specification, plan, ticket, implementation/i,
+  /creates one curated topic log by default/i,
+  /Create no log before source and topic confirmation/i,
+  /start-walkthrough/,
+  /update-walkthrough/,
+  /summary table/i,
+  /slice name, brief description, and current status/i,
+  /chronological running log/i,
+  /corrections table/i,
+  /valid finding requires a correction or change/i,
+  /even when the user has not granted implementation authority/i,
+  /Mark the correction `resolved`/i,
+  /Mark it `deferred`/i,
+  /Keep a correction `open`/i,
+  /selects the first unresolved slice/i,
+  /after the user resolves a slice/i,
+  /If the user stops early, preserve the unresolved next slice/i,
+  /rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines/i,
+  /one coherent slice at a time/i,
+  /one focused question/i,
+  /Pause for the user's response before the next slice/i,
+  /account for every changed file/i,
+  /verify.+live code.+before classifying/i,
+  /implementation authority/i,
+  /\$workflow:coordinator/,
+  /concern, question, or proposal does not grant implementation authority/i,
+  /pause the walkthrough/i,
+  /record the current slice, coverage state/i,
+  /complete the authorized implementation, verification, and review cycle/i,
+  /refresh the selected diff and coverage map/i,
+  /revisit each changed or superseded slice/i,
+  /resume the walkthrough/i,
+  /Humanizer/i,
+  /\$workflow:ste-writing/,
+  /presentation-patterns\.md/,
+  /covered areas and files/i,
+  /unresolved questions or risks/i,
+  /verification evidence and limits/i,
+])
 
-assert.match(patterns, /code snippet/i)
-assert.match(patterns, /inline diff/i)
-assert.match(patterns, /table/i)
-assert.match(patterns, /Mermaid diagram/i)
-assert.match(patterns, /Change:/)
-assert.match(patterns, /Behavior:/)
-assert.match(patterns, /Decision:/)
-assert.match(patterns, /Evidence:/)
-assert.match(patterns, /Risk:/)
-assert.match(patterns, /Question:/)
-assert.match(patterns, /explicitly authorizes a correction/i)
-assert.match(patterns, /authorized correction cycle/i)
-assert.match(patterns, /Do not store the file list or the full conversational map/i)
+assertContainsAll(patterns, [
+  /code snippet/i,
+  /inline diff/i,
+  /table/i,
+  /Mermaid diagram/i,
+  /Change:/,
+  /Behavior:/,
+  /Decision:/,
+  /Evidence:/,
+  /Risk:/,
+  /Question:/,
+  /explicitly authorizes a correction/i,
+  /authorized correction cycle/i,
+  /Do not store the file list or the full conversational map/i,
+])
 
-assert.match(log, /topics\/open\/<topic-id>\/walkthroughs\/<date>-<sequence>-<slug>\.md/)
-assert.match(log, /repository identity, branch, merge base, head, and comparison range/i)
-assert.match(log, /after the user resolves each slice/i)
-assert.match(log, /`## Slices` table/)
-assert.match(log, /`## Running log`/)
-assert.match(log, /initial status is `unresolved`/i)
-assert.match(log, /Do not use `complete` as a slice name/i)
-assert.match(log, /first unresolved table row as the next slice/i)
-assert.match(log, /covered, changed, or remains unresolved/i)
-assert.match(log, /Do not store a raw transcript, prompt, response, hidden reasoning, full diff, code excerpt/i)
-assert.match(log, /machine-local repository path/i)
-assert.match(log, /link to `\.\.\/TOPIC\.md`/)
-assert.match(log, /Resume the same log after context compaction/i)
-assert.match(log, /selects `complete` only when no unresolved row remains/i)
+assertContainsAll(log, [
+  /topics\/open\/<topic-id>\/walkthroughs\/<date>-<sequence>-<slug>\.md/,
+  /repository identity, branch, merge base, head, and comparison range/i,
+  /after the user resolves each slice/i,
+  /`## Slices` table/,
+  /`## Corrections` table/,
+  /stable ID, slice name, correction, and status/i,
+  /`open`.+still needs work/i,
+  /`resolved`.+verification are complete/i,
+  /`deferred`.+postponed/i,
+  /--correction <text>/i,
+  /--correction-id <id>/i,
+  /Existing logs without a `## Corrections` section remain valid/i,
+  /`## Running log`/,
+  /initial status is `unresolved`/i,
+  /Do not use `complete` as a slice name/i,
+  /first unresolved table row as the next slice/i,
+  /covered, changed, or remains unresolved/i,
+  /Do not store a raw transcript, prompt, response, hidden reasoning, full diff, code excerpt/i,
+  /machine-local repository path/i,
+  /link to `\.\.\/TOPIC\.md`/,
+  /Resume the same log after context compaction/i,
+  /selects `complete` only when no unresolved row remains/i,
+])
 
-assert.match(metadata, /display_name: "Walkthrough"/)
-assert.match(metadata, /short_description: "Review changes interactively and save a curated topic log"/)
-assert.match(metadata, /allow_implicit_invocation: false/)
-assert.match(readme, /`walkthrough`/)
-assert.match(readme, /manual-only.+`walkthrough`|`walkthrough`.+manual-only/i)
+assertContainsAll(metadata, [
+  /display_name: "Walkthrough"/,
+  /short_description: "Review changes interactively and save a curated topic log"/,
+  /allow_implicit_invocation: false/,
+])
+assertContainsAll(setup, [
+  /--correction <text> --correction-status open/,
+  /--correction-id <id> --correction-status <resolved\|deferred>/,
+  /Use that ID with `--correction-id`/i,
+])
+assertContainsAll(storage, [
+  /corrections table follows the summary table/i,
+  /Existing logs without this table remain valid/i,
+])
+assertContainsAll(readme, [
+  /`walkthrough`/,
+  /manual-only.+`walkthrough`|`walkthrough`.+manual-only/i,
+])
 assert.equal(
   packageJson.scripts['test:walkthrough'],
   'node plugins/workflow/skills/walkthrough/scripts/validate-contract.mjs',
@@ -93,25 +132,21 @@ assert.equal(
 assert.match(packageJson.scripts.check, /test:walkthrough/)
 
 assert.equal(scenarios.schemaVersion, 1)
-assert.deepEqual(
-  scenarios.scenarios.map(({ id }) => id),
-  [
-    'explicit-branch-walkthrough',
-    'missing-topic-without-setup-authority',
-    'implicit-review-request',
-    'authorized-correction',
-    'early-stop',
-    'unsafe-log-content',
-  ],
-)
+const scenarioById = Object.fromEntries(scenarios.scenarios.map((scenario) => [scenario.id, scenario]))
+assert.equal(scenarios.scenarios.length, 7)
+assert.ok(scenarioById['valid-correction-without-implementation-authority'])
 assert.equal(scenarios.scenarios[1].expectedLog, 'conversation-only')
 assert.ok(scenarios.scenarios[0].expectedLogSections.includes('slice-summary-table'))
 assert.ok(scenarios.scenarios[0].expectedLogSections.includes('running-log'))
 assert.equal(scenarios.scenarios[0].expectedInitialSliceStatus, 'unresolved')
 assert.equal(scenarios.scenarios[2].expectedActivation, false)
 assert.equal(scenarios.scenarios[3].implementationInsideWalkthrough, false)
-assert.equal(scenarios.scenarios[4].mustNotMarkComplete, true)
-assert.equal(scenarios.scenarios[4].expectedTableState, 'remaining-slices-unresolved')
-assert.ok(scenarios.scenarios[5].forbiddenStoredContent.includes('raw-transcript'))
+assert.deepEqual(scenarios.scenarios[3].expectedCorrectionStatus, ['open', 'resolved'])
+assert.equal(scenarios.scenarios[4].expectedCorrectionStatus, 'open')
+assert.equal(scenarios.scenarios[4].repositoryWrite, false)
+assert.equal(scenarios.scenarios[5].mustNotMarkComplete, true)
+assert.equal(scenarios.scenarios[5].expectedTableState, 'remaining-slices-unresolved')
+assert.equal(scenarios.scenarios[5].expectedCorrectionState, 'preserved')
+assert.ok(scenarios.scenarios[6].forbiddenStoredContent.includes('raw-transcript'))
 
 console.log('Walkthrough skill contract passed.')

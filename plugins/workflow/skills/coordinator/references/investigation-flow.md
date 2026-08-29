@@ -4,6 +4,8 @@ Use this read-only route to establish a credible fix path.
 
 Invoke `$workflow:systematic-debugging` for a bug, failing test, build failure, CI failure, performance problem, or unexpected behavior.
 
+For a user-invoked code review, select one reviewer tier. Apply every code review lens in [subagent prompt templates](subagent-templates.md).
+
 ```mermaid
 flowchart LR
     Explore["1. Explore"] --> Hypothesize["2. Hypothesize"]

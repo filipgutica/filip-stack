@@ -13,6 +13,7 @@ Use `$workflow:minimal-code` for implementation. Minimality never overrides corr
 
 - **Implementation authority:** permits repository edits.
 - **External-artifact authority:** an explicit user request to create or update a named artifact under `~/.engineering-workflow` permits only that artifact write. It does not grant repository edits, setup, migration, ticket publishing, or other external writes.
+- **Repository-document authority:** an explicit Grill With Docs request permits only selected existing repository documentation and qualifying ADR files. It does not grant code, configuration, specification, plan, ticket, commit, push, or publication changes.
 - **Setup or migration authority:** an explicit user request to configure or migrate Engineering Workflow storage permits only the requested setup or migration operation.
 - **Ticket-writing authority:** permits ticket creation or changes.
 - **Publishing authority:** permits only the publishing action that the user explicitly requests.

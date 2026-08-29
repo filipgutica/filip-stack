@@ -5,6 +5,8 @@ import { readFile } from 'node:fs/promises'
 
 const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
 const flow = await readFile(new URL('../references/implementation-flow.md', import.meta.url), 'utf8')
+const investigationFlow = await readFile(new URL('../references/investigation-flow.md', import.meta.url), 'utf8')
+const subagentTemplates = await readFile(new URL('../references/subagent-templates.md', import.meta.url), 'utf8')
 const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
 const branchPlanner = await readFile(new URL('../../branch-task-planner/SKILL.md', import.meta.url), 'utf8')
 const branchPlannerMetadata = await readFile(new URL('../../branch-task-planner/agents/openai.yaml', import.meta.url), 'utf8')
@@ -30,6 +32,14 @@ assert.match(flow, /Recommend deferral and continue the active slice/i)
 assert.match(flow, /Do not record deferred work until the user selects and authorizes a destination/i)
 assert.match(flow, /Explicit priority replacement/i)
 assert.match(flow, /user acceptance checkpoint/i)
+assert.match(investigationFlow, /user-invoked code review.*select one reviewer tier/is)
+
+assert.match(subagentTemplates, /user-invoked code review/i)
+assert.match(subagentTemplates, /Correctness:/)
+assert.match(subagentTemplates, /Coding standards:/)
+assert.match(subagentTemplates, /Efficiency:/)
+assert.match(subagentTemplates, /Reuse:/)
+assert.match(subagentTemplates, /Do not create separate reviewer agents unless distinct risk justifies independent review/i)
 
 assert.match(branchPlanner, /named-work-item end-to-end/i)
 assert.match(branchPlanner, /ticket, specification, or plan/i)
@@ -72,6 +82,7 @@ assert.deepEqual(
     'default-acceptance',
     'end-to-end-acceptance',
     'tiny-fast-path',
+    'user-invoked-code-review',
   ],
 )
 assert.equal(scenarios.scenarios[0].createTickets, false)
@@ -81,5 +92,11 @@ assert.equal(scenarios.scenarios[6].writeDeferredWork, false)
 assert.equal(scenarios.scenarios[9].commitAllowed, false)
 assert.equal(scenarios.scenarios[10].commitAllowed, true)
 assert.equal(scenarios.scenarios[11].requiresVisibleActiveSlice, false)
+assert.deepEqual(
+  scenarios.scenarios[12].requiredLenses,
+  ['correctness', 'coding-standards', 'efficiency', 'reuse'],
+)
+assert.equal(scenarios.scenarios[12].expectedRoute, 'one-independent-reviewer')
+assert.equal(scenarios.scenarios[12].separateReviewerPerLens, false)
 
 console.log('Coordinator active-slice contract passed.')

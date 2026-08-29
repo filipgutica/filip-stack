@@ -30,7 +30,7 @@ node <skill-directory>/scripts/engineering-workflow.mjs mark-spec-implemented --
 node <skill-directory>/scripts/engineering-workflow.mjs start-grill --repo-root <path> --topic-id <id> --slug <slug>
 node <skill-directory>/scripts/engineering-workflow.mjs update-grill --repo-root <path> --topic-id <id> --log-file <name> --question <text> --recommendation <text> --decision <text> --rationale <text> --next-question <text>
 node <skill-directory>/scripts/engineering-workflow.mjs start-walkthrough --repo-root <path> --topic-id <id> --slug <slug> --source <last-turn|working-tree|branch> [--base-ref <ref>] --slices <json-array>
-node <skill-directory>/scripts/engineering-workflow.mjs update-walkthrough --repo-root <path> --topic-id <id> --log-file <name> --slice <text> --status <covered|changed|unresolved> --summary <text> --evidence <text> --decision <text>
+node <skill-directory>/scripts/engineering-workflow.mjs update-walkthrough --repo-root <path> --topic-id <id> --log-file <name> --slice <text> --status <covered|changed|unresolved> --summary <text> --evidence <text> --decision <text> [--correction <text> --correction-status open | --correction-id <id> --correction-status <resolved|deferred>]
 ```
 
 `paths` and `topics` are read-only. `paths --topic-id` resolves the topic state from `TOPIC.md`. Use `--topic-state` only to inspect a proposed path before topic creation.
@@ -61,7 +61,11 @@ Lifecycle commands require a reason. They validate all targets before moving the
 
 An explicit Grill Me invocation uses `start-grill` after topic confirmation. Use `update-grill` after each resolved answer. Resume with `start-grill --log-file <name>`.
 
-An explicit Walkthrough invocation uses `start-walkthrough` after it builds the change map. Pass the ordered slice names and descriptions with `--slices`. A branch source requires `--base-ref`. Use `update-walkthrough` after each resolved slice. Resume with `start-walkthrough --log-file <name>`.
+An explicit Walkthrough invocation uses `start-walkthrough` after it builds the change map. Pass the ordered slice names and descriptions with `--slices`. A branch source requires `--base-ref`. Use `update-walkthrough` after each resolved slice.
+
+Use `--correction` and `--correction-status open` when a walkthrough confirms a required change. The command returns a correction ID. Use that ID with `--correction-id` to mark the correction `resolved` or `deferred`. These terminal states cannot change.
+
+Resume with `start-walkthrough --log-file <name>`.
 
 The agent stores only curated one-line walkthrough fields. The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines.
 

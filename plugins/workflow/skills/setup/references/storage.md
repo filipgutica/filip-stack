@@ -192,13 +192,19 @@ Use `start-walkthrough` to record a fixed provenance header. The header records 
 
 Pass `--slices` as a JSON array of ordered `slice` and `description` objects. The command creates a summary table and sets each status to `unresolved`.
 
+The corrections table follows the summary table. Each correction has a stable ID, source slice, short action, and status.
+
+Use `open` when the correction still needs work. Use `resolved` after implementation and verification. Use `deferred` when the user postpones it.
+
+Add a correction with `--correction` and `--correction-status open`. Update the open correction to `resolved` or `deferred` with the returned `--correction-id`. These terminal states cannot change. Existing logs without this table remain valid until the next update adds it.
+
 For a branch source, pass `--base-ref`. The setup utility uses `git merge-base HEAD <base-ref>` for the base. It records `<base>...<head>` as the range.
 
 For a last-turn or working-tree source, the base is `none`. The range is `<source>@<head>`.
 
 The repository field uses the stable repository ID. It does not store a local repository path.
 
-The running log follows the summary table. Use `update-walkthrough` after the user resolves a slice. The command updates the table row and appends one curated entry.
+The running log follows the corrections table. Use `update-walkthrough` after the user resolves a slice. The command updates the table row and appends one curated entry.
 
 The command selects the first unresolved table row as the next slice. It selects `complete` only when no unresolved row remains.
 
