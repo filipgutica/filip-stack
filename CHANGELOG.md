@@ -1,3 +1,15 @@
+# [1.15.0](https://github.com/filipgutica/filip-stack/compare/v1.14.1...v1.15.0) (2026-08-29)
+
+
+### Bug Fixes
+
+* **workflow:** target existing repository docs ([a94d1d1](https://github.com/filipgutica/filip-stack/commit/a94d1d19c197aeaf40a2931bbfb3a8df87cb9bbb))
+
+
+### Features
+
+* **workflow:** add domain-aware design grilling ([ff9c5c6](https://github.com/filipgutica/filip-stack/commit/ff9c5c6cfd8440ff3ac1f6ecc87f01bbb4c06ff7))
+
 ## [1.14.1](https://github.com/filipgutica/filip-stack/compare/v1.14.0...v1.14.1) (2026-08-24)
 
 
