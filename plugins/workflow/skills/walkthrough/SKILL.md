@@ -65,7 +65,7 @@ For each slice:
 
 Adjust the depth when the user asks to skip, expand, or revisit a slice. Keep a conversational coverage list of completed and remaining slices.
 
-The log starts with a summary table. Each row contains a slice name, brief description, and current status. A chronological running log follows the table.
+The log starts with a summary table. Each row contains a slice name, brief description, and current status. A corrections table and chronological running log follow it.
 
 After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only the curated status, summary, evidence, and decision. The utility updates the table, appends the running-log entry, and selects the first unresolved slice. Do not store the conversation or full coverage map.
 
@@ -73,17 +73,24 @@ The utility rejects high-signal credentials, absolute home paths, code fences, a
 
 If the user raises a concern, verify it against the live code and contract before classifying it. Classify it as valid, invalid, already addressed, out of scope, or blocked by missing evidence.
 
+When a valid finding requires a correction or change, add it to the corrections table immediately. Use `update-walkthrough` with the current slice, `--correction`, and `--correction-status open`. Do this before the next question, even when the user has not granted implementation authority.
+
+Do not log questions, recommendations, invalid findings, or findings that are already addressed as corrections.
+
 ## Authorized correction cycle
 
 If the user explicitly requests a bounded correction during the walkthrough:
 
 1. Pause the walkthrough.
-2. Record the current slice and coverage state in the walkthrough log when one exists.
+2. Record the current slice, coverage state, and `open` correction. Keep the returned correction ID.
 3. Route the correction through `$workflow:coordinator`.
 4. Complete the authorized implementation, verification, and review cycle.
-5. Refresh the selected diff and coverage map.
-6. Revisit each changed or superseded slice.
-7. Resume the walkthrough from the updated evidence.
+5. Mark the correction `resolved`. Mark it `deferred` if the user postpones the work.
+6. Refresh the selected diff and coverage map.
+7. Revisit each changed or superseded slice.
+8. Resume the walkthrough from the updated evidence.
+
+Keep a correction `open` when implementation authority or required evidence is missing.
 
 If the correction expands the agreed scope or changes a public contract, confirm that authority before implementation.
 
@@ -106,6 +113,7 @@ Report:
 - covered areas and files
 - decisions that the user accepted or changed
 - verified findings
+- open, resolved, and deferred corrections
 - unresolved questions or risks
 - verification evidence and limits
 

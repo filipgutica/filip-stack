@@ -80,6 +80,15 @@ Deliverable:
 
 Use for a standard review. Do not add an adversarial review unless the risk changes.
 
+For a user-invoked code review, use one selected reviewer and apply every lens:
+
+- **Correctness:** Check behavior, edge cases, error handling, contracts, and test evidence.
+- **Coding standards:** Check repository instructions and relevant language or framework conventions. Treat automated checks as evidence, not substitutes.
+- **Efficiency:** Check for unnecessary work and material performance regressions. Require evidence before suggesting micro-optimizations.
+- **Reuse:** Prefer existing project, platform, or shared paths when they preserve clear ownership. Flag duplicate logic and competing sources of truth.
+
+Evaluate every lens even when it produces no finding. Do not create separate reviewer agents unless distinct risk justifies independent review.
+
 ```md
 Role: reviewer
 
@@ -102,6 +111,7 @@ Deliverable:
 Rules:
 - read-only. Do not edit or accept work.
 - inspect the actual diff and available evidence
+- apply every code review lens when the user requested a code review
 - report no findings when the result is sound. Do not invent churn.
 ```
 
@@ -134,6 +144,7 @@ Rules:
 - read-only. Do not edit files.
 - keep the scope bounded
 - stay adversarial and specific
+- apply every code review lens when the user requested a code review
 - challenge test changes that do not prove the requested behavior
 - report helper extraction, fixture churn, focused tests, skipped tests, debug logging, weak assertions, and snapshot noise
 - challenge removed public docs, schema annotations, generated types, examples, descriptions, and API-facing metadata

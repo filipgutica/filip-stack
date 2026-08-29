@@ -82,6 +82,13 @@
       "prompt": "Fix this typo.",
       "expectedAction": "fast-path",
       "requiresVisibleActiveSlice": false
+    },
+    {
+      "id": "user-invoked-code-review",
+      "prompt": "Review this code.",
+      "expectedRoute": "one-independent-reviewer",
+      "requiredLenses": ["correctness", "coding-standards", "efficiency", "reuse"],
+      "separateReviewerPerLens": false
     }
   ]
 }

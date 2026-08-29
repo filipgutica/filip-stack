@@ -1104,6 +1104,7 @@ const updateGrill = ({
 const walkthroughFilePattern = /^(\d{4}-\d{2}-\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
 const walkthroughSources = new Set(['last-turn', 'working-tree', 'branch'])
 const walkthroughStatuses = new Set(['covered', 'changed', 'unresolved'])
+const walkthroughCorrectionStatuses = new Set(['open', 'resolved', 'deferred'])
 const walkthroughSliceKeys = new Set(['slice', 'description'])
 const escapePattern = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
 const unsafeWalkthroughText = /\/Users\/|\/home\/|[A-Za-z]:\\|(?:^|\s)(?:(?:github_pat_|gh[pousr]_)[A-Za-z0-9_]{12,}|AKIA[0-9A-Z]{16}|sk-[A-Za-z0-9_-]{20,}|xox[baprs]-[A-Za-z0-9-]{10,}|Bearer\s+[A-Za-z0-9._~+/-]{12,})|```|-----BEGIN [A-Z ]+PRIVATE KEY-----|^(?:User|Assistant|System|Prompt|Transcript):/i
@@ -1159,6 +1160,14 @@ const walkthroughTable = (slices) => (
   '| Slice | Description | Status |\n| --- | --- | --- |\n'
   + slices.map(({ slice, description, status }) => `| ${slice} | ${description} | ${status} |`).join('\n')
   + '\n'
+)
+
+const walkthroughCorrectionsTable = (corrections) => (
+  '| ID | Slice | Correction | Status |\n| --- | --- | --- | --- |\n'
+  + corrections.map(({ id, slice, correction, status }) => (
+    `| ${id} | ${slice} | ${correction} | ${status} |`
+  )).join('\n')
+  + (corrections.length > 0 ? '\n' : '')
 )
 
 const walkthroughEntries = (records) => records.map((record, index) => (
@@ -1220,6 +1229,103 @@ const parseWalkthroughEntries = ({ entries, slices, logFile }) => {
   return records
 }
 
+const parseWalkthroughCorrectionRow = ({ row, logFile }) => {
+  const match = row.match(/^\| (C[1-9]\d*) \| (.+) \| (.+) \| (open|resolved|deferred) \|$/)
+  if (!match) invalidWalkthroughLog(logFile)
+  return {
+    id: match[1],
+    slice: walkthroughSliceName(match[2]),
+    correction: walkthroughTableText({ name: 'correction', value: match[3] }),
+    status: match[4],
+  }
+}
+
+const validateWalkthroughCorrection = ({ correction, index, slices, logFile }) => {
+  if (correction.id !== `C${index + 1}`) invalidWalkthroughLog(logFile)
+  if (!slices.some((item) => item.slice === correction.slice)) invalidWalkthroughLog(logFile)
+}
+
+const parseWalkthroughCorrections = ({ table, slices, logFile }) => {
+  if (!table) return []
+  const corrections = table.trim().split('\n').slice(2)
+    .map((row) => parseWalkthroughCorrectionRow({ row, logFile }))
+  corrections.forEach((correction, index) => (
+    validateWalkthroughCorrection({ correction, index, slices, logFile })
+  ))
+  return corrections
+}
+
+const requireWalkthroughCorrectionStatus = (correctionStatus) => {
+  if (correctionStatus === undefined) {
+    fail('--correction-status is required for a correction update')
+  }
+  if (!walkthroughCorrectionStatuses.has(correctionStatus)) {
+    fail('--correction-status must be open, resolved, or deferred')
+  }
+}
+
+const selectedWalkthroughCorrectionMode = ({ correction, correctionId, correctionStatus }) => {
+  const selectorCount = Number(correction !== undefined) + Number(correctionId !== undefined)
+  if (selectorCount === 0) {
+    if (correctionStatus === undefined) return 'none'
+    fail('--correction-status requires exactly one of --correction or --correction-id')
+  }
+  if (selectorCount !== 1) {
+    fail('--correction-status requires exactly one of --correction or --correction-id')
+  }
+  return ['update', 'create'][Number(correction !== undefined)]
+}
+
+const requireWalkthroughCorrectionModeStatus = ({ mode, correctionStatus }) => {
+  if (mode === 'none') return
+  requireWalkthroughCorrectionStatus(correctionStatus)
+  const allowedStatuses = {
+    create: new Set(['open']),
+    update: new Set(['resolved', 'deferred']),
+  }
+  if (allowedStatuses[mode].has(correctionStatus)) return
+  const message = mode === 'create'
+    ? '--correction-status must be open when creating a correction'
+    : '--correction-status must be resolved or deferred when updating a correction'
+  fail(message)
+}
+
+const createWalkthroughCorrection = ({ corrections, slice, correction, correctionStatus }) => {
+  const nextCorrection = {
+    id: `C${corrections.length + 1}`,
+    slice,
+    correction: walkthroughTableText({ name: 'correction', value: correction }),
+    status: correctionStatus,
+  }
+  return { corrections: [...corrections, nextCorrection], correctionId: nextCorrection.id }
+}
+
+const updateWalkthroughCorrection = ({ corrections, correctionId, correctionStatus }) => {
+  const correctionIndex = corrections.findIndex(({ id }) => id === correctionId)
+  if (correctionIndex === -1) fail('--correction-id must match a correction in the walkthrough log')
+  if (corrections[correctionIndex].status !== 'open') {
+    fail('--correction-id must name an open correction')
+  }
+  return {
+    corrections: corrections.map((item, index) => (
+      index === correctionIndex ? { ...item, status: correctionStatus } : item
+    )),
+    correctionId,
+  }
+}
+
+const updateWalkthroughCorrections = ({
+  corrections, slice, correction, correctionId, correctionStatus,
+}) => {
+  const mode = selectedWalkthroughCorrectionMode({ correction, correctionId, correctionStatus })
+  requireWalkthroughCorrectionModeStatus({ mode, correctionStatus })
+  if (mode === 'none') return { corrections }
+  if (mode === 'create') {
+    return createWalkthroughCorrection({ corrections, slice, correction, correctionStatus })
+  }
+  return updateWalkthroughCorrection({ corrections, correctionId, correctionStatus })
+}
+
 const validateWalkthroughProgress = ({ slices, records, nextSlice, logFile }) => {
   const latestStatuses = new Map(records.map(({ slice, status }) => [slice, status]))
   const expectedNextSlice = slices.find(({ status }) => status === 'unresolved')?.slice || 'complete'
@@ -1249,11 +1355,18 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
       + '- Started at: (.+)\\n\\n## Slices\\n\\n'
       + '(\\| Slice \\| Description \\| Status \\|\\n'
       + '\\| --- \\| --- \\| --- \\|\\n(?:\\| .+ \\| .+ \\| (?:covered|changed|unresolved) \\|\\n)+)'
+      + '(?:\\n## Corrections\\n\\n'
+      + '(\\| ID \\| Slice \\| Correction \\| Status \\|\\n'
+      + '\\| --- \\| --- \\| --- \\| --- \\|\\n'
+      + '(?:\\| C[1-9]\\d* \\| .+ \\| .+ \\| (?:open|resolved|deferred) \\|\\n)*))?'
       + '\\n## Running log\\n\\n([\\s\\S]*?)## Next slice\\n\\n(.+)\\n$',
   )
   const match = content.match(pattern)
   if (!match) invalidWalkthroughLog(logFile)
-  const [, source, repository, branch, base, head, range, startedAt, table, entries, nextSlice] = match
+  const [
+    , source, repository, branch, base, head, range, startedAt,
+    table, correctionsTable, entries, nextSlice,
+  ] = match
   const validatedBranch = walkthroughText({ name: 'branch', value: branch })
   git({ repoRoot, args: ['check-ref-format', '--branch', validatedBranch] })
   const validBase = source === 'branch' ? base !== 'none' : base === 'none'
@@ -1263,10 +1376,11 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
     invalidWalkthroughLog(logFile)
   }
   const slices = parseWalkthroughTable({ table, logFile })
+  const corrections = parseWalkthroughCorrections({ table: correctionsTable, slices, logFile })
   const records = parseWalkthroughEntries({ entries, slices, logFile })
   validateWalkthroughProgress({ slices, records, nextSlice, logFile })
   return {
-    content, slices, records, source, repository, branch: validatedBranch,
+    content, slices, corrections, records, source, repository, branch: validatedBranch,
     base, head, range, startedAt, nextSlice,
   }
 }
@@ -1316,7 +1430,8 @@ const startWalkthrough = ({
       content: `# Walkthrough: ${slug}\n\nTopic: [TOPIC.md](${topicLink})\n\n## Provenance\n\n`
         + `- Source: ${source}\n- Repository: ${paths.repositoryId}\n- Branch: ${branch}\n`
         + `- Base: ${base}\n- Head: ${head}\n- Range: ${range}\n- Started at: ${startedAt}\n\n`
-        + `## Slices\n\n${walkthroughTable(slices)}\n## Running log\n\n`
+        + `## Slices\n\n${walkthroughTable(slices)}\n## Corrections\n\n`
+        + `${walkthroughCorrectionsTable([])}\n## Running log\n\n`
         + `## Next slice\n\n${slices[0].slice}\n`,
     })
     syncTopicUnlocked({ paths, topicId })
@@ -1326,6 +1441,7 @@ const startWalkthrough = ({
 
 const updateWalkthrough = ({
   paths, topicId, logFile: inputLogFile, slice, status, summary, evidence, decision,
+  correction, correctionId, correctionStatus,
 }) => withTopicLock({
   workflowRoot: paths.workflowRoot,
   action: () => {
@@ -1352,17 +1468,21 @@ const updateWalkthrough = ({
     const slices = log.slices.map((item, index) => (
       index === sliceIndex ? { ...item, status } : item
     ))
+    const correctionUpdate = updateWalkthroughCorrections({
+      corrections: log.corrections, slice: values.slice, correction, correctionId, correctionStatus,
+    })
     const records = [...log.records, { ...values, status }]
     const nextSlice = slices.find((item) => item.status === 'unresolved')?.slice || 'complete'
     const marker = '\n## Slices\n'
     const header = log.content.slice(0, log.content.indexOf(marker)).replace(/\s*$/, '')
     writeAtomically({
       file: logFile,
-      content: `${header}\n\n## Slices\n\n${walkthroughTable(slices)}\n## Running log\n\n`
+      content: `${header}\n\n## Slices\n\n${walkthroughTable(slices)}\n## Corrections\n\n`
+        + `${walkthroughCorrectionsTable(correctionUpdate.corrections)}\n## Running log\n\n`
         + `${walkthroughEntries(records)}## Next slice\n\n${nextSlice}\n`,
     })
     syncTopicUnlocked({ paths, topicId })
-    return { logFile, slice: records.length, nextSlice }
+    return { logFile, slice: records.length, nextSlice, correctionId: correctionUpdate.correctionId }
   },
 })
 
@@ -1425,7 +1545,8 @@ try {
       console.log(JSON.stringify(updateWalkthrough({
         paths, topicId: options['topic-id'], logFile: options['log-file'], slice: options.slice,
         status: options.status, summary: options.summary, evidence: options.evidence,
-        decision: options.decision,
+        decision: options.decision, correction: options.correction,
+        correctionId: options['correction-id'], correctionStatus: options['correction-status'],
       }), null, 2))
     } else if (command === 'configure-ticket-system') {
       const externalTicketSystem = configureTicketSystem({

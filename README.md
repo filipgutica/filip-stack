@@ -8,9 +8,9 @@ the shared `workflow` plugin directly from this GitHub repository.
 The `workflow` plugin is an engineering reference guide and execution workflow.
 Its skills are grouped by purpose:
 
-- **Planning and writing:** `brainstorming`, `grill-me`, `writing-specs`,
-  `writing-plans`, `spec-to-tickets`, `writing-tickets`, `ste-writing`, and
-  `writing-skills`.
+- **Planning and writing:** `brainstorming`, `grill-me`, `grill-with-docs`,
+  `writing-specs`, `writing-plans`, `spec-to-tickets`, `writing-tickets`,
+  `ste-writing`, and `writing-skills`.
 - **Implementation and debugging:** `implementation`, `minimal-code`,
   `systematic-debugging`, `using-git-worktrees`, and
   `subagent-driven-development`.
@@ -18,15 +18,20 @@ Its skills are grouped by purpose:
   `review-cycle`, `simplification-review`, and `field-guide`.
 - **Coordination and state:** `coordinator`, `branch-task-planner`, and `setup`.
 
-`setup`, `branch-task-planner`, `spec-to-tickets`, `using-git-worktrees`, and
-`subagent-driven-development` are manual-only. They run only when the user
-explicitly requests them or an explicitly authorized coordinator route requires
-them.
+`setup`, `branch-task-planner`, `grill-with-docs`, `spec-to-tickets`,
+`using-git-worktrees`, and `subagent-driven-development` are manual-only. They
+run only when the user explicitly requests them or an authorized coordinator
+route requires them.
+
+`grill-with-docs` uses the `grill-me` interview loop while maintaining domain
+documentation. It records resolved terms in the selected `CONTEXT.md`. It
+records only hard-to-reverse, surprising tradeoff decisions as ADRs.
 
 `walkthrough` is manual-only. It explains and reviews selected changes without
 granting authority to modify them. An explicit invocation can save one curated
 walkthrough log under a confirmed topic. The log keeps a slice-status table and
-a chronological running log.
+a chronological running log. A corrections table tracks required changes as
+`open`, `resolved`, or `deferred`.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
@@ -189,6 +194,11 @@ an explicit storage request. An explicit `grill-me` invocation creates one
 curated topic log after topic confirmation. An explicit `walkthrough` invocation
 creates one curated log with source provenance after source and topic confirmation.
 
+An explicit `grill-with-docs` invocation adds domain-document authority. It may
+update the selected `CONTEXT.md` glossary and qualifying ADR files. It does not
+grant authority for code, configuration, planning artifacts, commits, or
+publication.
+
 Topic lifecycle commands audit known work, move root and repository topic
 directories together, and preserve acknowledged warnings in `TOPIC.md`. A
 specification uses Draft, Ready, or Implemented independently of topic state.
@@ -258,10 +268,9 @@ guidance is adapted from pinned
 adaptations narrow the triggers, authority, and execution rules to this plugin.
 They do not require the Superpowers plugin at runtime.
 
-Some provenance records link to pinned
-[Matt Pocock skills](https://github.com/mattpocock/skills) as idea-only
-inspiration for specifications and implementation. No substantial text was
-copied from those sources. See
+`grill-with-docs` adapts domain-modeling guidance from pinned
+[Matt Pocock skills](https://github.com/mattpocock/skills). Other provenance
+records use that repository as idea-only inspiration. See
 [THIRD_PARTY_NOTICES.md](plugins/workflow/THIRD_PARTY_NOTICES.md) and each
 adapted skill's `references/upstream.md` for source pins and local decisions.
 
