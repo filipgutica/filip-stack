@@ -3,10 +3,10 @@
   "scenarios": [
     {
       "id": "explicit-grill-with-docs",
-      "userMessage": "Use $workflow:grill-with-docs to challenge this design and keep its domain docs current.",
+      "userMessage": "Use $workflow:grill-with-docs to challenge this design and keep its repository docs current.",
       "expectedActivation": true,
       "expectedQuestionMode": "one-at-a-time",
-      "expectedWrites": ["confirmed-topic-grill-log", "resolved-glossary-terms", "qualifying-adrs"]
+      "expectedWrites": ["confirmed-topic-grill-log", "selected-existing-repository-docs", "qualifying-adrs"]
     },
     {
       "id": "generic-grill-request",
@@ -17,17 +17,17 @@
     },
     {
       "id": "implicit-domain-doc-request",
-      "userMessage": "Grill this design and keep the domain docs current.",
+      "userMessage": "Grill this design and keep the repository docs current.",
       "expectedActivation": false,
       "expectedRoute": "workflow:grill-me",
       "repositoryWrite": false
     },
     {
-      "id": "unresolved-domain-language",
-      "userMessage": "We might call this concept an account, customer, or tenant.",
+      "id": "existing-readme-update",
+      "userMessage": "The package README still describes the old command behavior.",
       "sessionState": "active-grill-with-docs",
-      "expectedAction": "ask-one-focused-question",
-      "glossaryWrite": false
+      "expectedAction": "update-smallest-owning-existing-document",
+      "expectedDocumentKind": "readme"
     },
     {
       "id": "ordinary-reversible-decision",
@@ -51,11 +51,18 @@
       "repositoryCodeWrite": false
     },
     {
-      "id": "escaping-domain-path",
-      "userMessage": "CONTEXT-MAP.md selects ../shared/CONTEXT.md for this context.",
+      "id": "escaping-document-path",
+      "userMessage": "The selected README is a symlink to ../shared/README.md.",
       "sessionState": "active-grill-with-docs",
-      "expectedAction": "reject-outside-repository-domain-path",
-      "domainDocumentWrite": false
+      "expectedAction": "reject-outside-repository-document-path",
+      "repositoryDocumentWrite": false
+    },
+    {
+      "id": "missing-document-owner",
+      "userMessage": "No existing README or documentation file owns this resolved information.",
+      "sessionState": "active-grill-with-docs",
+      "expectedAction": "ask-before-creating-general-document",
+      "repositoryDocumentWrite": false
     }
   ]
 }

@@ -1,42 +1,29 @@
-# Domain documentation
+# Repository documentation
 
-Update domain documentation as terms and decisions become final. Do not batch resolved updates until the end of the interview.
+Update repository documentation as information and decisions become final. Do not batch resolved updates until the end of the interview.
 
-## Select the context
+## Select the document
 
 1. Resolve the live Git root.
-2. If the repository has `CONTEXT-MAP.md`, read it and select the matching context.
-3. If the repository has only a root `CONTEXT.md`, use that single context.
-4. If neither file exists, create a root `CONTEXT.md` when the first domain term is resolved.
-5. If the context remains unclear, ask the user before writing.
+2. Inspect the root README, package READMEs, documentation directories, and links between them.
+3. Select the smallest existing document whose audience needs the resolved information.
+4. If ownership remains unclear, ask the user before writing.
 
-Before each write, resolve existing glossary and ADR paths through symlinks. For a new target, resolve its nearest existing parent. Require the resolved target or parent to remain inside the live Git root. Reject the write when a mapped path, parent path, or symlink target escapes the repository.
+Before each write, resolve existing documentation and ADR paths through symlinks. For a new ADR, resolve its nearest existing parent. Require the resolved target or parent to remain inside the live Git root. Reject the write when a path, parent path, or symlink target escapes the repository.
 
-Do not create `CONTEXT-MAP.md` without explicit authority to define multiple contexts.
+Do not create a general documentation file under this authority. Ask the user to approve its audience and purpose first.
 
-Place system-wide ADRs in the root `docs/adr/` directory. Place context-specific ADRs in that context's `docs/adr/` directory.
+Use the repository's established ADR directory. If none exists, use the root `docs/adr/` directory unless repository ownership makes that location unclear.
 
-## Glossary format
+## Document updates
 
-Preserve an established glossary format. If the repository has no established format, use this compact structure:
+Preserve the document's audience, format, and scope. Update the section that already owns the information. Avoid a new catch-all section.
 
-```md
-# {Context name}
+Keep updates factual and concise. Exclude tentative language, interview history, plans, and decision rationale that belongs in an ADR or grill log.
 
-{One or two sentences that define the context and its purpose.}
+Use an existing `CONTEXT.md`, glossary, or `CONTEXT-MAP.md` only when the repository already relies on that convention. Do not create these files by default.
 
-## Language
-
-**{Canonical term}**:
-{One or two sentences that define the term.}
-_Avoid_: {Conflicting or ambiguous alternatives}
-```
-
-Use `_Avoid_` only when alternatives could cause confusion. Update an existing entry instead of creating a duplicate.
-
-Keep definitions specific to the domain. Exclude general programming terms, implementation details, workflows, plans, and decision rationale.
-
-Group terms under headings only when a clear domain grouping exists.
+When a resolved term belongs in an existing glossary, update its existing entry instead of creating a duplicate.
 
 ## ADR gate
 
@@ -60,6 +47,6 @@ Use the repository's established ADR format when one exists. Otherwise, use this
 
 Add optional status, considered options, or consequences only when they help a future reader.
 
-For a new ADR, scan the selected `docs/adr/` directory and increment its highest four-digit prefix. Start with `0001` when the directory has no numbered ADRs.
+For a new ADR, scan the selected ADR directory and increment its highest four-digit prefix. Start with `0001` when the directory has no numbered ADRs.
 
 Do not silently rewrite historical rationale. Record a superseding decision in a new ADR. Mark the earlier ADR as superseded only when the repository uses status metadata.

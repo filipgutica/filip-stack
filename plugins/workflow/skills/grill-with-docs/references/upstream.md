@@ -10,17 +10,18 @@
 ## Retained ideas
 
 - Combine a rigorous design interview with active domain documentation.
-- Keep `CONTEXT.md` limited to a domain glossary.
 - Create ADRs only for durable, surprising decisions with real tradeoffs.
-- Select single-context or mapped multi-context documentation from repository evidence.
-- Create glossary and ADR files only when resolved content requires them.
+- Select documentation from repository evidence.
+- Update documentation only when resolved content requires it.
 
 ## Local changes
 
 - Ask one question at a time and recommend an answer.
 - Preserve the existing curated grill log.
 - Make the skill manual-only because it can write repository documentation.
-- Limit write authority to selected glossary and qualifying ADR files.
+- Prefer existing READMEs and documentation over a new documentation system.
+- Treat `CONTEXT.md` as an optional repository convention.
+- Limit write authority to selected existing documentation and qualifying ADR files.
 - Preserve local document formats and existing user changes.
 
 ## Update policy

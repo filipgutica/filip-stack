@@ -1,22 +1,22 @@
 ---
 name: grill-with-docs
-description: "Use only when the user explicitly asks to be grilled while maintaining the repository's domain glossary and qualifying architecture decision records."
+description: "Use only when the user explicitly asks to be grilled while keeping repository documentation current and recording qualifying architecture decisions."
 disable-model-invocation: true
 ---
 
 # Grill With Docs
 
-Stress-test a plan or design one decision at a time. Record resolved domain language and durable architectural decisions as they emerge.
+Stress-test a plan or design one decision at a time. Update existing repository documentation with resolved information. Record qualifying architectural decisions as ADRs.
 
-Before the first question, read [`grill-me`](../grill-me/SKILL.md), its [grill log contract](../grill-me/references/grill-log.md), and [domain documentation](references/domain-docs.md).
+Before the first question, read [`grill-me`](../grill-me/SKILL.md), its [grill log contract](../grill-me/references/grill-log.md), and [repository documentation](references/domain-docs.md).
 
 ## Authority
 
-An explicit invocation grants domain-document authority for the selected `CONTEXT.md` glossary and qualifying ADR files. It also grants external-artifact authority for one grill log under a confirmed topic.
+An explicit invocation grants repository-document authority for selected existing documentation and qualifying ADR files. It also grants external-artifact authority for one grill log under a confirmed topic.
 
 This authority does not permit code, configuration, specification, plan, ticket, setup, topic creation, commit, push, or publication changes.
 
-Before the first repository write, inspect Git state and the selected domain documents. Apply the repository containment checks in [domain documentation](references/domain-docs.md) before each domain-document write. Preserve unrelated changes. If user edits overlap the intended update and the correct merge is unclear, ask one focused question.
+Before the first repository write, inspect Git state and the selected documentation. Apply the containment checks in [repository documentation](references/domain-docs.md) before each write. Preserve unrelated changes. If user edits overlap the intended update and the correct merge is unclear, ask one focused question.
 
 ## Interview loop
 
@@ -27,18 +27,18 @@ Ask exactly one question at a time unless the user requests a checklist. Include
 After each resolved answer, complete these actions before the next question:
 
 1. Update the grill log when storage is available and authorized.
-2. Update the selected glossary when the answer resolves domain language.
+2. Update the selected repository documentation when the answer changes its documented subject.
 3. Create or update an ADR only when the decision passes every ADR gate.
 
-Do not write tentative language or unresolved decisions. Ordinary decisions remain in the grill log and conversation.
+Do not write tentative language or unresolved decisions. Keep decisions that do not belong in existing documentation in the grill log and conversation.
 
-## Domain documentation
+## Repository documentation
 
-Challenge terms that conflict with the current glossary. Replace vague or overloaded language with a precise canonical term.
+Use each document's current audience and purpose. Prefer the smallest existing README or documentation file that owns the resolved information.
 
 Use concrete scenarios to test boundaries and relationships. Compare factual claims with code, tests, configuration, and existing documentation before asking the user.
 
-Create domain files only when a resolved answer requires them. Keep `CONTEXT.md` as a glossary. Keep implementation details, plans, and decision rationale out of it.
+Do not create `CONTEXT.md` or another general documentation file by default. Treat an existing `CONTEXT.md` as a repository convention and preserve its purpose and format.
 
 Create or update an ADR only when the decision is hard to reverse, surprising without context, and based on a real tradeoff.
 
@@ -46,9 +46,9 @@ Create or update an ADR only when the decision is hard to reverse, surprising wi
 
 Stop when the major decision branches are coherent, the user asks to stop, or missing authority blocks the next required write.
 
-Before completion, confirm that each resolved glossary term and qualifying ADR decision appears in the correct repository document. State any grill-log or documentation update that could not be persisted.
+Before completion, confirm that each resolved documentation update and qualifying ADR decision appears in the correct repository document. State any update that could not be persisted.
 
 ## References
 
-- [Domain documentation](references/domain-docs.md)
+- [Repository documentation](references/domain-docs.md)
 - [Upstream provenance](references/upstream.md)

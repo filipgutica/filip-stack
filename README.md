@@ -23,9 +23,10 @@ Its skills are grouped by purpose:
 run only when the user explicitly requests them or an authorized coordinator
 route requires them.
 
-`grill-with-docs` uses the `grill-me` interview loop while maintaining domain
-documentation. It records resolved terms in the selected `CONTEXT.md`. It
-records only hard-to-reverse, surprising tradeoff decisions as ADRs.
+`grill-with-docs` uses the `grill-me` interview loop while keeping existing
+repository documentation current. It updates the smallest README or other
+documentation file that owns the resolved information. It records only
+hard-to-reverse, surprising tradeoff decisions as ADRs.
 
 `walkthrough` is manual-only. It explains and reviews selected changes without
 granting authority to modify them. An explicit invocation can save one curated
@@ -194,10 +195,10 @@ an explicit storage request. An explicit `grill-me` invocation creates one
 curated topic log after topic confirmation. An explicit `walkthrough` invocation
 creates one curated log with source provenance after source and topic confirmation.
 
-An explicit `grill-with-docs` invocation adds domain-document authority. It may
-update the selected `CONTEXT.md` glossary and qualifying ADR files. It does not
-grant authority for code, configuration, planning artifacts, commits, or
-publication.
+An explicit `grill-with-docs` invocation adds repository-document authority. It
+may update selected existing repository documentation and qualifying ADR files.
+It does not grant authority for code, configuration, planning artifacts,
+commits, or publication.
 
 Topic lifecycle commands audit known work, move root and repository topic
 directories together, and preserve acknowledged warnings in `TOPIC.md`. A

@@ -1,7 +1,7 @@
 interface:
   display_name: "Grill With Docs"
-  short_description: "Stress-test decisions and maintain domain docs"
-  default_prompt: "Use $workflow:grill-with-docs to challenge this design and maintain its glossary and qualifying ADRs."
+  short_description: "Stress-test decisions and maintain repository docs"
+  default_prompt: "Use $workflow:grill-with-docs to challenge this design and keep its repository documentation current."
 
 policy:
   allow_implicit_invocation: false
