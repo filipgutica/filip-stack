@@ -57,6 +57,15 @@ A manual-only skill can be an explicit nested invocation when the selected autho
 - **Adversarial critic:** performs the independent review for broad or high-risk changes.
 - **Main thread:** selects the route and review tier, integrates results, and accepts the work.
 
+Select an explicit registered profile for each delegation. Do not rely on the
+main thread's inherited model or reasoning effort. Use the critic profile only
+when the selected review tier is adversarial. Use a non-critic profile for
+exploration, implementation, verification, and standard review.
+
+Reuse an existing agent for follow-up work while its role and responsibility
+stay the same. Spawn a new agent only when the responsibility changes or fresh
+independence is required.
+
 Use a fresh worker context for a ledger task when it reduces context load or adds useful isolation. Keep one writer for overlapping files.
 
 ## References

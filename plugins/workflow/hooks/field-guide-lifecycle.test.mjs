@@ -35,31 +35,24 @@ const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home'), en
 
 const runJson = (input, env) => run({ input: `${JSON.stringify(input)}\n`, env })
 
-test('UserPromptSubmit emits context only for Claude', () => {
-  const claude = runJson(
-    { hook_event_name: 'UserPromptSubmit', host: 'spoofed-claude', prompt: 'private-claude' },
-    hostEnvironment.claude,
-  )
-  assert.equal(claude.status, 0, claude.stderr)
-  assert.deepEqual(JSON.parse(claude.stdout), promptOutput)
-  assert.equal(claude.stderr, '')
-  assert.doesNotMatch(claude.stdout, /private-/)
-
-  const codex = runJson(
-    { hook_event_name: 'UserPromptSubmit', host: 'spoofed-codex', prompt: 'private-codex' },
-    hostEnvironment.codex,
-  )
-  assert.equal(codex.status, 0, codex.stderr)
-  assert.deepEqual(JSON.parse(codex.stdout), {})
-  assert.equal(codex.stderr, '')
-  assert.doesNotMatch(codex.stdout, /private-/)
+test('UserPromptSubmit emits context for Claude and Codex', () => {
+  for (const host of ['claude', 'codex']) {
+    const result = runJson(
+      { hook_event_name: 'UserPromptSubmit', host: `spoofed-${host}`, prompt: `private-${host}` },
+      hostEnvironment[host],
+    )
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+    assert.equal(result.stderr, '')
+    assert.doesNotMatch(result.stdout, /private-/)
+  }
 
   const codexCompatibilityEnvironment = runJson(
     { hook_event_name: 'UserPromptSubmit' },
     { ...hostEnvironment.claude, ...hostEnvironment.codex },
   )
   assert.equal(codexCompatibilityEnvironment.status, 0, codexCompatibilityEnvironment.stderr)
-  assert.deepEqual(JSON.parse(codexCompatibilityEnvironment.stdout), {})
+  assert.deepEqual(JSON.parse(codexCompatibilityEnvironment.stdout), promptOutput)
 })
 
 test('UserPromptSubmit fails open for an unknown host', () => {
@@ -96,15 +89,17 @@ test('a repeated Stop is also silent for both hosts', () => {
 })
 
 test('UserPromptSubmit keeps capture, ask, and skip directions internal', () => {
-  const result = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment.claude)
-  const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
+  for (const host of ['claude', 'codex']) {
+    const result = runJson({ hook_event_name: 'UserPromptSubmit' }, hostEnvironment[host])
+    const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
 
-  assert.match(context, /capture, ask, or skip/)
-  assert.match(context, /For capture or skip, preserve the normal task response\./)
-  assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
-  assert.match(context, /If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice\./)
-  assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
-  assert.match(context, /Add no other lifecycle or storage text\./)
+    assert.match(context, /capture, ask, or skip/)
+    assert.match(context, /For capture or skip, preserve the normal task response\./)
+    assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
+    assert.match(context, /If capture is warranted, follow the Workflow field-guide skill and append only its concise change notice\./)
+    assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
+    assert.match(context, /Add no other lifecycle or storage text\./)
+  }
 })
 
 test('invalid or unknown input fails open', () => {
@@ -116,25 +111,27 @@ test('invalid or unknown input fails open', () => {
   }
 })
 
-test('sensitive hook fields never appear in output', () => {
+test('sensitive hook fields never appear in output for either host', () => {
   const secrets = [
     'PASSWORD=hook-secret',
     '/Users/example/private/transcript.jsonl',
     'const proprietaryCode = true',
   ]
-  const result = runJson({
-    hook_event_name: 'UserPromptSubmit',
-    prompt: secrets[0],
-    transcript_path: secrets[1],
-    last_assistant_message: secrets[2],
-    background_tasks: secrets,
-  }, hostEnvironment.claude)
+  for (const host of ['claude', 'codex']) {
+    const result = runJson({
+      hook_event_name: 'UserPromptSubmit',
+      prompt: secrets[0],
+      transcript_path: secrets[1],
+      last_assistant_message: secrets[2],
+      background_tasks: secrets,
+    }, hostEnvironment[host])
 
-  assert.equal(result.status, 0, result.stderr)
-  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
-  for (const secret of secrets) {
-    assert.doesNotMatch(result.stdout, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
-    assert.doesNotMatch(result.stderr, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+    for (const secret of secrets) {
+      assert.doesNotMatch(result.stdout, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+      assert.doesNotMatch(result.stderr, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    }
   }
 })
 
@@ -152,14 +149,16 @@ test('the hook runner resolves an NVM Node installation outside PATH', () => {
   mkdirSync(nodeDirectory, { recursive: true })
   symlinkSync(process.execPath, join(nodeDirectory, 'node'))
 
-  const result = spawnSync('/bin/sh', [nodeRunner.pathname, '--fail-open', adapter.pathname], {
-    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit' })}\n`,
-    encoding: 'utf8',
-    env: { HOME: home, PATH: '/usr/bin:/bin', CLAUDE_PLUGIN_ROOT: '/plugins/workflow' },
-  })
+  for (const env of [hostEnvironment.claude, hostEnvironment.codex]) {
+    const result = spawnSync('/bin/sh', [nodeRunner.pathname, '--fail-open', adapter.pathname], {
+      input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit' })}\n`,
+      encoding: 'utf8',
+      env: { HOME: home, PATH: '/usr/bin:/bin', ...env },
+    })
 
-  assert.equal(result.status, 0, result.stderr)
-  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+    assert.equal(result.status, 0, result.stderr)
+    assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+  }
 })
 
 test('the hook runner fails open when an explicit Node runtime is unavailable', () => {

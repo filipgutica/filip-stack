@@ -2,43 +2,47 @@
 
 ## Purpose
 
-The Workflow plugin gives Claude agents one short, static lifecycle instruction.
-Command details remain in the field-guide skill and do not appear in hook output.
-The adapter does not read conversation data or field-guide files.
+The Workflow plugin gives Claude and Codex agents one short, static lifecycle
+instruction. Command details remain in the field-guide skill and do not appear
+in hook output. The adapter parses the hook event only to select
+`hook_event_name`.
 
 ## Host selection
 
-The Codex manifest points to an explicit empty hook file. This overrides default
-hook discovery without relying on an empty manifest array.
-The adapter also returns no output when `PLUGIN_ROOT` is present. Codex sets
-both host variables for plugin hook compatibility.
+The Codex manifest points to `hooks/codex-hooks.json`. Its command uses
+`PLUGIN_ROOT`. The Claude manifest uses `hooks/hooks.json`, whose command uses
+`CLAUDE_PLUGIN_ROOT`.
 
-The adapter identifies Claude only when `CLAUDE_PLUGIN_ROOT` is present without
-`PLUGIN_ROOT`. An unknown host returns no output.
+The adapter accepts `PLUGIN_ROOT` for Codex or `CLAUDE_PLUGIN_ROOT` for Claude.
+Codex can set both variables for plugin compatibility. An unknown host returns
+no output.
 
 ## Lifecycle behavior
 
-Claude registers only the `UserPromptSubmit` hook. That hook instructs the agent
-to evaluate `capture`, `ask`, or `skip` before its final response.
+Claude and Codex register only the `UserPromptSubmit` hook. The hook instructs
+the agent to evaluate `capture`, `ask`, or `skip` before its final response.
 
-Codex does not register Workflow lifecycle hooks. [Codex parses `suppressOutput`
-but does not implement it](https://learn.chatgpt.com/docs/hooks#common-output-fields).
-A registered hook cannot meet the silent-output contract.
+[Codex supports plugin-bundled hooks and `UserPromptSubmit` additional
+context](https://learn.chatgpt.com/docs/hooks#plugin-bundled-hooks). Codex parses
+`suppressOutput` but does not implement it. Codex can therefore show the hook
+run and injected developer context.
 
 [Claude accepts `suppressOutput` without acting on it](https://code.claude.com/docs/en/hooks#json-output). An isolated local Claude Code check also showed that a blocking Stop reason remains model-visible. The adapter therefore returns an empty object for direct Stop input.
 
-The Claude UserPromptSubmit instruction preserves agent judgment. Capture and
-skip preserve the normal task response. The instruction permits these visible
+The UserPromptSubmit instruction preserves agent judgment. Capture and skip
+preserve the normal task response. The instruction permits these visible
 results:
 
 - `capture`: show the concise field-guide change notice.
 - `ask`: show one focused question only.
 - `skip`: write nothing and show no field-guide text.
 
-The Claude end-of-task evaluation is instructed but not enforced. Hook errors
-and non-Claude hosts fail open. Codex agents use the Field Guide through normal
-skill routing instead of an automatic lifecycle hook.
+The end-of-task evaluation is instructed but not enforced. Hook errors and
+unknown hosts fail open. If a host disables or has not trusted the hook, agents
+use the Field Guide through normal skill routing.
 
 ## Privacy boundary
 
-The adapter uses static text and host environment variables only. It does not emit a launcher path or read transcripts, prompts, assistant messages, credentials, proprietary code, source files, or field-guide storage.
+The adapter does not access files referenced by the event. It does not inspect
+other event fields or emit or persist them. It does not access source files or
+field-guide storage. The output contains static text only.

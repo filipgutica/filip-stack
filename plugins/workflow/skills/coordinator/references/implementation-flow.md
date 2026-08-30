@@ -69,6 +69,11 @@ A standard reviewer can be a native review capability or a read-only reviewer. I
 
 Use an adversarial critic for ambiguity, security, public contracts, concurrency, or broad changes.
 
+Select an explicit registered profile for each delegated role. Do not inherit
+the main thread's model or reasoning effort. Reserve the critic profile for the
+adversarial review tier. Reuse that reviewer for corrections to the same review
+unless a new independent judgment is required.
+
 ## Named-work-item end-to-end route
 
 Use this route only with explicit named-work-item end-to-end authority. The primary work item can be a ticket, specification, or plan.
@@ -116,4 +121,6 @@ Review feedback does not grant branch, commit, push, or pull-request authority.
 - **Adversarial critic:** challenges a broad or high-risk change.
 - **Main thread:** selects the route and tier, integrates results, and accepts the work.
 
-Follow the host policy for model and tool selection. Do not require vendor-specific models or tool signatures.
+Follow the host profiles for model and tool selection. Select an explicit
+profile instead of inheriting the main thread's settings. Do not require
+vendor-specific models or tool signatures.

@@ -88,7 +88,31 @@
       "prompt": "Review this code.",
       "expectedRoute": "one-independent-reviewer",
       "requiredLenses": ["correctness", "coding-standards", "efficiency", "reuse"],
-      "separateReviewerPerLens": false
+      "separateReviewerPerLens": false,
+      "explicitProfileRequired": true,
+      "criticAllowed": false,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "bounded-worker-delegation",
+      "prompt": "Delegate this unusually difficult but bounded implementation slice.",
+      "expectedRole": "worker",
+      "expectedProfileClass": "non-critic",
+      "explicitProfileRequired": true,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "initial-adversarial-review",
+      "prompt": "Run an adversarial review of this public configuration contract.",
+      "expectedRole": "critic",
+      "explicitProfileRequired": true,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "adversarial-review-follow-up",
+      "prompt": "Recheck the corrected diff against the same adversarial findings.",
+      "expectedAction": "follow-up-existing-critic",
+      "newAgentAllowed": false
     }
   ]
 }

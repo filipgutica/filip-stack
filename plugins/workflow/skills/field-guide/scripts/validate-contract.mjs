@@ -61,11 +61,10 @@ assert.match(skill, /Keep an inferred contradiction as a linked candidate/)
 assert.match(skill, /use `transition` with action `supersede`, `confirmed: true`/)
 assert.match(skill, /raw transcripts, prompts, credentials/)
 assert.match(skill, /rejects high-signal secrets and unsafe source text at the write boundary/)
-assert.match(skill, /Claude's plugin hook adds bounded lifecycle guidance at `UserPromptSubmit`/)
-assert.match(skill, /instructs one `capture`, `ask`, or `skip` evaluation before the final response/)
-assert.match(skill, /does not register a Codex lifecycle hook/)
-assert.match(skill, /Claude hook does not register a `Stop` continuation/)
-assert.match(skill, /End-of-task evaluation is instructed but not enforced/)
+assert.match(skill, /Claude and Codex plugin hooks add bounded lifecycle guidance at\s+`UserPromptSubmit`/)
+assert.match(skill, /instruct one `capture`, `ask`, or `skip` evaluation\s+before the final response/)
+assert.match(skill, /does not register a `Stop` continuation/)
+assert.match(skill, /End-of-task evaluation is\s+instructed but not enforced/)
 assert.match(skill, /field-guide\.sh/)
 assert.match(skill, /--input-json/)
 assert.doesNotMatch(skill, /node scripts\/field-guide\.mjs/)
@@ -77,21 +76,29 @@ assert.match(policy, /Run `candidates` before `submit`/)
 assert.match(policy, /Exact duplicates are deterministic/)
 assert.match(policy, /At the end of meaningful work, decide `capture`, `ask`, or `skip`/)
 assert.match(policy, /A `Stop` continuation does not enforce it/)
+assert.match(policy, /current repository is evidence context, not an automatic scope signal/i)
+assert.match(policy, /If the resulting guidance remains correct and useful across unrelated repositories, use shared scope/)
+assert.match(policy, /If applying it elsewhere could be wrong because it relies on a repository-specific contract, use project scope/)
+assert.match(policy, /inferred shared learning still requires independent evidence from two repository identities and `generic: true`/i)
+assert.match(policy, /authoritative in current global or project instructions/)
 assert.match(storage, /review record/i)
+assert.match(storage, /does not define scope or activation for machine-recorded guidance in `memory\.md`/)
+assert.match(storage, /explicit portable user preference becomes active shared guidance immediately/)
 assert.match(metadata, /allow_implicit_invocation: true/)
 assert.match(metadata, /durable preferences, corrections, repeated misses, and manual learning/)
 assert.doesNotMatch(metadata, /only after review feedback/)
 assert.match(readme, /obvious durable user preferences, corrections, and repeated misses/)
-assert.match(readme, /does not register Codex lifecycle hooks/)
+assert.match(readme, /Claude and Codex hooks send bounded lifecycle instructions/)
 assert.match(readme, /`suppressOutput` is not implemented/)
-assert.match(readme, /does not register a `Stop` continuation/)
+assert.match(readme, /does not register a `Stop`\s+continuation/)
 assert.match(readme, /End-of-task evaluation is instructed but not enforced/)
-assert.match(readme, /evaluation is\s+not enforced by a Stop continuation/i)
+assert.match(readme, /Stop\s+continuation does not enforce the evaluation/i)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
 assert.deepEqual(Object.keys(hooks.hooks).sort(), ['UserPromptSubmit'])
 assert.equal(codexManifest.hooks, './hooks/codex-hooks.json')
-assert.deepEqual(codexHooks, { hooks: {} })
+assert.deepEqual(Object.keys(codexHooks.hooks).sort(), ['UserPromptSubmit'])
 assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*run-node\.sh.*--fail-open/)
+assert.match(codexHooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*\$\{PLUGIN_ROOT\}.*run-node\.sh.*--fail-open/)
 assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
 assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)
 assert.match(hookAdapter, /if \(input\.hook_event_name === 'Stop'\) return \{\}/)
@@ -99,7 +106,7 @@ assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field
 assert.doesNotMatch(hookAdapter, /field-guide\.sh|\/Users\//)
 assert.match(lifecycleHooks, /`PLUGIN_ROOT`/)
 assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
-assert.match(lifecycleHooks, /Codex does not register Workflow lifecycle hooks/)
+assert.match(lifecycleHooks, /Claude and Codex register only the `UserPromptSubmit` hook/)
 assert.match(lifecycleHooks, /returns an empty object for direct Stop input/)
 
 assert.equal(scenarios.schemaVersion, 1)
@@ -108,8 +115,7 @@ assert.deepEqual(
   new Set(['obvious', 'ambiguous', 'temporary', 'repeated', 'contradictory', 'manual', 'privacy', 'audit']),
 )
 for (const scenario of scenarios.scenarios) {
-  const expectedHosts = scenario.id.startsWith('end-task-') ? ['claude'] : ['claude', 'codex']
-  assert.deepEqual(scenario.hosts, expectedHosts)
+  assert.deepEqual(scenario.hosts, ['claude', 'codex'])
   assert.match(scenario.id, /^[a-z0-9]+(?:-[a-z0-9]+)*$/)
   assert.ok(['capture', 'ask', 'skip', 'audit'].includes(scenario.expectedDecision))
 }
@@ -121,6 +127,57 @@ assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-durable-corre
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-ambiguous-learning').expectedDecision, 'ask')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').expectedDecision, 'skip')
 assert.equal(scenarios.scenarios.find(({ id }) => id === 'end-task-no-learning').preservesTaskResponse, true)
+const expectedScopeScenarios = [
+  {
+    id: 'portable-preference-stated-during-project',
+    category: 'obvious',
+    hosts: ['claude', 'codex'],
+    userMessage: 'Prefer named constants for non-obvious domain thresholds.',
+    expectedDecision: 'capture',
+    expectedScope: 'shared',
+    expectedState: 'active',
+    requiresNotice: true,
+  },
+  {
+    id: 'authoritative-preference-duplicate',
+    category: 'obvious',
+    hosts: ['claude', 'codex'],
+    userMessage: 'Prefer destructured object parameters for functions with optional or configuration-style inputs.',
+    authoritativeSource: 'global-instructions',
+    expectedDecision: 'skip',
+    requiresNotice: false,
+  },
+  {
+    id: 'durable-repository-caveat',
+    category: 'obvious',
+    hosts: ['claude', 'codex'],
+    userMessage: "In this repository's fixture catalog, update an existing entry when it covers the same scenario. Add an entry only when the test contract requires an independent case.",
+    expectedDecision: 'capture',
+    expectedScope: 'project',
+    expectedState: 'active',
+    requiresNotice: true,
+  },
+  {
+    id: 'task-local-repository-detail',
+    category: 'temporary',
+    hosts: ['claude', 'codex'],
+    userMessage: 'For this fixture patch, update the row we changed earlier.',
+    expectedDecision: 'skip',
+    requiresNotice: false,
+  },
+  {
+    id: 'durable-ambiguous-scope',
+    category: 'ambiguous',
+    hosts: ['claude', 'codex'],
+    userMessage: 'Remember that I prefer updating existing entries instead of adding new ones.',
+    expectedDecision: 'ask',
+    expectedQuestionFocus: 'shared-or-project-scope',
+    requiresNotice: false,
+  },
+]
+for (const expected of expectedScopeScenarios) {
+  assert.deepEqual(scenarios.scenarios.find(({ id }) => id === expected.id), expected)
+}
 for (const { lifecycleEvent, enforcement, id } of scenarios.scenarios.filter(({ id }) => id.startsWith('end-task-'))) {
   assert.equal(lifecycleEvent, 'UserPromptSubmit', id)
   assert.equal(enforcement, 'instructed-not-enforced', id)

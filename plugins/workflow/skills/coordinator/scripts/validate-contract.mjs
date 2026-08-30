@@ -24,6 +24,10 @@ assert.match(skill, /active slice/i)
 assert.match(skill, /outcome, boundary, and verification signal/i)
 assert.match(skill, /decision-complete/i)
 assert.match(skill, /material scope conflict/i)
+assert.match(skill, /Select an explicit registered profile for each delegation/)
+assert.match(skill, /Use the critic profile only.*review tier is adversarial/is)
+assert.match(skill, /Reuse an existing agent for follow-up work/)
+assert.match(skill, /Spawn a new agent only when the responsibility changes or fresh\s+independence is required/)
 
 assert.match(flow, /named-work-item end-to-end route/i)
 assert.match(flow, /direct execution or plan composition/i)
@@ -32,6 +36,9 @@ assert.match(flow, /Recommend deferral and continue the active slice/i)
 assert.match(flow, /Do not record deferred work until the user selects and authorizes a destination/i)
 assert.match(flow, /Explicit priority replacement/i)
 assert.match(flow, /user acceptance checkpoint/i)
+assert.match(flow, /Select an explicit registered profile for each delegated role/)
+assert.match(flow, /Reserve the critic profile for the\s+adversarial review tier/)
+assert.match(flow, /Reuse that reviewer for corrections to the same review/)
 assert.match(investigationFlow, /user-invoked code review.*select one reviewer tier/is)
 
 assert.match(subagentTemplates, /user-invoked code review/i)
@@ -83,6 +90,9 @@ assert.deepEqual(
     'end-to-end-acceptance',
     'tiny-fast-path',
     'user-invoked-code-review',
+    'bounded-worker-delegation',
+    'initial-adversarial-review',
+    'adversarial-review-follow-up',
   ],
 )
 assert.equal(scenarios.scenarios[0].createTickets, false)
@@ -98,5 +108,17 @@ assert.deepEqual(
 )
 assert.equal(scenarios.scenarios[12].expectedRoute, 'one-independent-reviewer')
 assert.equal(scenarios.scenarios[12].separateReviewerPerLens, false)
+assert.equal(scenarios.scenarios[12].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[12].criticAllowed, false)
+assert.equal(scenarios.scenarios[12].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[13].expectedRole, 'worker')
+assert.equal(scenarios.scenarios[13].expectedProfileClass, 'non-critic')
+assert.equal(scenarios.scenarios[13].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[13].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[14].expectedRole, 'critic')
+assert.equal(scenarios.scenarios[14].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[14].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[15].expectedAction, 'follow-up-existing-critic')
+assert.equal(scenarios.scenarios[15].newAgentAllowed, false)
 
 console.log('Coordinator active-slice contract passed.')

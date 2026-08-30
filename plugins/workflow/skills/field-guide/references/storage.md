@@ -210,9 +210,13 @@ When later evidence changes a pattern, update the guidance and retain the histor
 
 ## Shared promotion
 
+This section applies to indexed shared Markdown files that use project review records. It does not define scope or activation for machine-recorded guidance in `memory.md`.
+
+For machine-recorded guidance, use the capture policy. An explicit portable user preference becomes active shared guidance immediately. An inferred shared learning requires independent evidence from two repository identities and `generic: true`.
+
 Create a focused file under `shared/` only for cross-project guidance.
 
-Promote a preference immediately when the user states that it is general. Otherwise, require committed evidence from two project guides.
+Promote an explicit user preference immediately when its semantic applicability is shared. Otherwise, require committed evidence from two project guides.
 
 Record one of these evidence shapes near the top of the shared file:
 
@@ -229,6 +233,8 @@ Record one of these evidence shapes near the top of the shared file:
 - [<first project review>](../projects/<repo-key>/reviews/<record>.md)
 - [<second project review>](../projects/<repo-key>/reviews/<record>.md)
 ```
+
+The `explicit-general-preference` label includes an explicit preference whose meaning is portable without a repository-specific contract. The user does not need to state the word "general."
 
 Multi-project evidence must link indexed review records from two project guides. Keep both repositories available during validation.
 
