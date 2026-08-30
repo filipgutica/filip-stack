@@ -2,16 +2,18 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const patterns = await readFile(new URL('../references/presentation-patterns.md', import.meta.url), 'utf8')
-const log = await readFile(new URL('../references/walkthrough-log.md', import.meta.url), 'utf8')
-const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
-const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
-const setup = await readFile(new URL('../../setup/SKILL.md', import.meta.url), 'utf8')
-const storage = await readFile(new URL('../../setup/references/storage.md', import.meta.url), 'utf8')
-const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
-const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const skillRoot = workflowSkillRoot('walkthrough')
+const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const patterns = await readFile(new URL('references/presentation-patterns.md', skillRoot), 'utf8')
+const log = await readFile(new URL('references/walkthrough-log.md', skillRoot), 'utf8')
+const scenarios = JSON.parse(await readFile(new URL('contract-scenarios.json', import.meta.url), 'utf8'))
+const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
+const setup = await readFile(new URL('../setup/SKILL.md', skillRoot), 'utf8')
+const storage = await readFile(new URL('../setup/references/storage.md', skillRoot), 'utf8')
+const readme = await readFile(new URL('README.md', repositoryRoot), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('package.json', repositoryRoot), 'utf8'))
 const assertContainsAll = (content, patterns) => {
   const missing = patterns.filter((pattern) => !pattern.test(content))
   assert.deepEqual(missing, [])
@@ -127,7 +129,7 @@ assertContainsAll(readme, [
 ])
 assert.equal(
   packageJson.scripts['test:walkthrough'],
-  'node plugins/workflow/skills/walkthrough/scripts/validate-contract.mjs',
+  'node tests/workflow/skills/walkthrough/validate-contract.mjs',
 )
 assert.match(packageJson.scripts.check, /test:walkthrough/)
 

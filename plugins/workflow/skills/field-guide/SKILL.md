@@ -41,11 +41,13 @@ Run commands through the bundled launcher in this skill's base directory. The la
 
 ## Retrieve guidance
 
-Retrieve guidance for meaningful planning, implementation, debugging, or review after the repository and subject are known:
+Retrieve guidance once for meaningful planning, implementation, debugging, or review after the repository and concrete task are known. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
 
 ```text
-/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --subject <subject-key> [--query <applicability-text>]
+/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --query <concrete-task-context> [--subject <subject-hint>]
 ```
+
+An exact subject can be used without a query when the desired subject key is already known. Do not guess a subject or broaden a query merely to force a result. No relevant result means continue from live authoritative sources without Field Guide guidance.
 
 Use only the bounded result. Normal retrieval contains at most five active records and no evidence. Expand evidence only to resolve a provenance or conflict question:
 
@@ -148,7 +150,7 @@ field-guide.mjs delete --repo-root <path> --input <json-file>
 field-guide.mjs init --repo-root <path>
 field-guide.mjs maintain --repo-root <path> --input <json-file>
 field-guide.mjs paths --repo-root <path>
-field-guide.mjs retrieve --repo-root <path> (--subject <key> [--query <text>] | --evidence-for <guidance-id>)
+field-guide.mjs retrieve --repo-root <path> ((--query <text> [--subject <key>]) | --subject <key> | --evidence-for <guidance-id>)
 field-guide.mjs submit --repo-root <path> --input <json-file>
 field-guide.mjs transition --repo-root <path> --input <json-file>
 field-guide.mjs validate --repo-root <path>

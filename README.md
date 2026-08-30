@@ -49,7 +49,12 @@ plugins/workflow/          Workflow plugin payload shared by Claude and Codex
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
+tests/workflow/            Development-only Workflow tests, contract validators, and fixtures
 ```
+
+The marketplace installs `plugins/workflow` directly. Keep tests, contract
+validators, and evaluation fixtures under `tests/workflow`; they are repository
+development assets and are not part of the installed runtime plugin.
 
 ## Install with Claude
 
@@ -121,9 +126,10 @@ The normal task response remains intact for `skip` and `capture`. A `skip` evalu
 
 ## Releases and versioning
 
-Claude and Codex install the tracked plugin files directly from this repository.
-Installation does not require a build. Both root marketplace registries point to
-`./plugins/workflow`.
+Claude and Codex install the tracked runtime files under `plugins/workflow`
+directly from this repository. Installation does not require a build. Both root
+marketplace registries point to `./plugins/workflow`; development-only tests live
+outside that payload under `tests/workflow`.
 
 CI runs semantic-release after each push to `main`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/):

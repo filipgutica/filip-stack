@@ -2,8 +2,10 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const read = (path) => readFile(new URL(path, import.meta.url), 'utf8')
+const setupRoot = workflowSkillRoot('setup')
+const read = (path) => readFile(new URL(path, setupRoot), 'utf8')
 
 const [
   storage,
@@ -17,16 +19,16 @@ const [
   prDescriptions,
   readme,
 ] = await Promise.all([
-  read('../references/storage.md'),
-  read('../../branch-task-planner/SKILL.md'),
-  read('../../coordinator/references/planning-flow.md'),
-  read('../../coordinator/references/implementation-flow.md'),
-  read('../../writing-specs/references/erd-format.md'),
-  read('../../writing-plans/SKILL.md'),
-  read('../../writing-tickets/SKILL.md'),
-  read('../../spec-to-tickets/SKILL.md'),
-  read('../../writing-pr-descriptions/SKILL.md'),
-  read('../../../../../README.md'),
+  read('references/storage.md'),
+  read('../branch-task-planner/SKILL.md'),
+  read('../coordinator/references/planning-flow.md'),
+  read('../coordinator/references/implementation-flow.md'),
+  read('../writing-specs/references/erd-format.md'),
+  read('../writing-plans/SKILL.md'),
+  read('../writing-tickets/SKILL.md'),
+  read('../spec-to-tickets/SKILL.md'),
+  read('../writing-pr-descriptions/SKILL.md'),
+  readFile(new URL('README.md', repositoryRoot), 'utf8'),
 ])
 
 const localTickets = storage.split('\n## ').find((section) => section.startsWith('Local tickets\n'))

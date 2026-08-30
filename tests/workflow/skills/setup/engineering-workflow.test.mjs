@@ -5,8 +5,9 @@ import { basename, dirname, join, relative, sep } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const script = fileURLToPath(new URL('./engineering-workflow.mjs', import.meta.url))
+const script = fileURLToPath(new URL('scripts/engineering-workflow.mjs', workflowSkillRoot('setup')))
 const git = (repoRoot, ...args) => execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim()
 const markdownPath = (value) => value.split(sep).join('/')
 

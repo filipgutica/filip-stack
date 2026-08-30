@@ -2,14 +2,16 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const domainDocs = await readFile(new URL('../references/domain-docs.md', import.meta.url), 'utf8')
-const upstream = await readFile(new URL('../references/upstream.md', import.meta.url), 'utf8')
-const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
-const coordinator = await readFile(new URL('../../coordinator/SKILL.md', import.meta.url), 'utf8')
-const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
-const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const skillRoot = workflowSkillRoot('grill-with-docs')
+const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const domainDocs = await readFile(new URL('references/domain-docs.md', skillRoot), 'utf8')
+const upstream = await readFile(new URL('references/upstream.md', skillRoot), 'utf8')
+const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
+const coordinator = await readFile(new URL('../coordinator/SKILL.md', skillRoot), 'utf8')
+const scenarios = JSON.parse(await readFile(new URL('contract-scenarios.json', import.meta.url), 'utf8'))
+const packageJson = JSON.parse(await readFile(new URL('package.json', repositoryRoot), 'utf8'))
 
 const assertMatches = (content, patterns) => {
   for (const pattern of patterns) assert.match(content, pattern)
@@ -85,7 +87,7 @@ assert.equal(scenarios.scenarios[6].repositoryCodeWrite, false)
 assert.equal(scenarios.scenarios[7].repositoryDocumentWrite, false)
 assert.equal(scenarios.scenarios[8].repositoryDocumentWrite, false)
 
-assert.equal(packageJson.scripts['test:grill-with-docs'], 'node plugins/workflow/skills/grill-with-docs/scripts/validate-contract.mjs')
+assert.equal(packageJson.scripts['test:grill-with-docs'], 'node tests/workflow/skills/grill-with-docs/validate-contract.mjs')
 assert.match(packageJson.scripts.check, /test:grill-with-docs/)
 
 console.log('Grill With Docs contract passed.')

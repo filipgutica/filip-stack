@@ -3,23 +3,25 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
 import Ajv2020 from 'ajv/dist/2020.js'
+import { repositoryRoot, workflowPluginRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skillUrl = new URL('../SKILL.md', import.meta.url)
-const policyUrl = new URL('../references/capture-policy.md', import.meta.url)
-const storageUrl = new URL('../references/storage.md', import.meta.url)
-const metadataUrl = new URL('../agents/openai.yaml', import.meta.url)
-const scenariosUrl = new URL('../evaluations/scenarios.json', import.meta.url)
-const memorySchemaUrl = new URL('../schemas/memory-v1.schema.json', import.meta.url)
-const submissionSchemaUrl = new URL('../schemas/submission-v1.schema.json', import.meta.url)
-const maintenanceSchemaUrl = new URL('../schemas/maintenance-v1.schema.json', import.meta.url)
-const lifecycleSchemaUrl = new URL('../schemas/lifecycle-v1.schema.json', import.meta.url)
-const retrievalSchemaUrl = new URL('../schemas/retrieval-v1.schema.json', import.meta.url)
-const lifecycleHooksUrl = new URL('../references/lifecycle-hooks.md', import.meta.url)
-const readmeUrl = new URL('../../../../../README.md', import.meta.url)
-const hooksUrl = new URL('../../../hooks/hooks.json', import.meta.url)
-const codexHooksUrl = new URL('../../../hooks/codex-hooks.json', import.meta.url)
-const hookAdapterUrl = new URL('../../../hooks/field-guide-lifecycle.mjs', import.meta.url)
-const codexManifestUrl = new URL('../../../.codex-plugin/plugin.json', import.meta.url)
+const skillRoot = workflowSkillRoot('field-guide')
+const skillUrl = new URL('SKILL.md', skillRoot)
+const policyUrl = new URL('references/capture-policy.md', skillRoot)
+const storageUrl = new URL('references/storage.md', skillRoot)
+const metadataUrl = new URL('agents/openai.yaml', skillRoot)
+const scenariosUrl = new URL('contract-scenarios.json', import.meta.url)
+const memorySchemaUrl = new URL('schemas/memory-v1.schema.json', skillRoot)
+const submissionSchemaUrl = new URL('schemas/submission-v1.schema.json', skillRoot)
+const maintenanceSchemaUrl = new URL('schemas/maintenance-v1.schema.json', skillRoot)
+const lifecycleSchemaUrl = new URL('schemas/lifecycle-v1.schema.json', skillRoot)
+const retrievalSchemaUrl = new URL('schemas/retrieval-v1.schema.json', skillRoot)
+const lifecycleHooksUrl = new URL('references/lifecycle-hooks.md', skillRoot)
+const readmeUrl = new URL('README.md', repositoryRoot)
+const hooksUrl = new URL('hooks/hooks.json', workflowPluginRoot)
+const codexHooksUrl = new URL('hooks/codex-hooks.json', workflowPluginRoot)
+const hookAdapterUrl = new URL('hooks/field-guide-lifecycle.mjs', workflowPluginRoot)
+const codexManifestUrl = new URL('.codex-plugin/plugin.json', workflowPluginRoot)
 
 const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, codexHooksText, hookAdapter, codexManifestText] = await Promise.all([
   readFile(skillUrl, 'utf8'),
@@ -53,6 +55,8 @@ assert.match(skill, /capture`, `ask`, or `skip`/)
 assert.match(skill, /manual learning requests/)
 assert.match(skill, /candidates --repo-root/)
 assert.match(skill, /Normal retrieval contains at most five active records and no evidence/)
+assert.match(skill, /Use the task language as the query/)
+assert.match(skill, /Do not guess a subject or broaden a query merely to force a result/)
 assert.match(skill, /Current user instructions, live repository contracts, and current code always outrank stored guidance/)
 assert.match(skill, /committed code-review evidence as a first-class history path/i)
 assert.match(skill, /Field-guide: <Activated\|Saved candidate\|Promoted\|Reinforced>/)
@@ -81,9 +85,14 @@ assert.match(policy, /If the resulting guidance remains correct and useful acros
 assert.match(policy, /If applying it elsewhere could be wrong because it relies on a repository-specific contract, use project scope/)
 assert.match(policy, /inferred shared learning still requires independent evidence from two repository identities and `generic: true`/i)
 assert.match(policy, /authoritative in current global or project instructions/)
+assert.match(policy, /remove the current task, patch, branch, migration, compatibility shim, and temporary condition/i)
+assert.match(policy, /Rewording a temporary implementation detail as a general sentence does not make it durable/)
 assert.match(storage, /review record/i)
 assert.match(storage, /does not define scope or activation for machine-recorded guidance in `memory\.md`/)
 assert.match(storage, /explicit portable user preference becomes active shared guidance immediately/)
+assert.match(storage, /two or more meaningful terms requires at least two complete-term matches/)
+assert.match(storage, /reports a null subject when no hint was used/)
+assert.match(storage, /Existing subject-based calls continue to return the requested subject/)
 assert.match(metadata, /allow_implicit_invocation: true/)
 assert.match(metadata, /durable preferences, corrections, repeated misses, and manual learning/)
 assert.doesNotMatch(metadata, /only after review feedback/)
@@ -162,6 +171,14 @@ const expectedScopeScenarios = [
     category: 'temporary',
     hosts: ['claude', 'codex'],
     userMessage: 'For this fixture patch, update the row we changed earlier.',
+    expectedDecision: 'skip',
+    requiresNotice: false,
+  },
+  {
+    id: 'temporary-compatibility-shim',
+    category: 'temporary',
+    hosts: ['claude', 'codex'],
+    userMessage: 'Remember to strip legacy aliases at the request boundary while this compatibility shim is in place.',
     expectedDecision: 'skip',
     requiresNotice: false,
   },

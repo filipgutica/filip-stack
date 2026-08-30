@@ -2,21 +2,23 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const flow = await readFile(new URL('../references/implementation-flow.md', import.meta.url), 'utf8')
-const investigationFlow = await readFile(new URL('../references/investigation-flow.md', import.meta.url), 'utf8')
-const subagentTemplates = await readFile(new URL('../references/subagent-templates.md', import.meta.url), 'utf8')
-const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
-const branchPlanner = await readFile(new URL('../../branch-task-planner/SKILL.md', import.meta.url), 'utf8')
-const branchPlannerMetadata = await readFile(new URL('../../branch-task-planner/agents/openai.yaml', import.meta.url), 'utf8')
-const implementation = await readFile(new URL('../../implementation/SKILL.md', import.meta.url), 'utf8')
-const implementationMetadata = await readFile(new URL('../../implementation/agents/openai.yaml', import.meta.url), 'utf8')
-const reviewCycle = await readFile(new URL('../../review-cycle/SKILL.md', import.meta.url), 'utf8')
-const reviewCycleMetadata = await readFile(new URL('../../review-cycle/agents/openai.yaml', import.meta.url), 'utf8')
-const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
-const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
-const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const skillRoot = workflowSkillRoot('coordinator')
+const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const flow = await readFile(new URL('references/implementation-flow.md', skillRoot), 'utf8')
+const investigationFlow = await readFile(new URL('references/investigation-flow.md', skillRoot), 'utf8')
+const subagentTemplates = await readFile(new URL('references/subagent-templates.md', skillRoot), 'utf8')
+const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
+const branchPlanner = await readFile(new URL('../branch-task-planner/SKILL.md', skillRoot), 'utf8')
+const branchPlannerMetadata = await readFile(new URL('../branch-task-planner/agents/openai.yaml', skillRoot), 'utf8')
+const implementation = await readFile(new URL('../implementation/SKILL.md', skillRoot), 'utf8')
+const implementationMetadata = await readFile(new URL('../implementation/agents/openai.yaml', skillRoot), 'utf8')
+const reviewCycle = await readFile(new URL('../review-cycle/SKILL.md', skillRoot), 'utf8')
+const reviewCycleMetadata = await readFile(new URL('../review-cycle/agents/openai.yaml', skillRoot), 'utf8')
+const scenarios = JSON.parse(await readFile(new URL('contract-scenarios.json', import.meta.url), 'utf8'))
+const readme = await readFile(new URL('README.md', repositoryRoot), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('package.json', repositoryRoot), 'utf8'))
 
 assert.match(skill, /Named-work-item end-to-end authority/)
 assert.match(skill, /ticket, specification, or plan/i)
@@ -70,7 +72,7 @@ assert.match(reviewCycleMetadata, /user acceptance/i)
 assert.match(metadata, /Named-work-item end-to-end authority/)
 assert.match(readme, /Named-work-item end-to-end authority/)
 
-assert.equal(packageJson.scripts['test:coordinator'], 'node plugins/workflow/skills/coordinator/scripts/validate-contract.mjs')
+assert.equal(packageJson.scripts['test:coordinator'], 'node tests/workflow/skills/coordinator/validate-contract.mjs')
 assert.match(packageJson.scripts.check, /test:coordinator/)
 
 assert.equal(scenarios.schemaVersion, 1)

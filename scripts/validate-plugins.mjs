@@ -1,6 +1,7 @@
 import { readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { isDevelopmentOnlyPluginPath } from './plugin-payload-policy.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = join(repoRoot, 'plugins')
@@ -115,6 +116,16 @@ const readDirectoryNames = async (path) => (
   .map((entry) => entry.name)
   .sort()
 
+const validateRuntimePayload = async (pluginRoot) => {
+  const paths = await readdir(pluginRoot, { recursive: true })
+  for (const path of paths.sort()) {
+    if (!(await stat(join(pluginRoot, path))).isFile()) continue
+    if (isDevelopmentOnlyPluginPath(path)) {
+      fail(`${join(pluginRoot, path)} is a development-only test asset inside the runtime plugin payload`)
+    }
+  }
+}
+
 console.log('Validating plugin manifests...')
 
 await validateJson(join(repoRoot, '.claude-plugin/marketplace.json'), ['name', 'owner', 'plugins'])
@@ -124,6 +135,7 @@ const pluginDirs = await readDirectoryNames(pluginsRoot)
 
 for (const pluginDir of pluginDirs) {
   const pluginRoot = join(pluginsRoot, pluginDir)
+  await validateRuntimePayload(pluginRoot)
 
   const claudeManifest = join(pluginRoot, '.claude-plugin/plugin.json')
   const codexManifest = join(pluginRoot, '.codex-plugin/plugin.json')

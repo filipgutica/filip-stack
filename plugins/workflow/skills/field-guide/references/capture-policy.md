@@ -61,6 +61,8 @@ Examples:
 
 Choose scope from where the guidance can be applied safely. The current repository is evidence context, not an automatic scope signal.
 
+Apply the durability counterfactual before choosing scope: remove the current task, patch, branch, migration, compatibility shim, and temporary condition. If the guidance loses its reason or would preserve behavior that should disappear with that work, skip it. Rewording a temporary implementation detail as a general sentence does not make it durable.
+
 Use shared scope for a portable preference, collaboration style, design judgment, or antipattern. Shared guidance must not depend on one repository's identity or contracts. Assign shared scope to a clear user preference even when the user states it during project work. The user does not need to say "in every repository" when the wording and meaning are already general.
 
 Use project scope only when the learning depends on a durable repository-specific contract, architecture, vocabulary, data shape, fixture convention, or workflow caveat. Write enough repository context into the learning to prevent accidental use elsewhere. The guidance must apply to future work in that repository. It must not describe only the current task, patch, branch, or completed work.
@@ -77,6 +79,7 @@ Examples:
 - Shared, if not authoritative elsewhere: "Prefer destructured object parameters for configuration-style inputs."
 - Project: "In this repository's fixture catalog, update an existing entry when it covers the same scenario. Add an entry only when the test contract requires an independent case."
 - Skip: "For this fixture patch, update the row we changed earlier."
+- Skip: "Strip legacy aliases at the request boundary while this compatibility shim is in place."
 
 An explicit preference can activate immediately. An inferred project learning remains a candidate until two independent evidence events support it. Manual evidence and conversation evidence without an occurrence ID do not satisfy promotion thresholds.
 

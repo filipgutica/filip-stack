@@ -110,22 +110,33 @@ that another record uses.
 
 ## Bounded retrieval
 
-Use `retrieve --subject <subject-key>` after the task scope is known. Add
-`--query <text>` for a concrete applicability match. Retrieval returns only
-active guidance and ranks it in this order:
+Use `retrieve --query <concrete-task-context>` after the repository and task are
+known. Add `--subject <subject-key>` only as a known ranking hint. An exact
+subject can be retrieved without a query. Retrieval returns only active guidance
+and ranks it in this order:
 
-1. Current-project guidance for the requested subject.
-2. Shared guidance for the requested subject.
+1. Current-project guidance for the subject hint, when provided.
+2. Shared guidance for the subject hint, when provided.
 3. Current-project or shared guidance from linked subjects.
-4. Other active guidance that matches the query text.
+4. Other active guidance by meaningful complete-term overlap with the query.
+
+Query matching ignores common language and Field Guide boilerplate. A query with
+two or more meaningful terms requires at least two complete-term matches. A
+single meaningful term requires one complete-term match. Applicability results
+with more matching terms rank first. Do not use generic wording or broaden a
+query to force a result.
 
 A current-project record suppresses an identical shared statement. Candidates
 and records for other repositories are excluded. Confidence and evidence count
 do not affect rank. Updated time breaks ties after scope and subject rank.
 
-Routing output is at most 2 KB. Normal output contains at most five whole
+Routing output is at most 2 KB and reports a null subject when no hint was used.
+Normal output contains at most five whole
 guidance records and 6 KB. It contains no evidence records or transition
 history. The utility never truncates a record. It reports the number omitted.
+The nullable subject extends the version 1 result only for the new query-only
+mode. Existing subject-based calls continue to return the requested subject
+string.
 
 Use `retrieve --evidence-for <guidance-id>` only for an explicit provenance or
 conflict check. Evidence expansion returns at most two whole records and 6 KB.

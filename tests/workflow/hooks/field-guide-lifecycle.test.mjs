@@ -4,9 +4,10 @@ import { mkdirSync, mkdtempSync, symlinkSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
+import { workflowPluginRoot } from '../plugin-paths.mjs'
 
-const adapter = new URL('./field-guide-lifecycle.mjs', import.meta.url)
-const nodeRunner = new URL('../scripts/run-node.sh', import.meta.url)
+const adapter = new URL('hooks/field-guide-lifecycle.mjs', workflowPluginRoot)
+const nodeRunner = new URL('scripts/run-node.sh', workflowPluginRoot)
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',

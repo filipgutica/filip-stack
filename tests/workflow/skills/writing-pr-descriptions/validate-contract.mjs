@@ -1,9 +1,11 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skillUrl = new URL('../SKILL.md', import.meta.url)
-const formatUrl = new URL('../references/default-format.md', import.meta.url)
-const implementationFlowUrl = new URL('../../coordinator/references/implementation-flow.md', import.meta.url)
+const skillRoot = workflowSkillRoot('writing-pr-descriptions')
+const skillUrl = new URL('SKILL.md', skillRoot)
+const formatUrl = new URL('references/default-format.md', skillRoot)
+const implementationFlowUrl = new URL('../coordinator/references/implementation-flow.md', skillRoot)
 
 const [skill, format, implementationFlow] = await Promise.all([
   readFile(skillUrl, 'utf8'),

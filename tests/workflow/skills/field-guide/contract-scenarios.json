@@ -49,6 +49,14 @@
       "requiresNotice": false
     },
     {
+      "id": "temporary-compatibility-shim",
+      "category": "temporary",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Remember to strip legacy aliases at the request boundary while this compatibility shim is in place.",
+      "expectedDecision": "skip",
+      "requiresNotice": false
+    },
+    {
       "id": "durable-ambiguous-scope",
       "category": "ambiguous",
       "hosts": ["claude", "codex"],
