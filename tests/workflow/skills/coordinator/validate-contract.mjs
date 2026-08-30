@@ -95,6 +95,9 @@ assert.deepEqual(
     'bounded-worker-delegation',
     'initial-adversarial-review',
     'adversarial-review-follow-up',
+    'complex-e2e-agent-walkthrough',
+    'routine-e2e-skips-agent-walkthrough',
+    'explicit-agent-walkthrough',
   ],
 )
 assert.equal(scenarios.scenarios[0].createTickets, false)
@@ -122,5 +125,10 @@ assert.equal(scenarios.scenarios[14].explicitProfileRequired, true)
 assert.equal(scenarios.scenarios[14].inheritMainModelAllowed, false)
 assert.equal(scenarios.scenarios[15].expectedAction, 'follow-up-existing-critic')
 assert.equal(scenarios.scenarios[15].newAgentAllowed, false)
+assert.equal(scenarios.scenarios[16].expectedRoute, 'agent-walkthrough-after-branch-checks')
+assert.equal(scenarios.scenarios[16].requiredReviewTierPreserved, true)
+assert.equal(scenarios.scenarios[17].agentWalkthroughRequired, false)
+assert.equal(scenarios.scenarios[18].presenterProfileClass, 'read-only-non-critic')
+assert.equal(scenarios.scenarios[18].reusePresenterForFollowUp, true)
 
 console.log('Coordinator active-slice contract passed.')

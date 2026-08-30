@@ -188,7 +188,9 @@ Resume an existing session by its log filename. Do not create a second log for t
 
 An explicit Walkthrough session creates one log after source and topic confirmation. Use `<date>-<sequence>-<slug>.md` under `walkthroughs/`.
 
-Use `start-walkthrough` to record a fixed provenance header. The header records the source, repository ID, branch, base, head, range, and start time.
+Use `start-walkthrough` to record the provenance header. The header records the source, reviewer mode, repository ID, branch, base, head, range, and start time.
+
+Reviewer is `user` or `agent`. An omitted value defaults to `user`. Legacy logs without the field remain valid.
 
 Pass `--slices` as a JSON array of ordered `slice` and `description` objects. The command creates a summary table and sets each status to `unresolved`.
 
@@ -198,15 +200,23 @@ Use `open` when the correction still needs work. Use `resolved` after implementa
 
 Add a correction with `--correction` and `--correction-status open`. Update the open correction to `resolved` or `deferred` with the returned `--correction-id`. These terminal states cannot change. Existing logs without this table remain valid until the next update adds it.
 
+A correction ID belongs to its source slice. An update must select that same slice.
+
 For a branch source, pass `--base-ref`. The setup utility uses `git merge-base HEAD <base-ref>` for the base. It records `<base>...<head>` as the range.
+
+After a correction commit, use `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`. The current checkout must use the walkthrough's recorded branch. The command atomically refreshes the stored merge base, head, and range, then validates the updated log.
 
 For a last-turn or working-tree source, the base is `none`. The range is `<source>@<head>`.
 
 The repository field uses the stable repository ID. It does not store a local repository path.
 
-The running log follows the corrections table. Use `update-walkthrough` after the user resolves a slice. The command updates the table row and appends one curated entry.
+The running log follows the corrections table. Use `update-walkthrough` after the reviewer resolves a slice. The command updates the table row and adds one curated entry.
 
-The command selects the first unresolved table row as the next slice. It selects `complete` only when no unresolved row remains.
+Each entry contains the reviewer decision and a distinct `Corrections` field. The field contains the applicable correction ID or `none`.
+
+The command selects the source slice of the first open correction before any unresolved table row. It selects `complete` only when no open correction and no unresolved row remain.
+
+Logs created before this ordering rule may still name the first unresolved row or `complete`. The utility accepts that stored value and normalizes it when the walkthrough resumes or updates.
 
 Each recorded field must use one line. Do not store a prompt, transcript, response, hidden reasoning, full diff, code excerpt, credential, or local repository path.
 

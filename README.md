@@ -14,8 +14,9 @@ Its skills are grouped by purpose:
 - **Implementation and debugging:** `implementation`, `minimal-code`,
   `systematic-debugging`, `using-git-worktrees`, and
   `subagent-driven-development`.
-- **Review and improvement:** `walkthrough`, `receiving-code-review`,
-  `review-cycle`, `simplification-review`, and `field-guide`.
+- **Review and improvement:** `walkthrough`, `agent-walkthrough`,
+  `receiving-code-review`, `review-cycle`, `simplification-review`, and
+  `field-guide`.
 - **Coordination and state:** `coordinator`, `branch-task-planner`, and `setup`.
 
 `setup`, `branch-task-planner`, `grill-with-docs`, `spec-to-tickets`,
@@ -33,6 +34,14 @@ granting authority to modify them. An explicit invocation can save one curated
 walkthrough log under a confirmed topic. The log keeps a slice-status table and
 a chronological running log. A corrections table tracks required changes as
 `open`, `resolved`, or `deferred`.
+
+`agent-walkthrough` is the automated branch-level variant. A fresh read-only
+presenter explains one slice at a time to the main thread acting as staff
+reviewer. The coordinator may select it for named-work-item end-to-end work when
+tasks interact across an end-to-end flow. It may also select it when a public
+contract crosses producer and consumer boundaries. Migration, compatibility, or
+rollout behavior across multiple slices can also require it. The skill does not
+replace the independent review tier or `review-cycle`.
 
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
@@ -167,10 +176,16 @@ The coordinator loads detailed guidance only for its selected route:
   `review-cycle` after meaningful edits.
 
 Named-work-item end-to-end authority applies to a ticket, specification, or
-plan. It permits branch setup, external ledger maintenance, bounded commits,
-push, and a draft pull request. The coordinator composes a plan when complexity
-requires it. It does not create tickets when the primary work item is already
-self-contained.
+plan. It permits branch setup, external ledger maintenance, a selected agent
+walkthrough log, bounded commits, push, and a draft pull request. The
+coordinator composes a plan when complexity requires it. It does not create
+tickets when the primary work item is already self-contained.
+
+After branch-level checks, the coordinator may run `agent-walkthrough` before
+final acceptance when branch-level integration risk remains. A pull request is
+resolved to verified base and head SHAs and reviewed as the same exact branch
+range. Valid corrections return through the normal implementation and review
+cycle before the same presenter revisits affected slices.
 
 For meaningful implementation, the coordinator states one active slice with an
 outcome, boundary, and verification signal. It defers independent work and
@@ -198,7 +213,9 @@ default. The topic must be user-identified or the only open topic. When multiple
 open topics exist, the user must choose one. Plans and local ticket drafts need
 an explicit storage request. An explicit `grill-me` invocation creates one
 curated topic log after topic confirmation. An explicit `walkthrough` invocation
-creates one curated log with source provenance after source and topic confirmation.
+creates one curated log with source provenance after source and topic
+confirmation. A selected `agent-walkthrough` uses the same bounded format and
+records the reviewer as `agent`.
 
 An explicit `grill-with-docs` invocation adds repository-document authority. It
 may update selected existing repository documentation and qualifying ADR files.

@@ -51,7 +51,7 @@ const commands = new Set([
   'start-grill', 'update-grill', 'start-walkthrough', 'update-walkthrough',
   'configure-ticket-system',
 ])
-const booleanFlags = new Set(['--confirm', '--confirm-warnings'])
+const booleanFlags = new Set(['--confirm', '--confirm-warnings', '--refresh-range'])
 
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
@@ -1103,6 +1103,7 @@ const updateGrill = ({
 
 const walkthroughFilePattern = /^(\d{4}-\d{2}-\d{2})-(\d{2})-([a-z0-9]+(?:-[a-z0-9]+)*)\.md$/
 const walkthroughSources = new Set(['last-turn', 'working-tree', 'branch'])
+const walkthroughReviewers = new Set(['user', 'agent'])
 const walkthroughStatuses = new Set(['covered', 'changed', 'unresolved'])
 const walkthroughCorrectionStatuses = new Set(['open', 'resolved', 'deferred'])
 const walkthroughSliceKeys = new Set(['slice', 'description'])
@@ -1172,7 +1173,8 @@ const walkthroughCorrectionsTable = (corrections) => (
 
 const walkthroughEntries = (records) => records.map((record, index) => (
   `### Entry ${index + 1}\n\n- Slice: ${record.slice}\n- Status: ${record.status}\n`
-  + `- Summary: ${record.summary}\n- Evidence: ${record.evidence}\n- Decision: ${record.decision}\n\n`
+  + `- Summary: ${record.summary}\n- Evidence: ${record.evidence}\n- Decision: ${record.decision}\n`
+  + `- Corrections: ${record.corrections}\n\n`
 )).join('')
 
 const requireOpenWalkthroughTopic = (topic) => {
@@ -1207,9 +1209,9 @@ const parseWalkthroughTable = ({ table, logFile }) => {
   return slices
 }
 
-const parseWalkthroughEntries = ({ entries, slices, logFile }) => {
+const parseWalkthroughEntries = ({ entries, slices, corrections, logFile }) => {
   const records = []
-  const pattern = /^### Entry (\d+)\n\n- Slice: (.+)\n- Status: (covered|changed|unresolved)\n- Summary: (.+)\n- Evidence: (.+)\n- Decision: (.+)\n\n/gm
+  const pattern = /^### Entry (\d+)\n\n- Slice: (.+)\n- Status: (covered|changed|unresolved)\n- Summary: (.+)\n- Evidence: (.+)\n- Decision: (.+)\n(?:- Corrections: (none|C[1-9]\d*)\n)?\n/gm
   let match
   while ((match = pattern.exec(entries)) !== null) {
     records.push({
@@ -1219,11 +1221,18 @@ const parseWalkthroughEntries = ({ entries, slices, logFile }) => {
       summary: walkthroughText({ name: 'summary', value: match[4] }),
       evidence: walkthroughText({ name: 'evidence', value: match[5] }),
       decision: walkthroughText({ name: 'decision', value: match[6] }),
+      corrections: match[7] ?? 'none',
     })
   }
   if (entries.replace(pattern, '').trim() !== ''
-    || records.some(({ number, slice }, index) => number !== index + 1
-      || !slices.some((item) => item.slice === slice))) {
+    || records.some(({ number, slice, corrections: correctionReference }, index) => (
+      number !== index + 1
+      || !slices.some((item) => item.slice === slice)
+      || (correctionReference !== 'none'
+        && !corrections.some(({ id, slice: correctionSlice }) => (
+          id === correctionReference && correctionSlice === slice
+        )))
+    ))) {
     invalidWalkthroughLog(logFile)
   }
   return records
@@ -1300,9 +1309,12 @@ const createWalkthroughCorrection = ({ corrections, slice, correction, correctio
   return { corrections: [...corrections, nextCorrection], correctionId: nextCorrection.id }
 }
 
-const updateWalkthroughCorrection = ({ corrections, correctionId, correctionStatus }) => {
+const updateWalkthroughCorrection = ({ corrections, slice, correctionId, correctionStatus }) => {
   const correctionIndex = corrections.findIndex(({ id }) => id === correctionId)
   if (correctionIndex === -1) fail('--correction-id must match a correction in the walkthrough log')
+  if (corrections[correctionIndex].slice !== slice) {
+    fail('--correction-id must belong to the selected slice')
+  }
   if (corrections[correctionIndex].status !== 'open') {
     fail('--correction-id must name an open correction')
   }
@@ -1323,16 +1335,32 @@ const updateWalkthroughCorrections = ({
   if (mode === 'create') {
     return createWalkthroughCorrection({ corrections, slice, correction, correctionStatus })
   }
-  return updateWalkthroughCorrection({ corrections, correctionId, correctionStatus })
+  return updateWalkthroughCorrection({ corrections, slice, correctionId, correctionStatus })
 }
 
-const validateWalkthroughProgress = ({ slices, records, nextSlice, logFile }) => {
+const nextWalkthroughSlice = ({ slices, corrections }) => (
+  corrections.find(({ status }) => status === 'open')?.slice
+  || slices.find(({ status }) => status === 'unresolved')?.slice
+  || 'complete'
+)
+
+const validateWalkthroughProgress = ({ slices, corrections, records, nextSlice, logFile }) => {
   const latestStatuses = new Map(records.map(({ slice, status }) => [slice, status]))
-  const expectedNextSlice = slices.find(({ status }) => status === 'unresolved')?.slice || 'complete'
+  const expectedNextSlice = nextWalkthroughSlice({ slices, corrections })
+  const previousNextSlice = slices.find(({ status }) => status === 'unresolved')?.slice || 'complete'
+  const validNextSlice = nextSlice === expectedNextSlice
+    || (corrections.some(({ status }) => status === 'open') && nextSlice === previousNextSlice)
   if (slices.some(({ slice, status }) => status !== (latestStatuses.get(slice) || 'unresolved'))
-    || nextSlice !== expectedNextSlice) {
+    || !validNextSlice) {
     invalidWalkthroughLog(logFile)
   }
+  return { expectedNextSlice, legacyOrder: nextSlice !== expectedNextSlice }
+}
+
+const currentWalkthroughBranch = ({ repoRoot }) => {
+  const branch = git({ repoRoot, args: ['branch', '--show-current'] })
+  if (!branch) fail('branch walkthrough requires a named branch checkout')
+  return walkthroughText({ name: 'branch', value: branch })
 }
 
 const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
@@ -1347,6 +1375,7 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
     `^# Walkthrough: ${escapePattern(title)}\\n\\nTopic: \\[TOPIC\\.md\\]\\(${escapePattern(topicTarget)}\\)`
       + '\\n\\n## Provenance\\n\\n'
       + '- Source: (last-turn|working-tree|branch)\\n'
+      + '(?:- Reviewer: (user|agent)\\n)?'
       + '- Repository: ([a-zA-Z0-9._-]+-[0-9a-f]{8})\\n'
       + '- Branch: (.+)\\n'
       + '- Base: (none|[0-9a-f]{40})\\n'
@@ -1364,7 +1393,7 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
   const match = content.match(pattern)
   if (!match) invalidWalkthroughLog(logFile)
   const [
-    , source, repository, branch, base, head, range, startedAt,
+    , source, reviewer, repository, branch, base, head, range, startedAt,
     table, correctionsTable, entries, nextSlice,
   ] = match
   const validatedBranch = walkthroughText({ name: 'branch', value: branch })
@@ -1377,16 +1406,29 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
   }
   const slices = parseWalkthroughTable({ table, logFile })
   const corrections = parseWalkthroughCorrections({ table: correctionsTable, slices, logFile })
-  const records = parseWalkthroughEntries({ entries, slices, logFile })
-  validateWalkthroughProgress({ slices, records, nextSlice, logFile })
+  const records = parseWalkthroughEntries({ entries, slices, corrections, logFile })
+  const progress = validateWalkthroughProgress({ slices, corrections, records, nextSlice, logFile })
   return {
     content, slices, corrections, records, source, repository, branch: validatedBranch,
-    base, head, range, startedAt, nextSlice,
+    reviewer: reviewer ?? 'user', base, head, range, startedAt, nextSlice,
+    expectedNextSlice: progress.expectedNextSlice, legacyNextSlice: progress.legacyOrder,
   }
 }
 
+const normalizeWalkthroughNextSlice = ({ log, logFile }) => {
+  if (!log.legacyNextSlice) return false
+  const previousEnding = `## Next slice\n\n${log.nextSlice}\n`
+  if (!log.content.endsWith(previousEnding)) invalidWalkthroughLog(logFile)
+  writeAtomically({
+    file: logFile,
+    content: `${log.content.slice(0, -previousEnding.length)}## Next slice\n\n${log.expectedNextSlice}\n`,
+  })
+  return true
+}
+
 const startWalkthrough = ({
-  paths, topicId, slug: inputSlug, source, baseRef, slices: inputSlices, logFile: inputLogFile,
+  paths, topicId, slug: inputSlug, source, reviewer: inputReviewer, baseRef,
+  slices: inputSlices, logFile: inputLogFile, refreshRange,
 }) => withTopicLock({
   workflowRoot: paths.workflowRoot,
   action: () => {
@@ -1396,19 +1438,68 @@ const startWalkthrough = ({
     const resolved = topicPaths({ paths, topic })
     if (inputLogFile) {
       const logFile = walkthroughLogFile({ root: resolved.walkthroughsRoot, inputLogFile })
+      let log = readWalkthroughLog({
+        logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+        repoRoot: paths.repositoryRoot,
+      })
+      if (!refreshRange) {
+        if (baseRef !== undefined) fail('--base-ref requires --refresh-range when resuming a walkthrough')
+        const normalized = normalizeWalkthroughNextSlice({ log, logFile })
+        if (normalized) {
+          log = readWalkthroughLog({
+            logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+            repoRoot: paths.repositoryRoot,
+          })
+        }
+        return {
+          resumed: true, refreshed: false, normalized, logFile, topicFile: resolved.topicFile,
+          reviewer: log.reviewer, base: log.base, head: log.head, range: log.range,
+          nextSlice: log.nextSlice,
+        }
+      }
+      if (log.source !== 'branch') fail('--refresh-range requires a branch walkthrough')
+      if (!baseRef?.trim()) fail('--base-ref is required with --refresh-range')
+      const branch = currentWalkthroughBranch({ repoRoot: paths.repositoryRoot })
+      if (branch !== log.branch) fail('--refresh-range requires the walkthrough branch checkout')
+      const head = git({ repoRoot: paths.repositoryRoot, args: ['rev-parse', 'HEAD'] })
+      const base = git({ repoRoot: paths.repositoryRoot, args: ['merge-base', 'HEAD', baseRef.trim()] })
+      const range = `${base}...${head}`
+      const normalized = normalizeWalkthroughNextSlice({ log, logFile })
+      if (normalized) {
+        log = readWalkthroughLog({
+          logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
+          repoRoot: paths.repositoryRoot,
+        })
+      }
+      const previousProvenance = `- Base: ${log.base}\n- Head: ${log.head}\n- Range: ${log.range}`
+      const refreshedProvenance = `- Base: ${base}\n- Head: ${head}\n- Range: ${range}`
+      if (!log.content.includes(previousProvenance)) invalidWalkthroughLog(logFile)
+      writeAtomically({
+        file: logFile,
+        content: log.content.replace(previousProvenance, refreshedProvenance),
+      })
       readWalkthroughLog({
         logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
         repoRoot: paths.repositoryRoot,
       })
-      return { resumed: true, logFile, topicFile: resolved.topicFile }
+      return {
+        resumed: true, refreshed: true, normalized, logFile, topicFile: resolved.topicFile,
+        reviewer: log.reviewer, base, head, range,
+        nextSlice: log.nextSlice,
+      }
     }
+    if (refreshRange) fail('--refresh-range requires --log-file')
     const slug = inputSlug?.trim()
     if (!topicIdPattern.test(slug || '')) fail('--slug must be a lowercase hyphenated ID')
     if (!walkthroughSources.has(source)) fail('--source must be last-turn, working-tree, or branch')
     if (source === 'branch' && !baseRef?.trim()) fail('--base-ref is required when --source is branch')
     if (source !== 'branch' && baseRef !== undefined) fail('--base-ref is only valid when --source is branch')
+    const reviewer = inputReviewer ?? 'user'
+    if (!walkthroughReviewers.has(reviewer)) fail('--reviewer must be user or agent')
     const slices = parseWalkthroughSlices(inputSlices)
-    const branch = walkthroughText({ name: 'branch', value: paths.branch })
+    const branch = source === 'branch'
+      ? currentWalkthroughBranch({ repoRoot: paths.repositoryRoot })
+      : walkthroughText({ name: 'branch', value: paths.branch })
     git({ repoRoot: paths.repositoryRoot, args: ['check-ref-format', '--branch', branch] })
     const head = git({ repoRoot: paths.repositoryRoot, args: ['rev-parse', 'HEAD'] })
     const base = source === 'branch'
@@ -1428,14 +1519,14 @@ const startWalkthrough = ({
     writeAtomically({
       file: logFile,
       content: `# Walkthrough: ${slug}\n\nTopic: [TOPIC.md](${topicLink})\n\n## Provenance\n\n`
-        + `- Source: ${source}\n- Repository: ${paths.repositoryId}\n- Branch: ${branch}\n`
+        + `- Source: ${source}\n- Reviewer: ${reviewer}\n- Repository: ${paths.repositoryId}\n- Branch: ${branch}\n`
         + `- Base: ${base}\n- Head: ${head}\n- Range: ${range}\n- Started at: ${startedAt}\n\n`
         + `## Slices\n\n${walkthroughTable(slices)}\n## Corrections\n\n`
         + `${walkthroughCorrectionsTable([])}\n## Running log\n\n`
         + `## Next slice\n\n${slices[0].slice}\n`,
     })
     syncTopicUnlocked({ paths, topicId })
-    return { resumed: false, logFile, topicFile: resolved.topicFile, base, head, range }
+    return { resumed: false, logFile, topicFile: resolved.topicFile, reviewer, base, head, range }
   },
 })
 
@@ -1471,8 +1562,11 @@ const updateWalkthrough = ({
     const correctionUpdate = updateWalkthroughCorrections({
       corrections: log.corrections, slice: values.slice, correction, correctionId, correctionStatus,
     })
-    const records = [...log.records, { ...values, status }]
-    const nextSlice = slices.find((item) => item.status === 'unresolved')?.slice || 'complete'
+    const records = [
+      ...log.records,
+      { ...values, status, corrections: correctionUpdate.correctionId ?? 'none' },
+    ]
+    const nextSlice = nextWalkthroughSlice({ slices, corrections: correctionUpdate.corrections })
     const marker = '\n## Slices\n'
     const header = log.content.slice(0, log.content.indexOf(marker)).replace(/\s*$/, '')
     writeAtomically({
@@ -1539,7 +1633,8 @@ try {
     } else if (command === 'start-walkthrough') {
       console.log(JSON.stringify(startWalkthrough({
         paths, topicId: options['topic-id'], slug: options.slug, source: options.source,
-        baseRef: options['base-ref'], slices: options.slices, logFile: options['log-file'],
+        reviewer: options.reviewer, baseRef: options['base-ref'], slices: options.slices,
+        logFile: options['log-file'], refreshRange: options['refresh-range'],
       }), null, 2))
     } else if (command === 'update-walkthrough') {
       console.log(JSON.stringify(updateWalkthrough({

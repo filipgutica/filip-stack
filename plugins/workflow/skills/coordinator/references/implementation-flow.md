@@ -80,7 +80,7 @@ Use this route only with explicit named-work-item end-to-end authority. The prim
 
 Choose direct execution or plan composition based on complexity. Do not create individual tickets when the primary work item already defines a bounded outcome.
 
-This authority permits branch setup, required ledger and pointer maintenance, bounded commits, push, and a draft pull request.
+This authority permits branch setup, required ledger and pointer maintenance, one selected agent-walkthrough log, bounded commits, push, and a draft pull request.
 
 1. Confirm or create the working branch. Use `$workflow:using-git-worktrees` only when this route requires isolation.
 2. Read the primary work item and relevant repository evidence. When the primary work item is ambiguous, follow its durable source before deciding scope.
@@ -95,8 +95,17 @@ This authority permits branch setup, required ledger and pointer maintenance, bo
 11. Repeat the bounded cycle for the next task.
 12. Run branch-level checks after all tasks are complete.
 13. If a branch check fails, create a correction task and return to step 6.
-14. Push the branch only after all branch-level checks pass.
-15. Invoke `$workflow:writing-pr-descriptions` to prepare the body. Open the draft pull request with that final body.
+14. After branch-level checks, decide whether `$workflow:agent-walkthrough` must run before final acceptance.
+    - Select it when the user explicitly requests it.
+    - Select it when reviewed tasks interact in one end-to-end flow.
+    - Select it when a public contract crosses producer and consumer boundaries.
+    - Select it when migration, compatibility, or rollout behavior spans slices.
+    - Select it when no individual task review proves the final behavior.
+    - Do not select it automatically for an isolated change, mechanical update, or documentation-only work without integration risk.
+15. Route valid walkthrough corrections back through step 6, rerun affected branch checks, and resume the same presenter on the refreshed range.
+16. Use final agent acceptance only after the selected walkthrough completes or the route records why it was not required. The walkthrough does not replace the selected independent review tier or review cycle.
+17. Push the branch only after all branch-level checks and required acceptance gates pass.
+18. Invoke `$workflow:writing-pr-descriptions` to prepare the body. Open the draft pull request with that final body.
 
 Perform only the publishing actions that the current request authorizes.
 
@@ -119,6 +128,7 @@ Review feedback does not grant branch, commit, push, or pull-request authority.
 - **Worker:** owns one bounded implementation area, tests it, and self-reviews it without accepting its own work.
 - **Standard reviewer:** reviews a routine meaningful change.
 - **Adversarial critic:** challenges a broad or high-risk change.
+- **Presenter:** explains an exact branch range read-only during an agent walkthrough without editing, independently reviewing, or accepting work.
 - **Main thread:** selects the route and tier, integrates results, and accepts the work.
 
 Follow the host profiles for model and tool selection. Select an explicit

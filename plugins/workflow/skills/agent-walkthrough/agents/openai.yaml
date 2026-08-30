@@ -1,0 +1,9 @@
+interface:
+  display_name: "Agent Walkthrough"
+  short_description: "Run a staff-level branch walkthrough with a presenter agent"
+  default_prompt: >-
+    Use $workflow:agent-walkthrough to have a read-only presenter explain the
+    complete branch or pull-request range to the main thread acting as staff
+    reviewer. Keep the existing independent review tier and correction cycle.
+policy:
+  allow_implicit_invocation: true

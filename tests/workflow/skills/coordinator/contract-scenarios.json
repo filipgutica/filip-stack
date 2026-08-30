@@ -113,6 +113,27 @@
       "prompt": "Recheck the corrected diff against the same adversarial findings.",
       "expectedAction": "follow-up-existing-critic",
       "newAgentAllowed": false
+    },
+    {
+      "id": "complex-e2e-agent-walkthrough",
+      "prompt": "Implement this producer and consumer contract migration end to end.",
+      "expectedRoute": "agent-walkthrough-after-branch-checks",
+      "branchIntegrationRisk": true,
+      "requiredReviewTierPreserved": true
+    },
+    {
+      "id": "routine-e2e-skips-agent-walkthrough",
+      "prompt": "Implement this isolated documentation correction end to end.",
+      "expectedRoute": "normal-end-to-end-completion",
+      "branchIntegrationRisk": false,
+      "agentWalkthroughRequired": false
+    },
+    {
+      "id": "explicit-agent-walkthrough",
+      "prompt": "Use $workflow:agent-walkthrough for the complete branch.",
+      "expectedRoute": "agent-walkthrough",
+      "presenterProfileClass": "read-only-non-critic",
+      "reusePresenterForFollowUp": true
     }
   ]
 }

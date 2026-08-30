@@ -32,6 +32,7 @@ assertContainsAll(skill, [
   /creates one curated topic log by default/i,
   /Create no log before source and topic confirmation/i,
   /start-walkthrough/,
+  /--reviewer user/,
   /update-walkthrough/,
   /summary table/i,
   /slice name, brief description, and current status/i,
@@ -42,7 +43,7 @@ assertContainsAll(skill, [
   /Mark the correction `resolved`/i,
   /Mark it `deferred`/i,
   /Keep a correction `open`/i,
-  /selects the first unresolved slice/i,
+  /returns to an open correction before it selects the first unresolved slice/i,
   /after the user resolves a slice/i,
   /If the user stops early, preserve the unresolved next slice/i,
   /rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines/i,
@@ -87,7 +88,9 @@ assertContainsAll(patterns, [
 assertContainsAll(log, [
   /topics\/open\/<topic-id>\/walkthroughs\/<date>-<sequence>-<slug>\.md/,
   /repository identity, branch, merge base, head, and comparison range/i,
-  /after the user resolves each slice/i,
+  /Reviewer as `user` or `agent`/i,
+  /legacy logs without the field remain valid/i,
+  /after the reviewer resolves each slice/i,
   /`## Slices` table/,
   /`## Corrections` table/,
   /stable ID, slice name, correction, and status/i,
@@ -100,13 +103,15 @@ assertContainsAll(log, [
   /`## Running log`/,
   /initial status is `unresolved`/i,
   /Do not use `complete` as a slice name/i,
-  /first unresolved table row as the next slice/i,
+  /first open correction before any unresolved table row/i,
   /covered, changed, or remains unresolved/i,
+  /Corrections: <id>.+Corrections: none/i,
   /Do not store a raw transcript, prompt, response, hidden reasoning, full diff, code excerpt/i,
   /machine-local repository path/i,
   /link to `\.\.\/TOPIC\.md`/,
   /Resume the same log after context compaction/i,
-  /selects `complete` only when no unresolved row remains/i,
+  /selects `complete` only when no open correction and no unresolved row remain/i,
+  /--refresh-range --base-ref <ref>/i,
 ])
 
 assertContainsAll(metadata, [
@@ -118,10 +123,12 @@ assertContainsAll(setup, [
   /--correction <text> --correction-status open/,
   /--correction-id <id> --correction-status <resolved\|deferred>/,
   /Use that ID with `--correction-id`/i,
+  /--refresh-range --base-ref <ref>/i,
 ])
 assertContainsAll(storage, [
   /corrections table follows the summary table/i,
   /Existing logs without this table remain valid/i,
+  /first open correction before any unresolved table row/i,
 ])
 assertContainsAll(readme, [
   /`walkthrough`/,

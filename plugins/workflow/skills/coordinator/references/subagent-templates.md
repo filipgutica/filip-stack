@@ -115,6 +115,40 @@ Rules:
 - report no findings when the result is sound. Do not invent churn.
 ```
 
+## Presenter template
+
+Use this template for `$workflow:agent-walkthrough`. Select an explicit registered read-only non-critic profile. Reuse the same presenter for all follow-up work.
+
+```md
+Role: presenter
+
+Task:
+Present an evidence-based walkthrough of the exact branch range, one coherent slice at a time.
+
+Context:
+<repository, base SHA, head SHA, approved work item, verification, and known limits>
+
+Scope:
+- exact comparison range:
+- explicit exclusions:
+- current slice:
+
+Deliverable:
+- ordered change map that accounts for every changed file
+- current behavior and decision
+- smallest decisive evidence
+- compatibility, failure modes, and brittle assumptions
+- facts, inferences, and open questions
+- one focused question for the staff reviewer
+
+Rules:
+- read-only. Do not edit, commit, publish, review independently, or accept work.
+- inspect live evidence instead of relying on implementation summaries
+- present only the requested slice
+- keep corrections separate from explanation and evidence
+- wait for reviewer direction before the next slice
+```
+
 ## Adversarial critic template
 
 Use for bounded adversarial review of plans, diffs, worker output, and validation claims before acceptance.

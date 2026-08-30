@@ -17,7 +17,7 @@ Use `$workflow:minimal-code` for implementation. Minimality never overrides corr
 - **Setup or migration authority:** an explicit user request to configure or migrate Engineering Workflow storage permits only the requested setup or migration operation.
 - **Ticket-writing authority:** permits ticket creation or changes.
 - **Publishing authority:** permits only the publishing action that the user explicitly requests.
-- **Named-work-item end-to-end authority:** applies to a ticket, specification, or plan. It permits branch setup, required ledger maintenance, bounded commits, push, and a draft pull request.
+- **Named-work-item end-to-end authority:** applies to a ticket, specification, or plan. It permits branch setup, required ledger maintenance, one selected agent-walkthrough log, bounded commits, push, and a draft pull request.
 
 Planning and Investigation are read-only for repository files. Review feedback does not grant implementation or publishing authority.
 
@@ -55,6 +55,7 @@ A manual-only skill can be an explicit nested invocation when the selected autho
 - **Worker:** owns a separate bounded change, tests it, and self-reviews it. It does not widen scope or accept its own work.
 - **Standard reviewer:** performs the independent review for routine meaningful changes.
 - **Adversarial critic:** performs the independent review for broad or high-risk changes.
+- **Presenter:** reconstructs and explains an exact branch range read-only during an agent walkthrough. It does not edit, review independently, or accept work.
 - **Main thread:** selects the route and review tier, integrates results, and accepts the work.
 
 Select an explicit registered profile for each delegation. Do not rely on the

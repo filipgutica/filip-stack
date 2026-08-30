@@ -36,7 +36,7 @@ Use the setup utility to resolve an existing topic. A durable source or register
 
 Create no log before source and topic confirmation. If setup, topic creation, or repository attachment is required, use `$workflow:setup` only with explicit setup authority. Without that authority, continue in the conversation and state that no walkthrough log was persisted.
 
-After you build the change map, use setup `start-walkthrough` to create the log. Pass the ordered slice names and brief descriptions with `--slices`. For a branch walkthrough, pass the verified base ref. Resume an interrupted walkthrough with `start-walkthrough --log-file <name>`.
+After you build the change map, use setup `start-walkthrough --reviewer user` to create the log. Pass the ordered slice names and brief descriptions with `--slices`. For a branch walkthrough, pass the verified base ref. Resume an interrupted walkthrough with `start-walkthrough --log-file <name>`.
 
 ## Prepare the walkthrough
 
@@ -67,7 +67,7 @@ Adjust the depth when the user asks to skip, expand, or revisit a slice. Keep a 
 
 The log starts with a summary table. Each row contains a slice name, brief description, and current status. A corrections table and chronological running log follow it.
 
-After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only the curated status, summary, evidence, and decision. The utility updates the table, appends the running-log entry, and selects the first unresolved slice. Do not store the conversation or full coverage map.
+After the user resolves a slice, use setup `update-walkthrough` before the next slice. Record only the curated status, summary, evidence, and decision. The utility updates the table, appends the running-log entry, and returns to an open correction before it selects the first unresolved slice. Do not store the conversation or full coverage map.
 
 The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines. This check is a backstop. Curate every field before the write.
 
@@ -86,7 +86,7 @@ If the user explicitly requests a bounded correction during the walkthrough:
 3. Route the correction through `$workflow:coordinator`.
 4. Complete the authorized implementation, verification, and review cycle.
 5. Mark the correction `resolved`. Mark it `deferred` if the user postpones the work.
-6. Refresh the selected diff and coverage map.
+6. Refresh the selected diff and coverage map. For a branch walkthrough, also run setup `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`.
 7. Revisit each changed or superseded slice.
 8. Resume the walkthrough from the updated evidence.
 
