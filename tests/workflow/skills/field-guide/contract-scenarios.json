@@ -12,6 +12,60 @@
       "requiresNotice": true
     },
     {
+      "id": "portable-preference-stated-during-project",
+      "category": "obvious",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Prefer named constants for non-obvious domain thresholds.",
+      "expectedDecision": "capture",
+      "expectedScope": "shared",
+      "expectedState": "active",
+      "requiresNotice": true
+    },
+    {
+      "id": "authoritative-preference-duplicate",
+      "category": "obvious",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Prefer destructured object parameters for functions with optional or configuration-style inputs.",
+      "authoritativeSource": "global-instructions",
+      "expectedDecision": "skip",
+      "requiresNotice": false
+    },
+    {
+      "id": "durable-repository-caveat",
+      "category": "obvious",
+      "hosts": ["claude", "codex"],
+      "userMessage": "In this repository's fixture catalog, update an existing entry when it covers the same scenario. Add an entry only when the test contract requires an independent case.",
+      "expectedDecision": "capture",
+      "expectedScope": "project",
+      "expectedState": "active",
+      "requiresNotice": true
+    },
+    {
+      "id": "task-local-repository-detail",
+      "category": "temporary",
+      "hosts": ["claude", "codex"],
+      "userMessage": "For this fixture patch, update the row we changed earlier.",
+      "expectedDecision": "skip",
+      "requiresNotice": false
+    },
+    {
+      "id": "temporary-compatibility-shim",
+      "category": "temporary",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Remember to strip legacy aliases at the request boundary while this compatibility shim is in place.",
+      "expectedDecision": "skip",
+      "requiresNotice": false
+    },
+    {
+      "id": "durable-ambiguous-scope",
+      "category": "ambiguous",
+      "hosts": ["claude", "codex"],
+      "userMessage": "Remember that I prefer updating existing entries instead of adding new ones.",
+      "expectedDecision": "ask",
+      "expectedQuestionFocus": "shared-or-project-scope",
+      "requiresNotice": false
+    },
+    {
       "id": "unclear-style-preference",
       "category": "ambiguous",
       "hosts": ["claude", "codex"],
@@ -79,7 +133,7 @@
     {
       "id": "end-task-durable-correction",
       "category": "obvious",
-      "hosts": ["claude"],
+      "hosts": ["claude", "codex"],
       "userMessage": "That fix is right. Always preserve the generated header when this repository rewrites schema files.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
@@ -90,7 +144,7 @@
     {
       "id": "end-task-ambiguous-learning",
       "category": "ambiguous",
-      "hosts": ["claude"],
+      "hosts": ["claude", "codex"],
       "userMessage": "Use the other review format next time.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
@@ -100,7 +154,7 @@
     {
       "id": "end-task-no-learning",
       "category": "temporary",
-      "hosts": ["claude"],
+      "hosts": ["claude", "codex"],
       "userMessage": "Show the current branch name.",
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",

@@ -11,26 +11,27 @@ The guide is local and untracked at `~/.field-guide` by default. Current user in
 
 ## Automatic lifecycle
 
-Claude's plugin hook adds bounded lifecycle guidance at `UserPromptSubmit`. It
-instructs one `capture`, `ask`, or `skip` evaluation before the final response.
+Claude and Codex plugin hooks add bounded lifecycle guidance at
+`UserPromptSubmit`. They instruct one `capture`, `ask`, or `skip` evaluation
+before the final response.
 
-Workflow does not register a Codex lifecycle hook. Codex shows hook runs and
-injected context, and `suppressOutput` is not implemented. On Codex, use this
-skill through normal routing when durable guidance is relevant.
+Codex can show the hook run and injected context because `suppressOutput` is not
+implemented. This visibility does not change the capture decision or final
+response contract.
 
-The Claude hook does not register a `Stop` continuation. Claude can show its
-block reason. End-of-task evaluation is instructed but not enforced.
+Workflow does not register a `Stop` continuation. End-of-task evaluation is
+instructed but not enforced.
 
 Read [references/lifecycle-hooks.md](references/lifecycle-hooks.md) for the host selection, visibility, and privacy contract.
 
-The hook supplies static instructions only. It does not read prompts,
-transcripts, assistant messages, credentials, proprietary code, or field-guide
-files.
+The adapter parses the hook event only to select `hook_event_name`. It does not
+access referenced files, use other event fields, or emit or persist those
+fields.
 
 Use only this field guide for the automatic lifecycle. Do not route the evaluation to host auto-memory or another memory system.
 
-If Claude disables or rejects the hook, use this skill manually. A hook failure
-must not block task completion.
+If a host disables, rejects, or has not trusted the hook, use this skill
+manually. A hook failure must not block task completion.
 
 Run commands through the bundled launcher in this skill's base directory. The launcher finds supported Node installations when PATH does not contain `node`:
 
@@ -40,11 +41,13 @@ Run commands through the bundled launcher in this skill's base directory. The la
 
 ## Retrieve guidance
 
-Retrieve guidance for meaningful planning, implementation, debugging, or review after the repository and subject are known:
+Retrieve guidance once for meaningful planning, implementation, debugging, or review after the repository and concrete task are known. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
 
 ```text
-/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --subject <subject-key> [--query <applicability-text>]
+/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --query <concrete-task-context> [--subject <subject-hint>]
 ```
+
+An exact subject can be used without a query when the desired subject key is already known. Do not guess a subject or broaden a query merely to force a result. No relevant result means continue from live authoritative sources without Field Guide guidance.
 
 Use only the bounded result. Normal retrieval contains at most five active records and no evidence. Expand evidence only to resolve a provenance or conflict question:
 
@@ -66,11 +69,11 @@ Do not initialize a guide merely to consult it.
 
 ## Decide whether to learn
 
-Classify an observation as `capture`, `ask`, or `skip`. Read [references/capture-policy.md](references/capture-policy.md) for the decision rules and examples.
+Classify an observation as `capture`, `ask`, or `skip`. Read [references/capture-policy.md](references/capture-policy.md) for the decision rules and examples. Choose scope from the guidance's semantic applicability, not from the current working repository.
 
 - `capture`: The correction, preference, or repeated miss is explicit, durable, reusable, and safe. Store it automatically and tell the user.
 - `ask`: Durability, intended behavior, scope, or safe wording is ambiguous. Ask one focused question and write nothing until the user confirms.
-- `skip`: The observation is task-local, tentative, sensitive, already authoritative in live code or repository instructions, or unlikely to help later work.
+- `skip`: The observation is task-local, tentative, sensitive, authoritative in current global or project instructions, authoritative in live technical sources, or unlikely to help later work.
 
 Confidence is audit metadata. It never overrides these rules or evidence thresholds.
 
@@ -98,7 +101,7 @@ Initialize the store when needed, then submit input that follows `schemas/submis
 For an explicit durable preference, avoid a temporary file by passing the same validated submission inline. Replace only the subject, learning, and sanitized summary:
 
 ```text
-/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh submit --repo-root <git-root> --input-json '{"schemaVersion":1,"decision":"capture","confidence":"high","scope":"project","subjectKey":"testing","learning":"Run focused tests before broad test suites.","explicitPreference":true,"evidence":{"summary":"The user stated a durable testing preference.","pointers":[{"kind":"manual","sourceLabel":"Direct request"}]}}'
+/bin/sh <field-guide-skill-directory>/scripts/field-guide.sh submit --repo-root <git-root> --input-json '{"schemaVersion":1,"decision":"capture","confidence":"high","scope":"shared","subjectKey":"code-clarity","learning":"Prefer named constants for non-obvious domain thresholds.","explicitPreference":true,"evidence":{"summary":"The user stated a durable code-clarity preference.","pointers":[{"kind":"manual","sourceLabel":"Direct request"}]}}'
 ```
 
 Store a short paraphrase, not a quotation. Include sanitized pattern and antipattern examples only when they make the guidance more precise. Never store raw transcripts, prompts, credentials, proprietary code blocks, URL query parameters, or absolute home-directory paths.
@@ -147,7 +150,7 @@ field-guide.mjs delete --repo-root <path> --input <json-file>
 field-guide.mjs init --repo-root <path>
 field-guide.mjs maintain --repo-root <path> --input <json-file>
 field-guide.mjs paths --repo-root <path>
-field-guide.mjs retrieve --repo-root <path> (--subject <key> [--query <text>] | --evidence-for <guidance-id>)
+field-guide.mjs retrieve --repo-root <path> ((--query <text> [--subject <key>]) | --subject <key> | --evidence-for <guidance-id>)
 field-guide.mjs submit --repo-root <path> --input <json-file>
 field-guide.mjs transition --repo-root <path> --input <json-file>
 field-guide.mjs validate --repo-root <path>

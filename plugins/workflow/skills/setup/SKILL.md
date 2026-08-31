@@ -29,7 +29,8 @@ node <skill-directory>/scripts/engineering-workflow.mjs reopen-topic --repo-root
 node <skill-directory>/scripts/engineering-workflow.mjs mark-spec-implemented --repo-root <path> --topic-id <id>
 node <skill-directory>/scripts/engineering-workflow.mjs start-grill --repo-root <path> --topic-id <id> --slug <slug>
 node <skill-directory>/scripts/engineering-workflow.mjs update-grill --repo-root <path> --topic-id <id> --log-file <name> --question <text> --recommendation <text> --decision <text> --rationale <text> --next-question <text>
-node <skill-directory>/scripts/engineering-workflow.mjs start-walkthrough --repo-root <path> --topic-id <id> --slug <slug> --source <last-turn|working-tree|branch> [--base-ref <ref>] --slices <json-array>
+node <skill-directory>/scripts/engineering-workflow.mjs start-walkthrough --repo-root <path> --topic-id <id> --slug <slug> --source <last-turn|working-tree|branch> [--reviewer <user|agent>] [--base-ref <ref>] --slices <json-array>
+node <skill-directory>/scripts/engineering-workflow.mjs start-walkthrough --repo-root <path> --topic-id <id> --log-file <name> [--refresh-range --base-ref <ref>]
 node <skill-directory>/scripts/engineering-workflow.mjs update-walkthrough --repo-root <path> --topic-id <id> --log-file <name> --slice <text> --status <covered|changed|unresolved> --summary <text> --evidence <text> --decision <text> [--correction <text> --correction-status open | --correction-id <id> --correction-status <resolved|deferred>]
 ```
 
@@ -61,11 +62,15 @@ Lifecycle commands require a reason. They validate all targets before moving the
 
 An explicit Grill Me invocation uses `start-grill` after topic confirmation. Use `update-grill` after each resolved answer. Resume with `start-grill --log-file <name>`.
 
-An explicit Walkthrough invocation uses `start-walkthrough` after it builds the change map. Pass the ordered slice names and descriptions with `--slices`. A branch source requires `--base-ref`. Use `update-walkthrough` after each resolved slice.
+An explicit Walkthrough invocation uses `start-walkthrough --reviewer user` after it builds the change map. Agent Walkthrough uses `--reviewer agent`.
+
+The option defaults to `user` for compatibility. Pass ordered slice names and descriptions with `--slices`. A branch source requires `--base-ref`. Use `update-walkthrough` after each resolved slice.
 
 Use `--correction` and `--correction-status open` when a walkthrough confirms a required change. The command returns a correction ID. Use that ID with `--correction-id` to mark the correction `resolved` or `deferred`. These terminal states cannot change.
 
-Resume with `start-walkthrough --log-file <name>`.
+Resume with `start-walkthrough --log-file <name>`. A branch walkthrough refuses to resume or update against a stale branch range: its recorded branch and head must match the current checkout.
+
+After a correction commit changes a branch walkthrough, resume with `--refresh-range --base-ref <ref>` before marking the correction `resolved`. The checkout must remain on the recorded branch, the recorded head must remain an ancestor of the current head, and the recorded merge base must remain unchanged. The command validates the stored log, verifies continuity, atomically refreshes the stored head and range, then validates the refreshed log. It is not valid for `last-turn` or `working-tree` walkthroughs. Start a new log when branch history was rewritten or the merge base changed.
 
 The agent stores only curated one-line walkthrough fields. The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines.
 

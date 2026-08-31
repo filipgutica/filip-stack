@@ -2,16 +2,18 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const patterns = await readFile(new URL('../references/presentation-patterns.md', import.meta.url), 'utf8')
-const log = await readFile(new URL('../references/walkthrough-log.md', import.meta.url), 'utf8')
-const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
-const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
-const setup = await readFile(new URL('../../setup/SKILL.md', import.meta.url), 'utf8')
-const storage = await readFile(new URL('../../setup/references/storage.md', import.meta.url), 'utf8')
-const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
-const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const skillRoot = workflowSkillRoot('walkthrough')
+const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const patterns = await readFile(new URL('references/presentation-patterns.md', skillRoot), 'utf8')
+const log = await readFile(new URL('references/walkthrough-log.md', skillRoot), 'utf8')
+const scenarios = JSON.parse(await readFile(new URL('contract-scenarios.json', import.meta.url), 'utf8'))
+const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
+const setup = await readFile(new URL('../setup/SKILL.md', skillRoot), 'utf8')
+const storage = await readFile(new URL('../setup/references/storage.md', skillRoot), 'utf8')
+const readme = await readFile(new URL('README.md', repositoryRoot), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('package.json', repositoryRoot), 'utf8'))
 const assertContainsAll = (content, patterns) => {
   const missing = patterns.filter((pattern) => !pattern.test(content))
   assert.deepEqual(missing, [])
@@ -30,6 +32,7 @@ assertContainsAll(skill, [
   /creates one curated topic log by default/i,
   /Create no log before source and topic confirmation/i,
   /start-walkthrough/,
+  /--reviewer user/,
   /update-walkthrough/,
   /summary table/i,
   /slice name, brief description, and current status/i,
@@ -40,7 +43,7 @@ assertContainsAll(skill, [
   /Mark the correction `resolved`/i,
   /Mark it `deferred`/i,
   /Keep a correction `open`/i,
-  /selects the first unresolved slice/i,
+  /returns to an open correction before it selects the first unresolved slice/i,
   /after the user resolves a slice/i,
   /If the user stops early, preserve the unresolved next slice/i,
   /rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines/i,
@@ -85,7 +88,9 @@ assertContainsAll(patterns, [
 assertContainsAll(log, [
   /topics\/open\/<topic-id>\/walkthroughs\/<date>-<sequence>-<slug>\.md/,
   /repository identity, branch, merge base, head, and comparison range/i,
-  /after the user resolves each slice/i,
+  /Reviewer as `user` or `agent`/i,
+  /legacy logs without the field remain valid/i,
+  /after the reviewer resolves each slice/i,
   /`## Slices` table/,
   /`## Corrections` table/,
   /stable ID, slice name, correction, and status/i,
@@ -98,13 +103,16 @@ assertContainsAll(log, [
   /`## Running log`/,
   /initial status is `unresolved`/i,
   /Do not use `complete` as a slice name/i,
-  /first unresolved table row as the next slice/i,
+  /first open correction before any unresolved table row/i,
   /covered, changed, or remains unresolved/i,
+  /Corrections: <id>.+Corrections: none/i,
   /Do not store a raw transcript, prompt, response, hidden reasoning, full diff, code excerpt/i,
   /machine-local repository path/i,
   /link to `\.\.\/TOPIC\.md`/,
   /Resume the same log after context compaction/i,
-  /selects `complete` only when no unresolved row remains/i,
+  /selects `complete` only when no open correction and no unresolved row remain/i,
+  /--refresh-range --base-ref <ref>/i,
+  /stale branch range/i,
 ])
 
 assertContainsAll(metadata, [
@@ -116,10 +124,14 @@ assertContainsAll(setup, [
   /--correction <text> --correction-status open/,
   /--correction-id <id> --correction-status <resolved\|deferred>/,
   /Use that ID with `--correction-id`/i,
+  /--refresh-range --base-ref <ref>/i,
+  /before marking.+resolved/i,
 ])
 assertContainsAll(storage, [
   /corrections table follows the summary table/i,
   /Existing logs without this table remain valid/i,
+  /first open correction before any unresolved table row/i,
+  /recorded head.+ancestor/i,
 ])
 assertContainsAll(readme, [
   /`walkthrough`/,
@@ -127,7 +139,7 @@ assertContainsAll(readme, [
 ])
 assert.equal(
   packageJson.scripts['test:walkthrough'],
-  'node plugins/workflow/skills/walkthrough/scripts/validate-contract.mjs',
+  'node tests/workflow/skills/walkthrough/validate-contract.mjs',
 )
 assert.match(packageJson.scripts.check, /test:walkthrough/)
 

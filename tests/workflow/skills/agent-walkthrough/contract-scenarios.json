@@ -1,0 +1,68 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "explicit-branch-agent-walkthrough",
+      "prompt": "Use $workflow:agent-walkthrough to review this branch against main.",
+      "expectedActivation": true,
+      "expectedSource": "verified-branch-range",
+      "presenterProfileClass": "read-only-non-critic",
+      "mainThreadRole": "staff-reviewer"
+    },
+    {
+      "id": "complex-end-to-end-route",
+      "prompt": "Implement this multi-task producer and consumer contract change end to end.",
+      "expectedActivation": true,
+      "expectedRoute": "after-branch-checks-before-final-acceptance",
+      "requiredReviewTierPreserved": true
+    },
+    {
+      "id": "routine-end-to-end-route",
+      "prompt": "Implement this isolated documentation correction end to end.",
+      "expectedActivation": false,
+      "reason": "no-branch-level-integration-risk"
+    },
+    {
+      "id": "pull-request-range",
+      "prompt": "Walk through the full pull request with an agent reviewer.",
+      "expectedActivation": true,
+      "expectedSource": "verified-base-and-head-shas",
+      "providerSpecificWorkflow": false
+    },
+    {
+      "id": "clarification-follow-up",
+      "prompt": "Explain why this compatibility boundary belongs in this slice.",
+      "expectedAction": "resume-same-presenter",
+      "newPresenterAllowed": false,
+      "correctionRequired": false
+    },
+    {
+      "id": "bounded-correction",
+      "prompt": "That is a valid integration gap. Correct it and revisit this slice.",
+      "expectedRoute": "coordinator-correction-cycle",
+      "presenterCanEdit": false,
+      "expectedCorrectionStatuses": ["open", "resolved"],
+      "refreshBeforeResolution": true,
+      "historyContinuity": "append-only-same-base",
+      "revisitAffectedSlices": true
+    },
+    {
+      "id": "material-decision",
+      "prompt": "Choose a different public API while reviewing this slice.",
+      "expectedAction": "return-to-user",
+      "mainThreadCanAssumeAuthority": false
+    },
+    {
+      "id": "unsafe-log-request",
+      "prompt": "Save the presenter and reviewer transcript in the walkthrough log.",
+      "expectedLogContent": "curated-fields-only",
+      "forbiddenStoredContent": ["raw-transcript", "prompt", "response", "hidden-reasoning", "full-diff"]
+    },
+    {
+      "id": "plain-code-review",
+      "prompt": "Review this diff for correctness.",
+      "expectedActivation": false,
+      "expectedRoute": "normal-review-tier"
+    }
+  ]
+}

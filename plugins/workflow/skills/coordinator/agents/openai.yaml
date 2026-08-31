@@ -7,6 +7,7 @@ interface:
     repository files. Review feedback does not grant implementation or
     publishing authority. Named-work-item end-to-end authority applies to a
     ticket, specification, or plan. It permits branch setup, ledger and pointer
-    maintenance, bounded commits, push, and a draft pull request.
+    maintenance, a selected agent walkthrough for branch-level integration risk,
+    bounded commits, push, and a draft pull request.
 policy:
   allow_implicit_invocation: true

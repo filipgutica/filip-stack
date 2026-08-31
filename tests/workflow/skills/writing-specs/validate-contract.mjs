@@ -2,15 +2,15 @@
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skillRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const format = readFileSync(resolve(skillRoot, 'references/erd-format.md'), 'utf8')
-const specSkill = readFileSync(resolve(skillRoot, 'SKILL.md'), 'utf8')
-const ticketSkill = readFileSync(resolve(skillRoot, '../spec-to-tickets/SKILL.md'), 'utf8')
-const planningFlow = readFileSync(resolve(skillRoot, '../coordinator/references/planning-flow.md'), 'utf8')
-const readme = readFileSync(resolve(skillRoot, '../../../../README.md'), 'utf8')
+const skillRoot = workflowSkillRoot('writing-specs')
+const format = readFileSync(fileURLToPath(new URL('references/erd-format.md', skillRoot)), 'utf8')
+const specSkill = readFileSync(fileURLToPath(new URL('SKILL.md', skillRoot)), 'utf8')
+const ticketSkill = readFileSync(fileURLToPath(new URL('../spec-to-tickets/SKILL.md', skillRoot)), 'utf8')
+const planningFlow = readFileSync(fileURLToPath(new URL('../coordinator/references/planning-flow.md', skillRoot)), 'utf8')
+const readme = readFileSync(fileURLToPath(new URL('README.md', repositoryRoot)), 'utf8')
 const template = format.match(/Copy these headings in this order:\n\n```md\n([\s\S]*?)\n```/)?.[1]
 const assertMatches = (content, patterns) => {
   for (const pattern of patterns) assert.match(content, pattern)

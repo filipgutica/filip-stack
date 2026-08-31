@@ -31,6 +31,8 @@ A standard reviewer can be a native review capability or a read-only reviewer. I
 
 Use an adversarial critic for ambiguity, security, public contracts, concurrency, or broad changes. Do not stack tiers unless the risk changes.
 
+Agent Walkthrough is a separate branch-level integration and comprehension gate. It does not satisfy the selected independent review tier or replace this review cycle.
+
 ## Procedure
 
 1. Run `git status --short`.

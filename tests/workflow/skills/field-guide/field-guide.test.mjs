@@ -13,8 +13,16 @@ import { join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import Ajv2020 from 'ajv/dist/2020.js'
+import { workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const script = fileURLToPath(new URL('./field-guide.mjs', import.meta.url))
+const skillRoot = workflowSkillRoot('field-guide')
+const script = fileURLToPath(new URL('scripts/field-guide.mjs', skillRoot))
+const memorySchema = JSON.parse(readFileSync(fileURLToPath(new URL('schemas/memory-v1.schema.json', skillRoot)), 'utf8'))
+const retrievalSchema = JSON.parse(readFileSync(fileURLToPath(new URL('schemas/retrieval-v1.schema.json', skillRoot)), 'utf8'))
+const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
+ajv.addSchema(memorySchema)
+const validateRetrieval = ajv.compile(retrievalSchema)
 
 const git = (repoRoot, ...args) => (
   execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim()
@@ -80,13 +88,14 @@ const replaceCanonicalMemoryJson = ({ paths, memory }) => {
   writeFileSync(paths.memoryFile, `${serialized}\n`)
 }
 
-const retrieve = ({ repoRoot, guideRoot, subject = 'testing', query, evidenceFor }) => (
+const retrieve = ({ repoRoot, guideRoot, subject, query, evidenceFor }) => (
   run({
     command: 'retrieve',
     repoRoot,
     guideRoot,
     args: [
-      ...(evidenceFor ? ['--evidence-for', evidenceFor] : ['--subject', subject]),
+      ...(evidenceFor ? ['--evidence-for', evidenceFor] : []),
+      ...(subject ? ['--subject', subject] : []),
       ...(query ? ['--query', query] : []),
     ],
   }).result
@@ -639,7 +648,8 @@ test('retrieve ranks active project, shared, linked, and applicable guidance wit
   otherProjectInput.linkedSubjects = ['security']
   submit({ repoRoot: otherRepo, guideRoot, input: otherProjectInput })
 
-  const result = retrieve({ repoRoot, guideRoot, query: 'keyboard behavior' })
+  const result = retrieve({ repoRoot, guideRoot, subject: 'testing', query: 'keyboard coverage' })
+  assert.equal(validateRetrieval(result), true, JSON.stringify(validateRetrieval.errors))
   assert.deepEqual(result.guidance.map(({ match }) => match), [
     'project-subject',
     'shared-subject',
@@ -654,6 +664,65 @@ test('retrieve ranks active project, shared, linked, and applicable guidance wit
   assert.ok(result.bytes <= 6144)
 })
 
+test('retrieve uses a concrete query without requiring a subject hint', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-query-only-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/query-only.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const preferredInput = conversationSubmission({
+    learning: 'Prefer destructured object parameters for configuration-style inputs.',
+    turnId: 'turn-1',
+    scope: 'shared',
+    explicitPreference: true,
+  })
+  preferredInput.subjectKey = 'code-clarity'
+  submit({ repoRoot, guideRoot, input: preferredInput })
+  const unrelatedInput = conversationSubmission({
+    learning: 'Keep corrections separate from task summaries.',
+    turnId: 'turn-2',
+    scope: 'shared',
+    explicitPreference: true,
+  })
+  unrelatedInput.subjectKey = 'walkthrough-logs'
+  submit({ repoRoot, guideRoot, input: unrelatedInput })
+  const projectDuplicate = conversationSubmission({
+    learning: preferredInput.learning,
+    turnId: 'turn-3',
+    explicitPreference: true,
+  })
+  projectDuplicate.subjectKey = preferredInput.subjectKey
+  submit({ repoRoot, guideRoot, input: projectDuplicate })
+
+  const result = retrieve({
+    repoRoot,
+    guideRoot,
+    query: 'function signatures and destructured object parameters',
+  })
+
+  assert.equal(validateRetrieval(result), true, JSON.stringify(validateRetrieval.errors))
+  assert.equal(result.routing.subjectKey, null)
+  assert.deepEqual(result.guidance.map(({ learning }) => learning), [preferredInput.learning])
+  assert.equal(result.guidance[0].scope.kind, 'project')
+  assert.equal(result.guidance[0].match, 'applicability')
+
+  const genericResult = retrieve({
+    repoRoot,
+    guideRoot,
+    query: 'durable preference and correction guidance',
+  })
+  assert.deepEqual(genericResult.guidance, [])
+})
+
+test('retrieve requires a subject hint or a concrete query', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-input-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-input.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+
+  const result = run({ command: 'retrieve', repoRoot, guideRoot, expectFailure: true })
+  assert.match(result.stderr, /requires --subject or --query/)
+})
+
 test('retrieve enforces whole-record count and byte budgets', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-budget-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-budget.git' })
@@ -666,7 +735,7 @@ test('retrieve enforces whole-record count and byte budgets', () => {
       input: conversationSubmission({ learning: `Active testing preference ${index}.`, turnId: `turn-${index}`, explicitPreference: true }),
     })
   }
-  const result = retrieve({ repoRoot, guideRoot })
+  const result = retrieve({ repoRoot, guideRoot, subject: 'testing' })
   assert.equal(result.guidance.length, 5)
   assert.equal(result.omittedCount, 2)
   assert.ok(result.bytes <= 6144)
@@ -693,7 +762,7 @@ test('explicit evidence expansion returns at most two complete records within si
   assert.ok(result.evidence.every((evidence) => evidence.pointers.length === 1))
 })
 
-test('retrieve accepts version 1 records that predate linked subjects', () => {
+test('retrieve accepts version 1 records that predate linked subjects and examples', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-retrieve-compatibility-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/retrieve-compatibility.git' })
   const guideRoot = join(root, 'guide')
@@ -705,6 +774,7 @@ test('retrieve accepts version 1 records that predate linked subjects', () => {
   })
   const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
   delete memory.guidance[0].linkedSubjects
+  delete memory.guidance[0].examples
   replaceCanonicalMemoryJson({ paths, memory })
   writeFileSync(
     paths.memoryIndexFile,
@@ -712,8 +782,15 @@ test('retrieve accepts version 1 records that predate linked subjects', () => {
   )
 
   run({ command: 'validate', repoRoot, guideRoot })
-  const result = retrieve({ repoRoot, guideRoot })
+  const result = retrieve({ repoRoot, guideRoot, subject: 'testing' })
   assert.deepEqual(result.guidance[0].linkedSubjects, [])
+  assert.deepEqual(result.guidance[0].examples, [])
+  assert.equal(validateRetrieval(result), true, JSON.stringify(validateRetrieval.errors))
+
+  const queryResult = retrieve({ repoRoot, guideRoot, query: 'version one' })
+  assert.equal(queryResult.guidance[0].learning, 'A version one preference.')
+  assert.deepEqual(queryResult.guidance[0].examples, [])
+  assert.equal(validateRetrieval(queryResult), true, JSON.stringify(validateRetrieval.errors))
 })
 
 test('retrieve rejects conflicting normal and evidence modes', () => {

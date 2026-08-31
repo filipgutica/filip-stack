@@ -2,12 +2,12 @@
 
 import assert from 'node:assert/strict'
 import { readFileSync } from 'node:fs'
-import { dirname, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const root = resolve(dirname(fileURLToPath(import.meta.url)), '..')
-const skill = readFileSync(resolve(root, 'SKILL.md'), 'utf8')
-const log = readFileSync(resolve(root, 'references/grill-log.md'), 'utf8')
+const root = workflowSkillRoot('grill-me')
+const skill = readFileSync(fileURLToPath(new URL('SKILL.md', root)), 'utf8')
+const log = readFileSync(fileURLToPath(new URL('references/grill-log.md', root)), 'utf8')
 const assertMatches = (content, patterns) => {
   for (const pattern of patterns) assert.match(content, pattern)
 }

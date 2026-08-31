@@ -2,21 +2,23 @@
 
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { repositoryRoot, workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const skill = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const flow = await readFile(new URL('../references/implementation-flow.md', import.meta.url), 'utf8')
-const investigationFlow = await readFile(new URL('../references/investigation-flow.md', import.meta.url), 'utf8')
-const subagentTemplates = await readFile(new URL('../references/subagent-templates.md', import.meta.url), 'utf8')
-const metadata = await readFile(new URL('../agents/openai.yaml', import.meta.url), 'utf8')
-const branchPlanner = await readFile(new URL('../../branch-task-planner/SKILL.md', import.meta.url), 'utf8')
-const branchPlannerMetadata = await readFile(new URL('../../branch-task-planner/agents/openai.yaml', import.meta.url), 'utf8')
-const implementation = await readFile(new URL('../../implementation/SKILL.md', import.meta.url), 'utf8')
-const implementationMetadata = await readFile(new URL('../../implementation/agents/openai.yaml', import.meta.url), 'utf8')
-const reviewCycle = await readFile(new URL('../../review-cycle/SKILL.md', import.meta.url), 'utf8')
-const reviewCycleMetadata = await readFile(new URL('../../review-cycle/agents/openai.yaml', import.meta.url), 'utf8')
-const scenarios = JSON.parse(await readFile(new URL('../evaluations/scenarios.json', import.meta.url), 'utf8'))
-const readme = await readFile(new URL('../../../../../README.md', import.meta.url), 'utf8')
-const packageJson = JSON.parse(await readFile(new URL('../../../../../package.json', import.meta.url), 'utf8'))
+const skillRoot = workflowSkillRoot('coordinator')
+const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const flow = await readFile(new URL('references/implementation-flow.md', skillRoot), 'utf8')
+const investigationFlow = await readFile(new URL('references/investigation-flow.md', skillRoot), 'utf8')
+const subagentTemplates = await readFile(new URL('references/subagent-templates.md', skillRoot), 'utf8')
+const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
+const branchPlanner = await readFile(new URL('../branch-task-planner/SKILL.md', skillRoot), 'utf8')
+const branchPlannerMetadata = await readFile(new URL('../branch-task-planner/agents/openai.yaml', skillRoot), 'utf8')
+const implementation = await readFile(new URL('../implementation/SKILL.md', skillRoot), 'utf8')
+const implementationMetadata = await readFile(new URL('../implementation/agents/openai.yaml', skillRoot), 'utf8')
+const reviewCycle = await readFile(new URL('../review-cycle/SKILL.md', skillRoot), 'utf8')
+const reviewCycleMetadata = await readFile(new URL('../review-cycle/agents/openai.yaml', skillRoot), 'utf8')
+const scenarios = JSON.parse(await readFile(new URL('contract-scenarios.json', import.meta.url), 'utf8'))
+const readme = await readFile(new URL('README.md', repositoryRoot), 'utf8')
+const packageJson = JSON.parse(await readFile(new URL('package.json', repositoryRoot), 'utf8'))
 
 assert.match(skill, /Named-work-item end-to-end authority/)
 assert.match(skill, /ticket, specification, or plan/i)
@@ -24,6 +26,10 @@ assert.match(skill, /active slice/i)
 assert.match(skill, /outcome, boundary, and verification signal/i)
 assert.match(skill, /decision-complete/i)
 assert.match(skill, /material scope conflict/i)
+assert.match(skill, /Select an explicit registered profile for each delegation/)
+assert.match(skill, /Use the critic profile only.*review tier is adversarial/is)
+assert.match(skill, /Reuse an existing agent for follow-up work/)
+assert.match(skill, /Spawn a new agent only when the responsibility changes or fresh\s+independence is required/)
 
 assert.match(flow, /named-work-item end-to-end route/i)
 assert.match(flow, /direct execution or plan composition/i)
@@ -32,6 +38,9 @@ assert.match(flow, /Recommend deferral and continue the active slice/i)
 assert.match(flow, /Do not record deferred work until the user selects and authorizes a destination/i)
 assert.match(flow, /Explicit priority replacement/i)
 assert.match(flow, /user acceptance checkpoint/i)
+assert.match(flow, /Select an explicit registered profile for each delegated role/)
+assert.match(flow, /Reserve the critic profile for the\s+adversarial review tier/)
+assert.match(flow, /Reuse that reviewer for corrections to the same review/)
 assert.match(investigationFlow, /user-invoked code review.*select one reviewer tier/is)
 
 assert.match(subagentTemplates, /user-invoked code review/i)
@@ -63,7 +72,7 @@ assert.match(reviewCycleMetadata, /user acceptance/i)
 assert.match(metadata, /Named-work-item end-to-end authority/)
 assert.match(readme, /Named-work-item end-to-end authority/)
 
-assert.equal(packageJson.scripts['test:coordinator'], 'node plugins/workflow/skills/coordinator/scripts/validate-contract.mjs')
+assert.equal(packageJson.scripts['test:coordinator'], 'node tests/workflow/skills/coordinator/validate-contract.mjs')
 assert.match(packageJson.scripts.check, /test:coordinator/)
 
 assert.equal(scenarios.schemaVersion, 1)
@@ -83,6 +92,12 @@ assert.deepEqual(
     'end-to-end-acceptance',
     'tiny-fast-path',
     'user-invoked-code-review',
+    'bounded-worker-delegation',
+    'initial-adversarial-review',
+    'adversarial-review-follow-up',
+    'complex-e2e-agent-walkthrough',
+    'routine-e2e-skips-agent-walkthrough',
+    'explicit-agent-walkthrough',
   ],
 )
 assert.equal(scenarios.scenarios[0].createTickets, false)
@@ -98,5 +113,22 @@ assert.deepEqual(
 )
 assert.equal(scenarios.scenarios[12].expectedRoute, 'one-independent-reviewer')
 assert.equal(scenarios.scenarios[12].separateReviewerPerLens, false)
+assert.equal(scenarios.scenarios[12].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[12].criticAllowed, false)
+assert.equal(scenarios.scenarios[12].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[13].expectedRole, 'worker')
+assert.equal(scenarios.scenarios[13].expectedProfileClass, 'non-critic')
+assert.equal(scenarios.scenarios[13].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[13].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[14].expectedRole, 'critic')
+assert.equal(scenarios.scenarios[14].explicitProfileRequired, true)
+assert.equal(scenarios.scenarios[14].inheritMainModelAllowed, false)
+assert.equal(scenarios.scenarios[15].expectedAction, 'follow-up-existing-critic')
+assert.equal(scenarios.scenarios[15].newAgentAllowed, false)
+assert.equal(scenarios.scenarios[16].expectedRoute, 'agent-walkthrough-after-branch-checks')
+assert.equal(scenarios.scenarios[16].requiredReviewTierPreserved, true)
+assert.equal(scenarios.scenarios[17].agentWalkthroughRequired, false)
+assert.equal(scenarios.scenarios[18].presenterProfileClass, 'read-only-non-critic')
+assert.equal(scenarios.scenarios[18].reusePresenterForFollowUp, true)
 
 console.log('Coordinator active-slice contract passed.')

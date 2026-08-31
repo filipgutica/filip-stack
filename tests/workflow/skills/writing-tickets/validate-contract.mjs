@@ -1,11 +1,13 @@
 import assert from 'node:assert/strict'
 import { readFile } from 'node:fs/promises'
+import { workflowSkillRoot } from '../../plugin-paths.mjs'
 
-const writingTickets = await readFile(new URL('../SKILL.md', import.meta.url), 'utf8')
-const specToTickets = await readFile(new URL('../../spec-to-tickets/SKILL.md', import.meta.url), 'utf8')
-const storage = await readFile(new URL('../../setup/references/storage.md', import.meta.url), 'utf8')
-const setup = await readFile(new URL('../../setup/SKILL.md', import.meta.url), 'utf8')
-const planningFlow = await readFile(new URL('../../coordinator/references/planning-flow.md', import.meta.url), 'utf8')
+const skillRoot = workflowSkillRoot('writing-tickets')
+const writingTickets = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
+const specToTickets = await readFile(new URL('../spec-to-tickets/SKILL.md', skillRoot), 'utf8')
+const storage = await readFile(new URL('../setup/references/storage.md', skillRoot), 'utf8')
+const setup = await readFile(new URL('../setup/SKILL.md', skillRoot), 'utf8')
+const planningFlow = await readFile(new URL('../coordinator/references/planning-flow.md', skillRoot), 'utf8')
 const storageLocalTickets = storage.split('\n## ').find((section) => section.startsWith('Local tickets\n'))
 const writingLocalLinks = writingTickets.split('\n## ')
   .find((section) => section.startsWith('Local ticket links\n'))

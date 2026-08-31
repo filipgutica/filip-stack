@@ -32,3 +32,9 @@ Run structural validation. Test retrieval with one representative prompt when th
 - Proofread saved technical prose.
 
 Record the prompt, result, and remaining limit outside the distributed skill when the evaluation is session-specific.
+
+Keep automated tests, contract validators, and their scenario fixtures outside
+the distributed plugin payload. In filip-stack, store them under
+`tests/workflow/skills/<skill>/`; use `contract-scenarios.json` for static
+behavioral contract fixtures. Files under `plugins/workflow` must be required at
+runtime by a host, hook, skill, or utility.

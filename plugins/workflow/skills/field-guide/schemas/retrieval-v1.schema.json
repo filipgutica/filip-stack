@@ -58,7 +58,12 @@
       "required": ["projectKey", "subjectKey", "linkedSubjects", "omittedLinkedSubjectCount"],
       "properties": {
         "projectKey": { "type": "string" },
-        "subjectKey": { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+        "subjectKey": {
+          "oneOf": [
+            { "type": "string", "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$" },
+            { "type": "null" }
+          ]
+        },
         "linkedSubjects": {
           "type": "array",
           "maxItems": 16,

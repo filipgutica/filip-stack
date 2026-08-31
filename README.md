@@ -14,8 +14,9 @@ Its skills are grouped by purpose:
 - **Implementation and debugging:** `implementation`, `minimal-code`,
   `systematic-debugging`, `using-git-worktrees`, and
   `subagent-driven-development`.
-- **Review and improvement:** `walkthrough`, `receiving-code-review`,
-  `review-cycle`, `simplification-review`, and `field-guide`.
+- **Review and improvement:** `walkthrough`, `agent-walkthrough`,
+  `receiving-code-review`, `review-cycle`, `simplification-review`, and
+  `field-guide`.
 - **Coordination and state:** `coordinator`, `branch-task-planner`, and `setup`.
 
 `setup`, `branch-task-planner`, `grill-with-docs`, `spec-to-tickets`,
@@ -34,6 +35,14 @@ walkthrough log under a confirmed topic. The log keeps a slice-status table and
 a chronological running log. A corrections table tracks required changes as
 `open`, `resolved`, or `deferred`.
 
+`agent-walkthrough` is the automated branch-level variant. A fresh read-only
+presenter explains one slice at a time to the main thread acting as staff
+reviewer. The coordinator may select it for named-work-item end-to-end work when
+tasks interact across an end-to-end flow. It may also select it when a public
+contract crosses producer and consumer boundaries. Migration, compatibility, or
+rollout behavior across multiple slices can also require it. The skill does not
+replace the independent review tier or `review-cycle`.
+
 Both the Claude and Codex marketplaces distribute this plugin. The separate
 `codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
 
@@ -49,7 +58,12 @@ plugins/workflow/          Workflow plugin payload shared by Claude and Codex
 .claude-plugin/            Claude git marketplace registry (marketplace.json)
 .agents/plugins/           Codex git marketplace registry (marketplace.json)
 scripts/                   Stamp and validate scripts
+tests/workflow/            Development-only Workflow tests, contract validators, and fixtures
 ```
+
+The marketplace installs `plugins/workflow` directly. Keep tests, contract
+validators, and evaluation fixtures under `tests/workflow`; they are repository
+development assets and are not part of the installed runtime plugin.
 
 ## Install with Claude
 
@@ -85,6 +99,8 @@ claude plugin update workflow@filip-stack
 2. Restart Codex.
 3. Open the plugin directory.
 4. Install `workflow` from the `filip-stack` marketplace.
+5. Run `/hooks`, review the Workflow `UserPromptSubmit` hook, and trust its
+   current definition.
 
 Codex upgrades the marketplace instead of an individual plugin. Run this command
 to install marketplace updates:
@@ -95,8 +111,8 @@ codex plugin marketplace upgrade filip-stack
 
 ### Automatic field-guide hook
 
-The packaged `UserPromptSubmit` hook supports local Claude Code on macOS and
-Linux. It does not require a global `CLAUDE.md` instruction.
+The packaged `UserPromptSubmit` hooks support local Claude Code and Codex on
+macOS and Linux. They do not require a global host instruction.
 
 The local host must have Node.js 20.16 or newer. Git must be on PATH.
 The launcher searches PATH and common macOS and Linux install locations. It also
@@ -105,16 +121,13 @@ searches the default NVM, fnm, Volta, asdf, and mise locations. Set
 
 Claude remote execution and Windows are not supported.
 
-The Claude hook sends bounded lifecycle instructions at `UserPromptSubmit`. It
-instructs the agent to decide `capture`, `ask`, or `skip` before the final
-response.
+The Claude and Codex hooks send bounded lifecycle instructions at
+`UserPromptSubmit`. They instruct the agent to decide `capture`, `ask`, or
+`skip` before the final response.
 
-Workflow does not register Codex lifecycle hooks. Codex shows hook runs and
-injected context, and `suppressOutput` is not implemented. Codex agents use the
-Field Guide through normal skill routing.
-
-The Claude hook does not register a `Stop` continuation. Claude can show its
-block reason. End-of-task evaluation is instructed but not enforced.
+Codex can show the hook run and injected developer context because
+`suppressOutput` is not implemented. Workflow does not register a `Stop`
+continuation. End-of-task evaluation is instructed but not enforced.
 
 The hook fails open. If it is disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
 
@@ -122,9 +135,10 @@ The normal task response remains intact for `skip` and `capture`. A `skip` evalu
 
 ## Releases and versioning
 
-Claude and Codex install the tracked plugin files directly from this repository.
-Installation does not require a build. Both root marketplace registries point to
-`./plugins/workflow`.
+Claude and Codex install the tracked runtime files under `plugins/workflow`
+directly from this repository. Installation does not require a build. Both root
+marketplace registries point to `./plugins/workflow`; development-only tests live
+outside that payload under `tests/workflow`.
 
 CI runs semantic-release after each push to `main`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/):
@@ -162,10 +176,16 @@ The coordinator loads detailed guidance only for its selected route:
   `review-cycle` after meaningful edits.
 
 Named-work-item end-to-end authority applies to a ticket, specification, or
-plan. It permits branch setup, external ledger maintenance, bounded commits,
-push, and a draft pull request. The coordinator composes a plan when complexity
-requires it. It does not create tickets when the primary work item is already
-self-contained.
+plan. It permits branch setup, external ledger maintenance, a selected agent
+walkthrough log, bounded commits, push, and a draft pull request. The
+coordinator composes a plan when complexity requires it. It does not create
+tickets when the primary work item is already self-contained.
+
+After branch-level checks, the coordinator may run `agent-walkthrough` before
+final acceptance when branch-level integration risk remains. A pull request is
+resolved to verified base and head SHAs and reviewed as the same exact branch
+range. Valid corrections return through the normal implementation and review
+cycle before the same presenter revisits affected slices.
 
 For meaningful implementation, the coordinator states one active slice with an
 outcome, boundary, and verification signal. It defers independent work and
@@ -193,7 +213,9 @@ default. The topic must be user-identified or the only open topic. When multiple
 open topics exist, the user must choose one. Plans and local ticket drafts need
 an explicit storage request. An explicit `grill-me` invocation creates one
 curated topic log after topic confirmation. An explicit `walkthrough` invocation
-creates one curated log with source provenance after source and topic confirmation.
+creates one curated log with source provenance after source and topic
+confirmation. A selected `agent-walkthrough` uses the same bounded format and
+records the reviewer as `agent`.
 
 An explicit `grill-with-docs` invocation adds repository-document authority. It
 may update selected existing repository documentation and qualifying ADR files.
@@ -226,11 +248,10 @@ obvious durable user preferences, corrections, and repeated misses during normal
 work. It asks before storing ambiguous observations. Committed code-review
 corrections remain a first-class evidence and history path.
 
-The Claude plugin hook instructs one end-of-task learning evaluation before the
-final response. The agent decides `capture`, `ask`, or `skip`. The evaluation is
-not enforced by a Stop continuation. Codex uses normal skill routing instead of
-an automatic lifecycle hook. The hook never ingests a transcript or writes
-field-guide data.
+The Claude and Codex plugin hooks instruct one end-of-task learning evaluation
+before the final response. The agent decides `capture`, `ask`, or `skip`. A Stop
+continuation does not enforce the evaluation. The hook never ingests a
+transcript or writes field-guide data.
 
 You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
 The optional `.obsidian/` directory is disposable client state. Field-guide

@@ -829,7 +829,7 @@ const addEvidence = ({ submission, memory, paths, now }) => {
 const renderMemoryIndex = (memory) => {
   const records = [...memory.guidance].sort((left, right) => left.id.localeCompare(right.id))
   const sections = records.map((record) => {
-    const examples = record.examples.map((example) => (
+    const examples = (record.examples ?? []).map((example) => (
       `\n#### ${example.kind === 'pattern' ? 'Pattern' : 'Antipattern'} (\`${example.language}\`)\n\n`
         + `\`\`\`${example.language}\n${example.code}\n\`\`\``
     )).join('\n')
@@ -1174,18 +1174,40 @@ const retrievalRecord = ({ guidance, match }) => ({
   linkedSubjects: guidance.linkedSubjects ?? [],
   learning: guidance.learning,
   status: guidance.status,
-  examples: guidance.examples,
+  examples: guidance.examples ?? [],
   updatedAt: guidance.updatedAt,
   match,
 })
 
-const queryTerms = (query) => (
+const retrievalStopwords = new Set([
+  'and', 'are', 'but', 'capture', 'correction', 'corrections', 'durable', 'field',
+  'for', 'from', 'guidance', 'guide', 'into', 'learning', 'memory', 'preference',
+  'preferences', 'project', 'remember', 'repository', 'shared', 'that', 'the',
+  'their', 'them', 'then', 'these', 'this', 'those', 'use', 'used', 'uses',
+  'using', 'was', 'were', 'will', 'with', 'would', 'your',
+])
+
+const relevanceTerms = (value) => (
   new Set(
-    normalizeLearning(query ?? '')
+    normalizeLearning(value ?? '')
       .split(/[^\p{L}\p{N}]+/u)
-      .filter((term) => term.length >= 3),
+      .filter((term) => term.length >= 3 && !retrievalStopwords.has(term)),
   )
 )
+
+const applicabilityScore = ({ guidance, query }) => {
+  const requested = relevanceTerms(query)
+  if (requested.size === 0) return 0
+  const available = relevanceTerms([
+    guidance.subjectKey,
+    ...(guidance.linkedSubjects ?? []),
+    guidance.learning,
+    ...(guidance.examples ?? []).map(({ code }) => code),
+  ].join(' '))
+  const overlap = [...requested].filter((term) => available.has(term)).length
+  const requiredOverlap = requested.size === 1 ? 1 : 2
+  return overlap >= requiredOverlap ? overlap : 0
+}
 
 const retrieveEvidence = ({ memory, guidanceId }) => {
   if (!guidanceIdPattern.test(guidanceId)) fail('--evidence-for must be a valid guidance ID')
@@ -1207,32 +1229,32 @@ const retrieveEvidence = ({ memory, guidanceId }) => {
 }
 
 const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
-  if (!portableKey.test(subjectKey ?? '') || byteLength(subjectKey) > 128) {
+  if (subjectKey !== undefined && (!portableKey.test(subjectKey) || byteLength(subjectKey) > 128)) {
     fail('--subject must be a portable subject key')
   }
   if (query !== undefined) requireString({ value: query, label: 'retrieval query', maxBytes: 1024 })
+  if (subjectKey === undefined && query === undefined) fail('retrieve requires --subject or --query')
   const active = memory.guidance.filter(({ status }) => status === 'active')
   const relevantActive = active.filter(({ scope }) => (
     scope.kind === 'shared' || scope.repositoryIdentity === paths.identity
   ))
   const exactSubject = relevantActive.filter(({ subjectKey: recordSubject }) => recordSubject === subjectKey)
-  const projectExactLearning = new Set(
-    exactSubject
+  const projectLearning = new Set(
+    relevantActive
       .filter(({ scope }) => scope.kind === 'project' && scope.repositoryIdentity === paths.identity)
       .map(({ learning }) => normalizeLearning(learning)),
   )
   const effectiveExactSubject = exactSubject.filter((guidance) => !(
-    guidance.scope.kind === 'shared' && projectExactLearning.has(normalizeLearning(guidance.learning))
+    guidance.scope.kind === 'shared' && projectLearning.has(normalizeLearning(guidance.learning))
   ))
   const linkedSubjects = [...new Set(effectiveExactSubject.flatMap((record) => record.linkedSubjects ?? []))].sort()
-  const terms = queryTerms(query)
   const ranked = []
   for (const guidance of relevantActive) {
     if (guidance.scope.kind === 'shared'
-      && guidance.subjectKey === subjectKey
-      && projectExactLearning.has(normalizeLearning(guidance.learning))) continue
+      && projectLearning.has(normalizeLearning(guidance.learning))) continue
     let rank
     let match
+    let score = 0
     if (guidance.subjectKey === subjectKey) {
       rank = guidance.scope.kind === 'project' ? 0 : 1
       match = guidance.scope.kind === 'project' ? 'project-subject' : 'shared-subject'
@@ -1240,15 +1262,16 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
       rank = 2
       match = 'linked-subject'
     } else {
-      const normalized = normalizeLearning(guidance.learning)
-      if (terms.size === 0 || ![...terms].some((term) => normalized.includes(term))) continue
+      score = applicabilityScore({ guidance, query })
+      if (score === 0) continue
       rank = 3
       match = 'applicability'
     }
-    ranked.push({ guidance, rank, match })
+    ranked.push({ guidance, rank, match, score })
   }
   ranked.sort((left, right) => (
     left.rank - right.rank
+      || right.score - left.score
       || (left.guidance.scope.kind === right.guidance.scope.kind
         ? 0
         : (left.guidance.scope.kind === 'project' ? -1 : 1))
@@ -1261,7 +1284,7 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
   const routingFit = fitWholeRecords({ records: routingCandidates, maxRecords: 16, maxBytes: 1800 })
   const routing = {
     projectKey: paths.projectKey,
-    subjectKey,
+    subjectKey: subjectKey ?? null,
     linkedSubjects: routingFit.records.map(({ subjectKey: linkedSubject }) => linkedSubject),
     omittedLinkedSubjectCount: routingFit.omittedCount,
   }
@@ -1313,7 +1336,7 @@ const candidateMatches = ({ paths, subjectKey, scope: scopeKind }) => {
       scope: guidance.scope,
       subjectKey: guidance.subjectKey,
       learning: guidance.learning,
-      examples: guidance.examples,
+      examples: guidance.examples ?? [],
       ...(guidance.relationship ? { relationship: guidance.relationship } : {}),
     }))
   const fitted = fitWholeRecords({ records, maxRecords: 10, maxBytes: 6144 })

@@ -88,7 +88,52 @@
       "prompt": "Review this code.",
       "expectedRoute": "one-independent-reviewer",
       "requiredLenses": ["correctness", "coding-standards", "efficiency", "reuse"],
-      "separateReviewerPerLens": false
+      "separateReviewerPerLens": false,
+      "explicitProfileRequired": true,
+      "criticAllowed": false,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "bounded-worker-delegation",
+      "prompt": "Delegate this unusually difficult but bounded implementation slice.",
+      "expectedRole": "worker",
+      "expectedProfileClass": "non-critic",
+      "explicitProfileRequired": true,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "initial-adversarial-review",
+      "prompt": "Run an adversarial review of this public configuration contract.",
+      "expectedRole": "critic",
+      "explicitProfileRequired": true,
+      "inheritMainModelAllowed": false
+    },
+    {
+      "id": "adversarial-review-follow-up",
+      "prompt": "Recheck the corrected diff against the same adversarial findings.",
+      "expectedAction": "follow-up-existing-critic",
+      "newAgentAllowed": false
+    },
+    {
+      "id": "complex-e2e-agent-walkthrough",
+      "prompt": "Implement this producer and consumer contract migration end to end.",
+      "expectedRoute": "agent-walkthrough-after-branch-checks",
+      "branchIntegrationRisk": true,
+      "requiredReviewTierPreserved": true
+    },
+    {
+      "id": "routine-e2e-skips-agent-walkthrough",
+      "prompt": "Implement this isolated documentation correction end to end.",
+      "expectedRoute": "normal-end-to-end-completion",
+      "branchIntegrationRisk": false,
+      "agentWalkthroughRequired": false
+    },
+    {
+      "id": "explicit-agent-walkthrough",
+      "prompt": "Use $workflow:agent-walkthrough for the complete branch.",
+      "expectedRoute": "agent-walkthrough",
+      "presenterProfileClass": "read-only-non-critic",
+      "reusePresenterForFollowUp": true
     }
   ]
 }

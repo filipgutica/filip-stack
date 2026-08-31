@@ -110,22 +110,33 @@ that another record uses.
 
 ## Bounded retrieval
 
-Use `retrieve --subject <subject-key>` after the task scope is known. Add
-`--query <text>` for a concrete applicability match. Retrieval returns only
-active guidance and ranks it in this order:
+Use `retrieve --query <concrete-task-context>` after the repository and task are
+known. Add `--subject <subject-key>` only as a known ranking hint. An exact
+subject can be retrieved without a query. Retrieval returns only active guidance
+and ranks it in this order:
 
-1. Current-project guidance for the requested subject.
-2. Shared guidance for the requested subject.
+1. Current-project guidance for the subject hint, when provided.
+2. Shared guidance for the subject hint, when provided.
 3. Current-project or shared guidance from linked subjects.
-4. Other active guidance that matches the query text.
+4. Other active guidance by meaningful complete-term overlap with the query.
+
+Query matching ignores common language and Field Guide boilerplate. A query with
+two or more meaningful terms requires at least two complete-term matches. A
+single meaningful term requires one complete-term match. Applicability results
+with more matching terms rank first. Do not use generic wording or broaden a
+query to force a result.
 
 A current-project record suppresses an identical shared statement. Candidates
 and records for other repositories are excluded. Confidence and evidence count
 do not affect rank. Updated time breaks ties after scope and subject rank.
 
-Routing output is at most 2 KB. Normal output contains at most five whole
+Routing output is at most 2 KB and reports a null subject when no hint was used.
+Normal output contains at most five whole
 guidance records and 6 KB. It contains no evidence records or transition
 history. The utility never truncates a record. It reports the number omitted.
+The nullable subject extends the version 1 result only for the new query-only
+mode. Existing subject-based calls continue to return the requested subject
+string.
 
 Use `retrieve --evidence-for <guidance-id>` only for an explicit provenance or
 conflict check. Evidence expansion returns at most two whole records and 6 KB.
@@ -210,9 +221,13 @@ When later evidence changes a pattern, update the guidance and retain the histor
 
 ## Shared promotion
 
+This section applies to indexed shared Markdown files that use project review records. It does not define scope or activation for machine-recorded guidance in `memory.md`.
+
+For machine-recorded guidance, use the capture policy. An explicit portable user preference becomes active shared guidance immediately. An inferred shared learning requires independent evidence from two repository identities and `generic: true`.
+
 Create a focused file under `shared/` only for cross-project guidance.
 
-Promote a preference immediately when the user states that it is general. Otherwise, require committed evidence from two project guides.
+Promote an explicit user preference immediately when its semantic applicability is shared. Otherwise, require committed evidence from two project guides.
 
 Record one of these evidence shapes near the top of the shared file:
 
@@ -229,6 +244,8 @@ Record one of these evidence shapes near the top of the shared file:
 - [<first project review>](../projects/<repo-key>/reviews/<record>.md)
 - [<second project review>](../projects/<repo-key>/reviews/<record>.md)
 ```
+
+The `explicit-general-preference` label includes an explicit preference whose meaning is portable without a repository-specific contract. The user does not need to state the word "general."
 
 Multi-project evidence must link indexed review records from two project guides. Keep both repositories available during validation.
 
