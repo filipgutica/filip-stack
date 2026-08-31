@@ -42,6 +42,8 @@
       "expectedRoute": "coordinator-correction-cycle",
       "presenterCanEdit": false,
       "expectedCorrectionStatuses": ["open", "resolved"],
+      "refreshBeforeResolution": true,
+      "historyContinuity": "append-only-same-base",
       "revisitAffectedSlices": true
     },
     {

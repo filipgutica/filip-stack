@@ -14,9 +14,9 @@ The utility records Reviewer as `user` or `agent`. An omitted value defaults to 
 
 For a branch walkthrough, pass the verified base ref. The setup utility records the repository identity, branch, merge base, head, and comparison range. For a last-turn or working-tree walkthrough, it records the current head and labels the range with the source type.
 
-Resume the same log after context compaction or interruption. Use `start-walkthrough --log-file <name>` to validate the existing session file.
+Resume the same log after context compaction or interruption. Use `start-walkthrough --log-file <name>` to validate the existing session file. A branch log with a stale branch range cannot resume or accept an update until its recorded branch and head match the current checkout.
 
-After a correction commit changes a branch walkthrough, use `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`. Stay on the recorded branch. The command refreshes the stored base, head, and range before the next slice.
+After a correction commit changes a branch walkthrough, use `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>` before marking the correction resolved. Stay on the recorded branch. The recorded head must remain an ancestor of the current head, and the merge base must remain unchanged. The command refreshes the stored head and range before the next slice. Start a new log and rebuild coverage if history was rewritten or the merge base changed.
 
 The log starts with a `## Slices` table. Each row contains the slice name, a brief description, and its current status. The initial status is `unresolved`.
 

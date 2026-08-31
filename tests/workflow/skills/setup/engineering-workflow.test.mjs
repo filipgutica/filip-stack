@@ -799,10 +799,66 @@ test('walkthrough branch provenance records the merge base and comparison range'
   assert.match(log, new RegExp(`- Base: ${base}`))
   assert.match(log, new RegExp(`- Range: ${base}\\.\\.\\.${head}`))
 
+  const unknownHead = '1'.repeat(40)
+  const unknownHeadLog = log
+    .replace(`- Head: ${head}`, `- Head: ${unknownHead}`)
+    .replace(`- Range: ${base}...${head}`, `- Range: ${base}...${unknownHead}`)
+  writeFileSync(result.logFile, unknownHeadLog)
+  const missingCommit = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile),
+    ],
+  })
+  assert.equal(missingCommit.status, 1)
+  assert.match(missingCommit.stderr, /walkthrough head must identify a commit/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), unknownHeadLog)
+
+  const unknownBase = '2'.repeat(40)
+  const unknownBaseLog = log
+    .replace(`- Base: ${base}`, `- Base: ${unknownBase}`)
+    .replace(`- Range: ${base}...${head}`, `- Range: ${unknownBase}...${head}`)
+  writeFileSync(result.logFile, unknownBaseLog)
+  const missingBase = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile),
+    ],
+  })
+  assert.equal(missingBase.status, 1)
+  assert.match(missingBase.stderr, /walkthrough base must identify a commit/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), unknownBaseLog)
+  writeFileSync(result.logFile, log)
+
   writeFileSync(join(repoRoot, 'CHANGELOG.md'), '# More changes\n')
   git(repoRoot, 'add', 'CHANGELOG.md')
   git(repoRoot, 'commit', '-m', 'test: add correction change')
   const refreshedHead = git(repoRoot, 'rev-parse', 'HEAD')
+  const beforeRefresh = readFileSync(result.logFile, 'utf8')
+  const staleResume = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile),
+    ],
+  })
+  assert.equal(staleResume.status, 1)
+  assert.match(staleResume.stderr, /walkthrough head does not match the current checkout/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), beforeRefresh)
+
+  const changedBase = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile), '--refresh-range', '--base-ref', 'HEAD',
+    ],
+  })
+  assert.equal(changedBase.status, 1)
+  assert.match(changedBase.stderr, /refresh-range requires the recorded merge base/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), beforeRefresh)
+
   const refreshed = run({
     command: 'start-walkthrough',
     args: [
@@ -820,8 +876,33 @@ test('walkthrough branch provenance records the merge base and comparison range'
   assert.match(refreshedLog, new RegExp(`- Range: ${base}\\.\\.\\.${refreshedHead}`))
   assert.doesNotMatch(refreshedLog, new RegExp(`- Head: ${head}`))
 
+  git(repoRoot, 'reset', '--hard', head)
+  const beforeRewrittenRefresh = readFileSync(result.logFile, 'utf8')
+  const rewrittenHistory = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile), '--refresh-range', '--base-ref', base,
+    ],
+  })
+  assert.equal(rewrittenHistory.status, 1)
+  assert.match(rewrittenHistory.stderr, /refresh-range requires the recorded head to remain an ancestor/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), beforeRewrittenRefresh)
+  git(repoRoot, 'reset', '--hard', refreshedHead)
+
   git(repoRoot, 'checkout', '-b', 'feat/other')
   const beforeSpoof = readFileSync(result.logFile, 'utf8')
+  const wrongBranchResume = runRaw({
+    command: 'start-walkthrough',
+    args: [
+      '--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one',
+      '--log-file', basename(result.logFile),
+    ],
+  })
+  assert.equal(wrongBranchResume.status, 1)
+  assert.match(wrongBranchResume.stderr, /branch walkthrough requires the recorded branch checkout/)
+  assert.equal(readFileSync(result.logFile, 'utf8'), beforeSpoof)
+
   const spoofedBranch = runRaw({
     command: 'start-walkthrough',
     args: [
@@ -872,6 +953,74 @@ test('walkthrough branch provenance records the merge base and comparison range'
   assert.equal(unsafeBranch.status, 1)
   assert.match(unsafeBranch.stderr, /not a valid branch name/)
   assert.equal(existsSync(legacyTopic.paths.walkthroughsRoot), false)
+})
+
+test('branch correction resolution requires a refreshed current range', () => {
+  const root = mkdtempSync(join(tmpdir(), 'engineering-workflow-walkthrough-branch-correction-'))
+  const repoRoot = createRepo({ parent: root })
+  const workflowRoot = join(root, 'workflow')
+  initializeWorkflow({ repoRoot, workflowRoot })
+  createTopic({ repoRoot, workflowRoot })
+  const common = ['--repo-root', repoRoot, '--workflow-root', workflowRoot, '--topic-id', 'topic-one']
+  const base = git(repoRoot, 'rev-parse', 'HEAD')
+  writeFileSync(join(repoRoot, 'feature.md'), 'initial behavior\n')
+  git(repoRoot, 'add', 'feature.md')
+  git(repoRoot, 'commit', '-m', 'test: add initial behavior')
+  const walkthrough = run({
+    command: 'start-walkthrough',
+    args: [
+      ...common, '--slug', 'branch-correction', '--source', 'branch', '--base-ref', base,
+      '--reviewer', 'agent',
+      '--slices', walkthroughSlices(['Integration', 'Review the integrated behavior.']),
+    ],
+  })
+  run({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Integration', '--status', 'covered',
+      '--summary', 'The behavior needs a correction.', '--evidence', 'The integration contract.',
+      '--decision', 'Correct the behavior.',
+      '--correction', 'Preserve the required integration state.', '--correction-status', 'open',
+    ],
+  })
+  writeFileSync(join(repoRoot, 'feature.md'), 'corrected behavior\n')
+  git(repoRoot, 'add', 'feature.md')
+  git(repoRoot, 'commit', '-m', 'test: correct behavior')
+  const staleLog = readFileSync(walkthrough.logFile, 'utf8')
+
+  const staleResolution = runRaw({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Integration', '--status', 'changed',
+      '--summary', 'The correction is implemented.', '--evidence', 'The integration test.',
+      '--decision', 'Accept the correction.',
+      '--correction-id', 'C1', '--correction-status', 'resolved',
+    ],
+  })
+  assert.equal(staleResolution.status, 1)
+  assert.match(staleResolution.stderr, /walkthrough head does not match the current checkout/)
+  assert.equal(readFileSync(walkthrough.logFile, 'utf8'), staleLog)
+
+  run({
+    command: 'start-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--refresh-range', '--base-ref', base,
+    ],
+  })
+  const resolved = run({
+    command: 'update-walkthrough',
+    args: [
+      ...common, '--log-file', basename(walkthrough.logFile),
+      '--slice', 'Integration', '--status', 'changed',
+      '--summary', 'The correction is implemented.', '--evidence', 'The integration test.',
+      '--decision', 'Accept the correction.',
+      '--correction-id', 'C1', '--correction-status', 'resolved',
+    ],
+  })
+  assert.equal(resolved.nextSlice, 'complete')
 })
 
 test('walkthrough updates the summary table, appends entries, and derives the next slice', () => {

@@ -79,12 +79,14 @@ For a valid correction:
 2. Pause the walkthrough.
 3. Route the bounded correction through `$workflow:coordinator` for implementation, verification, independent review, and commit handling.
 4. Rerun affected branch checks.
-5. Mark the correction `resolved`, or `deferred` only when the user or owning work item explicitly permits deferral.
-6. Refresh the log with setup `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`.
+5. Refresh the log with setup `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>` before marking the correction `resolved`. The refresh requires the recorded head to remain an ancestor of the current head and the merge base to remain unchanged.
+6. Mark the correction `resolved`, or `deferred` only when the user or owning work item explicitly permits deferral.
 7. Resume the same presenter with the refreshed exact range and evidence.
 8. Revisit every affected or superseded slice before continuing.
 
 The presenter never implements its own correction.
+
+If the branch history was rewritten or its merge base changed, start a new walkthrough log and rebuild the change map. Do not attach the earlier decisions to a different comparison range.
 
 ## Completion
 

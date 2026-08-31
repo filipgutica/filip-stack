@@ -85,12 +85,14 @@ If the user explicitly requests a bounded correction during the walkthrough:
 2. Record the current slice, coverage state, and `open` correction. Keep the returned correction ID.
 3. Route the correction through `$workflow:coordinator`.
 4. Complete the authorized implementation, verification, and review cycle.
-5. Mark the correction `resolved`. Mark it `deferred` if the user postpones the work.
-6. Refresh the selected diff and coverage map. For a branch walkthrough, also run setup `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`.
+5. Refresh the selected diff and coverage map. For a branch walkthrough, run setup `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>` before marking the correction `resolved`.
+6. Mark the correction `resolved`. Mark it `deferred` if the user postpones the work.
 7. Revisit each changed or superseded slice.
 8. Resume the walkthrough from the updated evidence.
 
 Keep a correction `open` when implementation authority or required evidence is missing.
+
+For a branch walkthrough, range refresh requires append-only history from the recorded head and an unchanged merge base. If either condition fails, start a new log and rebuild coverage instead of carrying decisions onto rewritten history.
 
 If the correction expands the agreed scope or changes a public contract, confirm that authority before implementation.
 

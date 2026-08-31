@@ -112,6 +112,7 @@ assertContainsAll(log, [
   /Resume the same log after context compaction/i,
   /selects `complete` only when no open correction and no unresolved row remain/i,
   /--refresh-range --base-ref <ref>/i,
+  /stale branch range/i,
 ])
 
 assertContainsAll(metadata, [
@@ -124,11 +125,13 @@ assertContainsAll(setup, [
   /--correction-id <id> --correction-status <resolved\|deferred>/,
   /Use that ID with `--correction-id`/i,
   /--refresh-range --base-ref <ref>/i,
+  /before marking.+resolved/i,
 ])
 assertContainsAll(storage, [
   /corrections table follows the summary table/i,
   /Existing logs without this table remain valid/i,
   /first open correction before any unresolved table row/i,
+  /recorded head.+ancestor/i,
 ])
 assertContainsAll(readme, [
   /`walkthrough`/,

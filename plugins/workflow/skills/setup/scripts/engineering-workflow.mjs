@@ -29,6 +29,10 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(result.stderr.trim() || `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
+const gitSucceeds = ({ repoRoot, args }) => (
+  spawnSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).status === 0
+)
+
 const slugify = (value) => (
   value.replace(/[^a-zA-Z0-9._-]+/g, '-').replace(/^-+|-+$/g, '') || 'repository'
 )
@@ -1363,6 +1367,24 @@ const currentWalkthroughBranch = ({ repoRoot }) => {
   return walkthroughText({ name: 'branch', value: branch })
 }
 
+const requireStoredWalkthroughCommits = ({ source, base, head, repoRoot }) => {
+  if (git({ repoRoot, args: ['cat-file', '-t', head], optional: true }) !== 'commit') {
+    fail('walkthrough head must identify a commit')
+  }
+  if (source === 'branch'
+    && git({ repoRoot, args: ['cat-file', '-t', base], optional: true }) !== 'commit') {
+    fail('walkthrough base must identify a commit')
+  }
+}
+
+const requireCurrentWalkthroughRange = ({ log, repoRoot }) => {
+  if (log.source !== 'branch') return
+  const branch = currentWalkthroughBranch({ repoRoot })
+  if (branch !== log.branch) fail('branch walkthrough requires the recorded branch checkout')
+  const head = git({ repoRoot, args: ['rev-parse', 'HEAD'] })
+  if (head !== log.head) fail('walkthrough head does not match the current checkout')
+}
+
 const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
   const content = readFileSync(logFile, 'utf8')
   const title = basename(logFile).match(walkthroughFilePattern)?.[3]
@@ -1404,6 +1426,7 @@ const readWalkthroughLog = ({ logFile, topicFile, repositoryId, repoRoot }) => {
     || !validBase || range !== expectedRange) {
     invalidWalkthroughLog(logFile)
   }
+  requireStoredWalkthroughCommits({ source, base, head, repoRoot })
   const slices = parseWalkthroughTable({ table, logFile })
   const corrections = parseWalkthroughCorrections({ table: correctionsTable, slices, logFile })
   const records = parseWalkthroughEntries({ entries, slices, corrections, logFile })
@@ -1444,6 +1467,7 @@ const startWalkthrough = ({
       })
       if (!refreshRange) {
         if (baseRef !== undefined) fail('--base-ref requires --refresh-range when resuming a walkthrough')
+        requireCurrentWalkthroughRange({ log, repoRoot: paths.repositoryRoot })
         const normalized = normalizeWalkthroughNextSlice({ log, logFile })
         if (normalized) {
           log = readWalkthroughLog({
@@ -1463,6 +1487,13 @@ const startWalkthrough = ({
       if (branch !== log.branch) fail('--refresh-range requires the walkthrough branch checkout')
       const head = git({ repoRoot: paths.repositoryRoot, args: ['rev-parse', 'HEAD'] })
       const base = git({ repoRoot: paths.repositoryRoot, args: ['merge-base', 'HEAD', baseRef.trim()] })
+      if (base !== log.base) fail('--refresh-range requires the recorded merge base')
+      if (!gitSucceeds({
+        repoRoot: paths.repositoryRoot,
+        args: ['merge-base', '--is-ancestor', log.head, head],
+      })) {
+        fail('--refresh-range requires the recorded head to remain an ancestor')
+      }
       const range = `${base}...${head}`
       const normalized = normalizeWalkthroughNextSlice({ log, logFile })
       if (normalized) {
@@ -1554,6 +1585,7 @@ const updateWalkthrough = ({
       logFile, topicFile: resolved.topicFile, repositoryId: paths.repositoryId,
       repoRoot: paths.repositoryRoot,
     })
+    requireCurrentWalkthroughRange({ log, repoRoot: paths.repositoryRoot })
     const sliceIndex = log.slices.findIndex((item) => item.slice === values.slice)
     if (sliceIndex === -1) fail('--slice must match a slice in the walkthrough table')
     const slices = log.slices.map((item, index) => (

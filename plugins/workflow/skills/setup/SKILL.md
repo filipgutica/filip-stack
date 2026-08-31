@@ -68,9 +68,9 @@ The option defaults to `user` for compatibility. Pass ordered slice names and de
 
 Use `--correction` and `--correction-status open` when a walkthrough confirms a required change. The command returns a correction ID. Use that ID with `--correction-id` to mark the correction `resolved` or `deferred`. These terminal states cannot change.
 
-Resume with `start-walkthrough --log-file <name>`.
+Resume with `start-walkthrough --log-file <name>`. A branch walkthrough refuses to resume or update against a stale branch range: its recorded branch and head must match the current checkout.
 
-After a correction commit changes a branch walkthrough, resume with `--refresh-range --base-ref <ref>`. The checkout must remain on the recorded branch. This command updates the stored base, head, and range before it validates the log. It is not valid for `last-turn` or `working-tree` walkthroughs.
+After a correction commit changes a branch walkthrough, resume with `--refresh-range --base-ref <ref>` before marking the correction `resolved`. The checkout must remain on the recorded branch, the recorded head must remain an ancestor of the current head, and the recorded merge base must remain unchanged. The command validates the stored log, verifies continuity, atomically refreshes the stored head and range, then validates the refreshed log. It is not valid for `last-turn` or `working-tree` walkthroughs. Start a new log when branch history was rewritten or the merge base changed.
 
 The agent stores only curated one-line walkthrough fields. The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines.
 

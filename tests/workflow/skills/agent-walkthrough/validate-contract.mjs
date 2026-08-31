@@ -46,6 +46,7 @@ assertContainsAll(skill, [
   /separate.+correction/i,
   /Use `none` when no correction was made/i,
   /--refresh-range --base-ref <ref>/i,
+  /Refresh.+before.+resolved/is,
   /Do not store.+raw transcript/is,
   /presenter-protocol\.md/,
 ])
@@ -86,6 +87,8 @@ assert.match(setup, /--reviewer <user\|agent>/)
 assert.match(setup, /--refresh-range --base-ref <ref>/)
 assert.match(storage, /Reviewer.+user.+agent/i)
 assert.match(storage, /first open correction before any unresolved table row/i)
+assert.match(storage, /recorded head.+ancestor/i)
+assert.match(storage, /merge base.+unchanged/i)
 assert.match(readme, /`agent-walkthrough`/)
 
 assert.equal(
@@ -104,6 +107,8 @@ assert.equal(byId['pull-request-range'].providerSpecificWorkflow, false)
 assert.equal(byId['clarification-follow-up'].newPresenterAllowed, false)
 assert.equal(byId['bounded-correction'].presenterCanEdit, false)
 assert.deepEqual(byId['bounded-correction'].expectedCorrectionStatuses, ['open', 'resolved'])
+assert.equal(byId['bounded-correction'].refreshBeforeResolution, true)
+assert.equal(byId['bounded-correction'].historyContinuity, 'append-only-same-base')
 assert.equal(byId['material-decision'].expectedAction, 'return-to-user')
 assert.ok(byId['unsafe-log-request'].forbiddenStoredContent.includes('raw-transcript'))
 assert.equal(byId['plain-code-review'].expectedRoute, 'normal-review-tier')

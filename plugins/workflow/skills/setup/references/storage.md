@@ -204,7 +204,7 @@ A correction ID belongs to its source slice. An update must select that same sli
 
 For a branch source, pass `--base-ref`. The setup utility uses `git merge-base HEAD <base-ref>` for the base. It records `<base>...<head>` as the range.
 
-After a correction commit, use `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>`. The current checkout must use the walkthrough's recorded branch. The command atomically refreshes the stored merge base, head, and range, then validates the updated log.
+After a correction commit, use `start-walkthrough --log-file <name> --refresh-range --base-ref <ref>` before marking the correction resolved. The current checkout must use the walkthrough's recorded branch, the recorded head must remain an ancestor of the current head, and the merge base must remain unchanged. The command atomically refreshes the stored head and range, then validates the updated log. Start a new log and rebuild coverage when history was rewritten or the merge base changed.
 
 For a last-turn or working-tree source, the base is `none`. The range is `<source>@<head>`.
 
@@ -222,7 +222,7 @@ Each recorded field must use one line. Do not store a prompt, transcript, respon
 
 The utility rejects high-signal credentials, absolute home paths, code fences, and role-labeled transcript lines. This check cannot identify all sensitive meaning. The agent must curate each field.
 
-Resume an interrupted session with its log filename. The setup utility validates the log before it resumes or appends a slice.
+Resume an interrupted session with its log filename. The setup utility validates the log before it resumes or appends a slice. A branch walkthrough refuses a stale branch range unless its recorded branch and head match the current checkout.
 
 ## Local tickets
 
