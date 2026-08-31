@@ -1,3 +1,17 @@
+# [1.16.0](https://github.com/filipgutica/filip-stack/compare/v1.15.0...v1.16.0) (2026-08-31)
+
+
+### Bug Fixes
+
+* **workflow:** bind walkthrough state to branch history ([efb8873](https://github.com/filipgutica/filip-stack/commit/efb88737fae1fdf6624995308a41747a98aa1f64))
+
+
+### Features
+
+* **workflow:** add automated agent walkthrough ([e85e76a](https://github.com/filipgutica/filip-stack/commit/e85e76ae9a854bb4b329b8762de4b374c92c3cce))
+* **workflow:** tighten durable learning and agent routing ([df580d9](https://github.com/filipgutica/filip-stack/commit/df580d90ac5eb4d3f4897681938d4a290ba05470))
+* **workflow:** tighten field guide and runtime payload ([c9a3131](https://github.com/filipgutica/filip-stack/commit/c9a313198de23a5361b274b18294702044e2bcdf))
+
 # [1.15.0](https://github.com/filipgutica/filip-stack/compare/v1.14.1...v1.15.0) (2026-08-29)
 
 
