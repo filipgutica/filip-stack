@@ -1,0 +1,28 @@
+diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py
+index 6dcf640..2c4e7f9 100644
+--- a/src/_pytest/reports.py
++++ b/src/_pytest/reports.py
+@@ -192,7 +192,9 @@ class BaseReport:
+                 "reprtraceback": reprtraceback,
+                 "sections": rep.longrepr.sections,
+             }
+-            if isinstance(rep.longrepr, ExceptionChainRepr):
++            if isinstance(rep.longrepr, ExceptionChainRepr) and len(
++                rep.longrepr.chain
++            ) > 1:
+                 result["chain"] = [
+                     {
+                         "reprtraceback": serialize_reprtraceback(reprtraceback),
+@@ -289,8 +291,10 @@ class BaseReport:
+                     )
+                     exception_info = ReprExceptionInfo(
+                         reprtraceback=reprtraceback,
+-                        reprcrash=ReprFileLocation(
+-                            **reportdict["longrepr"]["reprcrash"]
++                        reprcrash=(
++                            ReprFileLocation(**reportdict["longrepr"]["reprcrash"])
++                            if reportdict["longrepr"]["reprcrash"] is not None
++                            else None
+                         ),
+                     )
+ 

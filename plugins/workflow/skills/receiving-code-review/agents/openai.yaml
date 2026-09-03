@@ -1,7 +1,0 @@
-interface:
-  display_name: "Receiving Code Review"
-  short_description: "Verify review feedback before changing code"
-  default_prompt: "Use $workflow:receiving-code-review to evaluate this code review feedback against the repository."
-
-policy:
-  allow_implicit_invocation: true

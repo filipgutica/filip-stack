@@ -1,0 +1,24 @@
+{
+  "name": "field-guide",
+  "version": "1.16.0",
+  "description": "Optional local guidance that learns durable preferences and corrections without loading its complete store into context.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "skills": "./skills",
+  "interface": {
+    "displayName": "Field Guide",
+    "shortDescription": "Retrieve and maintain bounded local guidance.",
+    "longDescription": "Field Guide stores durable preferences, corrections, and recurring lessons locally. It retrieves only relevant guidance, keeps live code and current instructions authoritative, and provides explicit audit and maintenance paths.",
+    "developerName": "Filip Gutica",
+    "category": "Productivity",
+    "capabilities": [
+      "Interactive",
+      "Write"
+    ],
+    "defaultPrompt": [
+      "Use $field-guide:field-guide to retrieve or manage durable local guidance.",
+      "Use $field-guide:field-guide audit to inspect stored guidance without changing it."
+    ]
+  }
+}

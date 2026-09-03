@@ -1,0 +1,18 @@
+diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py
+index 6dcf640..69341d6 100644
+--- a/src/_pytest/reports.py
++++ b/src/_pytest/reports.py
+@@ -269,6 +269,13 @@ class BaseReport:
+                     return ReprTraceback(**reprtraceback)
+ 
+                 if "chain" in reportdict["longrepr"]:
++                    # ``reprtraceback`` is kept at the top level for backwards
++                    # compatibility.  Validate it as well as the entries in
++                    # the chain, even though the chain is used to reconstruct
++                    # the complete representation.
++                    unserialize_reprtraceback(
++                        reportdict["longrepr"]["reprtraceback"]
++                    )
+                     chain = []
+                     for chain_data in reportdict["longrepr"]["chain"]:
+                         chain.append(

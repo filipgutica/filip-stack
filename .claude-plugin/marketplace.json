@@ -8,6 +8,10 @@
     {
       "name": "workflow",
       "source": "./plugins/workflow"
+    },
+    {
+      "name": "field-guide",
+      "source": "./plugins/field-guide"
     }
   ]
 }

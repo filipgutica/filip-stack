@@ -1,7 +1,7 @@
 {
   "name": "workflow",
   "version": "1.16.0",
-  "description": "Engineering guidance for planning, specifications, tickets, implementation, debugging, review, and ledger-backed execution.",
+  "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
   "author": {
     "name": "Filip Gutica"
   },

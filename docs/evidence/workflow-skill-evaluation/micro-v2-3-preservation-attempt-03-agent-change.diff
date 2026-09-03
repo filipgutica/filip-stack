@@ -1,0 +1,51 @@
+diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py
+index 2a03619..f5ab5d3 100644
+--- a/src/_pytest/reports.py
++++ b/src/_pytest/reports.py
+@@ -178,9 +178,10 @@ class BaseReport:
+             return reprtraceback
+ 
+         def disassembled_report(rep):
+-            if isinstance(rep.longrepr, ExceptionChainRepr) and len(
+-                rep.longrepr.chain
+-            ) > 1:
++            # Keep the legacy representation for ordinary one-traceback reports.
++            if isinstance(rep.longrepr, ExceptionChainRepr) and (
++                len(rep.longrepr.chain) > 1 or rep.longrepr.reprcrash is None
++            ):
+                 chain = []
+                 for reprtraceback, reprcrash, descr in rep.longrepr.chain:
+                     chain.append(
+diff --git a/testing/test_reports.py b/testing/test_reports.py
+index e2e6065..1f29238 100644
+--- a/testing/test_reports.py
++++ b/testing/test_reports.py
+@@ -26,6 +26,28 @@ class TestReportSerialization:
+ 
+         assert newrep.longreprtext == rep.longreprtext
+ 
++    def test_exception_chain_without_crash_serialization(self):
++        from _pytest._code.code import ExceptionChainRepr
++        from _pytest._code.code import ReprTracebackNative
++
++        longrepr = ExceptionChainRepr(
++            [(ReprTracebackNative(["cause"]), None, None)]
++        )
++        report = TestReport(
++            nodeid="test",
++            location=("test.py", 1, "test"),
++            keywords={},
++            outcome="failed",
++            longrepr=longrepr,
++            when="call",
++        )
++
++        data = report._to_json()
++        assert data["longrepr"]["chain"][0]["reprcrash"] is None
++        newrep = TestReport._from_json(data)
++
++        assert newrep.longreprtext == report.longreprtext
++
+     def test_xdist_longrepr_to_str_issue_241(self, testdir):
+         """
+         Regarding issue pytest-xdist#241

@@ -19,10 +19,14 @@ test('runtime payload policy rejects development-only test assets', () => {
 
 test('runtime payload policy allows runtime guidance and utilities', () => {
   const allowed = [
-    'skills/writing-skills/references/evaluations.md',
-    'skills/implementation/references/test-driven-development.md',
-    'skills/setup/scripts/engineering-workflow.mjs',
-    'skills/field-guide/schemas/retrieval-v1.schema.json',
+    'skills/engineering/references/testing-and-debugging.md',
+    'skills/engineering/references/verification-tools.md',
+    'skills/planning/references/spec.md',
+    'skills/walkthrough/references/presenter.md',
+    'hooks/field-guide-lifecycle.mjs',
+    'scripts/run-node.sh',
+    'skills/field-guide/scripts/field-guide.mjs',
+    'skills/field-guide/schemas/memory-v1.schema.json',
   ]
 
   assert.deepEqual(allowed.filter(isDevelopmentOnlyPluginPath), [])

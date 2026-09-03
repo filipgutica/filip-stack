@@ -1,0 +1,16 @@
+diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py
+index 6dcf640..fd0bec4 100644
+--- a/src/_pytest/reports.py
++++ b/src/_pytest/reports.py
+@@ -192,7 +192,10 @@ class BaseReport:
+                 "reprtraceback": reprtraceback,
+                 "sections": rep.longrepr.sections,
+             }
+-            if isinstance(rep.longrepr, ExceptionChainRepr):
++            if (
++                isinstance(rep.longrepr, ExceptionChainRepr)
++                and len(rep.longrepr.chain) > 1
++            ):
+                 result["chain"] = [
+                     {
+                         "reprtraceback": serialize_reprtraceback(reprtraceback),

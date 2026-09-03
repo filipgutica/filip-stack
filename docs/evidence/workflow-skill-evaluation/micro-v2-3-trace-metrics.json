@@ -1,0 +1,284 @@
+{
+  "schema_version": 1,
+  "candidate_skill_digest": "sha256:fee5909ce4068ca04e4b02a8f783f6b47b1986f2e0e90ad17459c8ff0c6fff7a",
+  "source": "Promptfoo result tokenUsage, latencyMs, cost, response.metadata.skillCalls, response.raw items, and official verifier agent-change.diff artifacts",
+  "repair": {
+    "run_child": "20260903T153142Z-workflow-pytest-repair-canary",
+    "baseline_run_child": "20260903T055005Z-workflow-pytest-repair-canary",
+    "baseline": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "verifier_outcome": "repair",
+          "latency_ms": 313564,
+          "cost_usd": 0.0924454,
+          "reported_tokens": 1149967,
+          "commands": 22,
+          "failed_commands": 6,
+          "file_change_events": 1,
+          "first_test_command_position": 3
+        },
+        {
+          "attempt": 2,
+          "verifier_outcome": "repair",
+          "latency_ms": 269772,
+          "cost_usd": 0.07833844,
+          "reported_tokens": 944161,
+          "commands": 17,
+          "failed_commands": 3,
+          "file_change_events": 3,
+          "first_test_command_position": 4
+        },
+        {
+          "attempt": 3,
+          "verifier_outcome": "repair",
+          "latency_ms": 389527,
+          "cost_usd": 0.11570124000000001,
+          "reported_tokens": 1224274,
+          "commands": 34,
+          "failed_commands": 8,
+          "file_change_events": 3,
+          "first_test_command_position": 7
+        },
+        {
+          "attempt": 4,
+          "verifier_outcome": "repair",
+          "latency_ms": 195601,
+          "cost_usd": 0.056443,
+          "reported_tokens": 710994,
+          "commands": 14,
+          "failed_commands": 4,
+          "file_change_events": 3,
+          "first_test_command_position": 3
+        },
+        {
+          "attempt": 5,
+          "verifier_outcome": "repair",
+          "latency_ms": 334595,
+          "cost_usd": 0.10649192,
+          "reported_tokens": 1082722,
+          "commands": 33,
+          "failed_commands": 7,
+          "file_change_events": 1,
+          "first_test_command_position": 8
+        }
+      ],
+      "medians": {
+        "latency_ms": 313564,
+        "cost_usd": 0.0924454,
+        "reported_tokens": 1082722,
+        "commands": 22,
+        "failed_commands": 6,
+        "file_change_events": 3,
+        "first_test_command_position": 4
+      }
+    },
+    "treatment": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "verifier_outcome": "repair",
+          "latency_ms": 252570,
+          "cost_usd": 0.06767784,
+          "reported_tokens": 621292,
+          "commands": 29,
+          "failed_commands": 1,
+          "file_change_events": 1,
+          "first_test_command_position": 10,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py"]
+        },
+        {
+          "attempt": 2,
+          "verifier_outcome": "repair",
+          "latency_ms": 126770,
+          "cost_usd": 0.0179784,
+          "reported_tokens": 268648,
+          "commands": 13,
+          "failed_commands": 2,
+          "file_change_events": 2,
+          "first_test_command_position": 6,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py"]
+        },
+        {
+          "attempt": 3,
+          "verifier_outcome": "repair",
+          "latency_ms": 321563,
+          "cost_usd": 0.08698288000000001,
+          "reported_tokens": 1013939,
+          "commands": 29,
+          "failed_commands": 4,
+          "file_change_events": 2,
+          "first_test_command_position": 3,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py"]
+        },
+        {
+          "attempt": 4,
+          "verifier_outcome": "repair",
+          "latency_ms": 328057,
+          "cost_usd": 0.0787742,
+          "reported_tokens": 948124,
+          "commands": 27,
+          "failed_commands": 3,
+          "file_change_events": 3,
+          "first_test_command_position": 9,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py"]
+        },
+        {
+          "attempt": 5,
+          "verifier_outcome": "repair",
+          "latency_ms": 203108,
+          "cost_usd": 0.07028620000000001,
+          "reported_tokens": 710306,
+          "commands": 26,
+          "failed_commands": 3,
+          "file_change_events": 2,
+          "first_test_command_position": 9,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py"]
+        }
+      ],
+      "medians": {
+        "latency_ms": 252570,
+        "cost_usd": 0.07028620000000001,
+        "reported_tokens": 710306,
+        "commands": 27,
+        "failed_commands": 3,
+        "file_change_events": 2,
+        "first_test_command_position": 9
+      },
+      "median_delta_percent": {
+        "latency_ms": -19.4519,
+        "cost_usd": -23.9700,
+        "reported_tokens": -34.3963,
+        "commands": 22.7273,
+        "failed_commands": -50.0000,
+        "file_change_events": -33.3333,
+        "first_test_command_position": 125.0000
+      },
+      "reference_reads": 2,
+      "reference_read_attempts": [4, 5],
+      "reviewer_spawns": 0,
+      "scope_adjudication": "All five attempts changed only the production owner. No attempt changed a test or an unrelated file."
+    }
+  },
+  "preservation": {
+    "run_child": "20260903T155846Z-workflow-pytest-preservation-control",
+    "baseline": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "verifier_outcome": "preservation",
+          "latency_ms": 403664,
+          "cost_usd": 0.0946814,
+          "reported_tokens": 1025963,
+          "commands": 49,
+          "failed_commands": 9,
+          "file_change_events": 0,
+          "first_test_command_position": 15,
+          "changed_paths": []
+        },
+        {
+          "attempt": 2,
+          "verifier_outcome": "preservation",
+          "latency_ms": 281005,
+          "cost_usd": 0.07364916,
+          "reported_tokens": 808907,
+          "commands": 30,
+          "failed_commands": 2,
+          "file_change_events": 1,
+          "first_test_command_position": 7,
+          "changed_paths": ["testing/test_reports.py"]
+        },
+        {
+          "attempt": 3,
+          "verifier_outcome": "preservation",
+          "latency_ms": 372884,
+          "cost_usd": 0.07639512000000001,
+          "reported_tokens": 902194,
+          "commands": 22,
+          "failed_commands": 3,
+          "file_change_events": 1,
+          "first_test_command_position": 5,
+          "changed_paths": ["src/_pytest/reports.py", "testing/test_reports.py"]
+        }
+      ],
+      "medians": {
+        "latency_ms": 372884,
+        "cost_usd": 0.07639512000000001,
+        "reported_tokens": 902194,
+        "commands": 30,
+        "failed_commands": 3,
+        "file_change_events": 1,
+        "first_test_command_position": 7
+      }
+    },
+    "treatment": {
+      "attempts": [
+        {
+          "attempt": 1,
+          "verifier_outcome": "preservation",
+          "latency_ms": 253942,
+          "cost_usd": 0.0746644,
+          "reported_tokens": 861049,
+          "commands": 37,
+          "failed_commands": 4,
+          "file_change_events": 0,
+          "first_test_command_position": 16,
+          "skill_calls": ["engineering"],
+          "changed_paths": []
+        },
+        {
+          "attempt": 2,
+          "verifier_outcome": "preservation",
+          "latency_ms": 308984,
+          "cost_usd": 0.08610736,
+          "reported_tokens": 1061698,
+          "commands": 23,
+          "failed_commands": 4,
+          "file_change_events": 0,
+          "first_test_command_position": 10,
+          "skill_calls": ["engineering"],
+          "changed_paths": []
+        },
+        {
+          "attempt": 3,
+          "verifier_outcome": "preservation",
+          "latency_ms": 297081,
+          "cost_usd": 0.09261572,
+          "reported_tokens": 1064829,
+          "commands": 23,
+          "failed_commands": 4,
+          "file_change_events": 2,
+          "first_test_command_position": 2,
+          "skill_calls": ["engineering"],
+          "changed_paths": ["src/_pytest/reports.py", "testing/test_reports.py"]
+        }
+      ],
+      "medians": {
+        "latency_ms": 297081,
+        "cost_usd": 0.08610736,
+        "reported_tokens": 1061698,
+        "commands": 23,
+        "failed_commands": 4,
+        "file_change_events": 0,
+        "first_test_command_position": 10
+      },
+      "median_delta_percent": {
+        "latency_ms": -20.3288,
+        "cost_usd": 12.7132,
+        "reported_tokens": 17.6796,
+        "commands": -23.3333,
+        "failed_commands": 33.3333,
+        "file_change_events": -100.0000,
+        "first_test_command_position": 42.8571
+      },
+      "reference_reads": 0,
+      "reviewer_spawns": 0,
+      "scope_adjudication": "Two attempts made no changes. Attempt 3 made a same-owner edge-case fix and added one focused regression test; no attempt changed an unrelated file or weakened an existing test."
+    }
+  }
+}

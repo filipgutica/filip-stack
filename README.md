@@ -1,312 +1,171 @@
 # Filip Stack
 
 Filip Stack is a personal plugin marketplace for Claude and Codex. It distributes
-the shared `workflow` plugin directly from this GitHub repository.
+the `workflow` plugin and the optional `field-guide` plugin directly from this
+repository.
 
-## What the workflow plugin includes
+## Workflow v2
 
-The `workflow` plugin is an engineering reference guide and execution workflow.
-Its skills are grouped by purpose:
+Workflow v2 is intentionally small. Five skills cover the normal engineering
+loop without chaining a large collection of procedures together.
 
-- **Planning and writing:** `brainstorming`, `grill-me`, `grill-with-docs`,
-  `writing-specs`, `writing-plans`, `spec-to-tickets`, `writing-tickets`,
-  `ste-writing`, and `writing-skills`.
-- **Implementation and debugging:** `implementation`, `minimal-code`,
-  `systematic-debugging`, `using-git-worktrees`, and
-  `subagent-driven-development`.
-- **Review and improvement:** `walkthrough`, `agent-walkthrough`,
-  `receiving-code-review`, `review-cycle`, `simplification-review`, and
-  `field-guide`.
-- **Coordination and state:** `coordinator`, `branch-task-planner`, and `setup`.
+| Skill | Use |
+| --- | --- |
+| `engineering` | Implement, debug, refactor, respond to review feedback, and verify authorized code changes. |
+| `planning` | Explore a problem or produce one specification, plan, task set, or ticket set. |
+| `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
+| `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
+| `walkthrough` | Explicitly inspect and explain a change one verifiable slice at a time. |
 
-`setup`, `branch-task-planner`, `grill-with-docs`, `spec-to-tickets`,
-`using-git-worktrees`, and `subagent-driven-development` are manual-only. They
-run only when the user explicitly requests them or an authorized coordinator
-route requires them.
+`engineering`, `planning`, and `technical-writing` may be selected from a
+matching request. `grill-me` and `walkthrough` are manual-only.
 
-`grill-with-docs` uses the `grill-me` interview loop while keeping existing
-repository documentation current. It updates the smallest README or other
-documentation file that owns the resolved information. It records only
-hard-to-reverse, surprising tradeoff decisions as ADRs.
+### How it stays small
 
-`walkthrough` is manual-only. It explains and reviews selected changes without
-granting authority to modify them. An explicit invocation can save one curated
-walkthrough log under a confirmed topic. The log keeps a slice-status table and
-a chronological running log. A corrections table tracks required changes as
-`open`, `resolved`, or `deferred`.
+The plugin uses three levels of progressive disclosure:
 
-`agent-walkthrough` is the automated branch-level variant. A fresh read-only
-presenter explains one slice at a time to the main thread acting as staff
-reviewer. The coordinator may select it for named-work-item end-to-end work when
-tasks interact across an end-to-end flow. It may also select it when a public
-contract crosses producer and consumer boundaries. Migration, compatibility, or
-rollout behavior across multiple slices can also require it. The skill does not
-replace the independent review tier or `review-cycle`.
+1. The host sees only each skill's name and description while choosing a route.
+2. The selected `SKILL.md` supplies the operating contract.
+3. A short reference file is opened only when the selected mode needs it.
 
-Both the Claude and Codex marketplaces distribute this plugin. The separate
-`codex-claude-plugin` marketplace distributes the Codex-only `claude-plugin`.
+Skills do not invoke other public Workflow skills. The two broad routes select
+an internal mode instead:
+
+- `engineering` selects implementation, debugging, refactoring, review
+  correction, or final verification guidance.
+- `planning` selects exploration, specification, plan, tasks, or tickets.
+
+The engineering loop is evidence-driven: define the boundary, establish a test
+or reproduction, make the smallest correct change, run focused checks, inspect
+the complete diff, and review consequential decisions. Repository tools such as
+tests, types, linters, ESLint, and Fallow supply deterministic evidence where
+available.
+
+This keeps the useful part of loop engineering: failed evidence returns only to
+the affected step, and explicit stop conditions prevent unbounded retries. It is
+not a scheduler or unattended loop runner. Complex work can form a small task
+graph through dependencies and independent owners, but Workflow does not add a
+graph schema, state engine, or orchestration runtime for linear work.
+
+### Artifacts and migration
+
+Most planning and writing stays in the conversation. Persist an artifact only
+when the user asks for one. New local artifacts use a flat work-item layout:
+
+```text
+~/.engineering-workflow/<work-item>/
+├── SPEC.md
+├── PLAN.md
+├── TASKS.md
+├── grills/
+└── walkthroughs/
+```
+
+Workflow v2 does not install hooks, maintain a topic registry, or mutate local
+workflow state automatically. Existing `~/.engineering-workflow` data is left
+untouched. After the v2 release is verified, handle migration as a separate,
+small task: copy useful artifacts into the simplified layout, verify the copy,
+and remove old data only with explicit user approval.
+
+This is a breaking redesign. Removed v1 skills and hooks have no compatibility
+aliases.
+
+## Field Guide
+
+Field Guide is a separate, optional plugin. It keeps durable preferences,
+corrections, and recurring lessons under `~/.field-guide` and retrieves only a
+bounded relevant set. Installing it opts into its `UserPromptSubmit` lifecycle
+guidance; leaving it uninstalled keeps that context out of normal Workflow use.
+
+Workflow does not invoke or depend on Field Guide. Current instructions, live
+code, and repository contracts continue to outrank stored guidance.
 
 ## Repository layout
 
 ```text
-plugins/workflow/          Workflow plugin payload shared by Claude and Codex
-  .claude-plugin/          Claude plugin manifest
-  .codex-plugin/           Codex plugin manifest
-  hooks/                   Shared local lifecycle hooks
-  skills/                  Planning, writing, implementation, review, coordination, and setup skills
-  THIRD_PARTY_NOTICES.md   License notice for adapted upstream guidance
-.claude-plugin/            Claude git marketplace registry (marketplace.json)
-.agents/plugins/           Codex git marketplace registry (marketplace.json)
-scripts/                   Stamp and validate scripts
-tests/workflow/            Development-only Workflow tests, contract validators, and fixtures
+plugins/workflow/          Runtime plugin shared by Claude and Codex
+  .claude-plugin/          Claude manifest
+  .codex-plugin/           Codex manifest
+  skills/                  The five Workflow skills and conditional references
+  THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
+plugins/field-guide/       Optional local-learning plugin
+  hooks/                   Bounded capture, ask, or skip lifecycle guidance
+  scripts/                 Cross-host Node launcher
+  skills/field-guide/      Skill, storage utility, schemas, and references
+tests/workflow/            Repository-only contract and payload tests
+tests/field-guide/         Field Guide contracts and utility tests
+scripts/                   Version and plugin validation scripts
 ```
 
-The marketplace installs `plugins/workflow` directly. Keep tests, contract
-validators, and evaluation fixtures under `tests/workflow`; they are repository
-development assets and are not part of the installed runtime plugin.
+Each marketplace entry installs its plugin directory directly. Tests and
+evaluation fixtures stay outside the runtime payload.
 
 ## Install with Claude
 
-1. Add the marketplace:
+```sh
+claude plugin marketplace add filipgutica/filip-stack
+claude plugin install workflow@filip-stack
+# Optional local learning:
+claude plugin install field-guide@filip-stack
+```
 
-   ```sh
-   claude plugin marketplace add filipgutica/filip-stack
-   ```
-
-2. Install the `workflow` plugin:
-
-   ```sh
-   claude plugin install workflow@filip-stack
-   ```
-
-3. Run `/hooks` and confirm that the plugin `UserPromptSubmit` hook is enabled.
-
-Claude identifies the installed plugin as `workflow@filip-stack`. Run this
-command to update it:
+Update it with:
 
 ```sh
 claude plugin update workflow@filip-stack
+claude plugin update field-guide@filip-stack
 ```
 
 ## Install with Codex
 
-1. Add the marketplace:
+```sh
+codex plugin marketplace add filipgutica/filip-stack
+codex plugin add workflow@filip-stack
+# Optional local learning:
+codex plugin add field-guide@filip-stack
+```
 
-   ```sh
-   codex plugin marketplace add filipgutica/filip-stack
-   ```
-
-2. Restart Codex.
-3. Open the plugin directory.
-4. Install `workflow` from the `filip-stack` marketplace.
-5. Run `/hooks`, review the Workflow `UserPromptSubmit` hook, and trust its
-   current definition.
-
-Codex upgrades the marketplace instead of an individual plugin. Run this command
-to install marketplace updates:
+Update the marketplace with:
 
 ```sh
 codex plugin marketplace upgrade filip-stack
 ```
 
-### Automatic field-guide hook
+Restart Codex after installing or upgrading so a new session loads the current
+skill inventory.
 
-The packaged `UserPromptSubmit` hooks support local Claude Code and Codex on
-macOS and Linux. They do not require a global host instruction.
+## Development
 
-The local host must have Node.js 20.16 or newer. Git must be on PATH.
-The launcher searches PATH and common macOS and Linux install locations. It also
-searches the default NVM, fnm, Volta, asdf, and mise locations. Set
-`WORKFLOW_NODE` to the executable path for another installation.
+Install dependencies and run the complete deterministic check:
 
-Claude remote execution and Windows are not supported.
+```sh
+pnpm install
+pnpm check
+```
 
-The Claude and Codex hooks send bounded lifecycle instructions at
-`UserPromptSubmit`. They instruct the agent to decide `capture`, `ask`, or
-`skip` before the final response.
-
-Codex can show the hook run and injected developer context because
-`suppressOutput` is not implemented. Workflow does not register a `Stop`
-continuation. End-of-task evaluation is instructed but not enforced.
-
-The hook fails open. If it is disabled, untrusted, or unavailable, the task can finish without automatic evaluation. The field-guide skill remains available manually.
-
-The normal task response remains intact for `skip` and `capture`. A `skip` evaluation writes no memory and adds no field-guide notice. A `capture` adds only the concise change notice. An `ask` returns only the focused question.
+The check enforces the five-skill Workflow inventory, declared activation
+policy, context budgets, conditional-reference integrity, the separation of
+Field Guide hooks and state, both plugins' runtime payloads, and plugin manifest
+validity. Prompt routing scenarios are evaluation inputs; static contracts do
+not prove model behavior.
 
 ## Releases and versioning
 
-Claude and Codex install the tracked runtime files under `plugins/workflow`
-directly from this repository. Installation does not require a build. Both root
-marketplace registries point to `./plugins/workflow`; development-only tests live
-outside that payload under `tests/workflow`.
-
-CI runs semantic-release after each push to `main`. Commit messages follow
+CI runs semantic-release after pushes to `main`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/):
 
 | Commit prefix | Version bump |
-|---|---|
+| --- | --- |
 | `fix:` | patch |
 | `feat:` | minor |
 | `feat!:` or `BREAKING CHANGE:` | major |
 
-The lefthook `commit-msg` hook runs commitlint for each local commit. When a
-release is due, CI updates `package.json`, the plugin manifests, and both
-marketplace registries. CI then creates a GitHub release. You do not need to run
-version commands.
+When a release is due, CI stamps `package.json`, every plugin manifest, and both
+marketplace registries before creating the GitHub release.
 
-The release workflow stamps the version from `package.json` into:
+## Evaluation
 
-```text
-.claude-plugin/marketplace.json
-.agents/plugins/marketplace.json
-plugins/*/.claude-plugin/plugin.json
-plugins/*/.codex-plugin/plugin.json
-```
-
-## How the workflow operates
-
-The coordinator loads detailed guidance only for its selected route:
-
-- Planning selects only the requested output: brainstorming, a specification, a
-  plan, ticket decomposition, ticket writing, or an external branch ledger.
-- Investigation reproduces the problem, gathers evidence, and presents a fix
-  path without changing repository files.
-- Implementation requires implementation authority. It uses proportional
-  test-first evidence and `minimal-code`, selects one review tier, and runs
-  `review-cycle` after meaningful edits.
-
-Named-work-item end-to-end authority applies to a ticket, specification, or
-plan. It permits branch setup, external ledger maintenance, a selected agent
-walkthrough log, bounded commits, push, and a draft pull request. The
-coordinator composes a plan when complexity requires it. It does not create
-tickets when the primary work item is already self-contained.
-
-After branch-level checks, the coordinator may run `agent-walkthrough` before
-final acceptance when branch-level integration risk remains. A pull request is
-resolved to verified base and head SHAs and reviewed as the same exact branch
-range. Valid corrections return through the normal implementation and review
-cycle before the same presenter revisits affected slices.
-
-For meaningful implementation, the coordinator states one active slice with an
-outcome, boundary, and verification signal. It defers independent work and
-continues the active slice unless the user replaces the priority. Review
-compares the final diff with the active slice before acceptance. Review feedback
-does not grant implementation or publishing authority.
-
-### External artifacts
-
-Planning artifacts and branch task ledgers stay outside repositories under:
-
-```text
-~/.engineering-workflow/
-├── topics/<open|complete|abandoned>/<topic-id>/
-└── repositories/<repo-id>/topics/<open|complete|abandoned>/<topic-id>/
-```
-
-`TOPIC.md` is the topic registry and navigation entry point. A topic owns its
-specification, plan, local tickets, grill logs, and walkthrough logs. Repository
-directories own configuration and branch ledgers. One topic or ticket can span
-repositories. Directory names show whether work is open, complete, or abandoned.
-
-An explicit `writing-specs` invocation writes `SPEC.md` under an open topic by
-default. The topic must be user-identified or the only open topic. When multiple
-open topics exist, the user must choose one. Plans and local ticket drafts need
-an explicit storage request. An explicit `grill-me` invocation creates one
-curated topic log after topic confirmation. An explicit `walkthrough` invocation
-creates one curated log with source provenance after source and topic
-confirmation. A selected `agent-walkthrough` uses the same bounded format and
-records the reviewer as `agent`.
-
-An explicit `grill-with-docs` invocation adds repository-document authority. It
-may update selected existing repository documentation and qualifying ADR files.
-It does not grant authority for code, configuration, planning artifacts,
-commits, or publication.
-
-Topic lifecycle commands audit known work, move root and repository topic
-directories together, and preserve acknowledged warnings in `TOPIC.md`. A
-specification uses Draft, Ready, or Implemented independently of topic state.
-The new layout has no repository migration command. A one-time interactive
-local migration occurs after merge and release.
-
-### Durable source links
-
-Only durable, retrievable artifacts are workflow sources. A brainstorm can stay
-ephemeral, so downstream work does not depend on a session link. The first
-persisted specification, plan, ticket, grill log, walkthrough log, or ledger can
-identify `Direct request`. Every local artifact links to `TOPIC.md`. Local
-artifacts use relative links to local sources. Jira and GitHub work items use
-verified HTTPS links and never machine-local paths. A ledger records its
-primary work item plus optional specification and plan sources, then maps each
-task to its commit. Artifact levels can be skipped. A multi-repository ticket
-uses one ledger per repository and branch, with the same primary work item.
-
-### Field guide
-
-The field guide stores untracked data at `~/.field-guide`. It reads only relevant
-indexed guidance and keeps project guidance with its repository. It can capture
-obvious durable user preferences, corrections, and repeated misses during normal
-work. It asks before storing ambiguous observations. Committed code-review
-corrections remain a first-class evidence and history path.
-
-The Claude and Codex plugin hooks instruct one end-of-task learning evaluation
-before the final response. The agent decides `capture`, `ask`, or `skip`. A Stop
-continuation does not enforce the evaluation. The hook never ingests a
-transcript or writes field-guide data.
-
-You can open `~/.field-guide` as an Obsidian vault to read and audit guidance.
-The optional `.obsidian/` directory is disposable client state. Field-guide
-commands ignore it, and no field-guide contract depends on Obsidian.
-
-Shared guidance requires either a general user preference or independent generic
-evidence from at least two repositories. The utility provides bounded retrieval,
-candidate matching, submission, lifecycle, audit, maintenance, and validation
-commands. It preserves existing review records and validates typed evidence.
-
-You can also open `~/.engineering-workflow` as an Obsidian vault to audit
-planning artifacts. Git worktrees live separately under
-`~/code/worktrees/<project>/`. Do not create vaults inside topic, ticket
-lifecycle, or branch directories.
-
-### Simplification review
-
-Use `simplification-review` directly to find simplification opportunities. The
-coordinator can also use it when a change has material duplication, reuse,
-ownership, or complexity risk. The skill is read-only and does not replace an
-independent review tier.
-
-The skill audits Minimality, Reuse, Ownership, Complexity, and Cleanup. It uses
-the Fallow CLI by default. The Fallow MCP interface is optional.
-
-### Attribution
-
-The `minimal-code` skill uses original local guidance inspired by
-[Ponytail](https://github.com/DietrichGebert/ponytail). It does not copy upstream
-text. Ponytail uses the MIT license. Skill metadata and coordinator routing make
-`minimal-code` available without lifecycle hooks or always-on injection.
-
-Selected implementation, debugging, worktree, subagent, review, and skill-writing
-guidance is adapted from pinned
-[Superpowers](https://github.com/obra/superpowers) 6.2.0 sources. These local
-adaptations narrow the triggers, authority, and execution rules to this plugin.
-They do not require the Superpowers plugin at runtime.
-
-`grill-with-docs` adapts domain-modeling guidance from pinned
-[Matt Pocock skills](https://github.com/mattpocock/skills). Other provenance
-records use that repository as idea-only inspiration. See
-[THIRD_PARTY_NOTICES.md](plugins/workflow/THIRD_PARTY_NOTICES.md) and each
-adapted skill's `references/upstream.md` for source pins and local decisions.
-
-## CI
-
-- `validate` runs plugin manifest validation for each pull request and push.
-- `release` runs after validation on `main`. It updates versions and manifests,
-  commits the result, and creates a GitHub release.
-
-There is no separate Pages deployment workflow.
-
-## Development
-
-```sh
-pnpm validate-plugins
-pnpm check          # field-guide tests plus plugin manifest validation
-```
+[WORKFLOW_V2_PLAN.md](WORKFLOW_V2_PLAN.md) records the design, evaluation
+findings that motivated it, success criteria, and the proposed matched
+SWE-bench comparison. Paid benchmark runs are intentionally separate from the
+runtime rewrite.

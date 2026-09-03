@@ -1,7 +1,7 @@
 interface:
   display_name: "Walkthrough"
-  short_description: "Review changes interactively and save a curated topic log"
-  default_prompt: "Use $workflow:walkthrough to explain and review these changes interactively."
+  short_description: "Explain changes one verified slice at a time"
+  default_prompt: "Use $workflow:walkthrough to review these changes with me one coherent slice at a time."
 
 policy:
   allow_implicit_invocation: false
