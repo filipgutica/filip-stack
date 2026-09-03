@@ -1,9 +1,0 @@
-interface:
-  display_name: "Simplification Review"
-  short_description: "Review scoped code for safe simplification and cleanup"
-  default_prompt: >-
-    Use $workflow:simplification-review for a standalone or risk-based,
-    read-only audit. Review Minimality, Reuse, Ownership, Complexity, and
-    Cleanup. Run a focused Fallow check first for supported code. Return one
-    severity-ranked report. Do not edit code or replace the selected independent
-    review tier.

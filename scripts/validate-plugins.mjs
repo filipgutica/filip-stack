@@ -5,7 +5,6 @@ import { isDevelopmentOnlyPluginPath } from './plugin-payload-policy.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const pluginsRoot = join(repoRoot, 'plugins')
-const supportedHookEvents = new Set(['Stop', 'UserPromptSubmit'])
 
 let errors = 0
 
@@ -54,58 +53,6 @@ const pathExists = async (path) => {
   }
 }
 
-const validateHookHandler = async ({ expectedRootVariable, handler, event, path, pluginRoot }) => {
-  if (handler?.type !== 'command' || typeof handler.command !== 'string') {
-    fail(`${path} hook event "${event}" must use a command handler`)
-    return
-  }
-  const references = [...handler.command.matchAll(/\$\{(CLAUDE_PLUGIN_ROOT|PLUGIN_ROOT)\}\/([^"\s]+)/g)]
-  if (references.length === 0) {
-    fail(`${path} hook event "${event}" must reference a packaged plugin file`)
-    return
-  }
-  if (references.some(([, rootVariable]) => rootVariable !== expectedRootVariable)) {
-    fail(`${path} hook event "${event}" must use \${${expectedRootVariable}} for packaged files`)
-    return
-  }
-  for (const [, , reference] of references) {
-    if (!await pathExists(join(pluginRoot, reference))) {
-      fail(`${path} hook event "${event}" references a missing file: "${reference}"`)
-    }
-  }
-}
-
-const validateHookGroup = async ({ expectedRootVariable, group, event, path, pluginRoot }) => {
-  if (!group || !Array.isArray(group.hooks) || group.hooks.length === 0) {
-    fail(`${path} hook event "${event}" has an invalid handler group`)
-    return
-  }
-  await Promise.all(group.hooks.map((handler) => (
-    validateHookHandler({ expectedRootVariable, handler, event, path, pluginRoot })
-  )))
-}
-
-const validateHookEvent = async ({ expectedRootVariable, event, groups, path, pluginRoot }) => {
-  if (!supportedHookEvents.has(event)) fail(`${path} has an unsupported hook event: "${event}"`)
-  if (!Array.isArray(groups) || groups.length === 0) {
-    fail(`${path} hook event "${event}" must have at least one group`)
-    return
-  }
-  await Promise.all(groups.map((group) => validateHookGroup({ expectedRootVariable, group, event, path, pluginRoot })))
-}
-
-const validateHooks = async ({ expectedRootVariable, path, pluginRoot }) => {
-  const parsed = await validateJson(path, ['hooks'])
-  if (!parsed) return
-  if (!parsed.hooks || typeof parsed.hooks !== 'object' || Array.isArray(parsed.hooks)) {
-    fail(`${path} has an invalid "hooks" object`)
-    return
-  }
-  await Promise.all(Object.entries(parsed.hooks).map(([event, groups]) => (
-    validateHookEvent({ expectedRootVariable, event, groups, path, pluginRoot })
-  )))
-}
-
 const readDirectoryNames = async (path) => (
   await readdir(path, { withFileTypes: true }).catch((err) => {
     fail(`${path} — ${err.message}`)
@@ -151,13 +98,6 @@ for (const pluginDir of pluginDirs) {
   }
   if (hasCodexManifest) {
     await validateJson(codexManifest, ['name', 'skills'])
-  }
-
-  const hooksDir = join(pluginRoot, 'hooks')
-  const hooksFiles = await readdir(hooksDir).catch(() => [])
-  for (const hooksFile of hooksFiles.filter((file) => file.endsWith('.json')).sort()) {
-    const expectedRootVariable = hooksFile === 'codex-hooks.json' ? 'PLUGIN_ROOT' : 'CLAUDE_PLUGIN_ROOT'
-    await validateHooks({ expectedRootVariable, path: join(hooksDir, hooksFile), pluginRoot })
   }
 
   const skillsDir = join(pluginRoot, 'skills')

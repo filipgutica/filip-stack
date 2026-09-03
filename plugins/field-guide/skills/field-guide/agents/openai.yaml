@@ -1,0 +1,10 @@
+interface:
+  display_name: "Field Guide"
+  short_description: "Learn durable coding preferences and corrections"
+  default_prompt: >-
+    Use $field-guide:field-guide to retrieve bounded guidance and capture obvious
+    durable preferences, corrections, repeated misses, and manual learning
+    requests. Ask before storing ambiguous observations. Keep committed review
+    evidence as a first-class history path.
+policy:
+  allow_implicit_invocation: true

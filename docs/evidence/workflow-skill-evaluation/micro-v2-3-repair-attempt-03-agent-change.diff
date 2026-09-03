@@ -1,0 +1,51 @@
+diff --git a/src/_pytest/reports.py b/src/_pytest/reports.py
+index 6dcf640..d1c25ad 100644
+--- a/src/_pytest/reports.py
++++ b/src/_pytest/reports.py
+@@ -268,30 +268,35 @@ class BaseReport:
+                     reprtraceback["reprentries"] = unserialized_entries
+                     return ReprTraceback(**reprtraceback)
+ 
++                def unserialize_reprcrash(reprcrash):
++                    if reprcrash is None:
++                        return None
++                    return ReprFileLocation(**reprcrash)
++
++                # Keep validating the top-level representation for chained
++                # exceptions as it is part of the serialized report format.
++                # It also keeps malformed reports failing consistently with
++                # non-chained reports.
++                reprtraceback = unserialize_reprtraceback(
++                    reportdict["longrepr"]["reprtraceback"]
++                )
++                reprcrash = unserialize_reprcrash(reportdict["longrepr"]["reprcrash"])
++
+                 if "chain" in reportdict["longrepr"]:
+                     chain = []
+                     for chain_data in reportdict["longrepr"]["chain"]:
+                         chain.append(
+                             (
+                                 unserialize_reprtraceback(chain_data["reprtraceback"]),
+-                                (
+-                                    ReprFileLocation(**chain_data["reprcrash"])
+-                                    if chain_data["reprcrash"] is not None
+-                                    else None
+-                                ),
++                                unserialize_reprcrash(chain_data["reprcrash"]),
+                                 chain_data["description"],
+                             )
+                         )
+                     exception_info = ExceptionChainRepr(chain)
+                 else:
+-                    reprtraceback = unserialize_reprtraceback(
+-                        reportdict["longrepr"]["reprtraceback"]
+-                    )
+                     exception_info = ReprExceptionInfo(
+                         reprtraceback=reprtraceback,
+-                        reprcrash=ReprFileLocation(
+-                            **reportdict["longrepr"]["reprcrash"]
+-                        ),
++                        reprcrash=reprcrash,
+                     )
+ 
+                 for section in reportdict["longrepr"]["sections"]:

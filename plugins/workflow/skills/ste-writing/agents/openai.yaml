@@ -1,7 +1,0 @@
-interface:
-  display_name: "STE Writing"
-  short_description: "Write clear technical deliverables in Simplified English"
-  default_prompt: "Use $workflow:ste-writing to rewrite this technical deliverable in strict STE."
-
-policy:
-  allow_implicit_invocation: true

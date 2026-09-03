@@ -1,0 +1,155 @@
+{
+  "schema_version": 1,
+  "run_child": "20260903T135847Z-workflow-pytest-repair-canary",
+  "baseline_run_child": "20260903T055005Z-workflow-pytest-repair-canary",
+  "source": "Promptfoo result tokenUsage, latencyMs, cost, skillCalls, and response.raw items",
+  "baseline": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "verifier_outcome": "repair",
+        "latency_ms": 313564,
+        "cost_usd": 0.0924454,
+        "reported_tokens": 1149967,
+        "commands": 22,
+        "failed_commands": 6,
+        "file_change_events": 1,
+        "first_test_command_position": 3
+      },
+      {
+        "attempt": 2,
+        "verifier_outcome": "repair",
+        "latency_ms": 269772,
+        "cost_usd": 0.07833844,
+        "reported_tokens": 944161,
+        "commands": 17,
+        "failed_commands": 3,
+        "file_change_events": 3,
+        "first_test_command_position": 4
+      },
+      {
+        "attempt": 3,
+        "verifier_outcome": "repair",
+        "latency_ms": 389527,
+        "cost_usd": 0.11570124000000001,
+        "reported_tokens": 1224274,
+        "commands": 34,
+        "failed_commands": 8,
+        "file_change_events": 3,
+        "first_test_command_position": 7
+      },
+      {
+        "attempt": 4,
+        "verifier_outcome": "repair",
+        "latency_ms": 195601,
+        "cost_usd": 0.056443,
+        "reported_tokens": 710994,
+        "commands": 14,
+        "failed_commands": 4,
+        "file_change_events": 3,
+        "first_test_command_position": 3
+      },
+      {
+        "attempt": 5,
+        "verifier_outcome": "repair",
+        "latency_ms": 334595,
+        "cost_usd": 0.10649192,
+        "reported_tokens": 1082722,
+        "commands": 33,
+        "failed_commands": 7,
+        "file_change_events": 1,
+        "first_test_command_position": 8
+      }
+    ],
+    "medians": {
+      "latency_ms": 313564,
+      "cost_usd": 0.0924454,
+      "reported_tokens": 1082722,
+      "commands": 22,
+      "failed_commands": 6,
+      "file_change_events": 3,
+      "first_test_command_position": 4
+    }
+  },
+  "treatment": {
+    "attempts": [
+      {
+        "attempt": 1,
+        "verifier_outcome": "ambiguous_no_tests_collected",
+        "fail_to_pass": "success",
+        "pass_to_pass": "failure",
+        "failed_pass_to_pass": [
+          "testing/test_reports.py::TestReportSerialization::test_deserialization_failure"
+        ],
+        "infrastructure_errors": [],
+        "latency_ms": 331169,
+        "cost_usd": 0.1060032,
+        "reported_tokens": 1329388,
+        "commands": 25,
+        "failed_commands": 7,
+        "file_change_events": 2,
+        "first_test_command_position": 6,
+        "skill_calls": ["engineering"]
+      },
+      {
+        "attempt": 2,
+        "verifier_outcome": "repair",
+        "latency_ms": 295042,
+        "cost_usd": 0.09809708,
+        "reported_tokens": 1304597,
+        "commands": 32,
+        "failed_commands": 6,
+        "file_change_events": 2,
+        "first_test_command_position": 8,
+        "skill_calls": ["engineering"]
+      },
+      {
+        "attempt": 3,
+        "verifier_outcome": "repair",
+        "latency_ms": 246137,
+        "cost_usd": 0.06969316,
+        "reported_tokens": 621055,
+        "commands": 26,
+        "failed_commands": 6,
+        "file_change_events": 1,
+        "first_test_command_position": 7,
+        "skill_calls": ["engineering"]
+      },
+      {
+        "attempt": 4,
+        "verifier_outcome": "repair",
+        "latency_ms": 326245,
+        "cost_usd": 0.1020586,
+        "reported_tokens": 1352673,
+        "commands": 25,
+        "failed_commands": 6,
+        "file_change_events": 4,
+        "first_test_command_position": 4,
+        "skill_calls": ["engineering"]
+      },
+      {
+        "attempt": 5,
+        "verifier_outcome": "repair",
+        "latency_ms": 293348,
+        "cost_usd": 0.10009764000000002,
+        "reported_tokens": 1307070,
+        "commands": 25,
+        "failed_commands": 6,
+        "file_change_events": 2,
+        "first_test_command_position": 9,
+        "skill_calls": ["engineering"]
+      }
+    ],
+    "medians": {
+      "latency_ms": 295042,
+      "cost_usd": 0.10009764000000002,
+      "reported_tokens": 1307070,
+      "commands": 25,
+      "failed_commands": 6,
+      "file_change_events": 2,
+      "first_test_command_position": 7
+    },
+    "reference_reads": 0,
+    "reviewer_spawns": 0
+  }
+}

@@ -1,75 +1,26 @@
-# Walkthrough presentation patterns
+# Presentation patterns
 
-Use the smallest format that makes the current relationship clear.
+Start with behavior and show only the evidence needed to understand it.
 
-## Source evidence
-
-### Last completed agent turn
-
-Use conversation evidence only to identify the claimed scope. Confirm the scope against the current repository state, commit, or diff.
-
-If no reliable boundary remains, state that limit. Ask the user to select the working tree or a branch range.
-
-### Working tree
-
-Inspect staged, unstaged, and untracked files. State which states are present.
-
-Do not claim that the agent created an unrelated or pre-existing change. Include each file in the coverage map.
-
-### Branch
-
-Use the base that the user provides. Otherwise, select a local upstream or default branch only when the evidence is unambiguous.
-
-Compute and state the merge base. If several bases remain plausible, ask the user to select one.
-
-Branch mode covers committed changes. Report separate working tree changes before the first slice.
-
-## Visual selection
-
-| Format | Use it for |
-|---|---|
-| Code snippet | Local logic, a condition, or a data shape |
-| Inline diff | A small before-and-after behavior change |
-| Table | Repeated mappings, contracts, or alternatives |
-| Mermaid diagram | Data flow, control flow, sequence, ownership, or lifecycle |
-| Plain prose | One fact or a simple decision |
-
-Show only the lines needed for the point. Include a file link and line number when the host supports local links.
-
-## Slice shape
-
-Use this shape as a guide. Omit a field when it adds no value.
+Use this slice shape:
 
 ```text
-Change: What changed and where
-Behavior: What happens before and after
-Decision: Why this approach was selected
-Evidence: Code, diff, test, or contract
-Risk: What could be brittle or ambiguous
-Question: One focused checkpoint for the user
+Behavior: <what the user or system observes>
+Change: <what implements it>
+Decision: <why this shape was selected>
+Evidence: <smallest code, diff, test, or command proof>
+Risk: <material risk or none>
+Question: <one focused acceptance question>
 ```
 
-Do not turn these labels into a long report. Write a natural explanation around the evidence.
+Choose one presentation form:
 
-## Coverage map
+- Use a short code excerpt when one implementation detail is decisive.
+- Use a focused inline diff when the before-and-after relationship matters.
+- Use a table for three or more items with repeated fields.
+- Use a small Mermaid diagram when control flow, data flow, ownership, or state changes are hard to explain linearly.
+- Use prose for a simple relationship.
 
-Start with a compact table when the change has several files or concerns.
+Preserve exact identifiers and commands. Do not paste full files, large diffs, or noisy command output.
 
-| Slice | Files | Purpose | State |
-|---|---|---|---|
-| Configuration | `config.ts`, `config.test.ts` | Add the selected backend | Pending |
-| Documentation | `README.md` | Explain the public contract | Pending |
-
-Update the state in conversation as the walkthrough proceeds. Store only the slice name, brief description, and status in the log table. Do not store the file list or the full conversational map. Append one curated running-log entry after the user resolves a slice.
-
-## Review findings
-
-When the user challenges a decision:
-
-1. Restate the concern as a technical requirement.
-2. Inspect the live code, tests, and contract.
-3. Show the smallest decisive evidence.
-4. Classify the concern.
-5. Explain the effect on the remaining walkthrough.
-
-Do not implement a valid finding inside the read-only walkthrough. If the user explicitly authorizes a correction, pause and use the authorized correction cycle in `SKILL.md`.
+Order slices from public behavior and contracts through implementation, tests, and documentation. A file can appear in more than one slice only when different hunks support different behaviors. Account for every changed file before completion.

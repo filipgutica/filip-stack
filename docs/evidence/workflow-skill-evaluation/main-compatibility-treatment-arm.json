@@ -1,0 +1,187 @@
+{
+  "schema_version": 1,
+  "arm": "treatment",
+  "compatibility_fingerprint": "sha256:7784040560d1a097d0d9af0a14cab70fdbc787f1bcbfb7e8cef8304e63825b86",
+  "compatibility_payload": {
+    "schema_version": 1,
+    "engine": {
+      "name": "promptfoo",
+      "version": "0.122.2"
+    },
+    "runtime": {
+      "os": "Darwin",
+      "architecture": "arm64",
+      "python": "3.14",
+      "container_image": "pluginbench-runtime:0.2.0",
+      "container_image_id": "sha256:46f9b2d6cd61403c82d00b26cb280a7e5a598bb4ab5a8688378160bfe0f0a6bf",
+      "container_sandbox": "codex-bwrap",
+      "docker_security_options": [
+        "--cap-add",
+        "SYS_ADMIN",
+        "--security-opt",
+        "apparmor=unconfined",
+        "--security-opt",
+        "seccomp=unconfined"
+      ]
+    },
+    "dataset": {
+      "adapter": "swe-bench",
+      "name": "SWE-bench/SWE-bench_Verified",
+      "version": "78f471bf655a3137b2e8a75af1501690ec009ec3",
+      "task_ids": [
+        "pytest-dev__pytest-5787"
+      ],
+      "task_digests": {
+        "pytest-dev__pytest-5787": "sha256:3f980516acf7c48d6833187c01005674143fd526fd12e71578bd68d436dd83a0"
+      },
+      "harness": {
+        "version": "5.0.2",
+        "image_platform": "linux/amd64"
+      }
+    },
+    "agent": {
+      "provider": "openai:codex-sdk",
+      "codex_sdk_version": "0.151.0",
+      "model": "gpt-5.6-luna",
+      "reasoning": "high",
+      "sandbox_mode": "workspace-write",
+      "approval_policy": "never",
+      "network_access_enabled": false,
+      "web_search_enabled": false
+    },
+    "trial": {
+      "attempts": 3,
+      "concurrency": 1,
+      "batch_size": 1,
+      "timeout_seconds": 600.0
+    }
+  },
+  "tasks": {
+    "pytest-dev__pytest-5787": {
+      "task_id": "pytest-dev__pytest-5787",
+      "attempts": 3,
+      "score": 0.0,
+      "passed": false,
+      "duration_seconds": 979.3954235010342,
+      "infrastructure_errors": [],
+      "skill_calls": [
+        "engineering"
+      ],
+      "usage": {
+        "input_tokens": 2865808,
+        "cached_tokens": 2653184,
+        "output_tokens": 40445,
+        "cost_usd": 0.26397796
+      },
+      "starting_patch": {
+        "digest": "sha256:5e7174f7973d6313c492aa3285ce46fa827ea61bff073a5a80f284375aa5d74c",
+        "expected_score": 0,
+        "repaired_attempts": 0,
+        "preserved_attempts": 0,
+        "regressed_attempts": 0,
+        "unchanged_failure_attempts": 3,
+        "unscored_attempts": 0
+      }
+    }
+  },
+  "task_checksums": {
+    "pytest-dev__pytest-5787": "sha256:3f980516acf7c48d6833187c01005674143fd526fd12e71578bd68d436dd83a0"
+  },
+  "promptfoo_version": "0.122.2",
+  "agent_versions": [
+    "0.151.0"
+  ],
+  "model_identifiers": [
+    "gpt-5.6-luna"
+  ],
+  "skill_digest": "sha256:e205f577d33fdd43fa040d8c1a708fa543834e26aa944e27edadc26250d1c782",
+  "skill_source_path": "/Users/filip.gutica/.t3/worktrees/filip-stack/t3code-7ed6efb0/plugins/workflow/skills",
+  "started_at": "2026-09-02T20:56:10.740991Z",
+  "finished_at": "2026-09-02T21:12:33.551689Z",
+  "provenance": {
+    "engine": "promptfoo",
+    "promptfoo_version": "0.122.2",
+    "codex_sdk_version": "0.151.0",
+    "model": "gpt-5.6-luna",
+    "runtime_image_id": "sha256:46f9b2d6cd61403c82d00b26cb280a7e5a598bb4ab5a8688378160bfe0f0a6bf",
+    "resolved_configuration": {
+      "schema_version": 1,
+      "experiment": {
+        "name": "workflow-pytest-repair-canary"
+      },
+      "dataset": {
+        "adapter": "swe-bench",
+        "name": "SWE-bench/SWE-bench_Verified",
+        "version": "78f471bf655a3137b2e8a75af1501690ec009ec3",
+        "source": "/Users/filip.gutica/code/pluginbench/benchmarks/swe-bench-verified-hard/tasks.json",
+        "task_ids": [
+          "pytest-dev__pytest-5787"
+        ],
+        "harness": {
+          "executable": "/Users/filip.gutica/code/pluginbench/.venv/bin/swebench",
+          "version": "5.0.2",
+          "image_platform": "linux/amd64"
+        },
+        "starting_patches": {
+          "pytest-dev__pytest-5787": {
+            "path": "/Users/filip.gutica/code/pluginbench/benchmarks/workflow-pytest-canary/seeds/repair.patch",
+            "expected_score": 0
+          }
+        }
+      },
+      "skill": {
+        "path": "/Users/filip.gutica/.t3/worktrees/filip-stack/t3code-7ed6efb0/plugins/workflow/skills"
+      },
+      "agent": {
+        "provider": "openai:codex-sdk",
+        "codex_sdk_version": "0.151.0",
+        "model": "gpt-5.6-luna",
+        "reasoning": "high",
+        "sandbox_mode": "workspace-write",
+        "approval_policy": "never",
+        "network_access_enabled": false,
+        "web_search_enabled": false,
+        "auth_file": "/Users/filip.gutica/.codex/auth.json"
+      },
+      "tooling": {
+        "promptfoo_version": "0.122.2",
+        "container_image": "pluginbench-runtime:0.2.0"
+      },
+      "execution": {
+        "baseline": {
+          "mode": "reuse",
+          "result": "/Users/filip.gutica/code/pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/baseline/arm.json"
+        },
+        "attempts": 3,
+        "concurrency": 1,
+        "batch_size": 1,
+        "max_tasks": 1,
+        "timeout_seconds": 600.0
+      },
+      "limits": {
+        "max_total_tokens": 12000000,
+        "max_total_cost_usd": 1.5
+      },
+      "estimates": {
+        "tokens_per_trial": 1500000,
+        "cost_per_trial_usd": 0.15
+      },
+      "decision": {
+        "minimum_pass_rate_lift_pp": 0.0,
+        "maximum_cost_overhead_pct": 20.0,
+        "maximum_incremental_cost_per_additional_success_usd": null
+      },
+      "output": {
+        "runs_dir": "/Users/filip.gutica/code/pluginbench/runs/20260902-workflow-v2-pytest-repair-main-compatibility"
+      }
+    }
+  },
+  "tasks_attempted": 1,
+  "tasks_passed": 0,
+  "infrastructure_errors": {},
+  "input_tokens": 2865808,
+  "cached_tokens": 2653184,
+  "output_tokens": 40445,
+  "cost_usd": 0.26397796,
+  "known_cost_usd": 0.26397796
+}

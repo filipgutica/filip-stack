@@ -1,7 +1,0 @@
-interface:
-  display_name: "Writing Tickets"
-  short_description: "Draft evidence-backed, execution-ready engineering tickets"
-  default_prompt: "Use $workflow:writing-tickets to draft an evidence-backed engineering ticket for this work."
-
-policy:
-  allow_implicit_invocation: true

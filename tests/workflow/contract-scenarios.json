@@ -1,0 +1,173 @@
+{
+  "schemaVersion": 1,
+  "scenarios": [
+    {
+      "id": "implement-behavior",
+      "prompt": "Implement this behavior change and prove it with focused tests.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "implementation",
+      "expectedReference": "testing-and-debugging.md"
+    },
+    {
+      "id": "debug-failure",
+      "prompt": "Find the root cause of this failing test and fix it.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "debugging",
+      "expectedReference": "testing-and-debugging.md"
+    },
+    {
+      "id": "refactor-with-baseline",
+      "prompt": "Refactor this behavior without changing its public result, and prove the behavior is preserved.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "refactoring",
+      "expectedReference": "testing-and-debugging.md"
+    },
+    {
+      "id": "delegate-independent-work",
+      "prompt": "Implement these independent changes with separate subagents and verify each owned result.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "delegated-implementation",
+      "expectedReference": "delegation-and-review.md"
+    },
+    {
+      "id": "inspect-review-feedback",
+      "prompt": "Check this review comment against the live code before changing anything.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "review-feedback",
+      "expectedReference": "delegation-and-review.md"
+    },
+    {
+      "id": "write-specification",
+      "prompt": "Write an engineering specification for this feature.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "specification",
+      "expectedReference": "spec.md"
+    },
+    {
+      "id": "write-plan",
+      "prompt": "Create a file-specific implementation plan.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "plan",
+      "expectedReference": "plan.md"
+    },
+    {
+      "id": "write-tickets",
+      "prompt": "Break this approved specification into independently verifiable Jira tickets.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "tickets",
+      "expectedReference": "tasks-and-tickets.md"
+    },
+    {
+      "id": "write-ticket-hierarchy",
+      "prompt": "Draft a parent issue and child stories from this approved specification, with verified blocker relationships and source links.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "tickets",
+      "expectedReference": "tasks-and-tickets.md"
+    },
+    {
+      "id": "review-ticket-draft",
+      "prompt": "Review this engineering ticket for unsupported work, unclear ownership, scope creep, and unverifiable acceptance criteria.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "tickets",
+      "expectedReference": "tasks-and-tickets.md"
+    },
+    {
+      "id": "write-task-file",
+      "prompt": "Create a TASKS.md for this multi-step implementation.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "tasks",
+      "expectedReference": "tasks-and-tickets.md"
+    },
+    {
+      "id": "explore-direction",
+      "prompt": "Help me compare two approaches before we decide what to build.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "exploration",
+      "expectedReference": null
+    },
+    {
+      "id": "explicit-grill",
+      "prompt": "Use $workflow:grill-me to stress-test this plan.",
+      "expectedSkill": "grill-me",
+      "activation": "explicit",
+      "mode": "interview",
+      "expectedReference": null
+    },
+    {
+      "id": "explicit-grill-log",
+      "prompt": "Use $workflow:grill-me and persist the material decisions in this work item's grill log.",
+      "expectedSkill": "grill-me",
+      "activation": "explicit",
+      "mode": "interview-with-log",
+      "expectedReference": "grill-log.md"
+    },
+    {
+      "id": "grill-near-miss",
+      "prompt": "Do you see any obvious risk in this small plan?",
+      "expectedSkill": null,
+      "activation": "none",
+      "mode": "manual-skill-near-miss",
+      "expectedReference": null
+    },
+    {
+      "id": "rewrite-documentation",
+      "prompt": "Rewrite this technical procedure in concise plain language.",
+      "expectedSkill": "technical-writing",
+      "activation": "implicit",
+      "mode": "technical-prose",
+      "expectedReference": null
+    },
+    {
+      "id": "write-pr-description",
+      "prompt": "Draft a pull request description from this verified diff.",
+      "expectedSkill": "technical-writing",
+      "activation": "implicit",
+      "mode": "pr-description",
+      "expectedReference": "pr-description.md"
+    },
+    {
+      "id": "writing-near-miss",
+      "prompt": "Implement the parser and tell me when the tests pass.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "implementation",
+      "expectedReference": "testing-and-debugging.md"
+    },
+    {
+      "id": "engineering-near-miss",
+      "prompt": "Explain how this parser works without editing any files.",
+      "expectedSkill": null,
+      "activation": "none",
+      "mode": "explanation-only",
+      "expectedReference": null
+    },
+    {
+      "id": "explicit-walkthrough",
+      "prompt": "Use $workflow:walkthrough to explain this branch one slice at a time.",
+      "expectedSkill": "walkthrough",
+      "activation": "explicit",
+      "mode": "human-presenter",
+      "expectedReference": "presentation-patterns.md"
+    },
+    {
+      "id": "walkthrough-near-miss",
+      "prompt": "Summarize what changed in this file.",
+      "expectedSkill": null,
+      "activation": "none",
+      "mode": "manual-skill-near-miss",
+      "expectedReference": null
+    }
+  ]
+}

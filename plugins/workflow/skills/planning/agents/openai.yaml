@@ -1,0 +1,7 @@
+interface:
+  display_name: "Planning"
+  short_description: "Create specs, plans, tasks, and tickets"
+  default_prompt: "Use $workflow:planning to turn this request into one decision-ready engineering artifact."
+
+policy:
+  allow_implicit_invocation: true

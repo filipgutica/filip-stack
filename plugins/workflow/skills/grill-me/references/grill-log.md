@@ -1,29 +1,39 @@
 # Grill log
 
-Store one log for each explicit Grill Me session:
+Use one plain Markdown log for one explicit session. Prefer a clear date and subject in the filename:
 
 ```text
-~/.engineering-workflow/topics/open/<topic-id>/grills/<date>-<sequence>-<slug>.md
+~/.engineering-workflow/<work-item>/grills/YYYY-MM-DD-<subject>.md
 ```
 
-Use setup `start-grill` after topic confirmation. The command assigns the date and sequence. Do not reconstruct the filename.
+Use a user-supplied path when present. Do not create a manifest, sequence registry, topic lifecycle, or generated link index.
 
-Resume the same log after context compaction or interruption. Use `start-grill --log-file <name>` to validate the existing session file.
+Use this shape:
 
-Use setup `update-grill` after each resolved answer. Curate the content before the write.
+```md
+# Grill: <subject>
 
-Keep each recorded field on one line. The setup command rejects line breaks before it writes the log.
+Source: <artifact, request, or link>
+Date: YYYY-MM-DD
 
-Record only:
+## Decisions
 
-- the focused question
-- the recommendation
-- the user's decision
-- the decision rationale
-- the next unresolved question
+### <Decision>
+- Question: <focused question>
+- Recommendation: <recommended answer and assumptions>
+- Decision: <user decision>
+- Rationale: <why>
+- Evidence: <bounded source>
 
-Do not store a raw transcript, hidden reasoning, speculative conclusions, or unrelated conversation. Keep the user's decision distinct from the recommendation.
+## Changed assumptions
 
-The log must link to `../TOPIC.md`. The setup utility adds each log to the manifest in chronological filename order.
+- <old assumption> -> <new fact or decision>
 
-If the user changes an earlier decision, append a new decision that names the superseded decision. Do not silently rewrite the historical record.
+## Open items
+
+- <unresolved question or risk>
+```
+
+Append a checkpoint only when a material decision resolves or changes. Keep the user decision distinct from the recommendation. If a later decision supersedes an earlier one, append the new decision and name the superseded entry.
+
+Do not store prompts, transcripts, hidden reasoning, credentials, full diffs, code excerpts, or unrelated conversation. On resume, read the source, latest decision, changed assumptions, and open items before reading older entries.

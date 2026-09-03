@@ -1,7 +1,0 @@
-interface:
-  display_name: "Writing Specs / ERDs"
-  short_description: "Create engineering specifications and ERDs"
-  default_prompt: "Use $workflow:writing-specs to create or update this engineering specification or ERD."
-
-policy:
-  allow_implicit_invocation: true

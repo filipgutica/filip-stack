@@ -4,4 +4,4 @@ interface:
   default_prompt: "Use $workflow:grill-me to challenge this plan one decision at a time."
 
 policy:
-  allow_implicit_invocation: true
+  allow_implicit_invocation: false
