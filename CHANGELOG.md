@@ -1,3 +1,15 @@
+# [2.0.0](https://github.com/filipgutica/filip-stack/compare/v1.16.0...v2.0.0) (2026-09-03)
+
+
+* feat(workflow)!: simplify engineering workflow ([74ead1a](https://github.com/filipgutica/filip-stack/commit/74ead1a52a07d384389dc9b50d3b663cb4fada9a))
+
+
+### BREAKING CHANGES
+
+* v1 Workflow skill entrypoints and hooks have no compatibility aliases.
+
+Field Guide now installs as a separate plugin.
+
 # [1.16.0](https://github.com/filipgutica/filip-stack/compare/v1.15.0...v1.16.0) (2026-08-31)
 
 
