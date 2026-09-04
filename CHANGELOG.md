@@ -1,3 +1,10 @@
+## [2.0.1](https://github.com/filipgutica/filip-stack/compare/v2.0.0...v2.0.1) (2026-09-04)
+
+
+### Bug Fixes
+
+* **workflow:** reconcile focused testing guidance ([5b57a46](https://github.com/filipgutica/filip-stack/commit/5b57a46f4fd531e7838428540c845e4c57444b3c))
+
 # [2.0.0](https://github.com/filipgutica/filip-stack/compare/v1.16.0...v2.0.0) (2026-09-03)
 
 
