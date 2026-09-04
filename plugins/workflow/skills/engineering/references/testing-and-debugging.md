@@ -4,13 +4,13 @@ Use the path that matches the requested change.
 
 ## New or corrected behavior
 
-1. Write one focused test for the requested observable behavior.
-2. Run the narrowest command that executes it.
-3. Confirm that it fails for the expected missing or incorrect behavior.
+1. Identify suitable existing coverage for the requested observable behavior and run the narrowest command that executes it, recording the baseline.
+2. If coverage observes the contract, use it as the baseline; add a focused regression test only for a specific uncovered path or edge case. If no suitable coverage exists, write one focused test for the requested observable behavior.
+3. When a new regression test is needed, confirm that it fails for the expected missing or incorrect behavior before implementation. Do not force a failing test when existing coverage already observes the contract.
 4. Fix a test error before implementation.
 5. Make the smallest production change that can pass the test.
-6. Run the focused test again.
-7. Fix the implementation before changing a correct test.
+6. Run the same focused coverage again and compare it with the baseline.
+7. Fix the implementation before changing a correct test. Repeat or broaden verification only when the changed code, an observed failure, or an unresolved risk justifies it.
 
 Prefer an observable result to a mock interaction. Use a mock only at a real dependency boundary.
 
@@ -35,7 +35,7 @@ Do not patch the first visible symptom.
 4. Compare a working path when one exists.
 5. Form one evidence-backed hypothesis.
 6. Use the smallest experiment that can disprove it.
-7. Add the regression test, then make the fix.
+7. Reuse suitable focused coverage; if the failure lacks coverage, add one focused regression test and confirm the expected failure before making the fix.
 
 When a check fails after the change, classify it before editing:
 

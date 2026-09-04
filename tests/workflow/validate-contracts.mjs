@@ -82,10 +82,10 @@ const requiredContracts = {
     /production owner, and the nearest existing test/u,
     /State the smallest plan.*owner.*verification signal/u,
     /Do nothing when no change is needed/u,
-    /Run the nearest existing test that observes the requested contract/u,
+    /Run the nearest existing test that observes the requested contract.*record the baseline/u,
     /Fix the production owner before changing a correct existing test/u,
     /Change an existing test only when repository evidence proves/u,
-    /new behavior lacks suitable coverage, add one focused observable test/u,
+    /new or corrected behavior lacks suitable coverage, add one focused observable test/u,
     /Make the smallest causal change/u,
     /standard library.*native platform or framework.*installed dependency/u,
     /one clear owner per responsibility/u,
@@ -136,7 +136,9 @@ for (const [name, patterns] of Object.entries(requiredContracts)) {
 const requiredReferenceContracts = {
   engineering: {
     'testing-and-debugging.md': [
-      /Write one focused test for the requested observable behavior/u,
+      /Identify suitable existing coverage.*recording the baseline/u,
+      /write one focused test for the requested observable behavior/u,
+      /same focused coverage again.*compare it with the baseline/u,
       /Behavior-preserving refactor/u,
       /Trace the value, state, or control flow backward to its owner/u,
     ],
