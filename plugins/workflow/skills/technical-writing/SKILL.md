@@ -1,6 +1,6 @@
 ---
 name: technical-writing
-description: Use to draft or revise finished technical documentation, reports, procedures, release notes, error text, code comments, or pull request descriptions when clear concise prose is the requested outcome. Do not use to decide engineering scope or create specifications, plans, tasks, or tickets.
+description: Write or revise technical prose in documentation, Confluence pages, reports, READMEs, procedures, release notes, error text, code comments, and pull request descriptions. Also use to polish existing specs, plans, and tickets without changing their decisions. Planning owns engineering scope, requirements, design, and task breakdowns.
 ---
 
 # Technical writing
@@ -17,25 +17,17 @@ Make technical prose clear, concise, and faithful to the source.
 
 For a pull request description, read [PR description guidance](references/pr-description.md).
 
-## Write with BLUF and plain language
+## Write technical prose
 
-- Lead with the result, decision, or required action.
-- Use one term for one concept.
-- Prefer short common words and active voice.
-- Use a verb for an action.
-- Keep instructions in imperative form with one action per step.
-- Keep one topic per paragraph.
-- Remove filler, marketing language, repeated conclusions, and unnecessary jargon.
-- Define a necessary technical term at first use when the audience might not know it.
-- Use a table or diagram only when it makes a relationship easier to understand.
+Apply [Simplified Technical English guidance](references/technical-prose.md) to every technical deliverable. It also applies to prose inside specifications, plans, and tickets. Their existing owner retains control of decisions and structure.
 
-Use short sentences as a default. Split a sentence when it contains independent instructions or several conditions. Correctness and required syntax take priority over style rules.
+Lead with the result, decision, or required action when it helps the reader. State it directly, without naming a rhetorical format or adding a stock summary heading. Preserve the requested artifact format.
 
 ## Finish
 
 Check that:
 
-- the first paragraph gives the bottom line
+- the opening states what the reader needs first
 - every claim has a source or a clear uncertainty label
 - required evidence and limitations remain present
 - code, commands, and identifiers are unchanged

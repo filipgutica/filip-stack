@@ -117,7 +117,7 @@ const requiredContracts = {
   ],
   'technical-writing': [
     /Do not invent behavior, verification, ownership, or rationale/u,
-    /Write with BLUF and plain language/u,
+    /Apply \[Simplified Technical English guidance\]\(references\/technical-prose\.md\)/u,
     /code, commands, and identifiers are unchanged/u,
   ],
   walkthrough: [

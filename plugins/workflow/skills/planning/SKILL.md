@@ -16,6 +16,8 @@ Turn a request into one decision-ready artifact or a bounded direction. Do not r
 
 Load only the reference for the selected mode. If the requested output is unclear and the difference changes the work, ask one focused question.
 
+For a specification, plan, task list, or ticket, also apply [technical prose guidance](../technical-writing/references/technical-prose.md). Keep the selected artifact's structure and decisions intact. Exploration replies follow the conversation guidance.
+
 ## Ground the result
 
 1. Confirm the outcome, users, constraints, non-goals, and authority boundary.

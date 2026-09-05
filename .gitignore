@@ -3,4 +3,7 @@ dist/
 coverage/
 .fallow/
 .DS_Store
-.claude/
+.claude/*
+!.claude/skills/
+.claude/skills/*
+!.claude/skills/release-and-refresh
