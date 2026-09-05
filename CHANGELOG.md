@@ -1,3 +1,10 @@
+## [2.0.2](https://github.com/filipgutica/filip-stack/compare/v2.0.1...v2.0.2) (2026-09-05)
+
+
+### Bug Fixes
+
+* **workflow:** clarify technical prose guidance and add release skill ([623aae6](https://github.com/filipgutica/filip-stack/commit/623aae6297baf5f4d3c5d08ed15bff7910362f92))
+
 ## [2.0.1](https://github.com/filipgutica/filip-stack/compare/v2.0.0...v2.0.1) (2026-09-04)
 
 

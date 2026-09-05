@@ -1,6 +1,6 @@
 {
   "name": "field-guide",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Optional local guidance that learns durable preferences and corrections without loading its complete store into context.",
   "author": {
     "name": "Filip Gutica"
