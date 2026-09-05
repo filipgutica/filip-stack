@@ -1,3 +1,10 @@
+# [2.1.0](https://github.com/filipgutica/filip-stack/compare/v2.0.2...v2.1.0) (2026-09-05)
+
+
+### Features
+
+* **workflow:** add read-only review and preserve task results during learning ([0ad18ac](https://github.com/filipgutica/filip-stack/commit/0ad18aceb0e4764506c864aebea73b7b333e5ede))
+
 ## [2.0.2](https://github.com/filipgutica/filip-stack/compare/v2.0.1...v2.0.2) (2026-09-05)
 
 
