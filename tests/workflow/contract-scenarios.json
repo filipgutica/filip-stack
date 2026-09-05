@@ -74,6 +74,22 @@
       "expectedReference": "tasks-and-tickets.md"
     },
     {
+      "id": "review-exact-range",
+      "prompt": "Review this pull request from its verified base to head and report evidence-backed findings without changing files.",
+      "expectedSkill": "review",
+      "activation": "implicit",
+      "mode": "exact-range",
+      "expectedReference": null
+    },
+    {
+      "id": "verify-existing-artifact",
+      "prompt": "Perform final read-only verification of this existing artifact and report either findings or no findings with limitations.",
+      "expectedSkill": "review",
+      "activation": "implicit",
+      "mode": "final-verification",
+      "expectedReference": null
+    },
+    {
       "id": "review-ticket-draft",
       "prompt": "Review this engineering ticket for unsupported work, unclear ownership, scope creep, and unverifiable acceptance criteria.",
       "expectedSkill": "planning",

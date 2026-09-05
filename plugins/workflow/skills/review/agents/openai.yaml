@@ -1,0 +1,7 @@
+interface:
+  display_name: "Review"
+  short_description: "Review exact changes with evidence"
+  default_prompt: "Use $workflow:review for a read-only review or final verification of an exact range or artifact."
+
+policy:
+  allow_implicit_invocation: true

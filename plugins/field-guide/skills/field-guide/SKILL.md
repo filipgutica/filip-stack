@@ -72,7 +72,7 @@ Do not initialize a guide merely to consult it.
 Classify an observation as `capture`, `ask`, or `skip`. Read [references/capture-policy.md](references/capture-policy.md) for the decision rules and examples. Choose scope from the guidance's semantic applicability, not from the current working repository.
 
 - `capture`: The correction, preference, or repeated miss is explicit, durable, reusable, and safe. Store it automatically and tell the user.
-- `ask`: Durability, intended behavior, scope, or safe wording is ambiguous. Ask one focused question and write nothing until the user confirms.
+- `ask`: Durability, intended behavior, scope, or safe wording is ambiguous. Preserve the task result, append one focused learning question, and write no memory until the user confirms. Learning does not block task completion.
 - `skip`: The observation is task-local, tentative, sensitive, authoritative in current global or project instructions, authoritative in live technical sources, or unlikely to help later work.
 
 Confidence is audit metadata. It never overrides these rules or evidence thresholds.

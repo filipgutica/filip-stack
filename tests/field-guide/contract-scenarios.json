@@ -149,6 +149,7 @@
       "lifecycleEvent": "UserPromptSubmit",
       "enforcement": "instructed-not-enforced",
       "expectedDecision": "ask",
+      "preservesTaskResponse": true,
       "requiresNotice": false
     },
     {

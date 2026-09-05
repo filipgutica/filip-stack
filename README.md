@@ -6,19 +6,20 @@ repository.
 
 ## Workflow v2
 
-Workflow v2 is intentionally small. Five skills cover the normal engineering
+Workflow v2 is intentionally small. Six skills cover the normal engineering
 loop without chaining a large collection of procedures together.
 
 | Skill | Use |
 | --- | --- |
 | `engineering` | Implement, debug, refactor, respond to review feedback, and verify authorized code changes. |
 | `planning` | Explore a problem or produce one specification, plan, task set, or ticket set. |
+| `review` | Read-only review or final verification of one exact change range or artifact. |
 | `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
 | `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
 | `walkthrough` | Explicitly inspect and explain a change one verifiable slice at a time. |
 
-`engineering`, `planning`, and `technical-writing` may be selected from a
-matching request. `grill-me` and `walkthrough` are manual-only.
+`engineering`, `planning`, `review`, and `technical-writing` may be selected
+from a matching request. `grill-me` and `walkthrough` are manual-only.
 
 ### How it stays small
 
@@ -28,12 +29,14 @@ The plugin uses three levels of progressive disclosure:
 2. The selected `SKILL.md` supplies the operating contract.
 3. A short reference file is opened only when the selected mode needs it.
 
-Skills do not invoke other public Workflow skills. The two broad routes select
-an internal mode instead:
+Skills do not invoke other public Workflow skills. The implementation and
+planning routes select an internal mode instead:
 
-- `engineering` selects implementation, debugging, refactoring, review
-  correction, or final verification guidance.
+- `engineering` selects implementation, debugging, refactoring, or review
+  correction guidance.
 - `planning` selects exploration, specification, plan, tasks, or tickets.
+- `review` selects read-only review or final verification of an exact range or
+  artifact.
 
 The engineering loop is evidence-driven: define the boundary, establish a test
 or reproduction, make the smallest correct change, run focused checks, inspect
@@ -86,7 +89,7 @@ code, and repository contracts continue to outrank stored guidance.
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
-  skills/                  The five Workflow skills and conditional references
+  skills/                  The six Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
   hooks/                   Bounded capture, ask, or skip lifecycle guidance
@@ -143,7 +146,7 @@ pnpm install
 pnpm check
 ```
 
-The check enforces the five-skill Workflow inventory, declared activation
+The check enforces the six-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
 Field Guide hooks and state, both plugins' runtime payloads, and plugin manifest
 validity. Prompt routing scenarios are evaluation inputs; static contracts do

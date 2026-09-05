@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Engineering Workflow",
     "shortDescription": "Plan, build, verify, explain, and review engineering work.",
-    "longDescription": "Five focused skills cover planning artifacts, authorized engineering changes, concise technical writing, adversarial design interviews, and evidence-backed walkthroughs. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+    "longDescription": "Six focused skills cover planning artifacts, authorized engineering changes, read-only review, concise technical writing, adversarial design interviews, and evidence-backed walkthroughs. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
@@ -18,9 +18,9 @@
       "Review"
     ],
     "defaultPrompt": [
-      "Use $workflow:engineering for authorized code changes, debugging, refactoring, review corrections, and final verification.",
-      "Use $workflow:planning for specs, plans, tasks, tickets, and design exploration; use $workflow:technical-writing for prose.",
-      "Invoke $workflow:grill-me or $workflow:walkthrough explicitly when you want those interactive review modes."
+      "Use $workflow:engineering for authorized code changes, debugging, refactoring, and review corrections.",
+      "Use $workflow:review for read-only review or final verification of an exact range or artifact.",
+      "Use $workflow:planning for specs, plans, tasks, or exploration; use $workflow:technical-writing for prose."
     ]
   }
 }

@@ -16,7 +16,7 @@ const hookCommand = JSON.parse(
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',
-    additionalContext: 'Before your final response, privately choose capture, ask, or skip for durable learning. For capture or skip, preserve the normal task response. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, reply with only one focused question; do not explain or offer options. Add no other lifecycle or storage text. This evaluation is advisory.',
+    additionalContext: 'Before your final response, privately choose capture, ask, or skip for durable learning. Preserve the normal task response for every decision. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, append one focused learning question and write no memory while awaiting the answer. Learning must not delay or replace the task result. Add no other lifecycle or storage text. This evaluation is advisory.',
   },
 }
 
@@ -119,10 +119,10 @@ test('UserPromptSubmit keeps capture, ask, and skip directions internal', () => 
     const context = JSON.parse(result.stdout).hookSpecificOutput.additionalContext
 
     assert.match(context, /capture, ask, or skip/)
-    assert.match(context, /For capture or skip, preserve the normal task response\./)
+    assert.match(context, /Preserve the normal task response for every decision\./)
     assert.match(context, /Skip uses no tools, writes nothing, and adds nothing\./)
     assert.match(context, /If capture is warranted, follow \$field-guide:field-guide and append only its concise change notice\./)
-    assert.match(context, /If ask is warranted, reply with only one focused question; do not explain or offer options\./)
+    assert.match(context, /If ask is warranted, append one focused learning question and write no memory while awaiting the answer\./)
     assert.match(context, /Add no other lifecycle or storage text\./)
   }
 })
