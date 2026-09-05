@@ -9,6 +9,7 @@ const expectedSkills = [
   'engineering',
   'grill-me',
   'planning',
+  'review',
   'technical-writing',
   'walkthrough',
 ]
@@ -26,7 +27,7 @@ const actualSkills = skillEntries
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort()
-assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose exactly the five v2 skills')
+assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose exactly the six v2 skills')
 
 let totalSkillWords = 0
 for (const name of expectedSkills) {
@@ -109,6 +110,12 @@ const requiredContracts = {
     /Load only the reference for the selected mode/u,
     /observable completion signal/u,
     /Persist it only when the user requests/u,
+  ],
+  review: [
+    /This route is read-only/u,
+    /does not authorize fixes, file edits/u,
+    /checks and exact results, and limitations for every review/u,
+    /Existing authorization remains valid/u,
   ],
   'grill-me': [
     /Ask exactly one consequential question/u,

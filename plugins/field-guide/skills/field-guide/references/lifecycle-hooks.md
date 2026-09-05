@@ -29,12 +29,12 @@ run and injected developer context.
 
 [Claude accepts `suppressOutput` without acting on it](https://code.claude.com/docs/en/hooks#json-output). An isolated local Claude Code check also showed that a blocking Stop reason remains model-visible. The adapter therefore returns an empty object for direct Stop input.
 
-The UserPromptSubmit instruction preserves agent judgment. Capture and skip
-preserve the normal task response. The instruction permits these visible
+The UserPromptSubmit instruction preserves agent judgment. Every decision
+preserves the normal task response. The instruction permits these visible
 results:
 
 - `capture`: show the concise field-guide change notice.
-- `ask`: show one focused question only.
+- `ask`: append one focused learning question without delaying or replacing the task result; write no memory while awaiting the answer.
 - `skip`: write nothing and show no field-guide text.
 
 The end-of-task evaluation is instructed but not enforced. Hook errors and

@@ -10,7 +10,7 @@ Claude and Codex `UserPromptSubmit` hooks instruct this evaluation before the
 final response. A `Stop` continuation does not enforce it. Codex can show the
 hook run and injected context.
 
-For `capture`, preserve the normal task response, use bounded candidates before submission, and append only the change notice. For `ask`, reply with one focused question only and write nothing. For `skip`, preserve the normal task response, write no memory, and append nothing.
+For `capture`, preserve the normal task response, use bounded candidates before submission, and append only the change notice. For `ask`, preserve the normal task response, append one focused learning question, and write no memory while the answer is pending. Learning must not delay or replace the task result. For `skip`, preserve the normal task response, write no memory, and append nothing.
 
 The hooks only instruct this decision. They do not classify observations or write memory.
 
@@ -39,7 +39,7 @@ Ask one focused question when any material part is ambiguous:
 - A correction might be a one-off tradeoff or a lasting preference. Ask whether it should guide later work.
 - New guidance appears to refine or contradict an active record, but the intended relationship is unclear. Show the short conflict and ask before resolving it.
 
-Write nothing while the answer is pending.
+Write no memory while the answer is pending. Continue and deliver the authorized task independently of this learning question.
 
 ## Skip
 
