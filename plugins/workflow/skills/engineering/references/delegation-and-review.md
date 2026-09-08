@@ -2,6 +2,8 @@
 
 Use delegation to reduce context or latency, or to add genuine independence. Do not delegate tightly coupled work that the main thread can complete with less coordination.
 
+Before starting a new agent, check whether an existing agent fits the role and responsibility. Reuse it for related follow-up work, corrections, and verification. Start a new agent when the role changes, parallel work requires another agent, independent judgment is needed, or the existing context is unsuitable. Do not use an implementation agent to independently review its own changes.
+
 ## Task boundaries
 
 A delegated task must define:
@@ -15,6 +17,16 @@ A delegated task must define:
 Use dependency order. Run tasks in parallel only when neither task needs the other's result and their writes cannot overlap. Keep one writer for an overlapping area. Return compact evidence instead of a transcript.
 
 The main thread owns integration, scope, and acceptance. A worker does not accept its own work.
+
+## Escalation and recovery
+
+Escalate early when uncertainty could change correctness, architecture, public contracts, dependencies, security, ownership, or authority. Pause dependent work while continuing independent investigation that cannot be invalidated by the decision.
+
+Return the evidence, unresolved decision, viable options, a recommendation, and what is blocked. Do not broaden the assignment or assume new authority to resolve the blocker.
+
+When a delegated task fails or cannot meet its completion signal, report the failure and checks that remain unverified. The main thread chooses whether to retry, narrow the task, reassign it, or take over within existing authority. Do not repeat failed attempts without new evidence or a changed approach.
+
+Before claiming completion, account for every required delegated task, integrate its result or complete its replacement, and confirm the required verification. Report unresolved failures and blocked checks as incomplete work, not success.
 
 ## Independent review
 
