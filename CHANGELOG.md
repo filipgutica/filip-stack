@@ -1,3 +1,10 @@
+## [2.1.1](https://github.com/filipgutica/filip-stack/compare/v2.1.0...v2.1.1) (2026-09-08)
+
+
+### Bug Fixes
+
+* **workflow:** clarify agent reuse and escalation ([87d6349](https://github.com/filipgutica/filip-stack/commit/87d6349fd751b0e9dd9005067837b9ab8ecb632c))
+
 # [2.1.0](https://github.com/filipgutica/filip-stack/compare/v2.0.2...v2.1.0) (2026-09-05)
 
 
