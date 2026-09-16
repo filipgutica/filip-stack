@@ -1,3 +1,10 @@
+## [2.1.2](https://github.com/filipgutica/filip-stack/compare/v2.1.1...v2.1.2) (2026-09-16)
+
+
+### Bug Fixes
+
+* **workflow:** make PR testing guidance optional ([b794b45](https://github.com/filipgutica/filip-stack/commit/b794b45c95003884998695519d76d7b2031c7d5d))
+
 ## [2.1.1](https://github.com/filipgutica/filip-stack/compare/v2.1.0...v2.1.1) (2026-09-08)
 
 
