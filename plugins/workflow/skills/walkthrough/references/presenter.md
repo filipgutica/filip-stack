@@ -8,10 +8,11 @@ Give the presenter:
 - the exact base and head or working-tree source
 - the changed files
 - relevant tests and verification evidence
+- verified local setup and any unavailable prerequisites
 - the presentation pattern
 - the next unresolved slice after the first response
 
-Ask the presenter to build an ordered change map that accounts for every changed file. For each turn, it returns one slice with behavior, decision, decisive evidence, verification limits, risk, and one question.
+Ask the presenter to build an ordered change map that accounts for every changed file. For each turn, it returns one slice using the presentation pattern, including its practical lesson and optional exercise. Return expected observations separately from user-reported or agent-observed results, and end with one question.
 
 The main thread checks the cited evidence before presenting or accepting it. Keep the same presenter for clarification and later slices so its responsibility stays stable.
 

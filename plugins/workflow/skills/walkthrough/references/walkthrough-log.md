@@ -26,6 +26,8 @@ Date: YYYY-MM-DD
 ### <slice>
 - Status: <accepted, changed, unresolved>
 - Behavior: <short summary>
+- Lesson: <one concept>
+- Exercise: <not attempted, skipped, unavailable, user-reported, or agent-observed; short outcome or limitation>
 - Evidence: <bounded source and verification>
 - Decision: <reviewer decision or none>
 
@@ -39,6 +41,8 @@ Date: YYYY-MM-DD
 ```
 
 Update the log only when a slice decision or correction state changes. Use `[x]` only after the reviewer accepts a slice or verification proves a correction. Preserve unresolved entries when the walkthrough stops.
+
+Include the exercise outcome available at that update. Keep exercise outcomes separate from acceptance; an expected result is not an observation.
 
 If the selected range changes, record the new exact range and revisit affected slices. Start a new log when rewritten history makes the earlier range incomparable.
 

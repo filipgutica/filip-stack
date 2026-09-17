@@ -130,6 +130,8 @@ const requiredContracts = {
   walkthrough: [
     /Present one coherent slice at a time/u,
     /read-only except for an authorized walkthrough log/u,
+    /one lesson, a concrete example, and an optional exercise with an expected observation/u,
+    /exercise completion.*as user acceptance/u,
     /every changed file is covered/u,
     /Do not treat silence/u,
   ],
@@ -141,6 +143,33 @@ for (const [name, patterns] of Object.entries(requiredContracts)) {
 }
 
 const requiredReferenceContracts = {
+  walkthrough: {
+    'presentation-patterns.md': [
+      /Lesson:.*\nExample:.*\nTry it:.*\nObserve:/u,
+      /Establish shared local setup once/u,
+      /Ground commands, routes, sample inputs, and breakpoint locations in the inspected repository and selected revision/u,
+      /Verify the local checkout matches that revision/u,
+      /worked example when execution is unavailable/u,
+      /\*\*UI:\*\*/u,
+      /\*\*API:\*\*/u,
+      /\*\*Debugger:\*\*.*values to inspect.*stepping forward/u,
+      /\*\*Test or CLI:\*\*/u,
+      /\*\*Documentation or configuration:\*\*/u,
+      /Agent execution requires existing authorization/u,
+      /Keep expected results separate from observed results/u,
+      /When results differ, stay on the current slice/u,
+      /Let the user skip the exercise/u,
+    ],
+    'presenter.md': [
+      /including its practical lesson and optional exercise/u,
+      /expected observations separately from user-reported or agent-observed results/u,
+    ],
+    'walkthrough-log.md': [
+      /Lesson:/u,
+      /Exercise:.*not attempted, skipped, unavailable, user-reported, or agent-observed/u,
+      /Keep exercise outcomes separate from acceptance/u,
+    ],
+  },
   engineering: {
     'testing-and-debugging.md': [
       /Identify suitable existing coverage.*recording the baseline/u,
