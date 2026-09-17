@@ -1,3 +1,10 @@
+# [2.2.0](https://github.com/filipgutica/filip-stack/compare/v2.1.2...v2.2.0) (2026-09-17)
+
+
+### Features
+
+* **workflow:** teach practical lessons in walkthrough slices ([6581109](https://github.com/filipgutica/filip-stack/commit/6581109f27676d4b56466820e2774f8235a945fd))
+
 ## [2.1.2](https://github.com/filipgutica/filip-stack/compare/v2.1.1...v2.1.2) (2026-09-16)
 
 
