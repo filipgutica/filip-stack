@@ -1,3 +1,10 @@
+## [2.2.1](https://github.com/filipgutica/filip-stack/compare/v2.2.0...v2.2.1) (2026-09-22)
+
+
+### Bug Fixes
+
+* **workflow:** omit CI results from PR descriptions ([#43](https://github.com/filipgutica/filip-stack/issues/43)) ([51b238f](https://github.com/filipgutica/filip-stack/commit/51b238f4c592f3724cb79b89e63df09d26dd3213))
+
 # [2.2.0](https://github.com/filipgutica/filip-stack/compare/v2.1.2...v2.2.0) (2026-09-17)
 
 
