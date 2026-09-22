@@ -27,7 +27,7 @@ Closes/Addresses: <ticket #> (if applicable)
 
 Omit the ticket line when no work item applies. Choose `Closes` or `Addresses` to match the relationship.
 
-Include `How to test/verify` only when the change scope warrants actionable instructions, especially for bug fixes and new features. Omit it when it adds no useful guidance. Describe how a reviewer can check the behavior; a list of completed checks is not required.
+Include `How to test/verify` only for actionable manual steps that help a reviewer check the behavior. Omit it when it adds no useful guidance. Keep passing automated test, lint, build, and typecheck results in CI; do not repeat them in validation or verification sections. Mention skipped checks, failures, or limitations only when they affect review.
 
 Add screenshots, rollout steps, or compatibility notes only when they apply. Preserve repository-required checklists and headings.
 
