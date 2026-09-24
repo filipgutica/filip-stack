@@ -16,13 +16,14 @@ const submissionSchemaUrl = new URL('schemas/submission-v1.schema.json', skillRo
 const maintenanceSchemaUrl = new URL('schemas/maintenance-v1.schema.json', skillRoot)
 const lifecycleSchemaUrl = new URL('schemas/lifecycle-v1.schema.json', skillRoot)
 const retrievalSchemaUrl = new URL('schemas/retrieval-v1.schema.json', skillRoot)
+const analyticsSchemaUrl = new URL('schemas/analytics-event-v1.schema.json', skillRoot)
 const lifecycleHooksUrl = new URL('references/lifecycle-hooks.md', skillRoot)
 const readmeUrl = new URL('README.md', repositoryRoot)
 const hooksUrl = new URL('hooks/hooks.json', fieldGuidePluginRoot)
 const hookAdapterUrl = new URL('hooks/field-guide-lifecycle.mjs', fieldGuidePluginRoot)
 const codexManifestUrl = new URL('.codex-plugin/plugin.json', fieldGuidePluginRoot)
 
-const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, lifecycleHooks, readme, hooksText, hookAdapter, codexManifestText] = await Promise.all([
+const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submissionSchemaText, maintenanceSchemaText, lifecycleSchemaText, retrievalSchemaText, analyticsSchemaText, lifecycleHooks, readme, hooksText, hookAdapter, codexManifestText] = await Promise.all([
   readFile(skillUrl, 'utf8'),
   readFile(policyUrl, 'utf8'),
   readFile(storageUrl, 'utf8'),
@@ -33,6 +34,7 @@ const [skill, policy, storage, metadata, scenariosText, memorySchemaText, submis
   readFile(maintenanceSchemaUrl, 'utf8'),
   readFile(lifecycleSchemaUrl, 'utf8'),
   readFile(retrievalSchemaUrl, 'utf8'),
+  readFile(analyticsSchemaUrl, 'utf8'),
   readFile(lifecycleHooksUrl, 'utf8'),
   readFile(readmeUrl, 'utf8'),
   readFile(hooksUrl, 'utf8'),
@@ -47,6 +49,7 @@ const submissionSchema = JSON.parse(submissionSchemaText)
 const maintenanceSchema = JSON.parse(maintenanceSchemaText)
 const lifecycleSchema = JSON.parse(lifecycleSchemaText)
 const retrievalSchema = JSON.parse(retrievalSchemaText)
+const analyticsSchema = JSON.parse(analyticsSchemaText)
 
 assert.match(skill, /capture`, `ask`, or `skip`/)
 assert.match(skill, /manual learning requests/)
@@ -104,7 +107,8 @@ assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*\$\
 assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
 assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)
 assert.match(hookAdapter, /if \(input\.hook_event_name === 'Stop'\) return \{\}/)
-assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|\.field-guide/)
+assert.match(hookAdapter, /appendAnalyticsEvent/)
+assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|input\.prompt|input\.host/)
 assert.doesNotMatch(hookAdapter, /field-guide\.sh|\/Users\//)
 assert.match(lifecycleHooks, /`PLUGIN_ROOT`/)
 assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
@@ -200,6 +204,16 @@ const validateSubmissionSchema = ajv.compile(submissionSchema)
 const validateMaintenanceSchema = ajv.compile(maintenanceSchema)
 const validateLifecycleSchema = ajv.compile(lifecycleSchema)
 ajv.compile(retrievalSchema)
+const validateAnalyticsEvent = ajv.compile(analyticsSchema)
+const validHookEvent = {
+  schemaVersion: 1,
+  id: '00000000-0000-4000-8000-000000000001',
+  at: '2026-01-01T00:00:00.000Z',
+  type: 'hook_invoked',
+  host: 'codex',
+}
+assert.equal(validateAnalyticsEvent(validHookEvent), true, JSON.stringify(validateAnalyticsEvent.errors))
+assert.equal(validateAnalyticsEvent({ ...validHookEvent, prompt: 'private task text' }), false)
 const validSubmission = {
   schemaVersion: 1,
   decision: 'capture',

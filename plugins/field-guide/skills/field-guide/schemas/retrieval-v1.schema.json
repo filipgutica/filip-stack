@@ -14,6 +14,7 @@
         "guidance": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/guidance" } },
         "bytes": { "type": "integer", "maximum": 6144 },
         "omittedCount": { "type": "integer", "minimum": 0 },
+        "analyticsEventId": { "type": "string", "format": "uuid" },
         "limits": { "$ref": "#/$defs/guidanceLimits" }
       }
     },

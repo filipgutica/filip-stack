@@ -1319,3 +1319,83 @@ test('validate checks guidance links and shared promotion evidence', () => {
   writeFileSync(secondReview, `# Second evidence\n\n- Commit: \`${secondCommit}\`\n`)
   run({ command: 'validate', repoRoot, guideRoot })
 })
+
+test('opt-in analytics records retrieval and capture metadata without task text', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-analytics-integration-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/analytics.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const eventFile = join(guideRoot, 'analytics', 'events.jsonl')
+
+  const beforeEnable = retrieve({ repoRoot, guideRoot, query: 'unique-private-task-text' })
+  assert.equal(beforeEnable.analyticsEventId, undefined)
+  assert.equal(existsSync(eventFile), false)
+
+  assert.equal(run({ command: 'analytics-enable', repoRoot, guideRoot }).result.enabled, true)
+  const submission = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({
+      learning: 'Use focused verification for small changes.',
+      turnId: 'turn-analytics',
+      explicitPreference: true,
+    }),
+  }).result
+  const retrieval = retrieve({ repoRoot, guideRoot, subject: 'testing', query: 'unique-private-task-text' })
+  assert.match(retrieval.analyticsEventId, /^[0-9a-f-]{36}$/)
+  assert.equal(retrieval.guidance[0].id, submission.targetId)
+
+  const events = readFileSync(eventFile, 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+  assert.deepEqual(events.map(({ type }) => type), ['submission', 'retrieval'])
+  assert.deepEqual(events[1].guidanceIds, [submission.targetId])
+  assert.doesNotMatch(readFileSync(eventFile, 'utf8'), /unique-private-task-text|Use focused verification/)
+
+  const impact = run({
+    command: 'analytics-impact',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', JSON.stringify({
+      schemaVersion: 1,
+      retrievalEventId: retrieval.analyticsEventId,
+      guidanceId: submission.targetId,
+      effect: 'decision_changed',
+    })],
+  }).result
+  run({
+    command: 'analytics-review',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', JSON.stringify({
+      schemaVersion: 1,
+      kind: 'impact',
+      impactEventId: impact.id,
+      verdict: 'confirmed',
+    })],
+  })
+  run({
+    command: 'analytics-review',
+    repoRoot,
+    guideRoot,
+    args: ['--input-json', JSON.stringify({
+      schemaVersion: 1,
+      kind: 'capture',
+      caseId: '00000000-0000-4000-8000-000000000001',
+      verdict: 'eligible_captured',
+    })],
+  })
+  const report = run({ command: 'analytics-report', repoRoot, guideRoot }).result
+  assert.equal(report.retrievals.hits, 1)
+  assert.equal(report.submissions.outcomes.created, 1)
+  assert.equal(report.impacts.decisionChanged, 1)
+  assert.equal(report.impacts.reviews.confirmed, 1)
+  assert.equal(report.impacts.reviewConfirmationRate, 1)
+  assert.equal(report.capture.captureRate, 1)
+  const emptyReport = run({ command: 'analytics-report', repoRoot, guideRoot, args: ['--since', '2999-01-01'] }).result
+  assert.equal(emptyReport.retrievals.total, 0)
+  assert.equal(emptyReport.capture.captureRate, null)
+
+  assert.equal(run({ command: 'analytics-disable', repoRoot, guideRoot }).result.enabled, false)
+  const beforeDisabledRetrieval = readFileSync(eventFile, 'utf8')
+  assert.equal(retrieve({ repoRoot, guideRoot, subject: 'testing' }).analyticsEventId, undefined)
+  assert.equal(readFileSync(eventFile, 'utf8'), beforeDisabledRetrieval)
+})
