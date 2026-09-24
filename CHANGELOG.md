@@ -1,3 +1,10 @@
+# [2.3.0](https://github.com/filipgutica/filip-stack/compare/v2.2.1...v2.3.0) (2026-09-24)
+
+
+### Features
+
+* **field-guide:** add opt-in effectiveness analytics ([1c1ec73](https://github.com/filipgutica/filip-stack/commit/1c1ec7325bc7b7f840b577d41ba43763a274e40d))
+
 ## [2.2.1](https://github.com/filipgutica/filip-stack/compare/v2.2.0...v2.2.1) (2026-09-22)
 
 
