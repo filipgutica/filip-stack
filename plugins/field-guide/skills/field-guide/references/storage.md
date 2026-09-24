@@ -10,6 +10,9 @@ Use these terms:
 
 ```text
 ~/.field-guide/
+├── analytics/          # Optional local event log and opt-in setting
+│   ├── config.json
+│   └── events.jsonl
 ├── .obsidian/          # Optional client-owned vault settings
 ├── init.md
 ├── memory.md           # Canonical readable and machine-recorded memory
@@ -159,6 +162,26 @@ token from the same canonical store and cache state.
 
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
+
+## Local analytics
+
+Analytics is disabled by default. `analytics-enable` requires an initialized
+guide and writes `analytics/config.json`. `analytics-disable` stops new events
+without deleting past events. Analytics files are separate from canonical
+`memory.md`, its cache, and indexed review evidence. The event log is local,
+append-only JSONL. Its records contain timestamps, event IDs, host or project
+keys, guidance IDs, and categorical outcomes. It does not store prompts,
+retrieval queries, guidance text, transcripts, or source content.
+
+When enabled, normal guidance retrieval appends an event and may return an
+`analyticsEventId`. Logging failures do not block retrieval, submission, or the
+hook. A report reads the available events and states missing or insufficient
+reviewed data explicitly. Hook events count invocations only. Agent-reported
+impact and independent review are separate events; neither changes guidance
+status or evidence thresholds. No historical events are synthesized when
+analytics is first enabled. The reviewed capture rate depends on which cases
+are sampled; use a stable random UUID per case and include eligible misses in
+the sample. The report does not infer corrections outside that sample.
 
 ## Obsidian compatibility
 

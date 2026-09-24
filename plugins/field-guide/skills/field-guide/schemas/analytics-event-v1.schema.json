@@ -1,0 +1,208 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/field-guide/analytics-event-v1.schema.json",
+  "title": "Field-guide local analytics event version 1",
+  "oneOf": [
+    { "$ref": "#/$defs/hookInvoked" },
+    { "$ref": "#/$defs/retrieval" },
+    { "$ref": "#/$defs/submission" },
+    { "$ref": "#/$defs/transition" },
+    { "$ref": "#/$defs/impact" },
+    { "$ref": "#/$defs/impactReview" },
+    { "$ref": "#/$defs/captureReview" }
+  ],
+  "$defs": {
+    "uuid": {
+      "type": "string",
+      "format": "uuid",
+      "pattern": "^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$"
+    },
+    "guidanceId": {
+      "type": "string",
+      "pattern": "^guidance:v1:[0-9a-f]{64}$"
+    },
+    "projectKey": {
+      "type": "string",
+      "maxLength": 128,
+      "pattern": "^[a-z0-9]+(?:-[a-z0-9]+)*$"
+    },
+    "event": {
+      "type": "object",
+      "required": ["schemaVersion", "id", "at", "type"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "id": { "$ref": "#/$defs/uuid" },
+        "at": { "type": "string", "format": "date-time" },
+        "type": { "type": "string" }
+      }
+    },
+    "hookInvoked": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "host"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "hook_invoked" },
+            "host": { "enum": ["codex", "claude"] }
+          }
+        }
+      ]
+    },
+    "retrieval": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "projectKey", "guidanceIds"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "retrieval" },
+            "projectKey": { "$ref": "#/$defs/projectKey" },
+            "guidanceIds": {
+              "type": "array",
+              "maxItems": 5,
+              "uniqueItems": true,
+              "items": { "$ref": "#/$defs/guidanceId" }
+            }
+          }
+        }
+      ]
+    },
+    "submission": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "projectKey", "guidanceId", "outcome"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "submission" },
+            "projectKey": { "$ref": "#/$defs/projectKey" },
+            "guidanceId": { "$ref": "#/$defs/guidanceId" },
+            "outcome": { "enum": ["created", "reinforced", "promoted", "duplicate-evidence"] }
+          }
+        }
+      ]
+    },
+    "transition": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "projectKey", "guidanceId", "outcome"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "transition" },
+            "projectKey": { "$ref": "#/$defs/projectKey" },
+            "guidanceId": { "$ref": "#/$defs/guidanceId" },
+            "outcome": { "enum": ["activate", "supersede", "undo", "withdraw"] }
+          }
+        }
+      ]
+    },
+    "impact": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "retrievalEventId", "guidanceId", "effect"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "impact" },
+            "retrievalEventId": { "$ref": "#/$defs/uuid" },
+            "guidanceId": { "$ref": "#/$defs/guidanceId" },
+            "effect": { "enum": ["applied", "decision_changed"] }
+          }
+        }
+      ]
+    },
+    "impactReview": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "kind", "impactEventId", "verdict"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "review" },
+            "kind": { "const": "impact" },
+            "impactEventId": { "$ref": "#/$defs/uuid" },
+            "verdict": { "enum": ["confirmed", "rejected"] }
+          }
+        }
+      ]
+    },
+    "captureReview": {
+      "allOf": [
+        { "$ref": "#/$defs/event" },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["schemaVersion", "id", "at", "type", "kind", "caseId", "verdict"],
+          "properties": {
+            "schemaVersion": { "const": 1 },
+            "id": { "$ref": "#/$defs/uuid" },
+            "at": { "type": "string", "format": "date-time" },
+            "type": { "const": "review" },
+            "kind": { "const": "capture" },
+            "caseId": { "$ref": "#/$defs/uuid" },
+            "verdict": { "enum": ["eligible_captured", "eligible_missed", "not_eligible"] }
+          }
+        }
+      ]
+    },
+    "impactInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "retrievalEventId", "guidanceId", "effect"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "retrievalEventId": { "$ref": "#/$defs/uuid" },
+        "guidanceId": { "$ref": "#/$defs/guidanceId" },
+        "effect": { "enum": ["applied", "decision_changed"] }
+      }
+    },
+    "impactReviewInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "impactEventId", "verdict"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "impact" },
+        "impactEventId": { "$ref": "#/$defs/uuid" },
+        "verdict": { "enum": ["confirmed", "rejected"] }
+      }
+    },
+    "captureReviewInput": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["schemaVersion", "kind", "caseId", "verdict"],
+      "properties": {
+        "schemaVersion": { "const": 1 },
+        "kind": { "const": "capture" },
+        "caseId": { "$ref": "#/$defs/uuid" },
+        "verdict": { "enum": ["eligible_captured", "eligible_missed", "not_eligible"] }
+      }
+    }
+  }
+}

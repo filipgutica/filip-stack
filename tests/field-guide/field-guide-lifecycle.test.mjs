@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
-import { spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync } from 'node:fs'
+import { execFileSync, spawnSync } from 'node:child_process'
+import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -158,6 +158,64 @@ test('sensitive hook fields never appear in output for either host', () => {
       assert.doesNotMatch(result.stderr, new RegExp(secret.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
     }
   }
+})
+
+test('opted-in hook analytics records only invocation metadata', () => {
+  const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-analytics-'))
+  const analyticsRoot = join(home, '.field-guide', 'analytics')
+  mkdirSync(analyticsRoot, { recursive: true })
+  writeFileSync(join(analyticsRoot, 'config.json'), `${JSON.stringify({ schemaVersion: 1, enabled: true })}\n`)
+
+  const prompt = run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', prompt: 'PASSWORD=private-value' })}\n`,
+    env: hostEnvironment.codex,
+  })
+  assert.equal(prompt.status, 0, prompt.stderr)
+  assert.deepEqual(JSON.parse(prompt.stdout), promptOutput)
+  assert.equal(prompt.stderr, '')
+
+  const eventsFile = join(analyticsRoot, 'events.jsonl')
+  const eventsText = readFileSync(eventsFile, 'utf8')
+  const [event] = eventsText.trim().split('\n').map((line) => JSON.parse(line))
+  assert.equal(event.type, 'hook_invoked')
+  assert.equal(event.host, 'codex')
+  assert.doesNotMatch(eventsText, /PASSWORD=private-value|prompt/)
+
+  const stop = run({ home, input: `${JSON.stringify({ hook_event_name: 'Stop' })}\n`, env: hostEnvironment.codex })
+  assert.deepEqual(JSON.parse(stop.stdout), {})
+  assert.equal(readFileSync(eventsFile, 'utf8'), eventsText)
+})
+
+test('hook analytics write failure preserves lifecycle output', () => {
+  const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-analytics-failure-'))
+  const analyticsRoot = join(home, '.field-guide', 'analytics')
+  mkdirSync(analyticsRoot, { recursive: true })
+  writeFileSync(join(analyticsRoot, 'config.json'), `${JSON.stringify({ schemaVersion: 1, enabled: true })}\n`)
+  mkdirSync(join(analyticsRoot, 'events.jsonl'))
+
+  const result = run({ home, input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit' })}\n`, env: hostEnvironment.claude })
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
+  assert.equal(result.stderr, '')
+})
+
+test('hook analytics does not block on a non-regular event log', { skip: process.platform === 'win32' }, () => {
+  const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-analytics-fifo-'))
+  const analyticsRoot = join(home, '.field-guide', 'analytics')
+  mkdirSync(analyticsRoot, { recursive: true })
+  writeFileSync(join(analyticsRoot, 'config.json'), '{"schemaVersion":1,"enabled":true}\n')
+  execFileSync('mkfifo', [join(analyticsRoot, 'events.jsonl')])
+
+  const result = spawnSync(process.execPath, [adapter.pathname], {
+    input: '{"hook_event_name":"UserPromptSubmit"}\n',
+    encoding: 'utf8',
+    timeout: 2000,
+    env: { ...process.env, HOME: home, PLUGIN_ROOT: '/plugins/field-guide', CLAUDE_PLUGIN_ROOT: undefined },
+  })
+  assert.equal(result.error, undefined)
+  assert.equal(result.status, 0, result.stderr)
+  assert.deepEqual(JSON.parse(result.stdout), promptOutput)
 })
 
 test('lifecycle guidance contains no launcher path or Stop reason', () => {

@@ -41,8 +41,15 @@ The end-of-task evaluation is instructed but not enforced. Hook errors and
 unknown hosts fail open. If a host disables or has not trusted the hook, agents
 use the Field Guide through normal skill routing.
 
+When local analytics is enabled, the adapter appends one `hook_invoked` event
+for a supported `UserPromptSubmit` call. This records invocation activity only.
+It does not prove that the host delivered the context or that the agent used
+guidance. Analytics write failures do not change the hook output.
+
 ## Privacy boundary
 
 The adapter does not access files referenced by the event. It does not inspect
 other event fields or emit or persist them. It does not access source files or
-field-guide storage. The output contains static text only.
+the guidance store. If analytics is enabled, it reads the local analytics
+setting and writes only the timestamp, event ID, event type, and host derived
+from the plugin environment. The hook output contains static text only.

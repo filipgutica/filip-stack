@@ -79,6 +79,9 @@ Field Guide is a separate, optional plugin. It keeps durable preferences,
 corrections, and recurring lessons under `~/.field-guide` and retrieves only a
 bounded relevant set. Installing it opts into its `UserPromptSubmit` lifecycle
 guidance; leaving it uninstalled keeps that context out of normal Workflow use.
+Local effectiveness analytics can be enabled separately after the guide is
+initialized. It records metadata in a local JSONL file and reports activity,
+agent-reported impact, and reviewed outcomes separately.
 
 Workflow does not invoke or depend on Field Guide. Current instructions, live
 code, and repository contracts continue to outrank stored guidance.

@@ -18,6 +18,13 @@ import { homedir } from 'node:os'
 import { isIP } from 'node:net'
 import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import {
+  appendAnalyticsEvent,
+  configureAnalytics,
+  recordImpact,
+  recordReview,
+  reportAnalytics,
+} from './field-guide-analytics.mjs'
 
 const scriptPath = fileURLToPath(import.meta.url)
 
@@ -34,7 +41,10 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set(['audit', 'candidates', 'delete', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate'])
+const commands = new Set([
+  'analytics-disable', 'analytics-enable', 'analytics-impact', 'analytics-report', 'analytics-review',
+  'audit', 'candidates', 'delete', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate',
+])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -44,6 +54,7 @@ const optionNames = new Map([
   ['--query', 'query'],
   ['--evidence-for', 'evidence-for'],
   ['--scope', 'scope'],
+  ['--since', 'since'],
 ])
 const parseOptions = (args) => {
   const options = {}
@@ -63,12 +74,15 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>]')
+    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--since <YYYY-MM-DD>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
-  if (options['input-json'] && command !== 'submit') fail('--input-json is supported only for submit')
+  if (options['input-json'] && !['submit', 'analytics-impact', 'analytics-review'].includes(command)) {
+    fail('--input-json is supported only for submit, analytics-impact, and analytics-review')
+  }
   if (options.input && options['input-json']) fail('use either --input or --input-json, not both')
+  if (options.since && command !== 'analytics-report') fail('--since is supported only for analytics-report')
   return { command, options }
 }
 
@@ -1837,6 +1851,17 @@ const main = () => {
   })
 
   let result
+  if (command === 'analytics-enable') result = configureAnalytics({ guideRoot: paths.guideRoot, enabled: true })
+  if (command === 'analytics-disable') result = configureAnalytics({ guideRoot: paths.guideRoot, enabled: false })
+  if (command === 'analytics-report') result = reportAnalytics({ guideRoot: paths.guideRoot, since: options.since })
+  if (command === 'analytics-impact') result = recordImpact({
+    guideRoot: paths.guideRoot,
+    input: readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] }),
+  })
+  if (command === 'analytics-review') result = recordReview({
+    guideRoot: paths.guideRoot,
+    input: readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] }),
+  })
   if (command === 'audit') result = audit(paths)
   if (command === 'candidates') result = candidateMatches({
     paths,
@@ -1846,18 +1871,53 @@ const main = () => {
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
-  if (command === 'retrieve') result = retrieve({
-    paths,
-    subjectKey: options.subject,
-    query: options.query,
-    evidenceFor: options['evidence-for'],
-  })
-  if (command === 'submit') result = submitObservation({
-    paths,
-    inputPath: options.input,
-    inputJson: options['input-json'],
-  })
-  if (command === 'transition') result = transitionGuidance({ paths, inputPath: options.input })
+  if (command === 'retrieve') {
+    result = retrieve({
+      paths,
+      subjectKey: options.subject,
+      query: options.query,
+      evidenceFor: options['evidence-for'],
+    })
+    if (result.mode === 'guidance') {
+      const event = appendAnalyticsEvent({
+        guideRoot: paths.guideRoot,
+        event: {
+          type: 'retrieval',
+          projectKey: paths.projectKey,
+          guidanceIds: result.guidance.map(({ id }) => id),
+        },
+      })
+      if (event) result.analyticsEventId = event.id
+    }
+  }
+  if (command === 'submit') {
+    result = submitObservation({
+      paths,
+      inputPath: options.input,
+      inputJson: options['input-json'],
+    })
+    appendAnalyticsEvent({
+      guideRoot: paths.guideRoot,
+      event: {
+        type: 'submission',
+        projectKey: paths.projectKey,
+        guidanceId: result.targetId,
+        outcome: result.outcome,
+      },
+    })
+  }
+  if (command === 'transition') {
+    result = transitionGuidance({ paths, inputPath: options.input })
+    appendAnalyticsEvent({
+      guideRoot: paths.guideRoot,
+      event: {
+        type: 'transition',
+        projectKey: paths.projectKey,
+        guidanceId: result.targetId,
+        outcome: result.outcome,
+      },
+    })
+  }
   if (command === 'validate') validate(paths)
 
   process.stdout.write(`${JSON.stringify({ ...paths, ...(result ? { result } : {}) }, null, 2)}\n`)
