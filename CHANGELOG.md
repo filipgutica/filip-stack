@@ -1,3 +1,10 @@
+# [2.4.0](https://github.com/filipgutica/filip-stack/compare/v2.3.0...v2.4.0) (2026-09-27)
+
+
+### Features
+
+* **workflow:** add test audit authoring and PR gates ([2272b7d](https://github.com/filipgutica/filip-stack/commit/2272b7d892716039d5bc5681da1f07d3c100c7c9))
+
 # [2.3.0](https://github.com/filipgutica/filip-stack/compare/v2.2.1...v2.3.0) (2026-09-24)
 
 
