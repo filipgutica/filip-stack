@@ -184,6 +184,30 @@
       "activation": "none",
       "mode": "manual-skill-near-miss",
       "expectedReference": null
+    },
+    {
+      "id": "audit-pr-tests",
+      "prompt": "Audit the tests added in this PR without editing files.",
+      "expectedSkill": "test-audit",
+      "activation": "implicit",
+      "mode": "focused-audit",
+      "expectedReference": "value-criteria.md"
+    },
+    {
+      "id": "gate-tdd-tests",
+      "prompt": "Use $workflow:test-audit before writing a failing test for this behavior.",
+      "expectedSkill": "test-audit",
+      "activation": "explicit",
+      "mode": "authoring",
+      "expectedReference": "value-criteria.md"
+    },
+    {
+      "id": "campaign-test-surface",
+      "prompt": "Audit this entire subsystem test surface and identify redundant coverage.",
+      "expectedSkill": "test-audit",
+      "activation": "implicit",
+      "mode": "campaign",
+      "expectedReference": "campaign.md"
     }
   ]
 }

@@ -41,6 +41,7 @@ Give the reviewer:
 - the requested outcome and non-goals
 - the exact diff, branch range, or changed files
 - relevant contract and test evidence
+- the focused test audit for changed tests and affected test-only seams; include it in this review assignment
 - known limits without coaching it toward acceptance
 
 Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.

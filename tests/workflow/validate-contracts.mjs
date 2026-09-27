@@ -11,6 +11,7 @@ const expectedSkills = [
   'planning',
   'review',
   'technical-writing',
+  'test-audit',
   'walkthrough',
 ]
 const manualSkills = new Set(['grill-me', 'walkthrough'])
@@ -27,7 +28,7 @@ const actualSkills = skillEntries
   .filter((entry) => entry.isDirectory())
   .map((entry) => entry.name)
   .sort()
-assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose exactly the six v2 skills')
+assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
 
 let totalSkillWords = 0
 for (const name of expectedSkills) {
@@ -44,7 +45,11 @@ for (const name of expectedSkills) {
   assert.match(frontmatter, /^description:\s*\S.+$/m)
   assert.ok(words(description) <= 80, `${name} description exceeds 80 words`)
   assert.ok(count <= 900, `${name}/SKILL.md exceeds 900 words (${count})`)
-  assert.doesNotMatch(body, /\$workflow:/u, `${name} chains to another public Workflow skill`)
+  const publicCalls = [...body.matchAll(/\$workflow:([a-z-]+)/gu)].map((match) => match[1])
+  assert.ok(
+    publicCalls.every((target) => ['engineering', 'review'].includes(name) && target === 'test-audit'),
+    `${name} has an undeclared public skill dependency`,
+  )
 
   const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
   assert.match(metadata, new RegExp(`\\$workflow:${name.replaceAll('-', '\\-')}`))
