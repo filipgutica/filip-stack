@@ -30,11 +30,12 @@ only when it changes the review.
 2. Inspect every changed file in the selected subject and trace affected
    behavior to its current owner. Read relevant tests, types, configuration,
    documentation, and callers when they can change the conclusion.
-3. Separate confirmed findings from inferences and unknowns. A finding must
+3. Invoke $workflow:test-audit for added, changed, or removed tests and affected test-only production seams in the selected range. Keep this audit read-only and include its outcome and limits in the review.
+4. Separate confirmed findings from inferences and unknowns. A finding must
    identify the path and line or command evidence, explain the affected
    contract, and state the practical consequence. Do not report style
    preferences, stale assumptions, or unsupported scope expansion.
-4. Run the narrowest appropriate checks once. Repeat a check only when new
+5. Run the narrowest appropriate checks once. Repeat a check only when new
    evidence, a scope correction, an environment change, or a newly discovered
    failure gives a reason to do so. A blocked, rejected, timed-out, or
    unavailable check is a limitation, not a pass.

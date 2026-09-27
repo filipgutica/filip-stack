@@ -14,10 +14,10 @@ Deliver the smallest authorized change and prove the requested contract.
 3. Run the nearest existing test that observes the requested contract when suitable coverage exists, and record the baseline.
 4. Fix the production owner before changing a correct existing test.
 5. Change an existing test only when repository evidence proves that its contract changed or the test is wrong.
-6. If new or corrected behavior lacks suitable coverage, add one focused observable test and confirm that it fails for the expected reason. Do not duplicate coverage that already observes the contract without a specific gap to close.
+6. Before writing or changing tests, invoke $workflow:test-audit and satisfy its authoring gate. If new or corrected behavior lacks suitable coverage, add one focused observable test and confirm that it fails for the expected reason. Do not duplicate coverage that already observes the contract without a specific gap to close.
 7. Make the smallest causal change. Reuse local code before adding code. Avoid speculative options, abstractions, dependencies, and adjacent cleanup.
 8. Rerun the same test and only the affected existing checks. Repeat or broaden verification when the changed code, an observed failure, or an unresolved risk justifies it.
-9. Inspect the final diff for accidental changes. Stop when the contract passes.
+9. Inspect the final diff for accidental changes and run the $workflow:test-audit focused PR gate before pushing or merging. Stop when the contract passes and required review gates are complete.
 
 ## Keep the design small
 

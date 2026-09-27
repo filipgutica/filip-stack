@@ -1,0 +1,7 @@
+interface:
+  display_name: "Test Audit"
+  short_description: "Gate test value and audit changed coverage"
+  default_prompt: "Use $workflow:test-audit to audit added or changed tests and their production seams in the exact change range."
+
+policy:
+  allow_implicit_invocation: true
