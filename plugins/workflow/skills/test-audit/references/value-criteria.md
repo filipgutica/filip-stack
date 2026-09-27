@@ -82,4 +82,3 @@ run parallel discovery lanes when available:
 
 Outside campaign mode, prefer a few high-confidence candidates over a large
 speculative inventory. Hunt for the [junk patterns](#junk-patterns).
-
