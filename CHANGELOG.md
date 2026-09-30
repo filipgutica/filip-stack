@@ -1,3 +1,10 @@
+# [2.5.0](https://github.com/filipgutica/filip-stack/compare/v2.4.0...v2.5.0) (2026-09-30)
+
+
+### Features
+
+* **workflow:** simplify writing artifacts and add manual checkpoints ([495c0d9](https://github.com/filipgutica/filip-stack/commit/495c0d90f48148b06547f40d9dace4c75343ab79))
+
 # [2.4.0](https://github.com/filipgutica/filip-stack/compare/v2.3.0...v2.4.0) (2026-09-27)
 
 
