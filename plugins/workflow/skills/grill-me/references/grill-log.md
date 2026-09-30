@@ -3,10 +3,10 @@
 Use one plain Markdown log for one explicit session. Prefer a clear date and subject in the filename:
 
 ```text
-~/.engineering-workflow/<work-item>/grills/YYYY-MM-DD-<subject>.md
+~/.engineering-workflow/<project-or-subject>/grills/YYYY-MM-DD-<subject>.md
 ```
 
-Use a user-supplied path when present. Do not create a manifest, sequence registry, topic lifecycle, or generated link index.
+Use a user-supplied path when present. Saving a log requires no work-item setup or companion artifacts. Do not create a manifest, sequence registry, topic lifecycle, or generated link index.
 
 Use this shape:
 

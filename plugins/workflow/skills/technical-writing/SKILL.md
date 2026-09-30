@@ -15,8 +15,6 @@ Make technical prose clear, concise, and faithful to the source.
 4. Do not invent behavior, verification, ownership, or rationale.
 5. Edit only the requested artifact or section.
 
-For a pull request description, read [PR description guidance](references/pr-description.md).
-
 ## Write technical prose
 
 Apply [Simplified Technical English guidance](references/technical-prose.md) to every technical deliverable. It also applies to prose inside specifications, plans, and tickets. Their existing owner retains control of decisions and structure.

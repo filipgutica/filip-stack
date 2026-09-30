@@ -1,31 +1,8 @@
-# Tasks and tickets
+# Tickets
 
-Use a task file for local execution state. Use Jira or GitHub issues when the external tracker owns the work. Do not mirror external status into a local ticket file.
+Use Jira or GitHub issues when the external tracker owns the work. Do not mirror external status into a local ticket file.
 
-## Task boundaries
-
-Create one task for one independently reviewable outcome. Add a dependency only when another task produces required input. Use subagents only for independent work with separate ownership.
-
-For `TASKS.md`, use this compact shape:
-
-```md
-# <Work item>
-
-## Goal
-## Non-goals
-## Success criteria
-
-### Task 1: [ ] <Outcome>
-- Owner/files: <surface>
-- Depends on: <task or none>
-- Verification: `<command>` proves <claim>
-- Evidence: <result or pending>
-- Risk or decision: <item or none>
-```
-
-Use `[ ]` for pending, `[x]` for verified complete, and `[!]` for a concrete blocker. Update state only when a task starts, completes, blocks, or changes scope. Git remains the worktree record.
-
-## Tickets
+Create one ticket for one independently reviewable outcome. Add a dependency only when another ticket produces required input. Use subagents only for independent work with separate ownership.
 
 A ticket must let an engineer perform the required work without guessing. Confirm current behavior and ownership before assigning implementation.
 
@@ -41,36 +18,7 @@ Use the hierarchy and relationship types supported by the target tracker. Verify
 - **Story or issue:** Define one independently reviewable outcome under its verified parent when the tracker supports hierarchy.
 - **Subtask:** Use only when part of a story needs separate ownership, sequencing, or verification. Keep ordinary implementation steps in the story.
 
-Use this external-parent shape when needed:
-
-```md
-## Goal
-## Children
-## Acceptance criteria
-## Non-goals
-```
-
-Use this minimal story shape:
-
-```md
-## Goal
-## Work
-## Acceptance criteria
-## Non-goals
-## Testing
-```
-
-For a bug, use:
-
-```md
-## Observed behavior
-## Environment
-## Root-cause evidence
-## Proposed fix
-## Testing
-```
-
-Omit a proposed fix when evidence does not support one. Make investigation the deliverable when the owner or cause is unknown.
+Follow the selected ticket format. Omit a proposed fix when evidence does not support one. Make investigation the deliverable when the owner or cause is unknown.
 
 ### Source and code links
 

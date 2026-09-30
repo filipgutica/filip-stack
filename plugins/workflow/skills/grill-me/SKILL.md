@@ -38,7 +38,7 @@ Do not turn the interview into a generic checklist. Do not ask the user to redis
 
 Read [grill log guidance](references/grill-log.md) only when a log path is known or the user requests persistence.
 
-Store a log beside a referenced work artifact or under `~/.engineering-workflow/<work-item>/grills/`. Do not block the interview on storage. If no destination is clear, keep a concise checkpoint in the conversation.
+Return decisions in conversation by default. When persistence is requested, use the supplied path, a location beside a referenced artifact, or `~/.engineering-workflow/<project-or-subject>/grills/`. Saving a log requires no work-item setup or companion artifacts. Do not block the interview on storage.
 
 Record material decisions and changed assumptions. Do not record every turn, a transcript, hidden reasoning, full source content, or repeated instructions.
 

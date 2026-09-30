@@ -1,0 +1,7 @@
+interface:
+  display_name: "Checkpoint"
+  short_description: "Capture verified state for a pause or handoff"
+  default_prompt: "Use $workflow:checkpoint to capture the current work state and next action."
+
+policy:
+  allow_implicit_invocation: false

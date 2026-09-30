@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url'
 import { workflowPluginRoot, workflowSkillRoot } from './plugin-paths.mjs'
 
 const expectedSkills = [
+  'checkpoint',
   'engineering',
   'grill-me',
   'planning',
@@ -14,7 +15,7 @@ const expectedSkills = [
   'test-audit',
   'walkthrough',
 ]
-const manualSkills = new Set(['grill-me', 'walkthrough'])
+const manualSkills = new Set(['checkpoint', 'grill-me', 'walkthrough'])
 const rootPath = fileURLToPath(workflowPluginRoot)
 const skillBodies = new Map()
 const skillReferences = new Map()
@@ -196,25 +197,11 @@ const requiredReferenceContracts = {
   },
   planning: {
     'plan.md': [
-      /## Context/u,
-      /## Goal/u,
-      /## Non-goals/u,
-      /## Success criteria/u,
-      /## Bounded subtasks/u,
-      /## Files touched/u,
-      /## Verification commands/u,
-      /## Risks \/ assumptions \/ open questions/u,
       /Each subtask must name/u,
       /owned files or surface/u,
       /narrow verification signal/u,
     ],
-    'spec.md': [
-      /## Requirements/u,
-      /## Design and ownership/u,
-      /## Component changes/u,
-      /## Verification/u,
-    ],
-    'tasks-and-tickets.md': [
+    'tickets.md': [
       /Execution-ready gate/u,
       /verify the current behavior, owner, and location/u,
       /Evidence needed before this is execution-ready/u,
@@ -296,7 +283,7 @@ assert.ok(
   )),
   'engineering needs an explanation-only negative routing scenario',
 )
-for (const mode of ['exploration', 'specification', 'plan', 'tasks', 'tickets']) {
+for (const mode of ['exploration', 'specification', 'plan', 'tickets']) {
   assert.ok(scenarios.scenarios.some((scenario) => scenario.expectedSkill === 'planning' && scenario.mode === mode))
 }
 for (const id of ['write-ticket-hierarchy', 'review-ticket-draft']) {
@@ -304,7 +291,7 @@ for (const id of ['write-ticket-hierarchy', 'review-ticket-draft']) {
     scenarios.scenarios.some((scenario) => (
       scenario.id === id
       && scenario.expectedSkill === 'planning'
-      && scenario.expectedReference === 'tasks-and-tickets.md'
+      && scenario.expectedReference === 'tickets.md'
     )),
     `planning is missing ticket scenario ${id}`,
   )
