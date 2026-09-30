@@ -63,7 +63,7 @@
       "expectedSkill": "planning",
       "activation": "implicit",
       "mode": "tickets",
-      "expectedReference": "tasks-and-tickets.md"
+      "expectedReference": "tickets.md"
     },
     {
       "id": "write-ticket-hierarchy",
@@ -71,7 +71,7 @@
       "expectedSkill": "planning",
       "activation": "implicit",
       "mode": "tickets",
-      "expectedReference": "tasks-and-tickets.md"
+      "expectedReference": "tickets.md"
     },
     {
       "id": "review-exact-range",
@@ -95,15 +95,7 @@
       "expectedSkill": "planning",
       "activation": "implicit",
       "mode": "tickets",
-      "expectedReference": "tasks-and-tickets.md"
-    },
-    {
-      "id": "write-task-file",
-      "prompt": "Create a TASKS.md for this multi-step implementation.",
-      "expectedSkill": "planning",
-      "activation": "implicit",
-      "mode": "tasks",
-      "expectedReference": "tasks-and-tickets.md"
+      "expectedReference": "tickets.md"
     },
     {
       "id": "explore-direction",
@@ -123,7 +115,7 @@
     },
     {
       "id": "explicit-grill-log",
-      "prompt": "Use $workflow:grill-me and persist the material decisions in this work item's grill log.",
+      "prompt": "Use $workflow:grill-me and save the material decisions in a grill log.",
       "expectedSkill": "grill-me",
       "activation": "explicit",
       "mode": "interview-with-log",
@@ -151,7 +143,7 @@
       "expectedSkill": "technical-writing",
       "activation": "implicit",
       "mode": "pr-description",
-      "expectedReference": "pr-description.md"
+      "expectedReference": null
     },
     {
       "id": "writing-near-miss",
@@ -208,6 +200,30 @@
       "activation": "implicit",
       "mode": "campaign",
       "expectedReference": "campaign.md"
+    },
+    {
+      "id": "explicit-checkpoint",
+      "prompt": "Use $workflow:checkpoint to capture the current work state before I hand it off.",
+      "expectedSkill": "checkpoint",
+      "activation": "explicit",
+      "mode": "conversation-snapshot",
+      "expectedReference": null
+    },
+    {
+      "id": "explicit-checkpoint-save",
+      "prompt": "Use $workflow:checkpoint and save a new checkpoint in the default notes location.",
+      "expectedSkill": "checkpoint",
+      "activation": "explicit",
+      "mode": "saved-snapshot",
+      "expectedReference": null
+    },
+    {
+      "id": "checkpoint-near-miss",
+      "prompt": "What remains to finish this change?",
+      "expectedSkill": null,
+      "activation": "none",
+      "mode": "manual-skill-near-miss",
+      "expectedReference": null
     }
   ]
 }

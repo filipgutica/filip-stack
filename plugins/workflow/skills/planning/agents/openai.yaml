@@ -1,6 +1,6 @@
 interface:
   display_name: "Planning"
-  short_description: "Create specs, plans, tasks, and tickets"
+  short_description: "Explore directions and draft specs, plans, and tickets"
   default_prompt: "Use $workflow:planning to turn this request into one decision-ready engineering artifact."
 
 policy:

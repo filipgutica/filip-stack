@@ -6,21 +6,22 @@ repository.
 
 ## Workflow v2
 
-Workflow v2 is intentionally small. Seven skills cover the normal engineering
+Workflow v2 is intentionally small. Eight skills cover the normal engineering
 loop without chaining a large collection of procedures together.
 
 | Skill | Use |
 | --- | --- |
 | `engineering` | Implement, debug, refactor, respond to review feedback, and verify authorized code changes. |
-| `planning` | Explore a problem or produce one specification, plan, task set, or ticket set. |
+| `planning` | Explore a problem or produce one specification, plan, or ticket set. |
 | `test-audit` | Gate new tests and audit changed coverage before pushing or merging. |
 | `review` | Read-only review or final verification of one exact change range or artifact. |
 | `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
 | `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
 | `walkthrough` | Explicitly inspect and explain a change one verifiable slice at a time. |
+| `checkpoint` | Explicitly capture an evidence-backed snapshot for pausing or handing off work. |
 
 `engineering`, `planning`, `review`, `test-audit`, and `technical-writing` may be selected
-from a matching request. `grill-me` and `walkthrough` are manual-only.
+from a matching request. `grill-me`, `walkthrough`, and `checkpoint` are manual-only.
 
 ### How it stays small
 
@@ -35,7 +36,7 @@ routes select internal modes without chaining public Workflow skills:
 
 - `engineering` selects implementation, debugging, refactoring, or review
   correction guidance.
-- `planning` selects exploration, specification, plan, tasks, or tickets.
+- `planning` selects exploration, specification, plan, or tickets.
 - `review` selects read-only review or final verification of an exact range or
   artifact.
 
@@ -53,23 +54,33 @@ graph schema, state engine, or orchestration runtime for linear work.
 
 ### Artifacts and migration
 
-Most planning and writing stays in the conversation. Persist an artifact only
-when the user asks for one. New local artifacts use a flat work-item layout:
+Planning and writing stay in the conversation unless the user requests a saved
+document. Use the supplied destination. Specifications and plans are optional;
+ordinary changes do not create task ledgers or companion artifacts.
+
+Personal PR, ticket, specification, and plan formats live under
+`~/.agents/writing/`, managed separately from the plugin. Global instructions
+point to the matching reference when drafting, creating, or updating a document.
+Applicable repository or project guidance determines required structure.
+Technical-writing owns prose quality; planning owns scope, decisions, and
+implementation readiness. The plugin remains usable without personal references.
+
+Grill and walkthrough log formats stay beside their skills. For an explicitly
+requested saved log or checkpoint without a supplied destination, use plain
+notes directories:
 
 ```text
-~/.engineering-workflow/<work-item>/
-├── SPEC.md
-├── PLAN.md
-├── TASKS.md
+~/.engineering-workflow/<project-or-subject>/
+├── checkpoints/
 ├── grills/
 └── walkthroughs/
 ```
 
-Workflow v2 does not install hooks, maintain a topic registry, or mutate local
-workflow state automatically. Existing `~/.engineering-workflow` data is left
-untouched. After the v2 release is verified, handle migration as a separate,
-small task: copy useful artifacts into the simplified layout, verify the copy,
-and remove old data only with explicit user approval.
+These folders need no work-item setup, registry, or task tracking. Checkpoints
+are new snapshots; earlier snapshots remain intact. Recheck current evidence
+when resuming. Workflow does not install hooks or update these notes
+automatically. Existing `~/.engineering-workflow` data is left untouched;
+any migration or cleanup is a separate, explicitly authorized task.
 
 This is a breaking redesign. Removed v1 skills and hooks have no compatibility
 aliases.
@@ -93,7 +104,7 @@ code, and repository contracts continue to outrank stored guidance.
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
-  skills/                  The seven Workflow skills and conditional references
+  skills/                  The eight Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
   hooks/                   Bounded capture, ask, or skip lifecycle guidance
@@ -150,7 +161,7 @@ pnpm install
 pnpm check
 ```
 
-The check enforces the seven-skill Workflow inventory, declared activation
+The check enforces the eight-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
 Field Guide hooks and state, both plugins' runtime payloads, and plugin manifest
 validity. Prompt routing scenarios are evaluation inputs; static contracts do

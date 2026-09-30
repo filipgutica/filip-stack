@@ -2,22 +2,7 @@
 
 Write a plan that another engineer can execute without rediscovering scope or ownership.
 
-Use these headings in order:
-
-```md
-# <Title>
-
-## Context
-## Goal
-## Non-goals
-## Success criteria
-## Bounded subtasks
-## Files touched
-## Verification commands
-## Risks / assumptions / open questions
-```
-
-Start Context with the nearest durable source or `Source: Direct request`.
+Follow the selected document format. Identify the nearest durable source or the direct request. Scale detail to the change; a short linear change needs a short plan.
 
 Each subtask must name:
 

@@ -1,12 +1,12 @@
 # Walkthrough log
 
-Use one plain Markdown log for one explicit walkthrough. Prefer this location when the user selected a work item:
+Use one plain Markdown log for one explicit walkthrough. When persistence is requested and no destination is supplied, prefer:
 
 ```text
-~/.engineering-workflow/<work-item>/walkthroughs/YYYY-MM-DD-<subject>.md
+~/.engineering-workflow/<project-or-subject>/walkthroughs/YYYY-MM-DD-<subject>.md
 ```
 
-Use a supplied path when present. Do not create manifests, sequence registries, repository mirrors, or generated indexes.
+Use a supplied path when present. Saving a log requires no work-item setup or companion artifacts. Do not create manifests, sequence registries, repository mirrors, or generated indexes.
 
 Use this shape:
 

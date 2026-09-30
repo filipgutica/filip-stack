@@ -2,23 +2,7 @@
 
 A specification defines what the system must do and which decisions constrain implementation. It is not a file-by-file implementation plan.
 
-Use this shape when each section adds information:
-
-```md
-# <Title>
-
-## Context
-## Goal
-## Non-goals
-## Requirements
-## Design and ownership
-## Component changes
-## Verification
-## Rollout or migration
-## Risks, assumptions, and open questions
-```
-
-Keep a small specification small. Add component, interface, data-flow, migration, or rollout detail only when the requested behavior needs it.
+Follow the selected document format. Keep a small specification small. Add component, interface, data-flow, migration, or rollout detail only when the requested behavior needs it.
 
 ## Decision quality
 
