@@ -1,3 +1,10 @@
+# [2.6.0](https://github.com/filipgutica/filip-stack/compare/v2.5.0...v2.6.0) (2026-10-02)
+
+
+### Features
+
+* **workflow:** add first-reader review for written deliverables ([aedefeb](https://github.com/filipgutica/filip-stack/commit/aedefebdb9fb0bc03001e3b5613628290464ee2c))
+
 # [2.5.0](https://github.com/filipgutica/filip-stack/compare/v2.4.0...v2.5.0) (2026-09-30)
 
 
