@@ -44,6 +44,6 @@ Do not use review as a substitute for a blocked or failed test.
 
 Map every completion claim to an exact command result or bounded direct evidence. Record the reviewed change range and any version, seed, or environment detail needed to reproduce a result. Do not report unavailable evidence as passed.
 
-Report the result, the checks that ran, and the remaining risk.
+Report results, checks, and remaining risk after [first-reader review](../technical-writing/references/technical-prose.md#first-reader-review).
 Do not describe self-review as independent review.
 Do not commit, push, publish, deploy, or modify external work without user authority.
