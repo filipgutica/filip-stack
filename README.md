@@ -13,7 +13,7 @@ loop without chaining a large collection of procedures together.
 | --- | --- |
 | `engineering` | Implement, debug, refactor, respond to review feedback, and verify authorized code changes. |
 | `planning` | Explore a problem or produce one specification, plan, or ticket set. |
-| `test-audit` | Gate new tests and audit changed coverage before pushing or merging. |
+| `test-audit` | Audit test value for requested cleanup, substantial coverage changes, or uncertain preservation. |
 | `review` | Read-only review or final verification of one exact change range or artifact. |
 | `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
 | `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
@@ -31,8 +31,10 @@ The plugin uses three levels of progressive disclosure:
 2. The selected `SKILL.md` supplies the operating contract.
 3. A short reference file is opened only when the selected mode needs it.
 
-Engineering and Review invoke `test-audit` for test quality gates. Other
-routes select internal modes without chaining public Workflow skills:
+Engineering and Review check routine test value directly. They invoke
+`test-audit` for requested audits, substantial coverage changes, or uncertainty
+about test value or preservation. Other routes select internal modes without
+chaining public Workflow skills:
 
 - `engineering` selects implementation, debugging, refactoring, or review
   correction guidance.

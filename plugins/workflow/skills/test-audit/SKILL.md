@@ -1,6 +1,6 @@
 ---
 name: test-audit
-description: "Invoke whenever writing, changing, reviewing, or sweeping tests. Authoring gate for new tests plus audit workflow for low-value, implementation-coupled, or duplicative tests and the test-only production seams they demand."
+description: "Audit tests when requested, during explicit cleanup, for substantial coverage changes, or when test value or preservation is uncertain. Authoring gate and audit workflow for low-value, implementation-coupled, or duplicative tests and the test-only production seams they demand. Routine test edits use Engineering's test-value questions without a separate audit."
 ---
 
 # Test Audit
@@ -12,6 +12,11 @@ production seams alive. Continue broad audits as separate coherent follow-up
 PRs; optimize for confidence, not deletion count. Campaign mode prunes one
 whole subsystem's test surface (every test file a plugin or core area owns);
 before starting one, read [campaign guidance](references/campaign.md).
+
+Workflow selects the requested files or exact change range before invoking
+this skill. Apply the authoring gate and audit procedure within that scope;
+whole-subsystem campaigns require an explicit request. Read-only audits
+authorize findings, not fixes. Repository-required checks and audits still apply.
 
 ## Authoring gate
 
@@ -46,39 +51,14 @@ regression, or an independently meaningful contract. In an audit, an existing
 test that must change for behavior-preserving source reorganization is suspect,
 not automatically deletable; the authoring gate still rejects new ones.
 
+Read [value criteria](references/value-criteria.md) for discovery, retention,
+candidate evidence, and edit shape.
+
 Before judging a candidate, read the complete test and production owner, its
 entry point, callers, callees, sibling implementations, overlapping tests, CI
 routing, and relevant history. Read root and scoped `AGENTS.md` files first.
 When the test claims dependency-backed behavior, inspect the dependency source
 or types directly.
-
-## Focused PR gate
-
-Before pushing or merging, audit every added or changed test and affected
-test-only production seam in the exact base-to-head range alongside the
-existing review gates. Include removed tests when deletion can remove the
-only proof of a contract. Read [value criteria](references/value-criteria.md)
-and apply the authoring gate, junk patterns, and retention bar to each test.
-Trace overlapping coverage to establish the primary owner; keep broader
-cleanup outside this gate. For a wider sweep, use
-[discovery guidance](references/value-criteria.md#discovery).
-
-Check assertions against the production owner, not just the test name. For
-TDD, a red-to-green result must fail for the intended behavior, not a broken
-fixture or an unrelated guard. Apply the authoring gate before writing the
-red test. Characterization tests for unchanged behavior should pass on the
-baseline; they do not need an artificial red result.
-
-Record the audited base and head, findings, regression evidence, and limits.
-With no test changes or affected test seams, record “not applicable.” Recheck
-the range before merging; repeat affected portions when later changes
-invalidate the audit. An unresolved finding or required evidence that could
-not be verified leaves the gate incomplete. Passing tests do not replace
-this audit, and this audit does not replace required checks.
-
-Read-only audit requests authorize findings, not fixes. Use the
-[candidate evidence and edit shape](references/value-criteria.md#candidate-evidence)
-before deleting a test, and edit only within existing implementation authority.
 
 ## Validation
 
@@ -101,7 +81,7 @@ and CI routing; do not assume commands from another project exist.
 ## Landing and continuation
 
 Commit, push, open a PR, or land only when authorized. Use the repository's
-landing procedure and the focused PR gate above. Land one coherent PR at a
+landing procedure and validation above. Land one coherent PR at a
 time; after landing, refresh from current main and rerun read-only discovery
 for the next high-confidence batch.
 

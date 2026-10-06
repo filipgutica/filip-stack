@@ -186,11 +186,35 @@
       "expectedReference": "value-criteria.md"
     },
     {
-      "id": "gate-tdd-tests",
-      "prompt": "Use $workflow:test-audit before writing a failing test for this behavior.",
+      "id": "review-proposed-test",
+      "prompt": "Use $workflow:test-audit to review whether this proposed regression test adds useful coverage.",
       "expectedSkill": "test-audit",
       "activation": "explicit",
       "mode": "authoring",
+      "expectedReference": "value-criteria.md"
+    },
+    {
+      "id": "ordinary-test-edit",
+      "prompt": "Extend this existing parser test table with one case for the reported negative-input bug, using the current fixture and assertions.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "implementation",
+      "expectedReference": null
+    },
+    {
+      "id": "review-small-test-change",
+      "prompt": "Review this one-case test change in the verified diff without editing files.",
+      "expectedSkill": "review",
+      "activation": "implicit",
+      "mode": "exact-range",
+      "expectedReference": null
+    },
+    {
+      "id": "uncertain-coverage-preservation",
+      "prompt": "These replacement integration tests may miss failures covered by the deleted suites. Determine whether the contracts still have independent proof.",
+      "expectedSkill": "test-audit",
+      "activation": "implicit",
+      "mode": "focused-audit",
       "expectedReference": "value-criteria.md"
     },
     {

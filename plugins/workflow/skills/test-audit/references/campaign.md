@@ -62,6 +62,9 @@ assertions to carry into keepers, and the test-only production seams unlocked.
 
 ## 5. Cutover
 
+For read-only campaigns, stop after step 4 and report the lane plans and
+baseline defects (step 7) as findings.
+
 Edit lane by lane. Serialize changes to shared harnesses and support files
 through one owner. With each lane, remove the test-only production seams it
 unlocks: injection parameters, getters, reset exports, and indirection layers.
@@ -87,14 +90,15 @@ every restored contract has a caught mutation.
 
 ## 7. Product defects
 
-A baseline failure that survives into a keeper is a bug report. Fix it at its
-owner as a separate commit, and prove it through the real user flow, with a
+A baseline failure that survives into a keeper is a bug report. Report it;
+when repairs are authorized, fix it at its owner as a separate commit and
+prove it through the real user flow, with a
 **control** run that reverts the fix and shows the old behavior. Record
 unrelated product discrepancies you find as follow-ups instead of fixing them
 in the campaign.
 
-Done when each repaired defect has a failing control and a passing candidate
-on the same harness.
+Done when baseline defects are reported or each authorized repair has a
+failing control and a passing candidate on the same harness.
 
 ## 8. Reconcile and hand off
 

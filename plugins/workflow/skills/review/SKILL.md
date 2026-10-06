@@ -30,7 +30,7 @@ only when it changes the review.
 2. Inspect every changed file in the selected subject and trace affected
    behavior to its current owner. Read relevant tests, types, configuration,
    documentation, and callers when they can change the conclusion.
-3. Invoke $workflow:test-audit for added, changed, or removed tests and affected test-only production seams in the selected range. Keep this audit read-only and include its outcome and limits in the review.
+3. Review changed tests for observable behavior, credible failures, and distinct coverage. For removed coverage, establish the proof that remains or why the contract is obsolete. Invoke $workflow:test-audit when requested, when coverage changes are substantial, or when test value or preservation is uncertain. Keep it read-only and bounded to the selected range.
 4. Separate confirmed findings from inferences and unknowns. A finding must
    identify the path and line or command evidence, explain the affected
    contract, and state the practical consequence. Do not report style
