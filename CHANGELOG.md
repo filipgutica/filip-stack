@@ -1,3 +1,10 @@
+# [2.7.0](https://github.com/filipgutica/filip-stack/compare/v2.6.0...v2.7.0) (2026-10-06)
+
+
+### Features
+
+* **workflow:** scale test audits and review to risk ([4b25dc0](https://github.com/filipgutica/filip-stack/commit/4b25dc05a136dac11d729a22cb928b1541eeee2c))
+
 # [2.6.0](https://github.com/filipgutica/filip-stack/compare/v2.5.0...v2.6.0) (2026-10-02)
 
 
