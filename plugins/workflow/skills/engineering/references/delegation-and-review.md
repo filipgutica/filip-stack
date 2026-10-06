@@ -30,18 +30,18 @@ Before claiming completion, account for every required delegated task, integrate
 
 ## Independent review
 
-Use proportional review:
+Scale independent review to risk and honor user or repository requirements:
 
-- Tiny mechanical changes can use main-thread diff inspection.
-- Meaningful changes use a separate review context when available.
-- Broad, ambiguous, security-sensitive, or public-contract changes use an adversarial reviewer.
+- Routine bounded changes can use focused checks and main-thread diff inspection.
+- Consequential changes, such as data-integrity, migration, or hard-to-reverse behavior, use a separate review context when available.
+- Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer.
 
 Give the reviewer:
 
 - the requested outcome and non-goals
 - the exact diff, branch range, or changed files
 - relevant contract and test evidence
-- the focused test audit for changed tests and affected test-only seams; include it in this review assignment
+- relevant test-value and preservation evidence; include a focused test audit when one was needed
 - known limits without coaching it toward acceptance
 
 Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.

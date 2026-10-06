@@ -122,7 +122,8 @@ SOFTWARE.
 
 Source: https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit
 
-Workflow adapts the authoring gate, test value criteria, and campaign guide.
+Workflow retains the authoring gate, test value criteria, and campaign guide,
+with local adaptations for activation, scope, and authority boundaries.
 Repository-specific commands are replaced by the receiving repository's
 validation and landing policy.
 
