@@ -35,9 +35,10 @@ only when it changes the review.
    identify the path and line or command evidence, explain the affected
    contract, and state the practical consequence. Do not report style
    preferences, stale assumptions, or unsupported scope expansion.
-5. Run the narrowest appropriate checks once. Repeat a check only when new
-   evidence, a scope correction, an environment change, or a newly discovered
-   failure gives a reason to do so. A blocked, rejected, timed-out, or
+5. Run the narrowest appropriate checks once, including available complexity,
+   dead-code, and duplication analysis. Repeat a check only when new evidence, a
+   scope correction, an environment change, or a newly discovered failure gives
+   a reason. A blocked, rejected, timed-out, or
    unavailable check is a limitation, not a pass.
 
 ## Finish

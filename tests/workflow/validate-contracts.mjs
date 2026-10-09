@@ -91,6 +91,7 @@ assert.ok(totalSkillWords <= 4000, `Top-level skills exceed 4,000 words (${total
 const requiredContracts = {
   engineering: [
     /production owner, and the nearest existing test/u,
+    /nearby implementations, the production owner/u,
     /Identify the owner, boundary, and verification signal before editing/u,
     /Do nothing when no change is needed/u,
     /Run the nearest existing test that observes the requested contract.*record the baseline/u,
@@ -99,6 +100,8 @@ const requiredContracts = {
     /Add focused coverage for a credible regression that existing tests would miss/u,
     /new bug regression test fails on the pre-fix code for the expected reason/u,
     /Make the smallest causal change/u,
+    /Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value/u,
+    /Simplify changed code if useful, preserving behavior; rerun affected checks after edits/u,
     /standard library or native framework features.*installed dependencies/u,
     /one clear owner per responsibility/u,
     /extend existing seams/u,
@@ -108,10 +111,9 @@ const requiredContracts = {
     /Stop when the contract passes/u,
     /Read \[testing and debugging\].*when.*uncertain/u,
     /Read \[verification tools\].*only when/u,
-    /Read \[delegation and review\].*substantial independent work, consequential or hard-to-reverse changes/u,
+    /Read \[delegation and review\].*for delegation or any change beyond a routine bounded edit/u,
     /Routine bounded changes can use focused checks and final diff inspection/u,
     /Invoke \$workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty/u,
-    /broad scope, material ambiguity, security, public-contract, concurrency, or ownership risk/u,
     /Do not use review as a substitute for a blocked or failed test/u,
     /Map every completion claim to an exact command result or bounded direct evidence/u,
     /Do not report unavailable evidence as passed/u,
@@ -128,6 +130,7 @@ const requiredContracts = {
     /does not authorize fixes, file edits/u,
     /checks and exact results, and limitations for every review/u,
     /Existing authorization remains valid/u,
+    /including available complexity,\s+dead-code, and duplication analysis/u,
     /Invoke \$workflow:test-audit when requested, when coverage changes are substantial, or when test value or preservation is uncertain/u,
   ],
   'grill-me': [
@@ -203,7 +206,8 @@ const requiredReferenceContracts = {
       /one outcome/u,
       /owned files or a read-only responsibility/u,
       /The main thread owns integration, scope, and acceptance/u,
-      /Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer/u,
+      /Every other change gets an adversarial reviewer on the final diff/u,
+      /critique the plan before editing/u,
     ],
     'verification-tools.md': [
       /Verification record/u,
