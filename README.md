@@ -6,7 +6,7 @@ repository.
 
 ## Workflow v2
 
-Workflow v2 is intentionally small. Eight skills cover the normal engineering
+Workflow v2 is intentionally small. Nine skills cover the normal engineering
 loop without chaining a large collection of procedures together.
 
 | Skill | Use |
@@ -15,13 +15,16 @@ loop without chaining a large collection of procedures together.
 | `planning` | Explore a problem or produce one specification, plan, or ticket set. |
 | `test-audit` | Audit test value for requested cleanup, substantial coverage changes, or uncertain preservation. |
 | `review` | Read-only review or final verification of one exact change range or artifact. |
+| `simplify` | Explicitly simplify selected code with three independent reviews while preserving behavior. |
 | `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
 | `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
 | `walkthrough` | Explicitly inspect and explain a change one verifiable slice at a time. |
 | `checkpoint` | Explicitly capture an evidence-backed snapshot for pausing or handing off work. |
 
 `engineering`, `planning`, `review`, `test-audit`, and `technical-writing` may be selected
-from a matching request. `grill-me`, `walkthrough`, and `checkpoint` are manual-only.
+from a matching request. `grill-me`, `walkthrough`, `checkpoint`, and `simplify` are manual-only.
+
+Invoke Simplify with `$workflow:simplify` in Codex or `/workflow:simplify` in Claude.
 
 ### How it stays small
 
@@ -106,7 +109,7 @@ code, and repository contracts continue to outrank stored guidance.
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
-  skills/                  The eight Workflow skills and conditional references
+  skills/                  The nine Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
   hooks/                   Bounded capture, ask, or skip lifecycle guidance
@@ -163,11 +166,15 @@ pnpm install
 pnpm check
 ```
 
-The check enforces the eight-skill Workflow inventory, declared activation
+The check enforces the nine-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
 Field Guide hooks and state, both plugins' runtime payloads, and plugin manifest
 validity. Prompt routing scenarios are evaluation inputs; static contracts do
 not prove model behavior.
+
+The original eight skill entrypoints retain their combined 3,500-word limit.
+Adding the manual Simplify skill gives the nine-skill inventory a 4,000-word
+limit. Each skill entrypoint remains limited to 900 words.
 
 ## Releases and versioning
 

@@ -11,11 +11,12 @@ const expectedSkills = [
   'grill-me',
   'planning',
   'review',
+  'simplify',
   'technical-writing',
   'test-audit',
   'walkthrough',
 ]
-const manualSkills = new Set(['checkpoint', 'grill-me', 'walkthrough'])
+const manualSkills = new Set(['checkpoint', 'grill-me', 'simplify', 'walkthrough'])
 const rootPath = fileURLToPath(workflowPluginRoot)
 const skillBodies = new Map()
 const skillReferences = new Map()
@@ -32,6 +33,7 @@ const actualSkills = skillEntries
 assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
 
 let totalSkillWords = 0
+let otherSkillWords = 0
 for (const name of expectedSkills) {
   const skillRoot = workflowSkillRoot(name)
   const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
@@ -40,6 +42,7 @@ for (const name of expectedSkills) {
   const description = frontmatter.match(/^description:\s*(.+)$/mu)?.[1] ?? ''
   const count = words(skill)
   totalSkillWords += count
+  if (name !== 'simplify') otherSkillWords += count
   skillBodies.set(name, body)
 
   assert.match(frontmatter, new RegExp(`^name: ${name}$`, 'm'))
@@ -82,7 +85,8 @@ for (const name of expectedSkills) {
     assert.ok(await exists(new URL(link, skillRoot)), `${name}/SKILL.md links to missing ${link}`)
   }
 }
-assert.ok(totalSkillWords <= 3500, `Top-level skills exceed 3,500 words (${totalSkillWords})`)
+assert.ok(otherSkillWords <= 3500, `Skills other than Simplify exceed 3,500 words (${otherSkillWords})`)
+assert.ok(totalSkillWords <= 4000, `Top-level skills exceed 4,000 words (${totalSkillWords})`)
 
 const requiredContracts = {
   engineering: [
@@ -135,6 +139,14 @@ const requiredContracts = {
     /Do not invent behavior, verification, ownership, or rationale/u,
     /Apply \[Simplified Technical English guidance\]\(references\/technical-prose\.md\)/u,
     /code, commands, and identifiers are unchanged/u,
+  ],
+  simplify: [
+    /Run only when the user invokes this skill/u,
+    /three read-only subagents in parallel/u,
+    /Wait for a usable assessment from all three agents before editing/u,
+    /report the incomplete review and stop before editing/u,
+    /Keep one writer in the main thread/u,
+    /Preserve meaningful tests and error handling/u,
   ],
   walkthrough: [
     /Present one coherent slice at a time/u,
