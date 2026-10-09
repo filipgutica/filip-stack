@@ -49,6 +49,8 @@ Read [testing and debugging](references/testing-and-debugging.md) when reproduct
 
 Read [verification tools](references/verification-tools.md) only when repository checks cannot cover the affected contract.
 
+Read [hygiene](references/commit-and-pr-hygiene.md) before subtasks, commits, PRs.
+
 Invoke $workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty about test value or preservation. Bound it to the affected tests and owners; routine test edits use the questions above.
 
 Read [delegation and review](references/delegation-and-review.md) for substantial independent work, consequential or hard-to-reverse changes, or broad scope, material ambiguity, security, public-contract, concurrency, or ownership risk. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
