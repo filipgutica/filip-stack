@@ -1,6 +1,6 @@
 # Delegation and review
 
-Use delegation to reduce context or latency, or to add genuine independence. Do not delegate tightly coupled work that the main thread can complete with less coordination.
+Keep focused or tightly coupled work in the main thread. Delegate substantial independent implementation, discovery, or verification when parallel work, context isolation, or independent judgment justifies the full coordination cost; a cheaper model alone is not a reason to delegate. Continue independent work while agents run.
 
 Before starting a new agent, check whether an existing agent fits the role and responsibility. Reuse it for related follow-up work, corrections, and verification. Start a new agent when the role changes, parallel work requires another agent, independent judgment is needed, or the existing context is unsuitable. Do not use an implementation agent to independently review its own changes.
 
@@ -16,7 +16,11 @@ A delegated task must define:
 
 Use dependency order. Run tasks in parallel only when neither task needs the other's result and their writes cannot overlap. Keep one writer for an overlapping area. Return compact evidence instead of a transcript.
 
-The main thread owns integration, scope, and acceptance. A worker does not accept its own work.
+The main thread owns integration, scope, and acceptance. Validate delegated results against source and checks; a worker does not accept its own work.
+
+## Delegated verification
+
+Routine checks belong to the main thread or implementer. For a substantial delegated verification batch, use the implementation profile with a check-only assignment: do not change source, tests, configuration, or documentation; allow required build outputs and caches; return exact commands, outcomes, and relevant failure evidence; do not fix failures.
 
 ## Escalation and recovery
 
@@ -32,9 +36,10 @@ Before claiming completion, account for every required delegated task, integrate
 
 Scale independent review to risk and honor user or repository requirements:
 
-- Routine bounded changes can use focused checks and main-thread diff inspection.
-- Consequential changes, such as data-integrity, migration, or hard-to-reverse behavior, use a separate review context when available.
-- Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer.
+- Routine changes, meaning small, local, and reversible with no public-contract, data, security, or concurrency impact, use focused checks and main-thread diff inspection.
+- Every other change gets an adversarial reviewer on the final diff. When the design is uncertain or hard to reverse, have it critique the plan before editing too.
+
+Advice and planning do not replace required review.
 
 Give the reviewer:
 
@@ -42,6 +47,7 @@ Give the reviewer:
 - the exact diff, branch range, or changed files
 - relevant contract and test evidence
 - relevant test-value and preservation evidence; include a focused test audit when one was needed
+- results from available complexity, dead-code, and duplication analysis, such as `fallow audit`, run after the last edit
 - known limits without coaching it toward acceptance
 
 Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.

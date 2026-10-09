@@ -248,6 +248,22 @@
       "activation": "none",
       "mode": "manual-skill-near-miss",
       "expectedReference": null
+    },
+    {
+      "id": "explicit-simplify",
+      "prompt": "Use $workflow:simplify to simplify the code changed in this task without changing its behavior.",
+      "expectedSkill": "simplify",
+      "activation": "explicit",
+      "mode": "behavior-preserving-simplification",
+      "expectedReference": null
+    },
+    {
+      "id": "simplify-near-miss",
+      "prompt": "Refactor this parser to remove redundant branches while preserving its behavior.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "refactoring",
+      "expectedReference": "testing-and-debugging.md"
     }
   ]
 }

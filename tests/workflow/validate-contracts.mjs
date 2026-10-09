@@ -11,11 +11,12 @@ const expectedSkills = [
   'grill-me',
   'planning',
   'review',
+  'simplify',
   'technical-writing',
   'test-audit',
   'walkthrough',
 ]
-const manualSkills = new Set(['checkpoint', 'grill-me', 'walkthrough'])
+const manualSkills = new Set(['checkpoint', 'grill-me', 'simplify', 'walkthrough'])
 const rootPath = fileURLToPath(workflowPluginRoot)
 const skillBodies = new Map()
 const skillReferences = new Map()
@@ -26,12 +27,13 @@ const words = (content) => content.match(/[\p{L}\p{N}][\p{L}\p{N}'-]*/gu)?.lengt
 
 const skillEntries = await readdir(new URL('skills/', workflowPluginRoot), { withFileTypes: true })
 const actualSkills = skillEntries
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
   .map((entry) => entry.name)
   .sort()
 assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
 
 let totalSkillWords = 0
+let otherSkillWords = 0
 for (const name of expectedSkills) {
   const skillRoot = workflowSkillRoot(name)
   const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
@@ -40,6 +42,7 @@ for (const name of expectedSkills) {
   const description = frontmatter.match(/^description:\s*(.+)$/mu)?.[1] ?? ''
   const count = words(skill)
   totalSkillWords += count
+  if (name !== 'simplify') otherSkillWords += count
   skillBodies.set(name, body)
 
   assert.match(frontmatter, new RegExp(`^name: ${name}$`, 'm'))
@@ -82,11 +85,13 @@ for (const name of expectedSkills) {
     assert.ok(await exists(new URL(link, skillRoot)), `${name}/SKILL.md links to missing ${link}`)
   }
 }
-assert.ok(totalSkillWords <= 3500, `Top-level skills exceed 3,500 words (${totalSkillWords})`)
+assert.ok(otherSkillWords <= 3500, `Skills other than Simplify exceed 3,500 words (${otherSkillWords})`)
+assert.ok(totalSkillWords <= 4000, `Top-level skills exceed 4,000 words (${totalSkillWords})`)
 
 const requiredContracts = {
   engineering: [
     /production owner, and the nearest existing test/u,
+    /nearby implementations, the production owner/u,
     /Identify the owner, boundary, and verification signal before editing/u,
     /Do nothing when no change is needed/u,
     /Run the nearest existing test that observes the requested contract.*record the baseline/u,
@@ -95,6 +100,8 @@ const requiredContracts = {
     /Add focused coverage for a credible regression that existing tests would miss/u,
     /new bug regression test fails on the pre-fix code for the expected reason/u,
     /Make the smallest causal change/u,
+    /Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value/u,
+    /Simplify changed code if useful, preserving behavior; rerun affected checks after edits/u,
     /standard library or native framework features.*installed dependencies/u,
     /one clear owner per responsibility/u,
     /extend existing seams/u,
@@ -104,10 +111,9 @@ const requiredContracts = {
     /Stop when the contract passes/u,
     /Read \[testing and debugging\].*when.*uncertain/u,
     /Read \[verification tools\].*only when/u,
-    /Read \[delegation and review\].*substantial independent work, consequential or hard-to-reverse changes/u,
+    /Read \[delegation and review\].*for delegation or any change beyond a routine bounded edit/u,
     /Routine bounded changes can use focused checks and final diff inspection/u,
     /Invoke \$workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty/u,
-    /broad scope, material ambiguity, security, public-contract, concurrency, or ownership risk/u,
     /Do not use review as a substitute for a blocked or failed test/u,
     /Map every completion claim to an exact command result or bounded direct evidence/u,
     /Do not report unavailable evidence as passed/u,
@@ -124,6 +130,7 @@ const requiredContracts = {
     /does not authorize fixes, file edits/u,
     /checks and exact results, and limitations for every review/u,
     /Existing authorization remains valid/u,
+    /including available complexity,\s+dead-code, and duplication analysis/u,
     /Invoke \$workflow:test-audit when requested, when coverage changes are substantial, or when test value or preservation is uncertain/u,
   ],
   'grill-me': [
@@ -135,6 +142,14 @@ const requiredContracts = {
     /Do not invent behavior, verification, ownership, or rationale/u,
     /Apply \[Simplified Technical English guidance\]\(references\/technical-prose\.md\)/u,
     /code, commands, and identifiers are unchanged/u,
+  ],
+  simplify: [
+    /Run only when the user invokes this skill/u,
+    /three read-only subagents in parallel/u,
+    /Wait for a usable assessment from all three agents before editing/u,
+    /report the incomplete review and stop before editing/u,
+    /Keep one writer in the main thread/u,
+    /Preserve meaningful tests and error handling/u,
   ],
   walkthrough: [
     /Present one coherent slice at a time/u,
@@ -191,7 +206,8 @@ const requiredReferenceContracts = {
       /one outcome/u,
       /owned files or a read-only responsibility/u,
       /The main thread owns integration, scope, and acceptance/u,
-      /Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer/u,
+      /Every other change gets an adversarial reviewer on the final diff/u,
+      /critique the plan before editing/u,
     ],
     'verification-tools.md': [
       /Verification record/u,
