@@ -26,7 +26,7 @@ const words = (content) => content.match(/[\p{L}\p{N}][\p{L}\p{N}'-]*/gu)?.lengt
 
 const skillEntries = await readdir(new URL('skills/', workflowPluginRoot), { withFileTypes: true })
 const actualSkills = skillEntries
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
   .map((entry) => entry.name)
   .sort()
 assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
