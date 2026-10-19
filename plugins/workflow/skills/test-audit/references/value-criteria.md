@@ -48,7 +48,9 @@ cross-language, package, release, or architecture contract. Also keep:
   the contract changes (the user-facing key, byte, or path) and survives an
   identifier-only refactor;
 - a retained test that fails on the baseline: treat it as a possible product
-  bug, reproduce it, and repair the owner rather than deleting it.
+  bug, reproduce it, and repair the owner rather than deleting it;
+- the last proof of a behavior or acceptance criterion: a test whose removal
+  leaves no remaining test that fails when that behavior breaks.
 
 Static or slow is not a deletion reason. A test that resembles implementation
 may still be the independent contract; prove otherwise before removing it.
@@ -61,10 +63,20 @@ not ready for deletion:
 - exact test name and location;
 - what failure it can actually detect;
 - non-test callers of the covered production or support seam;
-- stronger remaining owner-boundary proof, or why no proof is needed;
+- its [coverage record](#coverage-record) entry, or why its contract is obsolete;
 - relevant history and the reason the test or seam exists;
 - production or test-support deletion unlocked;
 - risk and the focused validation command.
+
+## Coverage record
+
+Write one entry per added or removed test in the handoff, judged against the
+final diff. Each entry names concrete tests as `file:test name`:
+
+- added test: the regression it catches and the existing test that misses it;
+- removed test: one remaining test that runs the removed case's inputs and
+  fails when that behavior breaks, confirmed by reading its inputs and
+  assertions.
 
 ## Edit shape
 
