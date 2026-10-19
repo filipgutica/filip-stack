@@ -40,9 +40,11 @@ refactoring is asserting implementation, not behavior; rewrite it at the
 owning boundary before landing it.
 
 Bug regression tests must fail on the pre-fix code for the intended reason and
-pass after the owner-boundary repair. A regression test that never demonstrably
-failed does not establish that it detects the bug. One regression at the owner boundary
+pass after the owner-boundary repair. One regression at the owner boundary
 covers the bug; do not replay the same scenario at every layer it crosses.
+
+Before handoff, write the [coverage record](references/value-criteria.md#coverage-record)
+against the final diff.
 
 ## Value bar
 

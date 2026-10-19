@@ -41,7 +41,7 @@ For ordinary test edits, consider:
 
 Prefer extending existing cases over duplicating proof. Another test layer can protect a distinct risk. Dependency injection for clocks, network, or storage can support deterministic tests at real boundaries.
 
-Before removing coverage, establish the failure it detects and the stronger proof that remains, or why its contract is obsolete. Preserve correct assertions rather than weakening them to pass.
+Before removing coverage, write its [coverage record](../test-audit/references/value-criteria.md#coverage-record) entry. Preserve correct assertions rather than weakening them to pass.
 
 ## Load only what the route needs
 

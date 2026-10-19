@@ -244,6 +244,9 @@ const requiredReferenceContracts = {
   'test-audit': {
     'value-criteria.md': [
       /narrowest boundary that can credibly expose its failure/u,
+      /the last proof of a behavior or acceptance criterion/u,
+      /## Coverage record/u,
+      /removed test: one remaining test that runs the removed case's inputs/u,
     ],
   },
 }
