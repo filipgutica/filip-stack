@@ -92,7 +92,7 @@ const requiredContracts = {
   engineering: [
     /production owner, and the nearest existing test/u,
     /nearby implementations, the production owner/u,
-    /Identify the owner, boundary, and verification signal before editing/u,
+    /Define behavior to preserve and boundary checks before editing/u,
     /Do nothing when no change is needed/u,
     /Run the nearest existing test that observes the requested contract.*record the baseline/u,
     /Fix the production owner before changing a correct existing test/u,
@@ -111,7 +111,7 @@ const requiredContracts = {
     /Stop when the contract passes/u,
     /Read \[testing and debugging\].*when.*uncertain/u,
     /Read \[verification tools\].*only when/u,
-    /Read \[delegation and review\].*for delegation or any change beyond a routine bounded edit/u,
+    /Read \[delegation and review\].*before delegating and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk/u,
     /Routine bounded changes can use focused checks and final diff inspection/u,
     /Invoke \$workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty/u,
     /Do not use review as a substitute for a blocked or failed test/u,
@@ -124,6 +124,8 @@ const requiredContracts = {
     /Load only the reference for the selected mode/u,
     /observable completion signal/u,
     /Persist it only when the user requests/u,
+    /Could an engineer follow every instruction literally/u,
+    /separate reviewer critique a consequential or ambiguous artifact/u,
   ],
   review: [
     /This route is read-only/u,
@@ -196,9 +198,8 @@ const requiredReferenceContracts = {
   },
   engineering: {
     'testing-and-debugging.md': [
-      /Identify suitable existing coverage.*recording the baseline/u,
-      /Add focused coverage when a credible regression would escape existing tests/u,
-      /same focused coverage again.*compare it with the baseline/u,
+      /Follow \[Engineering\]\(\.\.\/SKILL\.md\)'s baseline, focused regression, production change, and verification sequence/u,
+      /Fix a test error before implementation/u,
       /Behavior-preserving refactor/u,
       /Trace the value, state, or control flow backward to its owner/u,
     ],
@@ -206,8 +207,10 @@ const requiredReferenceContracts = {
       /one outcome/u,
       /owned files or a read-only responsibility/u,
       /The main thread owns integration, scope, and acceptance/u,
-      /Every other change gets an adversarial reviewer on the final diff/u,
-      /critique the plan before editing/u,
+      /Consequential changes, .* use a separate review context when available/u,
+      /Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer/u,
+      /Advice and planning do not replace required review/u,
+      /start from the diff and contract/u,
     ],
     'verification-tools.md': [
       /Verification record/u,
@@ -234,9 +237,13 @@ const requiredReferenceContracts = {
       /first material reference to code/u,
       /Never put a machine-local path in a ticket/u,
       /Critic pass/u,
-      /Could an engineer follow every instruction literally/u,
+      /Apply \[Planning\]\(\.\.\/SKILL\.md\)'s critic pass/u,
       /evidence, necessity, clarity, ownership, hierarchy, relationships, duplication, scope, and verification/u,
-      /separate reviewer when available/u,
+    ],
+  },
+  'test-audit': {
+    'value-criteria.md': [
+      /narrowest boundary that can credibly expose its failure/u,
     ],
   },
 }

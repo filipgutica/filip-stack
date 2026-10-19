@@ -36,8 +36,9 @@ Before claiming completion, account for every required delegated task, integrate
 
 Scale independent review to risk and honor user or repository requirements:
 
-- Routine changes, meaning small, local, and reversible with no public-contract, data, security, or concurrency impact, use focused checks and main-thread diff inspection.
-- Every other change gets an adversarial reviewer on the final diff. When the design is uncertain or hard to reverse, have it critique the plan before editing too.
+- Routine bounded changes can use focused checks and main-thread diff inspection.
+- Consequential changes, such as data-integrity, migration, or hard-to-reverse behavior, use a separate review context when available.
+- Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer.
 
 Advice and planning do not replace required review.
 
@@ -50,7 +51,7 @@ Give the reviewer:
 - results from available complexity, dead-code, and duplication analysis, such as `fallow audit`, run after the last edit
 - known limits without coaching it toward acceptance
 
-Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.
+Ask the reviewer to start from the diff and contract and to read other files only to investigate a concrete contract risk or verify a finding. Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.
 
 Review is independent only when a separate reviewer identity or context inspected the actual change. Self-review, an unscoped approval, or a claim without an artifact does not qualify.
 

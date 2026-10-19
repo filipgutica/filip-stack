@@ -10,7 +10,7 @@ Deliver the smallest authorized change and prove the requested contract.
 ## Work the change
 
 1. Inspect Git state, the requested behavior, the supplied diff, nearby implementations, the production owner, and the nearest existing test.
-2. Identify the owner, boundary, and verification signal before editing. For nontrivial work, state a plan and check it against a simpler alternative. Do nothing when no change is needed.
+2. Define behavior to preserve and boundary checks before editing. For nontrivial work, state a plan and check it against a simpler alternative. Do nothing when no change is needed.
 3. Run the nearest existing test that observes the requested contract when suitable coverage exists, and record the baseline.
 4. Fix the production owner before changing a correct existing test.
 5. Change an existing test only when repository evidence proves that its contract changed or the test is wrong.
@@ -53,7 +53,7 @@ Read [hygiene](references/commit-and-pr-hygiene.md) before subtasks, commits, PR
 
 Invoke $workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty about test value or preservation. Bound it to the affected tests and owners; routine test edits use the questions above.
 
-Read [delegation and review](references/delegation-and-review.md) for delegation or any change beyond a routine bounded edit. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
+Read [delegation and review](references/delegation-and-review.md) before delegating and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
 
 Do not use review as a substitute for a blocked or failed test.
 
@@ -61,6 +61,6 @@ Do not use review as a substitute for a blocked or failed test.
 
 Map every completion claim to an exact command result or bounded direct evidence. Record the reviewed change range and any version, seed, or environment detail needed to reproduce a result. Do not report unavailable evidence as passed.
 
-Report results, checks, and remaining risk after [first-reader review](../technical-writing/references/technical-prose.md#first-reader-review).
+Report results, checks, and remaining risk plainly.
 Do not describe self-review as independent review.
 Do not commit, push, publish, deploy, or modify external work without user authority.

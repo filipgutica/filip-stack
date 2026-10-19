@@ -4,13 +4,7 @@ Use the path that matches the requested change.
 
 ## New or corrected behavior
 
-1. Identify suitable existing coverage for the requested observable behavior and run the narrowest command that executes it, recording the baseline.
-2. If coverage observes the contract, use it as the baseline. Add focused coverage when a credible regression would escape existing tests. Reversible, low-impact changes can use existing checks instead of new implementation-mirroring tests.
-3. When a new regression test is needed, confirm that it fails for the expected missing or incorrect behavior before implementation. Do not force a failing test when existing coverage already observes the contract.
-4. Fix a test error before implementation.
-5. Make the smallest production change that can pass the test.
-6. Run the same focused coverage again and compare it with the baseline.
-7. Repeat or broaden verification only when the changed code, an observed failure, or an unresolved risk justifies it.
+Follow [Engineering](../SKILL.md)'s baseline, focused regression, production change, and verification sequence. Fix a test error before implementation.
 
 Prefer an observable result to a mock interaction. Use mocks or dependency injection at real boundaries when they make failure paths or timing deterministic.
 
