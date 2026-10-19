@@ -1,3 +1,11 @@
+# [2.9.0](https://github.com/filipgutica/filip-stack/compare/v2.8.0...v2.9.0) (2026-10-19)
+
+
+### Features
+
+* **workflow:** name coverage evidence in the test-audit handoff ([05ccee2](https://github.com/filipgutica/filip-stack/commit/05ccee200180134c0080b873fe352f5aebad031e))
+* **workflow:** re-gate added tests against final test-audit range ([72942da](https://github.com/filipgutica/filip-stack/commit/72942daae48e65ff6388feb7efbdb060dc523cee))
+
 # [2.8.0](https://github.com/filipgutica/filip-stack/compare/v2.7.0...v2.8.0) (2026-10-19)
 
 
