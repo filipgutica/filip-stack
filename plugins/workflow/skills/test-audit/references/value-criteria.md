@@ -4,7 +4,7 @@ Use this checklist for every new or changed test and every audit candidate.
 
 ## Layer selection
 
-A contract's primary owner is the narrowest boundary that can credibly expose its failure. That is the "strongest boundary" in the [authoring gate](../SKILL.md#authoring-gate). Other layers cover only their distinct wiring, lifecycle, transport, or user-visible risks. Neither a coverage percentage nor a test count establishes sufficiency.
+A contract's primary owner is the narrowest boundary that can credibly expose its failure. That is the "strongest boundary" in the [authoring gate](../SKILL.md#authoring-gate). Other layers cover only their distinct wiring, lifecycle, transport, or user-visible risks. When an owner suite iterates a shared registry, such as a field list, operator table, or fixture map, the new registry entry is the test; a bespoke per-entry test needs a risk the loop cannot reach. Neither a coverage percentage nor a test count establishes sufficiency.
 
 ## Junk patterns
 
@@ -17,7 +17,8 @@ matches one, and audits hunt for existing tests that do.
 - exact source, import, or string greps;
 - private predicate or call-shape tests duplicated at real boundaries;
 - repeated scenarios or assertions that add no distinct failure detection;
-- provider-local replays of shared helpers;
+- provider-, field-, or entity-local replays of shared helpers or validation,
+  such as a per-field accept and reject matrix for a generic filter class;
 - tests whose only purpose is preserving test-only exports, globals, or wrappers;
 - dead production code whose only callers are tests;
 - expected values produced by the helper or renderer under test;
@@ -30,7 +31,10 @@ matches one, and audits hunt for existing tests that do.
 - negative controls that pass for an unrelated reason, such as a denial from a
   different guard or a rejection the production path never reaches;
 - names or fixtures that promise more than the input exercises, such as a
-  "retires the window" test asserting the window was not cleared.
+  "retires the window" test asserting the window was not cleared;
+- misdirected guards: a test named for one feature whose real contract is an
+  unrelated cross-cutting change, such as a schema-wide `oneOf` to `anyOf`
+  switch; name and scope it to that contract, or move it with the change.
 
 ## Retention bar
 
