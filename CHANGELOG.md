@@ -1,3 +1,17 @@
+# [2.8.0](https://github.com/filipgutica/filip-stack/compare/v2.7.0...v2.8.0) (2026-10-19)
+
+
+### Bug Fixes
+
+* ignore hidden skill directories in validators ([ec67aea](https://github.com/filipgutica/filip-stack/commit/ec67aea93846ff3844175c69561bd7c50acc4354))
+* restore risk-scaled review gate and add Planning critic pass ([8932f1d](https://github.com/filipgutica/filip-stack/commit/8932f1db6394981ea51b42ec72127d95a351c297)), closes [hi#risk](https://github.com/hi/issues/risk)
+
+
+### Features
+
+* add a manual Simplify workflow skill ([a13e250](https://github.com/filipgutica/filip-stack/commit/a13e2507771f7acd3e9a34140b68a72e99827154))
+* tighten Engineering and adversarial review guidance ([39dde91](https://github.com/filipgutica/filip-stack/commit/39dde914a12670f11aedc50358a07845996bcf92))
+
 # [2.7.0](https://github.com/filipgutica/filip-stack/compare/v2.6.0...v2.7.0) (2026-10-06)
 
 
