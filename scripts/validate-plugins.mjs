@@ -101,7 +101,7 @@ for (const pluginDir of pluginDirs) {
   }
 
   const skillsDir = join(pluginRoot, 'skills')
-  const skills = await readdir(skillsDir).catch(() => [])
+  const skills = (await readdir(skillsDir).catch(() => [])).filter((name) => !name.startsWith('.'))
   for (const skill of skills) {
     await validateSkillMd(join(skillsDir, skill, 'SKILL.md'))
   }

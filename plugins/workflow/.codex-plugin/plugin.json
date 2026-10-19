@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "Engineering Workflow",
     "shortDescription": "Plan, build, verify, explain, and review engineering work.",
-    "longDescription": "Eight focused skills cover planning, authorized engineering changes, read-only review, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+    "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [

@@ -11,11 +11,12 @@ const expectedSkills = [
   'grill-me',
   'planning',
   'review',
+  'simplify',
   'technical-writing',
   'test-audit',
   'walkthrough',
 ]
-const manualSkills = new Set(['checkpoint', 'grill-me', 'walkthrough'])
+const manualSkills = new Set(['checkpoint', 'grill-me', 'simplify', 'walkthrough'])
 const rootPath = fileURLToPath(workflowPluginRoot)
 const skillBodies = new Map()
 const skillReferences = new Map()
@@ -26,12 +27,13 @@ const words = (content) => content.match(/[\p{L}\p{N}][\p{L}\p{N}'-]*/gu)?.lengt
 
 const skillEntries = await readdir(new URL('skills/', workflowPluginRoot), { withFileTypes: true })
 const actualSkills = skillEntries
-  .filter((entry) => entry.isDirectory())
+  .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
   .map((entry) => entry.name)
   .sort()
 assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
 
 let totalSkillWords = 0
+let otherSkillWords = 0
 for (const name of expectedSkills) {
   const skillRoot = workflowSkillRoot(name)
   const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
@@ -40,6 +42,7 @@ for (const name of expectedSkills) {
   const description = frontmatter.match(/^description:\s*(.+)$/mu)?.[1] ?? ''
   const count = words(skill)
   totalSkillWords += count
+  if (name !== 'simplify') otherSkillWords += count
   skillBodies.set(name, body)
 
   assert.match(frontmatter, new RegExp(`^name: ${name}$`, 'm'))
@@ -82,12 +85,14 @@ for (const name of expectedSkills) {
     assert.ok(await exists(new URL(link, skillRoot)), `${name}/SKILL.md links to missing ${link}`)
   }
 }
-assert.ok(totalSkillWords <= 3500, `Top-level skills exceed 3,500 words (${totalSkillWords})`)
+assert.ok(otherSkillWords <= 3500, `Skills other than Simplify exceed 3,500 words (${otherSkillWords})`)
+assert.ok(totalSkillWords <= 4000, `Top-level skills exceed 4,000 words (${totalSkillWords})`)
 
 const requiredContracts = {
   engineering: [
     /production owner, and the nearest existing test/u,
-    /Identify the owner, boundary, and verification signal before editing/u,
+    /nearby implementations, the production owner/u,
+    /Define behavior to preserve and boundary checks before editing/u,
     /Do nothing when no change is needed/u,
     /Run the nearest existing test that observes the requested contract.*record the baseline/u,
     /Fix the production owner before changing a correct existing test/u,
@@ -95,6 +100,8 @@ const requiredContracts = {
     /Add focused coverage for a credible regression that existing tests would miss/u,
     /new bug regression test fails on the pre-fix code for the expected reason/u,
     /Make the smallest causal change/u,
+    /Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value/u,
+    /Simplify changed code if useful, preserving behavior; rerun affected checks after edits/u,
     /standard library or native framework features.*installed dependencies/u,
     /one clear owner per responsibility/u,
     /extend existing seams/u,
@@ -104,10 +111,9 @@ const requiredContracts = {
     /Stop when the contract passes/u,
     /Read \[testing and debugging\].*when.*uncertain/u,
     /Read \[verification tools\].*only when/u,
-    /Read \[delegation and review\].*substantial independent work, consequential or hard-to-reverse changes/u,
+    /Read \[delegation and review\].*before delegating and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk/u,
     /Routine bounded changes can use focused checks and final diff inspection/u,
     /Invoke \$workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty/u,
-    /broad scope, material ambiguity, security, public-contract, concurrency, or ownership risk/u,
     /Do not use review as a substitute for a blocked or failed test/u,
     /Map every completion claim to an exact command result or bounded direct evidence/u,
     /Do not report unavailable evidence as passed/u,
@@ -118,12 +124,15 @@ const requiredContracts = {
     /Load only the reference for the selected mode/u,
     /observable completion signal/u,
     /Persist it only when the user requests/u,
+    /Could an engineer follow every instruction literally/u,
+    /separate reviewer critique a consequential or ambiguous artifact/u,
   ],
   review: [
     /This route is read-only/u,
     /does not authorize fixes, file edits/u,
     /checks and exact results, and limitations for every review/u,
     /Existing authorization remains valid/u,
+    /including available complexity,\s+dead-code, and duplication analysis/u,
     /Invoke \$workflow:test-audit when requested, when coverage changes are substantial, or when test value or preservation is uncertain/u,
   ],
   'grill-me': [
@@ -135,6 +144,14 @@ const requiredContracts = {
     /Do not invent behavior, verification, ownership, or rationale/u,
     /Apply \[Simplified Technical English guidance\]\(references\/technical-prose\.md\)/u,
     /code, commands, and identifiers are unchanged/u,
+  ],
+  simplify: [
+    /Run only when the user invokes this skill/u,
+    /three read-only subagents in parallel/u,
+    /Wait for a usable assessment from all three agents before editing/u,
+    /report the incomplete review and stop before editing/u,
+    /Keep one writer in the main thread/u,
+    /Preserve meaningful tests and error handling/u,
   ],
   walkthrough: [
     /Present one coherent slice at a time/u,
@@ -181,9 +198,8 @@ const requiredReferenceContracts = {
   },
   engineering: {
     'testing-and-debugging.md': [
-      /Identify suitable existing coverage.*recording the baseline/u,
-      /Add focused coverage when a credible regression would escape existing tests/u,
-      /same focused coverage again.*compare it with the baseline/u,
+      /Follow \[Engineering\]\(\.\.\/SKILL\.md\)'s baseline, focused regression, production change, and verification sequence/u,
+      /Fix a test error before implementation/u,
       /Behavior-preserving refactor/u,
       /Trace the value, state, or control flow backward to its owner/u,
     ],
@@ -191,7 +207,10 @@ const requiredReferenceContracts = {
       /one outcome/u,
       /owned files or a read-only responsibility/u,
       /The main thread owns integration, scope, and acceptance/u,
+      /Consequential changes, .* use a separate review context when available/u,
       /Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer/u,
+      /Advice and planning do not replace required review/u,
+      /start from the diff and contract/u,
     ],
     'verification-tools.md': [
       /Verification record/u,
@@ -218,9 +237,13 @@ const requiredReferenceContracts = {
       /first material reference to code/u,
       /Never put a machine-local path in a ticket/u,
       /Critic pass/u,
-      /Could an engineer follow every instruction literally/u,
+      /Apply \[Planning\]\(\.\.\/SKILL\.md\)'s critic pass/u,
       /evidence, necessity, clarity, ownership, hierarchy, relationships, duplication, scope, and verification/u,
-      /separate reviewer when available/u,
+    ],
+  },
+  'test-audit': {
+    'value-criteria.md': [
+      /narrowest boundary that can credibly expose its failure/u,
     ],
   },
 }

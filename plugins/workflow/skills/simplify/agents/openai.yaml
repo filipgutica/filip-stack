@@ -1,0 +1,7 @@
+interface:
+  display_name: "Simplify"
+  short_description: "Simplify code with independent agent reviews"
+  default_prompt: "Use $workflow:simplify to simplify the selected code while preserving its behavior."
+
+policy:
+  allow_implicit_invocation: false

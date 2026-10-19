@@ -26,8 +26,6 @@ Link the first material reference to code with a verified repository URL, ref, a
 
 ### Critic pass
 
-Before returning or publishing a draft, ask: **Could an engineer follow every instruction literally without confusion or extra unnecessary work?** Check evidence, necessity, clarity, ownership, hierarchy, relationships, duplication, scope, and verification. Remove unsupported instructions, repeated constraints, implementation guesses, and unrelated testing.
-
-For a consequential or ambiguous ticket set, use a separate reviewer when available. Give it the draft and inspected evidence without coaching it toward acceptance. Verify its findings before revising the draft.
+Apply [Planning](../SKILL.md)'s critic pass before returning or publishing a draft. For tickets, check evidence, necessity, clarity, ownership, hierarchy, relationships, duplication, scope, and verification. Remove unsupported instructions, repeated constraints, implementation guesses, and unrelated testing.
 
 Specification-to-ticket decomposition is this mode with a ready specification as its source. Create only independently owned outcomes. Do not turn each implementation step into a separate ticket.

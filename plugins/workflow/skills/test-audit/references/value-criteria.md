@@ -2,6 +2,10 @@
 
 Use this checklist for every new or changed test and every audit candidate.
 
+## Layer selection
+
+A contract's primary owner is the narrowest boundary that can credibly expose its failure. That is the "strongest boundary" in the [authoring gate](../SKILL.md#authoring-gate). Other layers cover only their distinct wiring, lifecycle, transport, or user-visible risks. Neither a coverage percentage nor a test count establishes sufficiency.
+
 ## Junk patterns
 
 The shared checklist for both modes: the authoring gate rejects a new test that
@@ -12,7 +16,7 @@ matches one, and audits hunt for existing tests that do.
 - copied fixtures, inventories, manifests, or export lists;
 - exact source, import, or string greps;
 - private predicate or call-shape tests duplicated at real boundaries;
-- duplicate invocations of the same contract;
+- repeated scenarios or assertions that add no distinct failure detection;
 - provider-local replays of shared helpers;
 - tests whose only purpose is preserving test-only exports, globals, or wrappers;
 - dead production code whose only callers are tests;
