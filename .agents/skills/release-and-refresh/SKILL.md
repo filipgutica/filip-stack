@@ -12,7 +12,7 @@ This is a repository development skill. Keep it outside `plugins/`; the Claude e
 ## Establish the release candidate
 
 - Verify the repository identity, current branch, dirty files, upstream, and existing PR. Fetch origin before comparing with main. Preserve unrelated changes and stage only the accepted work.
-- Read `.github/workflows/ci.yml`, `.releaserc.json`, and `package.json` for the current checks and release contract. Use the pnpm major version declared by CI and run `pnpm check` (currently pnpm 10; `npx --yes pnpm@10 check` selects it when the host has another major). Report unavailable checks accurately; do not treat a blocked command as passing.
+- Read `.github/workflows/ci.yml`, `.releaserc.json`, and `package.json` for the current checks and release contract. Run `pnpm check`; pnpm switches to the version pinned by `packageManager` in `package.json`, which CI also uses. Report unavailable checks accurately; do not treat a blocked command as passing.
 - Review the final diff and apply the appropriate independent review from the engineering workflow. Use a truthful conventional commit. Semantic-release owns version stamping and changelog generation; do not edit versions by hand or manufacture a release-triggering change.
 
 ## Publish and merge
