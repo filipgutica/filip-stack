@@ -32,7 +32,7 @@ Read [presentation patterns](references/presentation-patterns.md) before buildin
 1. Inspect the selected diff, changed files, tests, documentation, and verification evidence.
 2. Build an ordered map that accounts for every changed file.
 3. Group files by behavior or contract rather than presenting a file dump.
-4. Present one slice with its behavior, decision, decisive evidence, verification, and risk. Include one lesson, a concrete example, and an optional exercise with an expected observation, following the presentation patterns.
+4. Present one slice with its behavior, decision, decisive evidence, verification, and risk. Include one lesson, a concrete example, and an exercise when the presentation patterns call for one.
 5. Ask one focused acceptance question.
 6. Pause for the user's response.
 7. Record a valid correction without implementing it.

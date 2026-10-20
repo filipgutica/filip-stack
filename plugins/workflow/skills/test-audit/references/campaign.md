@@ -10,17 +10,15 @@ Each step ends on its completion criterion; do not start the next step early.
 
 Record the subsystem's test and support line counts and every test file's
 pass/fail state at a pinned `main` SHA. Keep baseline failures in their own
-list: in the Telegram campaign, all three were real delivery bugs, not stale
-tests.
+list; they may be real product bugs rather than stale tests.
 
 Done when every in-scope test file has a recorded baseline result.
 
 ## 2. Lanes and inventory
 
 Split the surface into **lanes** along production owner boundaries, not file
-prefixes. For Telegram these were accounts, commands, context, dispatch,
-inbound, outbound, persistence, transport, shared, harness, and live/QA
-scenarios. Include the subsystem's cases at shared core boundaries and its QA
+prefixes, such as accounts, commands, dispatch, inbound, outbound,
+persistence, transport, and live/QA scenarios for a messaging plugin. Include the subsystem's cases at shared core boundaries and its QA
 and live-proof harness tests.
 
 Done when every test file and QA scenario the subsystem owns belongs to exactly
@@ -42,7 +40,7 @@ unless its rows need different marks; then mark each row.
   table case, a stronger boundary suite, or the shared owner in another package;
 - `D`: delete, naming the proof that remains, or why no contract exists.
 
-Judge a test by its assertions, not its name. One Telegram test named for
+Judge a test by its assertions, not its name. One test named for
 retiring a progress window asserted the window was _not_ cleared.
 
 Done when every declaration in the lane has a mark and an evidence line.
@@ -50,7 +48,7 @@ Done when every declaration in the lane has a mark and an evidence line.
 ## 4. Layer plan per lane
 
 Treat the per-test ledger as input, not as the edit list. A second read-only
-pass, starting from the ledger, looks for the redundant **layer**. In Telegram,
+pass, starting from the ledger, looks for the redundant **layer**, such as
 several dispatch suites replayed the same shared compositor through one mocked
 preview, around stronger real-stream and HTTP-fixture suites. Name the
 **keeper** suite for each contract. Prefer the real transport boundary with a
@@ -68,9 +66,9 @@ baseline defects (step 7) as findings.
 Edit lane by lane. Serialize changes to shared harnesses and support files
 through one owner. With each lane, remove the test-only production seams it
 unlocks: injection parameters, getters, reset exports, and indirection layers.
-Register moved suites in CI routing and test inventories. Update shrink-only
-line-cap baselines. Put durable test-ownership rules in the subsystem's
-`AGENTS.md`, drawn from mistakes this campaign actually found.
+Register moved suites in CI routing and test inventories, and update any
+line-cap baselines the repository keeps. Propose durable test-ownership rules
+for the subsystem's instructions only from mistakes this campaign found.
 
 Done when every lane plan is applied and each lane's keepers pass.
 
@@ -79,8 +77,7 @@ Done when every lane plan is applied and each lane's keepers pass.
 Before claiming completion, have independent reviewers compare deleted
 coverage against the keepers, one reviewer per boundary group. They look for
 contracts that lost their only proof. They also look for new assertions that
-cannot fail, such as a rejection row the production code never reaches. The
-Telegram review found nine real gaps and one unreachable assertion.
+cannot fail, such as a rejection row the production code never reaches.
 
 For each restored contract, make one deliberate **mutation** of the production
 owner and confirm the keeper goes red. Then restore the source byte for byte.
@@ -102,12 +99,12 @@ failing control and a passing candidate on the same harness.
 
 ## 8. Reconcile and hand off
 
-Campaigns outlive many `main` commits. Merge `main` rather than rebasing a
-long, many-commit campaign. When `main` modified a file the campaign
-deleted, reconcile the new contract with its keeper before deciding whether
-the deletion still holds. Confirm every new regression `main` added still has
-a home. Rerun the whole
-subsystem suite and repeat live proof on the merged head.
+Campaigns outlive many `main` commits. Synchronize with `main` the way the
+repository requires. When `main` modified a file the campaign deleted,
+reconcile the new contract with its keeper before deciding whether the
+deletion still holds. Confirm every new regression `main` added still has a
+home. Rerun the whole subsystem suite, and any live proof the campaign relies
+on, on the synchronized head.
 
 Expect review tooling to see a truncated file list on a diff this large.
 Record maintainer decisions for generic compatibility flags in the PR evidence

@@ -183,6 +183,17 @@ analytics is first enabled. The reviewed capture rate depends on which cases
 are sampled; use a stable random UUID per case and include eligible misses in
 the sample. The report does not infer corrections outside that sample.
 
+An impact input has `schemaVersion: 1`, the retrieval's `analyticsEventId` as
+`retrievalEventId`, a returned `guidanceId`, and `effect: applied` or
+`decision_changed`. A separate reviewer can confirm or reject a claimed
+decision change. A reviewer can also label sampled corrections as
+`eligible_captured`, `eligible_missed`, or `not_eligible`. Do not review your
+own claimed impact. The report separates activity, agent reports, and reviewed
+outcomes. `reviewConfirmationRate` is the fraction of reviewed decision-change
+claims confirmed; `captureRate` is the fraction of eligible cases captured in
+the reviewed sample. Neither estimates an overall prevention rate. An
+invocation event proves the hook ran, not that guidance helped.
+
 ## Obsidian compatibility
 
 You can open `~/.field-guide` as an Obsidian vault for read-only inspection and

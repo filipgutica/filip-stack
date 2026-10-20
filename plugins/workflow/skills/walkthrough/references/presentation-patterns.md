@@ -31,7 +31,7 @@ Order slices from public behavior and contracts through implementation, tests, a
 
 ## Practical lessons
 
-Choose one small exercise that demonstrates the slice's decisive behavior. Establish shared local setup once, then give only slice-specific steps. Ground commands, routes, sample inputs, and breakpoint locations in the inspected repository and selected revision. Verify the local checkout matches that revision before using it to demonstrate the change. Mark missing prerequisites and use a worked example when execution is unavailable; explain the limitation.
+Choose one small exercise that demonstrates the slice's decisive behavior. Offer a runnable exercise by default for the slice that carries the change's main behavior; on minor slices it is optional. Before the user runs it, ask what they expect to observe, then compare that prediction with the result. Establish shared local setup once, then give only slice-specific steps. Ground commands, routes, sample inputs, and breakpoint locations in the inspected repository and selected revision. Verify the local checkout matches that revision before using it to demonstrate the change. Mark missing prerequisites and use a worked example when execution is unavailable; explain the limitation.
 
 Match the exercise to the change:
 
