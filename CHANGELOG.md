@@ -1,3 +1,11 @@
+# [2.10.0](https://github.com/filipgutica/filip-stack/compare/v2.9.0...v2.10.0) (2026-10-21)
+
+
+### Features
+
+* **workflow:** consolidate guidance after the instruction audit ([0c93e0f](https://github.com/filipgutica/filip-stack/commit/0c93e0f6e7a4dbc5ac42bd8f54144348c863e817))
+* **workflow:** own default document formats in Planning and Technical-writing ([b9655f5](https://github.com/filipgutica/filip-stack/commit/b9655f5f73e3ff2c877945b71a2c2a119c8689a5))
+
 # [2.9.0](https://github.com/filipgutica/filip-stack/compare/v2.8.0...v2.9.0) (2026-10-19)
 
 
