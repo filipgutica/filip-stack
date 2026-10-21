@@ -63,12 +63,11 @@ Planning and writing stay in the conversation unless the user requests a saved
 document. Use the supplied destination. Specifications and plans are optional;
 ordinary changes do not create task ledgers or companion artifacts.
 
-Personal PR, ticket, specification, and plan formats live under
-`~/.agents/writing/`, managed separately from the plugin. Global instructions
-point to the matching reference when drafting, creating, or updating a document.
-Applicable repository or project guidance determines required structure.
+Default specification, plan, and ticket formats live in Planning's mode
+references; the PR description format lives in Technical-writing's references.
+User instructions and repository or project guidance take precedence over them.
 Technical-writing owns prose quality; planning owns scope, decisions, and
-implementation readiness. The plugin remains usable without personal references.
+implementation readiness.
 
 Grill and walkthrough log formats stay beside their skills. For an explicitly
 requested saved log or checkpoint without a supplied destination, use plain

@@ -9,7 +9,7 @@ Make technical prose clear, concise, and faithful to the source.
 
 ## Preserve the contract
 
-1. Identify the audience, purpose, required format, and source evidence.
+1. Identify the audience, purpose, required format, and source evidence. PR descriptions follow [pull request guidance](references/pull-requests.md).
 2. Preserve facts, decisions, links, citations, identifiers, code, commands, and required headings.
 3. Separate confirmed facts from assumptions and unresolved items.
 4. Do not invent behavior, verification, ownership, or rationale.
