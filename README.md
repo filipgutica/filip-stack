@@ -191,7 +191,5 @@ marketplace registries before creating the GitHub release.
 
 ## Evaluation
 
-[WORKFLOW_V2_PLAN.md](WORKFLOW_V2_PLAN.md) records the design, evaluation
-findings that motivated it, success criteria, and the proposed matched
-SWE-bench comparison. Paid benchmark runs are intentionally separate from the
-runtime rewrite.
+Skills are evaluated with [PluginBench](https://github.com/filipgutica/pluginbench).
+Past study reports and the lab notebook are in [docs/](docs/).
