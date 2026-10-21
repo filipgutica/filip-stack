@@ -1,6 +1,6 @@
 ---
 name: test-audit
-description: "Audit tests when requested, during explicit cleanup, for substantial coverage changes, or when test value or preservation is uncertain. Authoring gate and audit workflow for low-value, implementation-coupled, or duplicative tests and the test-only production seams they demand. Routine test edits use Engineering's test-value questions without a separate audit."
+description: "Gate and audit tests for low-value, implementation-coupled, or duplicative coverage and the test-only production seams it demands. Use when a test audit or cleanup is requested, coverage changes are substantial, or test value or preservation is uncertain."
 ---
 
 # Test Audit

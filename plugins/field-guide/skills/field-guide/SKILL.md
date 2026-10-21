@@ -15,19 +15,10 @@ The standalone Field Guide plugin hooks add bounded lifecycle guidance at
 `UserPromptSubmit`. They instruct one `capture`, `ask`, or `skip` evaluation
 before the final response.
 
-Codex can show the hook run and injected context because `suppressOutput` is not
-implemented. This visibility does not change the capture decision or final
-response contract.
-
 Field Guide does not register a `Stop` continuation. End-of-task evaluation is
 instructed but not enforced.
 
 Read [references/lifecycle-hooks.md](references/lifecycle-hooks.md) for the host selection, visibility, and privacy contract.
-
-The adapter parses the hook event only to select `hook_event_name`. It does not
-access referenced files, use other event fields, or emit or persist those
-fields. When local analytics is enabled, it records an invocation event using
-only the host environment and time.
 
 Use only this Field Guide plugin for the automatic lifecycle. Do not route the evaluation to host auto-memory or another memory system.
 
@@ -151,10 +142,10 @@ Report findings without changing memory. Maintenance and permanent deletion requ
 ### Local analytics
 
 Analytics is off until explicitly enabled for an initialized guide. It writes
-allowlisted event metadata to `~/.field-guide/analytics/events.jsonl`, separate
-from guidance and review evidence. It never stores task queries, prompt text,
-guidance text, or transcripts. Disable it to stop new events; existing events
-remain available to the report.
+allowlisted event metadata to `~/.field-guide/analytics/events.jsonl` and never
+stores task queries, prompt text, guidance text, or transcripts. Read
+[local analytics](references/storage.md#local-analytics) before recording
+impact or reviewing outcomes.
 
 ```text
 field-guide.mjs analytics-enable --repo-root <path>
@@ -163,17 +154,6 @@ field-guide.mjs analytics-report --repo-root <path> [--since YYYY-MM-DD]
 field-guide.mjs analytics-impact --repo-root <path> --input <json-file>
 field-guide.mjs analytics-review --repo-root <path> --input <json-file>
 ```
-
-An impact input has `schemaVersion: 1`, the retrieval's `analyticsEventId` as
-`retrievalEventId`, a returned `guidanceId`, and `effect: applied` or
-`decision_changed`. A separate reviewer can confirm or reject a claimed
-decision change. A reviewer can also label sampled corrections as
-`eligible_captured`, `eligible_missed`, or `not_eligible`. Do not review your
-own claimed impact. The report separates activity, agent reports, and reviewed
-outcomes. `reviewConfirmationRate` is the fraction of reviewed decision-change
-claims confirmed; `captureRate` is the fraction of eligible cases captured in
-the reviewed sample. Neither estimates an overall prevention rate. An
-invocation event proves the hook ran, not that guidance helped.
 
 All commands accept `--guide-root <path>` for tests or alternate local storage:
 

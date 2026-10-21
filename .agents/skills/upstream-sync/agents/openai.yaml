@@ -1,0 +1,7 @@
+interface:
+  display_name: "Upstream Sync"
+  short_description: "Review upstream changes to adapted skills"
+  default_prompt: "Use $upstream-sync to compare the adapted skills with upstream."
+
+policy:
+  allow_implicit_invocation: false

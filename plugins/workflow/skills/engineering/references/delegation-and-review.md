@@ -53,7 +53,7 @@ Give the reviewer:
 
 Ask the reviewer to start from the diff and contract and to read other files only to investigate a concrete contract risk or verify a finding. Ask for action-required findings only. Each finding must name the affected location, concrete evidence, impact, and smallest correction.
 
-Review is independent only when a separate reviewer identity or context inspected the actual change. Self-review, an unscoped approval, or a claim without an artifact does not qualify.
+Review is independent only when a reviewer that did not author the change inspected the actual change in its own context. Self-review, an unscoped approval, or a claim without an artifact does not qualify.
 
 Verify reviewer findings against live code and the task contract. Reject style preferences, stale assumptions, and scope expansion. Apply valid findings only with implementation authority, then rerun affected checks. Reuse the same reviewer for correction verification unless a fresh judgment is necessary.
 

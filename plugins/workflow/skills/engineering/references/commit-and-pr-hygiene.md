@@ -4,3 +4,4 @@
 - Keep each commit focused on one coherent outcome. Define subtasks around independently verifiable changes and keep tightly coupled work together.
 - Reassess PR boundaries when scope grows. Split distinct, independently reviewable outcomes into separate PRs; stack dependent PRs on their prerequisites and give independent work separate PRs. Follow applicable delegation and authorization requirements.
 - Before drafting, opening, or verifying a PR, read and follow available project PR templates, project PR guidance, and user PR guidance.
+- While babysitting a PR, diagnose each failure, fix real issues, rerun flaky tests or failed infrastructure jobs only when evidence supports it, and verify results after every push or rerun. Report blockers that need user input.

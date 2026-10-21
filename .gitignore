@@ -7,3 +7,4 @@ coverage/
 !.claude/skills/
 .claude/skills/*
 !.claude/skills/release-and-refresh
+!.claude/skills/upstream-sync

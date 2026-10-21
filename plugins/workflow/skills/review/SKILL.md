@@ -26,7 +26,10 @@ only when it changes the review.
 
 ## Review the contract
 
-1. Read the request, acceptance criteria, and declared source of truth.
+1. Read the request, acceptance criteria, and declared source of truth. Read
+   the applicable user, global, and repository instructions, such as
+   `AGENTS.md` or `CLAUDE.md`, and check the change against their relevant
+   requirements.
 2. Inspect every changed file in the selected subject and trace affected
    behavior to its current owner. Read relevant tests, types, configuration,
    documentation, and callers when they can change the conclusion.
@@ -49,7 +52,7 @@ State the inspected subject, checks and exact results, and limitations for every
   next action for an authorized implementer
 - no findings supported by the inspected evidence
 
-State whether the review was independent. Self-review or a review without a
-separate reviewer identity is not independent. Corrections use Engineering with implementation authority.
+State whether the review was independent, as defined in
+[delegation and review](../engineering/references/delegation-and-review.md). Corrections use Engineering with implementation authority.
 Existing authorization remains valid; do not ask again when the request already
 authorizes the fixes.

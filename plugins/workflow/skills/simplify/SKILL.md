@@ -16,13 +16,13 @@ Read the affected code, its callers, project instructions, and the nearest exist
 
 ## Independent review
 
-Launch these three read-only subagents in parallel using explicit available host profiles. Give each the same bounded target and relevant project constraints. Ask for compact findings with file and line references, supporting evidence, and uncertainties; the first two agents should also propose concrete changes. They must not edit files or delegate further.
+Obtain three independent, read-only assessments through the host's delegation mechanism, using its reviewer routing when one is configured. Run them in parallel when capacity allows, otherwise one after another. Each child sees only its brief, so make each brief self-contained: the same bounded target, relevant project constraints, the read-only and no-delegation limits, and the return format. Ask for compact findings with file and line references, supporting evidence, and uncertainties; the first two assessments should also propose concrete changes. A brief does not make a child read-only on every host, so prefer a read-only reviewer role or sandbox when the host offers one.
 
 1. **Reuse and ownership:** Find existing local helpers or patterns that can replace duplicate code. Flag abstractions that have no current need and suggest the simplest owner for the logic.
 2. **Direct simplification:** Find redundant state, branches, nesting, indirection, comments, and unnecessary work. Favor clear, direct code over shorter code.
 3. **Behavior contract:** Map observable behavior and tests that constrain a refactor. Report specific invariants and risk areas involving validation, errors, type safety, side effects, ordering, timing, security, and public interfaces.
 
-Wait for a usable assessment from all three agents before editing. Retry a failed or missing assessment once with the same scope. If an agent is still unavailable, report the incomplete review and stop before editing.
+Wait for a usable assessment from all three before editing. Retry a failed or missing assessment once with the same scope. If one is still unavailable, or the host cannot delegate, report the incomplete review and stop before editing.
 
 ## Apply and verify
 

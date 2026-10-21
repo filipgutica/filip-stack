@@ -49,8 +49,8 @@ cross-language, package, release, or architecture contract. Also keep:
   identifier-only refactor;
 - a retained test that fails on the baseline: treat it as a possible product
   bug, reproduce it, and repair the owner rather than deleting it;
-- the last proof of a behavior or acceptance criterion: a test whose removal
-  leaves no remaining test that fails when that behavior breaks.
+- the last proof of a current behavior or acceptance criterion: a test whose
+  removal leaves no remaining test that fails when that behavior breaks.
 
 Static or slow is not a deletion reason. A test that resembles implementation
 may still be the independent contract; prove otherwise before removing it.
@@ -76,7 +76,8 @@ final diff. Each entry names concrete tests as `file:test name`:
 - added test: the regression it catches and the existing test that misses it;
 - removed test: one remaining test that runs the removed case's inputs and
   fails when that behavior breaks, confirmed by reading its inputs and
-  assertions.
+  assertions; or, when the contract itself is obsolete, the change or decision
+  that retired it.
 
 ## Edit shape
 

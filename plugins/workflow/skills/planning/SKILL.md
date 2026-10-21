@@ -34,7 +34,7 @@ Planning does not authorize code changes, commits, publishing, or tracker edits.
 
 Return the artifact in conversation by default. Persist it only when the user requests a file or destination.
 
-Follow the supplied destination, repository guidance, and host format references; otherwise include only what the reader needs.
+User and repository formats outrank the reference's default.
 
 Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** Have a separate reviewer critique a consequential or ambiguous artifact first, without coaching; verify its findings.
 
