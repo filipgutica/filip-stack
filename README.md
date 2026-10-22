@@ -213,7 +213,7 @@ limit. Each skill entrypoint remains limited to 900 words.
 
 Standalone skills load independently, so Workflow's combined budgets do not
 apply to them. Each needs a matching name, a description of at most 80 words, a
-`SKILL.md` of at most 500 lines, one-level references of at most 1,200 words,
+`SKILL.md` of at most 500 lines (a size guardrail, not a token budget), one-level references of at most 1,200 words,
 and relative links that stay inside its directory. It must not call a plugin
 skill or share a name with one.
 
@@ -243,4 +243,6 @@ treatment with a vanilla arm on the same tasks, model, and harness.
 [The lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) records the
 studies, decisions, and limits, and
 [the evidence directory](docs/evidence/workflow-skill-evaluation/) keeps their
-saved reports. Paid runs are separate from changes to the runtime guidance.
+saved reports. Give PluginBench Workflow as a `plugins:` treatment and a
+standalone skill as a `skills:` treatment pointing at `skills/<name>`. Paid runs
+are separate from changes to the runtime guidance.

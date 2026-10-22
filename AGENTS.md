@@ -6,13 +6,13 @@ This repository is Filip's plugin marketplace and the home for the skills he mai
 
 Decide a skill's tier before you add or move it:
 
-| Tier | What it is | Where it lives | How it installs | How to tell |
-| --- | --- | --- | --- | --- |
-| 1. Workflow | Works with other Workflow skills | `plugins/workflow/skills/<name>/` | The Workflow plugin | Links another Workflow skill's references, routing, or handoffs, or another skill depends on it |
-| 2. Standalone | Written here and useful alone | `skills/<name>/` | `npx skills add filipgutica/filip-stack -s <name>` | No dependency on a plugin skill |
-| 3. Adapted | A standalone skill based on an upstream skill, with local changes | `skills/<name>/` with `THIRD_PARTY_NOTICES.md` (source and baseline commit) | Same as tier 2 | `upstream-sync` compares it with upstream |
-| 4. Downloaded | An upstream skill used unchanged | Outside this repository | `npx skills add <source>` | Recorded in `~/.agents/.skill-lock.json` with an unchanged tree |
-| Excluded | Organization-specific skills | Outside this repository | Not distributed here | Depends on an employer's systems or repositories |
+| Tier | What it is | Where it lives | How to tell |
+| --- | --- | --- | --- |
+| 1. Workflow | Works with other Workflow skills | `plugins/workflow/skills/<name>/` | Links another Workflow skill's references, routing, or handoffs, or another skill depends on it |
+| 2. Standalone | Written here and useful alone | `skills/<name>/` | No dependency on a plugin skill |
+| 3. Adapted | A standalone skill based on an upstream skill, with local changes | `skills/<name>/` with `THIRD_PARTY_NOTICES.md` (source and baseline commit) | `upstream-sync` compares it with upstream |
+| 4. Downloaded | An upstream skill used unchanged | Outside this repository | Installed with `npx skills add <source>` and unchanged from its lock entry |
+| Excluded | Organization-specific skills | Outside this repository | Depends on an employer's systems or repositories |
 
 Skills that are not standalone set `metadata.internal: true`, so the skills CLI does not offer them. This covers plugin skills and repository development skills. Field Guide stays a plugin because it ships a hook.
 
@@ -27,10 +27,10 @@ Skills that are not standalone set `metadata.internal: true`, so the skills CLI 
 
 ## Evaluation
 
-PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Give it Workflow as a `plugins:` treatment and a standalone skill as a `skills:` treatment pointing at `skills/<name>`.
+PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Ship a behavior change to Workflow guidance only after an evaluation supports it.
 
 - Compare every treatment with vanilla on matched tasks, model, reasoning, harness, and attempts.
-- Run `pluginbench run --config <file> --dry-run` first. A paid run needs the user's approval.
+- Run a dry run first. A paid run needs the user's approval.
 - Reviewer findings are uncalibrated diagnostics, not a quality score.
 - Record each study in `docs/workflow-skill-evaluation-lab-notebook.md` and its saved reports in `docs/evidence/`.
 
