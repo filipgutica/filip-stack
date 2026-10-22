@@ -1,6 +1,8 @@
 ---
 name: release-and-refresh
-description: Ship accepted filip-stack changes through a pull request, wait for semantic-release, and refresh the released plugins in local Claude and Codex installations. Use for an authorized release or host refresh in this repository.
+description: Ship accepted filip-stack changes through a pull request, wait for semantic-release, and refresh the released plugins and standalone skills in local Claude and Codex installations. Use for an authorized release or host refresh in this repository.
+metadata:
+  internal: true
 ---
 
 # Release and refresh
@@ -27,6 +29,18 @@ This is a repository development skill. Keep it outside `plugins/`; the Claude e
 - After success, fetch tags and verify the published GitHub release and tag contain the merged change. Check the tag's package, marketplace, and plugin manifest versions agree. A green PR or a pre-existing latest release is not release evidence.
 - If semantic-release produces no release, inspect its result and explain why. Do not silently refresh an older version as if this change shipped. If a run fails, inspect the failure before retrying; stop dependent refresh work until a valid release exists.
 
+## Refresh standalone skills
+
+Standalone skills in `skills/` ship from `main` when they merge; semantic-release does not version them. Find the installed ones in `~/.agents/.skill-lock.json` entries whose `source` is `filipgutica/filip-stack`, and note each skill's current hosts: Codex reads `~/.agents/skills/<name>`, and Claude reads a `~/.claude/skills/<name>` link.
+
+Reinstall each with its hosts named explicitly. Do not use `npx skills update`: it reinstalls into every detected agent.
+
+```sh
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
+```
+
+Drop `claude-code` from `-a` for a skill that has no Claude link. The command installs the current `main`, so record `git ls-remote origin main` just before it runs. Verify that each installed directory matches `skills/<name>` at that revision, that the lock records the filip-stack source, and that no new host directory appeared. If `main` has advanced past the merge commit, report the installed revision.
+
 ## Refresh both hosts
 
 Inspect installed plugin inventory and current CLI help first; command syntax can change. Refresh only the installed filip-stack plugins, preserving their scope and enabled state. The current marketplace is named `filip-stack`, with Workflow and Field Guide installed in both hosts.
@@ -46,4 +60,4 @@ Codex marketplace upgrade refreshes its Git snapshot. Verify installed payloads 
 
 Verify each host's installed inventory, cache path, and manifest version against the release. Compare installed runtime files with the tagged `plugins/<name>/` source; distinguish host-generated metadata from source files. Check Workflow has no hooks, Field Guide has its expected hooks, and development assets have not entered either payload. Cache-directory existence alone is insufficient. If main has advanced, identify the actual installed commit/version instead of assuming it matches the target release.
 
-Report the PR, release tag, checks, and verified versions for each host. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
+Report the PR, release tag, checks, verified plugin versions for each host, and refreshed standalone skills. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.

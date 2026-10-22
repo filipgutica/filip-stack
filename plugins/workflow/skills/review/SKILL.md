@@ -1,6 +1,8 @@
 ---
 name: review
 description: Use for a read-only review or final verification of an existing exact change range or artifact. Report evidence-backed findings or no findings with limitations. Do not use for fixes, design interviews, or interactive walkthroughs.
+metadata:
+  internal: true
 ---
 
 # Review

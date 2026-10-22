@@ -1,6 +1,8 @@
 ---
 name: technical-writing
 description: Write or revise documentation, Confluence pages, reports, READMEs, procedures, release notes, error text, code comments, and PR descriptions. Apply first-reader review to any workflow's written deliverables, including specs, plans, and tickets, without changing decisions. Planning owns engineering scope, requirements, design, and task breakdowns.
+metadata:
+  internal: true
 ---
 
 # Technical writing

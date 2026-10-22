@@ -1,6 +1,8 @@
 ---
 name: engineering
 description: Use for an authorized code change, bug fix, refactor, failing test, CI failure, or review correction that needs the smallest correct implementation and focused verification. Do not use for explanation-only requests or planning without edits.
+metadata:
+  internal: true
 ---
 
 # Engineering

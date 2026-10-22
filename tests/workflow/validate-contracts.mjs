@@ -40,7 +40,8 @@ for (const name of expectedSkills) {
   const frontmatter = skill.match(/^---\n([\s\S]*?)\n---/u)?.[1] ?? ''
   const body = skill.replace(/^---\n[\s\S]*?\n---\n?/u, '')
   const description = frontmatter.match(/^description:\s*(.+)$/mu)?.[1] ?? ''
-  const count = words(skill)
+  // The skills-CLI distribution marker is not instruction text, so it stays out of the budget.
+  const count = words(skill.replace(/^metadata:\n  internal: true\n/mu, ''))
   totalSkillWords += count
   if (name !== 'simplify') otherSkillWords += count
   skillBodies.set(name, body)

@@ -1,0 +1,7 @@
+interface:
+  display_name: "Shared Policy Editor"
+  short_description: "Edit shared agent policy with minimal durable changes"
+  default_prompt: "Use $shared-policy-editor to make a minimal, vendor-neutral update to shared agent instructions or workflow policy."
+
+policy:
+  allow_implicit_invocation: true
