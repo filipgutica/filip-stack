@@ -1,0 +1,7 @@
+interface:
+  display_name: "Vue Best Practices"
+  short_description: "Build and review Vue components and composables"
+  default_prompt: "Use $vue-best-practices to build or review Vue components, composables, and tests while preserving the project's conventions and public contracts."
+
+policy:
+  allow_implicit_invocation: true
