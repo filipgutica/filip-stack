@@ -110,10 +110,10 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 | Skill | Use |
 | --- | --- |
 | `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
-| `codex-troubleshooting` | Diagnose Codex app, CLI, plugin, MCP, hook, and host-state issues. |
 | `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
-| `shared-policy-editor` | Make minimal, vendor-neutral edits to shared agent instructions and skills. |
+| `pr-review-churn` | Analyze recurring GitHub PR review feedback for repositories and a lookback you choose. |
 | `ux-laws` | Design or review interfaces and flows with established UX laws. |
+| `vue-best-practices` | Apply Vue guidance for reactivity, composables, component contracts, and tests. |
 
 ```sh
 npx skills add filipgutica/filip-stack --list
@@ -194,7 +194,8 @@ skill inventory.
 
 ## Development
 
-Install dependencies and run the complete deterministic check:
+Install dependencies and run the complete deterministic check. Python 3.9+ is
+also required for the collector tests; no Python packages are needed.
 
 ```sh
 pnpm install

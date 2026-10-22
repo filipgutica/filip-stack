@@ -1,0 +1,4 @@
+interface:
+  display_name: "PR Review Churn"
+  short_description: "Analyze recurring PR review feedback"
+  default_prompt: "Use $pr-review-churn to analyze my recent authored PR review feedback and propose workflow improvements."
