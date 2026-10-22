@@ -6,12 +6,15 @@ This repository is Filip's plugin marketplace and the home for the skills he mai
 
 Decide a skill's tier before you add or move it:
 
-1. **Workflow skill:** depends on other Workflow skills' references, routing, or handoffs. It lives in `plugins/workflow/skills/` and ships with the plugin.
-2. **Standalone skill:** written here and useful alone. It lives in `skills/<name>/` and installs with `npx skills add filipgutica/filip-stack -s <name>`.
-3. **Adapted skill:** a standalone skill based on an upstream skill. It is a tier 2 skill with `skills/<name>/THIRD_PARTY_NOTICES.md` recording the source and baseline commit. `upstream-sync` compares it with upstream.
-4. **Downloaded skill:** used unchanged from upstream with `npx skills add <source>`. It does not belong in this repository.
+| Tier | What it is | Where it lives | How it installs | How to tell |
+| --- | --- | --- | --- | --- |
+| 1. Workflow | Works with other Workflow skills | `plugins/workflow/skills/<name>/` | The Workflow plugin | Links another Workflow skill's references, routing, or handoffs, or another skill depends on it |
+| 2. Standalone | Written here and useful alone | `skills/<name>/` | `npx skills add filipgutica/filip-stack -s <name>` | No dependency on a plugin skill |
+| 3. Adapted | A standalone skill based on an upstream skill, with local changes | `skills/<name>/` with `THIRD_PARTY_NOTICES.md` (source and baseline commit) | Same as tier 2 | `upstream-sync` compares it with upstream |
+| 4. Downloaded | An upstream skill used unchanged | Outside this repository | `npx skills add <source>` | Recorded in `~/.agents/.skill-lock.json` with an unchanged tree |
+| Excluded | Organization-specific skills | Outside this repository | Not distributed here | Depends on an employer's systems or repositories |
 
-Skills that are not standalone set `metadata.internal: true`, so the skills CLI does not offer them. Field Guide stays a plugin because it ships a hook. Organization-specific skills do not belong here.
+Skills that are not standalone set `metadata.internal: true`, so the skills CLI does not offer them. This covers plugin skills and repository development skills. Field Guide stays a plugin because it ships a hook.
 
 ## Principles
 
