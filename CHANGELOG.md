@@ -1,3 +1,10 @@
+# [2.11.0](https://github.com/filipgutica/filip-stack/compare/v2.10.0...v2.11.0) (2026-10-22)
+
+
+### Features
+
+* **skills:** distribute standalone skills with the skills CLI ([988814c](https://github.com/filipgutica/filip-stack/commit/988814c3e2a008f3cc017ade2981c8049839d654))
+
 # [2.10.0](https://github.com/filipgutica/filip-stack/compare/v2.9.0...v2.10.0) (2026-10-21)
 
 
