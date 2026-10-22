@@ -1,6 +1,8 @@
 ---
 name: field-guide
 description: "Consult bounded local guidance, capture durable preferences, corrections, repeated misses, or manual learning requests, and audit field-guide memory."
+metadata:
+  internal: true
 ---
 
 # Field guide

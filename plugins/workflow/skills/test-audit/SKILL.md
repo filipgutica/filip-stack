@@ -1,6 +1,8 @@
 ---
 name: test-audit
 description: "Gate and audit tests for low-value, implementation-coupled, or duplicative coverage and the test-only production seams it demands. Use when a test audit or cleanup is requested, coverage changes are substantial, or test value or preservation is uncertain."
+metadata:
+  internal: true
 ---
 
 # Test Audit

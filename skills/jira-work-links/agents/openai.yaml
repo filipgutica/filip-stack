@@ -1,0 +1,4 @@
+interface:
+  display_name: "Jira Work Links"
+  short_description: "Link Jira work and find PR evidence"
+  default_prompt: "Use $jira-work-links to verify Jira dependencies and find linked pull request evidence."

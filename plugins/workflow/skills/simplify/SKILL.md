@@ -2,6 +2,8 @@
 name: simplify
 description: Simplify the selected code while preserving its behavior.
 disable-model-invocation: true
+metadata:
+  internal: true
 ---
 
 # Simplify

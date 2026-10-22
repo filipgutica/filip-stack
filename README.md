@@ -1,8 +1,8 @@
 # Filip Stack
 
-Filip Stack is a personal plugin marketplace for Claude and Codex. It distributes
-the `workflow` plugin and the optional `field-guide` plugin directly from this
-repository.
+Filip Stack is a personal plugin marketplace and skills home for Claude and
+Codex. It distributes the `workflow` plugin, the optional `field-guide` plugin,
+and standalone skills directly from this repository.
 
 ## Workflow v2
 
@@ -102,6 +102,37 @@ agent-reported impact, and reviewed outcomes separately.
 Workflow does not invoke or depend on Field Guide. Current instructions, live
 code, and repository contracts continue to outrank stored guidance.
 
+## Standalone skills
+
+Independent skills live in `skills/<name>/` and install one at a time with the
+[skills CLI](https://github.com/vercel-labs/skills):
+
+| Skill | Use |
+| --- | --- |
+| `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
+| `codex-troubleshooting` | Diagnose Codex app, CLI, plugin, MCP, hook, and host-state issues. |
+| `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
+| `shared-policy-editor` | Make minimal, vendor-neutral edits to shared agent instructions and skills. |
+| `ux-laws` | Design or review interfaces and flows with established UX laws. |
+
+```sh
+npx skills add filipgutica/filip-stack --list
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
+```
+
+The CLI keeps the canonical copy in `~/.agents/skills/<name>`, which Codex
+reads, and links `~/.claude/skills/<name>` to it for Claude. To refresh a skill,
+run the same `add` command again. Avoid `npx skills update`: it reinstalls into
+every agent it detects, not only the ones you chose.
+
+Workflow, Field Guide, and repository development skills set
+`metadata.internal: true`, so the CLI does not offer them. They depend on their
+plugin or this checkout and must not install on their own.
+
+An adapted skill carries `THIRD_PARTY_NOTICES.md` in its own directory with the
+upstream source and the baseline commit. The repository's `upstream-sync` skill
+compares it with upstream.
+
 ## Repository layout
 
 ```text
@@ -114,13 +145,18 @@ plugins/field-guide/       Optional local-learning plugin
   hooks/                   Bounded capture, ask, or skip lifecycle guidance
   scripts/                 Cross-host Node launcher
   skills/field-guide/      Skill, storage utility, schemas, and references
+skills/                    Standalone skills installed with the skills CLI
+.agents/skills/            Repository development skills (linked from .claude/skills)
 tests/workflow/            Repository-only contract and payload tests
+tests/skills/              Standalone skill contracts
 tests/field-guide/         Field Guide contracts and utility tests
 scripts/                   Version and plugin validation scripts
+docs/                      Evaluation lab notebook and evidence
 ```
 
-Each marketplace entry installs its plugin directory directly. Tests and
-evaluation fixtures stay outside the runtime payload.
+Each marketplace entry installs its plugin directory directly, and the skills
+CLI copies one `skills/<name>/` directory. Tests and evaluation fixtures stay
+outside both payloads.
 
 ## Install with Claude
 
@@ -167,13 +203,19 @@ pnpm check
 
 The check enforces the nine-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
-Field Guide hooks and state, both plugins' runtime payloads, and plugin manifest
-validity. Prompt routing scenarios are evaluation inputs; static contracts do
+Field Guide hooks and state, both plugins' runtime payloads, plugin manifest
+validity, and standalone skill contracts. Prompt routing scenarios are evaluation inputs; static contracts do
 not prove model behavior.
 
 The original eight skill entrypoints retain their combined 3,500-word limit.
 Adding the manual Simplify skill gives the nine-skill inventory a 4,000-word
 limit. Each skill entrypoint remains limited to 900 words.
+
+Standalone skills load independently, so Workflow's combined budgets do not
+apply to them. Each needs a matching name, a description of at most 80 words, a
+`SKILL.md` of at most 500 lines (a size guardrail, not a token budget), one-level references of at most 1,200 words,
+and relative links that stay inside its directory. It must not call a plugin
+skill or share a name with one.
 
 ## Releases and versioning
 
@@ -189,9 +231,18 @@ CI runs semantic-release after pushes to `main`. Commit messages follow
 When a release is due, CI stamps `package.json`, every plugin manifest, and both
 marketplace registries before creating the GitHub release.
 
+Standalone skills have no version of their own. The skills CLI installs them
+from `main`, so they ship when they merge. A releasing commit that changes only
+`skills/` still bumps the plugin manifests.
+
 ## Evaluation
 
-[WORKFLOW_V2_PLAN.md](WORKFLOW_V2_PLAN.md) records the design, evaluation
-findings that motivated it, success criteria, and the proposed matched
-SWE-bench comparison. Paid benchmark runs are intentionally separate from the
-runtime rewrite.
+Skills and plugins in this repository are evaluated with
+[PluginBench](https://github.com/filipgutica/pluginbench), which compares each
+treatment with a vanilla arm on the same tasks, model, and harness.
+[The lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) records the
+studies, decisions, and limits, and
+[the evidence directory](docs/evidence/workflow-skill-evaluation/) keeps their
+saved reports. Give PluginBench Workflow as a `plugins:` treatment and a
+standalone skill as a `skills:` treatment pointing at `skills/<name>`. Paid runs
+are separate from changes to the runtime guidance.

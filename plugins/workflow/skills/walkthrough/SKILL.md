@@ -2,6 +2,8 @@
 name: walkthrough
 description: Use only when the user explicitly invokes this skill for an interactive or agent-presented walkthrough of the last change, working tree, branch, or pull request. Do not activate it for ordinary summaries or code review.
 disable-model-invocation: true
+metadata:
+  internal: true
 ---
 
 # Walkthrough

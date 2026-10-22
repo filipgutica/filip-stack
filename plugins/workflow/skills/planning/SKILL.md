@@ -1,6 +1,8 @@
 ---
 name: planning
 description: Explore an engineering direction or create or revise a specification, implementation plan, or engineering ticket from repository evidence. Do not use for authorized implementation or ordinary prose editing.
+metadata:
+  internal: true
 ---
 
 # Planning

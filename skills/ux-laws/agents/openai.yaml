@@ -1,0 +1,4 @@
+interface:
+  display_name: "UX Laws"
+  short_description: "Design and review usable interfaces"
+  default_prompt: "Use $ux-laws to design or review this interface using relevant UX laws."
