@@ -1,3 +1,14 @@
+# [3.0.0](https://github.com/filipgutica/filip-stack/compare/v2.11.0...v3.0.0) (2026-10-22)
+
+
+* feat(skills)!: publish portable Vue and PR review guidance ([adf4abf](https://github.com/filipgutica/filip-stack/commit/adf4abf7369e5b8e4d11648150b20049b08e509d))
+
+
+### BREAKING CHANGES
+
+* The codex-troubleshooting and shared-policy-editor
+standalone skills are no longer distributed.
+
 # [2.11.0](https://github.com/filipgutica/filip-stack/compare/v2.10.0...v2.11.0) (2026-10-22)
 
 
