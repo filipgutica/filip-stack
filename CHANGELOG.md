@@ -1,3 +1,16 @@
+# [3.1.0](https://github.com/filipgutica/filip-stack/compare/v3.0.0...v3.1.0) (2026-10-23)
+
+
+### Bug Fixes
+
+* **skills:** harden merge council after first live run ([d4d5760](https://github.com/filipgutica/filip-stack/commit/d4d576015350ba0827a17e0ed5311b4f893757c9))
+
+
+### Features
+
+* **skills:** add merge-council review skill ([a3cf4a5](https://github.com/filipgutica/filip-stack/commit/a3cf4a532bf7e1306320a0aca86d3ce0a92dc809))
+* **skills:** run merge council through an independent chair agent ([c8ead78](https://github.com/filipgutica/filip-stack/commit/c8ead786889acb6528d36b12d443d7df0f133c03))
+
 # [3.0.0](https://github.com/filipgutica/filip-stack/compare/v2.11.0...v3.0.0) (2026-10-22)
 
 
