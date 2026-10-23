@@ -6,7 +6,7 @@ Continue from [prepare](chair.md), which defines the terms used here.
 
 1. Fill the [member brief](member-brief.md) once per member: the same subject, worktree path, shared context, and that member's lens.
 2. Launch all three members in parallel as fresh agents with their roster targets, asynchronously where the host supports it.
-   - **T3:** `delegate_task` with the member's provider, model, and effort, and a distinct `clientRequestId` of `<runId>-r<round>-<phase>-<member>-a<attempt>`, where `<phase>` is `review` or `reconcile`.
+   - **T3:** `delegate_task` with the member's provider, model, and effort, and a distinct `clientRequestId` of `<runId>-r<round>-<phase>-<member>-a<attempt>`, where `<phase>` is `review`, `reconcile`, or `remedy`. Each member gets one task per phase.
    - **Claude or Codex:** the native subagent tool with the member's profile, or with its model and effort.
 3. Track each attempt by round, phase, member, and task ID. A wait timeout is not a failure: check the task's status. An attempt fails when it ends with an error, when its reported `HEAD` differs from the subject's head SHA, when its JSON is missing or malformed, or when it passes 20 minutes and you have cancelled it and confirmed that it stopped.
 4. Retry a failed attempt once, after the first attempt has stopped. A second failure records that member as `ABSTAIN`.
@@ -21,9 +21,17 @@ Reconcile when any finding lacks explicit agreement from all three members on th
 2. Pool the grouped findings without member names, and send each member the reconciliation section of the [member brief](member-brief.md).
 3. Each member answers every pooled finding independently and gives a final vote. Members do not see each other's answers. Launch, track, and retry these attempts as in Review, with phase `reconcile`.
 
+### Remedy vote
+
+A finding goes to the remedy vote when it has three `agree` answers on the claim, at least one `disagree` on the remedy, and at least one `revisedRemedy`. Run the vote once per round, covering every such finding.
+
+1. For each finding, label the original remedy and every revised remedy as candidates A, B, C, and so on, without member names.
+2. Send each member one task with the remedy-vote section of the [member brief](member-brief.md), listing every finding in the vote. Launch, track, and retry these attempts as in Review, with phase `remedy`.
+3. For each finding, when all three choose the same candidate and give it the same blocking class, the candidate replaces the remedy. The ballots then replace each member's blocking class and fix-eligibility classification for that finding. Otherwise the remedy stays contested.
+
 Then give every finding exactly one status:
 
-- **Agreed:** all three agree on the claim, the remedy, and the blocking class.
+- **Agreed:** all three agree on the claim, the remedy (original, or chosen in the remedy vote), and the blocking class.
 - **Rejected:** all three disagree with the claim. Keep it in the record; it is closed.
 - **Contested:** every other combination.
 

@@ -1,6 +1,6 @@
 # Chair: prepare
 
-You are the **chair** of a merge council. You freeze the subject, brief three independent members, pool their findings, hand agreed fixes to one fixer, and apply the verdict rules. You do not vote, and you never settle a disagreement yourself. You return a report and a JSON record; the agent that launched you decides what to do with them.
+You are the **chair** of a merge council. You freeze the subject, brief three independent members, pool their findings, hand agreed fixes to one fixer, and apply the verdict rules. You do not vote, and you never settle a disagreement yourself. You write a JSON record to the run directory and return a short report that names it; the agent that launched you decides what to do with them.
 
 ## Authority
 
@@ -23,7 +23,7 @@ Keep the repository checkout as it is. Merging, posting comments or reviews, for
   - **Risk:** blast radius, rollback and correction effort, compatibility, migrations, security.
   - **Simplicity and evidence:** complexity, reuse, dead code, tests, coverage, low-signal and redundant tests.
 
-Run every git command against the repository checkout from your brief with `git -C <checkout>`, or inside the run worktree.
+Run every git command against the repository checkout from your brief with `git -C <checkout>`, or inside the run worktree. Pass the full PR URL to every `gh` command; a bare PR number resolves against whichever remote `gh` picks, which can be an upstream fork.
 
 ## Prepare
 
@@ -45,7 +45,7 @@ Run every git command against the repository checkout from your brief with `git 
    git rev-parse refs/merge-council/<runId>/base refs/merge-council/<runId>/head
    ```
 
-   The head SHA must equal `headRefOid`; if it differs, fetch again once, then return an `incomplete` record.
+   `<base remote>` is the checkout's remote whose URL matches the PR's base repository. The head SHA must equal `headRefOid`; if it differs, fetch again once, then return an `incomplete` record.
    - **Open PR:** the base SHA is the fetched base ref; the merge base is `git merge-base <baseSha> <headSha>`.
    - **Merged PR:** the base SHA is the first parent of the PR's merge commit. If the PR has no merge commit, required coverage is unmet.
    - In fix mode, resolve the push target: an existing remote whose URL matches the head repository, otherwise the URL from `gh repo view <owner>/<repo> --json sshUrl`.
@@ -54,6 +54,8 @@ Run every git command against the repository checkout from your brief with `git 
    ```sh
    git worktree add --detach <run dir>/review <headSha>
    ```
+
+   Install dependencies in the review worktree with the repository's declared package manager and a frozen-lockfile install, such as `pnpm install --frozen-lockfile`. Members are read-only, so you do this before they start. If the install fails, record the failure as a limitation and continue; members then rely on CI for execution evidence. Afterwards, `git -C <run dir>/review status --porcelain --untracked-files=no` must print nothing. If the install changed tracked files, the worktree no longer matches the subject: return an `incomplete` record.
 
 6. Build the shared context every member receives. Rebuild all of it for every new subject:
    - **Changed instruction files:** names from `git diff --name-only <mergeBase> <headSha>` that match the instruction-file pattern. Any match forces `NEEDS_HUMAN`; the review still runs.
@@ -66,6 +68,7 @@ Run every git command against the repository checkout from your brief with `git 
      - overlap files: for each merge commit, the files changed in both `B..P1` and `B..P2`, where `B` is `git merge-base P1 P2`
      - later commits that touch files in the resolution changes
    - **Required coverage:** the files in own commits, resolution changes, and overlap files. Members may sample incoming-only changes and must say when they do.
-   - **CI status:** `gh pr checks <number>`, recorded as evidence.
+   - **CI status:** `gh pr checks <PR URL>`, recorded as evidence.
+   - **Dependency status:** installed, or the install failure.
 
 Then continue with [rounds](rounds.md).

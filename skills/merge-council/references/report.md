@@ -20,13 +20,14 @@ Continue from [rounds](rounds.md).
    3. **`APPROVE`** when all three final votes are `APPROVE` and no blocking finding is open.
    4. **`NEEDS_HUMAN`** for every other combination, such as a `CHANGES_REQUESTED` vote that no blocking finding supports.
 
-Non-blocking findings, agreed or contested, never prevent `APPROVE`; they appear as notes. `unanimous` is true only when all three members voted `APPROVE` on the final subject. CI is evidence for members, not a verdict rule; the agent that launched you checks CI before it acts.
+Non-blocking findings, agreed or contested, never prevent `APPROVE`; the report lists them under "Worth a look". `unanimous` is true only when all three members voted `APPROVE` on the final subject. CI is evidence for members, not a verdict rule; the agent that launched you checks CI before it acts.
 
 ## Finish
 
-1. Build the JSON record, then write the Markdown report from it. Every statement in the report must trace to a field in the record.
-2. Remove the review worktree with `git worktree remove --force <run dir>/review` and the run's refs with `git update-ref -d` for each ref under `refs/merge-council/<runId>/`. Leave the run directory, which holds the member reports.
-3. End your reply with the Markdown report followed by the fenced JSON record. The report carries findings with evidence, not member transcripts.
+1. Build the JSON record and write it to `<run dir>/record.json`. If you stop before the run directory exists, create it first. Save each member's raw report in the run directory too.
+2. Write the Markdown report from the record. Every statement in the report must trace to a field in the record.
+3. Remove the review worktree with `git worktree remove --force <run dir>/review` and the run's refs with `git update-ref -d` for each ref under `refs/merge-council/<runId>/`. Leave the run directory.
+4. End your reply with the Markdown report alone. The record stays in its file; the report's last line points to it.
 
 ## JSON record
 
@@ -78,6 +79,11 @@ Non-blocking findings, agreed or contested, never prevent `APPROVE`; they appear
       "evidence": "",
       "remedy": "",
       "resolution": "fixed:<sha> | open | needs-decision | closed",
+      "remedyVote": {
+        "candidates": { "A": "original remedy", "B": "revised remedy" },
+        "ballots": { "risk": { "choice": "B", "blocking": false, "eligibility": "eligible" } },
+        "chosen": "B | none"
+      },
       "positions": {
         "risk": {
           "classification": "eligible",
@@ -99,45 +105,27 @@ Non-blocking findings, agreed or contested, never prevent `APPROVE`; they appear
 ```
 
 - `positions` has one entry per lens. `classification` is the member's own fix-eligibility class from its review; `claim`, `remedy`, `blocking`, and `eligibility` are its reconciliation answers. When a finding needed no reconciliation, every member raised it with the same remedy, blocking class, and eligibility, so record `agree` for all four.
+- `remedyVote` is present only when a remedy vote ran; `chosen` is `none` unless all three chose the same candidate with the same blocking class. When a candidate is chosen, `remedy` holds it, and `blocking`, `eligibility`, and each lens's `positions.<lens>.classification` come from the ballots. `positions` otherwise keeps the reconciliation answers.
 - `resolution` is `fixed:<sha>` for a pushed fix, `needs-decision` for an agreed finding that is not eligible, `closed` for a rejected finding, and `open` for everything else.
 - `approvalSummary` is two to four sentences the launching agent can post as a PR comment: the subject and roster, what the council checked, the fixes it pushed, and any notes worth a reader's attention.
 
 ## Markdown report
 
-Keep the report to one screen when the PR is clean. Omit a section that would be empty, except Verdict, Subject, Mode, Roster, and Limitations.
+The report answers one question in its first line: can this PR merge, and if not, what must the user look at? Write it for a reader who stops after that line. Everything else, including member positions, the roster, and limitations that do not change the verdict, stays in the record.
 
 ```md
-## Merge council: <VERDICT>
+**Merge council: <VERDICT>.** <one sentence: "Ready to merge." or the single main reason it is not>
+<repo>#<pr> at `<short head>` · CI <state> · <n>/3 approve<" · fixes pushed: <short sha>, ..." when any><" · incomplete" when status is incomplete>
 
-**Subject:** <repo>#<pr> · head `<short head>` (<head ref>) · base `<short base>` (<base ref>) · run `<runId>`
-**Mode:** <fix | read-only (<reason>)> · **Status:** <complete | incomplete> · **Unanimous:** <yes | no>
-**Roster:** chair: <model> <effort> · <lens>: <model> <effort> · <lens>: <model> <effort> · <lens>: <model> <effort><" (unverified)" when applicable>
+**Before merging**
+- **<id>** <what is wrong, one line> (`<path:line>`). <the remedy, or the decision the user must make>
 
-### Lenses
-- **Contract and guidance:** <final vote>. <one line>
-- **Risk:** <final vote>. <one line>
-- **Simplicity and evidence:** <final vote>. <one line>
+**Worth a look**
+- **<id>** <non-blocking finding, one line> (`<path:line>`)
 
-### Fixes pushed
-- `<short sha>` <summary> (<finding ids>)
-
-### Needs your decision
-- **<id>** <claim>. Evidence: <evidence>. Proposed: <remedy>. Excluded because: <category or uncertain>.
-
-### Contested
-- **<id>** <claim>. Evidence: <evidence>. Contract and guidance: <position>. Risk: <position>. Simplicity and evidence: <position>.
-
-### Open blocking findings
-- **<id>** <claim>. Evidence: <evidence>. Remedy: <remedy>.
-
-### Notes
-- <non-blocking finding, one line each>
-
-### CI
-<state, and failing checks by name>
-
-### Limitations
-- <changed instruction files, sampled areas, unverified settings, retries, missing history, or "none">
+Record: `<run dir>/record.json`
 ```
 
-After the Markdown report, include the JSON record in one fenced `json` block.
+- **Before merging** appears only when the verdict is not `APPROVE`. List every item that produced the verdict: open blocking findings, findings that need the user's decision, contested blocking findings, and the `NEEDS_HUMAN` condition that matched, such as unmet coverage or a changed instruction file.
+- **Worth a look** holds at most three non-blocking findings, the ones most likely to matter. When there are more, end with "<n> more in the record". Omit it when there are none.
+- One line per item. Name the finding, where it is, and what to do; leave the per-lens positions to the record.
