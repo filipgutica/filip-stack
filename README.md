@@ -111,6 +111,7 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 | --- | --- |
 | `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
 | `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
+| `merge-council` | Run a three-member review council on a PR when you, a task, or repository guidance asks for one; it returns a merge verdict and fixes agreed findings on your own PRs. |
 | `pr-review-churn` | Analyze recurring GitHub PR review feedback for repositories and a lookback you choose. |
 | `ux-laws` | Design or review interfaces and flows with established UX laws. |
 | `vue-best-practices` | Apply Vue guidance for reactivity, composables, component contracts, and tests. |
