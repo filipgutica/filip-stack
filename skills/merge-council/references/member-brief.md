@@ -36,7 +36,7 @@ You may sample incoming-only changes; list what you sampled.
 <CI status>
 
 ## What to assess
-Correctness and edge cases; adherence to user and repository guidance and established patterns; scope; blast radius and rollback or correction effort; compatibility, migrations, and security; simplicity, reuse, and dead code; and whether tests prove the changed behavior, including low-signal and redundant tests and coverage removed without a replacement. For merge commits, judge the conflict resolutions and the overlap files, where incoming changes meet the receiving branch's own changes.
+Correctness and edge cases; adherence to user and repository guidance and established patterns; scope; blast radius and rollback or correction effort; compatibility, migrations, security, and performance; simplicity, reuse, and dead code; and whether tests prove the changed behavior, including low-signal and redundant tests and coverage removed without a replacement. For merge commits, judge the conflict resolutions and the overlap files, where incoming changes meet the receiving branch's own changes.
 
 Report a finding only with evidence. Style preferences without a guidance or correctness basis are not findings.
 
