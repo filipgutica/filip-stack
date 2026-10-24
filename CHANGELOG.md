@@ -1,3 +1,10 @@
+# [3.2.0](https://github.com/filipgutica/filip-stack/compare/v3.1.0...v3.2.0) (2026-10-24)
+
+
+### Features
+
+* **skills:** add performance to merge council review ([7765c45](https://github.com/filipgutica/filip-stack/commit/7765c45f4ef503816ccc9e38e8796a843a34bc5e))
+
 # [3.1.0](https://github.com/filipgutica/filip-stack/compare/v3.0.0...v3.1.0) (2026-10-23)
 
 
