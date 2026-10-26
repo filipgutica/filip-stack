@@ -160,6 +160,23 @@ rebuilds only `memory.json` from a valid canonical `memory.md`; it never changes
 malformed canonical data. The default is a dry run. Apply requires the preview
 token from the same canonical store and cache state.
 
+## Shared guidance sync
+
+`export --output <json-file>` writes active shared guidance in a portable form:
+subject, linked subjects, learning, confidence, `generic`, and examples. It
+omits evidence, repository identities, relationships, and candidates. Retired
+shared records (superseded, withdrawn, or archived) appear only as fingerprints.
+When the output file already exists, export keeps its retired fingerprints
+unless the record is active locally.
+
+`import --input <json-file>` merges an export by fingerprint. It adds missing
+records as active with source `shared-sync` and no evidence, promotes a matching
+local candidate, and withdraws a local candidate or active record whose
+fingerprint is retired. It does not retire the active replacement of a local
+superseded record; it reports that record as skipped. Records retired locally
+stay retired. filip-stack's `host-config` script runs import on apply and
+import followed by export on `field-guide-sync`.
+
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.
 

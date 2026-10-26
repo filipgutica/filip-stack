@@ -1,0 +1,186 @@
+{
+  "schemaVersion": 1,
+  "active": [
+    {
+      "subjectKey": "agent-autonomy",
+      "linkedSubjects": [],
+      "learning": "Do routine, low-risk, in-scope follow-up steps yourself (dependency reinstalls, removing your own temporary worktrees) once the reason for deferring them is gone, then report them done; do not hand them to the user as a to-do.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "agent-autonomy",
+      "linkedSubjects": [],
+      "learning": "Once the user approves a multi-step or multi-PR plan, run it autonomously until the PRs are up; interrupt only for serious or blocking decisions, and prefer provider auto-review over user approval prompts for agent actions.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "agent-guidance",
+      "linkedSubjects": [],
+      "learning": "When improving agent instructions or skills, prefer deleting or replacing guidance over adding it; keep a line only when it corrects an observed miss or encodes a preference or authority rule the model cannot infer.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "browser-auth-state",
+      "linkedSubjects": [],
+      "learning": "Never conclude a browser session is signed out from DOM heuristics such as empty meta tags, hidden login links, or missing lazy-loaded elements. Scroll or wait for the content, and confirm with a screenshot of the avatar or user menu before claiming an auth problem.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "delegation",
+      "linkedSubjects": [],
+      "learning": "The user CLAUDE.md delegation table and review routing count as a standing request to use subagents. Route read-only review of an existing change to the review workflow with an explicit reviewer or critic profile instead of reviewing inline and citing the host default that subagents need an explicit ask.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "doc-comments",
+      "linkedSubjects": [],
+      "learning": "When asked to add or update doc comments on a PR, document only functions the PR adds. Leave comments on pre-existing functions unchanged, including ones the PR only moved or changed.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "evaluation-decision-criteria",
+      "linkedSubjects": [],
+      "learning": "When evaluating skills, accept higher skill token use when it reduces correction, review, and follow-up work; optimize total workflow burden rather than tokens in isolation.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "external-artifact-updates",
+      "linkedSubjects": [],
+      "learning": "When updating an existing artifact such as a pull request description, ticket, PRD, or document, fetch its live current content at the time of the request and edit from that baseline. Do not reuse a locally cached draft, which silently discards edits the user made after the last write.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "git-branching",
+      "linkedSubjects": [],
+      "learning": "When starting implementation for a ticket, create a new branch from freshly fetched origin/main and check it out in that ticket workspace; do not build on a prior prerequisite branch that has already merged.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "javascript-package-manager",
+      "linkedSubjects": [],
+      "learning": "Prefer pnpm for personal Node.js and TypeScript projects unless an existing repository declares another package manager.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "jsdoc-function-documentation",
+      "linkedSubjects": [],
+      "learning": "When asked to add JSDoc to functions, document parameters with @param and the return value with @returns, rather than providing only a summary.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "pr-coordination",
+      "linkedSubjects": [],
+      "learning": "Link only PRs that implement a ticket thread's own work; do not link side PRs in other repos that merely unblock a dependency, because closing them settles the thread.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "repo-boundaries",
+      "linkedSubjects": [],
+      "learning": "Keep the personal agent-tooling repo and employer work repos free of references to each other: no cross-repo links, PR numbers, or repo names in commits, PR descriptions, or skill text. Describe motivating incidents generically.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "shell-environment",
+      "linkedSubjects": [],
+      "learning": "When a needed token or env var (for example a PAT or NPM_TOKEN) looks missing in the agent shell, first check the user interactive zsh environment with zsh -ic and a presence-only test such as [ -n \"${(P)name}\" ]; never print, echo, log, or copy secret values. Run commands that need the value inside zsh -ic so the value stays in that process.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "stacked-prs",
+      "linkedSubjects": [],
+      "learning": "When PRs depend on each other, make a native GitHub stacked PR with gh stack (gh stack link <bottom> <top> for existing PRs, or init/add/submit), not just base-branch chaining.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "subagent-orchestration",
+      "linkedSubjects": [],
+      "learning": "When running inside T3 Code or whenever T3 orchestration tools are available, launch subagents through T3 orchestration (delegate_task, with worktree isolation for implementation) for every provider, including Claude, instead of the host native subagent tool.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "technical-writing",
+      "linkedSubjects": [],
+      "learning": "Match technical detail to the audience. In pull request descriptions and code comments, omit familiar primers and state the specific mechanism, consequence, and fix.",
+      "confidence": "high",
+      "generic": true,
+      "examples": []
+    },
+    {
+      "subjectKey": "typescript-type-safety",
+      "linkedSubjects": [],
+      "learning": "Avoid TypeScript non-null assertions (!) in new code and examples. Narrow the type, restructure, or use a lookup helper that throws a clear error instead.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "ui-mockups",
+      "linkedSubjects": [],
+      "learning": "Mockups that change an existing UI must reproduce the current look of the component being changed, built from the real app (captured markup and styles or real components), not approximated; surrounding context may stay illustrative.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "vue-reactivity",
+      "linkedSubjects": [],
+      "learning": "Treat Vue watchers with non-default flush timing as exceptions. Require a causal failing test before using them, and prefer fixing state ownership or the behavior boundary.",
+      "confidence": "high",
+      "generic": true,
+      "examples": []
+    },
+    {
+      "subjectKey": "vue-reactivity",
+      "linkedSubjects": [],
+      "learning": "Use default watcher flush timing. Use flush post or sync, watchPostEffect, or watchSyncEffect only when it fixes a reproducible, documented issue, and add a comment at the watcher that explains why the default timing fails and cites the evidence.",
+      "confidence": "high",
+      "examples": [
+        {
+          "kind": "antipattern",
+          "language": "ts",
+          "code": "// Template refs are already set after the DOM patch; post adds nothing.\nwatch(contentElement, observe, { flush: \"post\" })"
+        },
+        {
+          "kind": "pattern",
+          "language": "ts",
+          "code": "watch(contentElement, observe)"
+        }
+      ]
+    },
+    {
+      "subjectKey": "vue-template-refs",
+      "linkedSubjects": [],
+      "learning": "In Vue 3.5+ components, prefer useTemplateRef for static template element and component refs, with a matching ref name; use ref or shallowRef for reactive state and older Vue versions.",
+      "confidence": "high",
+      "examples": []
+    },
+    {
+      "subjectKey": "walkthrough-logs",
+      "linkedSubjects": [],
+      "learning": "Include a distinct Corrections field in every walkthrough entry. State the concrete correction separately from the summary, evidence, and decision, and use none when no correction was made.",
+      "confidence": "high",
+      "generic": true,
+      "examples": []
+    }
+  ],
+  "retired": [
+    "fingerprint:v1:38c3c8d5e0a5fd23c30e65b5252feeb3d6174508ec2ea13cfe90288c039fc920",
+    "fingerprint:v1:7d80743505f213630a2cb4307a7d6eb6a0297130ec84e20eb3428f72ac91158e",
+    "fingerprint:v1:b43b1fc7c0b3ead3e9aaf06731ecd8239645fa07a3ee140ef5271fa7ea47b106",
+    "fingerprint:v1:d88a45b3fe576c77c52e461dba0dffb178b9b2248de5338c0f2007e83b4c243e"
+  ]
+}

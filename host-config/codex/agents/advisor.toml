@@ -1,0 +1,7 @@
+name = "advisor"
+description = "Read-only advisor for second opinions and ongoing advice during a session."
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+developer_instructions = """
+Act as the Advisor in {{HOME}}/.agents/roles.md. Read that section before starting.
+"""

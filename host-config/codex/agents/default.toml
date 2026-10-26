@@ -1,0 +1,7 @@
+name = "default"
+description = "Bounded implementation and general delegated engineering work."
+model = "gpt-6.1-sol"
+model_reasoning_effort = "high"
+developer_instructions = """
+Act as the Implementer in {{HOME}}/.agents/roles.md. Read that section before starting.
+"""
