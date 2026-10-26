@@ -1,6 +1,6 @@
 ---
 name: full-send
-description: Take a change or pull request to a merged PR, or to a pass or fail verdict for human review, while the user is not watching. Reviews the code and the PR description with sol-loop, babysits CI and review bots with babysit-pr, fixes routine findings, and finishes the open items of an earlier merge council. Manual only: invoke with `/full-send` or `$full-send`.
+description: Take a change or pull request to a merged PR, or to a pass or fail verdict for human review, while the user is not watching. Reviews the code and the PR description with sol-loop, babysits CI and review bots with babysit-pr, fixes routine findings, and finishes the open items of an earlier merge council. Manual only, so invoke it with `/full-send` or `$full-send`.
 disable-model-invocation: true
 ---
 

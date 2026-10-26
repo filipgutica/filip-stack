@@ -46,6 +46,9 @@ for (const dir of standaloneDirs) {
   assert.match(name, /^[a-z0-9]+(?:-[a-z0-9]+)*$/u, `${name} is not a valid skill name`)
   assert.ok(!hiddenNames.has(name), `${name} shadows a plugin or repository skill of the same name`)
   const description = descriptionOf(frontmatter)
+  // A plain YAML scalar ends at `: ` or ` #`, so hosts and the skills CLI cannot parse such a description.
+  const plain = frontmatter.match(/^description:[ \t]*([^'"|>\s].*)$/mu)?.[1]
+  if (plain) assert.doesNotMatch(plain, /: | #/u, `${name} description needs quotes or a block scalar for ': ' or ' #'`)
   assert.ok(words(description) > 0, `${name} is missing a description`)
   assert.ok(words(description) <= 80, `${name} description exceeds 80 words`)
   // Agent Skills guidance; Workflow's tighter word budgets apply only inside its plugin.
