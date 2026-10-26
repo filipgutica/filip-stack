@@ -1449,6 +1449,13 @@ test('export and import sync shared guidance between machines', () => {
   const fresh = join(root, 'fresh')
   initializeMemory({ repoRoot, guideRoot: fresh })
   run({ command: 'import', repoRoot, guideRoot: fresh, args: ['--input', exported] })
+  const freshMemory = JSON.parse(readFileSync(join(fresh, 'memory.json'), 'utf8'))
+  assert.ok(ajv.getSchema(memorySchema.$id)(freshMemory), 'imported records match the memory schema')
+  const retrieved = retrieve({ repoRoot, guideRoot: fresh, subject: 'testing' })
+  assert.ok(validateRetrieval(retrieved), JSON.stringify(validateRetrieval.errors))
+  assert.deepEqual(retrieved.guidance.map(({ learning }) => learning).sort(), ['Name tests after behavior.', 'Prefer small pull requests.'])
+  const audited = run({ command: 'audit', repoRoot, guideRoot: fresh }).result
+  assert.deepEqual([audited.validationErrors, audited.orphanEvidence, audited.brokenPointers], [[], [], []])
   run({ command: 'export', repoRoot, guideRoot: fresh, args: ['--output', exported] })
   assert.equal(readFileSync(exported, 'utf8'), firstExport, 'a machine without the record keeps its retirement')
 
