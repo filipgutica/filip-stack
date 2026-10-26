@@ -1,3 +1,19 @@
+# [3.3.0](https://github.com/filipgutica/filip-stack/compare/v3.2.0...v3.3.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **field-guide:** skip import of records the same export retires ([a60c25b](https://github.com/filipgutica/filip-stack/commit/a60c25b799883344bf88780bc47d64bab8c29928))
+* **host-config:** match whole delimiter lines and record each write ([16c185c](https://github.com/filipgutica/filip-stack/commit/16c185cafe0da0d74b2cb3a89bc935da68e11c70))
+
+
+### Features
+
+* **field-guide:** add shared guidance export and import ([e1e4282](https://github.com/filipgutica/filip-stack/commit/e1e428266455d807f79c6c1503cca3cf566c9eaf))
+* **host-config:** add shared Field Guide preferences ([ec47126](https://github.com/filipgutica/filip-stack/commit/ec47126fe3432c4f9025f49e894c40383710584b))
+* **host-config:** add update command and manage ~/design-language ([5ca0ea1](https://github.com/filipgutica/filip-stack/commit/5ca0ea1811838cca2a44e7df810fe8da342c9490))
+* **host-config:** apply global agent guidance from filip-stack ([7fc48c6](https://github.com/filipgutica/filip-stack/commit/7fc48c6378343128f159c42b16c1518b9c1b4ffe))
+
 # [3.2.0](https://github.com/filipgutica/filip-stack/compare/v3.1.0...v3.2.0) (2026-10-24)
 
 
