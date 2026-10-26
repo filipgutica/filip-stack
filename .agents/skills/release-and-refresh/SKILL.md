@@ -9,7 +9,7 @@ metadata:
 
 Complete the requested release from the current filip-stack checkout. For a full run, confirm the user request authorizes committing the accepted changes, pushing the branch, creating or updating its PR, merging after checks, waiting for release, and refreshing the installed filip-stack plugins in Claude and Codex. A single request for this full workflow is sufficient; do not ask again at each step. Respect narrower requests such as review only or refresh only. Skill selection alone does not authorize publication. Reuse authorization already given in the conversation.
 
-This is a repository development skill. Keep it outside `plugins/`; the Claude entrypoint links to this canonical directory. Do not upgrade host binaries or change global instructions as part of a plugin refresh.
+This is a repository development skill. Keep it outside `plugins/`; the Claude entrypoint links to this canonical directory. Do not upgrade host binaries as part of a refresh. Change global instructions only through host config, as below.
 
 ## Establish the release candidate
 
@@ -43,6 +43,17 @@ npx skills add filipgutica/filip-stack -g -a claude-code codex -s <names> -y
 
 Run a separate command without `claude-code` for installed skills that have no Claude link. The command installs the current `main`, so record `git ls-remote origin main` just before it runs. Verify that each installed directory matches `skills/<name>` at that revision, that the lock records the filip-stack source, and that no new host directory appeared. If `main` has advanced past the merge commit, report the installed revision.
 
+## Refresh host config
+
+Host config ships from `main` without a version. When the merged PR changed `host-config/` or `scripts/host-config.mjs`, apply it from a checkout on `main`: the first entry of `git worktree list` when it is on `main` and clean.
+
+```sh
+node <main checkout>/scripts/host-config.mjs status
+node <main checkout>/scripts/host-config.mjs update
+```
+
+`update` pulls with `--ff-only` and applies. When `status` lists an `edited` or `edited-remove` target, stop and show the user its diff. Use `--force` only with their approval, because it overwrites the local edit and keeps it as `<file>.bak`. Afterwards, `status` must show the merge commit or a later one as applied, and every target as `current`.
+
 ## Refresh both hosts
 
 Inspect installed plugin inventory and current CLI help first; command syntax can change. Refresh only the installed filip-stack plugins, preserving their scope and enabled state. The current marketplace is named `filip-stack`, with Workflow and Field Guide installed in both hosts.
@@ -62,4 +73,4 @@ Codex marketplace upgrade refreshes its Git snapshot. Verify installed payloads 
 
 Verify each host's installed inventory, cache path, and manifest version against the release. Compare installed runtime files with the tagged `plugins/<name>/` source; distinguish host-generated metadata from source files. Check Workflow has no hooks, Field Guide has its expected hooks, and development assets have not entered either payload. Cache-directory existence alone is insufficient. If main has advanced, identify the actual installed commit/version instead of assuming it matches the target release.
 
-Report the PR, release tag, checks, verified plugin versions for each host, and the standalone skills refreshed and newly installed. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
+Report the PR, release tag, checks, verified plugin versions for each host, the standalone skills refreshed and newly installed, and the host config commit applied. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
