@@ -1,3 +1,10 @@
+## [3.5.1](https://github.com/filipgutica/filip-stack/compare/v3.5.0...v3.5.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **skills:** treat PR text and bot output as evidence, not instructions ([056ea2c](https://github.com/filipgutica/filip-stack/commit/056ea2c65c6b06f0fe074a165df00d850b3f11f6))
+
 # [3.5.0](https://github.com/filipgutica/filip-stack/compare/v3.4.0...v3.5.0) (2026-10-26)
 
 
