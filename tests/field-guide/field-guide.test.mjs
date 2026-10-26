@@ -1399,3 +1399,96 @@ test('opt-in analytics records retrieval and capture metadata without task text'
   assert.equal(retrieve({ repoRoot, guideRoot, subject: 'testing' }).analyticsEventId, undefined)
   assert.equal(readFileSync(eventFile, 'utf8'), beforeDisabledRetrieval)
 })
+
+test('export and import sync shared guidance between machines', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-shared-sync-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/shared-sync.git' })
+  const first = join(root, 'first')
+  const second = join(root, 'second')
+  const exported = join(root, 'shared.json')
+  initializeMemory({ repoRoot, guideRoot: first })
+  initializeMemory({ repoRoot, guideRoot: second })
+  const shared = ({ guideRoot, learning, turnId, explicitPreference }) => submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning, turnId, scope: 'shared', explicitPreference }),
+  }).result
+
+  shared({ guideRoot: first, learning: 'Prefer small pull requests.', turnId: 'turn-1', explicitPreference: true })
+  shared({ guideRoot: first, learning: 'Name tests after behavior.', turnId: 'turn-2', explicitPreference: true })
+  const withdrawn = shared({ guideRoot: first, learning: 'Squash every commit.', turnId: 'turn-3', explicitPreference: true })
+  submit({ repoRoot, guideRoot: first, input: conversationSubmission({ learning: 'Project-only rule.', turnId: 'turn-4', explicitPreference: true }) })
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot: first,
+    input: { schemaVersion: 1, action: 'withdraw', targetId: withdrawn.targetId, reason: 'Retired.', source: 'user' },
+  })
+  const candidate = shared({ guideRoot: second, learning: 'Name tests after behavior.', turnId: 'turn-5' })
+  assert.equal(candidate.status, 'candidate')
+  const stillActive = shared({ guideRoot: second, learning: 'Squash every commit.', turnId: 'turn-6', explicitPreference: true })
+
+  run({ command: 'export', repoRoot, guideRoot: first, args: ['--output', exported] })
+  const firstExport = readFileSync(exported, 'utf8')
+  const portable = JSON.parse(firstExport)
+  assert.deepEqual(portable.active.map(({ learning }) => learning), ['Name tests after behavior.', 'Prefer small pull requests.'])
+  assert.equal(portable.retired.length, 1)
+  assert.doesNotMatch(firstExport, /evidence|repositoryIdentity|Project-only|Squash/)
+
+  const imported = run({ command: 'import', repoRoot, guideRoot: second, args: ['--input', exported] }).result
+  assert.equal(imported.created.length, 1)
+  assert.deepEqual(imported.promoted, [candidate.targetId])
+  assert.deepEqual(imported.retired, [stillActive.targetId])
+  run({ command: 'validate', repoRoot, guideRoot: second })
+  const repeated = run({ command: 'import', repoRoot, guideRoot: second, args: ['--input', exported] }).result
+  assert.deepEqual(repeated, { created: [], promoted: [], retired: [], skipped: [] })
+
+  run({ command: 'export', repoRoot, guideRoot: second, args: ['--output', exported] })
+  assert.equal(readFileSync(exported, 'utf8'), firstExport)
+
+  const fresh = join(root, 'fresh')
+  initializeMemory({ repoRoot, guideRoot: fresh })
+  run({ command: 'import', repoRoot, guideRoot: fresh, args: ['--input', exported] })
+  run({ command: 'export', repoRoot, guideRoot: fresh, args: ['--output', exported] })
+  assert.equal(readFileSync(exported, 'utf8'), firstExport, 'a machine without the record keeps its retirement')
+
+  assert.match(run({ command: 'retrieve', repoRoot, guideRoot: first, args: ['--output', exported], expectFailure: true }).stderr, /only for export/)
+  assert.match(run({ command: 'export', repoRoot, guideRoot: first, expectFailure: true }).stderr, /--output is required/)
+})
+
+test('import does not retire the active replacement of superseded guidance', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-shared-sync-conflict-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/shared-sync-conflict.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const original = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Extract every helper.', turnId: 'turn-1', scope: 'shared', explicitPreference: true }),
+  }).result
+  const replacementInput = conversationSubmission({ learning: 'Keep single-use code inline.', turnId: 'turn-2', scope: 'shared' })
+  replacementInput.relationship = { kind: 'contradicts', targetId: original.targetId }
+  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'supersede',
+      targetId: original.targetId,
+      replacementId: replacement.targetId,
+      confirmed: true,
+      reason: 'The user confirmed the correction.',
+      source: 'user-confirmation',
+    },
+  })
+  const fingerprint = replacement.targetId.replace('guidance', 'fingerprint')
+  const exported = join(root, 'shared.json')
+  writeFileSync(exported, `${JSON.stringify({ schemaVersion: 1, active: [], retired: [fingerprint] })}\n`)
+
+  const result = run({ command: 'import', repoRoot, guideRoot, args: ['--input', exported] }).result
+  assert.deepEqual(result.skipped, [{ id: replacement.targetId, reason: 'active-replacement-of-superseded-guidance' }])
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  assert.equal(memory.guidance.find(({ id }) => id === replacement.targetId).status, 'active')
+})

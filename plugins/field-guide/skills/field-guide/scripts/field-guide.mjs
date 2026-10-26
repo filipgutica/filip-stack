@@ -43,7 +43,7 @@ const git = ({ repoRoot, args, optional = false }) => {
 
 const commands = new Set([
   'analytics-disable', 'analytics-enable', 'analytics-impact', 'analytics-report', 'analytics-review',
-  'audit', 'candidates', 'delete', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate',
+  'audit', 'candidates', 'delete', 'export', 'import', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate',
 ])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
@@ -55,6 +55,7 @@ const optionNames = new Map([
   ['--evidence-for', 'evidence-for'],
   ['--scope', 'scope'],
   ['--since', 'since'],
+  ['--output', 'output'],
 ])
 const parseOptions = (args) => {
   const options = {}
@@ -74,7 +75,7 @@ const parseOptions = (args) => {
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|audit|candidates|delete|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--since <YYYY-MM-DD>]')
+    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|audit|candidates|delete|export|import|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--since <YYYY-MM-DD>] [--output <json-file>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -83,6 +84,8 @@ const parseArgs = (argv) => {
   }
   if (options.input && options['input-json']) fail('use either --input or --input-json, not both')
   if (options.since && command !== 'analytics-report') fail('--since is supported only for analytics-report')
+  if (options.output && command !== 'export') fail('--output is supported only for export')
+  if (command === 'export' && !options.output) fail('--output is required for export')
   return { command, options }
 }
 
@@ -1167,6 +1170,114 @@ const deleteGuidance = ({ paths, inputPath }) => (
   withMemoryLock({ paths, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
 )
 
+const retiredStatuses = new Set(['superseded', 'withdrawn', 'archived'])
+const portableGuidanceFields = ['subjectKey', 'linkedSubjects', 'learning', 'confidence', 'generic', 'examples']
+
+// Shared guidance travels between machines without evidence, repository identities, or
+// relationships. Retired records travel as fingerprints only, so their text stays local.
+const exportSharedGuidance = ({ paths, outputPath }) => {
+  requireInitialized(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
+  const shared = memory.guidance.filter(({ scope }) => scope.kind === 'shared')
+  const active = shared
+    .filter(({ status }) => status === 'active')
+    .map(({ subjectKey, linkedSubjects, learning, confidence, generic, examples }) => ({
+      subjectKey,
+      linkedSubjects: linkedSubjects ?? [],
+      learning,
+      confidence,
+      ...(generic === undefined ? {} : { generic }),
+      examples: examples ?? [],
+    }))
+    .sort((left, right) => left.subjectKey.localeCompare(right.subjectKey) || left.learning.localeCompare(right.learning))
+  // Keep retirements already in the output file. A machine that never had a record must
+  // not drop another machine's retirement of it.
+  const activeFingerprints = new Set(shared.filter(({ status }) => status === 'active').map(({ fingerprint }) => fingerprint))
+  const previouslyRetired = existsSync(resolve(outputPath))
+    ? validatePortableSharedGuidance(readJsonInput(outputPath)).retired.filter((fingerprint) => !activeFingerprints.has(fingerprint))
+    : []
+  const retired = [...new Set([
+    ...previouslyRetired,
+    ...shared.filter(({ status }) => retiredStatuses.has(status)).map(({ fingerprint }) => fingerprint),
+  ])].sort()
+  writeTextAtomically({
+    path: resolve(outputPath),
+    content: `${JSON.stringify({ schemaVersion: 1, active, retired }, null, 2)}\n`,
+  })
+  return { active: active.length, retired: retired.length }
+}
+
+const validatePortableSharedGuidance = (input) => {
+  assertObject({ value: input, label: 'shared guidance export' })
+  assertClosedFields({ value: input, fields: ['schemaVersion', 'active', 'retired'], label: 'shared guidance export' })
+  if (input.schemaVersion !== 1) fail(`unsupported shared guidance export version: ${input.schemaVersion}`)
+  if (!Array.isArray(input.active) || !Array.isArray(input.retired)) fail('shared guidance export needs active and retired arrays')
+  input.active.forEach((record) => {
+    assertObject({ value: record, label: 'shared guidance' })
+    assertClosedFields({ value: record, fields: portableGuidanceFields, label: 'shared guidance' })
+  })
+  if (input.retired.some((fingerprint) => !fingerprintPattern.test(fingerprint))) fail('shared guidance export has an invalid retired fingerprint')
+  return input
+}
+
+// Merges exported shared guidance by fingerprint. Retirement wins over activation, and
+// local candidates are promoted because another machine already activated them.
+const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
+  requireInitialized(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
+  const input = validatePortableSharedGuidance(readJsonInput(inputPath))
+  const now = new Date().toISOString()
+  const result = { created: [], promoted: [], retired: [], skipped: [] }
+  for (const fingerprint of input.retired) {
+    const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
+    if (!local || retiredStatuses.has(local.status)) continue
+    const replacesSuperseded = memory.guidance.some((guidance) => (
+      guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === local.id
+    ))
+    if (replacesSuperseded) {
+      result.skipped.push({ id: local.id, reason: 'active-replacement-of-superseded-guidance' })
+      continue
+    }
+    appendTransition({ guidance: local, to: 'withdrawn', reason: 'retired-on-another-machine', source: 'shared-sync', now })
+    result.retired.push(local.id)
+  }
+  for (const record of input.active) {
+    const scope = { kind: 'shared' }
+    const fingerprint = fingerprintFor({ scope, subjectKey: record.subjectKey, learning: record.learning })
+    const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
+    if (local?.status === 'candidate') {
+      appendTransition({ guidance: local, to: 'active', reason: 'active-on-another-machine', source: 'shared-sync', now })
+      result.promoted.push(local.id)
+    }
+    if (local) continue
+    const guidance = {
+      id: fingerprint.replace('fingerprint', 'guidance'),
+      fingerprint,
+      scope,
+      ...record,
+      status: 'active',
+      evidenceIds: [],
+      independentEvidenceCount: 0,
+      transitions: [{ from: null, to: 'active', reason: 'imported-shared-guidance', source: 'shared-sync', at: now }],
+      createdAt: now,
+      updatedAt: now,
+    }
+    validateGuidanceRecord(guidance)
+    memory.guidance.push(guidance)
+    result.created.push(guidance.id)
+  }
+  if (result.created.length + result.promoted.length + result.retired.length > 0) {
+    writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
+  }
+  return result
+}
+
+const importSharedGuidance = ({ paths, inputPath }) => (
+  withMemoryLock({ paths, action: () => importSharedGuidanceUnlocked({ paths, inputPath }) })
+)
+
 const fitWholeRecords = ({ records, maxRecords, maxBytes }) => {
   const included = []
   for (const record of records) {
@@ -1869,6 +1980,8 @@ const main = () => {
     scope: options.scope,
   })
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
+  if (command === 'export') result = exportSharedGuidance({ paths, outputPath: options.output })
+  if (command === 'import') result = importSharedGuidance({ paths, inputPath: options.input })
   if (command === 'init') initialize(paths)
   if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
   if (command === 'retrieve') {
