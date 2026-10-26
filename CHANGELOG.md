@@ -1,3 +1,19 @@
+# [3.4.0](https://github.com/filipgutica/filip-stack/compare/v3.3.1...v3.4.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **field-guide:** keep hook session state in the user's guide ([1716cf1](https://github.com/filipgutica/filip-stack/commit/1716cf11e273f09b7adcb7feb1ecb0353860f4d3))
+* **field-guide:** keep parent session state when a subagent starts ([721df02](https://github.com/filipgutica/filip-stack/commit/721df024b025815c1a9d7f7a9e5a3f58c76eb743))
+* **field-guide:** refuse a symlinked sessions directory and prune only state files ([ea88453](https://github.com/filipgutica/filip-stack/commit/ea884538445689b36541eea1a35d32265f4bd3d9))
+* **field-guide:** restore retrieval safeguards (S-1, S-2) ([17e7406](https://github.com/filipgutica/filip-stack/commit/17e7406fc4014f3521d5bfc19bd2366fb5839654))
+* persist lifecycle state after retrieval failures (S-1, S-2) ([c19eaaa](https://github.com/filipgutica/filip-stack/commit/c19eaaaf1f65fc891ee20127b80113e0767cdc11))
+
+
+### Features
+
+* **field-guide:** inject relevant guidance at session start and first prompt ([949627a](https://github.com/filipgutica/filip-stack/commit/949627a5104a951f11c2ab4df3d1913f2733851f))
+
 ## [3.3.1](https://github.com/filipgutica/filip-stack/compare/v3.3.0...v3.3.1) (2026-10-26)
 
 
