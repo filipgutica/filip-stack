@@ -148,16 +148,20 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 
 | Skill | Use |
 | --- | --- |
+| `babysit-pr` | Watch a PR through CI and review bots, and fix real findings. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
+| `full-send` | Review the code and description with Sol, babysit, and merge the PR, or return PASS or FAIL for human review. Also finishes a merge council's open items. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
 | `merge-council` | Run a three-member review council on a PR when you, a task, or repository guidance asks for one; it returns a merge verdict and fixes agreed findings on your own PRs. |
 | `pr-review-churn` | Analyze recurring GitHub PR review feedback for repositories and a lookback you choose. |
+| `sol-loop` | Review a change with GPT Sol in a loop until both agents agree. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `ux-laws` | Design or review interfaces and flows with established UX laws. |
 | `vue-best-practices` | Apply Vue guidance for reactivity, composables, component contracts, and tests. |
 
 ```sh
 npx skills add filipgutica/filip-stack --list
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send sol-loop babysit-pr -y
 ```
 
 The CLI keeps the canonical copy in `~/.agents/skills/<name>`, which Codex

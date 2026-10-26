@@ -8,7 +8,7 @@ Decide a skill's tier before you add or move it:
 
 | Tier | What it is | Where it lives | How to tell |
 | --- | --- | --- | --- |
-| 1. Workflow | Works with other Workflow skills | `plugins/workflow/skills/<name>/` | Links another Workflow skill's references, routing, or handoffs, or another skill depends on it |
+| 1. Workflow | Works with other Workflow skills | `plugins/workflow/skills/<name>/` | Links another Workflow skill's references, routing, or handoffs, or another Workflow skill depends on it |
 | 2. Standalone | Written here and useful alone | `skills/<name>/` | No dependency on a plugin skill |
 | 3. Adapted | A standalone skill based on an upstream skill, with local changes | `skills/<name>/` with `THIRD_PARTY_NOTICES.md` (source and baseline commit) | `upstream-sync` compares it with upstream |
 | 4. Downloaded | An upstream skill used unchanged | Outside this repository | Installed with `npx skills add <source>` and unchanged from its lock entry |
@@ -17,6 +17,8 @@ Decide a skill's tier before you add or move it:
 Host configuration is not a skill. `host-config/` holds the general global guidance, agent templates, output styles, design language, and shared Field Guide export that `scripts/host-config.mjs` applies to `~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`. It ships from `main` without a version. Keep it free of employer-specific content and machine-specific paths; use `{{HOME}}` for the home directory.
 
 Skills that are not standalone set `metadata.internal: true`, so the skills CLI does not offer them. This covers plugin skills and repository development skills. Field Guide stays a plugin because it ships a hook.
+
+A standalone skill may require other standalone skills by name, as `full-send` requires `sol-loop` and `babysit-pr`. It stops when one is missing, and its README row says to install them together. A skill that depends on Workflow skills belongs in the plugin.
 
 ## Principles
 
