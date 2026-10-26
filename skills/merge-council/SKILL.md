@@ -18,8 +18,9 @@ The council is independent of you. You launch one **chair** agent, and the chair
    - a checkout the user named
    - the current checkout, when one of its remotes matches
    - a clone of the base repository at `${TMPDIR:-/tmp}/merge-council/clones/<owner>-<repo>`, created with `gh repo clone` when missing and reused across runs
-5. Fill the chair brief below and launch the chair as a fresh agent with the roster's `chair` target, asynchronously where the host supports it. The chair sees only its brief, so launch it without this conversation's context.
-6. Wait for the chair to finish. Its run limit is 120 minutes; if it has not finished after 150 minutes, cancel it and confirm that it stopped.
+5. Find the prior run: a record path the user names, otherwise the newest `${TMPDIR:-/tmp}/merge-council/*/record.json` whose `subject.repo` and `subject.pr` match this PR and whose verdict is not `APPROVE`. A follow-up run continues that council through its record. It does not resume the old agents: every round is a fresh task that carries the earlier findings. If the user has answered findings from that run, pass their words unchanged, with the finding IDs. If no prior run exists, say so and run fresh.
+6. Fill the chair brief below and launch the chair as a fresh agent with the roster's `chair` target, asynchronously where the host supports it. The chair sees only its brief, so launch it without this conversation's context.
+7. Wait for the chair to finish. Its run limit is 120 minutes; if it has not finished after 150 minutes, cancel it and confirm that it stopped.
 
 ### Chair brief
 
@@ -31,7 +32,9 @@ You are the chair of a merge council. Read <skill dir>/references/chair.md and f
 - Skill directory: <skill dir>
 - Host key: <host key>
 - Roster: <the chair and three member targets for this host key, as JSON>
-- User-level instruction files: <absolute paths of the user-level instruction files you loaded, and the files they reference for delegation roles>
+- User-level instruction files: <absolute paths of the user-level instruction files you loaded, and the files they reference for delegation roles and PR descriptions>
+- Prior run: <absolute path of the prior record.json, or "none">
+- User decisions: <one line per finding, "<finding id>: <the user's words>", or "none">
 - Started: <UTC timestamp>
 
 This brief authorizes you to delegate to the three members and one fixer named by the procedure, and, in fix mode, to push the fixer's commits as the procedure allows.
@@ -51,4 +54,4 @@ The chair replies with a short report whose last line names its JSON record, `re
 3. Before you act on `APPROVE`, confirm that the PR's head SHA and base SHA still match `subject` in the record and that CI passes.
 4. Act under the repository's guidance and the user's instructions:
    - **`APPROVE`:** where guidance allows merging on council approval, merge with `gh pr merge <PR URL> --match-head-commit <headSha>` and post `approvalSummary` with `gh pr comment <PR URL>`. Otherwise report that the PR is ready.
-   - **`CHANGES_REQUESTED`** or **`NEEDS_HUMAN`:** the report's "Before merging" items are the hand-off. Offer to dig into any of them, using the record for detail.
+   - **`CHANGES_REQUESTED`** or **`NEEDS_HUMAN`:** the report's "Before merging" items are the hand-off. Offer to dig into any of them, using the record for detail. After the user addresses them, the next council run on this PR continues from this record.

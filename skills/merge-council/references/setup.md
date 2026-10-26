@@ -57,6 +57,9 @@ Create or edit the roster at `~/.config/merge-council/roster.json`. Every host s
 
 Before launch, the launching agent confirms that the chair target still exists and that its effort is a value the host accepts. Before any review, the chair confirms that each member target for the selected host still exists and that its effort is a value the host accepts. If a target fails, stop before reviewing, name the target, and suggest `merge-council setup`. Never substitute another model or profile.
 
+- **T3:** `orchestrator_capabilities` lists only some models per provider. When a target's model is not listed, call it again with `search` set to the model ID before you treat the target as missing.
+- **Newer model:** when the host lists a newer version of a target's model, such as `gpt-6.1-sol` for a `gpt-6-sol` target, still run the roster target. Suggest `merge-council setup`: the chair adds the newer model to `limitations` for member targets, and the launching agent tells the user in one line for the chair target.
+
 The launching agent records the settings the chair ran with, and the chair records the settings each member ran with:
 
 - If the host reports a different model or effort than the roster asked for, stop the run.
