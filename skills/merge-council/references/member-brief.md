@@ -86,7 +86,7 @@ Set `blocking` to true only when the PR should not merge until the finding is re
 
 ## Reconciliation brief
 
-Send this as a new task for the same member target, with the same Limits, Subject, and Guidance sections as the review brief.
+Send this as a new task for the same member target, with the same Limits, Subject, Guidance, and Prior run sections as the review brief.
 
 ```md
 You are a member of a merge council, lens <lens>. The council pooled every member's findings for the subject above. Authors are hidden. Some findings are your own.
@@ -118,7 +118,7 @@ Return exactly this JSON:
 
 ## Remedy-vote brief
 
-Send this as a new task for the same member target, with the same Limits, Subject, Guidance, and Fix eligibility sections as the review brief.
+Send this as a new task for the same member target, with the same Limits, Subject, Guidance, Prior run, and Fix eligibility sections as the review brief.
 
 ```md
 You are a member of a merge council, lens <lens>. All three members agree that each finding below is true, but not on how to fix it.

@@ -87,10 +87,12 @@ Decide both at the start and check them again before you finish.
 3. **Review with `sol-loop`.** Add the description section below to its round 1
    brief, so Sol reviews the title and description with the code.
 4. **File the PR** if none exists. Rebase onto the latest default branch
-   first. Open a real PR, not a draft, so review bots run. For an existing PR,
-   apply the reviewed title and description with `gh pr edit`.
-5. **Babysit the PR** with `babysit-pr`. Fix real findings and CI failures,
-   and get proof for each fix before you push it. A fix that changes behavior
+   first. Open a real PR, not a draft, so review bots run. For an existing PR
+   in fix mode, apply the reviewed title and description with `gh pr edit`.
+   In review-only mode, list the corrections in the report instead.
+5. **Babysit the PR** with `babysit-pr`. In fix mode, fix real findings and CI
+   failures, and get proof for each fix before you push it. In review-only
+   mode, report them instead. A fix that changes behavior
    gets a `sol-loop` follow-up round while its budget lasts.
 6. **Finish.** In merge mode, merge when the merge gate passes. In verdict
    mode, finish when the merge gate passes except for human approval.
