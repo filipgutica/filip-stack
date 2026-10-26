@@ -74,7 +74,7 @@ guidance. Analytics write failures do not change the hook output.
 
 ## Privacy boundary
 
-Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, and
+Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, `source`, and
 `prompt` fields. It runs Git in `cwd` to identify the repository and reads the
 local guidance store. It does not access source files or files referenced by
 the event. It uses the prompt only as an in-memory retrieval query and

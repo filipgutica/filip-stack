@@ -351,6 +351,18 @@ test('the first prompt matches its whole text when session start did not run', (
   assert.match(context, /- \[stacked-prs\] Link dependent pull requests as a native stack\./)
 })
 
+test('a first prompt outside Git consumes pending guidance without retrying on later prompts', () => {
+  const { home, repoRoot } = seedGuide()
+  const send = (cwd) => contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-non-git-prompt', cwd, prompt: 'Fix the Vue watcher flush timing' })}\n`,
+    env: hostEnvironment.codex,
+  }))
+
+  assert.equal(send(home), promptOutput.hookSpecificOutput.additionalContext)
+  assert.equal(send(repoRoot), promptOutput.hookSpecificOutput.additionalContext)
+})
+
 test('session start injects nothing without a guide or a supported host', () => {
   const { home, repoRoot } = seedGuide()
   const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-3', cwd: repoRoot, source: 'startup' })}\n`
@@ -425,4 +437,24 @@ test('session start prunes old session state and writes none without a guide', (
   const emptyHome = mkdtempSync(join(tmpdir(), 'field-guide-hook-no-guide-'))
   contextFor(run({ home: emptyHome, input: input('session-8'), env: hostEnvironment.claude }))
   assert.equal(existsSync(join(emptyHome, '.field-guide')), false)
+})
+
+test('session start outside Git writes pending state and prunes old state', () => {
+  const { home, guideRoot } = seedGuide()
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const oldState = join(stateDirectory, 'old.json')
+  writeFileSync(oldState, '{}\n')
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  utimesSync(oldState, eightDaysAgo, eightDaysAgo)
+  const sessionId = 'session-non-git-start'
+
+  assert.equal(contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: home, source: 'startup' })}\n`,
+    env: hostEnvironment.claude,
+  })), null)
+  const statePath = join(stateDirectory, `${createHash('sha256').update(sessionId).digest('hex')}.json`)
+  assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')), { injectedIds: [], promptPending: true })
+  assert.equal(existsSync(oldState), false)
 })

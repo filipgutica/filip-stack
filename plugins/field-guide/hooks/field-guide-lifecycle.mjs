@@ -66,7 +66,12 @@ const sessionStartContext = (input) => {
   // Codex subagent hooks reuse the parent's session ID. Keep the parent's state.
   if (input.source === 'startup' && existsSync(sessionStatePath(input.session_id))) return null
   try {
-    const injection = sessionStartInjection({ repoRoot: input.cwd })
+    let injection = null
+    try {
+      injection = sessionStartInjection({ repoRoot: input.cwd })
+    } catch {
+      // Failed retrieval still starts the session and permits state pruning.
+    }
     // Write state before returning text so a failed write never repeats injection.
     writeSessionState(input.session_id, { injectedIds: injection?.guidanceIds ?? [], promptPending: true })
     pruneSessionStates()
@@ -85,7 +90,12 @@ const promptGuidanceContext = (input) => {
   try {
     const state = readSessionState(input.session_id)
     if (!state.promptPending) return null
-    const injection = promptInjection({ repoRoot: input.cwd, prompt: input.prompt, excludeIds: state.injectedIds })
+    let injection = null
+    try {
+      injection = promptInjection({ repoRoot: input.cwd, prompt: input.prompt, excludeIds: state.injectedIds })
+    } catch {
+      // Failed retrieval consumes this attempt so later prompts do not retry.
+    }
     writeSessionState(input.session_id, {
       injectedIds: [...state.injectedIds, ...(injection?.guidanceIds ?? [])],
       promptPending: false,
