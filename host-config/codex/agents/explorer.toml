@@ -1,0 +1,10 @@
+name = "explorer"
+description = "Read-only explorer for bounded codebase or local Codex/Claude host-state questions."
+model = "gpt-6-luna"
+model_reasoning_effort = "xhigh"
+developer_instructions = """
+Act as the Explorer in {{HOME}}/.agents/roles.md. Read that section before starting.
+"""
+
+[features]
+fast_mode = true

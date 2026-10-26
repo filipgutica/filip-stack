@@ -102,6 +102,42 @@ agent-reported impact, and reviewed outcomes separately.
 Workflow does not invoke or depend on Field Guide. Current instructions, live
 code, and repository contracts continue to outrank stored guidance.
 
+## Host config
+
+`host-config/` holds the general agent setup shared by every machine: the
+global Claude and Codex guidance, Claude agent templates and output styles,
+Codex agent profiles, `~/.agents/roles.md`, `~/.agents/CODING_STANDARDS.md`, and
+exported shared Field Guide preferences. It contains no employer-specific
+guidance; keep that local to the machine that needs it.
+
+```sh
+node scripts/host-config.mjs status            # applied commit, then each target's state
+node scripts/host-config.mjs apply [--force]   # write targets and import shared guidance
+node scripts/host-config.mjs field-guide-sync  # import, then export local shared guidance
+```
+
+`apply` copies `host-config/claude`, `codex`, and `agents` into `~/.claude`,
+`~/.codex`, and `~/.agents`, and replaces `{{HOME}}` with the home directory.
+It writes the guidance assembled from `host-config/guidance/` into a marked block
+in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
+as the ctx7 block or machine-local notes, stays as it is. The manifest in
+`~/.agents/.filip-stack-host-config.json` records the applied commit and a hash
+of each target. Apply removes a file it applied earlier once the repository no
+longer has it.
+
+When managed text was changed locally, apply prints the diff and stops. Move the
+change into `host-config/` and commit it, or rerun with `--force` to save the
+local file as `<file>.bak` and overwrite it. A guidance file without a block
+counts as changed. With `--force`, apply replaces it with the block, and you
+restore machine-local text below the block from the backup.
+
+Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
+pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
+Claude and Codex.
+
+`field-guide-sync` updates `host-config/field-guide/shared.json`. Review the
+diff before you commit it: an export carries every active shared learning.
+
 ## Standalone skills
 
 Independent skills live in `skills/<name>/` and install one at a time with the
@@ -147,11 +183,13 @@ plugins/field-guide/       Optional local-learning plugin
   scripts/                 Cross-host Node launcher
   skills/field-guide/      Skill, storage utility, schemas, and references
 skills/                    Standalone skills installed with the skills CLI
+host-config/               General Claude and Codex guidance, agents, and styles
 .agents/skills/            Repository development skills (linked from .claude/skills)
 tests/workflow/            Repository-only contract and payload tests
 tests/skills/              Standalone skill contracts
 tests/field-guide/         Field Guide contracts and utility tests
-scripts/                   Version and plugin validation scripts
+tests/host-config/         Host config apply tests
+scripts/                   Version, plugin validation, and host-config scripts
 docs/                      Evaluation lab notebook and evidence
 ```
 

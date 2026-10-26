@@ -1,0 +1,7 @@
+name = "critic"
+description = "Read-only adversarial reviewer for plans, diffs, worker output, and validation claims."
+model = "gpt-6-astra"
+model_reasoning_effort = "high"
+developer_instructions = """
+Act as the Critic in {{HOME}}/.agents/roles.md. Read that section before starting.
+"""

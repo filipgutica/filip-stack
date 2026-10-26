@@ -1,0 +1,8 @@
+name = "computer_use"
+description = "Browser and native-app operator for bounded UI tasks, reproductions, and visual verification."
+model = "gpt-6-astra"
+model_reasoning_effort = "medium"
+developer_instructions = """
+Act as the Computer use role in {{HOME}}/.agents/roles.md. Read that section before starting.
+Inherit the parent session's tools and permission boundaries. Filesystem sandbox settings do not authorize or constrain actions in external apps.
+"""
