@@ -6,6 +6,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
+import Ajv2020 from 'ajv/dist/2020.js'
 import { fieldGuidePluginRoot, fieldGuideSkillRoot } from './plugin-paths.mjs'
 
 const adapter = new URL('hooks/field-guide-lifecycle.mjs', fieldGuidePluginRoot)
@@ -289,6 +290,17 @@ const seedGuide = () => {
   return { home, repoRoot, guideRoot, capture }
 }
 
+const validateAnalyticsEvent = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
+  .compile(JSON.parse(readFileSync(fileURLToPath(new URL('schemas/analytics-event-v1.schema.json', fieldGuideSkillRoot)), 'utf8')))
+
+const startSession = ({ home, repoRoot, sessionId }) => contextFor(run({
+  home,
+  input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`,
+  env: hostEnvironment.claude,
+}))
+
+const projectSection = (context) => context.split('\n\n')[0]
+
 const contextFor = (result) => {
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stderr, '')
@@ -373,6 +385,40 @@ test('session start injects nothing without a guide or a supported host', () => 
 test('the session start hook matches only startup, clear, and compaction', () => {
   assert.equal(hooksConfig.hooks.SessionStart[0].matcher, 'startup|clear|compact')
   assert.equal(hooksConfig.hooks.SessionStart[0].hooks[0].command, hookCommand)
+})
+
+test('session start injects the eight newest project records and indexes the rest', () => {
+  const { home, repoRoot, guideRoot, capture } = seedGuide()
+  for (let index = 0; index < 9; index += 1) {
+    capture({ scope: 'project', subjectKey: `project-rule-${index}`, learning: `Apply project rule ${index}.`, turnId: `turn-rule-${index}` })
+  }
+  const context = startSession({ home, repoRoot, sessionId: 'session-cap' })
+
+  const lines = projectSection(context).split('\n').slice(1)
+  assert.deepEqual(lines, [8, 7, 6, 5, 4, 3, 2, 1].map((index) => `- [project-rule-${index}] Apply project rule ${index}.`))
+  assert.ok(Buffer.byteLength(projectSection(context)) <= 1536)
+  assert.match(context, /Other stored Field Guide subjects: project-rule-0, release-process, stacked-prs, vue-reactivity\./)
+  const events = readFileSync(join(guideRoot, 'analytics', 'events.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+  const injection = events.find(({ type }) => type === 'injection')
+  assert.equal(injection.guidanceIds.length, 8)
+  assert.ok(validateAnalyticsEvent(injection), JSON.stringify(validateAnalyticsEvent.errors))
+})
+
+test('session start keeps project guidance within 1.5 KB and indexes records that do not fit', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  // Two-byte characters make UTF-8 bytes exceed string length.
+  for (let index = 0; index < 4; index += 1) {
+    capture({ scope: 'project', subjectKey: `medium-rule-${index}`, learning: `Apply medium rule ${index}: ${'é'.repeat(200)}`, turnId: `turn-medium-${index}` })
+  }
+  capture({ scope: 'project', subjectKey: 'oversized-rule', learning: `Apply the oversized rule: ${'é'.repeat(800)}`, turnId: 'turn-oversized' })
+  const context = startSession({ home, repoRoot, sessionId: 'session-bytes' })
+
+  const section = projectSection(context)
+  assert.ok(Buffer.byteLength(section) <= 1536, `${Buffer.byteLength(section)} bytes`)
+  assert.deepEqual(section.split('\n').slice(1).map((line) => line.match(/^- \[([^\]]+)\]/)[1]), [
+    'medium-rule-3', 'medium-rule-2', 'medium-rule-1', 'release-process',
+  ])
+  assert.match(context, /Other stored Field Guide subjects: medium-rule-0, oversized-rule, stacked-prs, vue-reactivity\./)
 })
 
 test('the session start subject index stays within one kilobyte', () => {

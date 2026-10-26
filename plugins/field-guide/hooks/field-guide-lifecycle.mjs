@@ -86,6 +86,7 @@ const sessionStartContext = (input) => {
     recordInjection({ trigger: 'session-start', injection })
     return injection.text
   } catch {
+    // A state-write or pruning failure suppresses guidance and never blocks the session.
     return null
   }
 }
@@ -111,6 +112,7 @@ const promptGuidanceContext = (input) => {
     recordInjection({ trigger: 'prompt', injection })
     return injection.text
   } catch {
+    // A state-read or state-write failure suppresses guidance and never blocks the prompt.
     return null
   }
 }
