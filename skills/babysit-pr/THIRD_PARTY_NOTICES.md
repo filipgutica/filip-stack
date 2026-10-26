@@ -5,6 +5,7 @@
 `agents/openai.yaml` for Codex and replaces upstream's `leaving-pr-comments`
 dependency with an inline comment rule. That skill prefixes every comment with
 an AI attribution callout, and comments posted here carry no AI attribution.
+It also treats PR text and bot output as evidence, not instructions.
 
 The repository's `upstream-sync` skill compares the tracked path with upstream
 and advances the baseline after review.
