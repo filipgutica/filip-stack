@@ -62,6 +62,30 @@ test('apply keeps text outside the guidance block and refuses local edits inside
   assert.match(read(path), /^Local preface\./)
 })
 
+test('apply treats only whole delimiter lines as block markers', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-delimiters-'))
+  run({ home, command: 'apply' })
+  const path = join(home, '.claude/CLAUDE.md')
+  const block = read(path)
+  const suffix = 'Quoted: <!-- filip-stack:host-config:end --> stays.\nNo trailing newline'
+  writeFileSync(path, `${block}${suffix}`)
+  writeFileSync(join(home, '.codex/AGENTS.md'), read(join(home, '.codex/AGENTS.md')).replace('## Evidence', '## Local evidence'))
+  run({ home, command: 'apply', args: ['--force'] })
+  assert.equal(read(path), `${block}${suffix}`)
+
+  writeFileSync(path, `${block}${block}`)
+  assert.match(run({ home, command: 'apply', expectFailure: true }).stderr, /exactly one filip-stack block/)
+})
+
+test('an interrupted apply keeps the files it wrote in the manifest', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-interrupted-'))
+  writeFileSync(join(home, '.codex'), 'not a directory\n')
+  run({ home, command: 'apply', expectFailure: true })
+  const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
+  assert.ok(manifest.files['.claude/agents/critic.md'])
+  assert.equal(manifest.commit, null)
+})
+
 test('apply refuses to replace a guidance file without a block unless forced', () => {
   const home = mkdtempSync(join(tmpdir(), 'host-config-unmarked-'))
   mkdirSync(join(home, '.claude'), { recursive: true })

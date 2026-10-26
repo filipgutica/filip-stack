@@ -67,20 +67,38 @@ const desiredTargets = (home) => {
     }
   }
   for (const [host, target] of guidanceTargets) {
-    targets.set(target, { kind: 'block', content: renderGuidance({ host, home }) })
+    const content = renderGuidance({ host, home })
+    if (hasDelimiterLine(content)) fail(`${host} guidance must not contain a filip-stack delimiter line`)
+    targets.set(target, { kind: 'block', content })
   }
   return targets
 }
 
+// Delimiters count only as whole lines, so text can quote them.
+const delimiterOffsets = ({ text, delimiter }) => {
+  const offsets = []
+  let offset = 0
+  for (const line of text.split('\n')) {
+    if (line === delimiter) offsets.push(offset)
+    offset += line.length + 1
+  }
+  return offsets
+}
+
+const hasDelimiterLine = (text) => (
+  text.split('\n').some((line) => line === blockStart || line === blockEnd)
+)
+
 const splitBlock = ({ text, path }) => {
-  const start = text.indexOf(blockStart)
-  const end = text.indexOf(blockEnd)
-  if (start === -1 && end === -1) return null
-  if (start === -1 || end < start) fail(`${path} has a malformed filip-stack block`)
+  const starts = delimiterOffsets({ text, delimiter: blockStart })
+  const ends = delimiterOffsets({ text, delimiter: blockEnd })
+  if (starts.length === 0 && ends.length === 0) return null
+  if (starts.length !== 1 || ends.length !== 1 || ends[0] < starts[0]) fail(`${path} must contain exactly one filip-stack block`)
+  const afterEnd = ends[0] + blockEnd.length
   return {
-    before: text.slice(0, start),
-    body: text.slice(start + blockStart.length + 1, end),
-    after: text.slice(end + blockEnd.length + 1),
+    before: text.slice(0, starts[0]),
+    body: text.slice(starts[0] + blockStart.length + 1, ends[0]),
+    after: text.slice(text[afterEnd] === '\n' ? afterEnd + 1 : afterEnd),
   }
 }
 
@@ -150,6 +168,12 @@ const status = ({ home }) => {
   for (const { target, state } of entries) process.stdout.write(`${state.padEnd(13)} ${target}\n`)
 }
 
+const writeManifest = ({ home, commit, files }) => {
+  const path = join(home, manifestTarget)
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, `${JSON.stringify({ commit, files }, null, 2)}\n`)
+}
+
 const backUp = (path) => {
   copyFileSync(path, `${path}.bak`)
   process.stdout.write(`backed up ${path} to ${path}.bak\n`)
@@ -201,6 +225,7 @@ const apply = ({ home, force }) => {
     if (entry.state.endsWith('remove')) {
       rmSync(path, { force: true })
       delete files[entry.target]
+      writeManifest({ home, commit: manifest.commit, files })
       process.stdout.write(`removed ${entry.target}\n`)
       continue
     }
@@ -209,11 +234,11 @@ const apply = ({ home, force }) => {
     }
     writeTarget({ home, ...entry })
     files[entry.target] = hash(entry.content)
+    // Record each write at once, so an interrupted apply still tracks the files it wrote.
+    writeManifest({ home, commit: manifest.commit, files })
     process.stdout.write(`wrote ${entry.target}\n`)
   }
-  const manifestPath = join(home, manifestTarget)
-  mkdirSync(dirname(manifestPath), { recursive: true })
-  writeFileSync(manifestPath, `${JSON.stringify({ commit: sourceCommit(), files }, null, 2)}\n`)
+  writeManifest({ home, commit: sourceCommit(), files })
   if (existsSync(sharedGuidancePath)) {
     runFieldGuide({ home, args: ['init'] })
     importSharedGuidance({ home })
