@@ -237,6 +237,14 @@ test('reports counts, valid denominators, and a date-filtered summary without ra
   enableAnalytics(guideRoot)
   appendAnalyticsEvent({ guideRoot, event: { type: 'hook_invoked', host: 'codex' } })
   appendAnalyticsEvent({ guideRoot, event: { type: 'hook_invoked', host: 'claude' } })
+  appendAnalyticsEvent({
+    guideRoot,
+    event: { type: 'injection', projectKey: 'sample-project', trigger: 'session-start', guidanceIds: [guidanceA] },
+  })
+  appendAnalyticsEvent({
+    guideRoot,
+    event: { type: 'injection', projectKey: 'sample-project', trigger: 'prompt', guidanceIds: [guidanceB] },
+  })
   const retrievalHit = appendAnalyticsEvent({
     guideRoot,
     event: { type: 'retrieval', projectKey: 'sample-project', guidanceIds: [guidanceA] },
@@ -293,6 +301,8 @@ test('reports counts, valid denominators, and a date-filtered summary without ra
   assert.equal(report.enabled, true)
   assert.equal(report.hooks.total, 2)
   assert.ok(report.hooks.byHost.codex.lastSeen)
+  assert.equal(report.injections.total, 2)
+  assert.deepEqual(report.injections.byTrigger, { 'session-start': 1, prompt: 1 })
   assert.equal(report.retrievals.total, 3)
   assert.equal(report.retrievals.hits, 2)
   assert.equal(report.retrievals.misses, 1)

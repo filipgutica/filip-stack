@@ -2,10 +2,10 @@
 
 ## Purpose
 
-The Field Guide plugin gives Claude and Codex agents one short, static lifecycle
-instruction. Command details remain in the field-guide skill and do not appear
-in hook output. The adapter parses the hook event only to select
-`hook_event_name`.
+The Field Guide plugin injects bounded stored guidance at session start and the
+first prompt, and adds a short lifecycle instruction for Claude and Codex agents.
+Command details remain in the field-guide skill and do not appear in hook output.
+The adapter reads only the event fields listed under Privacy boundary.
 
 ## Host selection
 

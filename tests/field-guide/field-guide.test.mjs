@@ -730,6 +730,9 @@ test('retrieve uses a concrete query without requiring a subject hint', () => {
   const subjectResult = retrieve({ repoRoot, guideRoot, query: 'reorganize walkthrough formatting' })
   assert.deepEqual(subjectResult.guidance.map(({ subjectKey }) => subjectKey), ['walkthrough-logs'])
 
+  const singleLearningTermResult = retrieve({ repoRoot, guideRoot, query: 'reorganize object formatting' })
+  assert.deepEqual(singleLearningTermResult.guidance, [])
+
   const genericResult = retrieve({
     repoRoot,
     guideRoot,

@@ -298,7 +298,7 @@ const contextFor = (result) => {
 test('session start injects project guidance and a subject index, then the first prompt adds matching guidance once', () => {
   const { home, repoRoot, guideRoot } = seedGuide()
   const send = (input) => contextFor(run({ home, input: `${JSON.stringify({ session_id: 'session-1', cwd: repoRoot, ...input })}\n`, env: hostEnvironment.claude }))
-  const prompt = 'Fix the Vue watcher flush timing PASSWORD=private-value'
+  const prompt = 'Fix the Vue watcher flush timing and run the release packaging check PASSWORD=private-value'
 
   const start = send({ hook_event_name: 'SessionStart', source: 'startup' })
   assert.match(start, /- \[release-process\] Run the packaging check before tagging a release\./)
@@ -310,7 +310,7 @@ test('session start injects project guidance and a subject index, then the first
   assert.doesNotMatch(first, /release-process|stacked-prs|PASSWORD/)
   assert.ok(first.endsWith(promptOutput.hookSpecificOutput.additionalContext))
 
-  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt }), promptOutput.hookSpecificOutput.additionalContext)
+  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt: 'Stack these pull requests.' }), promptOutput.hookSpecificOutput.additionalContext)
 
   const compacted = send({ hook_event_name: 'SessionStart', source: 'compact' })
   assert.match(compacted, /release-process/)
