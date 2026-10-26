@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { appendAnalyticsEvent } from '../skills/field-guide/scripts/field-guide-analytics.mjs'
@@ -18,6 +18,8 @@ const promptContext = 'Before your final response, privately choose capture, ask
 const sessionsRoot = () => join(guideRoot(), 'sessions')
 const sessionStateMaxAgeMs = 7 * 24 * 60 * 60 * 1000
 const hasGuide = () => existsSync(join(guideRoot(), 'memory.md'))
+// Matches state files and temporary files left by an interrupted write.
+const sessionStateFileName = /^[0-9a-f]{64}\.json(\.\d+\.tmp)?$/
 const sessionStatePath = (sessionId) => join(
   sessionsRoot(),
   `${createHash('sha256').update(sessionId).digest('hex')}.json`,
@@ -35,6 +37,9 @@ const readSessionState = (sessionId) => {
 
 const writeSessionState = (sessionId, state) => {
   mkdirSync(sessionsRoot(), { recursive: true, mode: 0o700 })
+  // A symlinked directory would send writes and pruning to another location.
+  const stats = lstatSync(sessionsRoot())
+  if (!stats.isDirectory() || stats.isSymbolicLink()) throw new Error('sessions must be a local directory')
   const path = sessionStatePath(sessionId)
   // Rename replaces the path itself, so a planted symlink is never followed.
   const temporaryPath = `${path}.${process.pid}.tmp`
@@ -45,9 +50,11 @@ const writeSessionState = (sessionId, state) => {
 const pruneSessionStates = () => {
   const cutoff = Date.now() - sessionStateMaxAgeMs
   for (const name of readdirSync(sessionsRoot())) {
+    if (!sessionStateFileName.test(name)) continue
     const path = join(sessionsRoot(), name)
     try {
-      if (statSync(path).mtimeMs < cutoff) unlinkSync(path)
+      const stats = lstatSync(path)
+      if (stats.isFile() && stats.mtimeMs < cutoff) unlinkSync(path)
     } catch {
       // Another session may remove or replace the file first; pruning is best effort.
     }

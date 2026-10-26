@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -420,11 +420,35 @@ test('session state replaces a planted symlink without writing through it', () =
   assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')).promptPending, true)
 })
 
+test('session state refuses a symlinked sessions directory and prunes only state files', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  const outside = join(home, 'outside')
+  mkdirSync(outside)
+  const outsideFile = join(outside, 'keep.txt')
+  writeFileSync(outsideFile, 'unchanged\n')
+  utimesSync(outsideFile, eightDaysAgo, eightDaysAgo)
+  const stateDirectory = join(guideRoot, 'sessions')
+  symlinkSync(outside, stateDirectory)
+
+  const input = (sessionId) => `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`
+  assert.equal(contextFor(run({ home, input: input('session-symlinked'), env: hostEnvironment.claude })), null)
+  assert.deepEqual(readdirSync(outside), ['keep.txt'])
+
+  unlinkSync(stateDirectory)
+  mkdirSync(stateDirectory)
+  const otherFile = join(stateDirectory, 'notes.txt')
+  writeFileSync(otherFile, 'unchanged\n')
+  utimesSync(otherFile, eightDaysAgo, eightDaysAgo)
+  contextFor(run({ home, input: input('session-local'), env: hostEnvironment.claude }))
+  assert.equal(readFileSync(otherFile, 'utf8'), 'unchanged\n')
+})
+
 test('session start prunes old session state and writes none without a guide', () => {
   const { home, repoRoot, guideRoot } = seedGuide()
   const stateDirectory = join(guideRoot, 'sessions')
   mkdirSync(stateDirectory, { recursive: true })
-  const oldState = join(stateDirectory, 'old.json')
+  const oldState = join(stateDirectory, `${createHash('sha256').update('expired-session').digest('hex')}.json`)
   writeFileSync(oldState, '{}\n')
   const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
   utimesSync(oldState, eightDaysAgo, eightDaysAgo)
@@ -443,7 +467,7 @@ test('session start outside Git writes pending state and prunes old state', () =
   const { home, guideRoot } = seedGuide()
   const stateDirectory = join(guideRoot, 'sessions')
   mkdirSync(stateDirectory, { recursive: true })
-  const oldState = join(stateDirectory, 'old.json')
+  const oldState = join(stateDirectory, `${createHash('sha256').update('expired-session').digest('hex')}.json`)
   writeFileSync(oldState, '{}\n')
   const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
   utimesSync(oldState, eightDaysAgo, eightDaysAgo)

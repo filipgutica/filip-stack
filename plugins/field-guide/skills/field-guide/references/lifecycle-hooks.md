@@ -86,8 +86,9 @@ the session ID. It holds only injected guidance IDs and whether the next prompt
 should receive matched guidance. The adapter writes the state before it returns
 guidance, so a failed write prevents repeated injection. It writes each state
 file to a new temporary file and renames it into place, so it never follows a
-symlink at the state path. Each session start removes state files older than
-seven days. Without an initialized guide, the adapter writes no state.
+symlink at the state path. If `sessions/` is not a local directory, for example a
+symlink, the adapter writes no state and injects nothing. Each session start
+removes state files older than seven days and leaves other files in place. Without an initialized guide, the adapter writes no state.
 
 If analytics is enabled, the adapter also reads the local analytics setting and
 writes event metadata: timestamp, event ID, event type, host, project key,
