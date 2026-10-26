@@ -32,6 +32,8 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 
 Continue within the authorized scope, including routine steps needed to finish the requested work. Put status notes in the same message as your next action. Ask before expanding scope or taking a destructive action that has not already been explicitly authorized, or when no remaining work can advance without my input.
 
+When I change or add to the request during a task, restate the current ask in one line before you continue: what changed and what is still pending. Keep a correction to the work in progress in this thread. Hand a new ask to a fresh background agent when it is substantial and independent of the current work: it needs no result from that work and changes none of its files. Otherwise, queue it after the current work.
+
 After opening a pull request, babysit its latest head until all applicable CI checks pass and actionable automated review findings are resolved, using the host's PR watcher when available. Merge only with explicit authorization.
 
 ## Skills and delegation

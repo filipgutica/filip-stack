@@ -10,7 +10,7 @@ Continue from [rounds](rounds.md).
       - a member is missing, timed out, or abstained
       - a member did not meet required coverage
       - a blocking finding is contested
-      - an agreed blocking finding needs the user's decision
+      - an agreed blocking finding needs the user's decision and has none
       - the fixer failed, stopped, or could not push
       - the run reached its time limit
       - the head or base moved without a council push
@@ -34,6 +34,8 @@ Non-blocking findings, agreed or contested, never prevent `APPROVE`; the report 
 ```json
 {
   "runId": "mc-182-1a2b3c4-20261023T1830Z",
+  "previousRunId": "the prior run's runId, or null",
+  "userDecisions": { "P-R-1": "the user's words" },
   "status": "complete | incomplete",
   "verdict": "APPROVE | CHANGES_REQUESTED | NEEDS_HUMAN",
   "unanimous": false,
@@ -78,7 +80,7 @@ Non-blocking findings, agreed or contested, never prevent `APPROVE`; the report 
       "claim": "",
       "evidence": "",
       "remedy": "",
-      "resolution": "fixed:<sha> | open | needs-decision | closed",
+      "resolution": "fixed:<sha> | resolved | decided | open | needs-decision | closed",
       "remedyVote": {
         "candidates": { "A": "original remedy", "B": "revised remedy" },
         "ballots": { "risk": { "choice": "B", "blocking": false, "eligibility": "eligible" } },
@@ -106,7 +108,7 @@ Non-blocking findings, agreed or contested, never prevent `APPROVE`; the report 
 
 - `positions` has one entry per lens. `classification` is the member's own fix-eligibility class from its review; `claim`, `remedy`, `blocking`, and `eligibility` are its reconciliation answers. When a finding needed no reconciliation, every member raised it with the same remedy, blocking class, and eligibility, so record `agree` for all four.
 - `remedyVote` is present only when a remedy vote ran; `chosen` is `none` unless all three chose the same candidate with the same blocking class. When a candidate is chosen, `remedy` holds it, and `blocking`, `eligibility`, and each lens's `positions.<lens>.classification` come from the ballots. `positions` otherwise keeps the reconciliation answers.
-- `resolution` is `fixed:<sha>` for a pushed fix, `needs-decision` for an agreed finding that is not eligible, `closed` for a rejected finding, and `open` for everything else.
+- `resolution` is `fixed:<sha>` for a pushed fix, `resolved` for a prior finding all three members found resolved, `decided` for a finding the user decided that no member reopened, `needs-decision` for an agreed finding that is not eligible and has no user decision, `closed` for a rejected finding, and `open` for everything else.
 - `approvalSummary` is two to four sentences the launching agent can post as a PR comment: the subject and roster, what the council checked, the fixes it pushed, and any notes worth a reader's attention.
 
 ## Markdown report
