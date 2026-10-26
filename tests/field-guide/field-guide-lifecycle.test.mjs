@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -32,7 +33,6 @@ const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home'), en
     env: {
       ...process.env,
       HOME: home,
-      TMPDIR: join(home, 'tmp'),
       PLUGIN_ROOT: undefined,
       CLAUDE_PLUGIN_ROOT: undefined,
       ...env,
@@ -316,7 +316,7 @@ test('session start injects project guidance and a subject index, then the first
   assert.match(compacted, /release-process/)
   assert.match(send({ hook_event_name: 'UserPromptSubmit', prompt }), /- \[vue-reactivity\]/)
 
-  const stateDirectory = join(home, 'tmp', 'field-guide-sessions')
+  const stateDirectory = join(guideRoot, 'sessions')
   const stateText = readdirSync(stateDirectory).map((name) => readFileSync(join(stateDirectory, name), 'utf8')).join('')
   const eventsText = readFileSync(join(guideRoot, 'analytics', 'events.jsonl'), 'utf8')
   const injections = eventsText.trim().split('\n').map((line) => JSON.parse(line)).filter(({ type }) => type === 'injection')
@@ -377,4 +377,38 @@ test('prompt guidance stays within two kilobytes', () => {
   const guidance = context.slice(0, -`\n\n${promptOutput.hookSpecificOutput.additionalContext}`.length)
   assert.match(guidance, /release-notes/)
   assert.ok(Buffer.byteLength(guidance) <= 2048, `${Buffer.byteLength(guidance)} bytes`)
+})
+
+test('session state replaces a planted symlink without writing through it', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const target = join(home, 'outside.txt')
+  writeFileSync(target, 'unchanged\n')
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const statePath = join(stateDirectory, `${createHash('sha256').update('session-6').digest('hex')}.json`)
+  symlinkSync(target, statePath)
+
+  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-6', cwd: repoRoot, source: 'startup' })}\n`
+  assert.match(contextFor(run({ home, input, env: hostEnvironment.claude })), /release-process/)
+  assert.equal(readFileSync(target, 'utf8'), 'unchanged\n')
+  assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')).promptPending, true)
+})
+
+test('session start prunes old session state and writes none without a guide', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const oldState = join(stateDirectory, 'old.json')
+  writeFileSync(oldState, '{}\n')
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  utimesSync(oldState, eightDaysAgo, eightDaysAgo)
+
+  const input = (sessionId) => `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`
+  contextFor(run({ home, input: input('session-7'), env: hostEnvironment.claude }))
+  assert.equal(existsSync(oldState), false)
+  assert.equal(readdirSync(stateDirectory).length, 1)
+
+  const emptyHome = mkdtempSync(join(tmpdir(), 'field-guide-hook-no-guide-'))
+  contextFor(run({ home: emptyHome, input: input('session-8'), env: hostEnvironment.claude }))
+  assert.equal(existsSync(join(emptyHome, '.field-guide')), false)
 })

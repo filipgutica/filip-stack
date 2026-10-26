@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
 import { createHash } from 'node:crypto'
-import { mkdirSync, readFileSync, writeFileSync } from 'node:fs'
-import { homedir, tmpdir } from 'node:os'
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { appendAnalyticsEvent } from '../skills/field-guide/scripts/field-guide-analytics.mjs'
 import { promptInjection, sessionStartInjection } from '../skills/field-guide/scripts/field-guide.mjs'
@@ -13,10 +13,13 @@ const guideRoot = () => join(homedir(), '.field-guide')
 const promptContext = 'Before your final response, privately choose capture, ask, or skip for durable learning. Preserve the normal task response for every decision. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, append one focused learning question and write no memory while awaiting the answer. Learning must not delay or replace the task result. Add no other lifecycle or storage text. This evaluation is advisory.'
 
 // Per-session state records which guidance is already in context and whether
-// the next prompt should get prompt-matched guidance. The OS cleans tmpdir.
+// the next prompt should get prompt-matched guidance. It lives in the user's
+// own guide, never in a shared temporary directory.
+const sessionsRoot = () => join(guideRoot(), 'sessions')
+const sessionStateMaxAgeMs = 7 * 24 * 60 * 60 * 1000
+const hasGuide = () => existsSync(join(guideRoot(), 'memory.md'))
 const sessionStatePath = (sessionId) => join(
-  tmpdir(),
-  'field-guide-sessions',
+  sessionsRoot(),
   `${createHash('sha256').update(sessionId).digest('hex')}.json`,
 )
 
@@ -31,8 +34,24 @@ const readSessionState = (sessionId) => {
 }
 
 const writeSessionState = (sessionId, state) => {
-  mkdirSync(join(tmpdir(), 'field-guide-sessions'), { recursive: true, mode: 0o700 })
-  writeFileSync(sessionStatePath(sessionId), `${JSON.stringify(state)}\n`, { mode: 0o600 })
+  mkdirSync(sessionsRoot(), { recursive: true, mode: 0o700 })
+  const path = sessionStatePath(sessionId)
+  // Rename replaces the path itself, so a planted symlink is never followed.
+  const temporaryPath = `${path}.${process.pid}.tmp`
+  writeFileSync(temporaryPath, `${JSON.stringify(state)}\n`, { mode: 0o600, flag: 'wx' })
+  renameSync(temporaryPath, path)
+}
+
+const pruneSessionStates = () => {
+  const cutoff = Date.now() - sessionStateMaxAgeMs
+  for (const name of readdirSync(sessionsRoot())) {
+    const path = join(sessionsRoot(), name)
+    try {
+      if (statSync(path).mtimeMs < cutoff) unlinkSync(path)
+    } catch {
+      // Another session may remove or replace the file first; pruning is best effort.
+    }
+  }
 }
 
 const recordInjection = ({ trigger, injection }) => appendAnalyticsEvent({
@@ -42,11 +61,12 @@ const recordInjection = ({ trigger, injection }) => appendAnalyticsEvent({
 
 /** Injects project guidance and the subject index at startup, clear, and after compaction. */
 const sessionStartContext = (input) => {
-  if (typeof input.session_id !== 'string' || typeof input.cwd !== 'string') return null
+  if (typeof input.session_id !== 'string' || typeof input.cwd !== 'string' || !hasGuide()) return null
   try {
     const injection = sessionStartInjection({ repoRoot: input.cwd })
     // Write state before returning text so a failed write never repeats injection.
     writeSessionState(input.session_id, { injectedIds: injection?.guidanceIds ?? [], promptPending: true })
+    pruneSessionStates()
     if (!injection) return null
     recordInjection({ trigger: 'session-start', injection })
     return injection.text
@@ -58,6 +78,7 @@ const sessionStartContext = (input) => {
 /** Injects prompt-matched guidance once per session start; later prompts get none. */
 const promptGuidanceContext = (input) => {
   if (typeof input.session_id !== 'string' || typeof input.cwd !== 'string' || typeof input.prompt !== 'string') return null
+  if (!hasGuide()) return null
   try {
     const state = readSessionState(input.session_id)
     if (!state.promptPending) return null

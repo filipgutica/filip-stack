@@ -77,10 +77,13 @@ the event. It uses the prompt only as an in-memory retrieval query and
 never emits or persists it. Hook output contains static text and stored
 guidance only.
 
-Session state lives in the OS temporary directory under a SHA-256 hash of the
-session ID. It holds only injected guidance IDs and whether the next prompt
+Session state lives in `~/.field-guide/sessions/`, one file per SHA-256 hash of
+the session ID. It holds only injected guidance IDs and whether the next prompt
 should receive matched guidance. The adapter writes the state before it returns
-guidance, so a failed write prevents repeated injection.
+guidance, so a failed write prevents repeated injection. It writes each state
+file to a new temporary file and renames it into place, so it never follows a
+symlink at the state path. Each session start removes state files older than
+seven days. Without an initialized guide, the adapter writes no state.
 
 If analytics is enabled, the adapter also reads the local analytics setting and
 writes event metadata: timestamp, event ID, event type, host, project key,
