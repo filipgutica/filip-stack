@@ -14,7 +14,7 @@ Decide a skill's tier before you add or move it:
 | 4. Downloaded | An upstream skill used unchanged | Outside this repository | Installed with `npx skills add <source>` and unchanged from its lock entry |
 | Excluded | Organization-specific skills | Outside this repository | Depends on an employer's systems or repositories |
 
-Host configuration is not a skill. `host-config/` holds the general global guidance, agent templates, output styles, and shared Field Guide export that `scripts/host-config.mjs` applies to `~/.claude`, `~/.codex`, and `~/.agents`. It ships from `main` without a version. Keep it free of employer-specific content and machine-specific paths; use `{{HOME}}` for the home directory.
+Host configuration is not a skill. `host-config/` holds the general global guidance, agent templates, output styles, design language, and shared Field Guide export that `scripts/host-config.mjs` applies to `~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`. It ships from `main` without a version. Keep it free of employer-specific content and machine-specific paths; use `{{HOME}}` for the home directory.
 
 Skills that are not standalone set `metadata.internal: true`, so the skills CLI does not offer them. This covers plugin skills and repository development skills. Field Guide stays a plugin because it ships a hook.
 

@@ -106,18 +106,21 @@ code, and repository contracts continue to outrank stored guidance.
 
 `host-config/` holds the general agent setup shared by every machine: the
 global Claude and Codex guidance, Claude agent templates and output styles,
-Codex agent profiles, `~/.agents/roles.md`, `~/.agents/CODING_STANDARDS.md`, and
-exported shared Field Guide preferences. It contains no employer-specific
+Codex agent profiles, `~/.agents/roles.md`, `~/.agents/CODING_STANDARDS.md`, the
+`~/design-language` files the guidance refers to, and exported shared Field Guide
+preferences. It contains no employer-specific
 guidance; keep that local to the machine that needs it.
 
 ```sh
 node scripts/host-config.mjs status            # applied commit, then each target's state
 node scripts/host-config.mjs apply [--force]   # write targets and import shared guidance
+node scripts/host-config.mjs update [--force]  # git pull --ff-only, then apply
 node scripts/host-config.mjs field-guide-sync  # import, then export local shared guidance
 ```
 
-`apply` copies `host-config/claude`, `codex`, and `agents` into `~/.claude`,
-`~/.codex`, and `~/.agents`, and replaces `{{HOME}}` with the home directory.
+`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` into
+`~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`, and replaces
+`{{HOME}}` with the home directory.
 It writes the guidance assembled from `host-config/guidance/` into a marked block
 in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
 as the ctx7 block or machine-local notes, stays as it is. The manifest in

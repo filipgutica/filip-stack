@@ -7,7 +7,8 @@ import { homedir, tmpdir } from 'node:os'
 import { dirname, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
-const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..')
+const scriptPath = fileURLToPath(import.meta.url)
+const repoRoot = join(dirname(scriptPath), '..')
 const sourceRoot = join(repoRoot, 'host-config')
 const sharedGuidancePath = join(sourceRoot, 'field-guide', 'shared.json')
 const fieldGuideScript = join(repoRoot, 'plugins', 'field-guide', 'skills', 'field-guide', 'scripts', 'field-guide.mjs')
@@ -16,11 +17,12 @@ const blockStart = '<!-- filip-stack:host-config:begin (managed by filip-stack; 
 const blockEnd = '<!-- filip-stack:host-config:end -->'
 
 // Source directories copied file for file into the home directory.
-const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
+const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents'], ['design-language', 'design-language']]
 // Guidance files that receive a managed block. Text outside the block stays local.
 const guidanceTargets = [['claude', '.claude/CLAUDE.md'], ['codex', '.codex/AGENTS.md']]
 
-const usage = 'Usage: host-config.mjs <status|apply|field-guide-sync> [--home <dir>] [--force]'
+const commands = ['status', 'apply', 'update', 'field-guide-sync']
+const usage = `Usage: host-config.mjs <${commands.join('|')}> [--home <dir>] [--force]`
 
 const fail = (message) => {
   process.stderr.write(`host-config: ${message}\n`)
@@ -29,10 +31,10 @@ const fail = (message) => {
 
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
-  if (!['status', 'apply', 'field-guide-sync'].includes(command)) fail(usage)
+  if (!commands.includes(command)) fail(usage)
   const options = { home: homedir(), force: false }
   for (let index = 0; index < rest.length; index += 1) {
-    if (rest[index] === '--force' && command === 'apply') options.force = true
+    if (rest[index] === '--force' && ['apply', 'update'].includes(command)) options.force = true
     else if (rest[index] === '--home' && rest[index + 1]) options.home = rest[(index += 1)]
     else fail(usage)
   }
@@ -245,6 +247,14 @@ const apply = ({ home, force }) => {
   }
 }
 
+// Pulls the checkout, then runs apply in a new process so the pulled script and sources apply.
+const update = ({ home, force }) => {
+  const pull = spawnSync('git', ['-C', repoRoot, 'pull', '--ff-only'], { stdio: 'inherit' })
+  if (pull.status !== 0) fail('git pull --ff-only failed; resolve the checkout and rerun')
+  const applied = spawnSync(process.execPath, [scriptPath, 'apply', '--home', home, ...(force ? ['--force'] : [])], { stdio: 'inherit' })
+  process.exit(applied.status ?? 1)
+}
+
 // Imports the committed shared guidance first so the export keeps records from other machines.
 const fieldGuideSync = ({ home }) => {
   runFieldGuide({ home, args: ['init'] })
@@ -257,4 +267,5 @@ const fieldGuideSync = ({ home }) => {
 const { command, options } = parseArgs(process.argv.slice(2))
 if (command === 'status') status(options)
 if (command === 'apply') apply(options)
+if (command === 'update') update(options)
 if (command === 'field-guide-sync') fieldGuideSync(options)
