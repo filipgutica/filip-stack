@@ -326,6 +326,20 @@ test('session start injects project guidance and a subject index, then the first
   for (const text of [stateText, eventsText]) assert.doesNotMatch(text, /PASSWORD|watcher|session-1/)
 })
 
+test('a startup that reuses a session ID keeps the parent session state', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const send = (input) => contextFor(run({ home, input: `${JSON.stringify({ session_id: 'session-parent', cwd: repoRoot, ...input })}\n`, env: hostEnvironment.codex }))
+  send({ hook_event_name: 'SessionStart', source: 'startup' })
+  send({ hook_event_name: 'UserPromptSubmit', prompt: 'Fix the Vue watcher flush timing' })
+  const stateDirectory = join(guideRoot, 'sessions')
+  const stateText = () => readdirSync(stateDirectory).map((name) => readFileSync(join(stateDirectory, name), 'utf8')).join('')
+  const parentState = stateText()
+
+  assert.equal(send({ hook_event_name: 'SessionStart', source: 'startup' }), null)
+  assert.equal(stateText(), parentState)
+  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt: 'Fix the Vue watcher flush timing' }), promptOutput.hookSpecificOutput.additionalContext)
+})
+
 test('the first prompt matches its whole text when session start did not run', () => {
   const { home, repoRoot } = seedGuide()
   const prompt = `${'Lorem ipsum dolor sit amet. '.repeat(100)}Stack these pull requests.`
@@ -388,7 +402,7 @@ test('session state replaces a planted symlink without writing through it', () =
   const statePath = join(stateDirectory, `${createHash('sha256').update('session-6').digest('hex')}.json`)
   symlinkSync(target, statePath)
 
-  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-6', cwd: repoRoot, source: 'startup' })}\n`
+  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-6', cwd: repoRoot, source: 'clear' })}\n`
   assert.match(contextFor(run({ home, input, env: hostEnvironment.claude })), /release-process/)
   assert.equal(readFileSync(target, 'utf8'), 'unchanged\n')
   assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')).promptPending, true)

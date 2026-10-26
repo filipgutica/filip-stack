@@ -62,6 +62,9 @@ const recordInjection = ({ trigger, injection }) => appendAnalyticsEvent({
 /** Injects project guidance and the subject index at startup, clear, and after compaction. */
 const sessionStartContext = (input) => {
   if (typeof input.session_id !== 'string' || typeof input.cwd !== 'string' || !hasGuide()) return null
+  // A new session has a new ID, so state at startup belongs to a parent session:
+  // Codex subagent hooks reuse the parent's session ID. Keep the parent's state.
+  if (input.source === 'startup' && existsSync(sessionStatePath(input.session_id))) return null
   try {
     const injection = sessionStartInjection({ repoRoot: input.cwd })
     // Write state before returning text so a failed write never repeats injection.

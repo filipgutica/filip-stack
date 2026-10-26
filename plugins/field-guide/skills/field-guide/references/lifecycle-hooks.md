@@ -40,6 +40,10 @@ instruction until the next session start. A prompt with no session start, such
 as one in a session that began before the plugin was installed, is treated as
 the first prompt.
 
+A `startup` event for a session that already has state injects nothing and keeps
+that state. Codex subagent hooks reuse the parent's session ID, so this stops a
+subagent start from resetting the parent session.
+
 Each injected record is one line: its subject and its learning. Injection never
 includes evidence. Without an initialized guide, both hooks inject nothing.
 
