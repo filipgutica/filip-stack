@@ -11,7 +11,7 @@ Read applicable repository and project guidance before writing. Explicit user in
 ## Changes
 - <Meaningful change>
 
-## Verification
+## How to verify
 1. <Concrete reviewer action, with setup when necessary.>
 2. <Expected result.>
 ```
@@ -39,7 +39,7 @@ Fix pagination so requesting a later page returns the correct widgets.
 ## Changes
 - Apply the requested offset when retrieving widgets.
 
-## Verification
+## How to verify
 1. Start the local API with five widgets ordered by ID and set `API_BASE_URL` to its address.
 2. Request the second page:
 
