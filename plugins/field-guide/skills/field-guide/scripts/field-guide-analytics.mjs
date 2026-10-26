@@ -22,6 +22,7 @@ const guidanceIdPattern = /^guidance:v1:[0-9a-f]{64}$/
 const projectKeyPattern = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const submissionOutcomes = new Set(['created', 'reinforced', 'promoted', 'duplicate-evidence'])
 const transitionOutcomes = new Set(['activate', 'supersede', 'undo', 'withdraw'])
+const injectionTriggers = new Set(['session-start', 'prompt'])
 const impactEffects = new Set(['applied', 'decision_changed'])
 const impactVerdicts = new Set(['confirmed', 'rejected'])
 const captureVerdicts = new Set(['eligible_captured', 'eligible_missed', 'not_eligible'])
@@ -117,6 +118,19 @@ const validateEvent = (event) => {
       fail('retrieval event guidanceIds must be a unique array with at most five items')
     }
     event.guidanceIds.forEach(validateGuidanceId)
+  } else if (event.type === 'injection') {
+    assertFields({
+      value: event,
+      required: ['schemaVersion', 'type', 'projectKey', 'trigger', 'guidanceIds'],
+      optional: ['id', 'at'],
+      label: 'injection event',
+    })
+    validateProjectKey(event.projectKey)
+    if (!injectionTriggers.has(event.trigger)) fail('injection event trigger is invalid')
+    if (!Array.isArray(event.guidanceIds) || event.guidanceIds.length > 8 || new Set(event.guidanceIds).size !== event.guidanceIds.length) {
+      fail('injection event guidanceIds must be a unique array with at most eight items')
+    }
+    event.guidanceIds.forEach(validateGuidanceId)
   } else if (event.type === 'submission' || event.type === 'transition') {
     assertFields({
       value: event,
@@ -179,6 +193,8 @@ const validateAutomaticInput = (event) => {
     assertFields({ value: event, required: ['type', 'host'], label: 'hook event input' })
   } else if (event.type === 'retrieval') {
     assertFields({ value: event, required: ['type', 'projectKey', 'guidanceIds'], label: 'retrieval event input' })
+  } else if (event.type === 'injection') {
+    assertFields({ value: event, required: ['type', 'projectKey', 'trigger', 'guidanceIds'], label: 'injection event input' })
   } else if (event.type === 'submission' || event.type === 'transition') {
     assertFields({
       value: event,
@@ -451,6 +467,7 @@ export const reportAnalytics = ({ guideRoot, since } = {}) => {
     : allEvents.filter(({ at }) => Date.parse(at) >= dateFilter.timestamp)
   const hooks = events.filter(({ type }) => type === 'hook_invoked')
   const retrievals = events.filter(({ type }) => type === 'retrieval')
+  const injections = events.filter(({ type }) => type === 'injection')
   const submissions = events.filter(({ type }) => type === 'submission')
   const transitions = events.filter(({ type }) => type === 'transition')
   const impacts = events.filter(({ type }) => type === 'impact')
@@ -485,6 +502,13 @@ export const reportAnalytics = ({ guideRoot, since } = {}) => {
           lastSeen: hostEvents.map(({ at }) => at).sort().at(-1) ?? null,
         }]
       })),
+    },
+    injections: {
+      total: injections.length,
+      byTrigger: Object.fromEntries([...injectionTriggers].map((trigger) => [
+        trigger,
+        injections.filter((event) => event.trigger === trigger).length,
+      ])),
     },
     retrievals: {
       total: retrievals.length,

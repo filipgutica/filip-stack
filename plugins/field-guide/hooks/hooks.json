@@ -1,6 +1,18 @@
 {
-  "description": "Prompt bounded field-guide use before the final response.",
+  "description": "Inject relevant field-guide guidance and prompt bounded field-guide use before the final response.",
   "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup|clear|compact",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/run-node.sh\" --fail-open \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/field-guide-lifecycle.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
     "UserPromptSubmit": [
       {
         "hooks": [

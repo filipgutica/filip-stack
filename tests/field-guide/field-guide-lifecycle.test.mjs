@@ -1,18 +1,18 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
-import { fieldGuidePluginRoot } from './plugin-paths.mjs'
+import { fieldGuidePluginRoot, fieldGuideSkillRoot } from './plugin-paths.mjs'
 
 const adapter = new URL('hooks/field-guide-lifecycle.mjs', fieldGuidePluginRoot)
 const nodeRunner = new URL('scripts/run-node.sh', fieldGuidePluginRoot)
 const pluginRoot = fileURLToPath(fieldGuidePluginRoot)
-const hookCommand = JSON.parse(
-  readFileSync(new URL('hooks/hooks.json', fieldGuidePluginRoot), 'utf8'),
-).hooks.UserPromptSubmit[0].hooks[0].command
+const hooksConfig = JSON.parse(readFileSync(new URL('hooks/hooks.json', fieldGuidePluginRoot), 'utf8'))
+const hookCommand = hooksConfig.hooks.UserPromptSubmit[0].hooks[0].command
+const fieldGuideScript = fileURLToPath(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot))
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',
@@ -32,6 +32,7 @@ const run = ({ input = '', home = join(tmpdir(), 'missing-field-guide-home'), en
     env: {
       ...process.env,
       HOME: home,
+      TMPDIR: join(home, 'tmp'),
       PLUGIN_ROOT: undefined,
       CLAUDE_PLUGIN_ROOT: undefined,
       ...env,
@@ -253,4 +254,127 @@ test('the hook runner fails open when an explicit Node runtime is unavailable', 
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '')
   assert.equal(result.stderr, '')
+})
+
+const seedGuide = () => {
+  const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-injection-'))
+  const repoRoot = join(home, 'repo')
+  execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
+  execFileSync('git', ['-C', repoRoot, 'remote', 'add', 'origin', 'git@github.com:example/injection.git'])
+  const guideRoot = join(home, '.field-guide')
+  const fieldGuide = (...args) => execFileSync(
+    process.execPath,
+    [fieldGuideScript, ...args, '--repo-root', repoRoot, '--guide-root', guideRoot],
+    { encoding: 'utf8' },
+  )
+  fieldGuide('init')
+  const capture = ({ scope, subjectKey, learning, turnId }) => fieldGuide('submit', '--input-json', JSON.stringify({
+    schemaVersion: 1,
+    decision: 'capture',
+    confidence: 'high',
+    scope,
+    subjectKey,
+    learning,
+    explicitPreference: true,
+    evidence: {
+      summary: 'The user stated a durable preference.',
+      pointers: [{ kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId }],
+    },
+  }))
+  capture({ scope: 'project', subjectKey: 'release-process', learning: 'Run the packaging check before tagging a release.', turnId: 'turn-1' })
+  capture({ scope: 'shared', subjectKey: 'vue-reactivity', learning: 'Use default watcher flush timing unless a failing test proves otherwise.', turnId: 'turn-2' })
+  capture({ scope: 'shared', subjectKey: 'stacked-prs', learning: 'Link dependent pull requests as a native stack.', turnId: 'turn-3' })
+  mkdirSync(join(guideRoot, 'analytics'), { recursive: true })
+  writeFileSync(join(guideRoot, 'analytics', 'config.json'), '{"schemaVersion":1,"enabled":true}\n')
+  return { home, repoRoot, guideRoot, capture }
+}
+
+const contextFor = (result) => {
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stderr, '')
+  return JSON.parse(result.stdout).hookSpecificOutput?.additionalContext ?? null
+}
+
+test('session start injects project guidance and a subject index, then the first prompt adds matching guidance once', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const send = (input) => contextFor(run({ home, input: `${JSON.stringify({ session_id: 'session-1', cwd: repoRoot, ...input })}\n`, env: hostEnvironment.claude }))
+  const prompt = 'Fix the Vue watcher flush timing PASSWORD=private-value'
+
+  const start = send({ hook_event_name: 'SessionStart', source: 'startup' })
+  assert.match(start, /- \[release-process\] Run the packaging check before tagging a release\./)
+  assert.match(start, /Other stored Field Guide subjects: stacked-prs, vue-reactivity\./)
+  assert.doesNotMatch(start, /watcher flush timing unless/)
+
+  const first = send({ hook_event_name: 'UserPromptSubmit', prompt })
+  assert.match(first, /- \[vue-reactivity\] Use default watcher flush timing/)
+  assert.doesNotMatch(first, /release-process|stacked-prs|PASSWORD/)
+  assert.ok(first.endsWith(promptOutput.hookSpecificOutput.additionalContext))
+
+  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt }), promptOutput.hookSpecificOutput.additionalContext)
+
+  const compacted = send({ hook_event_name: 'SessionStart', source: 'compact' })
+  assert.match(compacted, /release-process/)
+  assert.match(send({ hook_event_name: 'UserPromptSubmit', prompt }), /- \[vue-reactivity\]/)
+
+  const stateDirectory = join(home, 'tmp', 'field-guide-sessions')
+  const stateText = readdirSync(stateDirectory).map((name) => readFileSync(join(stateDirectory, name), 'utf8')).join('')
+  const eventsText = readFileSync(join(guideRoot, 'analytics', 'events.jsonl'), 'utf8')
+  const injections = eventsText.trim().split('\n').map((line) => JSON.parse(line)).filter(({ type }) => type === 'injection')
+  assert.deepEqual(injections.map(({ trigger, guidanceIds }) => [trigger, guidanceIds.length]), [
+    ['session-start', 1], ['prompt', 1], ['session-start', 1], ['prompt', 1],
+  ])
+  for (const text of [stateText, eventsText]) assert.doesNotMatch(text, /PASSWORD|watcher|session-1/)
+})
+
+test('the first prompt matches its whole text when session start did not run', () => {
+  const { home, repoRoot } = seedGuide()
+  const prompt = `${'Lorem ipsum dolor sit amet. '.repeat(100)}Stack these pull requests.`
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-2', cwd: repoRoot, prompt })}\n`,
+    env: hostEnvironment.codex,
+  }))
+  assert.match(context, /- \[stacked-prs\] Link dependent pull requests as a native stack\./)
+})
+
+test('session start injects nothing without a guide or a supported host', () => {
+  const { home, repoRoot } = seedGuide()
+  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-3', cwd: repoRoot, source: 'startup' })}\n`
+  assert.equal(contextFor(run({ input, env: hostEnvironment.claude })), null)
+  assert.equal(contextFor(run({ home, input })), null)
+})
+
+test('the session start hook matches only startup, clear, and compaction', () => {
+  assert.equal(hooksConfig.hooks.SessionStart[0].matcher, 'startup|clear|compact')
+  assert.equal(hooksConfig.hooks.SessionStart[0].hooks[0].command, hookCommand)
+})
+
+test('the session start subject index stays within one kilobyte', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  for (let index = 0; index < 12; index += 1) {
+    capture({ scope: 'shared', subjectKey: `subject-${index}-${'x'.repeat(100)}`, learning: `Apply rule ${index}.`, turnId: `turn-index-${index}` })
+  }
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-4', cwd: repoRoot, source: 'startup' })}\n`,
+    env: hostEnvironment.codex,
+  }))
+  const indexLine = context.split('\n').find((line) => line.startsWith('Other stored Field Guide subjects: '))
+  assert.match(indexLine, / and \d+ more\. /)
+  assert.ok(Buffer.byteLength(indexLine) <= 1024, `${Buffer.byteLength(indexLine)} bytes`)
+})
+
+test('prompt guidance stays within two kilobytes', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  const learning = `Write release notes for every user-facing change. ${'Keep each entry specific. '.repeat(70)}`.trim()
+  capture({ scope: 'shared', subjectKey: 'release-notes', learning, turnId: 'turn-long' })
+  capture({ scope: 'shared', subjectKey: 'release-notes-format', learning: 'Group release notes by feature.', turnId: 'turn-short' })
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-5', cwd: repoRoot, prompt: 'Draft the release notes' })}\n`,
+    env: hostEnvironment.claude,
+  }))
+  const guidance = context.slice(0, -`\n\n${promptOutput.hookSpecificOutput.additionalContext}`.length)
+  assert.match(guidance, /release-notes/)
+  assert.ok(Buffer.byteLength(guidance) <= 2048, `${Buffer.byteLength(guidance)} bytes`)
 })

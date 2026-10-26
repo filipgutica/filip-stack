@@ -17,6 +17,10 @@ The standalone Field Guide plugin hooks add bounded lifecycle guidance at
 `UserPromptSubmit`. They instruct one `capture`, `ask`, or `skip` evaluation
 before the final response.
 
+At session start, after `/clear`, and after compaction, the hooks inject this
+repository's project guidance and an index of other stored subjects. The first
+prompt after that also receives up to three stored records that match it.
+
 Field Guide does not register a `Stop` continuation. End-of-task evaluation is
 instructed but not enforced.
 
@@ -35,7 +39,7 @@ Run commands through the bundled launcher in this skill's base directory. The la
 
 ## Retrieve guidance
 
-Retrieve guidance once for meaningful planning, implementation, debugging, or review after the repository and concrete task are known. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
+Injected guidance is already in context; do not retrieve it again. Retrieve when the task touches an indexed subject that was not injected. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
 
 ```text
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --query <concrete-task-context> [--subject <subject-hint>]
@@ -49,7 +53,7 @@ Use only the bounded result. Normal retrieval contains at most five active recor
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --evidence-for <guidance-id>
 ```
 
-Retrieve again only when the task scope changes materially, the user corrects the approach, or guidance conflicts. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work.
+Retrieve again when the task scope changes materially, the user corrects the approach, or guidance conflicts. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work.
 
 Apply guidance in this order:
 

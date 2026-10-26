@@ -124,7 +124,8 @@ and ranks it in this order:
 4. Other active guidance by meaningful complete-term overlap with the query.
 
 Query matching ignores common language and Field Guide boilerplate. A query with
-two or more meaningful terms requires at least two complete-term matches. A
+two or more meaningful terms requires at least two complete-term matches,
+unless one matching term comes from the subject key or a linked subject. A
 single meaningful term requires one complete-term match. Applicability results
 with more matching terms rank first. Do not use generic wording or broaden a
 query to force a result.
