@@ -1,3 +1,10 @@
+# [3.6.0](https://github.com/filipgutica/filip-stack/compare/v3.5.1...v3.6.0) (2026-10-26)
+
+
+### Features
+
+* **host-config:** let machine-local instructions override shared guidance ([5687752](https://github.com/filipgutica/filip-stack/commit/5687752e4f73eda65f347b802e85ffb780c79c7c))
+
 ## [3.5.1](https://github.com/filipgutica/filip-stack/compare/v3.5.0...v3.5.1) (2026-10-26)
 
 
