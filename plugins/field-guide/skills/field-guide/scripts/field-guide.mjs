@@ -1355,30 +1355,29 @@ const retrieveEvidence = ({ memory, guidanceId }) => {
   }
 }
 
-const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
-  if (subjectKey !== undefined && (!portableKey.test(subjectKey) || byteLength(subjectKey) > 128)) {
-    fail('--subject must be a portable subject key')
-  }
-  if (query !== undefined) requireString({ value: query, label: 'retrieval query', maxBytes: 1024 })
-  if (subjectKey === undefined && query === undefined) fail('retrieve requires --subject or --query')
-  const active = memory.guidance.filter(({ status }) => status === 'active')
-  const relevantActive = active.filter(({ scope }) => (
-    scope.kind === 'shared' || scope.repositoryIdentity === paths.identity
+/** Returns active guidance for the repository, without shared records that a project record repeats. */
+const applicableGuidance = ({ memory, paths }) => {
+  const relevantActive = memory.guidance.filter(({ status, scope }) => (
+    status === 'active' && (scope.kind === 'shared' || scope.repositoryIdentity === paths.identity)
   ))
-  const exactSubject = relevantActive.filter(({ subjectKey: recordSubject }) => recordSubject === subjectKey)
   const projectLearning = new Set(
     relevantActive
-      .filter(({ scope }) => scope.kind === 'project' && scope.repositoryIdentity === paths.identity)
+      .filter(({ scope }) => scope.kind === 'project')
       .map(({ learning }) => normalizeLearning(learning)),
   )
-  const effectiveExactSubject = exactSubject.filter((guidance) => !(
+  return relevantActive.filter((guidance) => !(
     guidance.scope.kind === 'shared' && projectLearning.has(normalizeLearning(guidance.learning))
   ))
-  const linkedSubjects = [...new Set(effectiveExactSubject.flatMap((record) => record.linkedSubjects ?? []))].sort()
+}
+
+const rankGuidance = ({ applicable, subjectKey, query }) => {
+  const linkedSubjects = [...new Set(
+    applicable
+      .filter(({ subjectKey: recordSubject }) => recordSubject === subjectKey)
+      .flatMap((record) => record.linkedSubjects ?? []),
+  )].sort()
   const ranked = []
-  for (const guidance of relevantActive) {
-    if (guidance.scope.kind === 'shared'
-      && projectLearning.has(normalizeLearning(guidance.learning))) continue
+  for (const guidance of applicable) {
     let rank
     let match
     let score = 0
@@ -1405,6 +1404,20 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
       || right.guidance.updatedAt.localeCompare(left.guidance.updatedAt)
       || left.guidance.id.localeCompare(right.guidance.id)
   ))
+  return { ranked, linkedSubjects }
+}
+
+const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
+  if (subjectKey !== undefined && (!portableKey.test(subjectKey) || byteLength(subjectKey) > 128)) {
+    fail('--subject must be a portable subject key')
+  }
+  if (query !== undefined) requireString({ value: query, label: 'retrieval query', maxBytes: 1024 })
+  if (subjectKey === undefined && query === undefined) fail('retrieve requires --subject or --query')
+  const { ranked, linkedSubjects } = rankGuidance({
+    applicable: applicableGuidance({ memory, paths }),
+    subjectKey,
+    query,
+  })
   const records = ranked.map(({ guidance, match }) => retrievalRecord({ guidance, match }))
   const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
   const routingCandidates = linkedSubjects.map((linkedSubject) => ({ subjectKey: linkedSubject }))
@@ -1441,6 +1454,88 @@ const retrieve = ({ paths, subjectKey, query, evidenceFor }) => {
   return evidenceFor
     ? retrieveEvidence({ memory, guidanceId: evidenceFor })
     : retrieveGuidance({ memory, paths, subjectKey, query })
+}
+
+const injectionLine = ({ subjectKey, learning }) => `- [${subjectKey}] ${learning}`
+
+const readInjectionMemory = ({ repoRoot, guideRoot }) => {
+  // Hooks run on every session; skip Git work when no guide exists.
+  if (!existsSync(join(guideRootFor(guideRoot), 'memory.md'))) return null
+  const paths = resolvePaths({ repoRoot, guideRoot })
+  const memory = readMemory(paths)
+  return memory ? { paths, applicable: applicableGuidance({ memory, paths }) } : null
+}
+
+/**
+ * Selects session-start context: this repository's newest project guidance and
+ * an index of the other applicable subjects. Returns null when nothing applies.
+ */
+export const sessionStartInjection = ({ repoRoot, guideRoot }) => {
+  const loaded = readInjectionMemory({ repoRoot, guideRoot })
+  if (!loaded) return null
+  const { paths, applicable } = loaded
+  const project = applicable
+    .filter(({ scope }) => scope.kind === 'project')
+    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id))
+  // JSON-array bytes are an upper bound for the rendered lines, so fitting to the
+  // budget minus the framing text keeps each rendered section within budget.
+  const projectHeader = 'Field Guide: stored user guidance for this repository. Follow it when it applies.'
+  const fittedLines = fitWholeRecords({
+    records: project.map(injectionLine),
+    maxRecords: 8,
+    maxBytes: 1536 - byteLength(projectHeader),
+  })
+  const injected = project.filter((guidance) => fittedLines.records.includes(injectionLine(guidance)))
+  const injectedIds = injected.map(({ id }) => id)
+  const otherSubjects = [...new Set(
+    applicable.filter(({ id }) => !injectedIds.includes(id)).map(({ subjectKey }) => subjectKey),
+  )].sort()
+  if (injected.length === 0 && otherSubjects.length === 0) return null
+  const indexPrefix = 'Other stored Field Guide subjects: '
+  const indexSuffix = '. Retrieve one with $field-guide:field-guide when the task touches it.'
+  const moreText = (count) => (count > 0 ? ` and ${count} more` : '')
+  const fittedSubjects = fitWholeRecords({
+    records: otherSubjects,
+    maxRecords: 64,
+    maxBytes: 1024 - byteLength(`${indexPrefix}${moreText(otherSubjects.length)}${indexSuffix}`),
+  })
+
+  const sections = []
+  if (injected.length > 0) sections.push([projectHeader, ...fittedLines.records].join('\n'))
+  if (otherSubjects.length > 0) {
+    sections.push(`${indexPrefix}${fittedSubjects.records.join(', ')}${moreText(fittedSubjects.omittedCount)}${indexSuffix}`)
+  }
+  return { projectKey: paths.projectKey, guidanceIds: injectedIds, text: sections.join('\n\n') }
+}
+
+/**
+ * Selects up to three applicable records that match the user's prompt and were
+ * not already injected. Returns null when nothing new matches.
+ */
+export const promptInjection = ({ repoRoot, guideRoot, prompt, excludeIds }) => {
+  // Match on the prompt's distinct terms: the whole prompt counts, but a long
+  // paste costs no more than its vocabulary.
+  const query = [...relevanceTerms(prompt)].join(' ')
+  if (query.length === 0) return null
+  const loaded = readInjectionMemory({ repoRoot, guideRoot })
+  if (!loaded) return null
+  const { paths, applicable } = loaded
+  const candidates = rankGuidance({ applicable, query }).ranked
+    .map(({ guidance }) => guidance)
+    .filter(({ id }) => !excludeIds.includes(id))
+  const header = 'Field Guide: stored user guidance that may apply to this request. Follow it when it applies.'
+  const fittedLines = fitWholeRecords({
+    records: candidates.map(injectionLine),
+    maxRecords: 3,
+    maxBytes: 2048 - byteLength(header),
+  })
+  if (fittedLines.records.length === 0) return null
+  const injected = candidates.filter((guidance) => fittedLines.records.includes(injectionLine(guidance)))
+  return {
+    projectKey: paths.projectKey,
+    guidanceIds: injected.map(({ id }) => id),
+    text: [header, ...fittedLines.records].join('\n'),
+  }
 }
 
 const candidateMatches = ({ paths, subjectKey, scope: scopeKind }) => {
@@ -2038,9 +2133,20 @@ const main = () => {
   process.stdout.write(`${JSON.stringify({ ...paths, ...(result ? { result } : {}) }, null, 2)}\n`)
 }
 
-try {
-  main()
-} catch (error) {
-  process.stderr.write(`${basename(scriptPath)}: ${error.message}\n`)
-  process.exitCode = 1
+const isEntryPoint = () => {
+  try {
+    return realpathSync(process.argv[1]) === scriptPath
+  } catch {
+    // The lifecycle hook imports this module; it has no command to run.
+    return false
+  }
+}
+
+if (isEntryPoint()) {
+  try {
+    main()
+  } catch (error) {
+    process.stderr.write(`${basename(scriptPath)}: ${error.message}\n`)
+    process.exitCode = 1
+  }
 }

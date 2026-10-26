@@ -1,18 +1,20 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, symlinkSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, symlinkSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { createHash } from 'node:crypto'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import test from 'node:test'
-import { fieldGuidePluginRoot } from './plugin-paths.mjs'
+import Ajv2020 from 'ajv/dist/2020.js'
+import { fieldGuidePluginRoot, fieldGuideSkillRoot } from './plugin-paths.mjs'
 
 const adapter = new URL('hooks/field-guide-lifecycle.mjs', fieldGuidePluginRoot)
 const nodeRunner = new URL('scripts/run-node.sh', fieldGuidePluginRoot)
 const pluginRoot = fileURLToPath(fieldGuidePluginRoot)
-const hookCommand = JSON.parse(
-  readFileSync(new URL('hooks/hooks.json', fieldGuidePluginRoot), 'utf8'),
-).hooks.UserPromptSubmit[0].hooks[0].command
+const hooksConfig = JSON.parse(readFileSync(new URL('hooks/hooks.json', fieldGuidePluginRoot), 'utf8'))
+const hookCommand = hooksConfig.hooks.UserPromptSubmit[0].hooks[0].command
+const fieldGuideScript = fileURLToPath(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot))
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',
@@ -253,4 +255,276 @@ test('the hook runner fails open when an explicit Node runtime is unavailable', 
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '')
   assert.equal(result.stderr, '')
+})
+
+const seedGuide = () => {
+  const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-injection-'))
+  const repoRoot = join(home, 'repo')
+  execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
+  execFileSync('git', ['-C', repoRoot, 'remote', 'add', 'origin', 'git@github.com:example/injection.git'])
+  const guideRoot = join(home, '.field-guide')
+  const fieldGuide = (...args) => execFileSync(
+    process.execPath,
+    [fieldGuideScript, ...args, '--repo-root', repoRoot, '--guide-root', guideRoot],
+    { encoding: 'utf8' },
+  )
+  fieldGuide('init')
+  const capture = ({ scope, subjectKey, learning, turnId }) => fieldGuide('submit', '--input-json', JSON.stringify({
+    schemaVersion: 1,
+    decision: 'capture',
+    confidence: 'high',
+    scope,
+    subjectKey,
+    learning,
+    explicitPreference: true,
+    evidence: {
+      summary: 'The user stated a durable preference.',
+      pointers: [{ kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId }],
+    },
+  }))
+  capture({ scope: 'project', subjectKey: 'release-process', learning: 'Run the packaging check before tagging a release.', turnId: 'turn-1' })
+  capture({ scope: 'shared', subjectKey: 'vue-reactivity', learning: 'Use default watcher flush timing unless a failing test proves otherwise.', turnId: 'turn-2' })
+  capture({ scope: 'shared', subjectKey: 'stacked-prs', learning: 'Link dependent pull requests as a native stack.', turnId: 'turn-3' })
+  mkdirSync(join(guideRoot, 'analytics'), { recursive: true })
+  writeFileSync(join(guideRoot, 'analytics', 'config.json'), '{"schemaVersion":1,"enabled":true}\n')
+  return { home, repoRoot, guideRoot, capture }
+}
+
+const validateAnalyticsEvent = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
+  .compile(JSON.parse(readFileSync(fileURLToPath(new URL('schemas/analytics-event-v1.schema.json', fieldGuideSkillRoot)), 'utf8')))
+
+const startSession = ({ home, repoRoot, sessionId }) => contextFor(run({
+  home,
+  input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`,
+  env: hostEnvironment.claude,
+}))
+
+const projectSection = (context) => context.split('\n\n')[0]
+
+const contextFor = (result) => {
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(result.stderr, '')
+  return JSON.parse(result.stdout).hookSpecificOutput?.additionalContext ?? null
+}
+
+test('session start injects project guidance and a subject index, then the first prompt adds matching guidance once', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const send = (input) => contextFor(run({ home, input: `${JSON.stringify({ session_id: 'session-1', cwd: repoRoot, ...input })}\n`, env: hostEnvironment.claude }))
+  const prompt = 'Fix the Vue watcher flush timing and run the release packaging check PASSWORD=private-value'
+
+  const start = send({ hook_event_name: 'SessionStart', source: 'startup' })
+  assert.match(start, /- \[release-process\] Run the packaging check before tagging a release\./)
+  assert.match(start, /Other stored Field Guide subjects: stacked-prs, vue-reactivity\./)
+  assert.doesNotMatch(start, /watcher flush timing unless/)
+
+  const first = send({ hook_event_name: 'UserPromptSubmit', prompt })
+  assert.match(first, /- \[vue-reactivity\] Use default watcher flush timing/)
+  assert.doesNotMatch(first, /release-process|stacked-prs|PASSWORD/)
+  assert.ok(first.endsWith(promptOutput.hookSpecificOutput.additionalContext))
+
+  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt: 'Stack these pull requests.' }), promptOutput.hookSpecificOutput.additionalContext)
+
+  const compacted = send({ hook_event_name: 'SessionStart', source: 'compact' })
+  assert.match(compacted, /release-process/)
+  assert.match(send({ hook_event_name: 'UserPromptSubmit', prompt }), /- \[vue-reactivity\]/)
+
+  const stateDirectory = join(guideRoot, 'sessions')
+  const stateText = readdirSync(stateDirectory).map((name) => readFileSync(join(stateDirectory, name), 'utf8')).join('')
+  const eventsText = readFileSync(join(guideRoot, 'analytics', 'events.jsonl'), 'utf8')
+  const injections = eventsText.trim().split('\n').map((line) => JSON.parse(line)).filter(({ type }) => type === 'injection')
+  assert.deepEqual(injections.map(({ trigger, guidanceIds }) => [trigger, guidanceIds.length]), [
+    ['session-start', 1], ['prompt', 1], ['session-start', 1], ['prompt', 1],
+  ])
+  for (const text of [stateText, eventsText]) assert.doesNotMatch(text, /PASSWORD|watcher|session-1/)
+})
+
+test('a startup that reuses a session ID keeps the parent session state', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const send = (input) => contextFor(run({ home, input: `${JSON.stringify({ session_id: 'session-parent', cwd: repoRoot, ...input })}\n`, env: hostEnvironment.codex }))
+  send({ hook_event_name: 'SessionStart', source: 'startup' })
+  send({ hook_event_name: 'UserPromptSubmit', prompt: 'Fix the Vue watcher flush timing' })
+  const stateDirectory = join(guideRoot, 'sessions')
+  const stateText = () => readdirSync(stateDirectory).map((name) => readFileSync(join(stateDirectory, name), 'utf8')).join('')
+  const parentState = stateText()
+
+  assert.equal(send({ hook_event_name: 'SessionStart', source: 'startup' }), null)
+  assert.equal(stateText(), parentState)
+  assert.equal(send({ hook_event_name: 'UserPromptSubmit', prompt: 'Fix the Vue watcher flush timing' }), promptOutput.hookSpecificOutput.additionalContext)
+})
+
+test('the first prompt matches its whole text when session start did not run', () => {
+  const { home, repoRoot } = seedGuide()
+  const prompt = `${'Lorem ipsum dolor sit amet. '.repeat(100)}Stack these pull requests.`
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-2', cwd: repoRoot, prompt })}\n`,
+    env: hostEnvironment.codex,
+  }))
+  assert.match(context, /- \[stacked-prs\] Link dependent pull requests as a native stack\./)
+})
+
+test('a first prompt outside Git consumes pending guidance without retrying on later prompts', () => {
+  const { home, repoRoot } = seedGuide()
+  const send = (cwd) => contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-non-git-prompt', cwd, prompt: 'Fix the Vue watcher flush timing' })}\n`,
+    env: hostEnvironment.codex,
+  }))
+
+  assert.equal(send(home), promptOutput.hookSpecificOutput.additionalContext)
+  assert.equal(send(repoRoot), promptOutput.hookSpecificOutput.additionalContext)
+})
+
+test('session start injects nothing without a guide or a supported host', () => {
+  const { home, repoRoot } = seedGuide()
+  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-3', cwd: repoRoot, source: 'startup' })}\n`
+  assert.equal(contextFor(run({ input, env: hostEnvironment.claude })), null)
+  assert.equal(contextFor(run({ home, input })), null)
+})
+
+test('the session start hook matches only startup, clear, and compaction', () => {
+  assert.equal(hooksConfig.hooks.SessionStart[0].matcher, 'startup|clear|compact')
+  assert.equal(hooksConfig.hooks.SessionStart[0].hooks[0].command, hookCommand)
+})
+
+test('session start injects the eight newest project records and indexes the rest', () => {
+  const { home, repoRoot, guideRoot, capture } = seedGuide()
+  for (let index = 0; index < 9; index += 1) {
+    capture({ scope: 'project', subjectKey: `project-rule-${index}`, learning: `Apply project rule ${index}.`, turnId: `turn-rule-${index}` })
+  }
+  const context = startSession({ home, repoRoot, sessionId: 'session-cap' })
+
+  const lines = projectSection(context).split('\n').slice(1)
+  assert.deepEqual(lines, [8, 7, 6, 5, 4, 3, 2, 1].map((index) => `- [project-rule-${index}] Apply project rule ${index}.`))
+  assert.ok(Buffer.byteLength(projectSection(context)) <= 1536)
+  assert.match(context, /Other stored Field Guide subjects: project-rule-0, release-process, stacked-prs, vue-reactivity\./)
+  const events = readFileSync(join(guideRoot, 'analytics', 'events.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+  const injection = events.find(({ type }) => type === 'injection')
+  assert.equal(injection.guidanceIds.length, 8)
+  assert.ok(validateAnalyticsEvent(injection), JSON.stringify(validateAnalyticsEvent.errors))
+})
+
+test('session start keeps project guidance within 1.5 KB and indexes records that do not fit', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  // Two-byte characters make UTF-8 bytes exceed string length.
+  for (let index = 0; index < 4; index += 1) {
+    capture({ scope: 'project', subjectKey: `medium-rule-${index}`, learning: `Apply medium rule ${index}: ${'é'.repeat(200)}`, turnId: `turn-medium-${index}` })
+  }
+  capture({ scope: 'project', subjectKey: 'oversized-rule', learning: `Apply the oversized rule: ${'é'.repeat(800)}`, turnId: 'turn-oversized' })
+  const context = startSession({ home, repoRoot, sessionId: 'session-bytes' })
+
+  const section = projectSection(context)
+  assert.ok(Buffer.byteLength(section) <= 1536, `${Buffer.byteLength(section)} bytes`)
+  assert.deepEqual(section.split('\n').slice(1).map((line) => line.match(/^- \[([^\]]+)\]/)[1]), [
+    'medium-rule-3', 'medium-rule-2', 'medium-rule-1', 'release-process',
+  ])
+  assert.match(context, /Other stored Field Guide subjects: medium-rule-0, oversized-rule, stacked-prs, vue-reactivity\./)
+})
+
+test('the session start subject index stays within one kilobyte', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  for (let index = 0; index < 12; index += 1) {
+    capture({ scope: 'shared', subjectKey: `subject-${index}-${'x'.repeat(100)}`, learning: `Apply rule ${index}.`, turnId: `turn-index-${index}` })
+  }
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-4', cwd: repoRoot, source: 'startup' })}\n`,
+    env: hostEnvironment.codex,
+  }))
+  const indexLine = context.split('\n').find((line) => line.startsWith('Other stored Field Guide subjects: '))
+  assert.match(indexLine, / and \d+ more\. /)
+  assert.ok(Buffer.byteLength(indexLine) <= 1024, `${Buffer.byteLength(indexLine)} bytes`)
+})
+
+test('prompt guidance stays within two kilobytes', () => {
+  const { home, repoRoot, capture } = seedGuide()
+  const learning = `Write release notes for every user-facing change. ${'Keep each entry specific. '.repeat(70)}`.trim()
+  capture({ scope: 'shared', subjectKey: 'release-notes', learning, turnId: 'turn-long' })
+  capture({ scope: 'shared', subjectKey: 'release-notes-format', learning: 'Group release notes by feature.', turnId: 'turn-short' })
+  const context = contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'UserPromptSubmit', session_id: 'session-5', cwd: repoRoot, prompt: 'Draft the release notes' })}\n`,
+    env: hostEnvironment.claude,
+  }))
+  const guidance = context.slice(0, -`\n\n${promptOutput.hookSpecificOutput.additionalContext}`.length)
+  assert.match(guidance, /release-notes/)
+  assert.ok(Buffer.byteLength(guidance) <= 2048, `${Buffer.byteLength(guidance)} bytes`)
+})
+
+test('session state replaces a planted symlink without writing through it', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const target = join(home, 'outside.txt')
+  writeFileSync(target, 'unchanged\n')
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const statePath = join(stateDirectory, `${createHash('sha256').update('session-6').digest('hex')}.json`)
+  symlinkSync(target, statePath)
+
+  const input = `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: 'session-6', cwd: repoRoot, source: 'clear' })}\n`
+  assert.match(contextFor(run({ home, input, env: hostEnvironment.claude })), /release-process/)
+  assert.equal(readFileSync(target, 'utf8'), 'unchanged\n')
+  assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')).promptPending, true)
+})
+
+test('session state refuses a symlinked sessions directory and prunes only state files', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  const outside = join(home, 'outside')
+  mkdirSync(outside)
+  const outsideFile = join(outside, 'keep.txt')
+  writeFileSync(outsideFile, 'unchanged\n')
+  utimesSync(outsideFile, eightDaysAgo, eightDaysAgo)
+  const stateDirectory = join(guideRoot, 'sessions')
+  symlinkSync(outside, stateDirectory)
+
+  const input = (sessionId) => `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`
+  assert.equal(contextFor(run({ home, input: input('session-symlinked'), env: hostEnvironment.claude })), null)
+  assert.deepEqual(readdirSync(outside), ['keep.txt'])
+
+  unlinkSync(stateDirectory)
+  mkdirSync(stateDirectory)
+  const otherFile = join(stateDirectory, 'notes.txt')
+  writeFileSync(otherFile, 'unchanged\n')
+  utimesSync(otherFile, eightDaysAgo, eightDaysAgo)
+  contextFor(run({ home, input: input('session-local'), env: hostEnvironment.claude }))
+  assert.equal(readFileSync(otherFile, 'utf8'), 'unchanged\n')
+})
+
+test('session start prunes old session state and writes none without a guide', () => {
+  const { home, repoRoot, guideRoot } = seedGuide()
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const oldState = join(stateDirectory, `${createHash('sha256').update('expired-session').digest('hex')}.json`)
+  writeFileSync(oldState, '{}\n')
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  utimesSync(oldState, eightDaysAgo, eightDaysAgo)
+
+  const input = (sessionId) => `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`
+  contextFor(run({ home, input: input('session-7'), env: hostEnvironment.claude }))
+  assert.equal(existsSync(oldState), false)
+  assert.equal(readdirSync(stateDirectory).length, 1)
+
+  const emptyHome = mkdtempSync(join(tmpdir(), 'field-guide-hook-no-guide-'))
+  contextFor(run({ home: emptyHome, input: input('session-8'), env: hostEnvironment.claude }))
+  assert.equal(existsSync(join(emptyHome, '.field-guide')), false)
+})
+
+test('session start outside Git writes pending state and prunes old state', () => {
+  const { home, guideRoot } = seedGuide()
+  const stateDirectory = join(guideRoot, 'sessions')
+  mkdirSync(stateDirectory, { recursive: true })
+  const oldState = join(stateDirectory, `${createHash('sha256').update('expired-session').digest('hex')}.json`)
+  writeFileSync(oldState, '{}\n')
+  const eightDaysAgo = (Date.now() - 8 * 24 * 60 * 60 * 1000) / 1000
+  utimesSync(oldState, eightDaysAgo, eightDaysAgo)
+  const sessionId = 'session-non-git-start'
+
+  assert.equal(contextFor(run({
+    home,
+    input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: home, source: 'startup' })}\n`,
+    env: hostEnvironment.claude,
+  })), null)
+  const statePath = join(stateDirectory, `${createHash('sha256').update(sessionId).digest('hex')}.json`)
+  assert.deepEqual(JSON.parse(readFileSync(statePath, 'utf8')), { injectedIds: [], promptPending: true })
+  assert.equal(existsSync(oldState), false)
 })

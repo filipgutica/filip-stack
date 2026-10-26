@@ -98,21 +98,22 @@ assert.match(metadata, /durable preferences, corrections, repeated misses, and m
 assert.doesNotMatch(metadata, /only after review feedback/)
 assert.match(readme, /Field Guide is a separate, optional plugin/)
 assert.match(readme, /durable preferences,\s+corrections, and recurring lessons/)
-assert.match(readme, /Installing it opts into its `UserPromptSubmit` lifecycle/)
+assert.match(readme, /Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle/)
 assert.match(readme, /Workflow does not invoke or depend on Field Guide/)
 assert.doesNotMatch(readme, /records? a\s+lesson only after a code-review correction/i)
-assert.deepEqual(Object.keys(hooks.hooks).sort(), ['UserPromptSubmit'])
+assert.deepEqual(Object.keys(hooks.hooks).sort(), ['SessionStart', 'UserPromptSubmit'])
 assert.ok(!('hooks' in codexManifest))
 assert.match(hooks.hooks.UserPromptSubmit[0].hooks[0].command, /^\/bin\/sh .*\$\{PLUGIN_ROOT:-\$\{CLAUDE_PLUGIN_ROOT\}\}.*run-node\.sh.*--fail-open/)
 assert.match(hookAdapter, /process\.env\.PLUGIN_ROOT/)
 assert.match(hookAdapter, /process\.env\.CLAUDE_PLUGIN_ROOT/)
 assert.match(hookAdapter, /if \(input\.hook_event_name === 'Stop'\) return \{\}/)
 assert.match(hookAdapter, /appendAnalyticsEvent/)
-assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|input\.prompt|input\.host/)
+assert.doesNotMatch(hookAdapter, /transcript_path|last_assistant_message|input\.host/)
 assert.doesNotMatch(hookAdapter, /field-guide\.sh|\/Users\//)
 assert.match(lifecycleHooks, /`PLUGIN_ROOT`/)
 assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
-assert.match(lifecycleHooks, /Claude and Codex register only the `UserPromptSubmit` hook/)
+assert.match(lifecycleHooks, /Claude and Codex register the `SessionStart` and `UserPromptSubmit` hooks/)
+assert.match(lifecycleHooks, /never emits or persists it/)
 assert.match(lifecycleHooks, /returns an empty object for direct Stop input/)
 
 assert.equal(scenarios.schemaVersion, 1)
@@ -214,6 +215,10 @@ const validHookEvent = {
 }
 assert.equal(validateAnalyticsEvent(validHookEvent), true, JSON.stringify(validateAnalyticsEvent.errors))
 assert.equal(validateAnalyticsEvent({ ...validHookEvent, prompt: 'private task text' }), false)
+const validInjectionEvent = { ...validHookEvent, type: 'injection', projectKey: 'repo', trigger: 'prompt', guidanceIds: [] }
+delete validInjectionEvent.host
+assert.equal(validateAnalyticsEvent(validInjectionEvent), true, JSON.stringify(validateAnalyticsEvent.errors))
+assert.equal(validateAnalyticsEvent({ ...validInjectionEvent, prompt: 'private task text' }), false)
 const validSubmission = {
   schemaVersion: 1,
   decision: 'capture',

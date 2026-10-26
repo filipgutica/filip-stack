@@ -17,6 +17,7 @@ Use these terms:
 ├── init.md
 ├── memory.md           # Canonical readable and machine-recorded memory
 ├── memory.json         # Validated machine cache
+├── sessions/           # Hook session state; pruned after seven days
 ├── shared/
 └── projects/
     └── <repo-key>/
@@ -24,6 +25,8 @@ Use these terms:
         ├── patterns.md
         └── reviews/
 ```
+
+See [hook lifecycle](lifecycle-hooks.md#privacy-boundary) for session state details.
 
 ## Indexes
 

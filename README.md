@@ -93,7 +93,7 @@ aliases.
 
 Field Guide is a separate, optional plugin. It keeps durable preferences,
 corrections, and recurring lessons under `~/.field-guide` and retrieves only a
-bounded relevant set. Installing it opts into its `UserPromptSubmit` lifecycle
+bounded relevant set. Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
 guidance; leaving it uninstalled keeps that context out of normal Workflow use.
 Local effectiveness analytics can be enabled separately after the guide is
 initialized. It records metadata in a local JSONL file and reports activity,
@@ -182,7 +182,7 @@ plugins/workflow/          Runtime plugin shared by Claude and Codex
   skills/                  The nine Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
-  hooks/                   Bounded capture, ask, or skip lifecycle guidance
+  hooks/                   Guidance injection and capture, ask, or skip lifecycle guidance
   scripts/                 Cross-host Node launcher
   skills/field-guide/      Skill, storage utility, schemas, and references
 skills/                    Standalone skills installed with the skills CLI
