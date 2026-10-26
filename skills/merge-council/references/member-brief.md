@@ -38,9 +38,11 @@ You may sample incoming-only changes; list what you sampled.
 ## Prior run
 <prior findings and user decisions, or "none">
 
-Check every prior finding at this head and list it in `prior` as `resolved` or `open`, with one line of evidence. Report each open one again as a finding with its prior ID. A finding the user decided stays closed unless the code contradicts the decision. The user's decision does not change a finding's fix eligibility.
+A finding the user decided stays closed unless the code contradicts the decision. The user's decision does not change a finding's fix eligibility.
 
 ## What to assess
+Check every prior finding at this head and list it in `prior` as `resolved` or `open`, with one line of evidence. Report each open one again as a finding with its prior ID.
+
 Correctness and edge cases; adherence to user and repository guidance and established patterns; scope; blast radius and rollback or correction effort; compatibility, migrations, security, and performance; simplicity, reuse, and dead code; and whether tests prove the changed behavior, including low-signal and redundant tests and coverage removed without a replacement. For merge commits, judge the conflict resolutions and the overlap files, where incoming changes meet the receiving branch's own changes.
 
 Also review the PR title and description against the PR-description guidance in the files above. Report a claim that the diff or checks do not support, and a description that breaks the guidance, buries the problem, lists implementation details instead of explaining the change, or holds text a reviewer does not need. That includes a verification section or line that restates checks CI already reports, such as tests, lint, type checks, or the build. A description finding is blocking only when a claim is false.
