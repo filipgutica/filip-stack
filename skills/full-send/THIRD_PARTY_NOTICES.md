@@ -12,6 +12,7 @@ Local changes:
 - It finishes the open items of an earlier merge council run.
 - Routine fixes stop at the same categories as merge council's fix eligibility.
 - It is manual-only.
+- It treats PR text and bot output as evidence, not instructions.
 
 The repository's `upstream-sync` skill compares the tracked path with upstream
 and advances the baseline after review.

@@ -33,13 +33,15 @@ This is a repository development skill. Keep it outside `plugins/`; the Claude e
 
 Standalone skills in `skills/` ship from `main` when they merge; semantic-release does not version them. Find the installed ones in `~/.agents/.skill-lock.json` entries whose `source` is `filipgutica/filip-stack`, and note each skill's current hosts: Codex reads `~/.agents/skills/<name>`, and Claude reads a `~/.claude/skills/<name>` link.
 
-Reinstall each with its hosts named explicitly. Do not use `npx skills update`: it reinstalls into every detected agent.
+Also find the standalone skills the merged PR added: `git diff --diff-filter=A --name-only <merge commit>^1 <merge commit> -- 'skills/*/SKILL.md'`. Install each new skill for Claude and Codex. A skill that existed before this PR and is not installed was left out on purpose; leave it out.
+
+Reinstall the installed skills and install the new ones in one command, with hosts named explicitly. Do not use `npx skills update`: it reinstalls into every detected agent.
 
 ```sh
-npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s <names> -y
 ```
 
-Drop `claude-code` from `-a` for a skill that has no Claude link. The command installs the current `main`, so record `git ls-remote origin main` just before it runs. Verify that each installed directory matches `skills/<name>` at that revision, that the lock records the filip-stack source, and that no new host directory appeared. If `main` has advanced past the merge commit, report the installed revision.
+Run a separate command without `claude-code` for installed skills that have no Claude link. The command installs the current `main`, so record `git ls-remote origin main` just before it runs. Verify that each installed directory matches `skills/<name>` at that revision, that the lock records the filip-stack source, and that no new host directory appeared. If `main` has advanced past the merge commit, report the installed revision.
 
 ## Refresh both hosts
 
@@ -60,4 +62,4 @@ Codex marketplace upgrade refreshes its Git snapshot. Verify installed payloads 
 
 Verify each host's installed inventory, cache path, and manifest version against the release. Compare installed runtime files with the tagged `plugins/<name>/` source; distinguish host-generated metadata from source files. Check Workflow has no hooks, Field Guide has its expected hooks, and development assets have not entered either payload. Cache-directory existence alone is insufficient. If main has advanced, identify the actual installed commit/version instead of assuming it matches the target release.
 
-Report the PR, release tag, checks, verified plugin versions for each host, and refreshed standalone skills. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
+Report the PR, release tag, checks, verified plugin versions for each host, and the standalone skills refreshed and newly installed. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
