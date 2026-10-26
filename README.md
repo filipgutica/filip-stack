@@ -114,7 +114,7 @@ guidance; keep that local to the machine that needs it.
 ```sh
 node scripts/host-config.mjs status            # applied commit, then each target's state
 node scripts/host-config.mjs apply [--force]   # write targets and import shared guidance
-node scripts/host-config.mjs update [--force]  # git pull --ff-only, then apply
+node scripts/host-config.mjs update [--force]  # on main only: git pull --ff-only, then apply
 node scripts/host-config.mjs field-guide-sync  # import, then export local shared guidance
 ```
 
