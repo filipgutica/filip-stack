@@ -1212,16 +1212,14 @@ const relevanceTerms = (value) => (
 const applicabilityScore = ({ guidance, query }) => {
   const requested = relevanceTerms(query)
   if (requested.size === 0) return 0
-  const subjectTerms = relevanceTerms([guidance.subjectKey, ...(guidance.linkedSubjects ?? [])].join(' '))
   const available = relevanceTerms([
-    ...subjectTerms,
+    guidance.subjectKey,
+    ...(guidance.linkedSubjects ?? []),
     guidance.learning,
     ...(guidance.examples ?? []).map(({ code }) => code),
   ].join(' '))
   const overlap = [...requested].filter((term) => available.has(term)).length
-  // A subject term names what the guidance is about, so one subject match is enough.
-  const subjectMatch = [...requested].some((term) => subjectTerms.has(term))
-  const requiredOverlap = requested.size === 1 || subjectMatch ? 1 : 2
+  const requiredOverlap = requested.size === 1 ? 1 : 2
   return overlap >= requiredOverlap ? overlap : 0
 }
 

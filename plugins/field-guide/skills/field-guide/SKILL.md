@@ -39,6 +39,8 @@ Run commands through the bundled launcher in this skill's base directory. The la
 
 ## Retrieve guidance
 
+Without injected Field Guide context, retrieve once for meaningful planning, implementation, debugging, or review after the repository and concrete task are known.
+
 Injected guidance is already in context; do not retrieve it again. Retrieve when the task touches an indexed subject that was not injected. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
 
 ```text
