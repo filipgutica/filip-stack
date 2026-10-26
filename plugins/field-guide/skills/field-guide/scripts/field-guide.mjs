@@ -1230,6 +1230,7 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
   const input = validatePortableSharedGuidance(readJsonInput(inputPath))
   const now = new Date().toISOString()
   const result = { created: [], promoted: [], retired: [], skipped: [] }
+  const retiredFingerprints = new Set(input.retired)
   for (const fingerprint of input.retired) {
     const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
     if (!local || retiredStatuses.has(local.status)) continue
@@ -1246,6 +1247,7 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
   for (const record of input.active) {
     const scope = { kind: 'shared' }
     const fingerprint = fingerprintFor({ scope, subjectKey: record.subjectKey, learning: record.learning })
+    if (retiredFingerprints.has(fingerprint)) continue
     const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
     if (local?.status === 'candidate') {
       appendTransition({ guidance: local, to: 'active', reason: 'active-on-another-machine', source: 'shared-sync', now })

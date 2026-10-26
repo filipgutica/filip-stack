@@ -1456,6 +1456,21 @@ test('export and import sync shared guidance between machines', () => {
   assert.match(run({ command: 'export', repoRoot, guideRoot: first, expectFailure: true }).stderr, /--output is required/)
 })
 
+test('import does not create a record that the same export retires', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-shared-sync-overlap-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/shared-sync-overlap.git' })
+  const record = { subjectKey: 'testing', linkedSubjects: [], learning: 'Prefer small pull requests.', confidence: 'high', examples: [] }
+  const probe = join(root, 'probe')
+  initializeMemory({ repoRoot, guideRoot: probe })
+  const created = runInputCommand({ command: 'import', repoRoot, guideRoot: probe, input: { schemaVersion: 1, active: [record], retired: [] } })
+  const fingerprint = created.result.created[0].replace('guidance', 'fingerprint')
+
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const result = runInputCommand({ command: 'import', repoRoot, guideRoot, input: { schemaVersion: 1, active: [record], retired: [fingerprint] } })
+  assert.deepEqual(result.result.created, [])
+})
+
 test('import does not retire the active replacement of superseded guidance', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-shared-sync-conflict-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/shared-sync-conflict.git' })
