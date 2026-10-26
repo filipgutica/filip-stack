@@ -1,3 +1,20 @@
+# [3.5.0](https://github.com/filipgutica/filip-stack/compare/v3.4.0...v3.5.0) (2026-10-26)
+
+
+### Bug Fixes
+
+* **merge-council:** keep review-only prior output out of later phases ([d54f695](https://github.com/filipgutica/filip-stack/commit/d54f69560ec8e1f39154764e21f975125f671e51))
+* **skills:** keep follow-up decisions and gate full-send edits ([89c6faa](https://github.com/filipgutica/filip-stack/commit/89c6faa6bb4b6c2fa03833ae0a5746768c955cfe))
+* **skills:** quote-safe full-send description and validate plain YAML descriptions ([a8a412f](https://github.com/filipgutica/filip-stack/commit/a8a412ffb50d603d4cc9138cebfa9ec8b740482e))
+
+
+### Features
+
+* **host-config:** restate steers and delegate new independent asks ([56c89eb](https://github.com/filipgutica/filip-stack/commit/56c89ebad92b1e6291883649be1afd90fa3cb87a))
+* **merge-council:** continue from prior runs and review PR descriptions ([afce68a](https://github.com/filipgutica/filip-stack/commit/afce68a5e504e228b64a6144cb4154536467c8b2))
+* **skills:** add sol-loop, full-send, and babysit-pr adapted from tstack ([b2b4133](https://github.com/filipgutica/filip-stack/commit/b2b4133faaa176a6cf28e4b94d402f090e274bd3))
+* **workflow:** title the PR verification section How to verify ([a3c04fa](https://github.com/filipgutica/filip-stack/commit/a3c04fae295f8d4a6fc959d63a62a68c399dd0fd))
+
 # [3.4.0](https://github.com/filipgutica/filip-stack/compare/v3.3.1...v3.4.0) (2026-10-26)
 
 
