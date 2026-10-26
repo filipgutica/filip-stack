@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -114,6 +114,18 @@ test('apply removes files it applied earlier once the repository drops them', ()
   run({ home, command: 'apply' })
   assert.equal(existsSync(join(home, retired)), false)
   assert.equal(JSON.parse(read(manifestPath)).files[retired], undefined)
+})
+
+test('update refuses to pull a checkout that is not on main', () => {
+  const repo = mkdtempSync(join(tmpdir(), 'host-config-branch-'))
+  spawnSync('git', ['init', '-q', '-b', 'feature', repo])
+  mkdirSync(join(repo, 'scripts'))
+  copyFileSync(script, join(repo, 'scripts/host-config.mjs'))
+  const home = mkdtempSync(join(tmpdir(), 'host-config-branch-home-'))
+  const result = spawnSync(process.execPath, [join(repo, 'scripts/host-config.mjs'), 'update', '--home', home], { encoding: 'utf8' })
+  assert.notEqual(result.status, 0)
+  assert.match(result.stderr, /update runs only on main, but .* is on feature/)
+  assert.deepEqual(readdirSync(home), [])
 })
 
 test('host-config sources contain no machine-specific home paths', () => {

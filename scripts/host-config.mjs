@@ -248,7 +248,10 @@ const apply = ({ home, force }) => {
 }
 
 // Pulls the checkout, then runs apply in a new process so the pulled script and sources apply.
+// host-config ships from main, so update refuses to pull and apply another branch.
 const update = ({ home, force }) => {
+  const branch = spawnSync('git', ['-C', repoRoot, 'branch', '--show-current'], { encoding: 'utf8' }).stdout.trim()
+  if (branch !== 'main') fail(`update runs only on main, but ${repoRoot} is on ${branch || 'a detached HEAD'}; switch to main or use apply`)
   const pull = spawnSync('git', ['-C', repoRoot, 'pull', '--ff-only'], { stdio: 'inherit' })
   if (pull.status !== 0) fail('git pull --ff-only failed; resolve the checkout and rerun')
   const applied = spawnSync(process.execPath, [scriptPath, 'apply', '--home', home, ...(force ? ['--force'] : [])], { stdio: 'inherit' })
