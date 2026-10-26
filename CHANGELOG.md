@@ -1,3 +1,10 @@
+## [3.3.1](https://github.com/filipgutica/filip-stack/compare/v3.3.0...v3.3.1) (2026-10-26)
+
+
+### Bug Fixes
+
+* **host-config:** run update only on main ([889b6bc](https://github.com/filipgutica/filip-stack/commit/889b6bc0bcd289b02e01666f2cc26825eba2d42e))
+
 # [3.3.0](https://github.com/filipgutica/filip-stack/compare/v3.2.0...v3.3.0) (2026-10-26)
 
 
