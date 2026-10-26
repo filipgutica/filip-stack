@@ -123,7 +123,8 @@ node scripts/host-config.mjs field-guide-sync  # import, then export local share
 `{{HOME}}` with the home directory.
 It writes the guidance assembled from `host-config/guidance/` into a marked block
 in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
-as the ctx7 block or machine-local notes, stays as it is. The manifest in
+as the ctx7 block or machine-local notes, stays as it is, and the shared
+guidance tells agents that it overrides the block where they conflict. The manifest in
 `~/.agents/.filip-stack-host-config.json` records the applied commit and a hash
 of each target. Apply removes a file it applied earlier once the repository no
 longer has it.

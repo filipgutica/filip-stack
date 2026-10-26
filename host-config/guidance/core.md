@@ -20,6 +20,7 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 ## Source of truth and authority
 
 - The current user request and live authoritative sources outrank generated memory and historical summaries.
+- Machine-local instructions outside the `filip-stack:host-config` block in this file override this shared guidance where they conflict.
 - Prefer Field Guide through `$field-guide:field-guide` for durable preferences, recurring judgment patterns, and generalized mistakes. Do not use it for task history or technical facts owned by live sources.
 - Treat automatically supplied memory as background context, not verified evidence. Beyond host-required steps and Field Guide's own retrieval, open other memory only for a concrete need live sources cannot meet: match the exact repository or a cross-project preference, read at most one or two entries, and open raw session history only when the user asks for prior-session evidence.
 - Code, types, tests, schemas, configuration, and current authoritative documentation own technical truth. Verify drift-prone facts before relying on them.
