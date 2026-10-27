@@ -49,6 +49,8 @@ Each brief names its role and tells the child to read that section of `{{HOME}}/
 
 {{include:roles}}
 
+When a role's target is not available in this setup, such as a disabled provider, a missing model, or an uninstalled profile, use that role's "Outside T3 Code" target. If that is also unavailable, use this host's default subagent, or do the work in this thread. An unavailable Opus visual review falls back to the Reviewer role. Say which fallback you used.
+
 For long-running work, keep detailed logs on disk and report compact evidence. Inspect targeted source or artifacts to resolve evidence gaps without repeating the full investigation.
 
 ## Evidence
