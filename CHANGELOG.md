@@ -1,3 +1,10 @@
+# [3.7.0](https://github.com/filipgutica/filip-stack/compare/v3.6.0...v3.7.0) (2026-10-27)
+
+
+### Features
+
+* **host-config:** let routine implementers build approved designs ([b24f364](https://github.com/filipgutica/filip-stack/commit/b24f364864a9c0682b3eede0f9ef349b45a10e47))
+
 # [3.6.0](https://github.com/filipgutica/filip-stack/compare/v3.5.1...v3.6.0) (2026-10-26)
 
 
