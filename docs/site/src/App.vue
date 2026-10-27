@@ -22,7 +22,10 @@ const install = {
   ].join('\n'),
 };
 const cloneCommand = 'git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack';
-const linkCommand = 'ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack';
+const linkCommand = [
+  'mkdir -p ~/.local/bin',
+  'ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack',
+].join('\n');
 const skillCommand = 'npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y';
 const hostCommands = [
   { code: 'filip-stack status', summary: 'Show the applied commit and the state of each target.' },

@@ -29,6 +29,7 @@ overview and lists every skill.
 4. Put the host config command on your `PATH` and apply it:
 
    ```sh
+   mkdir -p ~/.local/bin
    ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack
    filip-stack apply
    ```
