@@ -2,12 +2,75 @@
 
 Filip Stack is a personal plugin marketplace and skills home for Claude and
 Codex. It distributes the `workflow` plugin, the optional `field-guide` plugin,
-and standalone skills directly from this repository.
+standalone skills, and the shared host configuration that sets up each machine.
 
-## Workflow v2
+The [Filip Stack site](https://filipgutica.github.io/filip-stack/) gives an
+overview and lists every skill.
 
-Workflow v2 is intentionally small. Nine skills cover the normal engineering
-loop without chaining a large collection of procedures together.
+| Part | What it is | How it installs |
+| --- | --- | --- |
+| [Workflow](#workflow) | Nine skills for the engineering loop | Plugin, from this marketplace |
+| [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
+| [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
+| [Host config](#host-config) | Global guidance, agents, styles, and design language | `scripts/host-config.mjs` from a checkout |
+
+## Set up a machine
+
+1. Clone the repository. Host config applies from this checkout, so keep it on
+   `main`.
+
+   ```sh
+   git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack
+   ```
+
+2. Install the plugins in [Claude](#install-with-claude) or
+   [Codex](#install-with-codex).
+3. Install the [standalone skills](#standalone-skills) you use.
+4. Put the host config command on your `PATH` and apply it:
+
+   ```sh
+   ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack
+   filip-stack apply
+   ```
+
+## Install with Claude
+
+```sh
+claude plugin marketplace add filipgutica/filip-stack
+claude plugin install workflow@filip-stack
+# Optional local learning:
+claude plugin install field-guide@filip-stack
+```
+
+Update it with:
+
+```sh
+claude plugin update workflow@filip-stack
+claude plugin update field-guide@filip-stack
+```
+
+## Install with Codex
+
+```sh
+codex plugin marketplace add filipgutica/filip-stack
+codex plugin add workflow@filip-stack
+# Optional local learning:
+codex plugin add field-guide@filip-stack
+```
+
+Update the marketplace with:
+
+```sh
+codex plugin marketplace upgrade filip-stack
+```
+
+Restart Codex after installing or upgrading so a new session loads the current
+skill inventory.
+
+## Workflow
+
+Workflow is intentionally small. Nine skills cover the normal engineering loop
+without chaining a large collection of procedures together.
 
 | Skill | Use |
 | --- | --- |
@@ -24,7 +87,8 @@ loop without chaining a large collection of procedures together.
 `engineering`, `planning`, `review`, `test-audit`, and `technical-writing` may be selected
 from a matching request. `grill-me`, `walkthrough`, `checkpoint`, and `simplify` are manual-only.
 
-Invoke Simplify with `$workflow:simplify` in Codex or `/workflow:simplify` in Claude.
+Invoke a manual skill by name: `$workflow:simplify` in Codex or
+`/workflow:simplify` in Claude.
 
 ### How it stays small
 
@@ -57,7 +121,7 @@ not a scheduler or unattended loop runner. Complex work can form a small task
 graph through dependencies and independent owners, but Workflow does not add a
 graph schema, state engine, or orchestration runtime for linear work.
 
-### Artifacts and migration
+### Artifacts
 
 Planning and writing stay in the conversation unless the user requests a saved
 document. Use the supplied destination. Specifications and plans are optional;
@@ -83,11 +147,7 @@ notes directories:
 These folders need no work-item setup, registry, or task tracking. Checkpoints
 are new snapshots; earlier snapshots remain intact. Recheck current evidence
 when resuming. Workflow does not install hooks or update these notes
-automatically. Existing `~/.engineering-workflow` data is left untouched;
-any migration or cleanup is a separate, explicitly authorized task.
-
-This is a breaking redesign. Removed v1 skills and hooks have no compatibility
-aliases.
+automatically.
 
 ## Field Guide
 
@@ -95,52 +155,14 @@ Field Guide is a separate, optional plugin. It keeps durable preferences,
 corrections, and recurring lessons under `~/.field-guide` and retrieves only a
 bounded relevant set. Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
 guidance; leaving it uninstalled keeps that context out of normal Workflow use.
+At session start and on the first prompt, it injects the stored guidance that
+matches the work.
 Local effectiveness analytics can be enabled separately after the guide is
 initialized. It records metadata in a local JSONL file and reports activity,
 agent-reported impact, and reviewed outcomes separately.
 
 Workflow does not invoke or depend on Field Guide. Current instructions, live
 code, and repository contracts continue to outrank stored guidance.
-
-## Host config
-
-`host-config/` holds the general agent setup shared by every machine: the
-global Claude and Codex guidance, Claude agent templates and output styles,
-Codex agent profiles, `~/.agents/roles.md`, `~/.agents/CODING_STANDARDS.md`, the
-`~/design-language` files the guidance refers to, and exported shared Field Guide
-preferences. It contains no employer-specific
-guidance; keep that local to the machine that needs it.
-
-```sh
-node scripts/host-config.mjs status            # applied commit, then each target's state
-node scripts/host-config.mjs apply [--force]   # write targets and import shared guidance
-node scripts/host-config.mjs update [--force]  # on main only: git pull --ff-only, then apply
-node scripts/host-config.mjs field-guide-sync  # import, then export local shared guidance
-```
-
-`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` into
-`~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`, and replaces
-`{{HOME}}` with the home directory.
-It writes the guidance assembled from `host-config/guidance/` into a marked block
-in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
-as the ctx7 block or machine-local notes, stays as it is, and the shared
-guidance tells agents that it overrides the block where they conflict. The manifest in
-`~/.agents/.filip-stack-host-config.json` records the applied commit and a hash
-of each target. Apply removes a file it applied earlier once the repository no
-longer has it.
-
-When managed text was changed locally, apply prints the diff and stops. Move the
-change into `host-config/` and commit it, or rerun with `--force` to save the
-local file as `<file>.bak` and overwrite it. A guidance file without a block
-counts as changed. With `--force`, apply replaces it with the block, and you
-restore machine-local text below the block from the backup.
-
-Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
-pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
-Claude and Codex.
-
-`field-guide-sync` updates `host-config/field-guide/shared.json`. Review the
-diff before you commit it: an export carries every active shared learning.
 
 ## Standalone skills
 
@@ -178,9 +200,62 @@ An adapted skill carries `THIRD_PARTY_NOTICES.md` in its own directory with the
 upstream source and the baseline commit. The repository's `upstream-sync` skill
 compares it with upstream.
 
+## Host config
+
+`host-config/` holds the general agent setup shared by every machine:
+
+- the global guidance for `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`
+- Claude agent templates (`critic`, `explorer`, `reviewer`, `worker-high`) and
+  output styles
+- Codex agent profiles
+- `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
+- the `~/design-language` files the guidance refers to
+- exported shared Field Guide preferences
+
+It contains no employer-specific guidance; keep that local to the machine that
+needs it.
+
+The command runs from a checkout, because `update` pulls it and
+`field-guide-sync` writes back into it. A symlink on your `PATH` is enough; see
+[Set up a machine](#set-up-a-machine). Without one, run
+`node scripts/host-config.mjs` from the checkout.
+
+```sh
+filip-stack status            # applied commit, then each target's state
+filip-stack apply [--force]   # write targets and import shared guidance
+filip-stack update [--force]  # on main only: git pull --ff-only, then apply
+filip-stack field-guide-sync  # import, then export local shared guidance
+```
+
+`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` into
+`~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`, and replaces
+`{{HOME}}` with the home directory.
+It writes the guidance assembled from `host-config/guidance/` into a marked block
+in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
+as the ctx7 block or machine-local notes, stays as it is, and the shared
+guidance tells agents that it overrides the block where they conflict. The manifest in
+`~/.agents/.filip-stack-host-config.json` records the applied commit and a hash
+of each target. Apply removes a file it applied earlier once the repository no
+longer has it.
+
+When managed text was changed locally, apply prints the diff and stops. Move the
+change into `host-config/` and commit it, or rerun with `--force` to save the
+local file as `<file>.bak` and overwrite it. A guidance file without a block
+counts as changed. With `--force`, apply replaces it with the block, and you
+restore machine-local text below the block from the backup.
+
+Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
+pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
+Claude and Codex.
+
+`field-guide-sync` updates `host-config/field-guide/shared.json`. Review the
+diff before you commit it: an export carries every active shared learning.
+
 ## Repository layout
 
 ```text
+.claude-plugin/marketplace.json   Claude marketplace
+.agents/plugins/marketplace.json  Codex marketplace
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
@@ -199,45 +274,14 @@ tests/field-guide/         Field Guide contracts and utility tests
 tests/host-config/         Host config apply tests
 scripts/                   Version, plugin validation, and host-config scripts
 docs/                      Evaluation lab notebook and evidence
+docs/site/                 GitHub Pages site
 ```
 
 Each marketplace entry installs its plugin directory directly, and the skills
 CLI copies one `skills/<name>/` directory. Tests and evaluation fixtures stay
 outside both payloads.
 
-## Install with Claude
-
-```sh
-claude plugin marketplace add filipgutica/filip-stack
-claude plugin install workflow@filip-stack
-# Optional local learning:
-claude plugin install field-guide@filip-stack
-```
-
-Update it with:
-
-```sh
-claude plugin update workflow@filip-stack
-claude plugin update field-guide@filip-stack
-```
-
-## Install with Codex
-
-```sh
-codex plugin marketplace add filipgutica/filip-stack
-codex plugin add workflow@filip-stack
-# Optional local learning:
-codex plugin add field-guide@filip-stack
-```
-
-Update the marketplace with:
-
-```sh
-codex plugin marketplace upgrade filip-stack
-```
-
-Restart Codex after installing or upgrading so a new session loads the current
-skill inventory.
+[AGENTS.md](AGENTS.md) explains how to choose where a new skill lives.
 
 ## Development
 
@@ -255,15 +299,24 @@ Field Guide hooks and state, both plugins' runtime payloads, plugin manifest
 validity, and standalone skill contracts. Prompt routing scenarios are evaluation inputs; static contracts do
 not prove model behavior.
 
-The original eight skill entrypoints retain their combined 3,500-word limit.
-Adding the manual Simplify skill gives the nine-skill inventory a 4,000-word
-limit. Each skill entrypoint remains limited to 900 words.
+The Workflow skill entrypoints other than Simplify share a 3,500-word limit, and
+all nine share a 4,000-word limit. Each skill entrypoint remains limited to 900
+words.
 
 Standalone skills load independently, so Workflow's combined budgets do not
 apply to them. Each needs a matching name, a description of at most 80 words, a
 `SKILL.md` of at most 500 lines (a size guardrail, not a token budget), one-level references of at most 1,200 words,
 and relative links that stay inside its directory. It must not call a plugin
 skill or share a name with one.
+
+The site in `docs/site/` is a separate pnpm package. It reads the skill list
+from each `SKILL.md` when it builds, so it needs no edit when a skill changes.
+
+```sh
+cd docs/site
+pnpm install
+pnpm dev
+```
 
 ## Releases and versioning
 
@@ -281,7 +334,9 @@ marketplace registries before creating the GitHub release.
 
 Standalone skills have no version of their own. The skills CLI installs them
 from `main`, so they ship when they merge. A releasing commit that changes only
-`skills/` still bumps the plugin manifests.
+`skills/` still bumps the plugin manifests. Host config also ships from `main`
+without a version; run `filip-stack update` to pick it up. The site deploys from
+`main` when the site or a skill changes.
 
 ## Evaluation
 
