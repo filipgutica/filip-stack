@@ -25,6 +25,8 @@ const cloneCommand = 'git clone https://github.com/filipgutica/filip-stack.git ~
 const linkCommand = [
   'mkdir -p ~/.local/bin',
   'ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack',
+  'export PATH="$HOME/.local/bin:$PATH"',
+  'filip-stack apply',
 ].join('\n');
 const skillCommand = 'npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y';
 const hostCommands = [
@@ -127,8 +129,12 @@ onMounted(() => {
             <p>Install the <a href="#skills">standalone skills</a> you use.</p>
           </li>
           <li>
-            <p>Put the host config command on your <code>PATH</code>, then run <code>filip-stack apply</code>.</p>
+            <p>Put the host config command on your <code>PATH</code> and apply it.</p>
             <UiCodeBlock :code="linkCommand" language="bash" variant="compact" :copyable="enhanced" :wrap="true" />
+            <p class="hint">
+              If <code>~/.local/bin</code> is not already on your <code>PATH</code>,
+              add the <code>export</code> line to your shell profile, such as <code>~/.zshrc</code>.
+            </p>
           </li>
         </ol>
       </section>

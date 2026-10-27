@@ -31,8 +31,12 @@ overview and lists every skill.
    ```sh
    mkdir -p ~/.local/bin
    ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack
+   export PATH="$HOME/.local/bin:$PATH"
    filip-stack apply
    ```
+
+   If `~/.local/bin` is not already on your `PATH`, add the `export` line to
+   your shell profile, such as `~/.zshrc`.
 
 ## Install with Claude
 
