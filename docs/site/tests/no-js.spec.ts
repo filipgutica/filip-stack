@@ -100,3 +100,16 @@ test("native project menu and OS theme work without JavaScript", async ({
   await page.emulateMedia({ colorScheme: "dark" });
   await expect.poll(background).not.toBe(lightBackground);
 });
+
+test("the Workflow map links each skill and lists every engineering step without JavaScript", async ({
+  page,
+}) => {
+  await page.goto("/filip-stack/");
+  const map = page.locator("#workflow");
+  await expect(map.getByRole("button")).toHaveCount(0);
+  await expect(
+    map.getByRole("link", { name: "sol-loop", exact: true }),
+  ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
+  await expect(map.locator(".map-steps > li")).toHaveCount(6);
+  await expect(map.locator(".map-steps")).toBeVisible();
+});

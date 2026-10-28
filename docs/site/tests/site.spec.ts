@@ -73,6 +73,36 @@ test("copies install commands and command-table rows after hydration", async ({
     );
 });
 
+test("the Workflow map explains requests, skills, and engineering steps after hydration", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 1280, height: 900 });
+  await page.goto("/filip-stack/");
+  const map = page.locator("#workflow");
+  const detail = map.locator(".map-skill-detail");
+  await map.getByRole("button", { name: "Review this diff" }).click();
+  await expect(
+    map.getByRole("button", { name: "review", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
+  await expect(detail).toContainText("Read-only review or final verification");
+  await expect(map.locator(".map-load").last()).toContainText(
+    "No reference loaded",
+  );
+  await map.getByRole("button", { name: "merge-council", exact: true }).click();
+  await expect(detail.getByRole("heading")).toContainText("Standalone");
+  await expect(
+    detail.getByRole("link", { name: "Open skill page" }),
+  ).toHaveAttribute("href", "/filip-stack/skills/merge-council/");
+  await map.getByRole("button", { name: "Step 1: Define the boundary" }).click();
+  await expect(map.locator(".map-step-detail")).toContainText(
+    "1. Define the boundary",
+  );
+  await map.getByRole("button", { name: "Step 5: Read the diff" }).press("Enter");
+  await expect(map.locator(".map-step-detail")).toContainText(
+    "5. Read the diff",
+  );
+});
+
 test("the shared appearance picker persists dark across routes and resets to system", async ({
   page,
 }) => {
