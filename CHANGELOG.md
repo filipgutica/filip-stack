@@ -1,3 +1,10 @@
+# [3.11.0](https://github.com/filipgutica/filip-stack/compare/v3.10.0...v3.11.0) (2026-10-28)
+
+
+### Features
+
+* **host-config:** sync Field Guide preferences on update ([214eaa1](https://github.com/filipgutica/filip-stack/commit/214eaa1a37fb5b15684c8fe4ce8bf003b99c8fc1))
+
 # [3.10.0](https://github.com/filipgutica/filip-stack/compare/v3.9.0...v3.10.0) (2026-10-28)
 
 
