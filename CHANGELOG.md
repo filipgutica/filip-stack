@@ -1,3 +1,10 @@
+# [3.8.0](https://github.com/filipgutica/filip-stack/compare/v3.7.0...v3.8.0) (2026-10-28)
+
+
+### Features
+
+* **host-config:** sync Field Guide preferences through a user dotfile ([3625b3a](https://github.com/filipgutica/filip-stack/commit/3625b3a0ca82730968db73c192e3853f6c57223c))
+
 # [3.7.0](https://github.com/filipgutica/filip-stack/compare/v3.6.0...v3.7.0) (2026-10-27)
 
 
