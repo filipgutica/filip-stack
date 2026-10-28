@@ -1,5 +1,5 @@
 ---
-related: [sol-loop, babysit-pr, merge-council]
+related: [full-stop, sol-loop, babysit-pr, merge-council]
 ---
 
 ## What it does
@@ -16,7 +16,8 @@ earlier merge council. Adapted from [tstack](https://github.com/t3dotgg/tstack).
 
 It runs only when you call it by name, with `/full-send` or `$full-send`.
 It requires [sol-loop](../sol-loop/) and [babysit-pr](../babysit-pr/) and stops
-if either is missing. For a full three-member review, use
+if either is missing. To keep the merge for yourself, use
+[full-stop](../full-stop/). For a full three-member review, use
 [merge-council](../merge-council/).
 
 ## How it works
