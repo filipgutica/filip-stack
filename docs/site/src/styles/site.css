@@ -54,39 +54,97 @@ h1 code { overflow-wrap: anywhere; }
 footer { padding-block: var(--space-6) var(--space-8); }
 footer nav { display: flex; gap: var(--space-5); }
 footer a { display: inline-flex; min-height: var(--control-lg); align-items: center; color: var(--color-muted); }
-/* The map and token samples are the two page-specific visuals. */
-.parts, .skill-rows, .levels, .purposes ul, .loop ol { max-width: none; }
-.workflow-map { background: var(--color-surface); }
+/* The Workflow map and token samples are the two page-specific visuals. */
+.parts, .skill-rows { max-width: none; }
+.workflow-map { container-type: inline-size; background: var(--color-surface); }
+.workflow-map :where(p, ul, ol) { max-width: none; margin: 0; }
 .workflow-map .fg-card__body { display: grid; gap: var(--space-5); }
-.levels { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); list-style: none; padding: 0; counter-reset: level; }
-.levels li { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-bg); counter-increment: level; }
-.levels li::before { content: 'Level ' counter(level); color: var(--color-muted); font-size: var(--text-xs); }
-.levels strong, .levels span { font-size: var(--text-sm); }
-.levels span { color: var(--color-muted); }
-.purposes { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
-.purposes h3 { margin-bottom: var(--space-2); color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-medium); }
-.purposes ul { display: grid; gap: var(--space-1); padding: 0; list-style: none; }
-.purposes a { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--space-1); min-height: 34px; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); color: var(--color-text); font: var(--text-sm) var(--font-mono); text-decoration: none; overflow-wrap: anywhere; }
-.purposes a:hover { background: var(--color-row-hover); }
-.loop ol { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding: 0; list-style: none; counter-reset: step; }
-.loop li { display: inline-flex; align-items: center; gap: var(--space-2); font-size: var(--text-sm); counter-increment: step; }
-.loop li::before { content: counter(step); display: grid; place-items: center; width: 20px; height: 20px; border-radius: var(--radius-pill); background: var(--color-accent); color: var(--color-accent-text); font-size: var(--text-xs); }
-.loop li + li { padding-left: var(--space-5); background: linear-gradient(var(--color-border), var(--color-border)) left center / var(--space-3) 1px no-repeat; }
-.loop p { margin-top: var(--space-2); color: var(--color-muted); font-size: var(--text-sm); }
+.map-label { color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+.map-muted { color: var(--color-muted); font-size: var(--text-sm); }
+.map-requests { display: grid; gap: var(--space-2); }
+.map-requests > div { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.map-requests button { min-height: var(--control-sm); padding: 0 var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-pill); background: var(--color-surface-raised); color: var(--color-text); font: var(--text-sm) var(--font-ui); cursor: pointer; }
+.map-requests button:hover { border-color: var(--color-border); }
+.map-requests button[aria-pressed='true'] { border-color: var(--color-button-bg); background: var(--color-button-bg); color: var(--color-button-text); }
+/* A track joins the five stage numbers; the last leg is dashed because those skills are standalone. */
+.map-stages { position: relative; display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-2); padding: var(--space-6) 0 0; list-style: none; counter-reset: stage; }
+.map-stages::before, .map-stages::after { content: ''; position: absolute; top: 9px; height: 2px; }
+.map-stages::before { inset-inline: 10%; background: var(--color-border-subtle); }
+.map-stages::after { right: 10%; width: 20%; background: repeating-linear-gradient(90deg, var(--color-surface) 0 4px, transparent 4px 8px); }
+.map-stages > li { position: relative; display: grid; gap: var(--space-2); align-content: start; padding: var(--space-2); border-radius: var(--radius-control); counter-increment: stage; transition: background-color 0.15s; }
+.map-stages > li::before { content: counter(stage); position: absolute; z-index: 1; top: calc(-1 * var(--space-6)); left: 50%; translate: -50% 0; display: grid; place-items: center; width: 20px; height: 20px; border: 2px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
+.map-stages > li.is-current { background: color-mix(in srgb, var(--color-accent) 14%, transparent); }
+.map-stages > li.is-current::before { border-color: var(--color-button-bg); background: var(--color-button-bg); color: var(--color-button-text); }
+.map-stages h3 { font-size: var(--text-xs); font-weight: var(--weight-semibold); text-align: center; }
+.map-stages h3 small { display: block; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-regular); }
+.map-stages ul { display: grid; gap: var(--space-1); padding: 0; list-style: none; }
+.map-skill { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 2px var(--space-1); width: 100%; min-height: var(--control-sm); padding: var(--space-1) var(--space-2); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); color: var(--color-text); font: var(--text-sm) var(--font-mono); text-align: left; text-decoration: none; overflow-wrap: anywhere; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.map-skill code { font-size: inherit; }
+.map-skill:hover { border-color: var(--color-border); text-decoration: none; }
+.map-skill[aria-pressed='true'] { border-color: var(--color-accent); box-shadow: 0 0 0 1px var(--color-accent); }
+.map-stages > li.is-standalone .map-skill { border-style: dashed; }
+.map-skill-detail { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-content: start; min-height: 6.5rem; padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-left: 3px solid var(--color-accent); border-radius: var(--radius-control); background: var(--color-surface-raised); }
+.map-skill-detail h3 { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); font-size: var(--text-sm); }
+.map-skill-detail > a { grid-column: 2; grid-row: 1; font-size: var(--text-sm); white-space: nowrap; }
+.map-skill-detail p { grid-column: 1 / -1; font-size: var(--text-sm); }
+.map-panels { display: grid; grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr); gap: var(--space-4); }
+.map-panels > div { display: grid; gap: var(--space-2); align-content: start; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-bg); }
+.map-ring { display: block; width: 100%; max-width: 26rem; margin-inline: auto; font-family: var(--font-ui); }
+.map-ring__arc { fill: none; stroke: var(--color-border); stroke-width: 1.5; }
+.map-ring__arrow { fill: var(--color-border); }
+.map-ring__retry { fill: none; stroke: var(--color-error); stroke-width: 1.5; stroke-dasharray: 4 3; }
+.map-ring__retry-arrow, .map-ring__retry-label { fill: var(--color-error); }
+.map-ring__retry-label { font-size: 10px; }
+.map-ring__step circle { fill: var(--color-button-bg); }
+.map-ring__number { fill: var(--color-button-text); font-size: 11px; font-weight: var(--weight-semibold); text-anchor: middle; }
+.map-ring__label { fill: var(--color-text); font-size: 10.5px; }
+.map-ring__name { fill: var(--color-text); font: var(--weight-semibold) 11px var(--font-mono); text-anchor: middle; }
+.map-ring__sub { fill: var(--color-muted); font-size: 9.5px; text-anchor: middle; }
+.map-ring__hit { fill: transparent; stroke: transparent; stroke-width: 2; transition: fill 0.15s; }
+.is-enhanced .map-ring__step { cursor: pointer; outline: none; }
+.is-enhanced .map-ring__step:hover .map-ring__hit, .map-ring__step.is-current .map-ring__hit { fill: color-mix(in srgb, var(--color-accent) 14%, transparent); }
+.map-ring__step:focus-visible .map-ring__hit { stroke: var(--color-focus); }
+.map-ring__step.is-current circle { stroke: var(--color-button-bg); stroke-width: 6; stroke-opacity: 0.28; paint-order: stroke; }
+.map-ring__step.is-current .map-ring__label { font-weight: var(--weight-semibold); }
+.map-step-detail { display: grid; min-height: 5rem; align-content: start; padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); font-size: var(--text-sm); }
+.map-step-detail span, .map-steps span, .map-load span { color: var(--color-muted); }
+.map-steps { display: grid; gap: var(--space-2); padding-inline-start: 1.25em; font-size: var(--text-sm); }
+.map-steps strong { display: block; }
+.is-enhanced .map-steps { display: none; }
+.map-load { display: grid; gap: var(--space-1); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); font-size: var(--text-sm); }
+.map-load .map-load { margin-top: var(--space-1); border-color: transparent; background: color-mix(in srgb, var(--color-accent) 14%, var(--color-surface-raised)); }
+.map-load .map-load .map-load { border: 1px dashed var(--color-accent); background: var(--color-surface-raised); }
+.map-load code { color: var(--color-accent); font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+@container (max-width: 720px) {
+  .map-stages { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); padding: 0; }
+  .map-stages::before { inset: 10px auto 10px 17px; width: 2px; height: auto; }
+  .map-stages::after { display: none; }
+  .map-stages > li { grid-template-columns: 8rem minmax(0, 1fr); align-items: start; padding-left: 2.5rem; }
+  .map-stages > li::before { top: var(--space-2); left: 8px; translate: none; }
+  .map-stages h3 { padding-top: 3px; text-align: left; }
+  .map-stages ul { grid-template-columns: repeat(auto-fill, minmax(9rem, 1fr)); }
+  .map-panels { grid-template-columns: minmax(0, 1fr); }
+}
+@container (max-width: 460px) {
+  .map-stages > li { grid-template-columns: minmax(0, 1fr); }
+  .map-ring, .map-step-detail { display: none; }
+  .is-enhanced .map-steps { display: grid; }
+  .map-skill-detail { grid-template-columns: minmax(0, 1fr); }
+  .map-skill-detail > a { grid-column: 1; grid-row: auto; }
+}
 .swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-5); }
 .swatches figure { min-width: 0; }
 .swatches figure > span { display: block; height: var(--space-12); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); }
 .swatches figcaption { display: grid; gap: var(--space-1); margin-top: var(--space-2); color: var(--color-muted); font-size: var(--text-xs); }
 .swatches code { color: var(--color-text); overflow-wrap: anywhere; }
 @media (max-width: 1100px) {
-  .purposes { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .skill-rows li { grid-template-columns: minmax(0, 1fr) auto; }
   .skill-rows p { grid-column: 1 / -1; grid-row: 2; }
 }
 @media (max-width: 800px) {
   .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
   main { gap: var(--space-8); padding-top: var(--space-6); }
-  .cmd-pair, .parts, .levels, .purposes { grid-template-columns: minmax(0, 1fr); }
+  .cmd-pair, .parts { grid-template-columns: minmax(0, 1fr); }
   .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 680px) { .page { padding-inline: var(--space-4); } }

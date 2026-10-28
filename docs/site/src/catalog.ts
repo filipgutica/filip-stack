@@ -1,6 +1,6 @@
 // Build-time skill catalog. The README tables own the copy readers see, and each
 // SKILL.md owns whether the host may select the skill on its own.
-import { readFileSync, readdirSync } from "node:fs";
+import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
 import { marked, type Tokens } from "marked";
 
@@ -10,6 +10,8 @@ export interface CatalogSkill {
   summaryHtml: string;
   /** True when the skill runs only when invoked by name. */
   manual: boolean;
+  /** File names in the skill's references directory. */
+  references: string[];
   group: "Workflow" | "Standalone";
   source: string;
 }
@@ -50,6 +52,11 @@ const skillTable = ({
   }));
 };
 
+const referenceFiles = (skillDirectory: string) => {
+  const directory = join(skillDirectory, "references");
+  return existsSync(directory) ? readdirSync(directory).sort() : [];
+};
+
 const isManual = (skillFile: string) =>
   /^disable-model-invocation:\s*true$/m.test(readFileSync(skillFile, "utf8"));
 
@@ -80,6 +87,7 @@ const loadSkills = ({
     group,
     source: `https://github.com/filipgutica/filip-stack/blob/main/${directory}/${row.name}/SKILL.md`,
     manual: isManual(join(repoRoot, directory, row.name, "SKILL.md")),
+    references: referenceFiles(join(repoRoot, directory, row.name)),
   }));
 };
 
