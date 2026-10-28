@@ -1,3 +1,10 @@
+# [3.9.0](https://github.com/filipgutica/filip-stack/compare/v3.8.0...v3.9.0) (2026-10-28)
+
+
+### Features
+
+* **host-config:** end handoff turns with a current state footer ([45a33be](https://github.com/filipgutica/filip-stack/commit/45a33bee7c482126f84591c117aa2705d53aeb3d))
+
 # [3.8.0](https://github.com/filipgutica/filip-stack/compare/v3.7.0...v3.8.0) (2026-10-28)
 
 
