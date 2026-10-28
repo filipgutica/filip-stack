@@ -1,3 +1,10 @@
+# [3.12.0](https://github.com/filipgutica/filip-stack/compare/v3.11.0...v3.12.0) (2026-10-28)
+
+
+### Features
+
+* **skills:** add full-stop adapted from tstack ([93357c1](https://github.com/filipgutica/filip-stack/commit/93357c115c5e8c23bac09ebfaeec423efe48ae8f))
+
 # [3.11.0](https://github.com/filipgutica/filip-stack/compare/v3.10.0...v3.11.0) (2026-10-28)
 
 
