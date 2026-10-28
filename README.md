@@ -215,13 +215,12 @@ compares it with upstream.
 - Codex agent profiles
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the `~/design-language` files the guidance refers to
-- exported shared Field Guide preferences
 
 It contains no employer-specific guidance; keep that local to the machine that
 needs it.
 
-The command runs from a checkout, because `update` pulls it and
-`field-guide-sync` writes back into it. A symlink on your `PATH` is enough; see
+The command runs from a checkout, because `update` pulls it. A symlink on your
+`PATH` is enough; see
 [Set up a machine](#set-up-a-machine). Without one, run
 `node scripts/host-config.mjs` from the checkout.
 
@@ -253,8 +252,28 @@ Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
 pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
 Claude and Codex.
 
-`field-guide-sync` updates `host-config/field-guide/shared.json`. Review the
-diff before you commit it: an export carries every active shared learning.
+Shared Field Guide preferences live in `~/.config/filip-stack/field-guide.json`.
+When `XDG_CONFIG_HOME` is set and non-empty, the path is
+`$XDG_CONFIG_HOME/filip-stack/field-guide.json` instead. With `--home <dir>` and
+`XDG_CONFIG_HOME` unset or empty, the path is
+`<dir>/.config/filip-stack/field-guide.json`.
+
+`apply` imports this file when it exists. If it is missing, apply prints where
+to put it and continues. `field-guide-sync` imports the file if present, then
+exports local shared guidance to it, creating the directory. It leaves the
+repository unchanged. Use a dotfile manager to sync this file between machines.
+
+To migrate existing preferences, run these commands on a machine that already
+has them in `~/.field-guide`:
+
+```sh
+filip-stack field-guide-sync
+chezmoi add ~/.config/filip-stack/field-guide.json
+```
+
+If you set `XDG_CONFIG_HOME`, use the path printed by `field-guide-sync` in the
+`chezmoi add` command. Review the export before syncing it: it carries every
+active shared learning.
 
 ## Repository layout
 
