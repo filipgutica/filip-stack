@@ -11,6 +11,7 @@ const commands = {
   apply: "filip-stack apply",
   sync: "filip-stack field-guide-sync",
   chezmoi: "chezmoi add ~/.config/filip-stack/field-guide.json",
+  routine: "chezmoi update\nfilip-stack update\nchezmoi re-add",
 };
 const enhanced = ref(false);
 onMounted(() => {
@@ -30,7 +31,7 @@ const tables = {
     {
       command: "filip-stack update",
       description:
-        "On <code>main</code> only: runs <code>git pull --ff-only</code>, then apply.",
+        "On <code>main</code> only: runs <code>git pull --ff-only</code>, then apply, then <code>field-guide-sync</code> when your preferences file exists.",
     },
     {
       command: "filip-stack field-guide-sync",
@@ -251,10 +252,26 @@ const tables = {
           </p>
         </div>
       </li>
+      <li>
+        <div>
+          <p>
+            From then on, pull your dotfiles before you update, and add the
+            file back after. <code>update</code> syncs it for you.
+          </p>
+          <UiCodeBlock
+            :code="commands.routine"
+            language="bash"
+            variant="compact"
+            :copyable="enhanced"
+            :wrap="true"
+          />
+        </div>
+      </li>
     </ol>
     <p class="hint">
-      Run <code>field-guide-sync</code> again after you add preferences, then
-      sync your dotfiles as usual.
+      chezmoi keeps its own copy, so it sees a change only after
+      <code>chezmoi re-add</code>. Pulling first lets the sync merge your other
+      machines' preferences, so chezmoi has no conflict to report.
     </p>
   </section>
 
