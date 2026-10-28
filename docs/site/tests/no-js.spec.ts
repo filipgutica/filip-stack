@@ -1,56 +1,102 @@
-import { expect, test } from '@playwright/test';
+import { expect, test } from "@playwright/test";
+import { pageTypes, routes, themes, widths } from "./pages";
 
-const claudeInstall = 'claude plugin marketplace add filipgutica/filip-stack\nclaude plugin install workflow@filip-stack';
+for (const theme of themes)
+  for (const width of widths)
+    for (const entry of pageTypes) {
+      test(`${entry.path || "overview"} is readable and navigable at ${width}px in ${theme} without JavaScript`, async ({
+        page,
+      }) => {
+        await page.emulateMedia({ colorScheme: theme });
+        await page.setViewportSize({ width, height: 900 });
+        await page.goto(`/filip-stack/${entry.path}`);
+        await expect(page.locator("main h1")).toHaveText(entry.title);
+        await expect(page.getByRole("button", { name: /^Copy / })).toHaveCount(
+          0,
+        );
+        if (width <= 800) await page.locator(".fg-site-rail__summary").click();
+        const nav = page.getByRole("navigation", {
+          name: "Documentation",
+          exact: true,
+        });
+        await expect(nav.getByRole("link")).toHaveCount(routes.length);
+        await expect(nav.locator('[aria-current="page"]')).toHaveAttribute(
+          "href",
+          `/filip-stack/${entry.path}`,
+        );
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= innerWidth,
+          ),
+        ).toBe(true);
+        await nav
+          .getByRole("link", { name: "filip-stack CLI", exact: true })
+          .click();
+        await expect(page).toHaveURL("/filip-stack/cli/");
+        await expect(page.locator("main h1")).toHaveText("filip-stack CLI");
+      });
+    }
 
-for (const width of [320, 390, 768, 801, 1280]) {
-  test(`static content and native navigation at ${width}px without JavaScript`, async ({ page }) => {
-    await page.setViewportSize({ width, height: 900 });
-    await page.goto('/filip-stack/');
-    const projectTrigger = page.getByLabel('Project: Filip Stack', { exact: true });
-    await expect(projectTrigger).toBeVisible();
-    await expect(page.getByRole('navigation', { name: 'Site links' }).getByRole('link')).toHaveText([
-      'Guide',
-      'GitHub',
-      'Releases',
+test("all skill prose and README traits render without JavaScript", async ({
+  page,
+}) => {
+  for (const route of routes.filter((route) => route.startsWith("skills/"))) {
+    await page.goto(`/filip-stack/${route}`);
+    await expect(page.locator("main > section > h2")).toHaveText([
+      "What it does",
+      "When to use it",
+      "How it works",
+      "What you get",
+      "Related skills",
     ]);
-    await expect(page.getByRole('heading', { name: 'Skills and setup for Claude and Codex.', level: 1 })).toBeVisible();
-    await expect(page.locator('#install code')).toHaveText(claudeInstall);
-    await expect(page.getByRole('button', { name: 'Copy code' })).toHaveCount(0);
-
-    const projectMenu = page.getByRole('navigation', { name: 'Projects' });
-    await projectTrigger.click();
-    await expect(projectMenu.locator('[aria-current="page"]')).toHaveText('Filip Stack');
-    await projectTrigger.click();
-    await expect(projectMenu).toBeHidden();
-
-    if (width <= 800) await page.locator('.site-menu > summary').click();
-    await page.getByRole('navigation', { name: 'On this page' }).getByRole('link', { name: 'Host config', exact: true }).click();
-    await expect(page).toHaveURL(/#host-config$/);
-    await expect(page.locator('#host-config')).toBeInViewport();
-    expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
-  });
-}
-
-test('the skill lists come from the README and SKILL.md files', async ({ page }) => {
-  await page.goto('/filip-stack/');
-  const row = (section: string, name: string) =>
+    for (const section of await page.locator("main .prose").all())
+      await expect(section).not.toBeEmpty();
+    if (route === "skills/engineering/")
+      await expect(page.locator("main .fg-site-facts")).toContainText(
+        "Picked when a request matches",
+      );
+    if (route === "skills/simplify/")
+      await expect(page.locator("main .fg-site-facts")).toContainText(
+        "Manual · /workflow:simplify",
+      );
+  }
+  await page.goto("/filip-stack/");
+  await expect(
     page
-      .locator(`section[aria-labelledby="${section}"] .rows.skills .row`)
-      .filter({ has: page.locator(':scope > code', { hasText: new RegExp(`^${name}$`) }) });
-  await expect(row('workflow', 'engineering')).toContainText('Selected by request');
-  await expect(row('workflow', 'simplify')).toContainText('/workflow:simplify');
-  await expect(row('skills', 'full-send')).toContainText('/full-send');
-  await expect(row('skills', 'babysit-pr').getByRole('link', { name: 'tstack' })).toHaveAttribute(
-    'href',
-    'https://github.com/t3dotgg/tstack',
-  );
+      .locator("#standalone .skill-rows li")
+      .filter({
+        has: page.getByRole("link", { name: "full-send", exact: true }),
+      }),
+  ).toContainText("Manual");
+  await expect(
+    page
+      .locator("#standalone .skill-rows li")
+      .filter({
+        has: page.getByRole("link", { name: "babysit-pr", exact: true }),
+      })
+      .getByRole("link", { name: "tstack" }),
+  ).toHaveAttribute("href", "https://github.com/t3dotgg/tstack");
 });
 
-test('no-JavaScript readers follow the OS dark theme', async ({ page }) => {
-  await page.emulateMedia({ colorScheme: 'light' });
-  await page.goto('/filip-stack/');
-  const background = () => page.locator('body').evaluate((element) => getComputedStyle(element).backgroundColor);
+test("native project menu and OS theme work without JavaScript", async ({
+  page,
+}) => {
+  await page.emulateMedia({ colorScheme: "light" });
+  await page.goto("/filip-stack/");
+  const project = page.getByLabel("Project: Filip Stack", { exact: true });
+  const menu = page.getByRole("navigation", { name: "Projects" });
+  await project.click();
+  await expect(menu.locator('[aria-current="page"]')).toHaveText("Filip Stack");
+  await project.click();
+  await expect(menu).toBeHidden();
+  await expect(
+    page.getByRole("navigation", { name: "Site links" }).getByRole("link"),
+  ).toHaveText(["GitHub", "Releases", "Changelog"]);
+  const background = () =>
+    page
+      .locator("body")
+      .evaluate((element) => getComputedStyle(element).backgroundColor);
   const lightBackground = await background();
-  await page.emulateMedia({ colorScheme: 'dark' });
+  await page.emulateMedia({ colorScheme: "dark" });
   await expect.poll(background).not.toBe(lightBackground);
 });

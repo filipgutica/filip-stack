@@ -1,0 +1,57 @@
+---
+import App from '../App.vue';
+import { loadCatalog, type Catalog, type CatalogSkill, type SkillContent } from '../catalog';
+import libraryThemeCss from '@filipgutica/ui/theme.css?raw';
+import sitePaletteCss from '@filipgutica/ui/themes/graphite-indigo.css?raw';
+import { siteThemeBootScript } from '@filipgutica/ui/site';
+import '../styles/site.css';
+
+interface Props { catalog: Catalog; skill?: CatalogSkill; content?: SkillContent; }
+
+// Keep the library roles and page branding consistent without the theme boot script.
+const darkTokens = [libraryThemeCss, sitePaletteCss].map((css) => {
+  const tokens = css.match(/:root\.dark\s*\{([^}]+)\}/)?.[1];
+  if (!tokens) throw new Error('The dark theme tokens are missing.');
+  return tokens;
+}).join('\n');
+export function getStaticPaths() {
+  const { catalog, contents } = loadCatalog();
+  return [
+    ...[undefined, 'cli', 'design-language', 'field-guide'].map((page) => ({ params: { page }, props: { catalog } })),
+    ...[...catalog.workflow, ...catalog.standalone].map((skill) => ({
+      params: { page: `skills/${skill.name}` }, props: { catalog, skill, content: contents[skill.name] },
+    })),
+  ];
+}
+const { catalog, skill, content } = Astro.props;
+const page = Astro.url.pathname;
+const title = skill?.name ?? ({ cli: 'filip-stack CLI', 'design-language': 'Design language', 'field-guide': 'Field Guide' }[Astro.params.page ?? ''] ?? 'Skills and setup for Claude and Codex');
+const description = skill ? skill.summaryHtml.replace(/<[^>]+>/g, '') : 'Workflow skills, standalone skills, optional local memory, and shared host guidance for Claude Code and Codex.';
+const canonical = new URL(page, Astro.site).href;
+const noScriptDarkCss = `@media (prefers-color-scheme: dark) { :root:not(.dark) { ${darkTokens} } }`;
+---
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="light dark" />
+    <title>{title} · Filip Stack</title>
+    <meta name="description" content={description} />
+    <meta property="og:title" content={`${title} · Filip Stack`} />
+    <meta property="og:description" content={description} />
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content={canonical} />
+    <link rel="canonical" href={canonical} />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23222326'/%3E%3Ctext x='16' y='23' font-family='ui-monospace,Menlo,monospace' font-size='20' font-weight='700' text-anchor='middle' fill='white'%3Ef%3C/text%3E%3C/svg%3E"
+    />
+
+    <script is:inline set:html={siteThemeBootScript}></script>
+    <noscript><style is:global set:html={noScriptDarkCss}></style></noscript>
+  </head>
+  <body>
+    <App client:load catalog={catalog} page={page} skill={skill} content={content} />
+  </body>
+</html>
