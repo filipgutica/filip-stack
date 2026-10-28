@@ -1,8 +1,8 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
@@ -12,8 +12,11 @@ const sourceRoot = fileURLToPath(new URL('../../host-config/', import.meta.url))
 const blockStart = '<!-- filip-stack:host-config:begin'
 const blockEnd = '<!-- filip-stack:host-config:end -->\n'
 
-const run = ({ home, command, args = [], expectFailure = false }) => {
-  const result = spawnSync(process.execPath, [script, command, '--home', home, ...args], { encoding: 'utf8' })
+const run = ({ home, command, args = [], expectFailure = false, scriptPath = script, xdgConfigHome }) => {
+  const env = { ...process.env }
+  delete env.XDG_CONFIG_HOME
+  if (xdgConfigHome !== undefined) env.XDG_CONFIG_HOME = xdgConfigHome
+  const result = spawnSync(process.execPath, [scriptPath, command, '--home', home, ...args], { encoding: 'utf8', env })
   assert.equal(result.status !== 0, expectFailure, result.stderr || result.stdout)
   return result
 }
@@ -23,7 +26,9 @@ const states = (home) => run({ home, command: 'status' }).stdout.split('\n').sli
 
 test('apply renders both hosts into an empty home and is idempotent', () => {
   const home = mkdtempSync(join(tmpdir(), 'host-config-'))
-  run({ home, command: 'apply' })
+  const result = run({ home, command: 'apply' })
+  assert.ok(result.stdout.includes(`No shared Field Guide preferences were found; put them at ${join(home, '.config/filip-stack/field-guide.json')}\n`))
+  assert.equal(existsSync(join(home, '.field-guide')), false)
 
   const claude = read(join(home, '.claude/CLAUDE.md'))
   const codex = read(join(home, '.codex/AGENTS.md'))
@@ -42,6 +47,73 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   run({ home, command: 'apply' })
   assert.equal(read(join(home, '.agents/.filip-stack-host-config.json')), before)
 })
+
+const portableGuidance = (learning) => ({
+  schemaVersion: 1,
+  active: [{ subjectKey: 'testing', linkedSubjects: [], learning, confidence: 'high', examples: [] }],
+  retired: [],
+})
+
+const snapshot = (directory) => (
+  readdirSync(directory, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile())
+    .map((entry) => [join(entry.parentPath, entry.name), createHash('sha256').update(readFileSync(join(entry.parentPath, entry.name))).digest('hex')])
+    .sort(([left], [right]) => left.localeCompare(right))
+)
+
+for (const mode of ['unset', 'empty', 'custom']) {
+  test(`apply imports shared preferences with XDG_CONFIG_HOME ${mode}`, () => {
+    const home = mkdtempSync(join(tmpdir(), 'host-config-import-'))
+    const xdgConfigHome = mode === 'custom' ? mkdtempSync(join(tmpdir(), 'host-config-xdg-')) : mode === 'empty' ? '' : undefined
+    const path = join(xdgConfigHome || join(home, '.config'), 'filip-stack/field-guide.json')
+    const preferences = portableGuidance('Name tests after behavior.')
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, JSON.stringify(preferences))
+
+    const result = run({ home, command: 'apply', xdgConfigHome })
+    assert.match(result.stdout, /field-guide: created 1, promoted 0, retired 0, skipped 0/)
+    const memory = JSON.parse(read(join(home, '.field-guide/memory.json')))
+    assert.deepEqual(memory.guidance.map(({ learning }) => learning), ['Name tests after behavior.'])
+    assert.equal(read(path), JSON.stringify(preferences))
+  })
+
+  test(`field-guide-sync writes the dotfile and leaves the repository unchanged with XDG_CONFIG_HOME ${mode}`, () => {
+    const repo = mkdtempSync(join(tmpdir(), 'host-config-sync-repo-'))
+    const initialized = spawnSync('git', ['init', '-q', repo], { encoding: 'utf8' })
+    assert.equal(initialized.status, 0, initialized.stderr)
+    mkdirSync(join(repo, 'scripts'))
+    copyFileSync(script, join(repo, 'scripts/host-config.mjs'))
+    cpSync(sourceRoot, join(repo, 'host-config'), { recursive: true })
+    cpSync(new URL('../../plugins/field-guide/', import.meta.url), join(repo, 'plugins/field-guide'), { recursive: true })
+    // A leftover export must never be imported or overwritten.
+    mkdirSync(join(repo, 'host-config/field-guide'), { recursive: true })
+    writeFileSync(join(repo, 'host-config/field-guide/shared.json'), JSON.stringify(portableGuidance('Legacy guidance.')))
+    const before = snapshot(repo)
+    const home = mkdtempSync(join(tmpdir(), 'host-config-sync-home-'))
+    const xdgConfigHome = mode === 'custom' ? mkdtempSync(join(tmpdir(), 'host-config-sync-xdg-')) : mode === 'empty' ? '' : undefined
+    const path = join(xdgConfigHome || join(home, '.config'), 'filip-stack/field-guide.json')
+    const options = { home, scriptPath: join(repo, 'scripts/host-config.mjs'), xdgConfigHome }
+
+    // Seed local guidance, then remove the dotfile to exercise first-time export.
+    mkdirSync(dirname(path), { recursive: true })
+    writeFileSync(path, JSON.stringify(portableGuidance('Name tests after behavior.')))
+    run({ ...options, command: 'apply' })
+    rmSync(dirname(path), { recursive: true })
+    const result = run({ ...options, command: 'field-guide-sync' })
+    assert.ok(result.stdout.includes(`exported shared guidance to ${path}`))
+    assert.match(result.stdout, /add it to your dotfile manager/)
+    assert.deepEqual(JSON.parse(read(path)), portableGuidance('Name tests after behavior.'))
+
+    // Merge another machine's guidance before exporting the combined preferences.
+    writeFileSync(path, JSON.stringify(portableGuidance('Keep tests focused.')))
+    run({ ...options, command: 'field-guide-sync' })
+    assert.deepEqual(JSON.parse(read(path)).active.map(({ learning }) => learning), [
+      'Keep tests focused.', 'Name tests after behavior.',
+    ])
+    assert.deepEqual(snapshot(repo), before)
+    if (mode === 'custom') assert.equal(existsSync(join(home, '.config/filip-stack/field-guide.json')), false)
+  })
+}
 
 test('apply keeps text outside the guidance block and refuses local edits inside it', () => {
   const home = mkdtempSync(join(tmpdir(), 'host-config-edits-'))

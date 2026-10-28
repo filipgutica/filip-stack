@@ -10,7 +10,7 @@ import { fileURLToPath } from 'node:url'
 const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = join(dirname(scriptPath), '..')
 const sourceRoot = join(repoRoot, 'host-config')
-const sharedGuidancePath = join(sourceRoot, 'field-guide', 'shared.json')
+const sharedGuidancePath = (home) => join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'field-guide.json')
 const fieldGuideScript = join(repoRoot, 'plugins', 'field-guide', 'skills', 'field-guide', 'scripts', 'field-guide.mjs')
 const manifestTarget = '.agents/.filip-stack-host-config.json'
 const blockStart = '<!-- filip-stack:host-config:begin (managed by filip-stack; edit host-config/ there) -->'
@@ -202,7 +202,7 @@ const runFieldGuide = ({ home, args }) => {
 }
 
 const importSharedGuidance = ({ home }) => {
-  const result = runFieldGuide({ home, args: ['import', '--input', sharedGuidancePath] })
+  const result = runFieldGuide({ home, args: ['import', '--input', sharedGuidancePath(home)] })
   process.stdout.write(`field-guide: created ${result.created.length}, promoted ${result.promoted.length}, `
     + `retired ${result.retired.length}, skipped ${result.skipped.length}\n`)
   for (const { id, reason } of result.skipped) process.stdout.write(`  skipped ${id}: ${reason}\n`)
@@ -241,9 +241,12 @@ const apply = ({ home, force }) => {
     process.stdout.write(`wrote ${entry.target}\n`)
   }
   writeManifest({ home, commit: sourceCommit(), files })
-  if (existsSync(sharedGuidancePath)) {
+  const path = sharedGuidancePath(home)
+  if (existsSync(path)) {
     runFieldGuide({ home, args: ['init'] })
     importSharedGuidance({ home })
+  } else {
+    process.stdout.write(`No shared Field Guide preferences were found; put them at ${path}\n`)
   }
 }
 
@@ -258,13 +261,14 @@ const update = ({ home, force }) => {
   process.exit(applied.status ?? 1)
 }
 
-// Imports the committed shared guidance first so the export keeps records from other machines.
+// Imports the synced dotfile first so the export keeps records from other machines.
 const fieldGuideSync = ({ home }) => {
+  const path = sharedGuidancePath(home)
   runFieldGuide({ home, args: ['init'] })
-  if (existsSync(sharedGuidancePath)) importSharedGuidance({ home })
-  mkdirSync(dirname(sharedGuidancePath), { recursive: true })
-  runFieldGuide({ home, args: ['export', '--output', sharedGuidancePath] })
-  process.stdout.write(`exported shared guidance to ${relative(repoRoot, sharedGuidancePath)}; review it with git diff before committing\n`)
+  if (existsSync(path)) importSharedGuidance({ home })
+  mkdirSync(dirname(path), { recursive: true })
+  runFieldGuide({ home, args: ['export', '--output', path] })
+  process.stdout.write(`exported shared guidance to ${path}; add it to your dotfile manager\n`)
 }
 
 const { command, options } = parseArgs(process.argv.slice(2))
