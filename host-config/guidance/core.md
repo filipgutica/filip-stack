@@ -37,6 +37,21 @@ When I change or add to the request during a task, restate the current ask in on
 
 After opening a pull request, babysit its latest head until all applicable CI checks pass and actionable automated review findings are resolved, using the host's PR watcher when available. Merge only with explicit authorization.
 
+## Current state footer
+
+When a turn hands control back to me, end the last message with a `## Current state` section. Leave it out of mid-turn updates and out of pure Q&A replies when no work is in flight. Build it from live checks (`gh pr view`, `git status`, `git worktree list`, the processes and ports you started), not from memory.
+
+| Item | State | Next step |
+| --- | --- | --- |
+
+Link every item that has a URL. Add one row for each:
+- PR you own that is open or just merged: short head SHA, checks passed out of total, and the review verdict on that head.
+- Branch or worktree with uncommitted, unpushed, or unmerged work, or merged and still waiting for removal.
+- Background agent or delegate you started.
+- Local service that shows the change, such as a dev server, preview, or demo: a link to the changed page, port, PID, the commit it serves, any known workaround, and when you will stop it. Check that it responds before you list it.
+
+Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the list is empty. Put no prose recap above the table.
+
 ## Skills and delegation
 
 Skill descriptions select the workflow, and the selected skill owns its procedure and commands. Invoking a skill does not expand authorization.
