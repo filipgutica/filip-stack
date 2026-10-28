@@ -1,3 +1,10 @@
+# [3.10.0](https://github.com/filipgutica/filip-stack/compare/v3.9.0...v3.10.0) (2026-10-28)
+
+
+### Features
+
+* **host-config:** open the current state footer with a brief recap ([2c4a561](https://github.com/filipgutica/filip-stack/commit/2c4a561a21af60b597de03372e0df3cb6a9cd291))
+
 # [3.9.0](https://github.com/filipgutica/filip-stack/compare/v3.8.0...v3.9.0) (2026-10-28)
 
 
