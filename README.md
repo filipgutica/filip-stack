@@ -227,7 +227,7 @@ The command runs from a checkout, because `update` pulls it. A symlink on your
 ```sh
 filip-stack status            # applied commit, then each target's state
 filip-stack apply [--force]   # write targets and import shared guidance
-filip-stack update [--force]  # on main only: git pull --ff-only, then apply
+filip-stack update [--force]  # on main only: git pull --ff-only, apply, then sync
 filip-stack field-guide-sync  # import, then export local shared guidance
 ```
 
@@ -261,7 +261,9 @@ When `XDG_CONFIG_HOME` is set and non-empty, the path is
 `apply` imports this file when it exists. If it is missing, apply prints where
 to put it and continues. `field-guide-sync` imports the file if present, then
 exports local shared guidance to it, creating the directory. It leaves the
-repository unchanged. Use a dotfile manager to sync this file between machines.
+repository unchanged. `update` runs `field-guide-sync` after apply when the file
+exists, so guidance saved on this machine reaches it. Use a dotfile manager to
+sync this file between machines.
 
 To migrate existing preferences, run these commands on a machine that already
 has them in `~/.field-guide`:
@@ -274,6 +276,10 @@ chezmoi add ~/.config/filip-stack/field-guide.json
 If you set `XDG_CONFIG_HOME`, use the path printed by `field-guide-sync` in the
 `chezmoi add` command. Review the export before syncing it: it carries every
 active shared learning.
+
+chezmoi keeps its own copy of the file, so run `chezmoi re-add` after each
+update or sync. Run `chezmoi update` first: the sync then merges the other
+machines' guidance, and chezmoi has no conflict to report.
 
 ## Repository layout
 

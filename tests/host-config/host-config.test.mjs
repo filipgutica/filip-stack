@@ -200,6 +200,41 @@ test('update refuses to pull a checkout that is not on main', () => {
   assert.deepEqual(readdirSync(home), [])
 })
 
+test('update syncs the Field Guide dotfile only when it already exists', () => {
+  const source = mkdtempSync(join(tmpdir(), 'host-config-update-source-'))
+  const git = (args, cwd = source) => {
+    const result = spawnSync('git', ['-c', 'user.name=test', '-c', 'user.email=test@example.com', ...args], { cwd, encoding: 'utf8' })
+    assert.equal(result.status, 0, result.stderr)
+  }
+  git(['init', '-q', '-b', 'main'])
+  mkdirSync(join(source, 'scripts'))
+  copyFileSync(script, join(source, 'scripts/host-config.mjs'))
+  cpSync(sourceRoot, join(source, 'host-config'), { recursive: true })
+  cpSync(new URL('../../plugins/field-guide/', import.meta.url), join(source, 'plugins/field-guide'), { recursive: true })
+  git(['add', '.'])
+  git(['commit', '-q', '-m', 'init'])
+  const checkout = join(mkdtempSync(join(tmpdir(), 'host-config-update-')), 'checkout')
+  git(['clone', '-q', source, checkout])
+  const options = { scriptPath: join(checkout, 'scripts/host-config.mjs') }
+
+  // No dotfile means the machine has not opted in, so update leaves none behind.
+  const fresh = mkdtempSync(join(tmpdir(), 'host-config-update-fresh-'))
+  run({ ...options, home: fresh, command: 'update' })
+  assert.equal(existsSync(join(fresh, '.config/filip-stack/field-guide.json')), false)
+
+  // Guidance saved on this machine reaches the dotfile alongside another machine's.
+  const home = mkdtempSync(join(tmpdir(), 'host-config-update-home-'))
+  const path = join(home, '.config/filip-stack/field-guide.json')
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, JSON.stringify(portableGuidance('Name tests after behavior.')))
+  run({ ...options, home, command: 'apply' })
+  writeFileSync(path, JSON.stringify(portableGuidance('Keep tests focused.')))
+  run({ ...options, home, command: 'update' })
+  assert.deepEqual(JSON.parse(read(path)).active.map(({ learning }) => learning), [
+    'Keep tests focused.', 'Name tests after behavior.',
+  ])
+})
+
 test('host-config sources contain no machine-specific home paths', () => {
   const files = readdirSync(sourceRoot, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile())
   for (const entry of files) {
