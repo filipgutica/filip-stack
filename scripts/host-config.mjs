@@ -250,7 +250,8 @@ const apply = ({ home, force }) => {
   }
 }
 
-// Pulls the checkout, then runs apply in a new process so the pulled script and sources apply.
+// Pulls the checkout, then runs apply and, when the dotfile exists, field-guide-sync in new processes,
+// so the pulled script and sources apply.
 // host-config ships from main, so update refuses to pull and apply another branch.
 const update = ({ home, force }) => {
   const branch = spawnSync('git', ['-C', repoRoot, 'branch', '--show-current'], { encoding: 'utf8' }).stdout.trim()
@@ -258,7 +259,10 @@ const update = ({ home, force }) => {
   const pull = spawnSync('git', ['-C', repoRoot, 'pull', '--ff-only'], { stdio: 'inherit' })
   if (pull.status !== 0) fail('git pull --ff-only failed; resolve the checkout and rerun')
   const applied = spawnSync(process.execPath, [scriptPath, 'apply', '--home', home, ...(force ? ['--force'] : [])], { stdio: 'inherit' })
-  process.exit(applied.status ?? 1)
+  // Without a dotfile the machine has not opted in to syncing, so update creates none.
+  if (applied.status !== 0 || !existsSync(sharedGuidancePath(home))) process.exit(applied.status ?? 1)
+  const synced = spawnSync(process.execPath, [scriptPath, 'field-guide-sync', '--home', home], { stdio: 'inherit' })
+  process.exit(synced.status ?? 1)
 }
 
 // Imports the synced dotfile first so the export keeps records from other machines.
