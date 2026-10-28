@@ -5,16 +5,22 @@ on:
     branches: [main]
     paths:
       - "docs/site/**"
+      - "docs/site/src/content/**"
       - "README.md"
       - "skills/*/SKILL.md"
       - "plugins/*/skills/*/SKILL.md"
+      - "plugins/*/skills/*/references/**"
+      - "skills/*/references/**"
       - ".github/workflows/pages.yml"
   pull_request:
     paths:
       - "docs/site/**"
+      - "docs/site/src/content/**"
       - "README.md"
       - "skills/*/SKILL.md"
       - "plugins/*/skills/*/SKILL.md"
+      - "plugins/*/skills/*/references/**"
+      - "skills/*/references/**"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 
@@ -43,7 +49,7 @@ jobs:
           cache-dependency-path: docs/site/pnpm-lock.yaml
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
-      # The build fails when the README skill tables and the skill directories disagree.
+      # The build validates README tables, skill directories, and page content.
       - run: pnpm build
       - run: pnpm exec playwright install --with-deps chromium
       - run: pnpm test:e2e
