@@ -39,7 +39,9 @@ After opening a pull request, babysit its latest head until all applicable CI ch
 
 ## Current state footer
 
-When a turn hands control back to me, end the last message with a `## Current state` section: a brief recap, a table, and a **Waiting on you** list. Leave it out of mid-turn updates and out of pure Q&A replies when no work is in flight. Build the table from live checks (`gh pr view`, `git status`, `git worktree list`, the processes and ports you started), not from memory.
+Include `## Current state` once per user turn, only in the main agent's final response when ending the turn and handing control back to the user. Never include it in progress updates, tool-wait messages, delegate reports, or intermediate review results. Waiting for a tool or delegate does not count as a handoff; continue the authorized work when its result arrives. Omit the footer from pure Q&A replies when no work is in flight.
+
+The footer contains a brief recap, a table, and a **Waiting on you** list. Build the table from live checks, not memory.
 
 Start with a recap of two to four bullets: what the work achieved so far and any decisions, caveats, or results from earlier messages that still matter. Do not repeat the table.
 
