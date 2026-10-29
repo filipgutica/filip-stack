@@ -39,7 +39,11 @@ After opening a pull request, babysit its latest head until all applicable CI ch
 
 ## Current state footer
 
-Include `## Current state` once per user turn, only in the main agent's final response when ending the turn and handing control back to the user. Never include it in progress updates, tool-wait messages, delegate reports, or intermediate review results. Waiting for a tool or delegate does not count as a handoff; continue the authorized work when its result arrives. Omit the footer from pure Q&A replies when no work is in flight.
+Only the main agent writes `## Current state`, in its final response at a task handoff. A task handoff means all authorized work is complete, or no remaining work can proceed without the user's decision, approval, or manual action.
+
+Waiting for a tool, subagent, review, CI check, or watcher to resume work automatically is not a handoff. Omit the entire footer during these waits, including **Waiting on you**, even if the harness requires a final response or says to end the turn. Continue authorized work when results arrive. Optional actions the user could take do not make an automatic wait a handoff.
+
+Do not include the footer in progress updates or delegate reports. Omit it from pure Q&A replies when no work is in flight.
 
 The footer contains a brief recap, a table, and a **Waiting on you** list. Build the table from live checks, not memory.
 
@@ -54,7 +58,7 @@ Link every item that has a URL. Add one row for each:
 - Background agent or delegate you started.
 - Local service that shows the change, such as a dev server, preview, or demo: a link to the changed page, port, PID, the commit it serves, any known workaround, and when you will stop it. Check that it responds before you list it.
 
-Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the list is empty.
+Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
 ## Skills and delegation
 
