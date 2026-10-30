@@ -1,3 +1,12 @@
+## [3.12.1](https://github.com/filipgutica/filip-stack/compare/v3.12.0...v3.12.1) (2026-10-30)
+
+
+### Bug Fixes
+
+* **workflow:** keep risk reviews of an exact diff in Review ([22a7d4b](https://github.com/filipgutica/filip-stack/commit/22a7d4b83fc5ee8267d8db7b6544899c92c8745a))
+* **workflow:** narrow review skill activation ([94ca344](https://github.com/filipgutica/filip-stack/commit/94ca34448e89e134b69ee26e5669860556fe356a))
+* **workflow:** route review feedback and quick plan questions correctly ([d2c1a22](https://github.com/filipgutica/filip-stack/commit/d2c1a22bba58e479c32ce609f51abdbac6cdd1cc))
+
 # [3.12.0](https://github.com/filipgutica/filip-stack/compare/v3.11.0...v3.12.0) (2026-10-28)
 
 
