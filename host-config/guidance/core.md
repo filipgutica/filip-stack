@@ -54,11 +54,11 @@ Start with a recap of two to four bullets: what the work achieved so far and any
 | Item | State | Next step |
 | --- | --- | --- |
 
-Link every item that has a URL. Add one row for each:
+Make the Item cell a clickable Markdown link whenever the item has a URL or a file path, such as `[PR #12](https://…)`, `[dev server](http://localhost:5173/settings)`, or a thread link. A port number, a bare URL, or a name alone is not a link. Add one row for each:
 - PR you own that is open or just merged: short head SHA, checks passed out of total, and the review verdict on that head.
 - Branch or worktree with uncommitted, unpushed, or unmerged work, or merged and still waiting for removal.
 - Background agent or delegate you started.
-- Local service that shows the change, such as a dev server, preview, or demo: a link to the changed page, port, PID, the commit it serves, any known workaround, and when you will stop it. Check that it responds before you list it.
+- Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
