@@ -31,12 +31,13 @@ A standalone skill may require other standalone skills by name, as `full-send` r
 
 ## Evaluation
 
-PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Ship a behavior change to Workflow guidance only after an evaluation supports it.
+PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Ship a behavior change to Workflow guidance only after an evaluation supports it. For a change to activation text only, meaning skill descriptions and the pointers that choose a reference, a `pnpm eval:routing` run with no regressions is that evaluation; put its table in the PR. Changes to what a skill does need PluginBench.
 
 - Compare every treatment with vanilla on matched tasks, model, reasoning, harness, and attempts.
 - Run a dry run first. A paid run needs the user's approval.
 - Reviewer findings are uncalibrated diagnostics, not a quality score.
 - Record each study in `docs/workflow-skill-evaluation-lab-notebook.md` and its saved reports in `docs/evidence/`.
+- Before you push a Workflow `SKILL.md` edit, run `pnpm eval:routing --dry-run`, then a real run when the user approves. It compares skill and reference routing against the base branch through the local CLIProxyAPI.
 
 ## Checks and release
 
