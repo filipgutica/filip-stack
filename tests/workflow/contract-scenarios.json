@@ -210,6 +210,14 @@
       "expectedReference": null
     },
     {
+      "id": "review-diff-security-risk",
+      "prompt": "What security risks does this exact PR diff introduce? Review it read-only.",
+      "expectedSkill": "review",
+      "activation": "implicit",
+      "mode": "exact-range",
+      "expectedReference": null
+    },
+    {
       "id": "uncertain-coverage-preservation",
       "prompt": "These replacement integration tests may miss failures covered by the deleted suites. Determine whether the contracts still have independent proof.",
       "expectedSkill": "test-audit",
