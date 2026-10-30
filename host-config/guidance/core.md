@@ -41,7 +41,9 @@ After opening a pull request, babysit its latest head until all applicable CI ch
 
 Only the main agent writes `## Current state`, in its final response at a task handoff. A task handoff means all authorized work is complete, or no remaining work can proceed without the user's decision, approval, or manual action.
 
-Waiting for a tool, subagent, review, CI check, or watcher to resume work automatically is not a handoff. Omit the entire footer during these waits, including **Waiting on you**, even if the harness requires a final response or says to end the turn. Continue authorized work when results arrive. Optional actions the user could take do not make an automatic wait a handoff.
+Waiting for a tool, subagent, review, CI check, or watcher to resume work automatically is not a handoff. Optional actions the user could take do not make an automatic wait a handoff. Continue authorized work when results arrive.
+
+When a turn ends during such a wait, even because the harness requires a final response, end it with a wait note instead of the footer. Use at most three lines or bullets: what you did since your last message, what you are waiting for, and what you will do when it arrives. Do not repeat earlier wait notes, and do not add a table or **Waiting on you**.
 
 Do not include the footer in progress updates or delegate reports. Omit it from pure Q&A replies when no work is in flight.
 
@@ -52,11 +54,11 @@ Start with a recap of two to four bullets: what the work achieved so far and any
 | Item | State | Next step |
 | --- | --- | --- |
 
-Link every item that has a URL. Add one row for each:
+Make the Item cell a clickable Markdown link whenever the item has a URL or a file path, such as `[PR #12](https://…)`, `[dev server](http://localhost:5173/settings)`, or a thread link. A port number, a bare URL, or a name alone is not a link. Add one row for each:
 - PR you own that is open or just merged: short head SHA, checks passed out of total, and the review verdict on that head.
 - Branch or worktree with uncommitted, unpushed, or unmerged work, or merged and still waiting for removal.
 - Background agent or delegate you started.
-- Local service that shows the change, such as a dev server, preview, or demo: a link to the changed page, port, PID, the commit it serves, any known workaround, and when you will stop it. Check that it responds before you list it.
+- Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
@@ -99,6 +101,7 @@ Before investigating, planning, changing, or reviewing code, read `~/.agents/COD
 - Use the `humanizer` skill when the user requests natural-language editing or a draft needs substantial stylistic revision. Ordinary technical deliverables need only the applicable writing guidance and a concise final read.
 - Preserve facts, technical meaning, uncertainty, consistent terminology, code, links, required structure, and applicable Simplified Technical English constraints. Keep the draft and editorial audit internal. Return only the requested deliverable unless the user asks to see the editing process.
 - For a ticket, specification, or implementation plan, use `$workflow:planning`; for a PR description, use `$workflow:technical-writing`. Their references own the default formats.
+- Make PR descriptions, PR comments, review replies, and Slack messages easy to scan within their format. Put one idea on each line or bullet. Use a table to compare items or show status. Give a sequence of events as one bullet per event, in time order. Avoid dense paragraphs.
 
 ## Interface design
 
