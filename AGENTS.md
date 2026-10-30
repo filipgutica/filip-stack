@@ -37,6 +37,7 @@ PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/
 - Run a dry run first. A paid run needs the user's approval.
 - Reviewer findings are uncalibrated diagnostics, not a quality score.
 - Record each study in `docs/workflow-skill-evaluation-lab-notebook.md` and its saved reports in `docs/evidence/`.
+- Before you push a Workflow `SKILL.md` edit, run `pnpm eval:routing --dry-run`, then a real run when the user approves. It compares skill and reference routing against the base branch through the local CLIProxyAPI. It is a quick check, not PluginBench evidence.
 
 ## Checks and release
 
