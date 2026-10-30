@@ -1,6 +1,6 @@
 ---
 name: engineering
-description: Use for an authorized code change, bug fix, refactor, failing test, CI failure, or review correction that needs the smallest correct implementation and focused verification. Do not use for explanation-only requests or planning without edits.
+description: Use for an authorized code change, bug fix, refactor, failing test, CI failure, or review feedback to check or apply. Do not use for explanation-only requests or planning without edits.
 metadata:
   internal: true
 ---
@@ -55,7 +55,7 @@ Read [hygiene](references/commit-and-pr-hygiene.md) before subtasks, commits, PR
 
 Invoke $workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty about test value or preservation. Bound it to the affected tests and owners; routine test edits use the questions above.
 
-Read [delegation and review](references/delegation-and-review.md) before delegating and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
+Read [delegation and review](references/delegation-and-review.md) before delegating, when checking review feedback, and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
 
 Do not use review as a substitute for a blocked or failed test.
 

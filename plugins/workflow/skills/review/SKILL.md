@@ -1,6 +1,6 @@
 ---
 name: review
-description: Use for read-only review or final verification of an exact code change or existing artifact. Report evidence-backed findings or no findings with limitations. Not for tickets, plans, risk or status questions, review feedback, or walkthroughs.
+description: Use for read-only review or final verification of an exact code change or existing artifact. Not for tickets, plans, risk or status questions, review feedback, or walkthroughs.
 metadata:
   internal: true
 ---
