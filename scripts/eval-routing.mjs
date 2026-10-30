@@ -83,7 +83,8 @@ const askJson = async ({ model, system, user }) => {
     headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
     body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
   })
-  if (!response.ok) throw new Error(`${model}: HTTP ${response.status} ${(await response.text()).slice(0, 300)}`)
+  // An error body can echo the request, so redact the key before printing server text.
+  if (!response.ok) throw new Error(`${model}: HTTP ${response.status} ${(await response.text()).replaceAll(apiKey, '<redacted>').slice(0, 300)}`)
   const content = (await response.json()).choices?.[0]?.message?.content ?? ''
   try {
     return JSON.parse(content.match(/\{[\s\S]*\}/u)?.[0] ?? '')
@@ -100,7 +101,10 @@ const pickSkill = async ({ model, skills, scenario }) => {
     system: `You are the skill router of a coding agent. Available skills:\n${catalog}\n\nA skill applies when its description matches the user's request. Reply with only JSON: {"skill": "<name>"} for the one skill to load, or {"skill": null} when no skill applies.`,
     user: scenario.prompt,
   })
-  return reply.invalid === undefined ? reply.skill ?? null : `invalid reply "${reply.invalid}"`
+  if (reply.invalid !== undefined) return `invalid reply "${reply.invalid}"`
+  // A missing field must fail; only an explicit null means no skill applies.
+  const valid = reply.skill === null || skills.some(({ name }) => name === reply.skill)
+  return valid ? reply.skill : `invalid skill ${JSON.stringify(reply.skill)}`
 }
 
 const pickReferences = async ({ model, skill, scenario }) => {
