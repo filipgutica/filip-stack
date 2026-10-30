@@ -10,7 +10,7 @@ import { parseArgs } from 'node:util'
 
 const repoRoot = new URL('../', import.meta.url)
 const skillsPath = 'plugins/workflow/skills'
-const usage = 'Usage: pnpm eval:routing --model <id> [--model <id>] [--base <ref>] [--attempts <n>] [--dry-run]'
+const usage = 'Usage: pnpm eval:routing --model <id> [--model <id>] [--base <ref>] [--attempts <n>] [--api-key-file <path>] [--dry-run]'
 const concurrency = 4
 
 const { values: options } = parseArgs({
@@ -18,6 +18,7 @@ const { values: options } = parseArgs({
     model: { type: 'string', multiple: true, default: [] },
     base: { type: 'string', default: 'origin/main' },
     attempts: { type: 'string', default: '3' },
+    'api-key-file': { type: 'string' },
     'dry-run': { type: 'boolean', default: false },
   },
 })
@@ -73,8 +74,8 @@ if (options['dry-run']) process.exit(0)
 
 if (options.model.length === 0) throw new Error(`Pass at least one --model\n${usage}`)
 const baseUrl = process.env.CLIPROXY_BASE_URL ?? 'http://127.0.0.1:8317/v1'
-const apiKey = process.env.CLIPROXY_API_KEY
-if (!apiKey) throw new Error('Set CLIPROXY_API_KEY to one of the client api-keys in the CLIProxyAPI config')
+const apiKey = options['api-key-file'] ? (await readFile(options['api-key-file'], 'utf8')).trim() : process.env.CLIPROXY_API_KEY
+if (!apiKey) throw new Error('Set CLIPROXY_API_KEY or pass --api-key-file with one of the client api-keys in the CLIProxyAPI config')
 
 const askJson = async ({ model, system, user }) => {
   const response = await fetch(`${baseUrl}/chat/completions`, {
