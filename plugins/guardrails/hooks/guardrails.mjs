@@ -12,7 +12,7 @@ const MAX_MESSAGE_FILE_BYTES = 256 * 1024
 const AI_NAME = String.raw`(?:claude|codex|gpt|openai|anthropic|copilot|gemini)`
 const CO_AUTHOR_LINE = new RegExp(String.raw`^\s*co-authored-by:.*${AI_NAME}`, 'iu')
 const GENERATED_LINE = new RegExp(String.raw`^\s*(?:🤖\s*)?generated (?:with|by)\b.*${AI_NAME}`, 'iu')
-const FENCE_LINE = /^\s*(?:```|~~~)/u
+const FENCE_LINE = /^\s*(`{3,}|~{3,})/u
 
 const DENY_ATTRIBUTION = {
   permissionDecision: 'deny',
@@ -31,7 +31,8 @@ const ASK_ONE_PASSWORD = '1Password CLI access needs user approval. State the ex
 // command before it. Commands inside $( … ), backticks, process substitutions, and
 // unquoted heredocs are parsed too; their raw text stays in the surrounding word.
 
-const newCommand = ({ separator, previous }) => ({ words: [], stdin: [], separator, previous })
+// `substitution` is the raw $( … ), <( … ), or backtick text a command ran inside, if any.
+const newCommand = ({ separator, previous }) => ({ words: [], stdin: [], separator, previous, substitution: null })
 
 const createTokenizer = ({ src, start = 0, nested = false }) => ({
   src,
@@ -69,19 +70,24 @@ const endCommand = (t, separator) => {
   t.current = newCommand({ separator, previous: t.last })
 }
 
+// Keeps the substitution's commands and its raw text, which stays in the surrounding word.
+const addSubstitution = (t, { commands, end }) => {
+  const raw = t.src.slice(t.i, end + 1)
+  for (const command of commands) command.substitution ??= raw
+  t.commands.push(...commands)
+  append(t, raw)
+  t.i = end + 1
+}
+
 const readSubstitution = (t) => {
   const inner = parse(t.src, t.i + 2, true)
-  t.commands.push(...inner.commands)
-  append(t, t.src.slice(t.i, inner.end + 1))
-  t.i = inner.end + 1
+  addSubstitution(t, inner)
 }
 
 const readBacktick = (t) => {
   let close = t.i + 1
   while (close < t.src.length && t.src[close] !== '`') close += t.src[close] === '\\' ? 2 : 1
-  t.commands.push(...parse(t.src.slice(t.i + 1, close).replaceAll('\\`', '`')).commands)
-  append(t, t.src.slice(t.i, close + 1))
-  t.i = close + 1
+  addSubstitution(t, { commands: parse(t.src.slice(t.i + 1, close).replaceAll('\\`', '`')).commands, end: close })
 }
 
 // Reads text where $( … ) and backticks run: a double-quoted string up to `closing`,
@@ -115,29 +121,60 @@ const readAnsiC = (t) => {
   t.i += 1
 }
 
-const HEREDOC_DELIMITER = /^[ \t]*(?:(['"])(.*?)\1|(\\?)([^\s;&|<>()'"]+))/u
+const HEREDOC_WORD_END = /[\s;&|<>()]/u
+
+// Reads one part of a heredoc delimiter: a quoted string, an escaped character, or a plain character.
+const readDelimiterPart = (t) => {
+  const c = t.src[t.i]
+  const close = c === "'" || c === '"' ? t.src.indexOf(c, t.i + 1) : -1
+  if (close !== -1) {
+    const text = t.src.slice(t.i + 1, close)
+    t.i = close + 1
+    return { text, quoted: true }
+  }
+  const escaped = c === '\\'
+  t.i += escaped ? 2 : 1
+  return { text: escaped ? t.src[t.i - 1] ?? '' : c, quoted: escaped }
+}
+
+// Reads a heredoc delimiter word with quote removal: <<EOF, <<'EOF', <<E"OF", <<E\OF.
+// A quoted or escaped part anywhere in the word makes the body literal text.
+const readHeredocDelimiter = (t) => {
+  let delimiter = ''
+  let quoted = false
+  while (t.i < t.src.length && !HEREDOC_WORD_END.test(t.src[t.i])) {
+    const part = readDelimiterPart(t)
+    delimiter += part.text
+    quoted ||= part.quoted
+  }
+  return { delimiter, quoted }
+}
 
 const readHeredocOperator = (t) => {
   endWord(t)
   t.i += 2
   const stripTabs = t.src[t.i] === '-'
   if (stripTabs) t.i += 1
-  const [text, quote, quotedName, escape, name] = HEREDOC_DELIMITER.exec(t.src.slice(t.i)) ?? ['']
-  t.pendingHeredocs.push({ delimiter: quote ? quotedName : name ?? '', stripTabs, expands: !quote && !escape, owner: t.current })
-  t.i += text.length
+  while (t.src[t.i] === ' ' || t.src[t.i] === '\t') t.i += 1
+  const { delimiter, quoted } = readHeredocDelimiter(t)
+  t.pendingHeredocs.push({ delimiter, stripTabs, expands: !quoted, owner: t.current })
 }
 
+// Returns the body, or null when no closing delimiter follows. Then the scan resumes at
+// the body's first line, so a misread delimiter cannot hide the rest of the script.
 const readHeredocBody = (t, { delimiter, stripTabs }) => {
+  const start = t.i
   const lines = []
   while (t.i < t.src.length) {
     const newline = t.src.indexOf('\n', t.i)
     const end = newline === -1 ? t.src.length : newline
     const line = t.src.slice(t.i, end)
     t.i = end + 1
-    if ((stripTabs ? line.replace(/^\t+/u, '') : line) === delimiter) break
+    if ((stripTabs ? line.replace(/^\t+/u, '') : line) === delimiter) return lines.join('\n')
     lines.push(line)
   }
-  return lines.join('\n')
+  t.i = start
+  return null
 }
 
 const substitutionsIn = (text) => {
@@ -149,6 +186,7 @@ const substitutionsIn = (text) => {
 const attachHeredocBodies = (t) => {
   for (const heredoc of t.pendingHeredocs) {
     const body = readHeredocBody(t, heredoc)
+    if (body === null) break
     heredoc.owner.stdin.push(body)
     if (heredoc.expands) t.commands.push(...substitutionsIn(body))
   }
@@ -373,7 +411,7 @@ const GH_BODY_OPTIONS = {
 }
 const GH_API_OPTIONS = {
   short: { X: 'method', f: 'rawField', F: 'field', H: null, q: null, t: null, p: null },
-  long: { '--method': 'method', '--raw-field': 'rawField', '--field': 'field', '--input': 'file', '--header': null, '--jq': null, '--template': null, '--hostname': null, '--cache': null, '--preview': null },
+  long: { '--method': 'method', '--raw-field': 'rawField', '--field': 'field', '--input': 'input', '--header': null, '--jq': null, '--template': null, '--hostname': null, '--cache': null, '--preview': null },
 }
 const GIT_OPTIONS_WITH_VALUE = new Set(['-c', '--git-dir', '--work-tree', '--namespace', '--config-env'])
 const GH_BODY_WRITES = new Set(['pr create', 'pr edit', 'pr comment', 'issue create', 'issue edit', 'issue comment'])
@@ -403,19 +441,19 @@ const ghArgs = (argv) => {
 
 const ghApi = (args) => {
   const options = parseOptions(args, GH_API_OPTIONS)
-  const sendsData = Boolean(options.rawField || options.field || options.file)
+  const sendsData = Boolean(options.rawField || options.field || options.input)
   const method = options.method?.at(-1) || (sendsData ? 'POST' : 'GET')
   return { method: method.toUpperCase(), endpoint: options.positional[0] ?? '', options }
 }
 
 const afterEquals = (field) => field.slice(field.indexOf('=') + 1)
 
-const apiMessageSources = ({ rawField = [], field = [], file = [] }) => {
+const apiMessageSources = ({ rawField = [], field = [], input = [] }) => {
   const typed = field.filter((value) => MESSAGE_FIELD.test(value)).map(afterEquals)
   return {
     texts: [...rawField.filter((value) => MESSAGE_FIELD.test(value)).map(afterEquals), ...typed.filter((value) => !value.startsWith('@'))],
-    files: [...typed.filter((value) => value.startsWith('@')).map((value) => value.slice(1)), ...file],
-    dirs: [],
+    files: typed.filter((value) => value.startsWith('@')).map((value) => value.slice(1)),
+    jsonFiles: input,
   }
 }
 
@@ -423,7 +461,7 @@ const ghMessageSources = (argv) => {
   const [group, ...args] = ghArgs(argv)
   if (GH_BODY_WRITES.has(`${group} ${args[0]}`)) {
     const options = parseOptions(args.slice(1), GH_BODY_OPTIONS)
-    return { texts: options.message ?? [], files: options.file ?? [], dirs: [] }
+    return { texts: options.message ?? [], files: options.file ?? [] }
   }
   if (group !== 'api') return null
   const api = ghApi(args)
@@ -492,27 +530,54 @@ const jsonMessageTexts = (text) => {
   }
 }
 
+const isAttribution = (line) => CO_AUTHOR_LINE.test(line) || GENERATED_LINE.test(line)
+
+// A fence closes only on the same character, repeated at least as many times as it opened.
+const closesFence = (marker, fence) => marker?.[0] === fence[0] && marker.length >= fence.length
+
 // Lines split on real newlines and on literal \n, which printf and echo -e expand.
 // Lines inside fenced Markdown code blocks are examples, not attribution.
 const hasAttributionLine = (text) => {
-  let inFence = false
+  let fence = null
   for (const line of text.split(/\r?\n|\\n/u)) {
-    if (FENCE_LINE.test(line)) inFence = !inFence
-    else if (!inFence && (CO_AUTHOR_LINE.test(line) || GENERATED_LINE.test(line))) return true
+    const marker = FENCE_LINE.exec(line)?.[1]
+    if (fence !== null) fence = closesFence(marker, fence) ? null : fence
+    else if (marker) fence = marker
+    else if (isAttribution(line)) return true
   }
   return false
 }
 
-// The write's own message sources: its message options, its message files, the heredoc or
-// here-string attached to it, and the command that pipes into it.
-const writeHasAttribution = ({ argv, command }, cwd) => {
+// Text that reaches the command on stdin: its heredoc or here-string, and the command piping into it.
+const stdinTexts = (command) => {
+  const producer = command.separator === '|' ? command.previous : null
+  return [...command.stdin, ...(producer ? [...producer.words, ...producer.stdin] : [])]
+}
+
+// File contents, where `-` stands for the command's stdin.
+const readSources = ({ paths, dir, stdin }) => paths.flatMap((path) => (
+  path === '-' ? stdin : [readMessageFile(resolve(dir, expandHome(path)))]
+))
+
+// Words of the substitutions that a message value contains, such as $(printf …) or <(printf …).
+const substitutionWords = (values, entries) => entries
+  .filter(({ command }) => command.substitution !== null && values.some((value) => value.includes(command.substitution)))
+  .flatMap(({ command }) => command.words)
+
+// The write's own message sources: its message options, the substitutions inside them, its
+// message files, and its stdin when a message file is `-`. JSON inputs count only for body and title.
+const writeHasAttribution = ({ argv, command }, { cwd, entries }) => {
   const sources = messageSources(argv)
   if (sources === null) return false
-  const producer = command.separator === '|' ? command.previous : null
-  const dir = resolve(cwd, ...chainDirs(command).map(expandHome), ...sources.dirs.map(expandHome))
-  const files = sources.files.filter((path) => path !== '-').map((path) => readMessageFile(resolve(dir, expandHome(path))))
-  const texts = [...sources.texts, ...command.stdin, ...(producer ? [...producer.words, ...producer.stdin] : []), ...files]
-  return texts.flatMap((text) => [text, ...jsonMessageTexts(text)]).some(hasAttributionLine)
+  const { texts, files, jsonFiles = [], dirs = [] } = sources
+  const dir = resolve(cwd, ...chainDirs(command).map(expandHome), ...dirs.map(expandHome))
+  const stdin = stdinTexts(command)
+  return [
+    ...texts,
+    ...substitutionWords([...texts, ...files, ...jsonFiles], entries),
+    ...readSources({ paths: files, dir, stdin }),
+    ...readSources({ paths: jsonFiles, dir, stdin }).flatMap(jsonMessageTexts),
+  ].some(hasAttributionLine)
 }
 
 // --- Decision -----------------------------------------------------------------
@@ -528,7 +593,7 @@ const isCodexRuleForm = (command, entries) => !SHELL_SYNTAX.test(command.trim())
 
 const evaluate = ({ command, cwd, codex }) => {
   const entries = collectCommands(command)
-  if (entries.some((entry) => writeHasAttribution(entry, cwd))) return DENY_ATTRIBUTION
+  if (entries.some((entry) => writeHasAttribution(entry, { cwd, entries }))) return DENY_ATTRIBUTION
   const reasons = [
     entries.some(({ argv }) => isMerge(argv)) && ASK_MERGE,
     entries.some(({ argv }) => argv[0] === 'op') && ASK_ONE_PASSWORD,

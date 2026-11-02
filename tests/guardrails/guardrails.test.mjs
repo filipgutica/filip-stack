@@ -84,6 +84,8 @@ fixture('fenced-then-real.md', `## Summary\n\n${fence('example')}\n\n${claudeTra
 fixture('clean.md', '## Summary\n\nMentions Co-Authored-By: Claude only mid-line.\n')
 fixture('body.json', JSON.stringify({ title: 'feat: x', body: claudeTrailer }))
 fixture('bad.json', `{"body": "${claudeTrailer}"`)
+fixture('fenced.json', JSON.stringify({ body: `Example:\n${fence(claudeTrailer)}` }))
+fixture('other-field.json', JSON.stringify({ body: 'clean', note: `x\n${claudeTrailer}` }))
 fixture('big.md', `${'x'.repeat(300 * 1024)}\n${claudeTrailer}\n`)
 assert.equal(spawnSync('mkfifo', [join(fixtures, 'fifo')]).status, 0, 'mkfifo failed')
 
@@ -157,6 +159,9 @@ test('reads gh api --input JSON and fails open on bad input', () => {
   assertDecision([
     'gh api -X PATCH repos/o/r/pulls/12 --input bad.json',
     'gh api -X PATCH repos/o/r/pulls/12 --input missing.json',
+    'gh api -X PATCH repos/o/r/pulls/12 --input fenced.json',
+    // Only the decoded body and title count, not other fields or the raw JSON text.
+    'gh api -X PATCH repos/o/r/pulls/12 --input other-field.json',
   ], null, { cwd: fixtures })
 })
 
@@ -190,6 +195,50 @@ test('inspects only the write command, not the rest of the script', () => {
     `echo '${claudeTrailer}'; git commit -m clean`,
     `printf '${claudeTrailer}\\n' > notes.txt && gh pr create --title t --body clean`,
   ], null)
+})
+
+test('uses stdin only when the write reads its message from stdin', () => {
+  assertDecision([
+    `printf '${claudeTrailer}\\n' | git commit -m clean`,
+    `git commit -m clean <<'EOF'\n${claudeTrailer}\nEOF`,
+    `git commit -m clean <<< '${claudeTrailer}'`,
+    `printf '${claudeTrailer}\\n' | gh pr create --title t --body clean`,
+  ], null)
+})
+
+const printfMessage = (...lines) => `$(printf '%s\\n' ${lines.map((line) => `'${line}'`).join(' ')})`
+
+test('reads message text that a substitution produces', () => {
+  assertDecision([
+    `git commit -m "${printfMessage('feat: x', '', claudeTrailer)}"`,
+    `gh pr create --title t --body "${printfMessage('Summary', '', claudeFooter)}"`,
+    `git commit -F <(printf '%s\\n' 'feat: x' '' '${claudeTrailer}')`,
+  ], 'deny')
+  assertDecision([
+    `git commit -m "${printfMessage('feat: x', '', 'Signed-off-by: Jane <jane@example.com>')}"`,
+    // A substitution outside the message is unrelated.
+    `git commit -m "fix: clean"; NOTE="${printfMessage(claudeTrailer)}"`,
+  ], null)
+})
+
+test('closes a fence only on the same marker of at least the same length', () => {
+  const bodyFromStdin = (body) => `gh pr create --title t --body-file - <<'EOF'\nExample:\n${body}\nEOF`
+  const fourBackticks = ['````md', '```', claudeTrailer, '```', claudeTrailer, '````'].join('\n')
+  const tildes = ['~~~', '```', claudeTrailer, '```', claudeTrailer, '~~~'].join('\n')
+  assertDecision([bodyFromStdin(fourBackticks), bodyFromStdin(tildes)], null)
+  assertDecision([bodyFromStdin(`${fourBackticks}\n${claudeTrailer}`), bodyFromStdin(`${tildes}\n${claudeTrailer}`)], 'deny')
+})
+
+test('reads a heredoc delimiter word whole and scans past an unclosed heredoc', () => {
+  const merge = 'gh api -X PUT repos/o/r/pulls/12/merge'
+  assertDecision([
+    `cat <<E"OF"\nnotes\nEOF\n${merge}`,
+    `cat <<'E'OF\nnotes\nEOF\n${merge}`,
+    `cat <<E\\OF\nnotes\nEOF\n${merge}`,
+    `cat <<EOF\nnotes\n${merge}`,
+  ], 'ask')
+  // A partly quoted delimiter still makes the body literal text.
+  assertDecision(['cat <<E"OF"\n$(op whoami)\nEOF', 'cat <<E\\OF\n$(op whoami)\nEOF'], null)
 })
 
 test('asks before merging a pull request', () => {
