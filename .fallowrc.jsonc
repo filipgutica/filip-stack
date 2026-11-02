@@ -1,0 +1,51 @@
+{
+  "$schema": "./node_modules/fallow/schema.json",
+  // Package scripts supply the root CLI and test entries. These run outside that graph.
+  "entry": [
+    "plugins/field-guide/hooks/field-guide-lifecycle.mjs",
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs",
+    "plugins/guardrails/hooks/guardrails.mjs",
+    "docs/site/src/pages/**/*.astro",
+  ],
+  "includeEntryExports": true,
+  // These default exports are consumed by their tools, rather than imported by source.
+  "ignoreExports": [
+    { "file": "commitlint.config.js", "exports": ["default"] },
+    { "file": "docs/site/astro.config.mjs", "exports": ["default"] },
+    { "file": "docs/site/playwright.config.ts", "exports": ["default"] },
+  ],
+  "ignorePatterns": [
+    // Skill and host templates are copied into other projects, not executed here.
+    "skills/**",
+    "host-config/**",
+    ".agents/**",
+    ".claude/**",
+    "docs/evidence/**",
+    "**/{fixtures,__fixtures__,generated}/**",
+    "**/*.generated.*",
+    "**/.astro/**",
+    // This gate owns JavaScript/TypeScript; the site build resolves CSS and Vite queries.
+    "**/*.css",
+  ],
+  "ignoreUnresolvedImports": [
+    "@filipgutica/ui/theme.css?raw",
+    "@filipgutica/ui/themes/graphite-indigo.css?raw",
+  ],
+  "rules": {
+    "unused-dev-dependencies": "error",
+  },
+  // Match Workbench's complexity and clone limits, including this repository's tests.
+  "health": {
+    "maxCyclomatic": 20,
+    "maxCognitive": 15,
+    // No runtime coverage input: keep the gate on measured complexity.
+    "maxCrap": 0,
+  },
+  "duplicates": {
+    // Fallow's default duplicate ignores omit tests; tests are part of this gate.
+    "ignoreDefaults": false,
+    "minTokens": 50,
+    "minLines": 5,
+    "minOccurrences": 2,
+  },
+}

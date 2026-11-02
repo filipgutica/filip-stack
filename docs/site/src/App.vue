@@ -5,13 +5,16 @@ import OverviewPage from "./components/pages/OverviewPage.vue";
 import CliPage from "./components/pages/CliPage.vue";
 import DesignLanguagePage from "./components/pages/DesignLanguagePage.vue";
 import FieldGuidePage from "./components/pages/FieldGuidePage.vue";
+import AgentReadyEnvironmentsPage from "./components/pages/AgentReadyEnvironmentsPage.vue";
+import type { GuideSection } from "./agent-ready-guide";
 import SkillPage from "./components/pages/SkillPage.vue";
 
-const { catalog, page, skill, content } = defineProps<{
+const { catalog, page, skill, content, guide } = defineProps<{
   catalog: Catalog;
   page: string;
   skill?: CatalogSkill;
   content?: SkillContent;
+  guide?: GuideSection[];
 }>();
 const repository = "https://github.com/filipgutica/filip-stack";
 const pages = [
@@ -19,6 +22,10 @@ const pages = [
   { label: "filip-stack CLI", href: "/filip-stack/cli/" },
   { label: "Design language", href: "/filip-stack/design-language/" },
   { label: "Field Guide", href: "/filip-stack/field-guide/" },
+  {
+    label: "Agent-ready environments",
+    href: "/filip-stack/agent-ready-environments/",
+  },
 ];
 const groups = [
   { items: pages.map((item) => ({ ...item, current: item.href === page })) },
@@ -63,6 +70,10 @@ const groups = [
           v-else-if="page === '/filip-stack/design-language/'"
         />
         <FieldGuidePage v-else-if="page === '/filip-stack/field-guide/'" />
+        <AgentReadyEnvironmentsPage
+          v-else-if="page === '/filip-stack/agent-ready-environments/' && guide"
+          :sections="guide"
+        />
         <OverviewPage v-else :catalog="catalog" />
       </main>
     </div>
