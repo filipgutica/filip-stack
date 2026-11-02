@@ -176,6 +176,7 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 
 | Skill | Use |
 | --- | --- |
+| `agent-ready-environments` | Audit or set up repositories and engineering guidance so coding agents can verify their work. |
 | `babysit-pr` | Watch a PR through CI and review bots, and fix real findings. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
 | `full-send` | Review the code and description with Sol, babysit, and merge the PR, or return PASS or FAIL for human review. Also finishes a merge council's open items. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
