@@ -1,3 +1,10 @@
+# [3.13.0](https://github.com/filipgutica/filip-stack/compare/v3.12.1...v3.13.0) (2026-11-02)
+
+
+### Features
+
+* **skills:** add agent-ready-environments skill ([60d79e2](https://github.com/filipgutica/filip-stack/commit/60d79e2ef8e94126ab5b0845496976ceacaa0a73))
+
 ## [3.12.1](https://github.com/filipgutica/filip-stack/compare/v3.12.0...v3.12.1) (2026-10-30)
 
 
