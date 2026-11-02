@@ -1,48 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, themes, widths } from "./pages";
-
-test("the environment guide and its anchor links work without JavaScript", async ({
-  page,
-}) => {
-  await page.goto("/filip-stack/");
-  await page
-    .getByRole("region", { name: "Guides", exact: true })
-    .getByRole("link", { name: "Agent-ready environments", exact: true })
-    .click();
-  await expect(page).toHaveURL("/filip-stack/agent-ready-environments/");
-  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
-    "Agent-ready environments",
-  );
-  const pillars = page.getByRole("table").filter({
-    has: page.getByRole("columnheader", { name: "Observable audit check" }),
-  });
-  await expect(pillars.getByRole("row")).toHaveCount(9);
-  await expect(
-    page.getByRole("heading", { level: 2, name: /^Pillar \d:/ }),
-  ).toHaveCount(8);
-  await expect(pillars.getByRole("link", { name: "6", exact: true }))
-    .toHaveAttribute("href", "#pillar-6-reproducible-environment");
-  await pillars.getByRole("link", { name: "6", exact: true }).click();
-  await expect(page).toHaveURL(/#pillar-6-reproducible-environment$/);
-  await expect(page.getByRole("heading", {
-    name: "Pillar 6: Reproducible environment", exact: true,
-  })).toBeInViewport();
-  await page.getByRole("link", { name: "maintenance.md", exact: true })
-    .first().click();
-  const maintenance = page.getByRole("region", {
-    name: "Maintaining this skill", exact: true,
-  });
-  await expect(maintenance.getByRole("heading", {
-    name: "Maintaining this skill", exact: true,
-  })).toBeInViewport();
-  await maintenance.getByRole("link", { name: "SKILL.md", exact: true })
-    .first().click();
-  await expect(page).toHaveURL(/#agent-ready-environments$/);
-  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
-  await expect(page.locator(
-    'main a[href^="references/"], main a[href^="../"], main a[href="maintenance.md"]',
-  )).toHaveCount(0);
-});
+import {
+  expectNoFileLinks,
+  followPillarLink,
+  openGuideFromOverview,
+  openMaintenance,
+  pillarTable,
+} from "./guide";
 
 for (const theme of themes)
   for (const width of widths)
@@ -155,4 +119,23 @@ test("the Workflow map links each skill and lists every engineering step without
   ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
   await expect(map.locator(".map-steps > li")).toHaveCount(6);
   await expect(map.locator(".map-steps")).toBeVisible();
+});
+
+test("the environment guide and its anchor links work without JavaScript", async ({
+  page,
+}) => {
+  await page.goto("/filip-stack/");
+  await openGuideFromOverview(page);
+  const pillars = await pillarTable(page);
+  await followPillarLink(page, pillars, {
+    number: "6",
+    anchor: "pillar-6-reproducible-environment",
+    heading: "Pillar 6: Reproducible environment",
+  });
+  const maintenance = await openMaintenance(page);
+  await maintenance.getByRole("link", { name: "SKILL.md", exact: true })
+    .first().click();
+  await expect(page).toHaveURL(/#agent-ready-environments$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
+  await expectNoFileLinks(page);
 });
