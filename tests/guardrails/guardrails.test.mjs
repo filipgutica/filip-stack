@@ -1,31 +1,37 @@
 import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import test from 'node:test'
+import test, { after } from 'node:test'
 
 const pluginRoot = fileURLToPath(new URL('../../plugins/guardrails/', import.meta.url))
 const repositoryRoot = fileURLToPath(new URL('../../', import.meta.url))
 const hookScript = join(pluginRoot, 'hooks/guardrails.mjs')
+const codexRules = join(repositoryRoot, 'host-config/codex/rules/filip-stack.rules')
 const hookCommand = JSON.parse(readFileSync(join(pluginRoot, 'hooks/hooks.json'), 'utf8')).hooks.PreToolUse[0].hooks[0].command
 
 const claudeEnv = { CLAUDE_PLUGIN_ROOT: pluginRoot }
 const codexEnv = { CLAUDE_PLUGIN_ROOT: pluginRoot, PLUGIN_ROOT: pluginRoot }
 
-const runHook = ({ stdin, env = claudeEnv }) => {
-  const result = spawnSync(process.execPath, [hookScript], {
+// Runs a command with the hook's environment. The timeout makes a blocking file read fail fast.
+const spawnHook = ({ file, args, stdin, env }) => {
+  const result = spawnSync(file, args, {
     input: stdin,
     encoding: 'utf8',
+    timeout: 3000,
     env: { ...process.env, PLUGIN_ROOT: undefined, CLAUDE_PLUGIN_ROOT: undefined, ...env },
   })
+  assert.equal(result.signal, null, `hook timed out: ${stdin}`)
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stderr, '')
   return result.stdout
 }
 
-// Returns the permission decision for a Bash command, or null when the hook stays silent.
+const runHook = ({ stdin, env = claudeEnv }) => spawnHook({ file: process.execPath, args: [hookScript], stdin, env })
+
+// Returns the hook output for a Bash command, or null when the hook stays silent.
 const decide = (command, { env, cwd = tmpdir() } = {}) => {
   const stdout = runHook({ stdin: JSON.stringify({ hook_event_name: 'PreToolUse', tool_name: 'Bash', tool_input: { command }, cwd }), env })
   if (stdout === '') return null
@@ -63,14 +69,31 @@ const wrappers = {
   'bash -lc': (script) => `bash -lc '${script}'`,
 }
 
+const fixtures = mkdtempSync(join(tmpdir(), 'guardrails-'))
+after(() => rmSync(fixtures, { recursive: true, force: true }))
+const fixture = (path, content) => {
+  mkdirSync(join(fixtures, path, '..'), { recursive: true })
+  writeFileSync(join(fixtures, path), content)
+}
+const fence = (content) => ['```text', content, '```'].join('\n')
+fixture('body.md', `## Summary\n\n- adds a hook\n\n${claudeFooter}\n`)
+fixture('msg.txt', `feat: x\n\n${codexTrailer}\n`)
+fixture('sub/sub-msg.txt', `feat: x\n\n${claudeTrailer}\n`)
+fixture('fenced.md', `## Summary\n\nAn example trailer:\n\n${fence(claudeTrailer)}\n`)
+fixture('fenced-then-real.md', `## Summary\n\n${fence('example')}\n\n${claudeTrailer}\n`)
+fixture('clean.md', '## Summary\n\nMentions Co-Authored-By: Claude only mid-line.\n')
+fixture('body.json', JSON.stringify({ title: 'feat: x', body: claudeTrailer }))
+fixture('bad.json', `{"body": "${claudeTrailer}"`)
+fixture('big.md', `${'x'.repeat(300 * 1024)}\n${claudeTrailer}\n`)
+assert.equal(spawnSync('mkfifo', [join(fixtures, 'fifo')]).status, 0, 'mkfifo failed')
+
 test('denies AI attribution in commit messages', () => {
   assertDecision([
     heredocCommit(claudeTrailer),
     `git commit --amend -m "fix: typo" -m "${codexTrailer}"`,
-    `git commit -am 'feat: x' -m '${claudeTrailer.toLowerCase()}'`,
-    `git -C repo commit -m $'feat: x\\n\\n${claudeTrailer}'`,
-    `printf 'feat: x\\n\\n${claudeTrailer}\\n' | git commit -F -`,
-    `git commit -F - <<< $'feat: x\\n\\n${claudeTrailer}'`,
+    `git commit -am "feat: x\n\n${claudeTrailer.toLowerCase()}"`,
+    `git commit -m $'feat: x\\n\\n${claudeTrailer}'`,
+    `git commit --message="feat: x\n\n${claudeTrailer}"`,
     `git commit --trailer "Co-authored-by: GitHub Copilot <copilot@github.com>" -m "feat: x"`,
     `git commit -m "feat: x" -m "Generated with Codex"`,
   ], 'deny')
@@ -86,34 +109,64 @@ test('denies AI attribution in pull request and issue text', () => {
     `gh pr edit 12 -b 'Summary\n\nGenerated with Codex'`,
     `gh pr comment 12 --body=$'Done.\\n${codexTrailer}'`,
     `gh issue comment 4 --body "Fixed.\n${claudeFooter.replace('🤖 ', '')}"`,
+    `gh issue create --title "bug" --body "Steps.\n${codexTrailer}"`,
+    `gh issue edit 4 --body "Steps.\n${codexTrailer}"`,
+    `gh -R o/r pr create --title t --body "${codexTrailer}"`,
     `gh api repos/o/r/issues/4/comments -f body='${claudeTrailer}'`,
     `gh api --method PATCH repos/{owner}/{repo}/pulls/12 -f body="Summary\n\n${claudeFooter}"`,
   ], 'deny')
 })
 
+test('denies attribution that reaches the write through stdin', () => {
+  assertDecision([
+    `printf 'feat: x\\n\\n${claudeTrailer}\\n' | git commit -F -`,
+    `git commit -F - <<'EOF'\nfeat: x\n\n${claudeTrailer}\nEOF`,
+    `git commit -F - <<< $'feat: x\\n\\n${claudeTrailer}'`,
+    `cat <<'EOF' | gh pr create --title t --body-file -\nSummary\n\n${claudeFooter}\nEOF`,
+  ], 'deny')
+})
+
 test('denies AI attribution in message files', () => {
-  const dir = mkdtempSync(join(tmpdir(), 'guardrails-'))
-  writeFileSync(join(dir, 'body.md'), `## Summary\n\n- adds a hook\n\n${claudeFooter}\n`)
-  writeFileSync(join(dir, 'msg.txt'), `feat: x\n\n${codexTrailer}\n`)
-  writeFileSync(join(dir, 'clean.md'), '## Summary\n\nMentions Co-Authored-By: Claude only mid-line.\n')
   assertDecision([
     'gh pr create --title "feat: x" --body-file body.md',
-    `gh pr edit 12 --body-file=${join(dir, 'body.md')}`,
+    `gh pr edit 12 --body-file=${join(fixtures, 'body.md')}`,
     'gh issue comment 4 -F body.md',
+    'gh issue edit 4 --body-file body.md',
     'git commit -F msg.txt',
     'git commit --file=msg.txt',
     'gh api repos/o/r/issues/4/comments -F body=@body.md',
-  ], 'deny', { cwd: dir })
-  assertDecision([
-    'gh pr create --title "feat: x" --body-file clean.md',
-    'git commit -F missing.txt',
-  ], null, { cwd: dir })
+    'gh pr create --title "feat: x" --body-file fenced-then-real.md',
+  ], 'deny', { cwd: fixtures })
 })
 
-test('denies a message file written earlier in the same command', () => {
+test('resolves message files from the git -C and cd directories', () => {
   assertDecision([
-    `cat > msg.txt <<'EOF'\nfeat: x\n\n${claudeTrailer}\nEOF\ngit commit -F msg.txt`,
-  ], 'deny')
+    'git -C sub commit -F sub-msg.txt',
+    'cd sub && git commit -F sub-msg.txt',
+    'cd sub; git add .; git commit -F sub-msg.txt',
+  ], 'deny', { cwd: fixtures })
+  assertDecision(['git commit -F sub-msg.txt', '(cd sub) && git commit -F sub-msg.txt'], null, { cwd: fixtures })
+})
+
+test('reads gh api --input JSON and fails open on bad input', () => {
+  assertDecision([
+    'gh api -X PATCH repos/o/r/pulls/12 --input body.json',
+    'gh api -X PATCH repos/o/r/pulls/12 --input=body.json',
+    `gh api -X PATCH repos/o/r/pulls/12 --input - <<'EOF'\n${JSON.stringify({ body: claudeTrailer })}\nEOF`,
+  ], 'deny', { cwd: fixtures })
+  assertDecision([
+    'gh api -X PATCH repos/o/r/pulls/12 --input bad.json',
+    'gh api -X PATCH repos/o/r/pulls/12 --input missing.json',
+  ], null, { cwd: fixtures })
+})
+
+test('skips files that are not small regular files', () => {
+  assertDecision([
+    'git commit -F fifo',
+    'gh pr create --title t --body-file /dev/zero',
+    'git commit -F big.md',
+    'git commit -F missing.txt',
+  ], null, { cwd: fixtures })
 })
 
 test('allows commit and pull request text without AI attribution', () => {
@@ -122,9 +175,20 @@ test('allows commit and pull request text without AI attribution', () => {
     heredocCommit('This hook denies Co-Authored-By: Claude trailers.'),
     'git commit -m "docs: explain why Co-Authored-By: Claude trailers are denied"',
     'gh pr create --title "feat: guardrails" --body "Denies a whole-line Co-Authored-By: Claude trailer."',
+    'gh pr create --title "feat: x" --body-file fenced.md',
+    'gh pr create --title "feat: x" --body-file clean.md',
+    `gh pr create --title "feat: x" --body "Example:\n${fence(claudeTrailer)}"`,
     'git commit --amend --no-edit',
     `echo '${claudeTrailer}'`,
     `git log --grep '${claudeTrailer}'`,
+  ], null, { cwd: fixtures })
+})
+
+test('inspects only the write command, not the rest of the script', () => {
+  assertDecision([
+    "git log --grep 'Co-Authored-By: Claude <noreply@anthropic.com>' && git commit -m 'fix: clean'",
+    `echo '${claudeTrailer}'; git commit -m clean`,
+    `printf '${claudeTrailer}\\n' > notes.txt && gh pr create --title t --body clean`,
   ], null)
 })
 
@@ -132,12 +196,16 @@ test('asks before merging a pull request', () => {
   assertDecision([
     'gh pr merge 12 --squash',
     'gh pr merge',
+    'gh -R o/r pr merge 12',
+    'gh --repo o/r pr merge 12',
+    'gh --repo=o/r pr merge 12',
     'gh api -X PUT repos/o/r/pulls/12/merge',
     'gh api --method PUT repos/{owner}/{repo}/pulls/12/merge -f merge_method=squash',
     'gh api -XPUT /repos/o/r/pulls/$PR/merge',
   ], 'ask')
   assertDecision([
     'gh pr view 12',
+    'gh -R o/r pr view 12',
     'gh api repos/o/r/pulls/12/merge',
     'gh api -X PUT repos/o/r/pulls/12/requested_reviewers',
     // Quoted text passed to echo is data, not a command.
@@ -175,12 +243,13 @@ test('finds commands after separators, substitutions, and assignments', () => {
     '2>/dev/null op whoami',
     "cat <<'EOF'\nnotes\nEOF\nop whoami",
     'cat <<< "notes"\nop whoami',
+    'cat <<EOF\nToken: $(op read op://v/i/f)\nEOF',
   ], 'ask')
 })
 
-test('treats heredoc bodies as data', () => {
+test('treats quoted heredoc bodies as data', () => {
   assertDecision([
-    "cat <<'EOF'\nop read op://v/i/f\ngh pr merge 12\nEOF",
+    "cat <<'EOF'\nop read op://v/i/f\ngh pr merge 12\n$(op whoami)\nEOF",
   ], null)
 })
 
@@ -193,10 +262,41 @@ test('finds commands inside shell wrappers', () => {
   }
 })
 
-test('Codex receives deny but no ask, which it does not support', () => {
-  assert.equal(decide('gh pr merge 12', { env: codexEnv }), null)
-  assert.equal(decide('op whoami', { env: codexEnv }), null)
+// Plain forms that Codex execpolicy rules prompt for, so the hook stays silent on Codex.
+const codexPlainForms = [
+  ['gh', 'pr', 'merge', '12', '--squash'],
+  ['op', 'read', 'op://vault/item/field'],
+  ['op', 'whoami'],
+]
+
+test('Codex stays silent only for the plain forms its rules prompt for', () => {
+  assertDecision(codexPlainForms.map((argv) => argv.join(' ')), null, { env: codexEnv })
+  const unpromptable = [
+    'gh api -X PUT repos/o/r/pulls/12/merge',
+    '/opt/homebrew/bin/op whoami',
+    'GH_TOKEN=x gh pr merge 12',
+    'gh -R o/r pr merge 12',
+    'pnpm check && gh pr merge 12',
+    'op read op://v/i/f > secret.txt',
+    'export TOKEN=$(op read op://v/i/f)',
+    ...Object.values(wrappers).flatMap((wrap) => [wrap('op whoami'), wrap('gh pr merge 12')]),
+  ]
+  for (const command of unpromptable) {
+    const decision = decide(command, { env: codexEnv })
+    assert.equal(decision?.permissionDecision, 'deny', command)
+    assert.match(decision.permissionDecisionReason, /plain `gh pr merge …` or `op …` command/u, command)
+  }
   assert.equal(decide(heredocCommit(claudeTrailer), { env: codexEnv })?.permissionDecision, 'deny')
+})
+
+const hasCodex = !spawnSync('codex', ['--version'], { encoding: 'utf8' }).error
+
+test('Codex execpolicy rules prompt for the plain forms', { skip: !hasCodex && 'codex is not installed' }, () => {
+  for (const argv of codexPlainForms) {
+    const result = spawnSync('codex', ['execpolicy', 'check', '--rules', codexRules, '--', ...argv], { encoding: 'utf8', timeout: 10000 })
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(JSON.parse(result.stdout).decision, 'prompt', argv.join(' '))
+  }
 })
 
 test('fails open on malformed input', () => {
@@ -208,24 +308,27 @@ test('fails open on malformed input', () => {
 test('the manifest hook command runs for Claude and Codex', () => {
   const stdin = JSON.stringify({ tool_name: 'Bash', tool_input: { command: heredocCommit(claudeTrailer) } })
   for (const env of [claudeEnv, codexEnv]) {
-    const result = spawnSync('/bin/sh', ['-c', hookCommand], {
-      input: stdin,
-      encoding: 'utf8',
-      env: { ...process.env, PLUGIN_ROOT: undefined, CLAUDE_PLUGIN_ROOT: undefined, ...env },
-    })
-    assert.equal(result.status, 0, result.stderr)
-    assert.equal(JSON.parse(result.stdout).hookSpecificOutput.permissionDecision, 'deny')
+    const stdout = spawnHook({ file: '/bin/sh', args: ['-c', hookCommand], stdin, env })
+    assert.equal(JSON.parse(stdout).hookSpecificOutput.permissionDecision, 'deny')
   }
 })
 
-test('both marketplaces list the plugin, and its payload stands alone', () => {
+test('both marketplaces list the plugin', () => {
   const read = (path) => JSON.parse(readFileSync(join(repositoryRoot, path), 'utf8'))
   assert.deepEqual(
     read('.claude-plugin/marketplace.json').plugins.find(({ name }) => name === 'guardrails'),
     { name: 'guardrails', source: './plugins/guardrails' },
   )
   assert.deepEqual(read('.agents/plugins/marketplace.json').plugins.find(({ name }) => name === 'guardrails')?.source, { source: 'local', path: './plugins/guardrails' })
-  for (const file of readdirSync(pluginRoot, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile())) {
-    assert.doesNotMatch(readFileSync(join(file.parentPath, file.name), 'utf8'), /field-guide|workflow/iu, file.name)
-  }
+})
+
+test('the payload imports only Node built-ins and runs only its own files', () => {
+  const scripts = readdirSync(pluginRoot, { recursive: true }).filter((path) => path.endsWith('.mjs'))
+  assert.deepEqual(scripts, ['hooks/guardrails.mjs'])
+  const specifiers = [...readFileSync(hookScript, 'utf8').matchAll(/^import .+ from '([^']+)'$/gmu)].map(([, specifier]) => specifier)
+  assert.ok(specifiers.length > 0)
+  assert.deepEqual(specifiers.filter((specifier) => !specifier.startsWith('node:')), [])
+  const hookPaths = [...hookCommand.matchAll(/\}\}\/([^"]+)"/gu)].map(([, path]) => path)
+  assert.deepEqual(hookPaths, ['scripts/run-node.sh', 'hooks/guardrails.mjs'])
+  assert.ok(hookPaths.every((path) => existsSync(join(pluginRoot, path))))
 })

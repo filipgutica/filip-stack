@@ -2,215 +2,277 @@
 // PreToolUse guardrails for shell commands. Denies AI attribution in commits and pull
 // requests, and asks before a pull request merge or a 1Password CLI call.
 // Any internal error exits 0 with no decision, so a hook bug never blocks work.
-import { readFileSync } from 'node:fs'
+import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { basename, join, resolve } from 'node:path'
 
 const MAX_WRAPPER_DEPTH = 5
+const MAX_MESSAGE_FILE_BYTES = 256 * 1024
 
 const AI_NAME = String.raw`(?:claude|codex|gpt|openai|anthropic|copilot|gemini)`
 const CO_AUTHOR_LINE = new RegExp(String.raw`^\s*co-authored-by:.*${AI_NAME}`, 'iu')
 const GENERATED_LINE = new RegExp(String.raw`^\s*(?:🤖\s*)?generated (?:with|by)\b.*${AI_NAME}`, 'iu')
+const FENCE_LINE = /^\s*(?:```|~~~)/u
 
 const DENY_ATTRIBUTION = {
   permissionDecision: 'deny',
   permissionDecisionReason: 'Commit and pull request text must not contain AI attribution: a Co-Authored-By line naming an AI, or a "Generated with" footer. Remove the AI attribution line(s) and retry.',
 }
+const DENY_CODEX_UNPROMPTABLE = {
+  permissionDecision: 'deny',
+  permissionDecisionReason: 'This command needs user approval, and Codex can ask only for a plain `gh pr merge …` or `op …` command. Run it as its own command, with no shell wrapper, variable prefix, full path, redirection, `gh api` call, or option before the subcommand, so Codex prompts the user. If the plain form is also denied, stop and ask the user to run it.',
+}
 const ASK_MERGE = 'Merging a pull request needs explicit user authorization.'
 const ASK_ONE_PASSWORD = '1Password CLI access needs user approval. State the exact vault, item, and field (or search query), why you need it, and the scope of data you will retrieve.'
 
 // --- Shell tokenizer ---------------------------------------------------------
-// Splits a script into simple commands, each a list of words after quote removal.
-// Command substitutions, backticks, and process substitutions are parsed as commands
-// too, and their raw text stays in the surrounding word. Heredoc bodies are skipped:
-// they are data, and the attribution scan reads them from the raw script.
+// Splits a script into simple commands. A command keeps its words after quote removal,
+// the heredoc and here-string text attached to it, the operator before it, and the
+// command before it. Commands inside $( … ), backticks, process substitutions, and
+// unquoted heredocs are parsed too; their raw text stays in the surrounding word.
 
-const readAnsiC = (src, start) => {
-  const escapes = { n: '\n', t: '\t', r: '\r' }
-  let text = ''
-  let i = start
-  while (i < src.length && src[i] !== "'") {
-    if (src[i] === '\\' && i + 1 < src.length) {
-      text += escapes[src[i + 1]] ?? src[i + 1]
-      i += 2
-    } else {
-      text += src[i]
-      i += 1
+const newCommand = ({ separator, previous }) => ({ words: [], stdin: [], separator, previous })
+
+const createTokenizer = ({ src, start = 0, nested = false }) => ({
+  src,
+  i: start,
+  nested,
+  depth: 0,
+  closed: false,
+  commands: [],
+  last: null,
+  current: newCommand({ separator: null, previous: null }),
+  word: null,
+  // 'redirect' drops the next word; 'herestring' attaches it to the command's stdin.
+  target: null,
+  pendingHeredocs: [],
+})
+
+const append = (t, text) => {
+  t.word = (t.word ?? '') + text
+}
+
+const endWord = (t) => {
+  if (t.word === null) return
+  if (t.target === 'herestring') t.current.stdin.push(t.word)
+  else if (t.target === null) t.current.words.push(t.word)
+  t.target = null
+  t.word = null
+}
+
+const endCommand = (t, separator) => {
+  endWord(t)
+  if (t.current.words.length > 0) {
+    t.commands.push(t.current)
+    t.last = t.current
+  }
+  t.current = newCommand({ separator, previous: t.last })
+}
+
+const readSubstitution = (t) => {
+  const inner = parse(t.src, t.i + 2, true)
+  t.commands.push(...inner.commands)
+  append(t, t.src.slice(t.i, inner.end + 1))
+  t.i = inner.end + 1
+}
+
+const readBacktick = (t) => {
+  let close = t.i + 1
+  while (close < t.src.length && t.src[close] !== '`') close += t.src[close] === '\\' ? 2 : 1
+  t.commands.push(...parse(t.src.slice(t.i + 1, close).replaceAll('\\`', '`')).commands)
+  append(t, t.src.slice(t.i, close + 1))
+  t.i = close + 1
+}
+
+// Reads text where $( … ) and backticks run: a double-quoted string up to `closing`,
+// or a whole unquoted heredoc body when `closing` is undefined.
+const readExpanding = (t, closing) => {
+  append(t, '')
+  while (t.i < t.src.length && t.src[t.i] !== closing) {
+    const [c, next] = [t.src[t.i], t.src[t.i + 1]]
+    if (c === '\\' && next !== undefined && '$`"\\\n'.includes(next)) {
+      append(t, next === '\n' ? '' : next)
+      t.i += 2
+    } else if (c === '$' && next === '(') readSubstitution(t)
+    else if (c === '`') readBacktick(t)
+    else {
+      append(t, c)
+      t.i += 1
     }
   }
-  return { text, end: i + 1 }
+  t.i += 1
 }
 
-const closingBacktick = (src, start) => {
-  let i = start
-  while (i < src.length && src[i] !== '`') i += src[i] === '\\' ? 2 : 1
-  return Math.min(i, src.length)
+const readAnsiC = (t) => {
+  const escapes = { n: '\n', t: '\t', r: '\r' }
+  append(t, '')
+  t.i += 2
+  while (t.i < t.src.length && t.src[t.i] !== "'") {
+    const escaped = t.src[t.i] === '\\' && t.i + 1 < t.src.length
+    append(t, escaped ? escapes[t.src[t.i + 1]] ?? t.src[t.i + 1] : t.src[t.i])
+    t.i += escaped ? 2 : 1
+  }
+  t.i += 1
 }
+
+const HEREDOC_DELIMITER = /^[ \t]*(?:(['"])(.*?)\1|(\\?)([^\s;&|<>()'"]+))/u
+
+const readHeredocOperator = (t) => {
+  endWord(t)
+  t.i += 2
+  const stripTabs = t.src[t.i] === '-'
+  if (stripTabs) t.i += 1
+  const [text, quote, quotedName, escape, name] = HEREDOC_DELIMITER.exec(t.src.slice(t.i)) ?? ['']
+  t.pendingHeredocs.push({ delimiter: quote ? quotedName : name ?? '', stripTabs, expands: !quote && !escape, owner: t.current })
+  t.i += text.length
+}
+
+const readHeredocBody = (t, { delimiter, stripTabs }) => {
+  const lines = []
+  while (t.i < t.src.length) {
+    const newline = t.src.indexOf('\n', t.i)
+    const end = newline === -1 ? t.src.length : newline
+    const line = t.src.slice(t.i, end)
+    t.i = end + 1
+    if ((stripTabs ? line.replace(/^\t+/u, '') : line) === delimiter) break
+    lines.push(line)
+  }
+  return lines.join('\n')
+}
+
+const substitutionsIn = (text) => {
+  const t = createTokenizer({ src: text })
+  readExpanding(t, undefined)
+  return t.commands
+}
+
+const attachHeredocBodies = (t) => {
+  for (const heredoc of t.pendingHeredocs) {
+    const body = readHeredocBody(t, heredoc)
+    heredoc.owner.stdin.push(body)
+    if (heredoc.expands) t.commands.push(...substitutionsIn(body))
+  }
+  t.pendingHeredocs = []
+}
+
+const scanEscape = (t) => {
+  if (t.src[t.i] !== '\\') return false
+  const next = t.src[t.i + 1]
+  if (next !== '\n') append(t, next ?? '')
+  t.i += 2
+  return true
+}
+
+const scanSingleQuote = (t) => {
+  if (t.src[t.i] !== "'") return false
+  const close = t.src.indexOf("'", t.i + 1)
+  const end = close === -1 ? t.src.length : close
+  append(t, t.src.slice(t.i + 1, end))
+  t.i = end + 1
+  return true
+}
+
+const scanQuoted = (t) => {
+  if (t.src.startsWith("$'", t.i)) readAnsiC(t)
+  else if (t.src[t.i] === '"') {
+    t.i += 1
+    readExpanding(t, '"')
+  } else return false
+  return true
+}
+
+const scanSubstitution = (t) => {
+  if (t.src[t.i + 1] !== '(' || !'$<>'.includes(t.src[t.i])) return false
+  readSubstitution(t)
+  return true
+}
+
+const scanBacktick = (t) => {
+  if (t.src[t.i] !== '`') return false
+  readBacktick(t)
+  return true
+}
+
+const scanComment = (t) => {
+  if (t.src[t.i] !== '#' || t.word !== null) return false
+  const newline = t.src.indexOf('\n', t.i)
+  t.i = newline === -1 ? t.src.length : newline
+  return true
+}
+
+const scanNewline = (t) => {
+  if (t.src[t.i] !== '\n') return false
+  endCommand(t, '\n')
+  t.i += 1
+  attachHeredocBodies(t)
+  return true
+}
+
+const scanBlank = (t) => {
+  if (t.src[t.i] !== ' ' && t.src[t.i] !== '\t') return false
+  endWord(t)
+  t.i += 1
+  return true
+}
+
+const scanRedirection = (t) => {
+  const { src, i } = t
+  if (src.startsWith('<<<', i)) {
+    endWord(t)
+    t.target = 'herestring'
+    t.i += 3
+  } else if (src.startsWith('<<', i)) readHeredocOperator(t)
+  else if (src[i] === '<' || src[i] === '>' || src.startsWith('&>', i)) {
+    // A file descriptor number such as the 2 in 2>&1 belongs to the redirection.
+    if (/^\d+$/u.test(t.word ?? '')) t.word = null
+    endWord(t)
+    t.target = 'redirect'
+    t.i += 1
+    while (t.i < src.length && '<>&|'.includes(src[t.i])) t.i += 1
+  } else return false
+  return true
+}
+
+const OPERATORS = ['&&', '||', '|&', ';;', ';', '&', '|']
+
+const scanOperator = (t) => {
+  const operator = OPERATORS.find((candidate) => t.src.startsWith(candidate, t.i))
+  if (operator === undefined) return false
+  endCommand(t, operator === '|&' ? '|' : operator)
+  t.i += operator.length
+  return true
+}
+
+const scanParenthesis = (t) => {
+  const c = t.src[t.i]
+  if (c !== '(' && c !== ')') return false
+  endCommand(t, c)
+  // A subshell's commands, such as its `cd`, do not chain to the commands after it.
+  if (c === ')') {
+    t.last = null
+    t.current.previous = null
+  }
+  if (c === ')' && t.nested && t.depth === 0) {
+    t.closed = true
+    return true
+  }
+  t.depth = Math.max(0, t.depth + (c === '(' ? 1 : -1))
+  t.i += 1
+  return true
+}
+
+const SCANNERS = [scanEscape, scanSingleQuote, scanQuoted, scanSubstitution, scanBacktick, scanComment, scanNewline, scanBlank, scanRedirection, scanOperator, scanParenthesis]
 
 const parse = (src, start = 0, nested = false) => {
-  const commands = []
-  let words = []
-  let word = null
-  let isRedirectTarget = false
-  let pendingHeredocs = []
-  let depth = 0
-  let i = start
-
-  const append = (text) => {
-    word = (word ?? '') + text
-  }
-  const endWord = () => {
-    if (word === null) return
-    if (!isRedirectTarget) words.push(word)
-    isRedirectTarget = false
-    word = null
-  }
-  const endCommand = () => {
-    endWord()
-    if (words.length > 0) commands.push(words)
-    words = []
-  }
-  // Parses $( … ) or <( … ) starting at the opening parenthesis and keeps its raw text.
-  const substitution = (from, open) => {
-    const inner = parse(src, open + 1, true)
-    commands.push(...inner.commands)
-    append(src.slice(from, inner.end + 1))
-    return inner.end + 1
-  }
-  const backticks = (from) => {
-    const close = closingBacktick(src, from + 1)
-    commands.push(...parse(src.slice(from + 1, close).replaceAll('\\`', '`')).commands)
-    append(src.slice(from, close + 1))
-    return close + 1
-  }
-  const doubleQuoted = (from) => {
-    append('')
-    let j = from
-    while (j < src.length && src[j] !== '"') {
-      if (src[j] === '\\' && '$`"\\\n'.includes(src[j + 1] ?? 'x')) {
-        if (src[j + 1] !== '\n') append(src[j + 1])
-        j += 2
-      } else if (src[j] === '$' && src[j + 1] === '(') {
-        j = substitution(j, j + 1)
-      } else if (src[j] === '`') {
-        j = backticks(j)
-      } else {
-        append(src[j])
-        j += 1
-      }
-    }
-    return j + 1
-  }
-  const heredocOperator = (from) => {
-    let j = from
-    const stripTabs = src[j] === '-'
-    if (stripTabs) j += 1
-    while (src[j] === ' ' || src[j] === '\t') j += 1
-    let delimiter = ''
-    while (j < src.length && !' \t\n;&|<>()'.includes(src[j])) {
-      if (src[j] === "'" || src[j] === '"') {
-        const close = src.indexOf(src[j], j + 1)
-        const end = close === -1 ? src.length : close
-        delimiter += src.slice(j + 1, end)
-        j = end + 1
-      } else if (src[j] === '\\') {
-        delimiter += src[j + 1] ?? ''
-        j += 2
-      } else {
-        delimiter += src[j]
-        j += 1
-      }
-    }
-    pendingHeredocs.push({ delimiter, stripTabs })
-    return j
-  }
-  const skipHeredocBodies = (from) => {
-    let j = from
-    for (const { delimiter, stripTabs } of pendingHeredocs) {
-      while (j < src.length) {
-        const newline = src.indexOf('\n', j)
-        const lineEnd = newline === -1 ? src.length : newline
-        const line = src.slice(j, lineEnd)
-        j = lineEnd + 1
-        if ((stripTabs ? line.replace(/^\t+/u, '') : line) === delimiter) break
-      }
-    }
-    pendingHeredocs = []
-    return j
-  }
-
-  while (i < src.length) {
-    const c = src[i]
-    const next = src[i + 1]
-    if (c === '\\') {
-      if (next !== '\n') append(next ?? '')
-      i += 2
-    } else if (c === "'") {
-      const close = src.indexOf("'", i + 1)
-      const end = close === -1 ? src.length : close
-      append(src.slice(i + 1, end))
-      i = end + 1
-    } else if (c === '$' && next === "'") {
-      const { text, end } = readAnsiC(src, i + 2)
-      append(text)
-      i = end
-    } else if (c === '"') {
-      i = doubleQuoted(i + 1)
-    } else if (c === '$' && next === '(') {
-      i = substitution(i, i + 1)
-    } else if ((c === '<' || c === '>') && next === '(') {
-      i = substitution(i, i + 1)
-    } else if (c === '`') {
-      i = backticks(i)
-    } else if (c === '#' && word === null) {
-      const newline = src.indexOf('\n', i)
-      i = newline === -1 ? src.length : newline
-    } else if (c === '\n') {
-      endCommand()
-      i = skipHeredocBodies(i + 1)
-    } else if (c === ' ' || c === '\t') {
-      endWord()
-      i += 1
-    } else if (c === '&' && next === '>') {
-      endWord()
-      isRedirectTarget = true
-      i += src[i + 2] === '>' ? 3 : 2
-    } else if (c === ';' || c === '&' || c === '|') {
-      endCommand()
-      i += next === c || (c === '|' && next === '&') ? 2 : 1
-    } else if (c === '(') {
-      endCommand()
-      depth += 1
-      i += 1
-    } else if (c === ')') {
-      if (nested && depth === 0) {
-        endCommand()
-        return { commands, end: i }
-      }
-      endCommand()
-      depth = Math.max(0, depth - 1)
-      i += 1
-    } else if (src.startsWith('<<<', i)) {
-      // A here-string's word stays an ordinary word, so the attribution scan sees it.
-      endWord()
-      i += 3
-    } else if (c === '<' && next === '<') {
-      endWord()
-      i = heredocOperator(i + 2)
-    } else if (c === '<' || c === '>') {
-      // A file descriptor number such as the 2 in 2>&1 belongs to the redirection.
-      if (word !== null && /^\d+$/u.test(word)) word = null
-      endWord()
-      isRedirectTarget = true
-      i += 1
-      while (i < src.length && '<>&|'.includes(src[i])) i += 1
-    } else {
-      append(c)
-      i += 1
+  const t = createTokenizer({ src, start, nested })
+  while (t.i < src.length && !t.closed) {
+    if (!SCANNERS.some((scan) => scan(t))) {
+      append(t, src[t.i])
+      t.i += 1
     }
   }
-  endCommand()
-  return { commands, end: src.length }
+  if (!t.closed) endCommand(t, null)
+  return { commands: t.commands, end: t.closed ? t.i : src.length }
 }
 
 // --- Command classification ---------------------------------------------------
@@ -218,19 +280,17 @@ const parse = (src, start = 0, nested = false) => {
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/u
 const TRANSPARENT_PREFIXES = new Set(['!', '{', '}', 'if', 'then', 'else', 'elif', 'do', 'while', 'until', 'time', 'nohup', 'command', 'exec'])
 const SHELLS = new Set(['bash', 'zsh', 'sh', 'dash', 'ksh'])
+const SHELL_OPTION = /^[-+][A-Za-z]+$/u
 
 // Drops variable assignments and prefixes that run the next word as the command.
 const commandArgv = (words) => {
   let k = 0
   while (k < words.length) {
-    if (TRANSPARENT_PREFIXES.has(words[k]) || ASSIGNMENT.test(words[k])) {
-      k += 1
-    } else if (words[k] === 'env') {
+    if (TRANSPARENT_PREFIXES.has(words[k]) || ASSIGNMENT.test(words[k])) k += 1
+    else if (words[k] === 'env') {
       k += 1
       while (k < words.length && (words[k].startsWith('-') || ASSIGNMENT.test(words[k]))) k += 1
-    } else {
-      break
-    }
+    } else break
   }
   const argv = words.slice(k)
   if (argv.length > 0) argv[0] = basename(argv[0])
@@ -243,161 +303,250 @@ const wrappedScript = (argv) => {
   let hasScriptFlag = false
   for (let k = 1; k < argv.length; k += 1) {
     const arg = argv[k]
-    if (arg.startsWith('--')) continue
-    if (/^[-+][A-Za-z]+$/u.test(arg)) {
-      if (arg.startsWith('-') && arg.includes('c')) hasScriptFlag = true
-      if (arg === '-o' || arg === '+o') k += 1
-      continue
-    }
-    return hasScriptFlag ? arg : null
+    if (!arg.startsWith('--') && !SHELL_OPTION.test(arg)) return hasScriptFlag ? arg : null
+    hasScriptFlag ||= /^-[A-Za-z]*c/u.test(arg)
+    if (arg === '-o' || arg === '+o') k += 1
   }
   return null
 }
 
-const collectCommands = (script, depth = 0) => parse(script).commands.flatMap((words) => {
-  const argv = commandArgv(words)
+const collectCommands = (script, depth = 0) => parse(script).commands.flatMap((command) => {
+  const argv = commandArgv(command.words)
   const inner = wrappedScript(argv)
   const nested = inner !== null && depth < MAX_WRAPPER_DEPTH ? collectCommands(inner, depth + 1) : []
-  return [{ argv, words }, ...nested]
+  return [{ argv, command }, ...nested]
 })
 
-// Values of one option, in long (`--file x`, `--file=x`) and short (`-F x`, `-Fx`, `-aF x`) forms.
-// `shortWithValue` lists every short option that consumes a value, so `-m "-Fx"` is not misread.
-const optionValues = ({ args, long, short, shortWithValue }) => {
-  const values = []
-  for (let k = 0; k < args.length; k += 1) {
-    const arg = args[k]
-    if (arg === '--') break
-    if (arg.startsWith('--')) {
-      const equals = arg.indexOf('=')
-      const name = equals === -1 ? arg : arg.slice(0, equals)
-      if (long.includes(name)) values.push(equals === -1 ? args[(k += 1)] : arg.slice(equals + 1))
-      continue
-    }
-    if (!arg.startsWith('-')) continue
-    for (let p = 1; p < arg.length; p += 1) {
-      if (!shortWithValue.includes(arg[p])) continue
-      const value = p + 1 < arg.length ? arg.slice(p + 1) : args[(k += 1)]
-      if (arg[p] === short) values.push(value)
-      break
-    }
+// Reads `--name value` or `--name=value`. Returns the index of the last argument used.
+const readLongOption = ({ args, k, long, add }) => {
+  const equals = args[k].indexOf('=')
+  const name = equals === -1 ? args[k] : args[k].slice(0, equals)
+  if (!(name in long)) return k
+  if (equals !== -1) {
+    add(long[name], args[k].slice(equals + 1))
+    return k
   }
-  // `-` reads standard input, which the script scan already covers.
-  return values.filter((value) => typeof value === 'string' && value !== '' && value !== '-')
+  add(long[name], args[k + 1])
+  return k + 1
 }
 
-const GIT_OPTIONS_WITH_VALUE = new Set(['-C', '-c', '--git-dir', '--work-tree', '--namespace', '--config-env'])
+// Reads a short option cluster such as `-m value`, `-mvalue`, or `-am value`.
+const readShortCluster = ({ args, k, short, add }) => {
+  const arg = args[k]
+  const p = [...arg.slice(1)].findIndex((flag) => flag in short) + 1
+  if (p === 0) return k
+  if (p + 1 < arg.length) {
+    add(short[arg[p]], arg.slice(p + 1))
+    return k
+  }
+  add(short[arg[p]], args[k + 1])
+  return k + 1
+}
+
+// Collects option values by name. `short` and `long` map every option that takes a value
+// to the name it is collected under, or to null to skip the value.
+const parseOptions = (args, { short, long }) => {
+  const values = { positional: [] }
+  const add = (name, value) => {
+    if (name !== null) (values[name] ??= []).push(value ?? '')
+  }
+  for (let k = 0; k < args.length; k += 1) {
+    const arg = args[k]
+    if (arg === '--') {
+      values.positional.push(...args.slice(k + 1))
+      break
+    }
+    if (arg.startsWith('--')) k = readLongOption({ args, k, long, add })
+    else if (arg.startsWith('-') && arg.length > 1) k = readShortCluster({ args, k, short, add })
+    else values.positional.push(arg)
+  }
+  return values
+}
+
+const GIT_COMMIT_OPTIONS = {
+  short: { m: 'message', F: 'file', c: null, C: null, t: null },
+  long: { '--message': 'message', '--file': 'file', '--trailer': 'message' },
+}
+const GH_BODY_OPTIONS = {
+  short: { b: 'message', F: 'file', t: null, B: null, H: null, a: null, l: null, m: null, p: null, r: null, T: null, R: null },
+  long: { '--body': 'message', '--body-file': 'file' },
+}
+const GH_API_OPTIONS = {
+  short: { X: 'method', f: 'rawField', F: 'field', H: null, q: null, t: null, p: null },
+  long: { '--method': 'method', '--raw-field': 'rawField', '--field': 'field', '--input': 'file', '--header': null, '--jq': null, '--template': null, '--hostname': null, '--cache': null, '--preview': null },
+}
+const GIT_OPTIONS_WITH_VALUE = new Set(['-c', '--git-dir', '--work-tree', '--namespace', '--config-env'])
+const GH_BODY_WRITES = new Set(['pr create', 'pr edit', 'pr comment', 'issue create', 'issue edit', 'issue comment'])
+const PULL_OR_ISSUE_ENDPOINT = /(?:^|\/)(?:pulls|issues)(?:\/|$)/u
+const MERGE_ENDPOINT = /(?:^|\/)pulls\/[^/]+\/merge\/?(?:\?|$)/u
+const MESSAGE_FIELD = /^(?:body|title)=/su
 
 const gitSubcommand = (argv) => {
+  const dirs = []
   for (let k = 1; k < argv.length; k += 1) {
-    if (GIT_OPTIONS_WITH_VALUE.has(argv[k])) k += 1
-    else if (!argv[k].startsWith('-')) return { name: argv[k], args: argv.slice(k + 1) }
+    if (argv[k] === '-C') dirs.push(argv[(k += 1)] ?? '')
+    else if (GIT_OPTIONS_WITH_VALUE.has(argv[k])) k += 1
+    else if (!argv[k].startsWith('-')) return { name: argv[k], args: argv.slice(k + 1), dirs }
   }
   return null
 }
 
-const GH_API_OPTIONS_WITH_VALUE = new Set(['-H', '--header', '-q', '--jq', '-t', '--template', '--hostname', '--cache', '-p', '--preview'])
-
-const ghApi = (args) => {
-  let method = null
-  let endpoint = null
-  let hasInput = false
-  const fields = []
-  for (let k = 0; k < args.length; k += 1) {
-    const arg = args[k]
-    if (arg === '-X' || arg === '--method') method = args[(k += 1)] ?? ''
-    else if (arg.startsWith('--method=')) method = arg.slice('--method='.length)
-    else if (/^-X./u.test(arg)) method = arg.slice(2)
-    else if (['-f', '-F', '--field', '--raw-field'].includes(arg)) fields.push({ typed: ['-F', '--field'].includes(arg), value: args[(k += 1)] ?? '' })
-    else if (/^--(?:raw-)?field=/u.test(arg)) fields.push({ typed: arg.startsWith('--field='), value: arg.slice(arg.indexOf('=') + 1) })
-    else if (arg === '--input') {
-      hasInput = true
-      k += 1
-    } else if (GH_API_OPTIONS_WITH_VALUE.has(arg)) k += 1
-    else if (!arg.startsWith('-')) endpoint ??= arg
+// The gh arguments after `gh`, without options such as `-R owner/repo` placed before the subcommand.
+const ghArgs = (argv) => {
+  const args = argv.slice(1)
+  while (args.length > 0 && args[0].startsWith('-')) {
+    const option = args.shift()
+    if (option === '-R' || option === '--repo') args.shift()
   }
-  const defaultMethod = fields.length > 0 || hasInput ? 'POST' : 'GET'
-  return { method: (method || defaultMethod).toUpperCase(), endpoint: endpoint ?? '', fields }
+  return args
 }
 
-const PULL_OR_ISSUE_ENDPOINT = /(?:^|\/)(?:pulls|issues)(?:\/|$)/u
-const MERGE_ENDPOINT = /(?:^|\/)pulls\/[^/]+\/merge\/?(?:\?|$)/u
+const ghApi = (args) => {
+  const options = parseOptions(args, GH_API_OPTIONS)
+  const sendsData = Boolean(options.rawField || options.field || options.file)
+  const method = options.method?.at(-1) || (sendsData ? 'POST' : 'GET')
+  return { method: method.toUpperCase(), endpoint: options.positional[0] ?? '', options }
+}
 
-// Returns the message files of a commit or pull request write, or null when argv is neither.
-const attributionTarget = (argv) => {
-  if (argv[0] === 'git') {
-    const subcommand = gitSubcommand(argv)
-    if (subcommand?.name !== 'commit') return null
-    return optionValues({ args: subcommand.args, long: ['--file'], short: 'F', shortWithValue: 'mFcCt' })
+const afterEquals = (field) => field.slice(field.indexOf('=') + 1)
+
+const apiMessageSources = ({ rawField = [], field = [], file = [] }) => {
+  const typed = field.filter((value) => MESSAGE_FIELD.test(value)).map(afterEquals)
+  return {
+    texts: [...rawField.filter((value) => MESSAGE_FIELD.test(value)).map(afterEquals), ...typed.filter((value) => !value.startsWith('@'))],
+    files: [...typed.filter((value) => value.startsWith('@')).map((value) => value.slice(1)), ...file],
+    dirs: [],
   }
-  if (argv[0] !== 'gh') return null
-  const [, group, action] = argv
-  if ((group === 'pr' && ['create', 'edit', 'comment'].includes(action)) || (group === 'issue' && action === 'comment')) {
-    return optionValues({ args: argv.slice(3), long: ['--body-file'], short: 'F', shortWithValue: 'F' })
+}
+
+const ghMessageSources = (argv) => {
+  const [group, ...args] = ghArgs(argv)
+  if (GH_BODY_WRITES.has(`${group} ${args[0]}`)) {
+    const options = parseOptions(args.slice(1), GH_BODY_OPTIONS)
+    return { texts: options.message ?? [], files: options.file ?? [], dirs: [] }
   }
   if (group !== 'api') return null
-  const api = ghApi(argv.slice(2))
+  const api = ghApi(args)
   if (api.method === 'GET' || !PULL_OR_ISSUE_ENDPOINT.test(api.endpoint)) return null
-  return api.fields.filter(({ typed }) => typed).map(({ value }) => /^body=@(.+)$/su.exec(value)?.[1]).filter(Boolean)
+  return apiMessageSources(api.options)
+}
+
+// The message text, message files, and directories of a commit or pull request write, or null.
+const messageSources = (argv) => {
+  if (argv[0] === 'gh') return ghMessageSources(argv)
+  if (argv[0] !== 'git') return null
+  const subcommand = gitSubcommand(argv)
+  if (subcommand?.name !== 'commit') return null
+  const options = parseOptions(subcommand.args, GIT_COMMIT_OPTIONS)
+  return { texts: options.message ?? [], files: options.file ?? [], dirs: subcommand.dirs }
 }
 
 const isMerge = (argv) => {
   if (argv[0] !== 'gh') return false
-  if (argv[1] === 'pr' && argv[2] === 'merge') return true
-  if (argv[1] !== 'api') return false
-  const api = ghApi(argv.slice(2))
+  const [group, ...args] = ghArgs(argv)
+  if (group === 'pr') return args[0] === 'merge'
+  if (group !== 'api') return false
+  const api = ghApi(args)
   return api.method === 'PUT' && MERGE_ENDPOINT.test(api.endpoint)
 }
 
 // --- Attribution scan ---------------------------------------------------------
 
-const readMessageFile = ({ path, cwd }) => {
-  const expanded = path.startsWith('~/') ? join(homedir(), path.slice(2)) : path
+const SEQUENTIAL = new Set(['&&', ';', '\n'])
+
+// Directories from `cd <dir>` commands that run before this one in the same chain.
+const chainDirs = (command) => {
+  const dirs = []
+  for (let link = command; SEQUENTIAL.has(link.separator) && link.previous; link = link.previous) {
+    const [name, dir] = commandArgv(link.previous.words)
+    if (name === 'cd' && dir) dirs.unshift(dir)
+  }
+  return dirs
+}
+
+const expandHome = (path) => (path === '~' || path.startsWith('~/') ? join(homedir(), path.slice(1)) : path)
+
+// Reads a regular message file up to the size cap. The non-blocking open keeps a FIFO from
+// hanging the hook; anything unreadable is allowed rather than blocked on a guess.
+const readMessageFile = (path) => {
+  let fd
   try {
-    return readFileSync(resolve(cwd, expanded), 'utf8')
+    fd = openSync(path, constants.O_RDONLY | constants.O_NONBLOCK)
+    const stats = fstatSync(fd)
+    return stats.isFile() && stats.size <= MAX_MESSAGE_FILE_BYTES ? readFileSync(fd, 'utf8') : ''
   } catch {
-    // An unreadable message file cannot be inspected; allow rather than block on a guess.
     return ''
+  } finally {
+    if (fd !== undefined) closeSync(fd)
+  }
+}
+
+// `gh api --input` sends JSON: inspect its body and title.
+const jsonMessageTexts = (text) => {
+  if (!text.trimStart().startsWith('{')) return []
+  try {
+    const value = JSON.parse(text)
+    return [value?.body, value?.title].filter((field) => typeof field === 'string')
+  } catch {
+    return []
   }
 }
 
 // Lines split on real newlines and on literal \n, which printf and echo -e expand.
-const hasAttribution = (text) => text
-  .split(/\r?\n|\\n/u)
-  .some((line) => CO_AUTHOR_LINE.test(line) || GENERATED_LINE.test(line))
-
-// A word such as `body=…` or `--body=…` carries its text after the first `=`.
-const wordTexts = (word) => (word.includes('=') ? [word, word.slice(word.indexOf('=') + 1)] : [word])
-
-const evaluate = ({ command, cwd }) => {
-  const commands = collectCommands(command)
-  const messageFiles = commands.map(({ argv }) => attributionTarget(argv)).filter((files) => files !== null)
-  if (messageFiles.length > 0) {
-    // Scan the whole script, not only the target's arguments: the message can arrive
-    // through a pipe, a heredoc, or a file written earlier in the same command. The raw
-    // script holds heredoc bodies line for line; words hold quoted and $'…' text.
-    const texts = [
-      command,
-      ...commands.flatMap(({ words }) => words.flatMap(wordTexts)),
-      ...messageFiles.flat().map((path) => readMessageFile({ path, cwd })),
-    ]
-    if (texts.some(hasAttribution)) return DENY_ATTRIBUTION
+// Lines inside fenced Markdown code blocks are examples, not attribution.
+const hasAttributionLine = (text) => {
+  let inFence = false
+  for (const line of text.split(/\r?\n|\\n/u)) {
+    if (FENCE_LINE.test(line)) inFence = !inFence
+    else if (!inFence && (CO_AUTHOR_LINE.test(line) || GENERATED_LINE.test(line))) return true
   }
+  return false
+}
+
+// The write's own message sources: its message options, its message files, the heredoc or
+// here-string attached to it, and the command that pipes into it.
+const writeHasAttribution = ({ argv, command }, cwd) => {
+  const sources = messageSources(argv)
+  if (sources === null) return false
+  const producer = command.separator === '|' ? command.previous : null
+  const dir = resolve(cwd, ...chainDirs(command).map(expandHome), ...sources.dirs.map(expandHome))
+  const files = sources.files.filter((path) => path !== '-').map((path) => readMessageFile(resolve(dir, expandHome(path))))
+  const texts = [...sources.texts, ...command.stdin, ...(producer ? [...producer.words, ...producer.stdin] : []), ...files]
+  return texts.flatMap((text) => [text, ...jsonMessageTexts(text)]).some(hasAttributionLine)
+}
+
+// --- Decision -----------------------------------------------------------------
+
+// Codex execpolicy prefixes in host-config/codex/rules/filip-stack.rules.
+const CODEX_RULE_PREFIXES = [['gh', 'pr', 'merge'], ['op']]
+const SHELL_SYNTAX = /[\n$`<>|&;()\\*?]/u
+
+// True when Codex's prefix rules can match the command: one plain command, no shell syntax.
+// Without shell syntax the script is a single command, so its first entry is the whole command.
+const isCodexRuleForm = (command, entries) => !SHELL_SYNTAX.test(command.trim())
+  && CODEX_RULE_PREFIXES.some((prefix) => prefix.every((word, k) => entries[0]?.command.words[k] === word))
+
+const evaluate = ({ command, cwd, codex }) => {
+  const entries = collectCommands(command)
+  if (entries.some((entry) => writeHasAttribution(entry, cwd))) return DENY_ATTRIBUTION
   const reasons = [
-    commands.some(({ argv }) => isMerge(argv)) && ASK_MERGE,
-    commands.some(({ argv }) => argv[0] === 'op') && ASK_ONE_PASSWORD,
+    entries.some(({ argv }) => isMerge(argv)) && ASK_MERGE,
+    entries.some(({ argv }) => argv[0] === 'op') && ASK_ONE_PASSWORD,
   ].filter(Boolean)
-  return reasons.length > 0 ? { permissionDecision: 'ask', permissionDecisionReason: reasons.join(' ') } : null
+  if (reasons.length === 0) return null
+  // Codex does not support `ask` in hooks yet; its execpolicy rules prompt for plain forms.
+  if (codex) return isCodexRuleForm(command, entries) ? null : DENY_CODEX_UNPROMPTABLE
+  return { permissionDecision: 'ask', permissionDecisionReason: reasons.join(' ') }
 }
 
 const main = () => {
   const input = JSON.parse(readFileSync(0, 'utf8'))
   const command = input?.tool_input?.command
   if (typeof command !== 'string') return
-  const decision = evaluate({ command, cwd: typeof input.cwd === 'string' ? input.cwd : process.cwd() })
-  // Codex sets PLUGIN_ROOT and does not support `ask` yet: it reports a hook error and runs
-  // the command. Its execpolicy rules prompt for these commands instead.
-  if (decision === null || (decision.permissionDecision === 'ask' && process.env.PLUGIN_ROOT)) return
+  const cwd = typeof input.cwd === 'string' ? input.cwd : process.cwd()
+  // Codex sets PLUGIN_ROOT; Claude Code sets only CLAUDE_PLUGIN_ROOT.
+  const decision = evaluate({ command, cwd, codex: Boolean(process.env.PLUGIN_ROOT) })
+  if (decision === null) return
   process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', ...decision } })}\n`)
 }
 

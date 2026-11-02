@@ -182,7 +182,7 @@ shell command, including commands inside `bash -c` and `zsh -i -c` wrappers:
 
 | Rule | Commands | Decision |
 | --- | --- | --- |
-| No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line is a `Co-Authored-By` naming an AI or a "Generated with" footer |
+| No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create`, `gh issue edit`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line of the write's message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
 | Merge needs approval | `gh pr merge`, and `gh api` PUT to `pulls/<n>/merge` | Ask |
 | 1Password needs approval | `op` in command position | Ask |
 
@@ -190,7 +190,9 @@ The hook fails open: an internal error or a missing Node.js runtime leaves the
 normal permission flow in charge. Codex skips plugin hooks until you review and
 trust them. Codex hooks cannot ask yet, so on Codex the merge and 1Password
 prompts come from `~/.codex/rules/filip-stack.rules`, which host config
-installs. Those rules match direct `gh pr merge` and `op` commands only.
+installs. Those rules match only a plain `gh pr merge …` or `op …` command. On
+Codex the hook denies any other form of these commands, such as one inside a
+wrapper or a chain, and tells the agent to run the plain form.
 
 ## Standalone skills
 
