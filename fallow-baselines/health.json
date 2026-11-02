@@ -1,0 +1,74 @@
+{
+  "finding_counts": {
+    "docs/site/src/components/pages/OverviewPage.vue": {
+      "complexity_critical": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide-analytics.mjs": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs": {
+      "complexity_critical": {
+        "count": 1
+      },
+      "complexity_high": {
+        "count": 4
+      },
+      "complexity_moderate": {
+        "count": 2
+      }
+    }
+  },
+  "identity_finding_counts": {
+    "docs/site/src/components/pages/OverviewPage.vue\u0000<template>": {
+      "complexity_critical": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide-analytics.mjs\u0000validateEvent": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000main": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000submitObservationUnlocked": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000transitionGuidanceUnlocked": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000validateGuidanceRecord": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000validateMemory": {
+      "complexity_critical": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000validatePointer": {
+      "complexity_high": {
+        "count": 1
+      }
+    },
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs\u0000validateSubmission": {
+      "complexity_moderate": {
+        "count": 1
+      }
+    }
+  },
+  "runtime_coverage_findings": [],
+  "target_keys": []
+}

@@ -1,0 +1,41 @@
+{
+  "clone_groups": [
+    "tests/field-guide/field-guide-lifecycle.test.mjs:494-502|tests/field-guide/field-guide-lifecycle.test.mjs:513-520",
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:427-432|plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:729-734",
+    "tests/field-guide/field-guide.test.mjs:950-959|tests/field-guide/field-guide.test.mjs:989-997",
+    "docs/site/tests/no-js.spec.ts:10-14|docs/site/tests/site.spec.ts:164-169",
+    "tests/field-guide/field-guide-analytics.test.mjs:109-122|tests/field-guide/field-guide-analytics.test.mjs:332-341",
+    "tests/field-guide/field-guide.test.mjs:1095-1103|tests/field-guide/field-guide.test.mjs:1127-1135",
+    "tests/field-guide/field-guide-lifecycle.test.mjs:111-115|tests/field-guide/field-guide-lifecycle.test.mjs:96-100",
+    "tests/field-guide/field-guide-lifecycle.test.mjs:103-109|tests/field-guide/field-guide-lifecycle.test.mjs:86-93",
+    "tests/field-guide/field-guide-lifecycle.test.mjs:111-118|tests/field-guide/field-guide-lifecycle.test.mjs:134-141",
+    "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:516-519|plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:776-780",
+    "tests/field-guide/field-guide-lifecycle.test.mjs:199-202|tests/field-guide/field-guide-lifecycle.test.mjs:68-81"
+  ],
+  "clone_fingerprints": [
+    "dup:26cde565:2",
+    "dup:c4db8f0d:2",
+    "dup:a493b641:2",
+    "dup:1cfa9ec6:2",
+    "dup:af550fcd:2",
+    "dup:fb17a831:2",
+    "dup:f11c2a33:2",
+    "dup:eaa36340:2",
+    "dup:0df68b71:2",
+    "dup:9257aa49:2",
+    "dup:a8fa6804:2"
+  ],
+  "normalized_clone_fingerprints": [
+    "dup:c77b3abb6f87acd9-1:2",
+    "dup:c77b3abb6f87acd9-2:2",
+    "dup:c77b3abb6f87acd9-7:2",
+    "dup:c77b3abb6f87acd9-10:2",
+    "dup:c77b3abb6f87acd9-6:2",
+    "dup:c77b3abb6f87acd9-3:2",
+    "dup:c77b3abb6f87acd9-4:2",
+    "dup:c77b3abb6f87acd9-5:2",
+    "dup:c77b3abb6f87acd9-8:2",
+    "dup:dda63873:2",
+    "dup:c77b3abb6f87acd9-9:2"
+  ]
+}
