@@ -38,8 +38,14 @@ remaining findings, or after removing existing debt. From the repository root:
 pnpm exec fallow dead-code --save-baseline fallow-baselines/dead-code.json
 pnpm exec fallow health --complexity --baseline-mode identity --save-baseline fallow-baselines/health.json
 pnpm exec fallow dupes --save-baseline fallow-baselines/dupes.json
+node -e "const f='fallow-baselines/dupes.json', d=require('./' + f); delete d.normalized_clone_fingerprints; require('fs').writeFileSync(f, JSON.stringify(d, null, 2) + '\n')"
 pnpm test:static
 ```
+
+The `node -e` line removes `normalized_clone_fingerprints` from the duplication
+baseline. In Fallow 3.18.0 those fingerprints share one hash with a report-order
+suffix, so adding or removing an unrelated clone group changes which groups the
+baseline accepts. Without them, Fallow matches the stable `clone_fingerprints`.
 
 The save commands report the unsuppressed findings; dead-code and health can exit
 1 while still writing their baselines. Inspect each result and the baseline diff,

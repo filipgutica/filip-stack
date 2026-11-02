@@ -13,6 +13,10 @@ if (result.status !== 0) {
 }
 
 const report = JSON.parse(result.stdout)
+if (!Array.isArray(report.clone_groups)) {
+  console.error('Fallow duplication: report has no clone_groups array')
+  process.exit(1)
+}
 const newGroups = report.clone_groups.length
 console.log(`Fallow duplication: ${newGroups} new clone groups`)
 if (newGroups > 0) {
