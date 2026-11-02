@@ -96,11 +96,12 @@ for (const pluginDir of pluginDirs) {
   if (hasClaudeManifest) {
     await validateJson(claudeManifest, ['name'])
   }
+  const skillsDir = join(pluginRoot, 'skills')
   if (hasCodexManifest) {
-    await validateJson(codexManifest, ['name', 'skills'])
+    // A hooks-only plugin has no skills, and Codex finds hooks/hooks.json without a manifest field.
+    await validateJson(codexManifest, (await pathExists(skillsDir)) ? ['name', 'skills'] : ['name'])
   }
 
-  const skillsDir = join(pluginRoot, 'skills')
   const skills = (await readdir(skillsDir).catch(() => [])).filter((name) => !name.startsWith('.'))
   for (const skill of skills) {
     await validateSkillMd(join(skillsDir, skill, 'SKILL.md'))

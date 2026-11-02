@@ -4,6 +4,7 @@
   "entry": [
     "plugins/field-guide/hooks/field-guide-lifecycle.mjs",
     "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs",
+    "plugins/guardrails/hooks/guardrails.mjs",
     "docs/site/src/pages/**/*.astro",
   ],
   "includeEntryExports": true,
