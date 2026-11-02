@@ -1,6 +1,56 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, skillNames, themes, widths } from "./pages";
 
+test("the environment guide links its pillars and maintenance after hydration", async ({
+  page,
+}) => {
+  await page.goto("/filip-stack/");
+  await expect(
+    page.locator("#standalone").getByRole("link", {
+      name: "agent-ready-environments", exact: true,
+    }),
+  ).toHaveAttribute("href", "/filip-stack/skills/agent-ready-environments/");
+  await page
+    .getByRole("region", { name: "Guides", exact: true })
+    .getByRole("link", { name: "Agent-ready environments", exact: true })
+    .click();
+  await expect(page).toHaveURL("/filip-stack/agent-ready-environments/");
+  await expect(page.getByRole("heading", { level: 1 })).toHaveText(
+    "Agent-ready environments",
+  );
+  // Appearance controls only exist once the shared shell has hydrated.
+  await expect(page.getByRole("group", { name: "Color theme" })).toBeVisible();
+  const pillars = page.getByRole("table").filter({
+    has: page.getByRole("columnheader", { name: "Observable audit check" }),
+  });
+  await expect(pillars.getByRole("row")).toHaveCount(9);
+  await expect(
+    page.getByRole("heading", { level: 2, name: /^Pillar \d:/ }),
+  ).toHaveCount(8);
+  await expect(pillars.getByRole("link", { name: "1", exact: true }))
+    .toHaveAttribute("href", "#pillar-1-code-shape");
+  await pillars.getByRole("link", { name: "1", exact: true }).click();
+  await expect(page).toHaveURL(/#pillar-1-code-shape$/);
+  await expect(page.getByRole("heading", {
+    name: "Pillar 1: Code shape", exact: true,
+  })).toBeInViewport();
+  await page.getByRole("link", { name: "maintenance.md", exact: true })
+    .first().click();
+  await expect(page.getByRole("heading", {
+    name: "Maintaining this skill", exact: true,
+  })).toBeInViewport();
+  const maintenance = page.getByRole("region", {
+    name: "Maintaining this skill", exact: true,
+  });
+  await maintenance.getByRole("link", { name: "pillar 8", exact: true }).click();
+  await expect(page.getByRole("heading", {
+    name: "Pillar 8: Guidance is evaluated", exact: true,
+  })).toBeInViewport();
+  await expect(page.locator(
+    'main a[href^="references/"], main a[href^="../"], main a[href="maintenance.md"]',
+  )).toHaveCount(0);
+});
+
 test("every route is reachable and marks only its current navigation link", async ({
   page,
 }) => {
