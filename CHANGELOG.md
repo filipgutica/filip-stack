@@ -1,3 +1,16 @@
+# [3.15.0](https://github.com/filipgutica/filip-stack/compare/v3.14.0...v3.15.0) (2026-11-02)
+
+
+### Bug Fixes
+
+* **guardrails:** read heredoc delimiters whole and tighten message sources ([bd63953](https://github.com/filipgutica/filip-stack/commit/bd63953a9f8291898a4fc6131fa67b7be2af6494))
+* **guardrails:** scope attribution checks and close the Codex approval gap ([cdec91b](https://github.com/filipgutica/filip-stack/commit/cdec91bd7561863b65063cd88ed7173c490c8360))
+
+
+### Features
+
+* **guardrails:** add plugin that enforces attribution, merge, and 1Password rules ([38bc9cd](https://github.com/filipgutica/filip-stack/commit/38bc9cd98352de5136ca6d056f81ac3a0460c56c))
+
 # [3.14.0](https://github.com/filipgutica/filip-stack/compare/v3.13.0...v3.14.0) (2026-11-02)
 
 
