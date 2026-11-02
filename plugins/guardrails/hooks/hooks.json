@@ -1,0 +1,17 @@
+{
+  "description": "Deny AI attribution in commits and pull requests, and ask before a pull request merge or a 1Password CLI call.",
+  "hooks": {
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/run-node.sh\" \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/guardrails.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

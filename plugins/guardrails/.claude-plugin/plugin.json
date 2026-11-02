@@ -1,0 +1,8 @@
+{
+  "name": "guardrails",
+  "version": "3.13.0",
+  "description": "Hooks that deny AI attribution in commits and pull requests, and ask before pull request merges and 1Password CLI calls.",
+  "author": {
+    "name": "Filip Gutica"
+  }
+}

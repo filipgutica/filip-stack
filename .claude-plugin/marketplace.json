@@ -12,6 +12,10 @@
     {
       "name": "field-guide",
       "source": "./plugins/field-guide"
+    },
+    {
+      "name": "guardrails",
+      "source": "./plugins/guardrails"
     }
   ]
 }

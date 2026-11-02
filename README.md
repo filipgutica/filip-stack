@@ -1,8 +1,8 @@
 # Filip Stack
 
 Filip Stack is a personal plugin marketplace and skills home for Claude and
-Codex. It distributes the `workflow` plugin, the optional `field-guide` plugin,
-standalone skills, and the shared host configuration that sets up each machine.
+Codex. It distributes the `workflow` plugin, the optional `field-guide` and
+`guardrails` plugins, standalone skills, and the shared host configuration that sets up each machine.
 
 The [Filip Stack site](https://filipgutica.github.io/filip-stack/) gives an
 overview and lists every skill.
@@ -11,6 +11,7 @@ overview and lists every skill.
 | --- | --- | --- |
 | [Workflow](#workflow) | Nine skills for the engineering loop | Plugin, from this marketplace |
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
+| [Guardrails](#guardrails) | Optional hook that enforces attribution, merge, and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
 | [Host config](#host-config) | Global guidance, agents, styles, and design language | `scripts/host-config.mjs` from a checkout |
 
@@ -45,6 +46,8 @@ claude plugin marketplace add filipgutica/filip-stack
 claude plugin install workflow@filip-stack
 # Optional local learning:
 claude plugin install field-guide@filip-stack
+# Optional rule enforcement:
+claude plugin install guardrails@filip-stack
 ```
 
 Update it with:
@@ -52,6 +55,7 @@ Update it with:
 ```sh
 claude plugin update workflow@filip-stack
 claude plugin update field-guide@filip-stack
+claude plugin update guardrails@filip-stack
 ```
 
 ## Install with Codex
@@ -61,6 +65,8 @@ codex plugin marketplace add filipgutica/filip-stack
 codex plugin add workflow@filip-stack
 # Optional local learning:
 codex plugin add field-guide@filip-stack
+# Optional rule enforcement:
+codex plugin add guardrails@filip-stack
 ```
 
 Update the marketplace with:
@@ -169,6 +175,23 @@ agent-reported impact, and reviewed outcomes separately.
 Workflow does not invoke or depend on Field Guide. Current instructions, live
 code, and repository contracts continue to outrank stored guidance.
 
+## Guardrails
+
+Guardrails is a separate, optional plugin. Its `PreToolUse` hook checks each
+shell command, including commands inside `bash -c` and `zsh -i -c` wrappers:
+
+| Rule | Commands | Decision |
+| --- | --- | --- |
+| No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line is a `Co-Authored-By` naming an AI or a "Generated with" footer |
+| Merge needs approval | `gh pr merge`, and `gh api` PUT to `pulls/<n>/merge` | Ask |
+| 1Password needs approval | `op` in command position | Ask |
+
+The hook fails open: an internal error or a missing Node.js runtime leaves the
+normal permission flow in charge. Codex skips plugin hooks until you review and
+trust them. Codex hooks cannot ask yet, so on Codex the merge and 1Password
+prompts come from `~/.codex/rules/filip-stack.rules`, which host config
+installs. Those rules match direct `gh pr merge` and `op` commands only.
+
 ## Standalone skills
 
 Independent skills live in `skills/<name>/` and install one at a time with the
@@ -214,7 +237,8 @@ compares it with upstream.
 - the global guidance for `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`
 - Claude agent templates (`critic`, `explorer`, `reviewer`, `worker-high`) and
   output styles
-- Codex agent profiles
+- Codex agent profiles and the `~/.codex/rules/filip-stack.rules` prompts that
+  Guardrails relies on
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the `~/design-language` files the guidance refers to
 
@@ -297,12 +321,16 @@ plugins/field-guide/       Optional local-learning plugin
   hooks/                   Guidance injection and capture, ask, or skip lifecycle guidance
   scripts/                 Cross-host Node launcher
   skills/field-guide/      Skill, storage utility, schemas, and references
+plugins/guardrails/        Optional rule-enforcement plugin
+  hooks/                   PreToolUse hook for attribution, merge, and 1Password rules
+  scripts/                 Cross-host Node launcher
 skills/                    Standalone skills installed with the skills CLI
 host-config/               General Claude and Codex guidance, agents, and styles
 .agents/skills/            Repository development skills (linked from .claude/skills)
 tests/workflow/            Repository-only contract and payload tests
 tests/skills/              Standalone skill contracts
 tests/field-guide/         Field Guide contracts and utility tests
+tests/guardrails/          Guardrails hook tests
 tests/host-config/         Host config apply tests
 scripts/                   Version, plugin validation, and host-config scripts
 docs/                      Evaluation lab notebook and evidence
