@@ -1,3 +1,15 @@
+# [3.14.0](https://github.com/filipgutica/filip-stack/compare/v3.13.0...v3.14.0) (2026-11-02)
+
+
+### Bug Fixes
+
+* **ci:** match duplication baseline on stable fingerprints ([5e90429](https://github.com/filipgutica/filip-stack/commit/5e90429ba40eabe0d32866ce40ea7e54a79e547b))
+
+
+### Features
+
+* **site:** add agent-ready environments guide ([a6fa170](https://github.com/filipgutica/filip-stack/commit/a6fa17021036289f17b49b831ca5925b65220704))
+
 # [3.13.0](https://github.com/filipgutica/filip-stack/compare/v3.12.1...v3.13.0) (2026-11-02)
 
 
