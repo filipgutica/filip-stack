@@ -80,8 +80,8 @@ For long-running work, keep detailed logs on disk and report compact evidence. I
 
 ## Evidence
 
-- For substantive work, set observable acceptance criteria before material changes. Prove claims with the narrowest credible direct evidence: a command result, test, diff, runtime observation, or primary documentation. When a change alters runtime or UI behavior and the repository can run it, observe it in the running app, started with the repository's setup and seed data.
-- Report unmet or unverified requirements as incomplete, with any replacement evidence. When missing setup, seed data, or sandbox access blocks that evidence, name the gap and the fix that would close it. Distinguish confirmed facts from inference.
+- For substantive work, set observable acceptance criteria before material changes. Prove claims with the narrowest credible direct evidence: a command result, test, diff, runtime observation, or primary documentation. When runtime or UI acceptance criteria need app-level evidence, exercise the affected path with the repository's setup and relevant seed data.
+- Report unmet or unverified requirements as incomplete, with any replacement evidence. If the environment blocks that evidence, name the gap and its fix. Distinguish confirmed facts from inference.
 - The agent shell skips my interactive zsh setup, so environment variables such as tokens may be missing only there. Before calling one missing, check `zsh -i -c` for its presence without printing its value. When it is present, run the command through `zsh -i -c '<command>'`.
 
 ## Testing hygiene
