@@ -1,5 +1,38 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, skillNames, themes, widths } from "./pages";
+import {
+  expectNoFileLinks,
+  followPillarLink,
+  openGuideFromOverview,
+  openMaintenance,
+  pillarTable,
+} from "./guide";
+
+test("the environment guide links its pillars and maintenance after hydration", async ({
+  page,
+}) => {
+  await page.goto("/filip-stack/");
+  await expect(
+    page.locator("#standalone").getByRole("link", {
+      name: "agent-ready-environments", exact: true,
+    }),
+  ).toHaveAttribute("href", "/filip-stack/skills/agent-ready-environments/");
+  await openGuideFromOverview(page);
+  // Appearance controls only exist once the shared shell has hydrated.
+  await expect(page.getByRole("group", { name: "Color theme" })).toBeVisible();
+  const pillars = await pillarTable(page);
+  await followPillarLink(page, pillars, {
+    number: "1",
+    anchor: "pillar-1-code-shape",
+    heading: "Pillar 1: Code shape",
+  });
+  const maintenance = await openMaintenance(page);
+  await maintenance.getByRole("link", { name: "pillar 8", exact: true }).click();
+  await expect(page.getByRole("heading", {
+    name: "Pillar 8: Guidance is evaluated", exact: true,
+  })).toBeInViewport();
+  await expectNoFileLinks(page);
+});
 
 test("every route is reachable and marks only its current navigation link", async ({
   page,

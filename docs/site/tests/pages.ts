@@ -5,6 +5,7 @@ export const pageTypes = [
   { path: "cli/", title: "filip-stack CLI" },
   { path: "design-language/", title: "Design language" },
   { path: "field-guide/", title: "Field Guide" },
+  { path: "agent-ready-environments/", title: "Agent-ready environments" },
   { path: "skills/engineering/", title: "engineering" },
   { path: "skills/full-send/", title: "full-send" },
 ];
@@ -17,6 +18,7 @@ export const routes = [
   "cli/",
   "design-language/",
   "field-guide/",
+  "agent-ready-environments/",
   ...skillNames.map((name) => `skills/${name}/`),
 ];
 export const widths = [320, 390, 768, 801, 1280];

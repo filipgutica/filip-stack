@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, themes, widths } from "./pages";
+import {
+  expectNoFileLinks,
+  followPillarLink,
+  openGuideFromOverview,
+  openMaintenance,
+  pillarTable,
+} from "./guide";
 
 for (const theme of themes)
   for (const width of widths)
@@ -112,4 +119,23 @@ test("the Workflow map links each skill and lists every engineering step without
   ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
   await expect(map.locator(".map-steps > li")).toHaveCount(6);
   await expect(map.locator(".map-steps")).toBeVisible();
+});
+
+test("the environment guide and its anchor links work without JavaScript", async ({
+  page,
+}) => {
+  await page.goto("/filip-stack/");
+  await openGuideFromOverview(page);
+  const pillars = await pillarTable(page);
+  await followPillarLink(page, pillars, {
+    number: "6",
+    anchor: "pillar-6-reproducible-environment",
+    heading: "Pillar 6: Reproducible environment",
+  });
+  const maintenance = await openMaintenance(page);
+  await maintenance.getByRole("link", { name: "SKILL.md", exact: true })
+    .first().click();
+  await expect(page).toHaveURL(/#agent-ready-environments$/);
+  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
+  await expectNoFileLinks(page);
 });

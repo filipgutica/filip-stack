@@ -249,6 +249,21 @@ onMounted(() => {
     </ul>
   </section>
 
+  <section aria-labelledby="guides">
+    <h2 id="guides">Guides</h2>
+    <ul class="parts">
+      <li>
+        <a href="/filip-stack/agent-ready-environments/"
+          >Agent-ready environments</a
+        >
+        <p>
+          Eight pillars for auditing repositories and engineering guidance,
+          with checks and maintenance advice.
+        </p>
+      </li>
+    </ul>
+  </section>
+
   <section id="workflow" aria-labelledby="workflow-title">
     <h2 id="workflow-title">How Workflow works</h2>
     <p class="section-intro">
