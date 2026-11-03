@@ -8,21 +8,16 @@ import PillarSection from "../lesson/PillarSection.vue";
 import ScorePips from "../lesson/ScorePips.vue";
 import SourceRef from "../lesson/SourceRef.vue";
 import { sources } from "../lesson/sources";
+import { lessonPillars, maintenanceFile } from "../lesson/pillars";
 
 // This lesson is written for people. The skill it teaches is written for
-// agents, and its reference files are linked here, so a renamed or removed
-// reference fails the build instead of leaving a dead link.
+// agents. getStaticPaths checks that every reference linked here exists.
 const { catalog } = defineProps<{ catalog: Catalog }>();
 const skill = catalog.standalone.find(
   ({ name }) => name === "agent-ready-environments",
 );
 if (!skill) throw new Error("The lesson's skill, agent-ready-environments, is missing.");
 const referenceBase = skill.source.replace(/SKILL\.md$/, "references/");
-const reference = (prefix: string) => {
-  const file = skill.references.find((name) => name.startsWith(prefix));
-  if (!file) throw new Error(`agent-ready-environments has no reference starting ${prefix}`);
-  return file;
-};
 const repository = "https://github.com/filipgutica/filip-stack";
 const install =
   "npx skills add filipgutica/filip-stack -g -a claude-code codex -s agent-ready-environments -y";
@@ -87,18 +82,10 @@ const scorecard = [
     channel: "Advisory",
   },
 ];
-const pillars = (
-  [
-    { number: 1, title: "Code shape", job: "Tell" },
-    { number: 2, title: "Static gates", job: "Check" },
-    { number: 3, title: "Test gates with signal", job: "Check" },
-    { number: 4, title: "Documentation", job: "Tell" },
-    { number: 5, title: "Review gates chosen by risk", job: "Check" },
-    { number: 6, title: "Reproducible environment", job: "Check" },
-    { number: 7, title: "Bounded autonomy", job: "Bound" },
-    { number: 8, title: "Guidance is evaluated", job: "Tell" },
-  ] as const
-).map((pillar) => ({ ...pillar, reference: reference(`pillar-${pillar.number}-`) }));
+const pillars = lessonPillars.map(({ file, ...pillar }) => ({
+  ...pillar,
+  reference: file,
+}));
 const pillar = (number: number) => pillars[number - 1]!;
 const pillarMap = (["Tell", "Check", "Bound"] as const).map((job) => ({
   job,
@@ -953,7 +940,7 @@ onMounted(() => {
         <p>The full procedure, rubric, and sources the agent follows.</p>
       </li>
       <li>
-        <a :href="`${referenceBase}${reference('maintenance')}`">Maintenance procedure</a>
+        <a :href="`${referenceBase}${maintenanceFile}`">Maintenance procedure</a>
         <p>Triggers and the review steps above, in full.</p>
       </li>
     </ul>

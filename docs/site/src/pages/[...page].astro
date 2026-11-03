@@ -1,6 +1,7 @@
 ---
 import App from '../App.vue';
 import { loadCatalog, type Catalog, type CatalogSkill, type SkillContent } from '../catalog';
+import { assertLessonReferences } from '../components/lesson/pillars';
 import libraryThemeCss from '@filipgutica/ui/theme.css?raw';
 import sitePaletteCss from '@filipgutica/ui/themes/graphite-indigo.css?raw';
 import { siteThemeBootScript } from '@filipgutica/ui/site';
@@ -16,6 +17,9 @@ const darkTokens = [libraryThemeCss, sitePaletteCss].map((css) => {
 }).join('\n');
 export function getStaticPaths() {
   const { catalog, contents } = loadCatalog();
+  const lessonSkill = catalog.standalone.find(({ name }) => name === 'agent-ready-environments');
+  if (!lessonSkill) throw new Error('The agent-ready environments lesson needs its skill.');
+  assertLessonReferences(lessonSkill.references);
   return [
     ...[undefined, 'cli', 'design-language', 'field-guide', 'agent-ready-environments'].map((page) => ({ params: { page }, props: { catalog } })),
     ...[...catalog.workflow, ...catalog.standalone].map((skill) => ({
