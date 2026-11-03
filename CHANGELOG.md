@@ -1,3 +1,10 @@
+## [3.15.1](https://github.com/filipgutica/filip-stack/compare/v3.15.0...v3.15.1) (2026-11-03)
+
+
+### Bug Fixes
+
+* **guardrails:** stop asking before pull request merges ([6575675](https://github.com/filipgutica/filip-stack/commit/6575675d2f4a26c4bfc2a463624dc741b1068b48))
+
 # [3.15.0](https://github.com/filipgutica/filip-stack/compare/v3.14.0...v3.15.0) (2026-11-02)
 
 
