@@ -11,7 +11,7 @@ overview and lists every skill.
 | --- | --- | --- |
 | [Workflow](#workflow) | Nine skills for the engineering loop | Plugin, from this marketplace |
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
-| [Guardrails](#guardrails) | Optional hook that enforces attribution, merge, and 1Password rules | Plugin, from this marketplace |
+| [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
 | [Host config](#host-config) | Global guidance, agents, styles, and design language | `scripts/host-config.mjs` from a checkout |
 
@@ -183,16 +183,15 @@ shell command, including commands inside `bash -c` and `zsh -i -c` wrappers:
 | Rule | Commands | Decision |
 | --- | --- | --- |
 | No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create`, `gh issue edit`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line of the write's message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
-| Merge needs approval | `gh pr merge`, and `gh api` PUT to `pulls/<n>/merge` | Ask |
 | 1Password needs approval | `op` in command position | Ask |
 
 The hook fails open: an internal error or a missing Node.js runtime leaves the
 normal permission flow in charge. Codex skips plugin hooks until you review and
-trust them. Codex hooks cannot ask yet, so on Codex the merge and 1Password
-prompts come from `~/.codex/rules/filip-stack.rules`, which host config
-installs. Those rules match only a plain `gh pr merge …` or `op …` command. On
-Codex the hook denies any other form of these commands, such as one inside a
-wrapper or a chain, and tells the agent to run the plain form.
+trust them. Codex hooks cannot ask yet, so on Codex the 1Password
+prompt comes from `~/.codex/rules/filip-stack.rules`, which host config
+installs. That rule matches only a plain `op …` command. On Codex the hook
+denies any other form, such as one inside a wrapper or a chain, and tells the
+agent to run the plain form.
 
 ## Standalone skills
 
@@ -324,7 +323,7 @@ plugins/field-guide/       Optional local-learning plugin
   scripts/                 Cross-host Node launcher
   skills/field-guide/      Skill, storage utility, schemas, and references
 plugins/guardrails/        Optional rule-enforcement plugin
-  hooks/                   PreToolUse hook for attribution, merge, and 1Password rules
+  hooks/                   PreToolUse hook for attribution and 1Password rules
   scripts/                 Cross-host Node launcher
 skills/                    Standalone skills installed with the skills CLI
 host-config/               General Claude and Codex guidance, agents, and styles

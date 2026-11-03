@@ -1,13 +1,5 @@
-# Filip Stack guardrails for Codex. Codex hooks cannot ask yet, so these rules
-# prompt before a pull request merge and before any 1Password CLI call.
-
-prefix_rule(
-    pattern = ["gh", "pr", "merge"],
-    decision = "prompt",
-    justification = "Merging a pull request needs explicit user authorization.",
-    match = ["gh pr merge 12 --squash"],
-    not_match = ["gh pr view 12"],
-)
+# Filip Stack guardrails for Codex. Codex hooks cannot ask yet, so this rule
+# prompts before any 1Password CLI call.
 
 prefix_rule(
     pattern = ["op"],

@@ -1,5 +1,5 @@
 {
-  "description": "Deny AI attribution in commits and pull requests, and ask before a pull request merge or a 1Password CLI call.",
+  "description": "Deny AI attribution in commits and pull requests, and ask before a 1Password CLI call.",
   "hooks": {
     "PreToolUse": [
       {

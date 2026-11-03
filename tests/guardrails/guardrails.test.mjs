@@ -230,36 +230,22 @@ test('closes a fence only on the same marker of at least the same length', () =>
 })
 
 test('reads a heredoc delimiter word whole and scans past an unclosed heredoc', () => {
-  const merge = 'gh api -X PUT repos/o/r/pulls/12/merge'
+  const op = 'op whoami'
   assertDecision([
-    `cat <<E"OF"\nnotes\nEOF\n${merge}`,
-    `cat <<'E'OF\nnotes\nEOF\n${merge}`,
-    `cat <<E\\OF\nnotes\nEOF\n${merge}`,
-    `cat <<EOF\nnotes\n${merge}`,
+    `cat <<E"OF"\nnotes\nEOF\n${op}`,
+    `cat <<'E'OF\nnotes\nEOF\n${op}`,
+    `cat <<E\\OF\nnotes\nEOF\n${op}`,
+    `cat <<EOF\nnotes\n${op}`,
   ], 'ask')
   // A partly quoted delimiter still makes the body literal text.
   assertDecision(['cat <<E"OF"\n$(op whoami)\nEOF', 'cat <<E\\OF\n$(op whoami)\nEOF'], null)
 })
 
-test('asks before merging a pull request', () => {
-  assertDecision([
-    'gh pr merge 12 --squash',
-    'gh pr merge',
-    'gh -R o/r pr merge 12',
-    'gh --repo o/r pr merge 12',
-    'gh --repo=o/r pr merge 12',
-    'gh api -X PUT repos/o/r/pulls/12/merge',
-    'gh api --method PUT repos/{owner}/{repo}/pulls/12/merge -f merge_method=squash',
-    'gh api -XPUT /repos/o/r/pulls/$PR/merge',
-  ], 'ask')
-  assertDecision([
-    'gh pr view 12',
-    'gh -R o/r pr view 12',
-    'gh api repos/o/r/pulls/12/merge',
-    'gh api -X PUT repos/o/r/pulls/12/requested_reviewers',
-    // Quoted text passed to echo is data, not a command.
-    'echo "gh pr merge 12"',
-  ], null)
+// Merge authorization comes from the user's request, such as running full-send, not from a prompt.
+test('stays silent on pull request merges', () => {
+  const merges = ['gh pr merge 12 --merge', 'gh -R o/r pr merge 12', 'gh api -X PUT repos/o/r/pulls/12/merge']
+  assertDecision(merges, null)
+  assertDecision(merges, null, { env: codexEnv })
 })
 
 test('asks before a 1Password CLI call', () => {
@@ -286,9 +272,6 @@ test('finds commands after separators, substitutions, and assignments', () => {
     'TOKEN=$(op read op://v/i/f) npm publish',
     'export TOKEN="$(op read op://v/i/f)"',
     'TOKEN=`op read op://v/i/f` npm publish',
-    'GH_TOKEN=x gh pr merge 12',
-    'pnpm check && gh pr merge 12 --squash',
-    'git status\ngh pr merge 12',
     '2>/dev/null op whoami',
     "cat <<'EOF'\nnotes\nEOF\nop whoami",
     'cat <<< "notes"\nop whoami',
@@ -298,49 +281,46 @@ test('finds commands after separators, substitutions, and assignments', () => {
 
 test('treats quoted heredoc bodies as data', () => {
   assertDecision([
-    "cat <<'EOF'\nop read op://v/i/f\ngh pr merge 12\n$(op whoami)\nEOF",
+    "cat <<'EOF'\nop read op://v/i/f\n$(op whoami)\nEOF",
   ], null)
 })
 
 test('finds commands inside shell wrappers', () => {
   for (const [name, wrap] of Object.entries(wrappers)) {
     assert.equal(decide(wrap('op read op://v/i/f'))?.permissionDecision, 'ask', name)
-    assert.equal(decide(wrap('git status && gh pr merge 12'))?.permissionDecision, 'ask', name)
+    assert.equal(decide(wrap('git status && op whoami'))?.permissionDecision, 'ask', name)
     assert.equal(decide(wrap(`git commit -m "feat: x" -m "${codexTrailer}"`))?.permissionDecision, 'deny', name)
     assert.equal(decide(wrap('grep op file && git commit -m "feat: x"')), null, name)
   }
 })
 
-// Plain forms that Codex execpolicy rules prompt for, so the hook stays silent on Codex.
+// Plain forms that the Codex execpolicy rule prompts for, so the hook stays silent on Codex.
 const codexPlainForms = [
-  ['gh', 'pr', 'merge', '12', '--squash'],
   ['op', 'read', 'op://vault/item/field'],
   ['op', 'whoami'],
 ]
 
-test('Codex stays silent only for the plain forms its rules prompt for', () => {
+test('Codex stays silent only for the plain forms its rule prompts for', () => {
   assertDecision(codexPlainForms.map((argv) => argv.join(' ')), null, { env: codexEnv })
   const unpromptable = [
-    'gh api -X PUT repos/o/r/pulls/12/merge',
     '/opt/homebrew/bin/op whoami',
-    'GH_TOKEN=x gh pr merge 12',
-    'gh -R o/r pr merge 12',
-    'pnpm check && gh pr merge 12',
+    'GH_TOKEN=x op whoami',
+    'pnpm check && op whoami',
     'op read op://v/i/f > secret.txt',
     'export TOKEN=$(op read op://v/i/f)',
-    ...Object.values(wrappers).flatMap((wrap) => [wrap('op whoami'), wrap('gh pr merge 12')]),
+    ...Object.values(wrappers).map((wrap) => wrap('op whoami')),
   ]
   for (const command of unpromptable) {
     const decision = decide(command, { env: codexEnv })
     assert.equal(decision?.permissionDecision, 'deny', command)
-    assert.match(decision.permissionDecisionReason, /plain `gh pr merge …` or `op …` command/u, command)
+    assert.match(decision.permissionDecisionReason, /plain `op …` command/u, command)
   }
   assert.equal(decide(heredocCommit(claudeTrailer), { env: codexEnv })?.permissionDecision, 'deny')
 })
 
 const hasCodex = !spawnSync('codex', ['--version'], { encoding: 'utf8' }).error
 
-test('Codex execpolicy rules prompt for the plain forms', { skip: !hasCodex && 'codex is not installed' }, () => {
+test('the Codex execpolicy rule prompts for the plain forms', { skip: !hasCodex && 'codex is not installed' }, () => {
   for (const argv of codexPlainForms) {
     const result = spawnSync('codex', ['execpolicy', 'check', '--rules', codexRules, '--', ...argv], { encoding: 'utf8', timeout: 10000 })
     assert.equal(result.status, 0, result.stderr)
