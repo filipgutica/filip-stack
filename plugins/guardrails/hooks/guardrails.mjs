@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // PreToolUse guardrails for shell commands. Denies AI attribution in commits and pull
-// requests, and asks before a pull request merge or a 1Password CLI call.
+// requests, and asks before a 1Password CLI call.
 // Any internal error exits 0 with no decision, so a hook bug never blocks work.
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -20,9 +20,8 @@ const DENY_ATTRIBUTION = {
 }
 const DENY_CODEX_UNPROMPTABLE = {
   permissionDecision: 'deny',
-  permissionDecisionReason: 'This command needs user approval, and Codex can ask only for a plain `gh pr merge …` or `op …` command. Run it as its own command, with no shell wrapper, variable prefix, full path, redirection, `gh api` call, or option before the subcommand, so Codex prompts the user. If the plain form is also denied, stop and ask the user to run it.',
+  permissionDecisionReason: 'This command needs user approval, and Codex can ask only for a plain `op …` command. Run it as its own command, with no shell wrapper, variable prefix, full path, or redirection, so Codex prompts the user. If the plain form is also denied, stop and ask the user to run it.',
 }
-const ASK_MERGE = 'Merging a pull request needs explicit user authorization.'
 const ASK_ONE_PASSWORD = '1Password CLI access needs user approval. State the exact vault, item, and field (or search query), why you need it, and the scope of data you will retrieve.'
 
 // --- Shell tokenizer ---------------------------------------------------------
@@ -416,7 +415,6 @@ const GH_API_OPTIONS = {
 const GIT_OPTIONS_WITH_VALUE = new Set(['-c', '--git-dir', '--work-tree', '--namespace', '--config-env'])
 const GH_BODY_WRITES = new Set(['pr create', 'pr edit', 'pr comment', 'issue create', 'issue edit', 'issue comment'])
 const PULL_OR_ISSUE_ENDPOINT = /(?:^|\/)(?:pulls|issues)(?:\/|$)/u
-const MERGE_ENDPOINT = /(?:^|\/)pulls\/[^/]+\/merge\/?(?:\?|$)/u
 const MESSAGE_FIELD = /^(?:body|title)=/su
 
 const gitSubcommand = (argv) => {
@@ -477,15 +475,6 @@ const messageSources = (argv) => {
   if (subcommand?.name !== 'commit') return null
   const options = parseOptions(subcommand.args, GIT_COMMIT_OPTIONS)
   return { texts: options.message ?? [], files: options.file ?? [], dirs: subcommand.dirs }
-}
-
-const isMerge = (argv) => {
-  if (argv[0] !== 'gh') return false
-  const [group, ...args] = ghArgs(argv)
-  if (group === 'pr') return args[0] === 'merge'
-  if (group !== 'api') return false
-  const api = ghApi(args)
-  return api.method === 'PUT' && MERGE_ENDPOINT.test(api.endpoint)
 }
 
 // --- Attribution scan ---------------------------------------------------------
@@ -582,26 +571,22 @@ const writeHasAttribution = ({ argv, command }, { cwd, entries }) => {
 
 // --- Decision -----------------------------------------------------------------
 
-// Codex execpolicy prefixes in host-config/codex/rules/filip-stack.rules.
-const CODEX_RULE_PREFIXES = [['gh', 'pr', 'merge'], ['op']]
+// Codex execpolicy prefix in host-config/codex/rules/filip-stack.rules.
+const CODEX_RULE_PREFIX = 'op'
 const SHELL_SYNTAX = /[\n$`<>|&;()\\*?]/u
 
-// True when Codex's prefix rules can match the command: one plain command, no shell syntax.
+// True when Codex's prefix rule can match the command: one plain command, no shell syntax.
 // Without shell syntax the script is a single command, so its first entry is the whole command.
 const isCodexRuleForm = (command, entries) => !SHELL_SYNTAX.test(command.trim())
-  && CODEX_RULE_PREFIXES.some((prefix) => prefix.every((word, k) => entries[0]?.command.words[k] === word))
+  && entries[0]?.command.words[0] === CODEX_RULE_PREFIX
 
 const evaluate = ({ command, cwd, codex }) => {
   const entries = collectCommands(command)
   if (entries.some((entry) => writeHasAttribution(entry, { cwd, entries }))) return DENY_ATTRIBUTION
-  const reasons = [
-    entries.some(({ argv }) => isMerge(argv)) && ASK_MERGE,
-    entries.some(({ argv }) => argv[0] === 'op') && ASK_ONE_PASSWORD,
-  ].filter(Boolean)
-  if (reasons.length === 0) return null
-  // Codex does not support `ask` in hooks yet; its execpolicy rules prompt for plain forms.
+  if (!entries.some(({ argv }) => argv[0] === 'op')) return null
+  // Codex does not support `ask` in hooks yet; its execpolicy rule prompts for the plain form.
   if (codex) return isCodexRuleForm(command, entries) ? null : DENY_CODEX_UNPROMPTABLE
-  return { permissionDecision: 'ask', permissionDecisionReason: reasons.join(' ') }
+  return { permissionDecision: 'ask', permissionDecisionReason: ASK_ONE_PASSWORD }
 }
 
 const main = () => {

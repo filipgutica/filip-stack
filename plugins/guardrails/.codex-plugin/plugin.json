@@ -1,14 +1,14 @@
 {
   "name": "guardrails",
   "version": "3.15.0",
-  "description": "Hooks that deny AI attribution in commits and pull requests, and ask before pull request merges and 1Password CLI calls.",
+  "description": "Hooks that deny AI attribution in commits and pull requests, and ask before 1Password CLI calls.",
   "author": {
     "name": "Filip Gutica"
   },
   "interface": {
     "displayName": "Guardrails",
-    "shortDescription": "Enforce attribution, merge, and 1Password rules.",
-    "longDescription": "Guardrails runs a PreToolUse hook on shell commands. It denies commits and pull request text that carry AI attribution. Codex does not support the ask decision in hooks, so the merge and 1Password prompts come from the execpolicy rules that host config installs.",
+    "shortDescription": "Enforce attribution and 1Password rules.",
+    "longDescription": "Guardrails runs a PreToolUse hook on shell commands. It denies commits and pull request text that carry AI attribution. Codex does not support the ask decision in hooks, so the 1Password prompt comes from the execpolicy rule that host config installs.",
     "developerName": "Filip Gutica",
     "category": "Productivity"
   }
