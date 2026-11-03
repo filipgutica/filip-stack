@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, themes, widths } from "./pages";
 import {
-  expectNoFileLinks,
-  followPillarLink,
+  expectSkillLinks,
+  followPillarFromMap,
   openGuideFromOverview,
-  openMaintenance,
-  pillarTable,
+  openMaintenanceFromContents,
 } from "./guide";
 
 for (const theme of themes)
@@ -121,21 +120,29 @@ test("the Workflow map links each skill and lists every engineering step without
   await expect(map.locator(".map-steps")).toBeVisible();
 });
 
-test("the environment guide and its anchor links work without JavaScript", async ({
+test("the lesson reads in full and its anchor links work without JavaScript", async ({
   page,
 }) => {
   await page.goto("/filip-stack/");
   await openGuideFromOverview(page);
-  const pillars = await pillarTable(page);
-  await followPillarLink(page, pillars, {
-    number: "6",
+  // The figure lists both outcomes for every problem instead of toggles.
+  const figure = page.locator(".catch");
+  await expect(figure.getByRole("button")).toHaveCount(0);
+  await expect(figure.getByText("Without it", { exact: true })).toHaveCount(4);
+  // Every audit mode is visible as its own heading.
+  for (const name of ["New project", "Existing repository", "Engineering guidance"])
+    await expect(page.getByRole("heading", { level: 3, name, exact: true })).toBeVisible();
+  await followPillarFromMap(page, {
+    link: "6 Reproducible environment",
     anchor: "pillar-6-reproducible-environment",
     heading: "Pillar 6: Reproducible environment",
   });
-  const maintenance = await openMaintenance(page);
-  await maintenance.getByRole("link", { name: "SKILL.md", exact: true })
-    .first().click();
-  await expect(page).toHaveURL(/#agent-ready-environments$/);
-  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
-  await expectNoFileLinks(page);
+  const more = page
+    .locator("#pillar-6-reproducible-environment")
+    .locator("xpath=ancestor::article")
+    .locator("details");
+  await more.locator("summary").click();
+  await expect(more.getByText(/throwaway host home/)).toBeVisible();
+  await openMaintenanceFromContents(page);
+  await expectSkillLinks(page);
 });

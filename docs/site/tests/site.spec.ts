@@ -1,14 +1,13 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, skillNames, themes, widths } from "./pages";
 import {
-  expectNoFileLinks,
-  followPillarLink,
+  expectSkillLinks,
+  followPillarFromMap,
   openGuideFromOverview,
-  openMaintenance,
-  pillarTable,
+  openMaintenanceFromContents,
 } from "./guide";
 
-test("the environment guide links its pillars and maintenance after hydration", async ({
+test("the lesson's figure, audit modes, and links work after hydration", async ({
   page,
 }) => {
   await page.goto("/filip-stack/");
@@ -20,18 +19,43 @@ test("the environment guide links its pillars and maintenance after hydration", 
   await openGuideFromOverview(page);
   // Appearance controls only exist once the shared shell has hydrated.
   await expect(page.getByRole("group", { name: "Color theme" })).toBeVisible();
-  const pillars = await pillarTable(page);
-  await followPillarLink(page, pillars, {
-    number: "1",
+
+  const figure = page.locator(".catch");
+  const tally = figure.locator(".catch__tally");
+  await expect(tally).toHaveText(
+    "4 of 4 problems get past the agent, so you are the test suite.",
+  );
+  const check = figure.getByRole("button", { name: /^One check command/ });
+  await check.click();
+  await expect(check).toHaveAttribute("aria-pressed", "true");
+  await expect(tally).toHaveText("3 of 4 problems get past the agent.");
+  await expect(figure.locator(".catch__problems > li").first()).toContainText(
+    "Agent fixes it",
+  );
+  for (const name of [
+    /^Tests with signal/,
+    /^Seeded app, one command/,
+    /^Deny rule on secrets/,
+  ])
+    await figure.getByRole("button", { name }).click();
+  await expect(tally).toContainText("All 4 are stopped before the agent says done.");
+
+  const modes = page.getByRole("tablist", { name: "Audit mode" });
+  await expect(modes.getByRole("tab", { selected: true })).toHaveText(
+    "Existing repository",
+  );
+  await modes.getByRole("tab", { name: "New project" }).click();
+  await expect(
+    page.getByText("Gates are cheapest to add at zero lines of code."),
+  ).toBeVisible();
+
+  await followPillarFromMap(page, {
+    link: "1 Code shape",
     anchor: "pillar-1-code-shape",
     heading: "Pillar 1: Code shape",
   });
-  const maintenance = await openMaintenance(page);
-  await maintenance.getByRole("link", { name: "pillar 8", exact: true }).click();
-  await expect(page.getByRole("heading", {
-    name: "Pillar 8: Guidance is evaluated", exact: true,
-  })).toBeInViewport();
-  await expectNoFileLinks(page);
+  await openMaintenanceFromContents(page);
+  await expectSkillLinks(page);
 });
 
 test("every route is reachable and marks only its current navigation link", async ({

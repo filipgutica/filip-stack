@@ -6,15 +6,13 @@ import CliPage from "./components/pages/CliPage.vue";
 import DesignLanguagePage from "./components/pages/DesignLanguagePage.vue";
 import FieldGuidePage from "./components/pages/FieldGuidePage.vue";
 import AgentReadyEnvironmentsPage from "./components/pages/AgentReadyEnvironmentsPage.vue";
-import type { GuideSection } from "./agent-ready-guide";
 import SkillPage from "./components/pages/SkillPage.vue";
 
-const { catalog, page, skill, content, guide } = defineProps<{
+const { catalog, page, skill, content } = defineProps<{
   catalog: Catalog;
   page: string;
   skill?: CatalogSkill;
   content?: SkillContent;
-  guide?: GuideSection[];
 }>();
 const repository = "https://github.com/filipgutica/filip-stack";
 const pages = [
@@ -71,8 +69,8 @@ const groups = [
         />
         <FieldGuidePage v-else-if="page === '/filip-stack/field-guide/'" />
         <AgentReadyEnvironmentsPage
-          v-else-if="page === '/filip-stack/agent-ready-environments/' && guide"
-          :sections="guide"
+          v-else-if="page === '/filip-stack/agent-ready-environments/'"
+          :catalog="catalog"
         />
         <OverviewPage v-else :catalog="catalog" />
       </main>

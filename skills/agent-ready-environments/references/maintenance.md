@@ -30,6 +30,7 @@ Review this skill when any of these happens:
 5. **Calibrate the rubric.** Scores for the reference repositories should stay stable from one model to the next unless the repositories changed. If a check now passes everywhere, it no longer separates strong from weak; make it harder or remove it.
 6. **Resolve conflicts.** If vendors disagree, record both positions and how this skill reconciles them, as [pillar 4](pillar-4-documentation.md) does for documentation. Prefer the current vendor documentation over dated engineering posts, and dated posts over secondary summaries. A secondary summary is never the only source for a claim.
 7. **Update.** Edit the claims. Update `Verified` for each source you re-fetched. Commit with a message that names the trigger and the claims that changed. Git history is the review log.
+   In the filip-stack repository, also update the lesson for people, `docs/site/src/components/pages/AgentReadyEnvironmentsPage.vue`, wherever it repeats a claim you changed.
 
 The review is complete when every cited claim has a current `Verified` date,
 every line has passed the decay test or has been deleted, and the reference
