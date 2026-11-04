@@ -1,3 +1,18 @@
+# [3.19.0](https://github.com/filipgutica/filip-stack/compare/v3.18.0...v3.19.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **host-config:** hold the docs section marker only until the reader scrolls ([6e68f61](https://github.com/filipgutica/filip-stack/commit/6e68f6114107f17680a178fa26bb543fc5dcb466))
+* **host-config:** make the design-language example pages follow DESIGN.md ([1af0a94](https://github.com/filipgutica/filip-stack/commit/1af0a948ee765a220f3dc3152365588f17049274))
+
+
+### Features
+
+* **hill-climb:** judge the whole climb and simplify the runs page ([82e8c42](https://github.com/filipgutica/filip-stack/commit/82e8c42a55947e61130f1afd688745081cb45e76))
+* **host-config:** recopy design-language tokens from @filipgutica/ui 1.9.0 ([16cdfb4](https://github.com/filipgutica/filip-stack/commit/16cdfb4df72b7187dc5e5db468f7d1253babecdf))
+* **host-config:** state token names, focus, and surface roles in the design language ([7976c1f](https://github.com/filipgutica/filip-stack/commit/7976c1f67b65ac3dd8eb52bac02f4c42e5e9d73f))
+
 # [3.18.0](https://github.com/filipgutica/filip-stack/compare/v3.17.1...v3.18.0) (2026-11-04)
 
 
