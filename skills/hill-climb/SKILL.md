@@ -48,7 +48,8 @@ Find the base after `git fetch origin`:
 
 The change is base to working tree, with untracked files. Its paths are the
 scope. Changed lines are added plus deleted text lines from
-`git diff --numstat`, counting each untracked file's lines as added.
+`git diff --numstat <base> -- <scope>`, counting each untracked file's lines
+as added.
 
 Build the card and freeze it before round 1:
 
@@ -93,8 +94,9 @@ Judges never see it:
 - `snapshot/`: the incumbent. Copy each scoped path with `cp -p`, and write
   `manifest.tsv` with path, exists (`yes` or `no`), mode (the first field of
   `ls -l`), and SHA-256 hash.
-- `ledger.md`: the private ledger, with every brief sent and each judge's
-  A/B mapping.
+- `ledger.md`: the private ledger, with every brief sent, each judge's A/B
+  mapping, and each round's created files and outcome (accepted, rejected,
+  or void).
 
 Refresh `snapshot/` and the manifest each time a candidate is accepted.
 Files the candidate created join the scope and the manifest. Files it deleted
@@ -103,15 +105,17 @@ stay in the manifest as `no`.
 ### Check
 
 Before each round and after each restore, compare the scope with the
-manifest: exists, mode, and hash. On any difference, something outside the
-climb changed the files. Stop, report the paths, and change nothing further.
+manifest: exists, mode, and hash. Before you restore or accept a candidate,
+compare the scope with `candidate.tsv`, which Apply writes in the same
+format. On any difference, something outside the climb changed the files.
+Stop, report the paths, and change nothing further.
 
 ### Restore
 
 1. Copy each manifest path marked `yes` back from `snapshot/` with `cp -p`.
    This also re-creates a file the candidate deleted.
-2. Remove each manifest path marked `no` that now exists, and each file this
-   thread created in the round. Remove nothing else.
+2. Remove each manifest path marked `no` that now exists, and each file
+   `ledger.md` lists as created in this round. Remove nothing else.
 3. Run the check.
 
 If the climb fails or is cancelled during a round, restore before you report.
@@ -137,12 +141,15 @@ Run each round in order:
    empty queue.
 4. **Save evidence.** Save the incumbent's evidence before you edit.
 5. **Apply.** Make the smallest change that does the selected proposals.
-   Recreate `now/` empty, copy the scoped files and any new files to it, and
-   measure the climb with `git diff --no-index --numstat start now`. If it exceeds the size
-   limit, restore, mark those proposals declined for size, list them as
-   follow-ups, and select again without them.
+   Record each new file's path in `ledger.md`, then write `candidate.tsv`
+   for the scope and those new files. Recreate `now/` empty, copy the scoped
+   files and new files to it, and measure the climb with
+   `git diff --no-index --numstat start now`. If it exceeds the size limit,
+   restore, mark those proposals declined for size, list them as follow-ups,
+   and select again without them.
 6. **Gate.** Run every gate on the candidate. On a failure, restore, record
-   the round as rejected, and mark its proposals declined.
+   the round as rejected, and mark its proposals declined. End the round
+   there: skip Judge and Decide, and apply the stop rules.
 7. **Judge.** Build one bundle per judge and send each the judge brief.
 8. **Decide.** Apply the decision rules.
 
@@ -169,7 +176,8 @@ Choose the A/B order at random for each judge and record it only in
 - The candidate wins when a strict majority of completed judges prefers it
   overall. It becomes the incumbent: refresh the snapshot and mark its
   proposals applied.
-- Otherwise, restore and mark the round's proposals declined.
+- Otherwise, restore, record the round as rejected, and mark the round's
+  proposals declined.
 - Add a judge's `NEXT` to the queue only when it applies to the incumbent
   after the decision.
 - In the ledger, map each judge's answers back to incumbent and candidate,
@@ -219,7 +227,8 @@ Stop at the first of these:
 - Two rejected or void rounds in a row.
 - A strict majority of completed judges answers `SAME` overall.
 - The round budget is spent.
-- The size limit is used up.
+- The incumbent's changed lines against `start/` reach the size limit.
+  After a restore, measure the incumbent as in Apply.
 
 Leave the final incumbent in the working tree.
 
@@ -235,3 +244,13 @@ The final reply contains:
 - Follow-ups declined for size or scope.
 - Reusable lessons that the original work missed, as plain text.
 - Missing judges, and any two members that came from the same provider.
+- Where the run record is saved.
+
+### Save the run
+
+Save the run record before the final reply, as
+[references/run-record.md](references/run-record.md) describes: `run.json`
+and a copy of `ledger.md` in `~/.hill-climb/runs/<id>/`. Then run
+`node <skill-directory>/scripts/build-runs.mjs` to write `report.md` and the
+index. When the host can publish pages and the user keeps a runs page, offer
+to republish it from the records.
