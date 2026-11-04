@@ -20,3 +20,4 @@ Example in this repository: the PluginBench rule in `AGENTS.md`.
 **Audit check.** For each piece of guidance, ask what evidence shows it changes
 behavior. Guidance without evidence scores at most 1. Check when the guidance
 last had a line deleted.
+Level 2 needs runnable evidence against a no-guidance baseline for each applicable artifact; level 3 also blocks guidance changes on that check and tracks results over at least 20 runs or 30 days.

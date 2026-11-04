@@ -65,6 +65,8 @@ Put each rule on the channel that matches its exceptions:
 Scoring rules:
 
 - A pillar's score is the highest level whose criteria all verified evidence meets. An unverified check cannot lift a pillar to a level; list it under Unverified.
+- Level 2 needs the pillar's Observable audit check, met on runnable evidence. Level 3 also needs that check to block its action and to be tracked over time, as defined above. Reference-file Audit check bullets diagnose the Top gap; they gate a level only where that reference says so.
+- When a pillar covers several artifacts (files, skills, or review angles), score the weakest applicable artifact.
 - Optional CI that fails loudly but does not block merge is level 2, not 3.
 - Mark a pillar N/A when it does not apply, and leave it out of totals. When a pillar applies only in part, score the parts that apply and name the checks you dropped.
 - In the Report, `Channel` describes the proposed fix, not the current state.
@@ -171,7 +173,7 @@ test in [maintenance.md](references/maintenance.md).
 - **[A3]** Anthropic Engineering, *Effective harnesses for long-running agents*, 2025-11-26. Predates the current model generation. <https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents> Verified 2026-11-01.
 - **[A4]** Anthropic, *Skill authoring best practices*. <https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices> Verified 2026-11-01.
 - **[A5]** Anthropic, *Claude Code skills: Run and verify your app*. <https://code.claude.com/docs/en/skills> Verified 2026-11-01.
-- **[O1]** OpenAI (Ryan Lopopolo), *Harness engineering: leveraging Codex in an agent-first world*, February 2026. <https://openai.com/index/harness-engineering/>. Predates the current model generation. The primary page refused automated fetches (HTTP 403), so claims are paraphrased from secondary summaries. Not verified.
+- **[O1]** OpenAI (Ryan Lopopolo), *Harness engineering: leveraging Codex in an agent-first world*, February 2026. <https://openai.com/index/harness-engineering/>. Predates the current model generation. Verified 2026-11-03.
 - **[O3]** OpenAI, *Codex best practices* (covers GPT-6.1 Sol, GPT-6 Luna, GPT-6 Astra). <https://learn.chatgpt.com/guides/best-practices> Verified 2026-11-01.
 - **[O2]** OpenAI, *Codex: AGENTS.md*. <https://learn.chatgpt.com/docs/agent-configuration/agents-md> Verified 2026-11-01.
 - **[S1]** Agentic AI Foundation (Linux Foundation), *AGENTS.md*. <https://agents.md/> Verified 2026-11-01.

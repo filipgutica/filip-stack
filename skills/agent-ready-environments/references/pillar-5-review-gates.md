@@ -26,7 +26,7 @@ formatting and lint to CI [O2], and says Codex reviews every pull request at Ope
 
 - The reviewer gets the spec and the diff, not the author's reasoning.
 - Each finding is checked against the code before anyone fixes it. A findings-audit pass removes false positives and duplicates.
-- A human approves the merge.
+- A person authorizes the merge per action or in advance under the scoped authorization in [pillar 7](pillar-7-bounded-autonomy.md). Missing authorization is a gap; the absence of a repeated approval prompt is not.
 
 Example in this repository: `AGENTS.md` treats reviewer findings as
 uncalibrated diagnostics, not a quality score.
