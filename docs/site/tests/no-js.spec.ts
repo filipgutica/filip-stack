@@ -1,11 +1,10 @@
 import { expect, test } from "@playwright/test";
 import { pageTypes, routes, themes, widths } from "./pages";
 import {
-  expectNoFileLinks,
-  followPillarLink,
+  expectSkillLinks,
+  followPillarFromMap,
   openGuideFromOverview,
-  openMaintenance,
-  pillarTable,
+  openMaintenanceFromContents,
 } from "./guide";
 
 for (const theme of themes)
@@ -121,21 +120,39 @@ test("the Workflow map links each skill and lists every engineering step without
   await expect(map.locator(".map-steps")).toBeVisible();
 });
 
-test("the environment guide and its anchor links work without JavaScript", async ({
+test("the lesson reads in full and its anchor links work without JavaScript", async ({
   page,
 }) => {
   await page.goto("/filip-stack/");
   await openGuideFromOverview(page);
-  const pillars = await pillarTable(page);
-  await followPillarLink(page, pillars, {
-    number: "6",
+  // Readers get inline links and further reading, not the skill's citation keys.
+  await expect(page.locator("main")).not.toContainText(/\[[AOSG]\d/);
+  // The figure lists both outcomes for every problem instead of toggles.
+  const figure = page.locator(".catch");
+  await expect(figure.getByRole("button")).toHaveCount(0);
+  await expect(figure.getByText("Without it", { exact: true })).toHaveCount(4);
+  // The fix order counts steps 1 to 8, and each step names its pillar.
+  const steps = page.locator(".order li");
+  await expect(steps.locator(".order__step")).toHaveText(
+    [1, 2, 3, 4, 5, 6, 7, 8].map((step) => `Step ${step}`),
+  );
+  await expect(steps.getByRole("link")).toHaveText(
+    [7, 6, 3, 2, 5, 1, 8, 4].map((pillar) => `Pillar ${pillar}`),
+  );
+  // Every audit mode is visible as its own heading.
+  for (const name of ["New project", "Existing repository", "Engineering guidance"])
+    await expect(page.getByRole("heading", { level: 3, name, exact: true })).toBeVisible();
+  await followPillarFromMap(page, {
+    link: "Reproducible environment Pillar 6",
     anchor: "pillar-6-reproducible-environment",
     heading: "Pillar 6: Reproducible environment",
   });
-  const maintenance = await openMaintenance(page);
-  await maintenance.getByRole("link", { name: "SKILL.md", exact: true })
-    .first().click();
-  await expect(page).toHaveURL(/#agent-ready-environments$/);
-  await expect(page.getByRole("heading", { level: 1 })).toBeInViewport();
-  await expectNoFileLinks(page);
+  const more = page
+    .locator("#pillar-6-reproducible-environment")
+    .locator("xpath=ancestor::article")
+    .locator("details");
+  await more.locator("summary").click();
+  await expect(more.getByText(/throwaway host home/)).toBeVisible();
+  await openMaintenanceFromContents(page);
+  await expectSkillLinks(page);
 });

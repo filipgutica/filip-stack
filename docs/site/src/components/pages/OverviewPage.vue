@@ -257,8 +257,8 @@ onMounted(() => {
           >Agent-ready environments</a
         >
         <p>
-          Eight pillars for auditing repositories and engineering guidance,
-          with checks and maintenance advice.
+          A lesson on setting up repositories so coding agents can check their
+          own work, with a worked audit of this repository.
         </p>
       </li>
     </ul>
