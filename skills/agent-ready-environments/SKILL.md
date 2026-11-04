@@ -57,8 +57,8 @@ Put each rule on the channel that matches its exceptions:
 | Score | Meaning |
 | --- | --- |
 | 0 | Absent, or no verified evidence |
-| 1 | Written down only: a documented policy, script, or intent that nobody has shown runs |
-| 2 | Runnable: one command from a fresh checkout, with only declared prerequisites installed, and verified evidence that it works |
+| 1 | Present, not yet runnable as a whole: a documented policy, script, or partly working mechanism, with some level-2 criterion unmet or unverified |
+| 2 | Runnable: the pillar's Observable audit check is met on runnable evidence (see Evidence). Only pillar 6 requires a fresh checkout |
 | 3 | Enforced and measured: it blocks the action it guards (a required check blocks merge; a hook blocks the tool call), and its results are tracked over at least 20 runs or 30 days |
 | N/A | Does not apply to this repository; give a one-line reason |
 
@@ -66,7 +66,7 @@ Scoring rules:
 
 - A pillar's score is the highest level whose criteria all verified evidence meets. An unverified check cannot lift a pillar to a level; list it under Unverified.
 - Level 2 needs the pillar's Observable audit check, met on runnable evidence. Level 3 also needs that check to block its action and to be tracked over time, as defined above. Reference-file Audit check bullets diagnose the Top gap; they gate a level only where that reference says so.
-- When a pillar covers several artifacts (files, skills, or review angles), score the weakest applicable artifact.
+- When a pillar covers several artifacts (files, skills, or review angles), score the weakest applicable artifact. A missing artifact that the Observable audit check needs keeps the pillar below level 2; it does not by itself score the pillar 0.
 - Optional CI that fails loudly but does not block merge is level 2, not 3.
 - Mark a pillar N/A when it does not apply, and leave it out of totals. When a pillar applies only in part, score the parts that apply and name the checks you dropped.
 - In the Report, `Channel` describes the proposed fix, not the current state.
