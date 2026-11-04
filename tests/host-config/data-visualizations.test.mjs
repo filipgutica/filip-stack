@@ -1,0 +1,67 @@
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { validateSnapshot, formatPercent, renderReport } from '../../host-config/design-language/visualizations/build-count-report.mjs'
+
+const sample = () => ({
+  schemaVersion: 1, title: 'Synthetic API responses', capturedAt: '2026-01-08T12:05:00Z',
+  source: { provider: 'synthetic', dataset: 'example traces', basis: 'Spans -> Count', unit: 'retained spans', sampling: 'Synthetic fixture, no live data', scope: 'POST query endpoints', query: 'Example aggregate grouped by region, endpoint and status' },
+  categories: [{ key: '200', label: '200', tone: 'success' }, { key: '408', label: '408', tone: 'warning' }, { key: '500', label: '500', tone: 'danger' }, { key: 'other', label: 'Other', tone: 'neutral' }],
+  defaultWindow: 'hour', windows: [{ key: 'hour', label: 'Last hour', from: '2026-01-08T11:00:00Z', to: '2026-01-08T12:00:00Z', complete: true, referenceCounts: { '200': 90, '408': 7, '500': 1, other: 2 }, rows: [{ region: 'east', endpoint: 'POST /query', counts: { '200': 90, '408': 7, '500': 1, other: 2 } }] }],
+})
+
+test('validation rejects missing data, duplicate cells, incomplete captures and aggregate mismatches', () => {
+  const cases = [
+    [(s) => { s.windows[0].rows[0].counts['408'] = null }, /nonnegative/],
+    [(s) => { delete s.windows[0].rows[0].counts['408'] }, /exactly/],
+    [(s) => { s.windows[0].rows.push(structuredClone(s.windows[0].rows[0])) }, /unique/],
+    [(s) => { s.windows[0].complete = false }, /incomplete/],
+    [(s) => { s.windows[0].referenceCounts['408'] = 8 }, /aggregate mismatch/],
+    [(s) => { s.source.basis = '' }, /source.basis/],
+    [(s) => { s.windows[0].from = '2025-02-30T11:00:00Z' }, /calendar timestamp/],
+    [(s) => { s.windows[0].to = '2026-01-08T13:00:00Z' }, /bounds/],
+    [(s) => { s.windows[0].rows[0].counts['200'] = Number.MAX_SAFE_INTEGER }, /precision/],
+  ]
+  for (const [mutate, error] of cases) { const value = sample(); mutate(value); assert.throws(() => validateSnapshot(value), error) }
+  assert.equal(validateSnapshot(sample()).schemaVersion, 1)
+})
+
+test('percentage formatting preserves zero, tiny failures and incomplete 100% shares', () => {
+  assert.equal(formatPercent(0, 0), '—')
+  assert.equal(formatPercent(0, 10), '0%')
+  assert.equal(formatPercent(10, 10), '100%')
+  assert.equal(formatPercent(19999, 20000), '>99.99%')
+  assert.equal(formatPercent(199, 200000), '0.10%')
+  assert.equal(formatPercent(1, 20000), '0.0050%')
+  assert.equal(formatPercent(7, 100), '7.00%')
+})
+
+test('the generated initial state has reconciled counts, provenance and safe embedded content', async () => {
+  const value = sample()
+  value.title = 'Example </script><script>alert(1)</script>'
+  value.source.query = '<private query>'
+  const html = await renderReport(value)
+  const initial = html.split('<script>')[0]
+  assert.match(initial, /data-summary="" data-count="100"/)
+  assert.match(initial, /7 <span class="ov-percent">\(7.00%\)<\/span>/)
+  assert.match(initial, /All-region aggregate cross-check matched/)
+  assert.match(initial, /id="ov-mobile"/)
+  assert.equal((initial.match(/data-category="408" data-count="7"/g) || []).length, 2)
+  assert.match(initial, /&lt;private query&gt;/)
+  assert.doesNotMatch(html, /<script>alert\(1\)<\/script>/)
+  assert.match(html, /Example \\u003c\/script>/)
+  assert.doesNotMatch(html, /window\.openai|fetch\(/)
+})
+
+test('standalone mode requires tokens; missing aggregate evidence and empty results stay visible', async () => {
+  await assert.rejects(renderReport(sample(), { mode: 'standalone' }), /tokens/)
+  const html = await renderReport(sample(), { mode: 'standalone', tokens: ':root{--text:currentColor}' })
+  assert.match(html, /--foreground:var\(--text\)/)
+  const value = sample()
+  delete value.windows[0].referenceCounts
+  value.windows[0].rows = []
+  const empty = await renderReport(value)
+  assert.match(empty, /No retained spans in this selection/)
+  assert.match(empty, /No independent aggregate supplied/)
+  value.source.url = 'javascript:alert(1)'
+  assert.throws(() => validateSnapshot(value), /HTTP\(S\)/)
+})
