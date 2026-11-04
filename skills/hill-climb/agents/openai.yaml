@@ -1,0 +1,7 @@
+interface:
+  display_name: "Hill Climb"
+  short_description: "Polish a finished change in rounds judged by a blind council"
+  default_prompt: "Use $hill-climb to polish this thread's change before merge."
+
+policy:
+  allow_implicit_invocation: false

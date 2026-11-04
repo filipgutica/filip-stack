@@ -1,0 +1,101 @@
+# Run record
+
+Save one record for each climb, including a climb that stops before round 1.
+
+## Location
+
+`~/.hill-climb/runs/<id>/`, where `<id>` is `<YYYY-MM-DD>-<repository name>-<pr<N> or branch name>`. Add `-2`, `-3`, and so on when the directory already exists.
+
+The directory holds:
+
+- `run.json`: the record below.
+- `ledger.md`: a copy of the private ledger.
+- `report.md`: written by `scripts/build-runs.mjs`. Do not write it by hand.
+
+## `run.json`
+
+Use `schemaVersion: 1`. Every field is required unless marked optional. Write votes as `candidate`, `same`, or `incumbent`, already mapped back from each judge's A/B order.
+
+```json
+{
+  "schemaVersion": 1,
+  "id": "2026-11-04-filip-stack-pr90",
+  "date": "2026-11-04",
+  "title": "PR #90: standard service tier for Codex delegates",
+  "kind": "code",
+  "target": {
+    "repo": "owner/name",
+    "pr": 90,
+    "prUrl": "https://github.com/owner/name/pull/90",
+    "branch": "fix/example",
+    "base": "4d1ce344",
+    "head": "f79669f"
+  },
+  "goal": "One sentence from the climb card.",
+  "criteria": [{ "id": "C1", "name": "Clarity", "description": "From the climb card." }],
+  "lineup": [{ "member": "Astra", "model": "gpt-6-astra", "effort": "high", "provider": "OpenAI" }],
+  "budget": { "rounds": 3, "sizeLimit": 20, "originalChangedLines": 8 },
+  "gates": ["pnpm check"],
+  "notCovered": ["From the climb card."],
+  "rounds": [
+    {
+      "n": 1,
+      "summary": "A short phrase for what this round tried.",
+      "proposals": [{ "member": "Opus 5.5", "text": "The proposal.", "status": "applied", "reason": "Optional; required for declined or exhausted." }],
+      "applied": ["What the candidate changed, one item per change."],
+      "climbChangedLines": 2,
+      "gates": "pass",
+      "votes": [
+        {
+          "member": "Astra",
+          "overall": "candidate",
+          "criteria": { "C1": "candidate" },
+          "reason": "The judge's overall reason."
+        }
+      ],
+      "decision": "accepted",
+      "restore": "Optional: what the restore checked.",
+      "next": [{ "member": "Astra", "text": "The judge's NEXT." }]
+    }
+  ],
+  "stop": "The stop rule that ended the climb.",
+  "result": {
+    "summary": "What the climb changed, in one or two sentences.",
+    "climbChangedLines": 2,
+    "committed": false,
+    "diff": "The climb's diff against the starting incumbent."
+  },
+  "followUps": ["Declined or unapplied suggestions, with the member that raised them."],
+  "notes": ["Missing judges, same-provider members, retries, and operator errors."],
+  "memberCalls": 13
+}
+```
+
+Field notes:
+
+- `kind`: `code` or `ui`.
+- `target.pr` and `target.prUrl`: use `null` for a climb on uncommitted work.
+- `proposals`: round 1 holds the propose results; later rounds use `[]`. Statuses are `none`, `applied`, `declined`, `exhausted`, or `applied in round <n>`.
+- `gates`: `pass`, `fail`, or `blocked`.
+- `decision`: `accepted`, `rejected`, or `void`. A round that fails a gate is `rejected` and has no `votes`.
+- `memberCalls`: every propose and judge call, including retries.
+
+## Build the reports
+
+```text
+node <skill-directory>/scripts/build-runs.mjs
+```
+
+It writes each run's `report.md` and `~/.hill-climb/runs/index.json`.
+
+## Runs page
+
+`assets/runs-page.html` reads `runs/index.json` and `runs/<id>/run.json` from its own directory. When the host can publish a page, copy the page and data into a publish directory:
+
+```text
+node <skill-directory>/scripts/build-runs.mjs --page <publish-dir>
+```
+
+Publish `<publish-dir>/index.html` with `runs/index.json` and each `runs/<id>/run.json` as supporting files.
+
+`~/.hill-climb/page-url` holds the runs page's URL. When it exists, update that page instead of creating a new one. After creating a page, write its URL to that file.

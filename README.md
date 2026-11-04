@@ -206,6 +206,7 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 | `council` | Get independent advice from Astra, Sol 6.1, and Opus 5.5 on a question, decision, or artifact. One round by default. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-send` | Review the code and description with Sol, babysit, and merge the PR, or return PASS or FAIL for human review. Also finishes a merge council's open items. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Do the `full-send` work, but stop with the PR ready for you to merge. Never merges. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `hill-climb` | Polish a finished change in a few rounds. A blind council compares each candidate with the current version, and the skill keeps only changes that most judges prefer and that pass every gate. Needs `council`. |
 | `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
 | `merge-council` | Run a three-member review council on a PR when you, a task, or repository guidance asks for one; it returns a merge verdict and fixes agreed findings on your own PRs. |
 | `pr-review-churn` | Analyze recurring GitHub PR review feedback for repositories and a lookback you choose. |
@@ -217,6 +218,7 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 npx skills add filipgutica/filip-stack --list
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send full-stop sol-loop babysit-pr -y
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s hill-climb council -y
 ```
 
 The CLI keeps the canonical copy in `~/.agents/skills/<name>`, which Codex

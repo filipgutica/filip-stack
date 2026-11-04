@@ -1,0 +1,453 @@
+<meta charset="utf-8">
+<title>Hill Climb Runs</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one centered column. A runs table on top picks the run; its detail fills the full width below. */
+:root {
+  color-scheme: light;
+  --bg: #f4f5f8;
+  --surface: #e7e8ec;
+  --surface-raised: #ffffff;
+  --surface-hover: #e4e6eb;
+  --row-hover: #dfe1e7;
+  --row-selected: #ffffff;
+  --border-subtle: #d8dbe2;
+  --border: #777d88;
+  --text: #222326;
+  --text-muted: #5d626c;
+  --text-faint: #626772;
+  --accent: #6359a7;
+  --link: #075fc7;
+  --focus: #075fc7;
+  --success: #1f8a5b;
+  --warning: #86532e;
+  --danger: #c7372d;
+  --success-soft: color-mix(in srgb, var(--success) 14%, var(--bg));
+  --warning-soft: color-mix(in srgb, var(--warning) 14%, var(--bg));
+  --danger-soft: color-mix(in srgb, var(--danger) 12%, var(--bg));
+  --neutral-soft: var(--surface);
+  --code-bg: var(--surface);
+  --diff-add: color-mix(in srgb, var(--success) 13%, var(--surface-raised));
+  --diff-del: color-mix(in srgb, var(--danger) 11%, var(--surface-raised));
+  --font-sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  --text-xs: 12px;
+  --text-sm: 13px;
+  --text-md: 14px;
+  --text-lg: 16px;
+  --text-xl: 20px;
+  --text-2xl: 24px;
+  --text-reading: 16px;
+  --leading-tight: 1.25;
+  --leading: 1.5;
+  --weight-regular: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --tracking-tight: -0.01em;
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-5: 20px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --space-12: 48px;
+  --measure: 68ch;
+  --page-max: 1040px;
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+  --radius-pill: 999px;
+  --duration-fast: 120ms;
+  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    color-scheme: dark;
+    --bg: #151619;
+    --surface: #191a1d;
+    --surface-raised: #212226;
+    --surface-hover: #303238;
+    --row-hover: #25272d;
+    --row-selected: #38334f;
+    --border-subtle: #3b3e45;
+    --border: #818894;
+    --text: #f4f5f8;
+    --text-muted: #b0b5bf;
+    --text-faint: #a0a6b1;
+    --accent: #a99ce2;
+    --link: #58a6ff;
+    --focus: #58a6ff;
+    --success: #4cc38a;
+    --warning: #e2a54b;
+    --danger: #f0776c;
+    --neutral-soft: #2a2c31;
+  }
+}
+:root[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #151619;
+  --surface: #191a1d;
+  --surface-raised: #212226;
+  --surface-hover: #303238;
+  --row-hover: #25272d;
+  --row-selected: #38334f;
+  --border-subtle: #3b3e45;
+  --border: #818894;
+  --text: #f4f5f8;
+  --text-muted: #b0b5bf;
+  --text-faint: #a0a6b1;
+  --accent: #a99ce2;
+  --link: #58a6ff;
+  --focus: #58a6ff;
+  --success: #4cc38a;
+  --warning: #e2a54b;
+  --danger: #f0776c;
+  --neutral-soft: #2a2c31;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font: var(--weight-regular) var(--text-md) / var(--leading) var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-wrap: anywhere;
+}
+h1, h2, h3, h4, p, dl, dd, ul { margin: 0; }
+h1, h2, h3, h4 { font-weight: var(--weight-semibold); line-height: var(--leading-tight); letter-spacing: var(--tracking-tight); text-wrap: balance; }
+code, pre { font-family: var(--font-mono); }
+code { font-size: 0.92em; background: var(--code-bg); padding: 1px 4px; border-radius: var(--radius-sm); }
+a { color: var(--link); text-decoration: none; }
+a:hover { text-decoration: underline; }
+:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+.num, table { font-variant-numeric: tabular-nums; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; } }
+
+/* Every grid gets a shrinkable track, so long content wraps or scrolls inside its own box instead of widening the page. */
+.shell, .page-head, .detail, section, .run-head, .round, .block { display: grid; grid-template-columns: minmax(0, 1fr); }
+.shell {
+  max-width: var(--page-max);
+  margin: 0 auto;
+  padding-block: var(--space-8) var(--space-12);
+  padding-left: max(var(--space-6), env(safe-area-inset-left, 0px));
+  padding-right: max(var(--space-6), env(safe-area-inset-right, 0px));
+  gap: var(--space-8);
+}
+.page-head { gap: var(--space-2); }
+.page-head h1 { font-size: var(--text-2xl); }
+.page-head p { color: var(--text-muted); max-width: var(--measure); }
+.path { font-family: var(--font-mono); font-size: var(--text-sm); white-space: nowrap; }
+
+.detail { gap: var(--space-8); }
+section { gap: var(--space-4); }
+section > h3 { font-size: var(--text-lg); }
+.muted { color: var(--text-muted); }
+
+.table-wrap { overflow-x: auto; border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-raised); }
+table { border-collapse: collapse; width: 100%; font-size: var(--text-sm); }
+th, td { text-align: left; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-subtle); vertical-align: top; overflow-wrap: normal; }
+tr:last-child td { border-bottom: 0; }
+th { font-weight: var(--weight-medium); color: var(--text-muted); font-size: var(--text-xs); white-space: nowrap; }
+td.n, th.n { text-align: right; white-space: nowrap; }
+
+/* Runs table: each row selects a run. */
+.runs-table tbody tr { cursor: pointer; transition: background var(--duration-fast); }
+.runs-table tbody tr:hover { background: var(--row-hover); }
+.runs-table tbody tr[aria-current="true"] { background: var(--row-selected); box-shadow: inset 2px 0 0 var(--accent); }
+.runs-table tbody tr[aria-current="true"] .run-title { font-weight: var(--weight-medium); }
+.runs-table .run-title { color: var(--text); min-width: 220px; display: inline-block; }
+.runs-table .sub { display: block; font-size: var(--text-xs); color: var(--text-muted); }
+
+.run-head { gap: var(--space-3); border-top: 1px solid var(--border-subtle); }
+.run-head h2 { font-size: var(--text-2xl); padding-top: var(--space-6); }
+.facts { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-5); color: var(--text-muted); font-size: var(--text-sm); }
+.facts a { font-family: var(--font-mono); }
+.goal { font-size: var(--text-reading); max-width: var(--measure); }
+
+.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--space-3); }
+.stat { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); display: grid; gap: 2px; min-width: 0; }
+.stat .k { font-size: var(--text-xs); color: var(--text-muted); }
+.stat .v { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.stat .s { font-size: var(--text-xs); color: var(--text-muted); }
+
+.criteria { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); }
+.criteria dt { font-weight: var(--weight-medium); }
+.criteria dd { color: var(--text-muted); }
+
+/* Progress chart: one row per round. */
+.progress { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-4); display: grid; gap: var(--space-4); }
+.legend { display: flex; flex-wrap: wrap; gap: var(--space-2) var(--space-4); font-size: var(--text-xs); color: var(--text-muted); }
+.legend span { display: inline-flex; align-items: center; gap: var(--space-1); }
+.swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
+.sw-candidate { background: var(--success); }
+.sw-same { background: var(--border); }
+.sw-incumbent { background: var(--warning); }
+.sw-size { background: var(--accent); }
+.prow { display: grid; grid-template-columns: 80px minmax(0, 1fr) 120px; gap: var(--space-3); align-items: center; }
+.prow .rl { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.prow .rl small { display: block; font-weight: var(--weight-regular); color: var(--text-muted); font-size: var(--text-xs); }
+.bars { display: grid; gap: var(--space-1); min-width: 0; }
+.stack { display: flex; height: 14px; border-radius: var(--radius-sm); overflow: hidden; background: var(--neutral-soft); }
+.stack div { height: 100%; }
+.seg-candidate { background: var(--success); }
+.seg-same { background: var(--border); opacity: 0.55; }
+.seg-incumbent { background: var(--warning); }
+.size { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--neutral-soft); }
+.size div { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-pill); background: var(--accent); }
+.prow .rv { font-size: var(--text-xs); color: var(--text-muted); text-align: right; line-height: 1.4; }
+.chart-note { font-size: var(--text-xs); color: var(--text-muted); }
+
+.pill { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); font-weight: var(--weight-medium); padding: 2px var(--space-2); border-radius: var(--radius-pill); color: var(--text); white-space: nowrap; }
+.pill-accepted, .v-candidate { background: var(--success-soft); }
+.pill-rejected, .v-incumbent { background: var(--warning-soft); }
+.pill-void { background: var(--danger-soft); }
+.v-same { background: var(--neutral-soft); }
+.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
+.pill-accepted::before, .v-candidate::before { background: var(--success); }
+.pill-rejected::before, .v-incumbent::before { background: var(--warning); }
+.pill-void::before { background: var(--danger); }
+
+.round { border-top: 1px solid var(--border-subtle); padding-top: var(--space-6); gap: var(--space-4); }
+.round-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); }
+.round-head h4 { font-size: var(--text-lg); }
+.round-head .muted { font-size: var(--text-sm); }
+.applied { padding-left: var(--space-5); display: grid; gap: var(--space-1); max-width: var(--measure); }
+.label { font-size: var(--text-xs); font-weight: var(--weight-medium); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.block { gap: var(--space-2); }
+td.reason { color: var(--text-muted); min-width: 240px; overflow-wrap: anywhere; }
+td.member { font-weight: var(--weight-medium); white-space: nowrap; }
+
+.plist { display: grid; gap: var(--space-3); padding: var(--space-3) var(--space-4); max-width: var(--measure); }
+.plist li { list-style: none; display: grid; gap: 2px; }
+.plist .who, .status { font-size: var(--text-xs); color: var(--text-muted); }
+
+details { border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); background: var(--surface-raised); min-width: 0; }
+details > summary { cursor: pointer; padding: var(--space-3) var(--space-4); font-weight: var(--weight-medium); }
+details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
+.diff { margin: 0; overflow-x: auto; font-size: var(--text-xs); line-height: 1.55; padding: var(--space-3) 0; max-width: 100%; }
+.diff span { display: block; padding: 0 var(--space-4); white-space: pre; overflow-wrap: normal; }
+.diff .add { background: var(--diff-add); }
+.diff .del { background: var(--diff-del); }
+.diff .hunk { color: var(--text-muted); }
+.diff .meta { color: var(--text-faint); }
+
+.notes { padding-left: var(--space-5); display: grid; gap: var(--space-1); max-width: var(--measure); color: var(--text-muted); }
+.state { color: var(--text-muted); padding: var(--space-4); }
+
+@media (max-width: 760px) {
+  .shell { padding-block: var(--space-6) var(--space-8); padding-left: max(var(--space-4), env(safe-area-inset-left, 0px)); padding-right: max(var(--space-4), env(safe-area-inset-right, 0px)); gap: var(--space-6); }
+  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prow { grid-template-columns: 64px minmax(0, 1fr); }
+  .prow .rv { grid-column: 2; text-align: left; }
+  .criteria { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .criteria dd { margin-bottom: var(--space-2); }
+}
+</style>
+
+<div class="shell">
+  <header class="page-head">
+    <h1>Hill Climb Runs</h1>
+    <p>Each climb's criteria, rounds, judge votes, and what changed. Records live in <span class="path">~/.hill-climb/runs/</span>; this page shows a published copy.</p>
+  </header>
+  <section aria-labelledby="runs-heading">
+    <h3 id="runs-heading">All runs</h3>
+    <div class="table-wrap" id="runs"><p class="state">Loading runs…</p></div>
+  </section>
+  <main class="detail" id="detail"></main>
+</div>
+
+<script>
+(() => {
+  const $runs = document.getElementById('runs');
+  const $detail = document.getElementById('detail');
+  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent' };
+  const cache = new Map();
+  let index = [];
+
+  // Children may be nested arrays (for example [dt, dd] pairs), so flatten fully before appending.
+  const el = (tag, attrs = {}, ...kids) => {
+    const node = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') node.className = v;
+      else if (k === 'text') node.textContent = v;
+      else node.setAttribute(k, v);
+    }
+    for (const kid of kids.flat(Infinity)) if (kid != null) node.append(kid instanceof Node ? kid : document.createTextNode(String(kid)));
+    return node;
+  };
+  // Render `code` spans inside plain text.
+  const rich = (text) => String(text).split(/(`[^`]+`)/).map((part) =>
+    part.length > 1 && part.startsWith('`') && part.endsWith('`') ? el('code', { text: part.slice(1, -1) }) : document.createTextNode(part));
+  const pill = (kind, text) => el('span', { class: `pill ${kind}` }, text);
+  const cap = (s) => s[0].toUpperCase() + s.slice(1);
+
+  const verdicts = (round, criteria) => {
+    const t = { candidate: 0, same: 0, incumbent: 0 };
+    for (const v of round.votes) {
+      for (const c of criteria) t[v.criteria[c.id]] += 1;
+      t[v.overall] += 1;
+    }
+    return t;
+  };
+  const overall = (round) => {
+    const t = { candidate: 0, same: 0, incumbent: 0 };
+    for (const v of round.votes) t[v.overall] += 1;
+    return t;
+  };
+
+  const go = (id) => { if (location.hash.slice(1) !== id) location.hash = id; };
+
+  const renderRuns = (activeId) => {
+    const head = el('tr', {},
+      el('th', { text: 'Run' }), el('th', { text: 'Date' }), el('th', { class: 'n', text: 'Rounds' }),
+      el('th', { class: 'n', text: 'Accepted' }), el('th', { class: 'n', text: 'Rejected or void' }),
+      el('th', { class: 'n', text: 'Climb size' }), el('th', { text: 'Stopped because' }));
+    const rows = index.map((run) => {
+      const tr = el('tr', { 'aria-current': run.id === activeId ? 'true' : null },
+        el('td', {}, el('a', { class: 'run-title', href: `#${run.id}`, text: run.title }),
+          el('span', { class: 'sub', text: `${run.target.repo}${run.target.pr ? ` #${run.target.pr}` : ''} · ${run.target.branch}` })),
+        el('td', { class: 'num', style: 'white-space: nowrap', text: run.date }),
+        el('td', { class: 'n', text: String(run.rounds) }),
+        el('td', { class: 'n', text: String(run.accepted) }),
+        el('td', { class: 'n', text: String(run.rejected + (run.void || 0)) }),
+        el('td', { class: 'n', text: `${run.climbChangedLines} lines` }),
+        el('td', { class: 'muted', text: run.stop }));
+      tr.addEventListener('click', (event) => { if (!event.target.closest('a')) go(run.id); });
+      return tr;
+    });
+    $runs.replaceChildren(el('table', { class: 'runs-table' }, el('thead', {}, head), el('tbody', {}, rows)));
+  };
+
+  const progress = (run) => {
+    const legend = el('div', { class: 'legend' },
+      el('span', {}, el('i', { class: 'swatch sw-candidate' }), 'Prefers candidate'),
+      el('span', {}, el('i', { class: 'swatch sw-same' }), 'Same'),
+      el('span', {}, el('i', { class: 'swatch sw-incumbent' }), 'Prefers incumbent'),
+      el('span', {}, el('i', { class: 'swatch sw-size' }), 'Climb size vs limit'));
+    const rows = run.rounds.map((r) => {
+      const t = verdicts(r, run.criteria);
+      const total = t.candidate + t.same + t.incumbent || 1;
+      const seg = (k) => el('div', { class: `seg-${k}`, style: `width:${(t[k] / total) * 100}%`, title: `${LABEL[k]}: ${t[k]} of ${total}` });
+      const sizePct = Math.min(100, (r.climbChangedLines / run.budget.sizeLimit) * 100);
+      return el('div', { class: 'prow' },
+        el('div', { class: 'rl' }, `Round ${r.n}`, el('small', { text: cap(r.decision) })),
+        el('div', { class: 'bars', role: 'img', 'aria-label': `Round ${r.n}: ${t.candidate} candidate, ${t.same} same, ${t.incumbent} incumbent verdicts; climb ${r.climbChangedLines} of ${run.budget.sizeLimit} lines` },
+          el('div', { class: 'stack' }, seg('candidate'), seg('same'), seg('incumbent')),
+          el('div', { class: 'size' }, el('div', { style: `width:${sizePct}%` }))),
+        el('div', { class: 'rv num' }, `${t.candidate}/${total} for candidate`, el('br'), `${r.climbChangedLines} / ${run.budget.sizeLimit} lines`));
+    });
+    return el('div', { class: 'progress' }, legend, rows,
+      el('p', { class: 'chart-note', text: 'The thick bar counts every judge verdict in the round: each criterion plus overall. The thin bar is the climb’s total changed lines against its size limit.' }));
+  };
+
+  const voteTable = (run, round) => {
+    const head = el('tr', {}, el('th', { text: 'Member' }), run.criteria.map((c) => el('th', { text: `${c.id} ${c.name}` })), el('th', { text: 'Overall' }), el('th', { text: 'Reason' }));
+    const body = round.votes.map((v) => el('tr', {},
+      el('td', { class: 'member', text: v.member }),
+      run.criteria.map((c) => el('td', {}, pill(`v-${v.criteria[c.id]}`, LABEL[v.criteria[c.id]]))),
+      el('td', {}, pill(`v-${v.overall}`, LABEL[v.overall])),
+      el('td', { class: 'reason' }, rich(v.reason))));
+    return el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
+  };
+
+  const roundSection = (run, r) => {
+    const o = overall(r);
+    const parts = [
+      el('div', { class: 'round-head' },
+        el('h4', { text: `Round ${r.n}` }),
+        pill(`pill-${r.decision}`, `${cap(r.decision)} ${o.candidate}–${o.incumbent}${o.same ? `, ${o.same} same` : ''}`),
+        el('span', { class: 'muted' }, rich(r.summary))),
+      el('div', { class: 'block' }, el('div', { class: 'label', text: 'Changed in the candidate' }),
+        el('ul', { class: 'applied' }, r.applied.map((a) => el('li', {}, rich(a))))),
+    ];
+    if (r.votes.length) parts.push(el('div', { class: 'block' }, el('div', { class: 'label', text: 'Judge votes' }), voteTable(run, r)));
+    if (r.restore) parts.push(el('p', { class: 'muted' }, el('strong', { text: 'Restore: ' }), r.restore));
+    if (r.proposals && r.proposals.length) {
+      parts.push(el('details', {}, el('summary', { text: `Proposals (${r.proposals.length})` }),
+        el('ul', { class: 'plist' }, r.proposals.map((p) => el('li', {},
+          el('span', { class: 'who', text: p.member }), el('span', {}, rich(p.text)),
+          el('span', { class: 'status' }, p.status, p.reason ? ` — ${p.reason}` : ''))))));
+    }
+    if (r.next && r.next.length) {
+      parts.push(el('div', { class: 'block' }, el('div', { class: 'label', text: 'Judges suggested next' }),
+        el('ul', { class: 'applied' }, r.next.map((n) => el('li', {}, el('span', { class: 'muted', text: `${n.member}: ` }), rich(n.text))))));
+    }
+    return el('div', { class: 'round' }, parts);
+  };
+
+  const diffView = (text) => el('pre', { class: 'diff' }, text.trimEnd().split('\n').map((line) => {
+    const cls = /^(\+\+\+|---|diff |index )/.test(line) ? 'meta' : line.startsWith('@@') ? 'hunk' : line.startsWith('+') ? 'add' : line.startsWith('-') ? 'del' : '';
+    return el('span', { class: cls, text: line || ' ' });
+  }));
+
+  const renderRun = (run) => {
+    const accepted = run.rounds.filter((r) => r.decision === 'accepted').length;
+    const rejected = run.rounds.filter((r) => r.decision === 'rejected').length;
+    const voided = run.rounds.filter((r) => r.decision === 'void').length;
+    $detail.replaceChildren(
+      el('header', { class: 'run-head' },
+        el('h2', { text: run.title }),
+        el('div', { class: 'facts' },
+          el('span', { text: run.date }),
+          run.target.prUrl ? el('a', { href: run.target.prUrl, target: '_blank', rel: 'noopener' }, `${run.target.repo}#${run.target.pr}`) : el('span', { text: run.target.repo }),
+          el('span', {}, 'head ', el('code', { text: run.target.head })),
+          el('span', {}, el('code', { text: run.target.branch }))),
+        el('p', { class: 'goal' }, rich(run.goal))),
+      el('div', { class: 'summary' },
+        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Rounds' }), el('span', { class: 'v num', text: `${run.rounds.length} / ${run.budget.rounds}` }), el('span', { class: 's', text: run.stop })),
+        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Accepted' }), el('span', { class: 'v num', text: String(accepted) }), el('span', { class: 's', text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` })),
+        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Climb size' }), el('span', { class: 'v num', text: `${run.result.climbChangedLines} lines` }), el('span', { class: 's', text: `limit ${run.budget.sizeLimit} · original ${run.budget.originalChangedLines}` })),
+        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Member calls' }), el('span', { class: 'v num', text: String(run.memberCalls) }), el('span', { class: 's', text: run.result.committed ? 'Committed' : 'Not committed' }))),
+      el('section', {}, el('h3', { text: 'How the rounds went' }), progress(run)),
+      el('section', {}, el('h3', { text: 'Criteria' }),
+        el('dl', { class: 'criteria' }, run.criteria.map((c) => [el('dt', { text: `${c.id} ${c.name}` }), el('dd', {}, rich(c.description))]))),
+      el('section', {}, el('h3', { text: 'Rounds' }), run.rounds.map((r) => roundSection(run, r))),
+      el('section', {}, el('h3', { text: 'Result' }),
+        el('p', { class: 'goal' }, rich(run.result.summary)),
+        run.result.diff ? el('details', {}, el('summary', { text: 'Climb diff' }), diffView(run.result.diff)) : null),
+      el('section', {}, el('h3', { text: 'Follow-ups' }), el('ul', { class: 'notes' }, run.followUps.map((f) => el('li', {}, rich(f))))),
+      el('section', {}, el('h3', { text: 'Setup and notes' }),
+        el('dl', { class: 'criteria' },
+          el('dt', { text: 'Lineup' }), el('dd', { text: run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join(' · ') }),
+          el('dt', { text: 'Gates' }), el('dd', {}, run.gates.map((g, i) => [i ? ' · ' : '', el('code', { text: g })])),
+          el('dt', { text: 'Not covered' }), el('dd', { text: run.notCovered.join(' ') })),
+        el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n))))));
+  };
+
+  const show = async () => {
+    if (!index.length) return;
+    const wanted = decodeURIComponent(location.hash.slice(1));
+    const id = index.some((r) => r.id === wanted) ? wanted : index[0].id;
+    renderRuns(id);
+    try {
+      if (!cache.has(id)) {
+        const res = await fetch(`runs/${id}/run.json`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        cache.set(id, await res.json());
+      }
+      renderRun(cache.get(id));
+    } catch (err) {
+      $detail.replaceChildren(el('p', { class: 'state', text: `Could not load this run (${err.message}). Reload the page to try again.` }));
+    }
+  };
+
+  (async () => {
+    try {
+      const res = await fetch('runs/index.json');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      index = (await res.json()).runs || [];
+      if (!index.length) {
+        $runs.replaceChildren(el('p', { class: 'state', text: 'No climbs yet. Run the hill-climb skill, then republish this page from ~/.hill-climb/runs/.' }));
+        return;
+      }
+      await show();
+    } catch (err) {
+      $runs.replaceChildren(el('p', { class: 'state', text: `Could not load the run list (${err.message}). Reload the page to try again.` }));
+    }
+  })();
+  window.addEventListener('hashchange', show);
+})();
+</script>
