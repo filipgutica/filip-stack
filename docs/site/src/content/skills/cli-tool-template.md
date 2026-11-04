@@ -15,7 +15,7 @@ consistent while allowing language-specific builds, tests, and documentation.
 - Align an existing tool's repository, CI, release configuration, or formula.
 
 The language follows the tool's needs. The source examples are `annoterm`
-for Rust, `wtree` for TypeScript on Node, and `devps` for a single Python script.
+for Rust, and `wtree` and `devps` for TypeScript on Node.
 
 ## How it works
 
@@ -33,6 +33,9 @@ the repository that holds installation formulas.
 - Adds a formula, archive hash, update-workflow entry, and tap tests for a
   new tool. Tap changes go through a PR.
 - Verifies installation and a real command with Homebrew checks.
+- Sets up the tool's GitHub Pages site: Astro and Vue in `docs/site/`, the
+  shared docs shell from `@filipgutica/ui`, one section order, and site CI
+  that type-checks, builds, and runs Playwright tests.
 
 For an existing tool, every checklist item must match or have a recorded,
 intended language-specific difference. Gaps become one PR per repository,

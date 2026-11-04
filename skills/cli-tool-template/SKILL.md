@@ -16,14 +16,13 @@ Pick the language by what the tool needs, then follow that row. The reference to
 | Language | Pick when | Reference | Build and CI | release-please `release-type` (version source) | Formula |
 | --- | --- | --- | --- | --- | --- |
 | Rust | Interactive TUI, speed, or a native macOS bundle | annoterm | `rust-toolchain.toml` pin; `cargo fmt --check`, `clippy -D warnings`, `test --locked` | `rust` (`Cargo.toml`) | `depends_on "rust" => :build`; `cargo install *std_cargo_args` |
-| TypeScript on Node | Git, GitHub, or JSON-heavy logic that wants npm packages and types | wtree | npm with `package-lock.json`; `npm ci`, `typecheck`, `test`, `build`; Node 22 | `node` (`package.json`) | `depends_on "node"`; `npm ci`, `npm run build`, `npm install *std_npm_args` |
-| Python, single script | Small glue around OS commands, standard library only | devps | No build; `py_compile` and a smoke test | `simple` (`version.txt` plus `extra-files`) | `depends_on "python@3.x"`; `rewrite_shebang detected_python_shebang`; `bin.install` |
+| TypeScript on Node | Git, GitHub, process, or JSON-heavy logic that wants npm packages and types | wtree, devps | npm with `package-lock.json`; `npm ci`, `typecheck`, `test`, `build`; Node 22 | `node` (`package.json`) | `depends_on "node"`; `npm ci`, `npm run build`, `npm install *std_npm_args` |
 
 ## Repo contract
 
 - **Files:** `README.md`, MIT `LICENSE`, `.gitignore`, `.github/workflows/{ci,pr-title,release}.yml`, `release-please-config.json`, `.release-please-manifest.json`. release-please writes `CHANGELOG.md`.
 - **Workflows:** copy `templates/release.yml` and `templates/pr-title.yml` byte for byte. `ci.yml` is per language. It runs the tool's tests on `macos-latest`, adds `ubuntu-latest` when the tool supports Linux, and asserts that `--version` matches the manifest version.
-- **Release config:** start from `templates/release-please-config.json`. Set `release-type` to `rust`, `node`, or `simple`. A `simple` tool keeps a `version.txt` and lists its script in `extra-files`, with `# x-release-please-version` on the version line.
+- **Release config:** start from `templates/release-please-config.json`. Set `release-type` to `rust` or `node`.
 - **CLI surface:** `<tool> --version` and `<tool> --help`, with a one-line usage per command.
 - **README sections, in order:** one-line summary and a sample output, Install (the brew command), Use, how it works and safety rules, Development (local check commands), Releases (one line pointing to Conventional PR titles).
 - **Repo settings:** these are not copied with the files. Set them on every new repo:
@@ -35,6 +34,16 @@ Pick the language by what the tool needs, then follow that row. The reference to
   ```
 
   The last command lets release-please open its release PR. Without it, the Release workflow fails with "GitHub Actions is not permitted to create or approve pull requests". The release PR gets no CI run, because PRs opened by `GITHUB_TOKEN` do not trigger workflows.
+
+## Pages site
+
+Each tool has one page at `https://filipgutica.github.io/<tool>/`. Start from a sibling tool's `docs/site/`, then replace its content, captures, links, and tests with the new tool's. Keep the page's look in `@filipgutica/ui`, not in the site.
+
+- **Stack:** Astro with Vue in `docs/site/`, with its own `package.json` and `package-lock.json`. Copy `astro.config.mjs` and `tsconfig.json` byte for byte, changing only the tool name. Pin `@filipgutica/ui` to its latest release.
+- **Frame:** wrap the page in the library's `.fg-site-docs` shell, with `UiSiteHeader`, `UiSiteNav` (`label="On this page"`), and `.fg-site-footer`. Use `UiCapture` for terminal output, `.fg-site-legend` for what the screen shows, and `.fg-site-definitions` for notes. `src/styles/site.css` keeps the sibling's `@layer` and `@import` header unchanged, then holds only page-specific rules. The library owns the frame, rail, footer, base type, `kbd`, and the terminal palette.
+- **Sections, in order:** intro (H1 that says what the tool does, one-line summary, install command, facts row), the capture, Commands, Keys, then tool-specific sections, and Good to know last. Facts are plain text, not badges. Good to know terms are noun phrases.
+- **Links:** the header links to GitHub and Releases, and a "Full reference" link to the README closes the page. The footer links to the author, the Homebrew tap, issues, and Releases. Do not add a "Guide" link: the page is the guide.
+- **CI:** copy `site-ci.yml` and `pages.yml` byte for byte, changing only the tool name. `pages.yml` deploys `main`. Both use Node 22 in `docs/site`. Site CI runs `npm ci`, `npm run check` (`astro check` and `vue-tsc`), `npm run build`, `npx playwright install --with-deps chromium`, and `npm run test:e2e`. The Playwright tests cover phone and desktop widths and a no-JavaScript render.
 
 ## Versioning
 
@@ -57,7 +66,7 @@ For a local test before merge, copy the formula into `$(brew --repo filipgutica/
 
 ## Aligning an existing tool
 
-Compare the tool against every item in the repo contract, the repo settings, and its formula. **Done:** each item matches or is recorded as an intended per-language difference. Open one PR per repo for the gaps.
+Compare the tool against every item in the repo contract, the repo settings, the Pages site, and its formula. **Done:** each item matches or is recorded as an intended per-language difference. Open one PR per repo for the gaps.
 
 ## Gotchas
 
