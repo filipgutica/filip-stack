@@ -41,13 +41,13 @@ const scorecard = [
   {
     pillar: "6 Reproducible environment",
     gap: "A fresh agent worktree could not install dependencies inside the agent's sandbox.",
-    fix: "Share installed dependencies into worktrees or narrow the sandbox rule; put the fresh-worktree command in AGENTS.md; add a site preview per PR.",
+    fix: "Share installed dependencies into worktrees, or narrow the sandbox rule. Put the fresh-worktree command in AGENTS.md. Add a site preview per PR.",
     channel: "Enforced and advisory",
   },
   {
     pillar: "3 Test gates",
     gap: "No twenty-test sample, no single-test command in AGENTS.md, and the flake rate was unverified.",
-    fix: "Run the sample; add node --test <file> to AGENTS.md.",
+    fix: "Run the sample. Add node --test <file> to AGENTS.md.",
     channel: "Advisory",
   },
   {
@@ -70,7 +70,7 @@ const scorecard = [
   },
   {
     pillar: "8 Guidance evaluated",
-    gap: "The Workflow skills have baseline studies; the global guidance loaded on every task has none.",
+    gap: "The Workflow skills have baseline studies. The global guidance loaded on every task has none.",
     fix: "Run the decay test on the global guidance.",
     channel: "Advisory",
   },
@@ -144,17 +144,16 @@ onMounted(() => {
         anything it has no way to see.
       </p>
       <p>
-        So whether “looks done” means “is done” depends on the environment
-        around the agent. If the repository has a command that type-checks the
-        code, the agent runs it and sees red. If tests cover the behavior, the
-        agent sees the failure and fixes it. If it can start the app with
-        realistic data, it can open the page and look.
+        The environment decides whether “looks done” means “is done”. When the
+        repository has a type-check command and tests that cover the behavior,
+        the agent runs them, sees the failures, and fixes them. When it can
+        start the app with realistic data, it can also open the page and look.
       </p>
       <p>
-        Take those away and the agent still stops when the work looks done.
-        The difference is who finds the problem. Either the agent finds it a
-        minute later, or you find it in review, and then you are acting as the
-        agent's test suite. This lesson is about handing that job back to the environment.
+        Take those checks away and the agent still stops when the work looks
+        done. The problems are still there, so you find them in review. At
+        that point you are acting as the agent's test suite. This lesson shows
+        how to give that job back to the environment.
       </p>
     </div>
     <LessonFigure :number="1">
@@ -170,9 +169,9 @@ onMounted(() => {
     <h2 id="tell-check-bound">Three jobs: tell, check, bound</h2>
     <div class="prose">
       <p>
-        Everything that makes an environment agent-ready does one of three
-        jobs. Keep these in mind; every pillar later in the lesson is labelled
-        with one.
+        Each part of an agent-ready environment does one of three jobs. Later,
+        the lesson groups the work into eight areas called pillars, and each
+        pillar does one of these jobs.
       </p>
     </div>
     <dl class="jobs">
@@ -202,10 +201,9 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        In Figure 1, the check command, the tests, and the seeded app are
-        checks, and the deny rule bounds. None of the four tells. Telling helps
-        the agent aim, but on its own it gives the agent no way to see that it
-        missed.
+        In Figure 1, the check command, the tests, and the seeded app do the
+        check job, and the deny rule bounds. None of the four tells. Telling
+        helps the agent aim, but it cannot show the agent that it missed.
       </p>
     </div>
   </section>
@@ -216,11 +214,11 @@ onMounted(() => {
       <p>
         A rule reaches the agent on one of two channels. <strong>Advisory</strong> guidance is
         text the model reads: the prompt, <code>AGENTS.md</code> or
-        <code>CLAUDE.md</code>, and skills. The model weighs it and may decide
+        <code>CLAUDE.md</code>, and skills. The agent weighs it and may decide
         it does not apply. <strong>Enforced</strong> guidance is a mechanism:
         hooks, deny rules, the sandbox, the type checker, linters, and required
-        CI checks. Each runs at an action boundary, such as a tool call, a
-        commit, or a merge, whatever the model decided.
+        CI checks. Each mechanism runs at an action boundary, such as a tool
+        call, a commit, or a merge. It runs whatever the agent decided.
       </p>
     </div>
     <LessonFigure :number="2">
@@ -259,19 +257,18 @@ onMounted(() => {
           became code.
         </li>
         <li>
-          When an advisory line keeps getting missed, there are two possible
-          causes. Either it is a rule that cannot
-          bend, so it becomes a hook or a deny rule, or the file has grown long
-          enough to bury it, so the file gets shorter. Adding emphasis fixes
-          neither cause.
+          When the agent keeps missing an advisory line, there are two possible
+          causes. If the line is a rule that cannot bend, move it into a hook
+          or a deny rule. If the file has grown long enough to bury it, shorten
+          the file. Adding emphasis fixes neither cause.
         </li>
         <li>
-          A preference stays advisory. A large enforced set means preferences
-          have leaked into it. Every hook fires wrongly sometimes, and someone
-          has to maintain it.
+          Keep preferences advisory. A large enforced set is a sign that
+          preferences have leaked into it. Every hook sometimes fires when it
+          should not, and someone has to maintain it.
         </li>
         <li>
-          An enforced check should talk to the agent. An error message that
+          Write enforced checks for the agent to read. An error message that
           states the fix lets the agent repair its own work. This also comes
           from the OpenAI article, and no current source confirms it yet.
         </li>
@@ -287,8 +284,9 @@ onMounted(() => {
         Other guidance gives the model something it could never get by itself.
         Vendors now separate the two:
         <a :href="sources.claudeCodeBestPractices.href">Anthropic's Claude Code best practices</a>
-        include a list called “What you can stop doing”. The first kind
-        decays as models improve. The second kind lasts, so invest there.
+        include a list called “What you can stop doing”. The first kind is
+        decaying guidance: it loses value as models improve. The second kind
+        is durable, so invest there.
       </p>
     </div>
     <div class="lesson-table">
@@ -325,12 +323,12 @@ onMounted(() => {
     </div>
     <div class="prose">
       <p>
-        From that split, the skill makes an argument of its own; the vendors do
-        not rank the pillars. As models read code better, the documentation an
-        agent needs shrinks. No model improvement lets an agent observe an app
-        it cannot start, or data that does not exist. So a reproducible
-        environment is the most durable investment, followed by the static and
-        test gates that make the work checkable.
+        The skill draws its own conclusion from this split. The vendors do not
+        rank the pillars. As models read code better, an agent needs
+        less documentation. But no model improvement lets an agent observe an
+        app it cannot start, or data that does not exist. So a reproducible
+        environment is the most durable investment. The static and test gates
+        that make the work checkable come next.
       </p>
     </div>
   </section>
@@ -339,11 +337,12 @@ onMounted(() => {
     <h2 id="the-pillars">The eight pillars</h2>
     <div class="prose">
       <p>
-        The pillars split agent readiness into areas you can audit one at a
-        time. Each has a job from the previous section, an audit check you can
-        observe, and a reference file in the skill with its sources and
-        anti-patterns. Pillars 7 and 8 extend the original six, from the same
-        vendor guidance: the questions to ask before an unattended run and writing evaluations before guidance.
+        You can audit each pillar on its own. Each pillar has one job: tell,
+        check, or bound. It also has an audit check, an observable test shown
+        with the pillar. A reference file in the skill holds the pillar's
+        sources and anti-patterns. Pillars 7 and 8 extend the original six. They come from
+        the same vendor guidance: the questions to ask before an unattended
+        run, and writing evaluations before guidance.
       </p>
     </div>
     <LessonFigure :number="3">
@@ -396,10 +395,10 @@ onMounted(() => {
       <p>
         A build exit code and a linter are checks the agent can run and read.
         The most useful line in an instruction file is the command that runs
-        them, and a <code>Stop</code> hook turns running it from a request into
-        a condition of finishing. Codex guidance
-        likewise asks for a “done when” condition and the relevant lint,
-        format, and type checks.
+        them. With a <code>Stop</code> hook, running the command becomes a
+        condition of finishing instead of a request. Codex guidance also asks
+        for a “done when” condition and the relevant lint, format, and type
+        checks.
       </p>
       <template #check>
         One command runs every static gate locally, and CI runs the same
@@ -425,9 +424,10 @@ onMounted(() => {
         Tests are the main red-or-green check.
         Agents tend to call a feature complete after unit tests or a
         <code>curl</code> call, and they catch more bugs when they test end to
-        end as a user would. The agent runs
-        and trusts every test, so a test that cannot fail gives it a false
-        green. The layering below is field practice, not vendor guidance.
+        end as a user would. The agent runs and trusts every test, so a test
+        that cannot fail gives it a false green. The test layers under “What
+        good looks like” come from field practice. The vendors do not
+        prescribe them.
       </p>
       <template #check>
         A single test file runs with one command. A sample of tests each maps
@@ -451,19 +451,18 @@ onMounted(() => {
     >
       <p>
         Instruction files load into every session, so every line takes a
-        little attention on every task. Aim for
-        the smallest set of high-signal lines and load the rest when a task
-        needs it. To decide whether a
-        line earns its place, ask two questions:
+        little attention on every task. Keep only the lines that earn that
+        cost, and load the rest when a task needs it. To decide whether a line
+        earns its place, ask two questions:
       </p>
       <ol>
         <li>Could the agent find this by reading the code?</li>
         <li>Would it actually go and look?</li>
       </ol>
       <p>
-        If both answers are yes, delete the line. Keep the verification
-        commands anyway, because they are the most useful lines even though
-        <code>package.json</code> holds them. Judge global behavior rules,
+        If both answers are yes, delete the line. The verification commands
+        are the exception. <code>package.json</code> holds them, but they are
+        the most useful lines, so keep them. Judge global behavior rules,
         which no repository can show, with the
         <a href="#maintenance">decay test</a> instead.
       </p>
@@ -478,7 +477,7 @@ onMounted(() => {
           <li>Decision records explain why. A glossary maps domain terms to code names where they differ.</li>
           <li>CI runs the documented commands and checks the links.</li>
           <li>No dated advice in the body. Version requirements that are still true stay.</li>
-          <li>Layout is left out. <a :href="sources.claudeCodeBestPractices.href">Anthropic's best practices</a> list architecture and layout descriptions as outdated advice, while <a :href="sources.codexBestPractices.href">Codex best practices</a> allow layout in <code>AGENTS.md</code>. The skill sides with Anthropic because layout is the easiest thing to discover and the quickest to go stale; a short pointer to an unusual layout is fine.</li>
+          <li>Layout is left out. <a :href="sources.claudeCodeBestPractices.href">Anthropic's best practices</a> list architecture and layout descriptions as outdated advice, while <a :href="sources.codexBestPractices.href">Codex best practices</a> allow layout in <code>AGENTS.md</code>. The skill sides with Anthropic because layout is the easiest thing to discover and the quickest to go stale. A short pointer to an unusual layout is fine.</li>
         </ul>
       </template>
     </PillarSection>
@@ -489,10 +488,10 @@ onMounted(() => {
     >
       <p>
         A reviewer in a fresh context never saw the reasoning that produced
-        the code, so it is not swayed by it, and read-only tools make sure it
-        cannot edit. A reviewer asked to find
-        problems always finds some. Fixing every finding adds layers and tests
-        for impossible cases, so the review prompt should say what to skip.
+        the code, so that reasoning cannot sway it. Read-only tools make sure
+        it cannot edit. A reviewer asked to find problems always finds some.
+        Fixing every finding adds layers and tests for impossible cases, so
+        the review prompt should say what to skip.
       </p>
       <template #check>
         Each review angle has a trigger, runs read-only in a fresh context, and
@@ -500,11 +499,12 @@ onMounted(() => {
       </template>
       <template #good>
         <ul>
-          <li>Leave anything a tool can check to a gate.</li>
+          <li>Leave anything a tool can check to a gate (pillar 2).</li>
           <li>Contract adherence, the diff against the spec or ticket, runs on every change.</li>
           <li>Other angles run when the diff carries their risk: simplicity and reuse for a new abstraction or dependency, test value when tests change, security for authentication, input, secrets, or permissions, performance for hot paths and unbounded loops, coding standards for rules no linter can express.</li>
           <li>The reviewer gets the spec and the diff, not the author's reasoning.</li>
-          <li>Each finding is checked against the code before anyone fixes it, and a person authorizes the merge, either each time or in advance under the scoped authorization described in pillar 7.</li>
+          <li>Each finding is checked against the code before anyone fixes it.</li>
+          <li>A person authorizes the merge, either each time or in advance under the scoped authorization in pillar 7.</li>
         </ul>
       </template>
     </PillarSection>
@@ -516,11 +516,12 @@ onMounted(() => {
       <p>
         This is the most durable pillar. No model can observe an app it cannot
         start, or inspect states the data does not contain. A worktree is a
-        fresh checkout with no installed dependencies, and installing by trial and error is slow
-        and can fail outright. A failed setup step may not even stop the agent:
+        fresh checkout with no installed dependencies. Installing them by trial
+        and error is slow, and it can fail outright. A failed setup step may
+        not even stop the agent.
         <a :href="sources.copilotEnvironment.href">GitHub's Copilot documentation</a>
-        says it carries on in a partial environment, which is why setup ends
-        with a health check.
+        says the agent carries on in a partial environment. That is why setup
+        ends with a health check.
       </p>
       <template #check>
         A fresh worktree, inside the agent's own sandbox, reaches a seeded,
@@ -568,7 +569,7 @@ onMounted(() => {
           <li>Deny rules for secrets and protected paths.</li>
           <li>Worktree or container isolation, and least-privilege tokens.</li>
           <li>Turn or spend caps on unattended runs.</li>
-          <li>A person authorizes merges, deploys, and anything irreversible. They can do it each time, or in advance with a stated scope, an enforced boundary, a run cap, and a named sign-off on the result. Missing authorization is a gap; going without a repeated approval prompt is not.</li>
+          <li>A person authorizes merges, deploys, and anything irreversible. They can do it each time, or in advance with a stated scope, an enforced boundary, a run cap, and a named sign-off on the result. Missing authorization is a gap. Running without a repeated approval prompt is not a gap.</li>
         </ul>
       </template>
     </PillarSection>
@@ -578,12 +579,12 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Measure the agent without the guidance first, write the minimum that
-        closes the gaps you saw, and iterate against that baseline, as
         <a :href="sources.skillAuthoring.href">Anthropic's skill authoring guide</a>
-        recommends. Test with every model the guidance
-        targets, because what one model needs another finds redundant. Advice
-        that made up for older models becomes overhead.
+        recommends this order. First, measure the agent without the guidance.
+        Then write the minimum that closes the gaps you saw, and iterate
+        against that baseline. Test with every model the guidance targets,
+        because what one model needs another finds redundant. Advice that made
+        up for older models becomes overhead.
       </p>
       <template #check>
         Each instruction file or skill has evidence that it changes behavior
@@ -603,9 +604,9 @@ onMounted(() => {
     <h2 id="scoring">Scoring a pillar</h2>
     <div class="prose">
       <p>
-        Each pillar gets a score from 0 to 3. The rubric is the skill's own
-        synthesis, not vendor guidance. Each level builds on the one below
-        it.
+        Each pillar gets a score from 0 to 3. The skill defines this rubric
+        itself. It does not come from vendor guidance. Each level builds on
+        the one below it.
       </p>
     </div>
     <LessonFigure :number="4">
@@ -641,13 +642,13 @@ onMounted(() => {
       <ul>
         <li>
           A pillar's score is the highest level whose criteria the verified
-          evidence fully meets. An unverified check cannot lift a pillar; list
+          evidence fully meets. An unverified check cannot lift a pillar. List
           it under Unverified instead.
         </li>
         <li>
-          The audit check shown with each pillar is what gates levels 2 and 3.
-          The longer checks in each pillar's reference file diagnose the top
-          gap; they gate a level only where that file says so.
+          Levels 2 and 3 depend on the audit check shown with each pillar. The
+          longer checks in each pillar's reference file diagnose the top gap.
+          They decide a level only where that file says so.
         </li>
         <li>
           When a pillar covers several artifacts, such as several instruction
@@ -661,7 +662,7 @@ onMounted(() => {
           parts that apply and name the checks you dropped.
         </li>
       </ul>
-      <p>Evidence has a strength, too. From strongest to weakest:</p>
+      <p>Evidence also has a strength. From strongest to weakest:</p>
     </div>
     <ol class="fg-site-steps">
       <li>A local run in a fresh checkout, inside the agent's sandbox. Record the sandbox configuration, so a failure can be traced to the repository or to the auditor's machine.</li>
@@ -673,10 +674,10 @@ onMounted(() => {
       <p>
         A failed fresh setup is scored once, in pillar 6. Other pillars can
         still reach level 2 on CI results for the exact commit audited, or on
-        a local run with dependencies
-        supplied another way, labelled as such. Required checks, branch rules,
-        and review history need read access to the forge API, such as
-        <code>gh api</code>; without it, mark them unverified.
+        a local run with dependencies supplied another way, labelled as such.
+        Required checks, branch rules, and review history need read access to
+        the forge API, such as <code>gh api</code>. Without that access, mark
+        them unverified.
       </p>
     </div>
   </section>
@@ -685,7 +686,7 @@ onMounted(() => {
     <h2 id="audit-procedure">Running an audit</h2>
     <div class="prose">
       <p>
-        An audit has three modes. Pick every one that applies: a repository
+        An audit has three modes. Pick every mode that applies. A repository
         that ships guidance, like this one, needs both the existing-repository
         and the engineering-guidance modes.
       </p>
@@ -729,19 +730,23 @@ onMounted(() => {
     </UiTabs>
     <h3 id="report">The report</h3>
     <div class="prose">
+      <p>The report has four parts, in this order:</p>
+      <ol>
+        <li>An Evidence section.</li>
+        <li>
+          One table row per pillar, with its score, evidence, top gap, fix,
+          and channel. The channel column describes the proposed fix, not the
+          current state.
+        </li>
+        <li>The places where the skill was hard to apply.</li>
+        <li>Everything left unverified, and what running it needs.</li>
+      </ol>
       <p>
-        Write an Evidence section, then one table row per pillar with its
-        score, evidence, top gap, fix, and channel, then the places where the
-        skill was hard to apply, then everything left unverified and what
-        running it needs. The channel column describes the proposed fix, not
-        the current state.
-      </p>
-      <p>
-        Order the fixes by blast radius first: any unenforced pillar 7 rule
-        about secrets, protected paths, or irreversible actions comes first,
-        along with any defect that can hide such a rule from the agent, such as
-        instructions cut off by a size limit. Then order by durability, then by
-        cost.
+        Order the fixes by blast radius first, meaning how much damage a miss
+        can do. Any unenforced pillar 7 rule about secrets, protected paths,
+        or irreversible actions comes first. So does any defect that can hide
+        such a rule from the agent, such as instructions cut off by a size
+        limit. Then order by durability, then by cost.
       </p>
     </div>
     <LessonFigure :number="5">
@@ -765,8 +770,8 @@ onMounted(() => {
         </div>
       </div>
       <template #caption>
-        The fix order. The durability ranking is the skill's argument from the
-        durable and decaying split; vendors do not rank the pillars.
+        The fix order. The skill sets this order itself, based on the
+        durability ranking from the durable and decaying section.
       </template>
     </LessonFigure>
   </section>
@@ -790,7 +795,7 @@ onMounted(() => {
     </UiAlert>
     <div class="prose">
       <p>
-        The most useful finding came first. A fresh
+        The first finding was the most useful. A fresh
         <code>pnpm install --frozen-lockfile</code> failed after three seconds
         inside Claude Code's sandbox. One dependency ships a
         <code>.env</code> file in its package, and that machine's sandbox
@@ -841,12 +846,16 @@ onMounted(() => {
         from tightening the rubric, not from any change in the repository.
       </p>
       <p>
-        The audit also tested the skill. Five places where it was hard to apply
-        went back into the skill: a repository can need both modes, pillar 6
-        needed a meaning for guidance repositories, setup has to succeed inside
-        the agent's sandbox, the two-question test covers only repository
-        facts, and some checks need forge access.
+        The audit also tested the skill. It found five places where the skill
+        was hard to apply, and each became a change to the skill:
       </p>
+      <ul>
+        <li>A repository can need both modes.</li>
+        <li>Pillar 6 needed a meaning for guidance repositories.</li>
+        <li>Setup has to succeed inside the agent's sandbox.</li>
+        <li>The two-question test covers only repository facts.</li>
+        <li>Some checks need forge access.</li>
+      </ul>
       <p>Fixes merged since, in the report's order:</p>
       <ul>
         <li>
@@ -891,9 +900,9 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        Vendors retire their own advice as models catch up. Guidance is guidance, so pillar 8 applies
-        to it too: test it against the models it targets, and add instructions
-        only where you have seen a failure.
+        Vendors retire their own advice as models catch up. Pillar 8 applies
+        to this guidance too. Test it against the models it targets, and add
+        instructions only where you have seen a failure.
       </p>
       <p>Review the guidance when any of these happens:</p>
       <ul>
@@ -908,17 +917,17 @@ onMounted(() => {
       <li>Fetch each source again and mark every cited claim confirmed, changed, or removed. A claim that only a source from before the current model generation supports is unconfirmed until a current source restates it or the decay test covers it.</li>
       <li>Record each new recommendation and harness mechanism, and decide where it goes.</li>
       <li>Walk the durable and decaying table and the placement rules again. Keep a line only if it still tells, checks, or bounds.</li>
-      <li>Test for decay. Fix the protocol first: two reference repositories (one strong, one weak), a task set, attempts per arm, a pass criterion, and an approved budget. Run the guidance against no guidance, then remove one section at a time. Delete a section only when removing it makes no difference.</li>
-      <li>Calibrate the rubric: reference scores should stay stable across models. A check that now passes everywhere no longer separates strong from weak.</li>
+      <li>Run the decay test. First fix its protocol: two reference repositories (one strong, one weak), a task set, attempts per arm, a pass criterion, and an approved budget. Run the guidance against no guidance, then remove one section at a time. Delete a section only when removing it makes no difference.</li>
+      <li>Calibrate the rubric. Scores for the reference repositories should stay stable across models. A check that now passes everywhere no longer separates strong from weak.</li>
       <li>When vendors disagree, record both positions and how you reconcile them. Prefer current vendor documentation over dated posts, and never rely on a secondary summary alone.</li>
       <li>Edit the claims, refresh the verified dates, and commit with a message that names the trigger. Git history is the review log.</li>
     </ol>
     <div class="prose">
       <p>
-        A scheduled agent can re-verify sources and collect new guidance every month and open a
-        pull request with what it found. The rest needs judgment and a
-        person's approval, and the decay test costs money because it runs paid
-        evaluations.
+        A scheduled agent can re-verify sources and collect new guidance every
+        month, then open a pull request with what it found. The other steps
+        need judgment and a person's approval. The decay test also costs
+        money, because it runs paid evaluations.
       </p>
     </div>
   </section>
@@ -961,9 +970,7 @@ onMounted(() => {
     <div class="prose">
       <p>
         The vendor guidance behind the skill, last checked between 2026-11-01
-        and 2026-11-03. The
-        0–3 rubric, the fix order, and the durability ranking are the skill's
-        own synthesis.
+        and 2026-11-03.
       </p>
     </div>
     <ul class="further-reading">
