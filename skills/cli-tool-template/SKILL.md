@@ -16,8 +16,7 @@ Pick the language by what the tool needs, then follow that row. The reference to
 | Language | Pick when | Reference | Build and CI | release-please `release-type` (version source) | Formula |
 | --- | --- | --- | --- | --- | --- |
 | Rust | Interactive TUI, speed, or a native macOS bundle | annoterm | `rust-toolchain.toml` pin; `cargo fmt --check`, `clippy -D warnings`, `test --locked` | `rust` (`Cargo.toml`) | `depends_on "rust" => :build`; `cargo install *std_cargo_args` |
-| TypeScript on Node | Git, GitHub, or JSON-heavy logic that wants npm packages and types | wtree | npm with `package-lock.json`; `npm ci`, `typecheck`, `test`, `build`; Node 22 | `node` (`package.json`) | `depends_on "node"`; `npm ci`, `npm run build`, `npm install *std_npm_args` |
-| Python, single script | Small glue around OS commands, standard library only | devps | No build; `py_compile` and a smoke test | `simple` (`version.txt` plus `extra-files`) | `depends_on "python@3.x"`; `rewrite_shebang detected_python_shebang`; `bin.install` |
+| TypeScript on Node | Git, GitHub, process, or JSON-heavy logic that wants npm packages and types | wtree, devps | npm with `package-lock.json`; `npm ci`, `typecheck`, `test`, `build`; Node 22 | `node` (`package.json`) | `depends_on "node"`; `npm ci`, `npm run build`, `npm install *std_npm_args` |
 
 ## Repo contract
 
@@ -35,6 +34,16 @@ Pick the language by what the tool needs, then follow that row. The reference to
   ```
 
   The last command lets release-please open its release PR. Without it, the Release workflow fails with "GitHub Actions is not permitted to create or approve pull requests". The release PR gets no CI run, because PRs opened by `GITHUB_TOKEN` do not trigger workflows.
+
+## Pages site
+
+Each tool has one page at `https://filipgutica.github.io/<tool>/`. Copy the layout from a sibling tool, and keep the page's look in `@filipgutica/ui`, not in the site.
+
+- **Stack:** Astro with Vue in `docs/site/`, with its own `package.json` and `package-lock.json`. `astro.config.mjs` sets `site: 'https://filipgutica.github.io'` and `base: '/<tool>'`. Pin `@filipgutica/ui` to its latest release.
+- **Frame:** wrap the page in the library's `.fg-site-docs` shell, with `UiSiteHeader`, `UiSiteNav` (`label="On this page"`), and `.fg-site-footer`. Use `UiCapture` for terminal output, `.fg-site-legend` for what the screen shows, and `.fg-site-definitions` for notes. `src/styles/site.css` holds only page-specific rules. The library owns the frame, rail, footer, base type, `kbd`, and the terminal palette.
+- **Sections, in order:** intro (H1 that says what the tool does, one-line summary, install command, facts row), the capture, Commands, Keys, then tool-specific sections, and Good to know last. Facts are plain text, not badges. Good to know terms are noun phrases.
+- **Links:** the header links to GitHub and Releases, and a "Full reference" link to the README closes the page. The footer repeats the project links. Do not add a "Guide" link: the page is the guide.
+- **CI:** `site-ci.yml` runs on PRs that touch `docs/site/**` and `pages.yml` deploys `main`. Both use Node 22 in `docs/site`. Site CI runs `npm ci`, `npm run check` (`astro check` and `vue-tsc`), `npm run build`, `npx playwright install --with-deps chromium`, and `npm run test:e2e`. The Playwright tests cover phone and desktop widths and a no-JavaScript render.
 
 ## Versioning
 
