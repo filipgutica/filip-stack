@@ -273,7 +273,7 @@ onMounted(() => {
         <li>
           An enforced check should talk to the agent. An error message that
           states the fix lets the agent repair its own work. This also comes
-          from the OpenAI article.
+          from the OpenAI article, and no current source confirms it yet.
         </li>
       </ul>
     </div>
@@ -464,7 +464,8 @@ onMounted(() => {
         If both answers are yes, delete the line. Keep the verification
         commands anyway, because they are the most useful lines even though
         <code>package.json</code> holds them. Judge global behavior rules,
-        which no repository can show, with the decay test instead.
+        which no repository can show, with the
+        <a href="#maintenance">decay test</a> instead.
       </p>
       <template #check>
         Every always-loaded line passes the two-question test or the decay
@@ -616,13 +617,13 @@ onMounted(() => {
         </li>
         <li>
           <span class="ladder__score">1</span>
-          <strong>Written down</strong>
-          <span>A documented policy, script, or intent that nobody has shown runs.</span>
+          <strong>Present</strong>
+          <span>A documented policy, a script, or a partly working mechanism, with some level 2 criterion unmet or unverified.</span>
         </li>
         <li>
           <span class="ladder__score">2</span>
           <strong>Runnable</strong>
-          <span>The pillar's audit check passes on runnable evidence: one command from a fresh checkout, with only declared prerequisites.</span>
+          <span>The pillar's audit check passes on runnable evidence. Only pillar 6 requires a fresh checkout.</span>
         </li>
         <li>
           <span class="ladder__score">3</span>
@@ -650,7 +651,9 @@ onMounted(() => {
         </li>
         <li>
           When a pillar covers several artifacts, such as several instruction
-          files, score the weakest one that applies.
+          files, score the weakest one that applies. If an artifact the audit
+          check needs is missing, the pillar stays below level 2, but that
+          alone does not score it 0.
         </li>
         <li>
           Mark a pillar N/A when it does not apply, give a one-line reason, and
