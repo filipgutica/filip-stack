@@ -125,6 +125,8 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
 }) => {
   await page.goto("/filip-stack/");
   await openGuideFromOverview(page);
+  // Readers get inline links and further reading, not the skill's citation keys.
+  await expect(page.locator("main")).not.toContainText(/\[[AOSG]\d/);
   // The figure lists both outcomes for every problem instead of toggles.
   const figure = page.locator(".catch");
   await expect(figure.getByRole("button")).toHaveCount(0);

@@ -6,7 +6,6 @@ import CatchFigure from "../lesson/CatchFigure.vue";
 import LessonFigure from "../lesson/LessonFigure.vue";
 import PillarSection from "../lesson/PillarSection.vue";
 import ScorePips from "../lesson/ScorePips.vue";
-import SourceRef from "../lesson/SourceRef.vue";
 import { sources } from "../lesson/sources";
 import { lessonPillars, maintenanceFile } from "../lesson/pillars";
 
@@ -141,7 +140,7 @@ onMounted(() => {
       <p>
         Ask a coding agent for a feature and it edits files, runs whatever it
         can, and tells you it is finished. It stops when the work
-        <em>looks</em> done <SourceRef :keys="['A1']" />. It cannot judge
+        <em>looks</em> done. It cannot judge
         anything it has no way to see.
       </p>
       <p>
@@ -215,8 +214,7 @@ onMounted(() => {
     <h2 id="placement-advisory-or-enforced">Advisory or enforced</h2>
     <div class="prose">
       <p>
-        A rule reaches the agent on one of two channels
-        <SourceRef :keys="['A1']" />. <strong>Advisory</strong> guidance is
+        A rule reaches the agent on one of two channels. <strong>Advisory</strong> guidance is
         text the model reads: the prompt, <code>AGENTS.md</code> or
         <code>CLAUDE.md</code>, and skills. The model weighs it and may decide
         it does not apply. <strong>Enforced</strong> guidance is a mechanism:
@@ -254,13 +252,15 @@ onMounted(() => {
       <p>Put each rule on the channel that matches its exceptions.</p>
       <ul>
         <li>
-          A rule with no exceptions is enforced. OpenAI reported the same move
-          in early 2026: when documentation fell short, the rule became code
-          <SourceRef :keys="['O1']" />.
+          A rule with no exceptions is enforced. OpenAI's
+          <a :href="sources.harnessEngineering.href">harness engineering article</a>
+          from early 2026 reports the same move: when documentation fell short,
+          the rule became code. That article could not be fetched, so this
+          lesson checked it only through secondary summaries.
         </li>
         <li>
           When an advisory line keeps getting missed, there are two possible
-          causes <SourceRef :keys="['A1']" />. Either it is a rule that cannot
+          causes. Either it is a rule that cannot
           bend, so it becomes a hook or a deny rule, or the file has grown long
           enough to bury it, so the file gets shorter. Adding emphasis fixes
           neither cause.
@@ -268,13 +268,12 @@ onMounted(() => {
         <li>
           A preference stays advisory. A large enforced set means preferences
           have leaked into it. Every hook fires wrongly sometimes, and someone
-          has to maintain it <SourceRef :keys="['A1']" />.
+          has to maintain it.
         </li>
         <li>
           An enforced check should talk to the agent. An error message that
-          states the fix lets the agent repair its own work. This comes from
-          the OpenAI report and is not yet confirmed by a current source
-          <SourceRef :keys="['O1']" />.
+          states the fix lets the agent repair its own work. This also comes
+          from the OpenAI article, and no current source confirms it yet.
         </li>
       </ul>
     </div>
@@ -286,8 +285,9 @@ onMounted(() => {
       <p>
         Some guidance makes up for something the model cannot yet do well.
         Other guidance gives the model something it could never get by itself.
-        Vendors now separate the two; Anthropic's guide has a list called
-        “What you can stop doing” <SourceRef :keys="['A1']" />. The first kind
+        Vendors now separate the two:
+        <a :href="sources.claudeCodeBestPractices.href">Anthropic's Claude Code best practices</a>
+        include a list called “What you can stop doing”. The first kind
         decays as models improve. The second kind lasts, so invest there.
       </p>
     </div>
@@ -343,9 +343,7 @@ onMounted(() => {
         time. Each has a job from the previous section, an audit check you can
         observe, and a reference file in the skill with its sources and
         anti-patterns. Pillars 7 and 8 extend the original six, from the same
-        vendor guidance: the questions to ask before an unattended run
-        <SourceRef :keys="['A1']" /> and writing evaluations before guidance
-        <SourceRef :keys="['A4']" />.
+        vendor guidance: the questions to ask before an unattended run and writing evaluations before guidance.
       </p>
     </div>
     <LessonFigure :number="3">
@@ -373,8 +371,7 @@ onMounted(() => {
     >
       <p>
         Agents learn the conventions by reading the code, and they copy what
-        they find, including patterns the team is moving away from
-        <SourceRef :keys="['A1']" />. When there is one way to do each job,
+        they find, including patterns the team is moving away from. When there is one way to do each job,
         the nearest example is the right example.
       </p>
       <template #check>
@@ -400,9 +397,9 @@ onMounted(() => {
         A build exit code and a linter are checks the agent can run and read.
         The most useful line in an instruction file is the command that runs
         them, and a <code>Stop</code> hook turns running it from a request into
-        a condition of finishing <SourceRef :keys="['A1']" />. Codex guidance
+        a condition of finishing. Codex guidance
         likewise asks for a “done when” condition and the relevant lint,
-        format, and type checks <SourceRef :keys="['O3']" />.
+        format, and type checks.
       </p>
       <template #check>
         One command runs every static gate locally, and CI runs the same
@@ -425,10 +422,10 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Tests are the main red-or-green check <SourceRef :keys="['A1']" />.
+        Tests are the main red-or-green check.
         Agents tend to call a feature complete after unit tests or a
         <code>curl</code> call, and they catch more bugs when they test end to
-        end as a user would <SourceRef :keys="['A3', 'A5']" />. The agent runs
+        end as a user would. The agent runs
         and trusts every test, so a test that cannot fail gives it a false
         green. The layering below is field practice, not vendor guidance.
       </p>
@@ -454,10 +451,10 @@ onMounted(() => {
     >
       <p>
         Instruction files load into every session, so every line takes a
-        little attention on every task <SourceRef :keys="['A1']" />. Aim for
+        little attention on every task. Aim for
         the smallest set of high-signal lines and load the rest when a task
-        needs it <SourceRef :keys="['A2', 'A1', 'O3']" />. To decide whether a
-        line earns its place, ask two questions <SourceRef :keys="['A1']" />:
+        needs it. To decide whether a
+        line earns its place, ask two questions:
       </p>
       <ol>
         <li>Could the agent find this by reading the code?</li>
@@ -480,7 +477,7 @@ onMounted(() => {
           <li>Decision records explain why. A glossary maps domain terms to code names where they differ.</li>
           <li>CI runs the documented commands and checks the links.</li>
           <li>No dated advice in the body. Version requirements that are still true stay.</li>
-          <li>Layout is left out. Anthropic lists architecture and layout descriptions as outdated advice, while Codex guidance allows layout in <code>AGENTS.md</code> <SourceRef :keys="['A1', 'O3']" />. The skill sides with Anthropic because layout is the easiest thing to discover and the quickest to go stale; a short pointer to an unusual layout is fine.</li>
+          <li>Layout is left out. <a :href="sources.claudeCodeBestPractices.href">Anthropic's best practices</a> list architecture and layout descriptions as outdated advice, while <a :href="sources.codexBestPractices.href">Codex best practices</a> allow layout in <code>AGENTS.md</code>. The skill sides with Anthropic because layout is the easiest thing to discover and the quickest to go stale; a short pointer to an unusual layout is fine.</li>
         </ul>
       </template>
     </PillarSection>
@@ -492,7 +489,7 @@ onMounted(() => {
       <p>
         A reviewer in a fresh context never saw the reasoning that produced
         the code, so it is not swayed by it, and read-only tools make sure it
-        cannot edit <SourceRef :keys="['A1']" />. A reviewer asked to find
+        cannot edit. A reviewer asked to find
         problems always finds some. Fixing every finding adds layers and tests
         for impossible cases, so the review prompt should say what to skip.
       </p>
@@ -518,11 +515,11 @@ onMounted(() => {
       <p>
         This is the most durable pillar. No model can observe an app it cannot
         start, or inspect states the data does not contain. A worktree is a
-        fresh checkout with no installed dependencies
-        <SourceRef :keys="['A1']" />, and installing by trial and error is slow
-        and can fail outright. A failed setup step may not even stop the agent;
-        it carries on in a partial environment <SourceRef :keys="['G1']" />,
-        which is why setup ends with a health check.
+        fresh checkout with no installed dependencies, and installing by trial and error is slow
+        and can fail outright. A failed setup step may not even stop the agent:
+        <a :href="sources.copilotEnvironment.href">GitHub's Copilot documentation</a>
+        says it carries on in a partial environment, which is why setup ends
+        with a health check.
       </p>
       <template #check>
         A fresh worktree, inside the agent's own sandbox, reaches a seeded,
@@ -547,8 +544,7 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Before a run goes unattended, answer five questions
-        <SourceRef :keys="['A1']" />:
+        Before a run goes unattended, answer five questions:
       </p>
       <ol>
         <li>Does it know what done looks like?</li>
@@ -582,11 +578,11 @@ onMounted(() => {
     >
       <p>
         Measure the agent without the guidance first, write the minimum that
-        closes the gaps you saw, and iterate against that baseline
-        <SourceRef :keys="['A4']" />. Test with every model the guidance
+        closes the gaps you saw, and iterate against that baseline, as
+        <a :href="sources.skillAuthoring.href">Anthropic's skill authoring guide</a>
+        recommends. Test with every model the guidance
         targets, because what one model needs another finds redundant. Advice
-        that made up for older models becomes overhead
-        <SourceRef :keys="['A1']" />.
+        that made up for older models becomes overhead.
       </p>
       <template #check>
         Each instruction file or skill has evidence that it changes behavior
@@ -689,7 +685,7 @@ onMounted(() => {
               <li>Pillar 6: one command for setup, run, and teardown, with a seed script and a health check, proven inside the agent's sandbox.</li>
               <li>Pillars 2 and 3: strict types, lint, dead-code and boundary tools, and a single-file test command, behind one <code>check</code> command that CI runs and requires.</li>
               <li>Pillar 7: deny rules and sandbox limits for every “never” rule.</li>
-              <li>Pillar 4: a short <code>AGENTS.md</code> with those commands. Add a line only after you have corrected the agent twice <SourceRef :keys="['A1', 'O3']" />.</li>
+              <li>Pillar 4: a short <code>AGENTS.md</code> with those commands. Add a line only after you have corrected the agent twice.</li>
               <li>Pillars 1 and 5 grow with the code: record each decision when you make it, and add review angles as risk appears.</li>
             </ol>
         </div>
@@ -707,7 +703,7 @@ onMounted(() => {
         <div v-else class="modes__panel">
             <p class="hint">Instruction files, skills, and review gates.</p>
             <ol class="fg-site-steps">
-              <li>Measure what each host actually loads every session, not only file sizes. In Claude Code, <code>/context</code> shows it <SourceRef :keys="['A1']" />.</li>
+              <li>Measure what each host actually loads every session, not only file sizes. In Claude Code, <code>/context</code> shows it, as the <a :href="sources.claudeCodeBestPractices.href">Claude Code best practices</a> describe.</li>
               <li>Classify each instruction as durable or decaying, and as advisory or enforced.</li>
               <li>List every “always” or “never” rule that is only advisory. Each is a placement defect or a preference worded too strongly.</li>
               <li>Find lines that restate the layout, scripts, or config. Keep the verification commands.</li>
@@ -880,10 +876,9 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        Vendors retire their own advice as models catch up
-        <SourceRef :keys="['A1']" />. Guidance is guidance, so pillar 8 applies
+        Vendors retire their own advice as models catch up. Guidance is guidance, so pillar 8 applies
         to it too: test it against the models it targets, and add instructions
-        only where you have seen a failure <SourceRef :keys="['A2', 'O3']" />.
+        only where you have seen a failure.
       </p>
       <p>Review the guidance when any of these happens:</p>
       <ul>
@@ -946,23 +941,19 @@ onMounted(() => {
     </ul>
   </section>
 
-  <section aria-labelledby="sources">
-    <h2 id="sources">Sources</h2>
+  <section aria-labelledby="further-reading">
+    <h2 id="further-reading">Further reading</h2>
     <div class="prose">
       <p>
-        The current model generation is the Claude 5.5 family, with Fable 5.1,
-        and GPT-6.x (6.1 Sol, 6 Luna, 6 Astra). The 0–3 rubric, the fix order,
-        and the durability ranking are the skill's synthesis. Every source except O1
-        was last verified on 2026-11-01.
+        The vendor guidance behind the skill, last checked on 2026-11-01. The
+        0–3 rubric, the fix order, and the durability ranking are the skill's
+        own synthesis.
       </p>
     </div>
-    <ul class="sources">
-      <li v-for="(source, key) in sources" :id="`source-${key.toLowerCase()}`" :key="key">
-        <span class="sources__key">{{ key }}</span>
-        <span>
-          <a :href="source.href">{{ source.title }}</a>
-          <span v-if="'note' in source" class="sources__note">{{ source.note }}</span>
-        </span>
+    <ul class="further-reading">
+      <li v-for="source in sources" :key="source.href">
+        <a :href="source.href">{{ source.title }}</a>
+        <span v-if="'note' in source" class="further-reading__note">{{ source.note }}</span>
       </li>
     </ul>
   </section>
@@ -1034,11 +1025,8 @@ onMounted(() => {
 .scorecard__fix > span:first-child { color: var(--color-text); font-weight: var(--weight-medium); }
 .lesson-caveat { max-width: var(--measure); font-size: var(--text-md); }
 
-.sources { display: grid; gap: var(--space-2); max-width: var(--measure); margin: 0; padding: 0; list-style: none; font-size: var(--text-md); }
-.sources li { display: grid; grid-template-columns: 2.5rem minmax(0, 1fr); gap: var(--space-2); scroll-margin-top: var(--space-6); }
-.sources__key { color: var(--color-muted); font-family: var(--font-mono); font-size: var(--text-sm); }
-.sources__note { display: block; color: var(--color-muted); font-size: var(--text-sm); }
-.sources li:target { border-radius: var(--radius-control); background: var(--color-row-selected); }
+.further-reading { display: grid; gap: var(--space-2); max-width: var(--measure); font-size: var(--text-md); }
+.further-reading__note { display: block; color: var(--color-muted); font-size: var(--text-sm); }
 
 @media (max-width: 800px) {
   .jobs { grid-template-columns: minmax(0, 1fr); }
