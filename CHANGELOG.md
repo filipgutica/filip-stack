@@ -1,3 +1,21 @@
+# [3.17.0](https://github.com/filipgutica/filip-stack/compare/v3.16.2...v3.17.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **site:** fail the build when a lesson reference is renamed ([ce0ba73](https://github.com/filipgutica/filip-stack/commit/ce0ba73bfe1fd3000c592b8796023eec6822999a))
+* **site:** match the lesson's score levels to the skill ([7c7faec](https://github.com/filipgutica/filip-stack/commit/7c7faec90b7418aac6627096ee334cc33f24308a))
+* **site:** sync the lesson with the skill's audit and authorization rules ([100693c](https://github.com/filipgutica/filip-stack/commit/100693cc730c4b311bdfa2bba70479a8ff31148e))
+
+
+### Features
+
+* **site:** move lesson figures and toggles to @filipgutica/ui ([f1157ad](https://github.com/filipgutica/filip-stack/commit/f1157ad7132f9f5f17de29b494ff52495a001cf4))
+* **site:** number the fix order's steps in Figure 5 ([4eb44a4](https://github.com/filipgutica/filip-stack/commit/4eb44a46f86b69e69efaae8a18490b55467d87b7))
+* **site:** replace lesson citation keys with inline links ([65ccdf9](https://github.com/filipgutica/filip-stack/commit/65ccdf92e863fb24577f2f83cd556731368d461a))
+* **site:** rewrite agent-ready environments as a lesson for people ([5c6ccbb](https://github.com/filipgutica/filip-stack/commit/5c6ccbb178a8bb41148d46dcd16c55d1a256bc38))
+* **site:** tag pillars in Figure 3 instead of numbering them ([70f78ca](https://github.com/filipgutica/filip-stack/commit/70f78ca6434e6adbe9787116cf031aaeb9b5743d))
+
 ## [3.16.2](https://github.com/filipgutica/filip-stack/compare/v3.16.1...v3.16.2) (2026-11-04)
 
 
