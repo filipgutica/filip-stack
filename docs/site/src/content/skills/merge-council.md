@@ -10,7 +10,7 @@ can fix and push agreed findings.
 
 ## When to use it
 
-- Request a merge council or council review explicitly.
+- Request a merge council explicitly.
 - Follow up an earlier council using its saved record and your decisions.
 - Configure the chair and reviewers with `merge-council setup`.
 
