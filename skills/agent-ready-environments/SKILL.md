@@ -140,7 +140,7 @@ Gates are cheapest to add at zero lines of code.
 4. Find caches: lines that restate the directory layout, `package.json` scripts, or config. Keep the verification commands [A1] and lines whose lookup is expensive.
 5. Find duplicated meanings across files.
 6. Check review gates for a triage step and a counterweight to over-fixing (pillar 5).
-7. Ask for evaluation evidence (pillar 8). A written evaluation policy with no results scores 1; no policy scores 0. The decay test in [maintenance.md](references/maintenance.md) works for any guidance, not only this skill.
+7. Ask for evaluation evidence (pillar 8). Score evaluation results with the pillar 8 levels. Without results, a written evaluation policy scores 1 and no policy scores 0. The decay test in [maintenance.md](references/maintenance.md) works for any guidance, not only this skill.
 
 ## Report
 
