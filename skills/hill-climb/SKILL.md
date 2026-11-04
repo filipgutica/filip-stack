@@ -59,12 +59,15 @@ Build the card and freeze it before round 1:
   `~/design-language/DESIGN.md` when it exists. For code: repository
   conventions and `~/.agents/CODING_STANDARDS.md` when it exists.
 - **Scope:** the change's paths.
-- **Gates:** exact commands. For UI, also the exact routes, states, widths,
-  and themes to capture, and the repository's accessibility checker command
-  if it has one. Record whether screenshots come from the repository's tools
-  or the host's browser tools.
+- **Gates:** exact commands, run on the runtime versions CI uses, such as its
+  Node version, not whatever the shell resolves. For UI, also the exact
+  routes, states, widths, and themes to capture, and the repository's
+  accessibility checker command if it has one. Record whether screenshots
+  come from the repository's tools or the host's browser tools.
 - **Evidence:** for code, each version's diff from the base. For UI,
-  screenshots of each route and state.
+  screenshots of each route and state, plus each version's diff. Take every
+  screenshot from a fresh page load: going to a URL that differs only in its
+  hash does not reload the page.
 - **Not covered:** what the gates and evidence do not prove. For example,
   screenshots do not prove keyboard behavior.
 - **Budget:** 3 rounds, or fewer if the user sets fewer. 5 at most.
@@ -108,7 +111,8 @@ Before each round and after each restore, compare the scope with the
 manifest: exists, mode, and hash. Before you restore or accept a candidate,
 compare the scope with `candidate.tsv`, which Apply writes in the same
 format. On any difference, something outside the climb changed the files.
-Stop, report the paths, and change nothing further.
+Stop, report the paths, and change nothing further. Do not restore: a
+restore would overwrite those changes.
 
 ### Restore
 
@@ -118,14 +122,17 @@ Stop, report the paths, and change nothing further.
    `ledger.md` lists as created in this round. Remove nothing else.
 3. Run the check.
 
-If the climb fails or is cancelled during a round, restore before you report.
+If the climb fails or is cancelled during a round, restore before you report,
+unless the check found outside changes.
 
 ## 3. Rounds
 
 Convene members by `council`'s Convene section: lineup, model availability,
 separate contexts, read-only members, and completion. Each propose and judge
 call gets a fresh context. A judge never reuses a proposing context. The
-report states when two members come from the same provider.
+report states when two members come from the same provider. Before you retry
+a member that reported an error, check whether it ran: a late reply still
+counts, and a retry is a new call.
 
 Run each round in order:
 
@@ -136,8 +143,10 @@ Run each round in order:
    fewer than two members remain, stop: UI climbs are unavailable.
 3. **Select.** Take the highest-ranked open proposals that most members
    raised, or that the evidence clearly supports. Confirm each one still
-   applies to the incumbent; otherwise mark it exhausted. Decline
-   proposals outside the scope. If nothing can be selected, stop as for an
+   applies to the incumbent; otherwise mark it exhausted. Break ties by the
+   best rank any member gave, then by the smaller change. Decline proposals
+   outside the scope, and proposals that reverse a decision the user already
+   made; list those as follow-ups. If nothing can be selected, stop as for an
    empty queue.
 4. **Save evidence.** Save the incumbent's evidence before you edit.
 5. **Apply.** Make the smallest change that does the selected proposals.
@@ -146,7 +155,8 @@ Run each round in order:
    files and new files to it, and measure the climb with
    `git diff --no-index --numstat start now`. If it exceeds the size limit,
    restore, mark those proposals declined for size, list them as follow-ups,
-   and select again without them.
+   and select again without them. A test the round adds must fail on the
+   incumbent and pass on the candidate; check both before you judge.
 6. **Gate.** Run every gate on the candidate. On a failure, restore, record
    the round as rejected, and mark its proposals declined. End the round
    there: skip Judge and Decide, and apply the stop rules.
@@ -166,7 +176,8 @@ Choose the A/B order at random for each judge and record it only in
   `git diff <base> -- <scope>`, plus `git diff --no-index /dev/null <file>`
   for each untracked file. Never the diff between the two versions.
 - UI: `A/` and `B/` with the same screenshot names for each route, state,
-  width, and theme.
+  width, and theme, holding only the screenshots that differ, plus `A.diff`
+  and `B.diff` as for code. Tell the judge when no screenshot differs.
 
 ### Decide
 
@@ -175,7 +186,9 @@ Choose the A/B order at random for each judge and record it only in
 - With fewer than two completed judges, the round is void. Restore.
 - The candidate wins when a strict majority of completed judges prefers it
   overall. It becomes the incumbent: refresh the snapshot and mark its
-  proposals applied.
+  proposals applied. Once the remaining votes cannot change the outcome, you
+  may decide; record each late vote when it arrives. When the majority rests
+  on two members from the same provider, say so in the report.
 - Otherwise, restore, record the round as rejected, and mark the round's
   proposals declined.
 - Add a judge's `NEXT` to the queue only when it applies to the incumbent
@@ -194,6 +207,7 @@ Goal: <goal>
 Criteria: <criteria>
 Keep behavior, public interfaces, and features as they are. Stay in scope.
 Return up to three improvements against the criteria, best first.
+If nothing would clearly improve the change, reply NONE.
 <UI: if you could not open a screenshot, list it under UNREAD.>
 Reply:
 P1 <criterion> <file>:<line> <change>
@@ -207,7 +221,7 @@ Judge only. Do not edit files or start subagents.
 Use only the files in <bundle path>. Do not read the working tree or the repository.
 A and B are two versions of the same change.
 <Code: A.diff and B.diff are each version's diff from the same base.>
-<UI: A/ and B/ hold screenshots with matching names.>
+<UI: A/ and B/ hold the screenshots that differ, with matching names; A.diff and B.diff are each version's diff from the same base.>
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
@@ -230,7 +244,9 @@ Stop at the first of these:
 - The incumbent's changed lines against `start/` reach the size limit.
   After a restore, measure the incumbent as in Apply.
 
-Leave the final incumbent in the working tree.
+Leave the final incumbent in the working tree. When other branches are
+stacked on the change, rebase them onto the climbed result once it is
+committed, and run their gates.
 
 ## 5. Report
 
