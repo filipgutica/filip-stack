@@ -22,3 +22,6 @@ of a repeated approval prompt is not.
 
 **Audit check.** List every "never" rule in the guidance and confirm each is
 enforced. Confirm that unattended runs have caps and a named sign-off on the result.
+Accept configuration that the host or forge reports as active (for example a
+ruleset read with `gh api`, or the host's effective deny rules) as evidence that
+a rule is enforced; a rule stated only in prose is level 1.
