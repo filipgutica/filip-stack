@@ -21,7 +21,7 @@ and confirm what actually loaded before you report truncation. Current Codex gui
 If both answers are yes, delete the line. Two exceptions: keep the verification
 commands (test, typecheck, lint, run), which Anthropic lists as the most useful
 lines even though `package.json` holds them [A1]; and judge global behavior
-rules, which no repository can show, with the decay test in [pillar 8](pillar-8-guidance-evaluated.md) instead.
+rules, which no repository can show, with the decay test in [maintenance.md, step 4](maintenance.md#procedure) instead.
 
 **Resolving the tension.** Anthropic lists "describe your architecture and file
 layout" as outdated advice [A1]. Current Codex guidance lists repository layout

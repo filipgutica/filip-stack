@@ -15,7 +15,13 @@ A model-based safety classifier is a judgment call and can be wrong [A1].
 
 **Good looks like.** Deny rules for secrets and protected paths. Worktree or
 container isolation. Least-privilege tokens. Turn or spend caps on unattended
-runs. A human approves merges, deploys, and anything irreversible.
+runs. A person authorizes merges, deploys, and anything irreversible, either
+per action or in advance with a stated scope, an enforced boundary, a run cap,
+and a named sign-off on the result. Missing authorization is a gap; the absence
+of a repeated approval prompt is not.
 
 **Audit check.** List every "never" rule in the guidance and confirm each is
-enforced. Confirm that unattended runs have caps and a sign-off step.
+enforced. Confirm that unattended runs have caps and a named sign-off on the result.
+Accept configuration that the host or forge reports as active (for example a
+ruleset read with `gh api`, or the host's effective deny rules) as evidence that
+a rule is enforced; a rule stated only in prose is level 1.

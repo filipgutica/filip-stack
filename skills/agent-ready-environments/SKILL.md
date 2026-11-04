@@ -57,14 +57,16 @@ Put each rule on the channel that matches its exceptions:
 | Score | Meaning |
 | --- | --- |
 | 0 | Absent, or no verified evidence |
-| 1 | Written down only: a documented policy, script, or intent that nobody has shown runs |
-| 2 | Runnable: one command from a fresh checkout, with only declared prerequisites installed, and verified evidence that it works |
+| 1 | Present, not yet runnable as a whole: a documented policy, script, or partly working mechanism, with some level-2 criterion unmet or unverified |
+| 2 | Runnable: the pillar's Observable audit check is met on runnable evidence (see Evidence). Only pillar 6 requires a fresh checkout |
 | 3 | Enforced and measured: it blocks the action it guards (a required check blocks merge; a hook blocks the tool call), and its results are tracked over at least 20 runs or 30 days |
 | N/A | Does not apply to this repository; give a one-line reason |
 
 Scoring rules:
 
 - A pillar's score is the highest level whose criteria all verified evidence meets. An unverified check cannot lift a pillar to a level; list it under Unverified.
+- Level 2 needs the pillar's Observable audit check, met on runnable evidence. Level 3 also needs that check to block its action and to be tracked over time, as defined above. Reference-file Audit check bullets diagnose the Top gap; they gate a level only where that reference says so.
+- When a pillar covers several artifacts (files, skills, or review angles), score the weakest applicable artifact. A missing artifact that the Observable audit check needs keeps the pillar below level 2; it does not by itself score the pillar 0.
 - Optional CI that fails loudly but does not block merge is level 2, not 3.
 - Mark a pillar N/A when it does not apply, and leave it out of totals. When a pillar applies only in part, score the parts that apply and name the checks you dropped.
 - In the Report, `Channel` describes the proposed fix, not the current state.
@@ -77,7 +79,7 @@ Scoring rules:
 | [4](references/pillar-4-documentation.md) | Documentation: a map, decisions, workflows, glossary | Tell | Every always-loaded line passes the two-question test or the decay test; every documented command runs |
 | [5](references/pillar-5-review-gates.md) | Review gates chosen by risk | Check | Each review angle has a trigger, runs read-only in fresh context, and its findings are verified before they are fixed |
 | [6](references/pillar-6-reproducible-environment.md) | Reproducible environment: one command, seeded, observable | Check | A fresh worktree, inside the agent's own sandbox, reaches a seeded, healthy, running app with one command; two worktrees run at once without collisions |
-| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a human sign-off |
+| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a named sign-off on the result |
 | [8](references/pillar-8-guidance-evaluated.md) | Guidance is evaluated | Tell | Each instruction file or skill has evidence that it changes behavior against a no-guidance baseline |
 
 Pillars 7 and 8 extend the original six. Both come from the same vendor
@@ -138,7 +140,7 @@ Gates are cheapest to add at zero lines of code.
 4. Find caches: lines that restate the directory layout, `package.json` scripts, or config. Keep the verification commands [A1] and lines whose lookup is expensive.
 5. Find duplicated meanings across files.
 6. Check review gates for a triage step and a counterweight to over-fixing (pillar 5).
-7. Ask for evaluation evidence (pillar 8). A written evaluation policy with no results scores 1; no policy scores 0. The decay test in [maintenance.md](references/maintenance.md) works for any guidance, not only this skill.
+7. Ask for evaluation evidence (pillar 8). Score evaluation results with the pillar 8 levels. Without results, a written evaluation policy scores 1 and no policy scores 0. The decay test in [maintenance.md](references/maintenance.md) works for any guidance, not only this skill.
 
 ## Report
 
@@ -171,7 +173,7 @@ test in [maintenance.md](references/maintenance.md).
 - **[A3]** Anthropic Engineering, *Effective harnesses for long-running agents*, 2025-11-26. Predates the current model generation. <https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents> Verified 2026-11-01.
 - **[A4]** Anthropic, *Skill authoring best practices*. <https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices> Verified 2026-11-01.
 - **[A5]** Anthropic, *Claude Code skills: Run and verify your app*. <https://code.claude.com/docs/en/skills> Verified 2026-11-01.
-- **[O1]** OpenAI (Ryan Lopopolo), *Harness engineering: leveraging Codex in an agent-first world*, February 2026. <https://openai.com/index/harness-engineering/>. Predates the current model generation. The primary page refused automated fetches (HTTP 403), so claims are paraphrased from secondary summaries. Not verified.
+- **[O1]** OpenAI (Ryan Lopopolo), *Harness engineering: leveraging Codex in an agent-first world*, February 2026. <https://openai.com/index/harness-engineering/>. Predates the current model generation. Verified 2026-11-03.
 - **[O3]** OpenAI, *Codex best practices* (covers GPT-6.1 Sol, GPT-6 Luna, GPT-6 Astra). <https://learn.chatgpt.com/guides/best-practices> Verified 2026-11-01.
 - **[O2]** OpenAI, *Codex: AGENTS.md*. <https://learn.chatgpt.com/docs/agent-configuration/agents-md> Verified 2026-11-01.
 - **[S1]** Agentic AI Foundation (Linux Foundation), *AGENTS.md*. <https://agents.md/> Verified 2026-11-01.
