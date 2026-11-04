@@ -1,3 +1,10 @@
+## [3.17.1](https://github.com/filipgutica/filip-stack/compare/v3.17.0...v3.17.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **host-config:** use the standard service tier for Codex delegates ([f79669f](https://github.com/filipgutica/filip-stack/commit/f79669f0f89d97fb675c4ab6361f4fcf52eefc8b))
+
 # [3.17.0](https://github.com/filipgutica/filip-stack/compare/v3.16.2...v3.17.0) (2026-11-04)
 
 
