@@ -358,7 +358,8 @@ onMounted(() => {
           <ul>
             <li v-for="pillar in group.pillars" :key="pillar.number">
               <a :href="`#${pillar.reference.replace(/\.md$/, '')}`"
-                ><span>{{ pillar.number }}</span> {{ pillar.title }}</a
+                >{{ pillar.title }}
+                <span class="pillar-tag">Pillar {{ pillar.number }}</span></a
               >
             </li>
           </ul>
@@ -767,7 +768,7 @@ onMounted(() => {
               >
               {{ pillar(number).title }}
               <a
-                class="order__pillar"
+                class="pillar-tag"
                 :href="`#${pillar(number).reference.replace(/\.md$/, '')}`"
                 >Pillar {{ number }}</a
               >
@@ -1031,9 +1032,11 @@ onMounted(() => {
 .pillar-map { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .pillar-map > li { display: grid; gap: var(--space-2); align-content: start; }
 .pillar-map ul { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.pillar-map a { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
+.pillar-map a { display: grid; align-content: center; min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
 .pillar-map a:hover { border-color: var(--color-border); text-decoration: none; }
-.pillar-map a span { display: grid; flex: none; width: var(--space-6); height: var(--space-6); place-items: center; border-radius: var(--radius-pill); background: var(--color-surface-muted); color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
+/* Figures 3 and 5: the pillar number is a tag, not a position. */
+.pillar-tag { display: block; width: fit-content; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); }
+a.pillar-tag:hover { color: var(--color-text); }
 
 /* Figure 4: the fix order. */
 .order { display: grid; gap: var(--space-2); font-size: var(--text-sm); }
@@ -1043,8 +1046,6 @@ onMounted(() => {
 .order__chip { display: block; padding: var(--space-2); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); line-height: var(--leading-tight); }
 .order > div:first-child .order__chip { border-color: var(--color-accent); }
 .order__step { display: block; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
-.order__pillar { display: block; width: fit-content; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); }
-.order__pillar:hover { color: var(--color-text); }
 .order__scale { display: flex; justify-content: space-between; margin-top: var(--space-4); padding-top: var(--space-1); border-top: 1px solid var(--color-border-subtle); color: var(--color-muted); font-size: var(--text-xs); }
 
 .lesson-table { max-width: 100%; overflow-x: auto; font-size: var(--text-md); }

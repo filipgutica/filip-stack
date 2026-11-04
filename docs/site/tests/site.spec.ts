@@ -50,7 +50,7 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
   ).toBeVisible();
 
   await followPillarFromMap(page, {
-    link: "1 Code shape",
+    link: "Code shape Pillar 1",
     anchor: "pillar-1-code-shape",
     heading: "Pillar 1: Code shape",
   });

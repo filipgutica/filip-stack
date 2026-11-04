@@ -143,7 +143,7 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   for (const name of ["New project", "Existing repository", "Engineering guidance"])
     await expect(page.getByRole("heading", { level: 3, name, exact: true })).toBeVisible();
   await followPillarFromMap(page, {
-    link: "6 Reproducible environment",
+    link: "Reproducible environment Pillar 6",
     anchor: "pillar-6-reproducible-environment",
     heading: "Pillar 6: Reproducible environment",
   });
