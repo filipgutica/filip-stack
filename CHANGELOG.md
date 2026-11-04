@@ -1,3 +1,10 @@
+## [3.16.1](https://github.com/filipgutica/filip-stack/compare/v3.16.0...v3.16.1) (2026-11-04)
+
+
+### Bug Fixes
+
+* **host-config:** run Codex subagents on the standard service tier ([2b1ffc7](https://github.com/filipgutica/filip-stack/commit/2b1ffc752c22f0bb680d22da05963622905adf0b))
+
 # [3.16.0](https://github.com/filipgutica/filip-stack/compare/v3.15.1...v3.16.0) (2026-11-04)
 
 
