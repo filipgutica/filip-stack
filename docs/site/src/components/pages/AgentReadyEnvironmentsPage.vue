@@ -90,6 +90,12 @@ const pillarMap = (["Tell", "Check", "Bound"] as const).map((job) => ({
   job,
   pillars: pillars.filter((pillar) => pillar.job === job),
 }));
+// Figure 5 numbers the fix steps 1 to 8 across both groups. The pillar
+// number is a separate tag, so readers do not take it for a position.
+const fixOrder = [
+  { label: "First, by blast radius", start: 1, pillars: [7] },
+  { label: "Then by durability", start: 2, pillars: [6, 3, 2, 5, 1, 8, 4] },
+];
 const modes = [
   { value: "new", label: "New project" },
   { value: "existing", label: "Existing repository" },
@@ -751,23 +757,26 @@ onMounted(() => {
     </div>
     <LessonFigure :number="5">
       <div class="order">
-        <p class="order__first">
-          <span class="lesson-label">First, by blast radius</span>
-          <span class="order__chip"
-            ><span>7</span> {{ pillar(7).title }}</span
-          >
-        </p>
-        <div>
-          <span class="lesson-label">Then by durability</span>
-          <ol class="order__chips">
-            <li v-for="number in [6, 3, 2, 5, 1, 8, 4]" :key="number" class="order__chip">
-              <span>{{ number }}</span> {{ pillar(number).title }}
+        <div v-for="group in fixOrder" :key="group.start">
+          <span class="lesson-label">{{ group.label }}</span>
+          <ol class="order__chips" :start="group.start">
+            <li v-for="(number, index) in group.pillars" :key="number" class="order__chip">
+              <span class="order__step"
+                ><span class="fg-site-sr-only">Step </span
+                >{{ group.start + index }}</span
+              >
+              {{ pillar(number).title }}
+              <a
+                class="order__pillar"
+                :href="`#${pillar(number).reference.replace(/\.md$/, '')}`"
+                >Pillar {{ number }}</a
+              >
             </li>
           </ol>
-          <p class="order__scale" aria-hidden="true">
-            <span>Most durable</span><span>Least durable</span>
-          </p>
         </div>
+        <p class="order__scale" aria-hidden="true">
+          <span>Most durable</span><span>Least durable</span>
+        </p>
       </div>
       <template #caption>
         The fix order. The skill sets this order itself, based on the
@@ -1027,14 +1036,16 @@ onMounted(() => {
 .pillar-map a span { display: grid; flex: none; width: var(--space-6); height: var(--space-6); place-items: center; border-radius: var(--radius-pill); background: var(--color-surface-muted); color: var(--color-muted); font-size: var(--text-xs); font-variant-numeric: tabular-nums; }
 
 /* Figure 4: the fix order. */
-.order { display: grid; gap: var(--space-5); font-size: var(--text-sm); }
-.order__first { display: grid; justify-items: start; gap: var(--space-2); }
+.order { display: grid; gap: var(--space-2); font-size: var(--text-sm); }
 .order > div { display: grid; gap: var(--space-2); }
+.order > div + div { margin-top: var(--space-3); }
 .order__chips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .order__chip { display: block; padding: var(--space-2); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); line-height: var(--leading-tight); }
-.order__first .order__chip { border-color: var(--color-accent); }
-.order__chip > span { display: block; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
-.order__scale { display: flex; justify-content: space-between; padding-top: var(--space-1); border-top: 1px solid var(--color-border-subtle); color: var(--color-muted); font-size: var(--text-xs); }
+.order > div:first-child .order__chip { border-color: var(--color-accent); }
+.order__step { display: block; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
+.order__pillar { display: block; width: fit-content; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); }
+.order__pillar:hover { color: var(--color-text); }
+.order__scale { display: flex; justify-content: space-between; margin-top: var(--space-4); padding-top: var(--space-1); border-top: 1px solid var(--color-border-subtle); color: var(--color-muted); font-size: var(--text-xs); }
 
 .lesson-table { max-width: 100%; overflow-x: auto; font-size: var(--text-md); }
 .lesson-table table { width: 100%; border-collapse: collapse; }

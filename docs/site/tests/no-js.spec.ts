@@ -131,6 +131,14 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   const figure = page.locator(".catch");
   await expect(figure.getByRole("button")).toHaveCount(0);
   await expect(figure.getByText("Without it", { exact: true })).toHaveCount(4);
+  // The fix order counts steps 1 to 8, and each step names its pillar.
+  const steps = page.locator(".order li");
+  await expect(steps.locator(".order__step")).toHaveText(
+    [1, 2, 3, 4, 5, 6, 7, 8].map((step) => `Step ${step}`),
+  );
+  await expect(steps.getByRole("link")).toHaveText(
+    [7, 6, 3, 2, 5, 1, 8, 4].map((pillar) => `Pillar ${pillar}`),
+  );
   // Every audit mode is visible as its own heading.
   for (const name of ["New project", "Existing repository", "Engineering guidance"])
     await expect(page.getByRole("heading", { level: 3, name, exact: true })).toBeVisible();
