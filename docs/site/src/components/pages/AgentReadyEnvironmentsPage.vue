@@ -77,7 +77,7 @@ const scorecard = [
   {
     pillar: "4 Documentation",
     gap: "Not every documented command was run, and the always-loaded global guidance was not decay-tested.",
-    fix: "Prune it with the pillar 8 decay test.",
+    fix: "Prune it with the decay test.",
     channel: "Advisory",
   },
 ];
@@ -195,8 +195,8 @@ onMounted(() => {
         <dt>Bound</dt>
         <dd>
           Limit what the agent can touch, and name who signs off. For example,
-          a deny rule on <code>.env</code> files, or a person who approves the
-          merge.
+          a deny rule on <code>.env</code> files, or a person who authorizes
+          the merge.
         </dd>
       </div>
     </dl>
@@ -253,10 +253,10 @@ onMounted(() => {
       <ul>
         <li>
           A rule with no exceptions is enforced. OpenAI's
-          <a :href="sources.harnessEngineering.href">harness engineering article</a>
-          from early 2026 reports the same move: when documentation fell short,
-          the rule became code. That article could not be fetched, so this
-          lesson checked it only through secondary summaries.
+          <a :href="sources.harnessEngineering.href">harness engineering article</a>,
+          published in February 2026 before the current model generation,
+          reports the same move: when documentation fell short, the rule
+          became code.
         </li>
         <li>
           When an advisory line keeps getting missed, there are two possible
@@ -273,7 +273,7 @@ onMounted(() => {
         <li>
           An enforced check should talk to the agent. An error message that
           states the fix lets the agent repair its own work. This also comes
-          from the OpenAI article, and no current source confirms it yet.
+          from the OpenAI article.
         </li>
       </ul>
     </div>
@@ -503,7 +503,7 @@ onMounted(() => {
           <li>Contract adherence, the diff against the spec or ticket, runs on every change.</li>
           <li>Other angles run when the diff carries their risk: simplicity and reuse for a new abstraction or dependency, test value when tests change, security for authentication, input, secrets, or permissions, performance for hot paths and unbounded loops, coding standards for rules no linter can express.</li>
           <li>The reviewer gets the spec and the diff, not the author's reasoning.</li>
-          <li>Each finding is checked against the code before anyone fixes it, and a person approves the merge.</li>
+          <li>Each finding is checked against the code before anyone fixes it, and a person authorizes the merge, either each time or in advance under the scoped authorization described in pillar 7.</li>
         </ul>
       </template>
     </PillarSection>
@@ -560,14 +560,14 @@ onMounted(() => {
       </p>
       <template #check>
         Every “never” rule is a deny rule, hook, or sandbox limit. Unattended
-        runs have turn or spend caps and a human sign-off.
+        runs have turn or spend caps and a named sign-off on the result.
       </template>
       <template #good>
         <ul>
           <li>Deny rules for secrets and protected paths.</li>
           <li>Worktree or container isolation, and least-privilege tokens.</li>
           <li>Turn or spend caps on unattended runs.</li>
-          <li>A person approves merges, deploys, and anything irreversible.</li>
+          <li>A person authorizes merges, deploys, and anything irreversible. They can do it each time, or in advance with a stated scope, an enforced boundary, a run cap, and a named sign-off on the result. Missing authorization is a gap; going without a repeated approval prompt is not.</li>
         </ul>
       </template>
     </PillarSection>
@@ -622,12 +622,12 @@ onMounted(() => {
         <li>
           <span class="ladder__score">2</span>
           <strong>Runnable</strong>
-          <span>One command from a fresh checkout, with only declared prerequisites, and verified evidence that it works.</span>
+          <span>The pillar's audit check passes on runnable evidence: one command from a fresh checkout, with only declared prerequisites.</span>
         </li>
         <li>
           <span class="ladder__score">3</span>
           <strong>Enforced and measured</strong>
-          <span>It blocks the action it guards, and its results are tracked over at least 20 runs or 30 days.</span>
+          <span>That check also blocks the action it guards, and its results are tracked over at least 20 runs or 30 days.</span>
         </li>
       </ol>
       <template #caption>
@@ -642,6 +642,15 @@ onMounted(() => {
           A pillar's score is the highest level whose criteria the verified
           evidence fully meets. An unverified check cannot lift a pillar; list
           it under Unverified instead.
+        </li>
+        <li>
+          The audit check shown with each pillar is what gates levels 2 and 3.
+          The longer checks in each pillar's reference file diagnose the top
+          gap; they gate a level only where that file says so.
+        </li>
+        <li>
+          When a pillar covers several artifacts, such as several instruction
+          files, score the weakest one that applies.
         </li>
         <li>
           Mark a pillar N/A when it does not apply, give a one-line reason, and
@@ -660,7 +669,8 @@ onMounted(() => {
     <div class="prose">
       <p>
         A failed fresh setup is scored once, in pillar 6. Other pillars can
-        still reach level 2 on CI evidence, or on a local run with dependencies
+        still reach level 2 on CI results for the exact commit audited, or on
+        a local run with dependencies
         supplied another way, labelled as such. Required checks, branch rules,
         and review history need read access to the forge API, such as
         <code>gh api</code>; without it, mark them unverified.
@@ -854,8 +864,10 @@ onMounted(() => {
         </li>
       </ul>
       <p>
-        The audit has not been run again, so these fixes are not reflected in
-        a score yet.
+        An independent rerun on 2026-11-03 at <code>7c09fbed</code>, using
+        borrowed dependencies, scored 10 of 24. Code shape and test gates rose
+        to 2. Fresh setup still failed inside the sandbox, so pillar 6 stayed
+        at 1.
       </p>
     </div>
   </section>
@@ -945,7 +957,8 @@ onMounted(() => {
     <h2 id="further-reading">Further reading</h2>
     <div class="prose">
       <p>
-        The vendor guidance behind the skill, last checked on 2026-11-01. The
+        The vendor guidance behind the skill, last checked between 2026-11-01
+        and 2026-11-03. The
         0–3 rubric, the fix order, and the durability ranking are the skill's
         own synthesis.
       </p>

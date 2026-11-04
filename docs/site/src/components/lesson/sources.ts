@@ -24,7 +24,7 @@ export const sources = {
   harnessEngineering: {
     title: "OpenAI: Harness engineering, leveraging Codex in an agent-first world (February 2026)",
     href: "https://openai.com/index/harness-engineering/",
-    note: "Could not be fetched; checked only through secondary summaries.",
+    note: "Published before the current model generation.",
   },
   codexAgentsMd: {
     title: "OpenAI: Codex, AGENTS.md",
