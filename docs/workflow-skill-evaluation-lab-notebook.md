@@ -1205,6 +1205,32 @@ Evidence:
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/quality-report.md`
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-repair-report.md`
 
+### 21. Design language guidance probe (planned)
+
+Date: 2026-11-04
+
+This study asks whether the design-language change that adds Forms, Data views,
+and two named breakpoints makes agents build those pages more consistently.
+The design language is host config, not a Workflow skill, so `pnpm eval:routing`
+does not apply.
+
+The protocol compares base and head `host-config/design-language/` on three fixed
+briefs: a settings form, a data table, and a docs landing page. Each probe is
+built standalone and on the library stack, with 3 attempts per arm. Objective
+browser scores come first; blind screenshot judges are diagnostics only.
+
+No dry run started. PluginBench at `c6a6909` measures only the four reviewed
+DeepSWE verifier contracts, has no browser collector, and delivers guidance as
+one `AGENTS.md`, not as a host directory with sibling examples. A dry run would
+admit tasks that cannot produce one objective score.
+
+The paid run needs 36 coding attempts, or 54 with PluginBench's automatic
+vanilla arm, plus about 54 judge calls. The nominal estimate is at most about $12
+and is an assumption until a dated price table exists.
+
+The study plan, the gap evidence, the smallest PluginBench additions, and the
+cost estimate are in `docs/evidence/design-language-probe/study-plan.md`.
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1324,6 +1350,7 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Rollback | Initial v2 bundle | Restored | The control failed its indeterminate-result gate, so the micro-skill did not run. | Digest `sha256:60655c...` |
 | 2026-09-03 | Micro engineering loop v2.3 | Eight-step production-owner and test loop | 5 of 5 repairs; 3 of 3 preservation | It matched saturated correctness, reduced repair resources, and passed preservation within the fixed ceilings. | `20260903T153142Z-*`; `20260903T155846Z-*` |
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
+| 2026-11-04 | Design language probe plan | Forms, data views, and breakpoints in `DESIGN.md` | Not run; PluginBench lacks an artifact submission, a browser collector, and host-directory delivery | Host-config guidance needs browser scores that the code-patch harness cannot produce. | `docs/evidence/design-language-probe/study-plan.md` |
 
 ## Validity threats
 
@@ -1401,6 +1428,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Evidence | Location |
 | --- | --- |
 | Durable canary reports and arm manifests | `docs/evidence/workflow-skill-evaluation/` |
+| Design language probe plan and PluginBench gaps | `docs/evidence/design-language-probe/study-plan.md` |
 | Original capability report | `pluginbench/reports/2026-08-31-filip-stack-evaluation.md` |
 | Blinded review report | `pluginbench/reports/2026-09-01-filip-stack-blinded-review-evaluation.md` |
 | Pinned hard-task snapshot | `pluginbench/benchmarks/swe-bench-verified-hard/tasks.json` |
