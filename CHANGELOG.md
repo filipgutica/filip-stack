@@ -1,3 +1,16 @@
+# [3.18.0](https://github.com/filipgutica/filip-stack/compare/v3.17.1...v3.18.0) (2026-11-04)
+
+
+### Bug Fixes
+
+* **hill-climb:** apply lessons from the first five climbs ([0c23b80](https://github.com/filipgutica/filip-stack/commit/0c23b80ec0704e379c1668715394e48468774fe7))
+
+
+### Features
+
+* **hill-climb:** save run records and tighten restore and size checks ([0470c66](https://github.com/filipgutica/filip-stack/commit/0470c669ba257eaffaf5eab6a25d12ead37694a6))
+* **skills:** add hill-climb skill ([003bab2](https://github.com/filipgutica/filip-stack/commit/003bab26426c88ab8f94334ac1c50d1bd161fbcf))
+
 ## [3.17.1](https://github.com/filipgutica/filip-stack/compare/v3.17.0...v3.17.1) (2026-11-04)
 
 
