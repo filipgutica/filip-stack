@@ -18,13 +18,21 @@ const positional = args.filter((_, i) => i !== pageFlag && i !== pageFlag + 1)
 const runsDir = positional[0] ?? join(homedir(), '.hill-climb', 'runs')
 const skillDir = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same' }
+const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same', final: 'Final', start: 'Start' }
 
-const overall = (round) => {
-  const counts = { candidate: 0, same: 0, incumbent: 0 }
-  for (const vote of round.votes) counts[vote.overall] += 1
+// Counts overall votes. A round votes candidate/same/incumbent; the final check votes final/same/start.
+const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
+  const counts = Object.fromEntries(keys.map((key) => [key, 0]))
+  for (const vote of votes) counts[vote.overall] += 1
   return counts
 }
+const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
+
+const voteTable = (run, votes) => [
+  `| Member | ${run.criteria.map((c) => `${c.id} ${c.name}`).join(' | ')} | Overall | Reason |`,
+  `| --- | ${run.criteria.map(() => '---').join(' | ')} | --- | --- |`,
+  ...votes.map((vote) => `| ${vote.member} | ${run.criteria.map((c) => label[vote.criteria[c.id]]).join(' | ')} | ${label[vote.overall]} | ${vote.reason} |`),
+]
 
 const report = (run) => {
   const lines = [
@@ -48,7 +56,7 @@ const report = (run) => {
     '',
   ]
   for (const round of run.rounds) {
-    const counts = overall(round)
+    const counts = overall(round.votes)
     lines.push(`### Round ${round.n}: ${round.summary}`, '')
     lines.push(`- Decision: **${round.decision}** (overall votes: ${counts.candidate} candidate, ${counts.same} same, ${counts.incumbent} incumbent)`)
     lines.push(`- Climb size after this round: ${round.climbChangedLines} / ${run.budget.sizeLimit} lines. Gates: ${round.gates}.`)
@@ -57,13 +65,14 @@ const report = (run) => {
     if (round.proposals?.length) {
       lines.push('- Proposals:', ...round.proposals.map((p) => `  - ${p.member}: ${p.text} (${p.status}${p.reason ? `: ${p.reason}` : ''})`))
     }
-    lines.push('', `| Member | ${run.criteria.map((c) => `${c.id} ${c.name}`).join(' | ')} | Overall | Reason |`)
-    lines.push(`| --- | ${run.criteria.map(() => '---').join(' | ')} | --- | --- |`)
-    for (const vote of round.votes) {
-      lines.push(`| ${vote.member} | ${run.criteria.map((c) => label[vote.criteria[c.id]]).join(' | ')} | ${label[vote.overall]} | ${vote.reason} |`)
-    }
+    if (round.votes.length) lines.push('', ...voteTable(run, round.votes))
     if (round.next?.length) lines.push('', '- Next suggestions:', ...round.next.map((n) => `  - ${n.member}: ${n.text}`))
     lines.push('')
+  }
+  const fc = finalCounts(run)
+  if (fc) {
+    lines.push('## Start vs final', '', `Overall votes: ${fc.final} final, ${fc.same} same, ${fc.start} start.`, '', ...voteTable(run, run.final.votes), '')
+    if (run.final.notes?.length) lines.push(...run.final.notes.map((n) => `- ${n}`), '')
   }
   lines.push('## Follow-ups', '', ...run.followUps.map((f) => `- ${f}`), '')
   lines.push('## Notes', '', ...run.notes.map((n) => `- ${n}`), '')
@@ -88,6 +97,7 @@ const index = runs.map((run) => {
     rejected: run.rounds.filter((r) => r.decision === 'rejected').length,
     void: run.rounds.filter((r) => r.decision === 'void').length,
     climbChangedLines: run.result.climbChangedLines,
+    final: finalCounts(run),
     stop: run.stop,
   }
 }).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))
