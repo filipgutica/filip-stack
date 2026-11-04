@@ -59,6 +59,10 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
     }
   ],
   "stop": "The stop rule that ended the climb.",
+  "final": {
+    "votes": [{ "member": "Astra", "overall": "final", "criteria": { "C1": "final" }, "reason": "The judge's overall reason." }],
+    "notes": ["Optional: how the start and final evidence were built."]
+  },
   "result": {
     "summary": "What the climb changed, in one or two sentences.",
     "climbChangedLines": 2,
@@ -78,7 +82,8 @@ Field notes:
 - `proposals`: round 1 holds the propose results; later rounds use `[]`. Statuses are `none`, `applied`, `declined`, `exhausted`, or `applied in round <n>`.
 - `gates`: `pass`, `fail`, or `blocked`.
 - `decision`: `accepted`, `rejected`, or `void`. A round that fails a gate is `rejected` and has no `votes`.
-- `memberCalls`: every propose and judge call, including retries.
+- `final`: the final check. Votes are `final`, `same`, or `start`. Optional: leave it out when no round was accepted.
+- `memberCalls`: every propose and judge call, including the final check and retries.
 
 ## Build the reports
 

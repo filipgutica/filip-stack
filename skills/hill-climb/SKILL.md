@@ -248,6 +248,16 @@ Leave the final incumbent in the working tree. When other branches are
 stacked on the change, rebase them onto the climbed result once it is
 committed, and run their gates.
 
+### Final check
+
+Each round compares a candidate only with the version before it, so the
+rounds do not show whether the whole climb helped. When at least one round
+was accepted, run one more judge pass: the starting incumbent against the
+final incumbent. Build the bundles and send the judge brief as in a round,
+with `start/` as one version, and map each vote back to `final`, `same`, or
+`start`. Change no files. When a strict majority prefers the start, say so
+first in the report and recommend dropping the climb.
+
 ## 5. Report
 
 The final reply contains:
@@ -255,6 +265,7 @@ The final reply contains:
 - The climb card, including what it does not cover.
 - The round ledger: proposals, what changed, gate results, each judge's
   preference attributed to the model that ran, and the decision.
+- The final check's votes, attributed to the model that ran.
 - Before and after evidence. For UI, paired screenshots.
 - The climb's diff stat against the starting incumbent.
 - Follow-ups declined for size or scope.

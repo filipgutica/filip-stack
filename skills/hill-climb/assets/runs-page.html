@@ -8,23 +8,18 @@
   --bg: #f4f5f8;
   --surface: #e7e8ec;
   --surface-raised: #ffffff;
-  --surface-hover: #e4e6eb;
   --row-hover: #dfe1e7;
   --row-selected: #ffffff;
   --border-subtle: #d8dbe2;
   --border: #777d88;
   --text: #222326;
   --text-muted: #5d626c;
-  --text-faint: #626772;
   --accent: #6359a7;
   --link: #075fc7;
   --focus: #075fc7;
-  --success: #1f8a5b;
+  --success: #157249;
   --warning: #86532e;
   --danger: #c7372d;
-  --success-soft: color-mix(in srgb, var(--success) 14%, var(--bg));
-  --warning-soft: color-mix(in srgb, var(--warning) 14%, var(--bg));
-  --danger-soft: color-mix(in srgb, var(--danger) 12%, var(--bg));
   --neutral-soft: var(--surface);
   --code-bg: var(--surface);
   --diff-add: color-mix(in srgb, var(--success) 13%, var(--surface-raised));
@@ -55,26 +50,21 @@
   --measure: 68ch;
   --page-max: 1040px;
   --radius-sm: 4px;
-  --radius-md: 6px;
   --radius-lg: 8px;
-  --radius-pill: 999px;
   --duration-fast: 120ms;
-  --focus-ring: 0 0 0 2px var(--bg), 0 0 0 4px var(--focus);
 }
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     color-scheme: dark;
     --bg: #151619;
-    --surface: #191a1d;
+    --surface: #0e0f12;
     --surface-raised: #212226;
-    --surface-hover: #303238;
     --row-hover: #25272d;
     --row-selected: #38334f;
     --border-subtle: #3b3e45;
     --border: #818894;
     --text: #f4f5f8;
     --text-muted: #b0b5bf;
-    --text-faint: #a0a6b1;
     --accent: #a99ce2;
     --link: #58a6ff;
     --focus: #58a6ff;
@@ -87,16 +77,14 @@
 :root[data-theme="dark"] {
   color-scheme: dark;
   --bg: #151619;
-  --surface: #191a1d;
+  --surface: #0e0f12;
   --surface-raised: #212226;
-  --surface-hover: #303238;
   --row-hover: #25272d;
   --row-selected: #38334f;
   --border-subtle: #3b3e45;
   --border: #818894;
   --text: #f4f5f8;
   --text-muted: #b0b5bf;
-  --text-faint: #a0a6b1;
   --accent: #a99ce2;
   --link: #58a6ff;
   --focus: #58a6ff;
@@ -121,7 +109,7 @@ code, pre { font-family: var(--font-mono); }
 code { font-size: 0.92em; background: var(--code-bg); padding: 1px 4px; border-radius: var(--radius-sm); }
 a { color: var(--link); text-decoration: none; }
 a:hover { text-decoration: underline; }
-:focus-visible { outline: none; box-shadow: var(--focus-ring); border-radius: var(--radius-sm); }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
 .num, table { font-variant-numeric: tabular-nums; }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: 0ms !important; } }
 
@@ -158,7 +146,7 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .runs-table tbody tr[aria-current="true"] { background: var(--row-selected); box-shadow: inset 2px 0 0 var(--accent); }
 .runs-table tbody tr[aria-current="true"] .run-title { font-weight: var(--weight-medium); }
 .runs-table .run-title { color: var(--text); min-width: 220px; display: inline-block; }
-.runs-table .sub { display: block; font-size: var(--text-xs); color: var(--text-muted); }
+.runs-table .sub { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); font-size: var(--text-xs); color: var(--text-muted); }
 
 .run-head { gap: var(--space-3); border-top: 1px solid var(--border-subtle); }
 .run-head h2 { font-size: var(--text-2xl); padding-top: var(--space-6); }
@@ -166,11 +154,12 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .facts a { font-family: var(--font-mono); }
 .goal { font-size: var(--text-reading); max-width: var(--measure); }
 
-.summary { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: var(--space-3); }
-.stat { background: var(--surface-raised); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: var(--space-3) var(--space-4); display: grid; gap: 2px; min-width: 0; }
-.stat .k { font-size: var(--text-xs); color: var(--text-muted); }
-.stat .v { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
-.stat .s { font-size: var(--text-xs); color: var(--text-muted); }
+/* Totals: one strip of figures with dividers, not separate cards. */
+.totals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); border-block: 1px solid var(--border-subtle); }
+.totals div { display: grid; gap: 2px; padding: var(--space-3) var(--space-4) var(--space-3) 0; min-width: 0; }
+.totals dt { font-size: var(--text-sm); color: var(--text-muted); }
+.totals dd { font-size: var(--text-xl); font-weight: var(--weight-semibold); }
+.totals dd small { display: block; font-size: var(--text-sm); font-weight: var(--weight-regular); color: var(--text-muted); }
 
 .criteria { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: var(--space-2) var(--space-4); }
 .criteria dt { font-weight: var(--weight-medium); }
@@ -182,10 +171,11 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .legend span { display: inline-flex; align-items: center; gap: var(--space-1); }
 .swatch { width: 10px; height: 10px; border-radius: 2px; display: inline-block; }
 .sw-candidate { background: var(--success); }
-.sw-same { background: var(--border); }
+.sw-same { background: var(--border); opacity: 0.55; }
 .sw-incumbent { background: var(--warning); }
 .sw-size { background: var(--accent); }
-.prow { display: grid; grid-template-columns: 80px minmax(0, 1fr) 120px; gap: var(--space-3); align-items: center; }
+.prow { display: grid; grid-template-columns: 96px minmax(0, 1fr) 132px; gap: var(--space-3); align-items: center; }
+.prow.final { border-top: 1px solid var(--border-subtle); padding-top: var(--space-4); }
 .prow .rl { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .prow .rl small { display: block; font-weight: var(--weight-regular); color: var(--text-muted); font-size: var(--text-xs); }
 .bars { display: grid; gap: var(--space-1); min-width: 0; }
@@ -194,27 +184,24 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .seg-candidate { background: var(--success); }
 .seg-same { background: var(--border); opacity: 0.55; }
 .seg-incumbent { background: var(--warning); }
-.size { position: relative; height: 6px; border-radius: var(--radius-pill); background: var(--neutral-soft); }
-.size div { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-pill); background: var(--accent); }
+.size { position: relative; height: 6px; border-radius: var(--radius-sm); background: var(--neutral-soft); }
+.size div { position: absolute; inset: 0 auto 0 0; border-radius: var(--radius-sm); background: var(--accent); }
 .prow .rv { font-size: var(--text-xs); color: var(--text-muted); text-align: right; line-height: 1.4; }
-.chart-note { font-size: var(--text-xs); color: var(--text-muted); }
+.chart-note { font-size: var(--text-sm); color: var(--text-muted); max-width: var(--measure); }
 
-.pill { display: inline-flex; align-items: center; gap: var(--space-1); font-size: var(--text-xs); font-weight: var(--weight-medium); padding: 2px var(--space-2); border-radius: var(--radius-pill); color: var(--text); white-space: nowrap; }
-.pill-accepted, .v-candidate { background: var(--success-soft); }
-.pill-rejected, .v-incumbent { background: var(--warning-soft); }
-.pill-void { background: var(--danger-soft); }
-.v-same { background: var(--neutral-soft); }
-.pill::before { content: ""; width: 6px; height: 6px; border-radius: 50%; background: var(--border); }
-.pill-accepted::before, .v-candidate::before { background: var(--success); }
-.pill-rejected::before, .v-incumbent::before { background: var(--warning); }
-.pill-void::before { background: var(--danger); }
+/* A vote or decision is a word; color only repeats what the word says. */
+.verdict { font-weight: var(--weight-medium); white-space: nowrap; }
+.v-candidate, .v-final, .d-accepted { color: var(--success); }
+.v-incumbent, .v-start, .d-rejected { color: var(--warning); }
+.v-same { color: var(--text-muted); }
+.d-void { color: var(--danger); }
 
 .round { border-top: 1px solid var(--border-subtle); padding-top: var(--space-6); gap: var(--space-4); }
 .round-head { display: flex; flex-wrap: wrap; align-items: baseline; gap: var(--space-2) var(--space-3); }
 .round-head h4 { font-size: var(--text-lg); }
 .round-head .muted { font-size: var(--text-sm); }
 .applied { padding-left: var(--space-5); display: grid; gap: var(--space-1); max-width: var(--measure); }
-.label { font-size: var(--text-xs); font-weight: var(--weight-medium); color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+.label { font-size: var(--text-sm); font-weight: var(--weight-medium); color: var(--text-muted); }
 .block { gap: var(--space-2); }
 td.reason { color: var(--text-muted); min-width: 240px; overflow-wrap: anywhere; }
 td.member { font-weight: var(--weight-medium); white-space: nowrap; }
@@ -231,15 +218,15 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 .diff .add { background: var(--diff-add); }
 .diff .del { background: var(--diff-del); }
 .diff .hunk { color: var(--text-muted); }
-.diff .meta { color: var(--text-faint); }
+.diff .meta { color: var(--text-muted); }
 
 .notes { padding-left: var(--space-5); display: grid; gap: var(--space-1); max-width: var(--measure); color: var(--text-muted); }
 .state { color: var(--text-muted); padding: var(--space-4); }
 
-@media (max-width: 760px) {
+@media (max-width: 640px) {
   .shell { padding-block: var(--space-6) var(--space-8); padding-left: max(var(--space-4), env(safe-area-inset-left, 0px)); padding-right: max(var(--space-4), env(safe-area-inset-right, 0px)); gap: var(--space-6); }
-  .summary { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .prow { grid-template-columns: 64px minmax(0, 1fr); }
+  .totals { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .prow { grid-template-columns: 72px minmax(0, 1fr); }
   .prow .rv { grid-column: 2; text-align: left; }
   .criteria { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .criteria dd { margin-bottom: var(--space-2); }
@@ -262,7 +249,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 (() => {
   const $runs = document.getElementById('runs');
   const $detail = document.getElementById('detail');
-  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent' };
+  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent', final: 'Final', start: 'Start' };
   const cache = new Map();
   let index = [];
 
@@ -281,22 +268,16 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
   // Render `code` spans inside plain text.
   const rich = (text) => String(text).split(/(`[^`]+`)/).map((part) =>
     part.length > 1 && part.startsWith('`') && part.endsWith('`') ? el('code', { text: part.slice(1, -1) }) : document.createTextNode(part));
-  const pill = (kind, text) => el('span', { class: `pill ${kind}` }, text);
+  const verdict = (vote) => el('span', { class: `verdict v-${vote}`, text: LABEL[vote] });
   const cap = (s) => s[0].toUpperCase() + s.slice(1);
 
-  const verdicts = (round, criteria) => {
-    const t = { candidate: 0, same: 0, incumbent: 0 };
-    for (const v of round.votes) {
-      for (const c of criteria) t[v.criteria[c.id]] += 1;
-      t[v.overall] += 1;
-    }
+  // Overall votes only. A round votes candidate/same/incumbent; the final check votes final/same/start.
+  const overall = (votes) => {
+    const t = { candidate: 0, same: 0, incumbent: 0, final: 0, start: 0 };
+    for (const v of votes) t[v.overall] += 1;
     return t;
   };
-  const overall = (round) => {
-    const t = { candidate: 0, same: 0, incumbent: 0 };
-    for (const v of round.votes) t[v.overall] += 1;
-    return t;
-  };
+  const score = (t, win, lose) => `${t[win]}–${t[lose]}${t.same ? `, ${t.same} same` : ''}`;
 
   const go = (id) => { if (location.hash.slice(1) !== id) location.hash = id; };
 
@@ -304,16 +285,17 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     const head = el('tr', {},
       el('th', { text: 'Run' }), el('th', { text: 'Date' }), el('th', { class: 'n', text: 'Rounds' }),
       el('th', { class: 'n', text: 'Accepted' }), el('th', { class: 'n', text: 'Rejected or void' }),
-      el('th', { class: 'n', text: 'Climb size' }), el('th', { text: 'Stopped because' }));
+      el('th', { class: 'n', text: 'Climb size' }), el('th', { text: 'Start vs final' }), el('th', { text: 'Stopped because' }));
     const rows = index.map((run) => {
       const tr = el('tr', { 'aria-current': run.id === activeId ? 'true' : null },
         el('td', {}, el('a', { class: 'run-title', href: `#${run.id}`, text: run.title }),
-          el('span', { class: 'sub', text: `${run.target.repo}${run.target.pr ? ` #${run.target.pr}` : ''} · ${run.target.branch}` })),
+          el('span', { class: 'sub' }, el('span', { text: `${run.target.repo}${run.target.pr ? ` #${run.target.pr}` : ''}` }), el('span', { text: run.target.branch }))),
         el('td', { class: 'num', style: 'white-space: nowrap', text: run.date }),
         el('td', { class: 'n', text: String(run.rounds) }),
         el('td', { class: 'n', text: String(run.accepted) }),
         el('td', { class: 'n', text: String(run.rejected + (run.void || 0)) }),
         el('td', { class: 'n', text: `${run.climbChangedLines} lines` }),
+        el('td', {}, run.final ? el('span', { class: `verdict ${run.final.final > run.final.start ? 'v-final' : run.final.start > run.final.final ? 'v-start' : 'v-same'}`, text: `${run.final.final > run.final.start ? 'Final' : run.final.start > run.final.final ? 'Start' : 'Even'} ${score(run.final, 'final', 'start')}` }) : el('span', { class: 'muted', text: 'Not run' })),
         el('td', { class: 'muted', text: run.stop }));
       tr.addEventListener('click', (event) => { if (!event.target.closest('a')) go(run.id); });
       return tr;
@@ -323,53 +305,63 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 
   const progress = (run) => {
     const legend = el('div', { class: 'legend' },
-      el('span', {}, el('i', { class: 'swatch sw-candidate' }), 'Prefers candidate'),
+      el('span', {}, el('i', { class: 'swatch sw-candidate' }), 'Prefers the newer version'),
       el('span', {}, el('i', { class: 'swatch sw-same' }), 'Same'),
-      el('span', {}, el('i', { class: 'swatch sw-incumbent' }), 'Prefers incumbent'),
-      el('span', {}, el('i', { class: 'swatch sw-size' }), 'Climb size vs limit'));
+      el('span', {}, el('i', { class: 'swatch sw-incumbent' }), 'Prefers the older version'),
+      el('span', {}, el('i', { class: 'swatch sw-size' }), 'Climb size against its limit'));
+    const bar = (t, win, lose) => {
+      const total = t[win] + t.same + t[lose] || 1;
+      const seg = (k, cls) => el('div', { class: `seg-${cls}`, style: `width:${(t[k] / total) * 100}%`, title: `${LABEL[k]}: ${t[k]} of ${total}` });
+      return el('div', { class: 'stack' }, seg(win, 'candidate'), seg('same', 'same'), seg(lose, 'incumbent'));
+    };
     const rows = run.rounds.map((r) => {
-      const t = verdicts(r, run.criteria);
-      const total = t.candidate + t.same + t.incumbent || 1;
-      const seg = (k) => el('div', { class: `seg-${k}`, style: `width:${(t[k] / total) * 100}%`, title: `${LABEL[k]}: ${t[k]} of ${total}` });
+      const t = overall(r.votes);
       const sizePct = Math.min(100, (r.climbChangedLines / run.budget.sizeLimit) * 100);
       return el('div', { class: 'prow' },
         el('div', { class: 'rl' }, `Round ${r.n}`, el('small', { text: cap(r.decision) })),
-        el('div', { class: 'bars', role: 'img', 'aria-label': `Round ${r.n}: ${t.candidate} candidate, ${t.same} same, ${t.incumbent} incumbent verdicts; climb ${r.climbChangedLines} of ${run.budget.sizeLimit} lines` },
-          el('div', { class: 'stack' }, seg('candidate'), seg('same'), seg('incumbent')),
+        el('div', { class: 'bars', role: 'img', 'aria-label': `Round ${r.n}: ${t.candidate} judges preferred the candidate, ${t.same} same, ${t.incumbent} preferred the incumbent; climb ${r.climbChangedLines} of ${run.budget.sizeLimit} lines` },
+          bar(t, 'candidate', 'incumbent'),
           el('div', { class: 'size' }, el('div', { style: `width:${sizePct}%` }))),
-        el('div', { class: 'rv num' }, `${t.candidate}/${total} for candidate`, el('br'), `${r.climbChangedLines} / ${run.budget.sizeLimit} lines`));
+        el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
     });
+    if (run.final) {
+      const t = overall(run.final.votes);
+      rows.push(el('div', { class: 'prow final' },
+        el('div', { class: 'rl' }, 'Whole climb', el('small', { text: 'Start vs final' })),
+        el('div', { class: 'bars', role: 'img', 'aria-label': `Start vs final: ${t.final} judges preferred the final version, ${t.same} same, ${t.start} preferred the start` }, bar(t, 'final', 'start')),
+        el('div', { class: 'rv num' }, `Final ${score(t, 'final', 'start')}`)));
+    }
     return el('div', { class: 'progress' }, legend, rows,
-      el('p', { class: 'chart-note', text: 'The thick bar counts every judge verdict in the round: each criterion plus overall. The thin bar is the climb’s total changed lines against its size limit.' }));
+      el('p', { class: 'chart-note', text: 'Each round compares its candidate only with the version before it, so a round bar shows whether that one step helped, not the climb so far. The whole-climb row compares the starting version with the final one. Bars count each judge’s overall vote. The thin bar is the climb’s changed lines against its size limit.' }));
   };
 
-  const voteTable = (run, round) => {
+  const voteTable = (run, votes) => {
     const head = el('tr', {}, el('th', { text: 'Member' }), run.criteria.map((c) => el('th', { text: `${c.id} ${c.name}` })), el('th', { text: 'Overall' }), el('th', { text: 'Reason' }));
-    const body = round.votes.map((v) => el('tr', {},
+    const body = votes.map((v) => el('tr', {},
       el('td', { class: 'member', text: v.member }),
-      run.criteria.map((c) => el('td', {}, pill(`v-${v.criteria[c.id]}`, LABEL[v.criteria[c.id]]))),
-      el('td', {}, pill(`v-${v.overall}`, LABEL[v.overall])),
+      run.criteria.map((c) => el('td', {}, verdict(v.criteria[c.id]))),
+      el('td', {}, verdict(v.overall)),
       el('td', { class: 'reason' }, rich(v.reason))));
     return el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
   };
 
   const roundSection = (run, r) => {
-    const o = overall(r);
+    const o = overall(r.votes);
     const parts = [
       el('div', { class: 'round-head' },
         el('h4', { text: `Round ${r.n}` }),
-        pill(`pill-${r.decision}`, `${cap(r.decision)} ${o.candidate}–${o.incumbent}${o.same ? `, ${o.same} same` : ''}`),
+        el('span', { class: `verdict d-${r.decision}`, text: `${cap(r.decision)}${r.votes.length ? ` ${score(o, 'candidate', 'incumbent')}` : ''}` }),
         el('span', { class: 'muted' }, rich(r.summary))),
       el('div', { class: 'block' }, el('div', { class: 'label', text: 'Changed in the candidate' }),
         el('ul', { class: 'applied' }, r.applied.map((a) => el('li', {}, rich(a))))),
     ];
-    if (r.votes.length) parts.push(el('div', { class: 'block' }, el('div', { class: 'label', text: 'Judge votes' }), voteTable(run, r)));
+    if (r.votes.length) parts.push(el('div', { class: 'block' }, el('div', { class: 'label', text: 'Judge votes' }), voteTable(run, r.votes)));
     if (r.restore) parts.push(el('p', { class: 'muted' }, el('strong', { text: 'Restore: ' }), r.restore));
     if (r.proposals && r.proposals.length) {
       parts.push(el('details', {}, el('summary', { text: `Proposals (${r.proposals.length})` }),
         el('ul', { class: 'plist' }, r.proposals.map((p) => el('li', {},
           el('span', { class: 'who', text: p.member }), el('span', {}, rich(p.text)),
-          el('span', { class: 'status' }, p.status, p.reason ? ` — ${p.reason}` : ''))))));
+          el('span', { class: 'status' }, p.status, p.reason ? `: ${p.reason}` : ''))))));
     }
     if (r.next && r.next.length) {
       parts.push(el('div', { class: 'block' }, el('div', { class: 'label', text: 'Judges suggested next' }),
@@ -396,23 +388,28 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
           el('span', {}, 'head ', el('code', { text: run.target.head })),
           el('span', {}, el('code', { text: run.target.branch }))),
         el('p', { class: 'goal' }, rich(run.goal))),
-      el('div', { class: 'summary' },
-        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Rounds' }), el('span', { class: 'v num', text: `${run.rounds.length} / ${run.budget.rounds}` }), el('span', { class: 's', text: run.stop })),
-        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Accepted' }), el('span', { class: 'v num', text: String(accepted) }), el('span', { class: 's', text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` })),
-        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Climb size' }), el('span', { class: 'v num', text: `${run.result.climbChangedLines} lines` }), el('span', { class: 's', text: `limit ${run.budget.sizeLimit} · original ${run.budget.originalChangedLines}` })),
-        el('div', { class: 'stat' }, el('span', { class: 'k', text: 'Member calls' }), el('span', { class: 'v num', text: String(run.memberCalls) }), el('span', { class: 's', text: run.result.committed ? 'Committed' : 'Not committed' }))),
+      el('dl', { class: 'totals' },
+        el('div', {}, el('dt', { text: 'Rounds' }), el('dd', { class: 'num' }, `${run.rounds.length} of ${run.budget.rounds}`)),
+        el('div', {}, el('dt', { text: 'Accepted' }), el('dd', { class: 'num' }, String(accepted), el('small', { text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` }))),
+        el('div', {}, el('dt', { text: 'Climb size' }), el('dd', { class: 'num' }, `${run.result.climbChangedLines} lines`, el('small', { text: `Limit ${run.budget.sizeLimit}, original change ${run.budget.originalChangedLines}` }))),
+        el('div', {}, el('dt', { text: 'Member calls' }), el('dd', { class: 'num' }, String(run.memberCalls), el('small', { text: run.result.committed ? 'Committed' : 'Not committed' })))),
+      el('p', { class: 'muted' }, el('strong', { text: 'Stopped: ' }), rich(run.stop)),
       el('section', {}, el('h3', { text: 'How the rounds went' }), progress(run)),
       el('section', {}, el('h3', { text: 'Criteria' }),
         el('dl', { class: 'criteria' }, run.criteria.map((c) => [el('dt', { text: `${c.id} ${c.name}` }), el('dd', {}, rich(c.description))]))),
       el('section', {}, el('h3', { text: 'Rounds' }), run.rounds.map((r) => roundSection(run, r))),
+      run.final ? el('section', {}, el('h3', { text: 'Start vs final' }),
+        el('p', { class: 'muted', text: 'One judge pass after the climb, comparing the starting version with the final one.' }),
+        voteTable(run, run.final.votes),
+        run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null) : null,
       el('section', {}, el('h3', { text: 'Result' }),
         el('p', { class: 'goal' }, rich(run.result.summary)),
         run.result.diff ? el('details', {}, el('summary', { text: 'Climb diff' }), diffView(run.result.diff)) : null),
       el('section', {}, el('h3', { text: 'Follow-ups' }), el('ul', { class: 'notes' }, run.followUps.map((f) => el('li', {}, rich(f))))),
       el('section', {}, el('h3', { text: 'Setup and notes' }),
         el('dl', { class: 'criteria' },
-          el('dt', { text: 'Lineup' }), el('dd', { text: run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join(' · ') }),
-          el('dt', { text: 'Gates' }), el('dd', {}, run.gates.map((g, i) => [i ? ' · ' : '', el('code', { text: g })])),
+          el('dt', { text: 'Lineup' }), el('dd', { text: run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ') }),
+          el('dt', { text: 'Gates' }), el('dd', {}, run.gates.map((g, i) => [i ? ', ' : '', el('code', { text: g })])),
           el('dt', { text: 'Not covered' }), el('dd', { text: run.notCovered.join(' ') })),
         el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n))))));
   };
