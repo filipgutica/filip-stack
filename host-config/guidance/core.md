@@ -70,7 +70,7 @@ Do routine and tightly coupled work in this thread. Delegate only when the deleg
 
 The main thread owns architecture, scope, integration, and final acceptance. Workers do their brief's work themselves and delegate further only when the brief allows it.
 
-Each brief names its role and tells the child to read that section of `{{HOME}}/.agents/roles.md` before starting. In the table, a provider/model target means `delegate_task` with that model and effort; the child receives only the brief, so state any read-only limit in it. A profile name means the native subagent tool.
+Each brief names its role and tells the child to read that section of `{{HOME}}/.agents/roles.md` before starting. In the table, a provider/model target means `delegate_task` with that model and the listed options; the child receives only the brief, so state any read-only limit in it. A profile name means the native subagent tool.
 
 {{include:roles}}
 
