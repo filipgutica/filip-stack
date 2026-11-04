@@ -1,3 +1,14 @@
+## [3.16.2](https://github.com/filipgutica/filip-stack/compare/v3.16.1...v3.16.2) (2026-11-04)
+
+
+### Bug Fixes
+
+* **skills:** accept reported active configuration as pillar 7 enforcement evidence ([6b4a9e1](https://github.com/filipgutica/filip-stack/commit/6b4a9e10fa7a741ac9fa36c6d4d3ea20437aa815))
+* **skills:** align score levels 1 and 2 with the evidence rules ([77c62c2](https://github.com/filipgutica/filip-stack/commit/77c62c21a9e5470f1a64f2bb4d26e6cdd164b12b))
+* **skills:** clarify agent readiness scoring and authorization ([4a8d5ca](https://github.com/filipgutica/filip-stack/commit/4a8d5ca2d79086514b8c989c40563f7f989eb28c))
+* **skills:** match the pillar table to the scoped sign-off wording ([3daa8d5](https://github.com/filipgutica/filip-stack/commit/3daa8d5bf94a5fa7145f56d83e27da8642db85b7))
+* **skills:** score pillar 8 results before the policy fallback ([c06d5d4](https://github.com/filipgutica/filip-stack/commit/c06d5d40a867ea269883431b7b61e1613243b9f8))
+
 ## [3.16.1](https://github.com/filipgutica/filip-stack/compare/v3.16.0...v3.16.1) (2026-11-04)
 
 
