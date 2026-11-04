@@ -79,7 +79,7 @@ Scoring rules:
 | [4](references/pillar-4-documentation.md) | Documentation: a map, decisions, workflows, glossary | Tell | Every always-loaded line passes the two-question test or the decay test; every documented command runs |
 | [5](references/pillar-5-review-gates.md) | Review gates chosen by risk | Check | Each review angle has a trigger, runs read-only in fresh context, and its findings are verified before they are fixed |
 | [6](references/pillar-6-reproducible-environment.md) | Reproducible environment: one command, seeded, observable | Check | A fresh worktree, inside the agent's own sandbox, reaches a seeded, healthy, running app with one command; two worktrees run at once without collisions |
-| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a human sign-off |
+| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a named sign-off on the result |
 | [8](references/pillar-8-guidance-evaluated.md) | Guidance is evaluated | Tell | Each instruction file or skill has evidence that it changes behavior against a no-guidance baseline |
 
 Pillars 7 and 8 extend the original six. Both come from the same vendor
