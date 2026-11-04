@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { UiBadge } from "@filipgutica/ui";
+import { UiBadge, UiToggleButton } from "@filipgutica/ui";
 
 // An illustrative change with one hidden problem per safeguard. Without
 // JavaScript, each problem lists both outcomes; after hydration, the reader
@@ -56,9 +56,10 @@ const problems: {
 ];
 const enhanced = ref(false);
 const enabled = ref(new Set<SafeguardId>());
-const toggle = (id: SafeguardId) => {
+const setEnabled = (id: SafeguardId, on: boolean) => {
   const next = new Set(enabled.value);
-  if (!next.delete(id)) next.add(id);
+  if (on) next.add(id);
+  else next.delete(id);
   enabled.value = next;
 };
 // What each problem shows: both outcomes before hydration, the current one after.
@@ -101,19 +102,15 @@ onMounted(() => {
           Turn on parts of the environment
         </p>
         <div role="group" aria-labelledby="catch-controls-label">
-          <button
+          <UiToggleButton
             v-for="safeguard in safeguards"
             :key="safeguard.id"
-            type="button"
-            :aria-pressed="enabled.has(safeguard.id)"
-            @click="toggle(safeguard.id)"
+            :pressed="enabled.has(safeguard.id)"
+            @update:pressed="setEnabled(safeguard.id, $event)"
           >
-            <span class="catch__switch" aria-hidden="true" />
-            <span>
-              {{ safeguard.label }}
-              <small>Pillar {{ safeguard.pillar }}</small>
-            </span>
-          </button>
+            {{ safeguard.label }}
+            <template #description>Pillar {{ safeguard.pillar }}</template>
+          </UiToggleButton>
         </div>
       </div>
       <div class="catch__results">
@@ -154,15 +151,6 @@ onMounted(() => {
 .catch__scenario { max-width: var(--measure); }
 .catch__controls { display: grid; gap: var(--space-2); }
 .catch__controls [role='group'] { display: grid; gap: var(--space-2); }
-.catch__controls button { display: flex; align-items: center; gap: var(--space-3); min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); background: var(--color-surface-raised); color: var(--color-text); font: var(--text-md) / var(--leading-tight) var(--font-ui); text-align: left; cursor: pointer; }
-.catch__controls button:hover { border-color: var(--color-border); }
-.catch__controls button[aria-pressed='true'] { border-color: var(--color-accent); }
-.catch__controls small { display: block; color: var(--color-muted); font-size: var(--text-xs); }
-/* The thumb's position, not only its color, shows the state. */
-.catch__switch { position: relative; flex: none; width: 28px; height: 16px; border: 1px solid var(--color-border); border-radius: var(--radius-pill); background: var(--color-surface-muted); }
-.catch__switch::after { content: ''; position: absolute; top: 2px; left: 2px; width: 10px; height: 10px; border-radius: var(--radius-pill); background: var(--color-border); }
-[aria-pressed='true'] .catch__switch { border-color: var(--color-accent); background: var(--color-accent); }
-[aria-pressed='true'] .catch__switch::after { left: 14px; background: var(--color-button-text); }
 .catch__problems { display: grid; max-width: none; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .catch__problems > li { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-left: 3px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface-raised); }
 .catch__problems > li.is-stopped { border-left-color: var(--color-success); }
@@ -174,7 +162,7 @@ onMounted(() => {
 .catch__both dd { margin: 0; }
 .catch__tally { padding-top: var(--space-1); }
 @media (prefers-reduced-motion: no-preference) {
-  .catch__switch, .catch__switch::after, .catch__problems > li { transition: all var(--duration) var(--ease-out); }
+  .catch__problems > li { transition: all var(--duration) var(--ease-out); }
 }
 @media (max-width: 800px) {
   .is-enhanced .catch__body { grid-template-columns: minmax(0, 1fr); }

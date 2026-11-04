@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { UiAlert, UiBadge, UiCodeBlock, UiTabs } from "@filipgutica/ui";
+import { UiAlert, UiBadge, UiCodeBlock, UiFigure, UiScore, UiTabs } from "@filipgutica/ui";
 import type { Catalog } from "../../catalog";
 import CatchFigure from "../lesson/CatchFigure.vue";
-import LessonFigure from "../lesson/LessonFigure.vue";
 import PillarSection from "../lesson/PillarSection.vue";
-import ScorePips from "../lesson/ScorePips.vue";
 import { sources } from "../lesson/sources";
 import { lessonPillars, maintenanceFile } from "../lesson/pillars";
 
@@ -33,49 +31,57 @@ const contents = [
 ];
 const scorecard = [
   {
-    pillar: "7 Bounded autonomy",
+    pillar: 7,
+    name: "Bounded autonomy",
     gap: "The rule against AI attribution in commits was advisory only, and a reminder the harness injects every session contradicted it.",
     fix: "A hook that blocks attribution trailers, plus ask rules for merges and 1Password.",
     channel: "Enforced",
   },
   {
-    pillar: "6 Reproducible environment",
+    pillar: 6,
+    name: "Reproducible environment",
     gap: "A fresh agent worktree could not install dependencies inside the agent's sandbox.",
     fix: "Share installed dependencies into worktrees, or narrow the sandbox rule. Put the fresh-worktree command in AGENTS.md. Add a site preview per PR.",
     channel: "Enforced and advisory",
   },
   {
-    pillar: "3 Test gates",
+    pillar: 3,
+    name: "Test gates",
     gap: "No twenty-test sample, no single-test command in AGENTS.md, and the flake rate was unverified.",
     fix: "Run the sample. Add node --test <file> to AGENTS.md.",
     channel: "Advisory",
   },
   {
-    pillar: "2 Static gates",
+    pillar: 2,
+    name: "Static gates",
     gap: "About 5,700 lines of root scripts and tests had no static check.",
     fix: "Add a type check or Fallow to pnpm check.",
     channel: "Enforced",
   },
   {
-    pillar: "5 Review gates",
+    pillar: 5,
+    name: "Review gates",
     gap: "No configuration showed a read-only, fresh-context reviewer running on pull requests.",
     fix: "Decide whether a reviewer triggered by risk is worth its cost.",
     channel: "Enforced",
   },
   {
-    pillar: "1 Code shape",
+    pillar: 1,
+    name: "Code shape",
     gap: "Boundary checks passed, but there was no duplication tool, so level 2 was not met.",
     fix: "Fallow, the same fix as pillar 2.",
     channel: "Enforced",
   },
   {
-    pillar: "8 Guidance evaluated",
+    pillar: 8,
+    name: "Guidance evaluated",
     gap: "The Workflow skills have baseline studies. The global guidance loaded on every task has none.",
     fix: "Run the decay test on the global guidance.",
     channel: "Advisory",
   },
   {
-    pillar: "4 Documentation",
+    pillar: 4,
+    name: "Documentation",
     gap: "Not every documented command was run, and the always-loaded global guidance was not decay-tested.",
     fix: "Prune it with the decay test.",
     channel: "Advisory",
@@ -162,13 +168,13 @@ onMounted(() => {
         how to give that job back to the environment.
       </p>
     </div>
-    <LessonFigure :number="1">
+    <UiFigure class="lesson-figure" :number="1">
       <CatchFigure />
       <template #caption>
         Who catches it? The same change, with and without four parts of an
         agent-ready environment. The scenario is illustrative.
       </template>
-    </LessonFigure>
+    </UiFigure>
   </section>
 
   <section aria-labelledby="tell-check-bound">
@@ -227,7 +233,7 @@ onMounted(() => {
         call, a commit, or a merge. It runs whatever the agent decided.
       </p>
     </div>
-    <LessonFigure :number="2">
+    <UiFigure class="lesson-figure" :number="2">
       <ol class="flow" aria-label="How a rule reaches an action">
         <li class="flow__advisory">
           <span class="lesson-label">Advisory</span>
@@ -251,7 +257,7 @@ onMounted(() => {
         aside. Enforced checks sit between the decision and the action, so
         they run either way.
       </template>
-    </LessonFigure>
+    </UiFigure>
     <div class="prose">
       <p>Put each rule on the channel that matches its exceptions.</p>
       <ul>
@@ -351,7 +357,7 @@ onMounted(() => {
         run, and writing evaluations before guidance.
       </p>
     </div>
-    <LessonFigure :number="3">
+    <UiFigure class="lesson-figure" :number="3">
       <ul class="pillar-map">
         <li v-for="group in pillarMap" :key="group.job">
           <span class="lesson-label">{{ group.job }}</span>
@@ -369,7 +375,7 @@ onMounted(() => {
         The eight pillars, grouped by the job each one does. Select a pillar
         to jump to it.
       </template>
-    </LessonFigure>
+    </UiFigure>
 
     <PillarSection
       v-bind="pillar(1)"
@@ -569,7 +575,10 @@ onMounted(() => {
       </p>
       <template #check>
         Every “never” rule is a deny rule, hook, or sandbox limit. Unattended
-        runs have turn or spend caps and a named sign-off on the result.
+        runs have turn or spend caps and a named sign-off on the result. Count
+        a rule as enforced when the host or forge reports it active, such as a
+        ruleset read with <code>gh api</code> or the host's effective deny
+        rules. A rule stated only in prose is level 1.
       </template>
       <template #good>
         <ul>
@@ -616,7 +625,7 @@ onMounted(() => {
         the one below it.
       </p>
     </div>
-    <LessonFigure :number="4">
+    <UiFigure class="lesson-figure" :number="4">
       <ol class="ladder" aria-label="Score levels">
         <li>
           <span class="ladder__score">0</span>
@@ -644,7 +653,7 @@ onMounted(() => {
         blocks a tool call, is enforced. Optional CI that fails loudly but does
         not block merge stays at level 2.
       </template>
-    </LessonFigure>
+    </UiFigure>
     <div class="prose">
       <ul>
         <li>
@@ -756,7 +765,7 @@ onMounted(() => {
         limit. Then order by durability, then by cost.
       </p>
     </div>
-    <LessonFigure :number="5">
+    <UiFigure class="lesson-figure" :number="5">
       <div class="order">
         <div v-for="group in fixOrder" :key="group.start">
           <span class="lesson-label">{{ group.label }}</span>
@@ -783,7 +792,7 @@ onMounted(() => {
         The fix order. The skill sets this order itself, based on the
         durability ranking from the durable and decaying section.
       </template>
-    </LessonFigure>
+    </UiFigure>
   </section>
 
   <section aria-labelledby="worked-example">
@@ -830,8 +839,9 @@ onMounted(() => {
         <tbody>
           <tr v-for="row in scorecard" :key="row.pillar">
             <th scope="row">
-              <span>{{ row.pillar }}</span>
-              <ScorePips :score="1" />
+              <span>{{ row.name }}</span>
+              <span class="pillar-tag">Pillar {{ row.pillar }}</span>
+              <UiScore :score="1" />
             </th>
             <td>
               <p>{{ row.gap }}</p>
@@ -1006,6 +1016,9 @@ onMounted(() => {
 .jobs dt { font-weight: var(--weight-semibold); }
 .jobs dd { margin: 0; color: var(--color-muted); font-size: var(--text-md); }
 
+/* UiFigure sets no outer margin; the lesson spaces its figures here. */
+.lesson-figure { margin-block: var(--space-4); }
+
 /* Figure 2: four nodes joined by arrows; the enforced node sits on the boundary. */
 .flow, .ladder, .pillar-map, .order__chips, .order p { max-width: none; }
 #report { margin-top: var(--space-6); }
@@ -1054,7 +1067,8 @@ a.pillar-tag:hover { color: var(--color-text); }
 .lesson-table td, .lesson-table tbody th, .lesson-table tfoot th { padding: var(--space-3) var(--space-4) var(--space-3) 0; border-top: 1px solid var(--color-border-subtle); color: var(--color-text); font-size: var(--text-md); vertical-align: top; }
 .lesson-table tbody tr:last-child > * { border-bottom: 1px solid var(--color-border-subtle); }
 .scorecard tbody th { width: 13rem; font-weight: var(--weight-medium); }
-.scorecard tbody th > span:first-child { display: block; margin-bottom: var(--space-1); }
+.scorecard tbody th > span:first-child { display: block; }
+.scorecard .pillar-tag { margin-bottom: var(--space-1); font-weight: var(--weight-regular); }
 .scorecard td p + p { margin-top: var(--space-1); }
 .scorecard__fix { color: var(--color-muted); }
 .scorecard__fix > span:first-child { color: var(--color-text); font-weight: var(--weight-medium); }
