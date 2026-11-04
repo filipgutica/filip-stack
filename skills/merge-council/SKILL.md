@@ -1,6 +1,6 @@
 ---
 name: merge-council
-description: Run a merge council on a pull request only when the user, a task, or repository guidance explicitly asks for a merge council or council review. An independent chair agent runs three reviewers and returns a merge verdict bound to the reviewed commits; on the user's own open PRs, agreed findings are fixed and pushed. Also `merge-council setup`.
+description: Run a merge council on a pull request only when the user, a task, or repository guidance explicitly asks for a merge council. An independent chair agent runs three reviewers and returns a merge verdict bound to the reviewed commits; on the user's own open PRs, agreed findings are fixed and pushed. Also `merge-council setup`.
 ---
 
 # Merge Council
