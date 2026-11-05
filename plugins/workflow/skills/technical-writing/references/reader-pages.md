@@ -23,11 +23,11 @@ Put the answers to 1 to 3 on the first screen. Reference material, such as optio
 
 **R4. Show how to start before the details.** Before rules, options, or internals, give the install step or first command and one real example of using it. The example can be an invocation, a command, or a short output. Label illustrative examples as illustrative.
 
-**R5. Define a term before the page relies on it.** Give each term from the tool's or skill's internals a one-clause definition the first time it appears. For example, write "a *job*, meaning a runner and the servers it starts". Examples of such terms are job, gate, climb card, and pillar. If a term needs more than a sentence, check whether the page needs it at all.
+**R5. Define a term before the page relies on it.** Give each term from the tool's or skill's internals, such as job, gate, climb card, or pillar, a one-clause definition the first time it appears. For example, write "a *job*, meaning a runner and the servers it starts". If a term needs more than a sentence, check whether the page needs it at all.
 
 **R6. Write sentences, not notes.** Reader-facing copy uses sentences with a subject and a verb. Table cells stay short, but each one reads as a phrase a person would say. Avoid shorthand such as "Search: X. Browse: Y." or "Stop saves. No merge view." Length follows the reader's job. When a terse page leaves the reader guessing, the fix is more words.
 
-**R7. Write for the reader in front of you.** A page for people is not a copy of the agent's contract. Before you place a fact from the source, decide who needs it. Ask: would this reader do something differently if they knew it?
+**R7. Write for the reader in front of you.** Do not copy the agent's contract onto a page for people. Before you place a fact from the source, decide who needs it. Ask: would this reader do something differently if they knew it?
 
 - If yes, keep it in the reader's terms. For example, "path by path, without the stash stack" becomes "it never uses your Git stash".
 - If a mechanism matters only because it makes the tool safe or trustworthy, state the effect the reader sees and leave out the mechanism.
