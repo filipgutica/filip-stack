@@ -4,41 +4,50 @@ related: [review]
 
 ## What it does
 
-Walkthrough explains and inspects one exact change set with you. It presents
-one coherent slice at a time, shows the decisive evidence, and waits for
-your decision before continuing.
+Walkthrough helps you understand a change well enough to accept it. Instead
+of a summary or a file-by-file dump, the agent splits the change into parts by
+the behavior each part serves. For each part it shows the decision behind it,
+the evidence, how it was verified, and the remaining risk, with a concrete
+example.
 
 ## When to use it
 
-- Understand the last completed change or the working tree.
-- Walk through a branch or pull request at verified commits.
-- Learn how a change connects behavior, implementation, tests, and documentation.
+- Understand the last change the agent made, or your working tree.
+- Go through a branch or pull request before you approve it.
+- Learn how a change ties behavior, code, tests, and docs together.
 
-It runs only when you call it by name. It does not activate for ordinary
-summaries or code review. Use [review](../review/) for a read-only findings report.
+Walkthrough runs only when you call it: `/workflow:walkthrough` in Claude or
+`$workflow:walkthrough` in Codex. It comes with the
+[Workflow plugin](../../#install). Name what to walk through, for example
+`/workflow:walkthrough this branch`. If you want a written list of findings
+instead, use [review](../review/).
 
 ## How it works
 
-1. Confirms the exact source and keeps unrelated working-tree changes outside it.
-2. Inspects the diff, changed files, tests, documentation, and verification evidence.
-   It builds an ordered map that accounts for every changed file.
-3. Groups files by behavior or contract. Each slice explains the behavior,
-   decision, evidence, verification, and risk with a concrete example.
-4. Offers a practical exercise for the main behavior when appropriate. Expected
-   results stay separate from observed results, and you can skip the exercise.
-5. Asks one focused acceptance question and waits. Corrections are recorded
-   without being implemented. Separately authorized fixes cause affected slices
-   to be rebuilt.
-6. Finishes when every file is covered and corrections are resolved or explicitly deferred.
+The agent first pins down exactly which change it is explaining, and it tells
+you about working-tree changes outside it instead of quietly including them.
+It then builds an ordered map that covers every changed file.
 
-The normal presenter is the main thread. An automated agent walkthrough uses
-a fresh read-only presenter when you request one.
+For the part that carries the main behavior, it offers a small exercise you
+can run yourself, such as a command or a page to open, and asks what you
+expect to see first. You can skip it. Each part ends with one question that
+asks whether you accept it.
+
+If you correct something, the agent records the correction but does not fix
+it. Fixing needs a separate request. After an approved fix changes the code,
+it redoes the parts that the fix affected. The walkthrough ends when every
+changed file is covered and each correction is resolved or deferred.
+
+You can ask for a separate, read-only agent to present the walkthrough
+instead. Your agent then checks the evidence it presents.
 
 ## What you get
 
-- An explanation of the covered behavior and files.
-- Your decisions and corrections, verification limits, and unresolved risks.
-- A walkthrough log when you request persistence.
+- An explanation of the behavior and files covered.
+- Your decisions and corrections, the verification and its limits, and any
+  open risks or questions.
+- A walkthrough log, if you ask for one.
 
-Silence, passing tests, and completed exercises do not count as acceptance.
-The walkthrough does not authorize code changes, commits, pushes, or publication.
+Silence, a passing test, or a finished exercise does not count as your
+approval. Apart from the log, walkthrough changes no files and does not
+commit, push, or publish.

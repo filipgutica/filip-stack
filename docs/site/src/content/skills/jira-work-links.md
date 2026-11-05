@@ -4,43 +4,55 @@ related: [planning, review]
 
 ## What it does
 
-Jira work links builds the smallest accurate map of issues and their code
-references. It distinguishes hierarchy, context, implementation, validation,
-and release rather than treating them all as dependencies.
+Jira boards collect links that mean different things: an Epic that holds the
+work, a ticket that gives context, a ticket that really cannot start yet.
+When all of them look like blockers, nobody can tell what is waiting on what.
+This skill gives each link the one meaning it should have.
 
 ## When to use it
 
-- Create, correct, or review Jira blockers and other issue links.
-- Check parent, child, or Epic relationships during [planning](../planning/).
-- Find pull requests and commits for an issue.
-- Verify that Jira's Development section reflects the relevant implementation.
+- Create, correct, or review blockers and other issue links.
+- Check parent, child, or Epic relationships while you plan work.
+- Find the pull requests and commits behind an issue.
+- Check that an issue's Development section, the Jira panel that lists linked
+  branches, commits, and PRs, shows the right work.
 
-A simple issue summary does not need this skill. Reading issues and source
-evidence does not authorize tracker changes or publication.
+A plain summary of an issue does not need this skill. The agent needs access
+to your Jira site and to the code host, such as GitHub. Install the skill with
+the command above, then ask in plain words. An illustrative request:
+
+> Check the links on PROJ-120 to PROJ-128 and fix any blockers that are wrong.
 
 ## How it works
 
-1. Reads every named issue, including type, status, parent, description, links,
-   and Development references.
-2. Checks linked repositories, PR states, merge commits, commits, and builds.
-   If references are missing, it searches the source host for the exact
-   issue key, then relevant product and source terms.
-3. Traces the artifact each issue produces or consumes and draws the intended
-   relationship map before changing links.
-4. Uses `blocks` only for an unfinished artifact another issue needs. Context,
-   parallel work, and merged implementation normally use `relates to`.
-5. Applies only authorized changes. After a write, it refetches both issues
-   and checks that each side renders the intended relationship direction.
+The agent reads every issue you name first: its type, status, parent, links,
+and Development section. When an issue lists no code, it searches the code
+host for the issue key in PR titles, descriptions, branch names, and commits,
+then for the product terms the issue uses. It sketches the intended links
+before it changes any.
 
-Parent and child relationships describe scope, not dependency. Matching an
-issue key alone does not prove a PR meets the issue's acceptance criteria.
-A merged PR proves implementation exists, not that validation or release is complete.
+It follows a few rules:
+
+- An issue *blocks* another only when it has an unfinished piece of work that
+  the other issue needs, and the agent names that piece of work.
+- Epics, specifications, context, parallel work, and code that already merged
+  use *relates to*, unless that issue produces the unfinished work another
+  issue needs.
+- Parent and child links describe scope, not order.
+- A merged PR shows the code exists. It does not show the issue is validated,
+  released, or meets every acceptance criterion.
+
+The agent changes only what you allowed. After each change, it reloads both
+issues and checks that each side shows the link the right way round, for
+example "blocks PROJ-124" on one issue and "is blocked by PROJ-120" on the
+other. A link that shows the wrong way is removed and created again.
 
 ## What you get
 
-- A verified relationship map explained in plain language.
-- Code references with confirmed repositories and PR states.
-- Named unfinished artifacts for blockers and remaining validation or release work.
+- The link map, explained in plain words.
+- Each PR reference with its repository and state checked.
+- For each blocker, the unfinished work it names, and any validation or release
+  work that remains.
 
-Use [review](../review/) alongside this work when the implementation itself
-needs a bounded read-only check.
+Reading issues does not give the agent permission to edit them. It changes
+links or status only when you ask.

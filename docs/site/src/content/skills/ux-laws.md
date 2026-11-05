@@ -4,43 +4,48 @@ related: [planning, review]
 
 ## What it does
 
-UX laws helps design or review interfaces using established design heuristics,
-rules of thumb for how people use a product. It selects the few laws that
-affect the task and explains the tradeoffs they create.
+UX laws are well-known rules of thumb about how people use interfaces. For
+example, Hick's law says that more choices make a decision slower, and Fitts's
+law says that small, distant targets are harder to hit. This skill picks the
+few laws out of 21 that matter for your screen or flow, applies them, and
+names the tradeoff when two of them pull in different directions.
 
 ## When to use it
 
 - Design navigation, forms, interaction flows, or interface states.
-- Review a user journey and prioritize problems by user impact.
-- Explain hierarchy and interaction choices during [planning](../planning/).
+- Review a user journey and rank the problems by their effect on users.
+- Explain hierarchy and interaction choices while you plan a feature.
 
-It does not handle purely visual branding. A law can guide a decision, but
-it does not prove that a design works or replace usability evidence.
+It does not cover visual branding. Install it with the command above, then
+ask in plain words. An illustrative request:
+
+> Review the checkout flow in `src/checkout/` with UX laws.
 
 ## How it works
 
-1. Identifies the primary user, task, context, and constraints. Missing evidence
-   becomes a bounded assumption.
-2. Reads the laws reference and selects only those that materially affect
-   the task. It does not force all 21 laws into a design.
-3. Covers the complete path, including loading, empty, error, success, keyboard,
-   touch, and responsive states when relevant.
-4. Resolves conflicts by prioritizing safety and accessibility, user intent
-   and evidence, domain conventions, then design heuristics.
-5. Recommends the smallest useful change and identifies evidence that would
-   confirm an improvement.
+The agent first names the main user, their task, the context, and the
+constraints. Where evidence is missing, it states an assumption with clear
+limits. It covers the whole path, including loading, empty, error, and success
+states, and keyboard, touch, and small-screen use when they apply.
 
-The skill preserves contrast, visible focus, usable target sizes, reduced-motion
-preferences, and assistive-technology meaning. Color alone cannot carry meaning.
-Simplicity must preserve necessary control, information, consent, and recovery.
-It does not use concealed choices or other manipulative patterns.
+When laws conflict, the agent resolves them in this order: user safety and
+accessibility first, then what the user is trying to do and the evidence, then
+the conventions of the domain, and the laws last. It recommends the smallest
+change that helps.
+
+The skill keeps contrast, visible focus, usable target sizes, reduced-motion
+settings, and screen-reader meaning, and it never uses color as the only signal.
+A simpler design must still keep the controls, information, consent, and
+undo paths people need. It does not use dark patterns, such as fake urgency or
+hidden choices.
 
 ## What you get
 
-- For design work, a hierarchy, interaction flow, relevant laws, edge states,
-  and the riskiest assumption to test.
-- For a [review](../review/), findings ranked by user impact, each with an
-  observed issue, relevant law, recommended change, and verification method.
+- For a design: the hierarchy and flow, the laws that shaped them, the edge
+  states, and the riskiest assumption to test.
+- For a review: findings ranked by their effect on users, each with the
+  problem, the law behind it, the change to make, and how to check that the
+  change helped.
 
-Conflicting laws produce an explicit tradeoff. User research and validation
-remain separate from the recommendation.
+A law guides a decision but does not prove that a design works. The skill does
+not invent user research, so usability testing stays a separate step.

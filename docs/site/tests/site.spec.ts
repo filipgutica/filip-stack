@@ -141,7 +141,7 @@ test("the Workflow map explains requests, skills, and engineering steps after hy
   await expect(
     map.getByRole("button", { name: "review", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
-  await expect(detail).toContainText("Read-only review or final verification");
+  await expect(detail).toContainText("Reviews one exact change or document");
   await expect(map.locator(".map-load").last()).toContainText(
     "No reference loaded",
   );

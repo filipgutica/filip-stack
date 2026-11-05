@@ -4,41 +4,51 @@ related: [test-audit, walkthrough]
 
 ## What it does
 
-Review inspects one exact change range or artifact and reports what the
-evidence supports. It checks the requested behavior and relevant project
-rules without changing the subject.
+Review gives you a second look at a change before you accept it. It checks
+the change against your request and the repository's own rules, such as
+`AGENTS.md` or `CLAUDE.md`, and it leaves the files exactly as they were.
 
 ## When to use it
 
-- Review a working tree, branch, pull request, commit, or commit range.
-- Check a specific document or other artifact.
-- Perform final verification of an existing change.
+Use it to review one of these:
 
-It does not fix findings or accept the change. For an interactive explanation
-one slice at a time, call [walkthrough](../walkthrough/).
+- your working tree, a branch, a pull request, a commit, or a commit range
+- a document or other file
+- a finished change, as a final check before you accept it
+
+Review only reports. To apply its findings, ask for the fixes and
+[engineering](../engineering/) makes them. To have a change explained to you
+one part at a time, use [walkthrough](../walkthrough/).
+
+Review comes with the [Workflow plugin](../../#install), and the agent picks
+it when your request matches. An illustrative request:
+
+> Review this branch against main before I open the PR.
 
 ## How it works
 
-1. Confirms the exact subject and verifies its source or Git ancestry.
-   Unrelated and dirty changes stay outside the selected range.
-2. Reads the request, acceptance criteria, source evidence, and applicable
-   instructions, including relevant `AGENTS.md` or `CLAUDE.md` requirements.
-3. Inspects every changed file and traces affected behavior to its owner.
-   It reads callers, tests, types, configuration, and documentation when they
-   can change the conclusion.
-4. Checks whether changed tests protect observable behavior and whether
-   removed coverage still has proof. Substantial or uncertain coverage changes
-   use [test-audit](../test-audit/) within the same read-only scope.
-5. Runs the narrowest appropriate checks, including available complexity,
-   dead-code, and duplication analysis. An unavailable check remains a limitation.
-6. Separates confirmed findings from inferences and unknowns. Findings need
-   evidence, a practical consequence, and a precise next action.
+The agent first pins down exactly what it is reviewing, such as a branch from
+the commit it shares with `main` to its head. It reports changes outside that
+range instead of quietly including them.
+
+It reads every changed file and follows the affected behavior to the code that
+owns it, including callers, tests, types, and docs when they could change the
+answer. For changed or removed tests, it asks whether the behavior is still
+protected, and large coverage changes get a [test-audit](../test-audit/)
+pass. It runs the narrowest checks that fit, plus complexity, dead-code, and
+duplication analysis when the repository has those tools.
+
+A finding names the file and line or the command output, the behavior it
+breaks, and why that matters. Style preferences and scope creep are not
+findings. A check that was blocked or could not run is listed as a limit,
+never as a pass.
 
 ## What you get
 
-- Findings ordered by impact, or no findings supported by the inspected evidence.
-- The inspected subject, exact check results, and verification limits.
-- A statement of whether a separate reviewer independently inspected the change.
+- Findings ordered by impact, each with its evidence and a precise next step,
+  or a statement that the evidence supports no findings.
+- What was reviewed, the exact check results, and the limits of the review.
+- Whether the review was independent, meaning an agent that did not write the
+  change inspected it.
 
-The skill does not edit files, commit, push, publish, or post external comments.
-Corrections require implementation authority.
+Review does not edit files, commit, push, publish, or post comments.
