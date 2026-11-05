@@ -1,0 +1,422 @@
+[
+ {
+  "build": "204336a0",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5fd91b94/4afacd25.md"
+ },
+ {
+  "build": "cd7f254d",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a8de5f49/d4754b5c.md"
+ },
+ {
+  "build": "1869d53c",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f115c979/fbe37aa5.md"
+ },
+ {
+  "build": "0328e284",
+  "brief": "B1",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-be0d46ca/06c26236.md"
+ },
+ {
+  "build": "a7cbc576",
+  "brief": "B1",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-aa2c9d10/a3af2727.md"
+ },
+ {
+  "build": "e617d995",
+  "brief": "B1",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-155d5903/78445ff8.md"
+ },
+ {
+  "build": "cf99033b",
+  "brief": "B1",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-aa8e094f/f6912d1b.md"
+ },
+ {
+  "build": "569dbaea",
+  "brief": "B1",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5f7073d0/5f18d759.md"
+ },
+ {
+  "build": "752ea2a5",
+  "brief": "B1",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-3b7cfa19/a963e4de.md"
+ },
+ {
+  "build": "5c8d5012",
+  "brief": "B1",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-77eb6911/45dea513.md"
+ },
+ {
+  "build": "9826e5d8",
+  "brief": "B1",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f21021f0/f9c40f86.md"
+ },
+ {
+  "build": "66074131",
+  "brief": "B1",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e60deb05/8632a73c.md"
+ },
+ {
+  "build": "95176f49",
+  "brief": "B1",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-619c7864/6f207648.md"
+ },
+ {
+  "build": "dfee5813",
+  "brief": "B1",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e586de7b/d1d1e70b.md"
+ },
+ {
+  "build": "477f3709",
+  "brief": "B1",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4a7ece3c/44cbb1eb.md"
+ },
+ {
+  "build": "99289b44",
+  "brief": "B2",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-80a1cdbf/3e3858a6.md"
+ },
+ {
+  "build": "49dd7420",
+  "brief": "B2",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4b95f6a5/5da8e880.md"
+ },
+ {
+  "build": "8b75fb51",
+  "brief": "B2",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-72646470/b97c4ced.md"
+ },
+ {
+  "build": "03f69f7a",
+  "brief": "B2",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-db9fd941/2a01f7d5.md"
+ },
+ {
+  "build": "696d96aa",
+  "brief": "B2",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-870356cb/d226f574.md"
+ },
+ {
+  "build": "afc5beff",
+  "brief": "B2",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-59222a0a/1f0b7330.md"
+ },
+ {
+  "build": "aabec324",
+  "brief": "B2",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b761d6e1/4e96c6b3.md"
+ },
+ {
+  "build": "566f05b3",
+  "brief": "B2",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-71014ef7/d12d4db2.md"
+ },
+ {
+  "build": "7b8ac303",
+  "brief": "B2",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-d3704d18/6d26551c.md"
+ },
+ {
+  "build": "b509da3c",
+  "brief": "B2",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-470ae2fb/fcd6f529.md"
+ },
+ {
+  "build": "8a407abc",
+  "brief": "B2",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b343c6aa/2f8578ab.md"
+ },
+ {
+  "build": "478ed22a",
+  "brief": "B2",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d4e3661/3a590f2b.md"
+ },
+ {
+  "build": "38ab1cc7",
+  "brief": "B2",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2e1f8c8d/1629879a.md"
+ },
+ {
+  "build": "648789a5",
+  "brief": "B2",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c4ebbaf2/71e0311c.md"
+ },
+ {
+  "build": "3f123a13",
+  "brief": "B2",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8fc9d850/32550687.md"
+ },
+ {
+  "build": "271be7ea",
+  "brief": "B3",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e7d4314b/b4b9e2ca.md"
+ },
+ {
+  "build": "c22bfdfd",
+  "brief": "B3",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-44b15124/7ec24b10.md"
+ },
+ {
+  "build": "aceb5b25",
+  "brief": "B3",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c3cc7559/fbe2740d.md"
+ },
+ {
+  "build": "31b910e4",
+  "brief": "B3",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-df2d496b/191b38f8.md"
+ },
+ {
+  "build": "b92599a6",
+  "brief": "B3",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b679ba02/252b6098.md"
+ },
+ {
+  "build": "a7a11bf3",
+  "brief": "B3",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-fc490fcf/0e12cb0d.md"
+ },
+ {
+  "build": "ab48c343",
+  "brief": "B3",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23eb2738/365cf917.md"
+ },
+ {
+  "build": "8ab37df8",
+  "brief": "B3",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-94455a7f/a340d39a.md"
+ },
+ {
+  "build": "447fd146",
+  "brief": "B3",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-35f5a67f/f0d6afe2.md"
+ },
+ {
+  "build": "1192a656",
+  "brief": "B3",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c5452977/fd407098.md"
+ },
+ {
+  "build": "51f160e2",
+  "brief": "B3",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5aeb81f0/5ee432b2.md"
+ },
+ {
+  "build": "9dca4100",
+  "brief": "B3",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e9fc22e9/39f2fa40.md"
+ },
+ {
+  "build": "962a0d0c",
+  "brief": "B3",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d92c422/1e16a8b3.md"
+ },
+ {
+  "build": "f33a05fc",
+  "brief": "B3",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2221ff72/ac2d992e.md"
+ },
+ {
+  "build": "b7cfbb14",
+  "brief": "B3",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-35e042c9/2e599691.md"
+ },
+ {
+  "build": "4e3643e7",
+  "brief": "B4",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-55d16467/8fa1549d.md"
+ },
+ {
+  "build": "0b5ba43f",
+  "brief": "B4",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2647f2f1/dea65b56.md"
+ },
+ {
+  "build": "142c4fd1",
+  "brief": "B4",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-07b0b9a7/d5338bcc.md"
+ },
+ {
+  "build": "2c7e7f0e",
+  "brief": "B4",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-002fc420/39c86cb9.md"
+ },
+ {
+  "build": "8d17dc4f",
+  "brief": "B4",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8da65eee/a1112bce.md"
+ },
+ {
+  "build": "f4fb6b0e",
+  "brief": "B4",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9e8fdaf9/4888af3b.md"
+ },
+ {
+  "build": "aeddf1d5",
+  "brief": "B4",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f72739e7/8ac3a911.md"
+ },
+ {
+  "build": "653c62a9",
+  "brief": "B4",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-21584d94/6d127bd1.md"
+ },
+ {
+  "build": "1974bb53",
+  "brief": "B4",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a8ea20b5/2379f6e4.md"
+ },
+ {
+  "build": "c85339e0",
+  "brief": "B4",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-116091dc/c03104f5.md"
+ },
+ {
+  "build": "407a24ef",
+  "brief": "B4",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9a8c295e/5b176a6d.md"
+ },
+ {
+  "build": "f3b3764e",
+  "brief": "B4",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-463dd5bd/5f45b592.md"
+ },
+ {
+  "build": "94592a68",
+  "brief": "B4",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-73f477d8/be020542.md"
+ },
+ {
+  "build": "5592ba36",
+  "brief": "B4",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8451149b/e2a5f0f6.md"
+ },
+ {
+  "build": "cb776cfc",
+  "brief": "B4",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-3f41743c/b768ff5c.md"
+ }
+]

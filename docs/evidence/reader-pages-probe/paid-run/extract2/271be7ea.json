@@ -1,0 +1,20 @@
+{
+  "facts": [
+    {"id": "1", "present": true, "where": "explanation"},
+    {"id": "2", "present": true, "where": "explanation"},
+    {"id": "3", "present": true, "where": "explanation"},
+    {"id": "4", "present": true, "where": "explanation"},
+    {"id": "5", "present": true, "where": "explanation"},
+    {"id": "6", "present": true, "where": "explanation"},
+    {"id": "7", "present": false, "where": "absent"},
+    {"id": "8", "present": false, "where": "absent"}
+  ],
+  "invented_claims": [],
+  "opening": {
+    "first_two_sentences": "`tidy-hooks` is a Claude and Codex plugin that blocks `git commit` when staged files contain merge markers. The hook fails open: if Node.js is missing, commits proceed.",
+    "names_subject_and_job": true,
+    "reason_within_first_120_words": true
+  },
+  "sentences": 7,
+  "fragments": []
+}

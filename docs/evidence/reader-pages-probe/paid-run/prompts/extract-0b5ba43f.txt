@@ -1,0 +1,64 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the first two sections, about 350 words, of a lesson for engineers titled 'Flaky tests and agents'.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. An agent that sees a red test tries to fix the code, even when the test is flaky.
+2. A flaky test fails sometimes without any code change.
+3. Agents tend to rerun until green, or to weaken the assertion.
+4. Quarantine means moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.
+5. A required gate that sometimes fails teaches agents and people to ignore it.
+6. Measuring flakiness: rerun each test 20 times on the same commit, and count failures.
+7. `[agent-only]` The audit script is `scripts/flake-scan.mjs --runs 20 --json`.
+8. `[agent-only]` This lesson's rubric is the author's own and is not from a vendor.
+
+Draft page:
+<<<PAGE
+# Flaky tests and agents
+
+## 1. A red test can send an agent toward the wrong fix
+
+When a test is known to be flaky, quarantine it while it is fixed. Give it an owner and a date.
+
+A flaky test fails sometimes without any code change. An agent that sees a red test tries to fix the code, even when the test is flaky. That creates a problem for engineers: the agent responds to the failure, but the failure can occur with unchanged code.
+
+Agents tend to rerun tests until they turn green, or to weaken the assertion. Keep those tendencies in mind when you review an agent’s response to a failing test. Look at whether it changed the code, repeated the run, or weakened what the test checks.
+
+The required gate also matters. A gate that sometimes fails teaches agents and people to ignore it. Leaving a known-flaky test in that gate keeps exposing both to failures that occur without code changes.
+
+This lesson uses the author’s own rubric. It does not come from a vendor. The rubric focuses on measuring failures and handling known-flaky tests while they are fixed.
+
+## 2. Measure failures, then quarantine known-flaky tests
+
+Measure flakiness by running each test 20 times on the same commit and counting its failures. Keep the commit the same throughout those runs.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+For this lesson’s measurement, the count of failures across 20 runs is the result to record. A run that turns green is still part of that set. Count the failures across the full set rather than stopping when a rerun passes.
+
+Once a test is known to be flaky, quarantine it. Quarantine means moving the test out of the required gate while it is fixed. It must have an owner and a date.
+
+Use these points when reviewing the work:
+
+- **Measurement:** Each test ran 20 times on the same commit, and failures were counted.
+- **Quarantine:** The known-flaky test is outside the required gate while it is fixed.
+- **Responsibility:** The quarantined test has an owner and a date.
+PAGE>>>
+
+Report, for every fact id 1 to 8:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

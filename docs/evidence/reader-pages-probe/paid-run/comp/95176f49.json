@@ -1,0 +1,1 @@
+{"a":"Records which process held each local TCP port over time so you can look up its history.","b":"portlog start","c":"Yes, it can show processes that held a port even after they have exited."}

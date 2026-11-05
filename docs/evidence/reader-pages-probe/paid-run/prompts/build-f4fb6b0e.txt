@@ -1,0 +1,12 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9e8fdaf9/4888af3b.md` and follow it (skip this step when the file is empty). Read no other file. Write the first two sections, about 350 words, of a lesson for engineers titled 'Flaky tests and agents'. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. An agent that sees a red test tries to fix the code, even when the test is flaky.
+2. A flaky test fails sometimes without any code change.
+3. Agents tend to rerun until green, or to weaken the assertion.
+4. Quarantine means moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.
+5. A required gate that sometimes fails teaches agents and people to ignore it.
+6. Measuring flakiness: rerun each test 20 times on the same commit, and count failures.
+7. The audit script is `scripts/flake-scan.mjs --runs 20 --json`.
+8. This lesson's rubric is the author's own and is not from a vendor.

@@ -1,0 +1,64 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. Drafts release notes from merged PRs between two tags.
+2. Manual only: `/release-notes <from-tag> <to-tag>`.
+3. Groups PRs by Conventional Commit type: features, fixes, and breaking changes first.
+4. Skips PRs labeled `skip-notes`.
+5. Never publishes. It writes `RELEASE_NOTES.md` in the working tree and stops.
+6. A breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+7. Requires `gh` signed in. It stops if `gh auth status` fails.
+8. Neighbor: `technical-writing` edits prose. `release-notes` gathers the PRs and drafts.
+9. If either tag does not exist, it stops before drafting.
+10. `[agent-only]` Resolve the tags with `git rev-list -n1 <tag>`. The exit reason for a missing tag is `TAG_UNRESOLVED`.
+11. `[agent-only]` Fetch PRs with `gh pr list --state merged --search "merged:<from>..<to>" --json number,title,labels,body --limit 500`.
+12. A PR with labels of more than one type goes in the group that most of its labels name.
+13. `[agent-only]` The grouping counts labels with a strict-majority rule, and the code breaks ties by label order.
+14. `[agent-only]` Keep a private ledger at `$TMPDIR/release-notes/<id>/ledger.md`.
+
+Draft page:
+<<<PAGE
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from merged PRs between two tags.
+
+## When to use it
+
+Use it to gather PRs and prepare a release draft. Use `technical-writing` when you need to edit prose.
+
+The skill runs only when you invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+## How it works
+
+`gh` must be signed in. The skill stops if `gh auth status` fails. If either tag does not exist, it stops before drafting.
+
+It skips PRs labeled `skip-notes` and groups the rest by Conventional Commit type, with features, fixes, and breaking changes first. If a PR has labels for several types, it uses the type named by most labels. Ties follow label order.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in the working tree and stops. It never publishes.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+PAGE>>>
+
+Report, for every fact id 1 to 14:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

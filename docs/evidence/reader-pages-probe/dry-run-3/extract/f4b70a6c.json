@@ -1,0 +1,32 @@
+{
+  "facts": [
+    {"id": "1", "present": true, "where": "explanation"},
+    {"id": "2", "present": true, "where": "explanation"},
+    {"id": "3", "present": true, "where": "explanation"},
+    {"id": "4", "present": true, "where": "explanation"},
+    {"id": "5", "present": true, "where": "explanation"},
+    {"id": "6", "present": true, "where": "explanation"},
+    {"id": "7", "present": true, "where": "explanation"},
+    {"id": "8", "present": true, "where": "explanation"},
+    {"id": "9", "present": true, "where": "explanation"},
+    {"id": "10", "present": true, "where": "explanation"},
+    {"id": "11", "present": true, "where": "explanation"},
+    {"id": "12", "present": false, "where": "absent"},
+    {"id": "13", "present": false, "where": "absent"},
+    {"id": "14", "present": false, "where": "absent"}
+  ],
+  "invented_claims": [],
+  "opening": {
+    "first_two_sentences": [
+      "Know what held a port—even after the process exits.",
+      "portlog records which process held each local TCP port over time, so you can answer “what was on port 3000 an hour ago?”"
+    ],
+    "names_subject_and_job": true,
+    "reason_within_first_120_words": true
+  },
+  "sentences": 15,
+  "fragments": [
+    "Written in Go.",
+    "MIT licensed."
+  ]
+}

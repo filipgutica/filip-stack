@@ -1,0 +1,1 @@
+{"a":"A test that fails sometimes without any code change.","b":"Agents may try to fix code in response to a flaky failure, rerun until the test passes, or weaken an assertion. Flaky required gates also teach agents and people to disregard them.","c":"Moving a known-flaky test out of the required gate while it is fixed, assigning it an owner, and setting a date."}

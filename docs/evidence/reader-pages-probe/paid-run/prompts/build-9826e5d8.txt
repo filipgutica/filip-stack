@@ -1,0 +1,18 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f21021f0/f9c40f86.md` and follow it (skip this step when the file is empty). Read no other file. Write the landing page copy for `portlog`, following the tool page section order. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. portlog records which process held each local TCP port over time.
+2. It answers "what was on port 3000 an hour ago?" after the process has exited.
+3. Install: `brew install example/tap/portlog`.
+4. `portlog start` runs a background recorder. `portlog stop` stops it.
+5. `portlog who 3000` shows every process that held port 3000, newest first.
+6. `portlog who 3000 --since 2h` limits it to the last two hours.
+7. `portlog free 3000` stops the process that holds port 3000 now, after confirmation. `-y` skips the confirmation.
+8. History is kept for 7 days, in `~/.portlog/`.
+9. Runs on macOS and Linux. Written in Go. MIT license.
+10. It never records command-line arguments, because they can hold secrets.
+11. The recorder polls `lsof` every 2 seconds on macOS and reads `/proc/net/tcp` on Linux.
+12. The store is SQLite in WAL mode, with a busy timeout of 500 ms.
+13. Releases use release-please, and `fix:` makes a patch.
+14. The `who` query uses the index `idx_port_time`.

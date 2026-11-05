@@ -1,0 +1,1 @@
+{"a":"A test that fails sometimes without any code change.","b":"An agent that sees a red test tries to fix the code, even when the test is flaky. Agents also tend to rerun tests until they turn green or weaken the assertion, neither of which measures flakiness.","c":"Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date."}

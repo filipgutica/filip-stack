@@ -1,0 +1,25 @@
+{
+  "facts": [
+    {"id": "1", "present": true, "where": "explanation"},
+    {"id": "2", "present": true, "where": "explanation"},
+    {"id": "3", "present": true, "where": "explanation"},
+    {"id": "4", "present": true, "where": "explanation"},
+    {"id": "5", "present": true, "where": "explanation"},
+    {"id": "6", "present": true, "where": "explanation"},
+    {"id": "7", "present": true, "where": "explanation"},
+    {"id": "8", "present": true, "where": "explanation"}
+  ],
+  "invented_claims": [
+    "The rubric focuses on measuring failures and handling known-flaky tests while they are fixed."
+  ],
+  "opening": {
+    "first_two_sentences": [
+      "When a test is known to be flaky, quarantine it while it is fixed.",
+      "Give it an owner and a date."
+    ],
+    "names_subject_and_job": false,
+    "reason_within_first_120_words": true
+  },
+  "sentences": 27,
+  "fragments": []
+}

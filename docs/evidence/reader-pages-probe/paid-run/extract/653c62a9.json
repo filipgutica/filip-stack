@@ -1,0 +1,20 @@
+{
+  "facts": [
+    {"id": "1", "present": true, "where": "explanation"},
+    {"id": "2", "present": true, "where": "explanation"},
+    {"id": "3", "present": true, "where": "explanation"},
+    {"id": "4", "present": true, "where": "explanation"},
+    {"id": "5", "present": true, "where": "explanation"},
+    {"id": "6", "present": true, "where": "explanation"},
+    {"id": "7", "present": true, "where": "explanation"},
+    {"id": "8", "present": true, "where": "disclosure"}
+  ],
+  "invented_claims": [],
+  "opening": {
+    "first_two_sentences": "Check for flakiness before treating a red test as a request to change the code. A flaky test fails sometimes without any code change.",
+    "names_subject_and_job": true,
+    "reason_within_first_120_words": true
+  },
+  "sentences": 28,
+  "fragments": []
+}

@@ -1,0 +1,1 @@
+{"a":"No, it writes the draft and stops; it never publishes.","b":"Run /release-notes <from-tag> <to-tag> manually. Both tags must exist, and gh must be signed in.","c":"It marks the draft TODO: migration."}

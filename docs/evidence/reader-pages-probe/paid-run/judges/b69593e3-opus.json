@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "A", "overall": "A", "reason": "Draft B states the Codex trust step as a clear instruction, but it places the Node.js fail-open note under the Codex heading, which wrongly scopes it to Codex. Draft A puts that note in the opening, where it applies to both hosts, and it is tighter overall."}

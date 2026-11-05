@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Reader pages probe votes</title>
+<style>
+:root { color-scheme: light dark; }
+body { margin: 0; color: var(--foreground); font-family: var(--font-sans); }
+figure { margin: 0; }
+h3 { margin: 0 0 12px; font-weight: 500; }
+.axis, .row { display: grid; grid-template-columns: 94px minmax(0,1fr) 52px; gap: 12px; align-items: center; }
+.axis { margin-bottom: 8px; }
+.ticks { display: flex; justify-content: space-between; color: var(--foreground); }
+.row { min-height: 34px; }
+.group { margin-bottom: 12px; }
+.track { position: relative; height: 12px; background: var(--secondary); }
+.track::after { content: ""; position: absolute; inset-block: -4px; left: 53.333333%; border-left: 1px dashed var(--foreground); }
+.bar { height: 100%; background: var(--chart-1); }
+.value { font-variant-numeric: tabular-nums; text-align: right; }
+figcaption { margin-top: 8px; }
+</style>
+</head>
+<body>
+<figure aria-label="Overall judge votes for head, out of 15 per comparison. B1: 9 against base and 11 against vanilla. B2: 11 and 14. B3: 7 and 5. B4: 12 and 11. A majority requires 8. B3 fails against both controls.">
+<h3>Overall votes for head</h3>
+<div class="axis" aria-hidden="true"><span>Compared with</span><div class="ticks"><span>0</span><span>5</span><span>10</span><span>15</span></div><span class="value">of 15</span></div>
+<div class="group">
+<div class="row"><span>B1 · base</span><div class="track"><div class="bar" style="width:60%"></div></div><span class="value">9</span></div>
+<div class="row"><span>B1 · vanilla</span><div class="track"><div class="bar" style="width:73.333333%"></div></div><span class="value">11</span></div>
+</div>
+<div class="group">
+<div class="row"><span>B2 · base</span><div class="track"><div class="bar" style="width:73.333333%"></div></div><span class="value">11</span></div>
+<div class="row"><span>B2 · vanilla</span><div class="track"><div class="bar" style="width:93.333333%"></div></div><span class="value">14</span></div>
+</div>
+<div class="group">
+<div class="row"><span>B3 · base</span><div class="track"><div class="bar" style="width:46.666667%"></div></div><span class="value">7 · fail</span></div>
+<div class="row"><span>B3 · vanilla</span><div class="track"><div class="bar" style="width:33.333333%"></div></div><span class="value">5 · fail</span></div>
+</div>
+<div class="group">
+<div class="row"><span>B4 · base</span><div class="track"><div class="bar" style="width:80%"></div></div><span class="value">12</span></div>
+<div class="row"><span>B4 · vanilla</span><div class="track"><div class="bar" style="width:73.333333%"></div></div><span class="value">11</span></div>
+</div>
+<figcaption>The dashed line marks 8 votes, the majority threshold. B3 fails against both controls.</figcaption>
+</figure>
+</body>
+</html>

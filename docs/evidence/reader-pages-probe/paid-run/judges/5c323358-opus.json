@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "A", "overall": "A", "reason": "Both drafts let a first-time reader install portlog and look up a port, but A is more consistently organized: it groups every command under Commands, while B puts `portlog stop` under How it works and splits the title from the tagline in an awkward way."}

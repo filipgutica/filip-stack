@@ -1,0 +1,68 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the README's opening paragraph and its Install and update section for the `tidy-hooks` plugin.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. `tidy-hooks` is a Claude and Codex plugin. It blocks `git commit` when staged files contain merge markers.
+2. Claude: `claude plugin marketplace add example/tidy`, then `claude plugin install tidy-hooks@tidy`.
+3. Codex: `codex plugin marketplace add example/tidy`, then `codex plugin add tidy-hooks@tidy`.
+4. Codex skips plugin hooks until you review and trust them.
+5. Update in Claude with `claude plugin update tidy-hooks@tidy`. Update in Codex with `codex plugin marketplace upgrade tidy`, then restart Codex.
+6. The hook fails open: if Node.js is missing, commits proceed.
+7. `[agent-only]` The hook entry is `hooks/pre-tool-use.mjs`, and it parses `bash -c` wrappers with a shell tokenizer.
+8. `[agent-only]` Hook timeout 5 s, set in `hooks.json`.
+
+Draft page:
+<<<PAGE
+`tidy-hooks` is a Claude and Codex plugin that blocks `git commit` when staged files contain merge markers.
+
+## Install and update
+
+### Claude
+
+Add the marketplace, then install the plugin:
+
+```sh
+claude plugin marketplace add example/tidy
+claude plugin install tidy-hooks@tidy
+```
+
+To update the plugin, run:
+
+```sh
+claude plugin update tidy-hooks@tidy
+```
+
+### Codex
+
+Add the marketplace, then install the plugin:
+
+```sh
+codex plugin marketplace add example/tidy
+codex plugin add tidy-hooks@tidy
+```
+
+Review and trust the plugin hooks. Codex skips them until you do.
+
+To update, run the following command, then restart Codex:
+
+```sh
+codex plugin marketplace upgrade tidy
+```
+
+If Node.js is missing, the hook lets commits proceed.
+PAGE>>>
+
+Report, for every fact id 1 to 8:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

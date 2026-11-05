@@ -1,0 +1,102 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the landing page copy for `portlog`, following the tool page section order.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. portlog records which process held each local TCP port over time.
+2. It answers "what was on port 3000 an hour ago?" after the process has exited.
+3. Install: `brew install example/tap/portlog`.
+4. `portlog start` runs a background recorder. `portlog stop` stops it.
+5. `portlog who 3000` shows every process that held port 3000, newest first.
+6. `portlog who 3000 --since 2h` limits it to the last two hours.
+7. `portlog free 3000` stops the process that holds port 3000 now, after confirmation. `-y` skips the confirmation.
+8. History is kept for 7 days, in `~/.portlog/`.
+9. Runs on macOS and Linux. Written in Go. MIT license.
+10. It never records command-line arguments, because they can hold secrets.
+11. `[agent-only]` The recorder polls `lsof` every 2 seconds on macOS and reads `/proc/net/tcp` on Linux.
+12. `[agent-only]` The store is SQLite in WAL mode, with a busy timeout of 500 ms.
+13. `[agent-only]` Releases use release-please, and `fix:` makes a patch.
+14. `[agent-only]` The `who` query uses the index `idx_port_time`.
+
+Draft page:
+<<<PAGE
+# portlog
+
+## What was on port 3000 an hour ago?
+
+portlog records which process held each local TCP port over time, so you can look it up after the process has exited.
+
+## Install
+
+```sh
+brew install example/tap/portlog
+```
+
+Runs on macOS and Linux.
+
+## Record port history
+
+Start the background recorder:
+
+```sh
+portlog start
+```
+
+Stop it:
+
+```sh
+portlog stop
+```
+
+## Look up a port
+
+See every process that held port 3000, newest first:
+
+```sh
+portlog who 3000
+```
+
+Limit the results to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+## Free a port
+
+Stop the process holding port 3000 now, after confirmation:
+
+```sh
+portlog free 3000
+```
+
+Skip confirmation with `-y`:
+
+```sh
+portlog free 3000 -y
+```
+
+## History and privacy
+
+History is kept for 7 days in `~/.portlog/`.
+
+portlog never records command-line arguments, because they can hold secrets.
+
+## Built with Go
+
+Written in Go. MIT licensed.
+PAGE>>>
+
+Report, for every fact id 1 to 14:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

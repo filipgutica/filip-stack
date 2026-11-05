@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "A", "overall": "A", "reason": "B is easier for a first-time reader because it runs `portlog start` before the first query, while A's example skips that step. A is more complete and follows the tool page section order more closely: it has the Keys table, the recording method, and the Full reference link."}

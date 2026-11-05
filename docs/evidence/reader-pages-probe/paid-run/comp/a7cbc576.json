@@ -1,0 +1,1 @@
+{"a":"Records local TCP port history so you can see which processes held a port.","b":"portlog start","c":"Yes, it keeps seven days of history that you can query after a process exits."}

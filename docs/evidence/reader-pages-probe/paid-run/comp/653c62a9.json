@@ -1,0 +1,1 @@
+{"a":"A test that sometimes fails without any code change.","b":"Agents may treat a red test as proof that code needs fixing, then rerun until green or weaken the assertion, even though neither establishes whether the test is flaky.","c":"Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date recorded with the decision."}

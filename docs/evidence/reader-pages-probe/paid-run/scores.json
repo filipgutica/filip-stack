@@ -1,0 +1,4288 @@
+{
+ "builds": [
+  {
+   "build": "204336a0",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5fd91b94/4afacd25.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.221,
+   "M6": 0.143,
+   "M6_regex_fragments": 3,
+   "M7": 1,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after that process has exited.",
+     true
+    ]
+   },
+   "words": 128,
+   "fk_grade": 9.1,
+   "invented_claims": [],
+   "fragments": [
+    "Written in Go.",
+    "MIT license."
+   ]
+  },
+  {
+   "build": "cd7f254d",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a8de5f49/d4754b5c.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.133,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 2,
+   "M9_answers": {
+    "a": [
+     "portlog records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "Not stated",
+     false
+    ],
+    "c": [
+     "Yes, it lets you look back after the process exits.",
+     true
+    ]
+   },
+   "words": 98,
+   "fk_grade": 7.8,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "1869d53c",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f115c979/fbe37aa5.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.202,
+   "M6": 0.083,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 123,
+   "fk_grade": 10.3,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "0328e284",
+   "brief": "B1",
+   "attempt": 2,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-be0d46ca/06c26236.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.25,
+   "M6": 0.0,
+   "M6_regex_fragments": 2,
+   "M7": 2,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time so you can look it up later.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show recorded processes that have already exited.",
+     true
+    ]
+   },
+   "words": 124,
+   "fk_grade": 7.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "a7cbc576",
+   "brief": "B1",
+   "attempt": 2,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-aa2c9d10/a3af2727.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": 0.117,
+   "M6": 0.125,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records local TCP port history so you can see which processes held a port.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it keeps seven days of history that you can query after a process exits.",
+     true
+    ]
+   },
+   "words": 108,
+   "fk_grade": 9.3,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "e617d995",
+   "brief": "B1",
+   "attempt": 2,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-155d5903/78445ff8.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.21,
+   "M6": 0.2,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 70,
+   "fk_grade": 9.8,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "cf99033b",
+   "brief": "B1",
+   "attempt": 3,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-aa8e094f/f6912d1b.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.224,
+   "M6": 0.167,
+   "M6_regex_fragments": 3,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 108,
+   "fk_grade": 9.1,
+   "invented_claims": [],
+   "fragments": [
+    "Written in Go.",
+    "MIT licensed."
+   ]
+  },
+  {
+   "build": "569dbaea",
+   "brief": "B1",
+   "attempt": 3,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5f7073d0/5f18d759.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.133,
+   "M6": 0.2,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 2,
+   "M9_answers": {
+    "a": [
+     "Records local TCP port history so you can see which processes held a port.",
+     true
+    ],
+    "b": [
+     "Not stated",
+     false
+    ],
+    "c": [
+     "Yes, you can look back after a process exits.",
+     true
+    ]
+   },
+   "words": 64,
+   "fk_grade": 9.1,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "752ea2a5",
+   "brief": "B1",
+   "attempt": 3,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-3b7cfa19/a963e4de.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.197,
+   "M6": 0.143,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 79,
+   "fk_grade": 8.6,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "5c8d5012",
+   "brief": "B1",
+   "attempt": 4,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-77eb6911/45dea513.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.22,
+   "M6": 0.231,
+   "M6_regex_fragments": 3,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 112,
+   "fk_grade": 7.7,
+   "invented_claims": [],
+   "fragments": [
+    "Written in Go.",
+    "MIT licensed.",
+    "To stop recording:"
+   ]
+  },
+  {
+   "build": "9826e5d8",
+   "brief": "B1",
+   "attempt": 4,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f21021f0/f9c40f86.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.152,
+   "M6": 0.143,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 2,
+   "M9_answers": {
+    "a": [
+     "portlog records local TCP port ownership over time so you can look up which processes held a port.",
+     true
+    ],
+    "b": [
+     "Not stated",
+     false
+    ],
+    "c": [
+     "Yes, it can show a recorded process that already exited.",
+     true
+    ]
+   },
+   "words": 83,
+   "fk_grade": 8.8,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "66074131",
+   "brief": "B1",
+   "attempt": 4,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e60deb05/8632a73c.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.19,
+   "M6": 0.167,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "portlog records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show a recorded process that already exited.",
+     true
+    ]
+   },
+   "words": 71,
+   "fk_grade": 9.4,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "95176f49",
+   "brief": "B1",
+   "attempt": 5,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-619c7864/6f207648.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 0,
+   "M5": 0.222,
+   "M6": 0.133,
+   "M6_regex_fragments": 3,
+   "M7": 2,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records which process held each local TCP port over time so you can look up its history.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show processes that held a port even after they have exited.",
+     true
+    ]
+   },
+   "words": 131,
+   "fk_grade": 6.3,
+   "invented_claims": [],
+   "fragments": [
+    "Written in Go.",
+    "MIT license."
+   ]
+  },
+  {
+   "build": "dfee5813",
+   "brief": "B1",
+   "attempt": 5,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e586de7b/d1d1e70b.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.14,
+   "M6": 0.125,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "portlog records local TCP port history so you can see which processes held a port.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show a process that held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 109,
+   "fk_grade": 9.5,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "477f3709",
+   "brief": "B1",
+   "attempt": 5,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4a7ece3c/44cbb1eb.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.226,
+   "M6": 0.083,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "portlog records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after the process has exited.",
+     true
+    ]
+   },
+   "words": 107,
+   "fk_grade": 9.6,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "99289b44",
+   "brief": "B2",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-80a1cdbf/3e3858a6.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 4,
+   "M4": 0,
+   "M5": 0.268,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "/release-notes <from-tag> <to-tag>",
+     true
+    ],
+    "c": [
+     "The draft marks it `TODO: migration`.",
+     true
+    ]
+   },
+   "words": 193,
+   "fk_grade": 7.1,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "49dd7420",
+   "brief": "B2",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4b95f6a5/5da8e880.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 0,
+   "M5": 0.305,
+   "M6": 0.071,
+   "M6_regex_fragments": 4,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it writes a draft and stops. It never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually. You must be signed in to gh, and both tags must exist.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 165,
+   "fk_grade": 5.4,
+   "invented_claims": [],
+   "fragments": [
+    "A `RELEASE_NOTES.md` draft in your working tree."
+   ]
+  },
+  {
+   "build": "8b75fb51",
+   "brief": "B2",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-72646470/b97c4ced.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.257,
+   "M6": 0.062,
+   "M6_regex_fragments": 2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually. You must be signed in to gh, and both tags must exist.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 159,
+   "fk_grade": 6.0,
+   "invented_claims": [],
+   "fragments": [
+    "Illustrative example:"
+   ]
+  },
+  {
+   "build": "03f69f7a",
+   "brief": "B2",
+   "attempt": 2,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-db9fd941/2a01f7d5.md",
+   "M1": 0.9,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.345,
+   "M6": 0.077,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke it manually with /release-notes <from-tag> <to-tag>. Both tags must exist, and gh must be signed in.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 134,
+   "fk_grade": 6.3,
+   "invented_claims": [],
+   "fragments": [
+    "A `RELEASE_NOTES.md` file in the working tree."
+   ]
+  },
+  {
+   "build": "696d96aa",
+   "brief": "B2",
+   "attempt": 2,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-870356cb/d226f574.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.303,
+   "M6": 0.0,
+   "M6_regex_fragments": 2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Run it manually: /release-notes <from-tag> <to-tag>",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 147,
+   "fk_grade": 6.4,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "afc5beff",
+   "brief": "B2",
+   "attempt": 2,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-59222a0a/1f0b7330.md",
+   "M1": 0.9,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.296,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually, replacing the placeholders with existing tags. You must be signed in to gh.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 154,
+   "fk_grade": 6.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "aabec324",
+   "brief": "B2",
+   "attempt": 3,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b761d6e1/4e96c6b3.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 0,
+   "M5": 0.328,
+   "M6": 0.125,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it stops after writing the draft and never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag>. Both tags must exist, and gh must be signed in.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 188,
+   "fk_grade": 6.9,
+   "invented_claims": [],
+   "fragments": [
+    "Drafts release notes from merged PRs between two tags.",
+    "A `RELEASE_NOTES.md` draft in your working tree, with any missing migration lines marked for completion."
+   ]
+  },
+  {
+   "build": "566f05b3",
+   "brief": "B2",
+   "attempt": 3,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-71014ef7/d12d4db2.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": 0.289,
+   "M6": 0.0,
+   "M6_regex_fragments": 3,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke /release-notes <from-tag> <to-tag>.",
+     true
+    ],
+    "c": [
+     "The draft marks its migration line TODO: migration.",
+     true
+    ]
+   },
+   "words": 182,
+   "fk_grade": 5.9,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "7b8ac303",
+   "brief": "B2",
+   "attempt": 3,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-d3704d18/6d26551c.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.308,
+   "M6": 0.0,
+   "M6_regex_fragments": 2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke it manually with /release-notes <from-tag> <to-tag>.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 148,
+   "fk_grade": 6.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "b509da3c",
+   "brief": "B2",
+   "attempt": 4,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-470ae2fb/fcd6f529.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 0,
+   "M5": 0.261,
+   "M6": 0.062,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it stops after writing the draft and never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually. Both tags must exist, and gh must be signed in.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 181,
+   "fk_grade": 6.8,
+   "invented_claims": [],
+   "fragments": [
+    "A `RELEASE_NOTES.md` file in the working tree, grouped by change type and marked with any missing migration guidance."
+   ]
+  },
+  {
+   "build": "8a407abc",
+   "brief": "B2",
+   "attempt": 4,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b343c6aa/2f8578ab.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M4": 1,
+   "M5": 0.308,
+   "M6": 0.062,
+   "M6_regex_fragments": 3,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke it manually with /release-notes <from-tag> <to-tag>. You must be signed in to gh, and both tags must exist.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 185,
+   "fk_grade": 5.9,
+   "invented_claims": [],
+   "fragments": [
+    "A `RELEASE_NOTES.md` draft in your working tree, with missing migration lines marked for completion."
+   ]
+  },
+  {
+   "build": "478ed22a",
+   "brief": "B2",
+   "attempt": 4,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d4e3661/3a590f2b.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.263,
+   "M6": 0.062,
+   "M6_regex_fragments": 2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke it manually: /release-notes <from-tag> <to-tag>",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 162,
+   "fk_grade": 6.3,
+   "invented_claims": [],
+   "fragments": [
+    "For example, with illustrative tags:"
+   ]
+  },
+  {
+   "build": "38ab1cc7",
+   "brief": "B2",
+   "attempt": 5,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2e1f8c8d/1629879a.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 0,
+   "M5": 0.266,
+   "M6": 0.067,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it writes the draft file and stops.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually. You must be signed in to gh, and both tags must exist.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 181,
+   "fk_grade": 7.6,
+   "invented_claims": [],
+   "fragments": [
+    "A draft in `RELEASE_NOTES.md` in your working tree, including any migration TODOs that need attention."
+   ]
+  },
+  {
+   "build": "648789a5",
+   "brief": "B2",
+   "attempt": 5,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c4ebbaf2/71e0311c.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 0,
+   "M5": 0.277,
+   "M6": 0.071,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it writes the draft and stops; it never publishes.",
+     true
+    ],
+    "b": [
+     "Run /release-notes <from-tag> <to-tag> manually. Both tags must exist, and gh must be signed in.",
+     true
+    ],
+    "c": [
+     "It marks the draft TODO: migration.",
+     true
+    ]
+   },
+   "words": 179,
+   "fk_grade": 6.0,
+   "invented_claims": [],
+   "fragments": [
+    "A `RELEASE_NOTES.md` file in the working tree, with missing migration instructions marked for completion."
+   ]
+  },
+  {
+   "build": "3f123a13",
+   "brief": "B2",
+   "attempt": 5,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8fc9d850/32550687.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.327,
+   "M6": 0.071,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "No, it never publishes.",
+     true
+    ],
+    "b": [
+     "Invoke it manually with /release-notes <from-tag> <to-tag>.",
+     true
+    ],
+    "c": [
+     "The draft marks it TODO: migration.",
+     true
+    ]
+   },
+   "words": 146,
+   "fk_grade": 6.5,
+   "invented_claims": [],
+   "fragments": [
+    "For example, with illustrative tags:"
+   ]
+  },
+  {
+   "build": "271be7ea",
+   "brief": "B3",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e7d4314b/b4b9e2ca.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.391,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed.",
+     true
+    ]
+   },
+   "words": 50,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "c22bfdfd",
+   "brief": "B3",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-44b15124/7ec24b10.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.389,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook fails open and commits proceed.",
+     true
+    ]
+   },
+   "words": 53,
+   "fk_grade": 6.1,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "aceb5b25",
+   "brief": "B3",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c3cc7559/fbe2740d.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.265,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed without the merge-marker check.",
+     true
+    ]
+   },
+   "words": 76,
+   "fk_grade": 7.7,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "31b910e4",
+   "brief": "B3",
+   "attempt": 2,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-df2d496b/191b38f8.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.398,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "You must review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook fails open and commits proceed.",
+     true
+    ]
+   },
+   "words": 51,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "b92599a6",
+   "brief": "B3",
+   "attempt": 2,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-b679ba02/252b6098.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.353,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed.",
+     true
+    ]
+   },
+   "words": 48,
+   "fk_grade": 6.1,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "a7a11bf3",
+   "brief": "B3",
+   "attempt": 2,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-fc490fcf/0e12cb0d.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.286,
+   "M6": 0.111,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed without the hook blocking them.",
+     true
+    ]
+   },
+   "words": 68,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": [
+    "To update:"
+   ]
+  },
+  {
+   "build": "ab48c343",
+   "brief": "B3",
+   "attempt": 3,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23eb2738/365cf917.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.391,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed.",
+     true
+    ]
+   },
+   "words": 50,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "8ab37df8",
+   "brief": "B3",
+   "attempt": 3,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-94455a7f/a340d39a.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.382,
+   "M6": 0.222,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook lets commits proceed.",
+     true
+    ]
+   },
+   "words": 65,
+   "fk_grade": 6.9,
+   "invented_claims": [],
+   "fragments": [
+    "To update:",
+    "To update:"
+   ]
+  },
+  {
+   "build": "447fd146",
+   "brief": "B3",
+   "attempt": 3,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-35f5a67f/f0d6afe2.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.275,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook lets commits proceed.",
+     true
+    ]
+   },
+   "words": 72,
+   "fk_grade": 9.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "1192a656",
+   "brief": "B3",
+   "attempt": 4,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c5452977/fd407098.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.391,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed; the hook fails open.",
+     true
+    ]
+   },
+   "words": 50,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "51f160e2",
+   "brief": "B3",
+   "attempt": 4,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5aeb81f0/5ee432b2.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.378,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook fails open and commits proceed.",
+     true
+    ]
+   },
+   "words": 61,
+   "fk_grade": 7.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "9dca4100",
+   "brief": "B3",
+   "attempt": 4,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e9fc22e9/39f2fa40.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.343,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed.",
+     true
+    ]
+   },
+   "words": 68,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "962a0d0c",
+   "brief": "B3",
+   "attempt": 5,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d92c422/1e16a8b3.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.361,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It stops git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "You must review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "Commits proceed.",
+     true
+    ]
+   },
+   "words": 46,
+   "fk_grade": 7.1,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "f33a05fc",
+   "brief": "B3",
+   "attempt": 5,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2221ff72/ac2d992e.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.398,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook fails open and commits proceed.",
+     true
+    ]
+   },
+   "words": 51,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "b7cfbb14",
+   "brief": "B3",
+   "attempt": 5,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-35e042c9/2e599691.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.288,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "It blocks git commit when staged files contain merge markers.",
+     true
+    ],
+    "b": [
+     "Review and trust the plugin hooks.",
+     true
+    ],
+    "c": [
+     "The hook lets commits proceed.",
+     true
+    ]
+   },
+   "words": 67,
+   "fk_grade": 6.9,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "4e3643e7",
+   "brief": "B4",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-55d16467/8fa1549d.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 3,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents try to fix code when a test is red, even when it is flaky. They tend to rerun until green or weaken the assertion, neither of which measures how often the test fails on unchanged code.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 347,
+   "fk_grade": 8.4,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "0b5ba43f",
+   "brief": "B4",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2647f2f1/dea65b56.md",
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 2,
+   "M4": 0,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 7,
+   "M8": 3,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that fails sometimes without any code change.",
+     true
+    ],
+    "b": [
+     "An agent may try to fix unchanged code, rerun tests until they pass, or weaken the assertion in response to a flaky failure.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 341,
+   "fk_grade": 6.9,
+   "invented_claims": [
+    "The rubric focuses on measuring failures and handling known-flaky tests while they are fixed."
+   ],
+   "fragments": []
+  },
+  {
+   "build": "142c4fd1",
+   "brief": "B4",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-07b0b9a7/d5338bcc.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 2,
+   "M7": 1,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents try to fix code when a test fails, even when the test is flaky. They also tend to rerun until green or weaken assertions.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an assigned owner and a date.",
+     true
+    ]
+   },
+   "words": 335,
+   "fk_grade": 7.1,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "2c7e7f0e",
+   "brief": "B4",
+   "attempt": 2,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-002fc420/39c86cb9.md",
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 3,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents try to fix code when a test fails, even though a flaky failure does not establish that the code needs changing. They may rerun until green or weaken assertions, neither of which addresses the flakiness.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 351,
+   "fk_grade": 8.0,
+   "invented_claims": [
+    "Neither response addresses the known flakiness."
+   ],
+   "fragments": []
+  },
+  {
+   "build": "8d17dc4f",
+   "brief": "B4",
+   "attempt": 2,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8da65eee/a1112bce.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 1,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that fails sometimes without any code change.",
+     true
+    ],
+    "b": [
+     "An agent that sees a red test tries to fix the code, even when the test is flaky. Agents also tend to rerun tests until they turn green or weaken the assertion, neither of which measures flakiness.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 344,
+   "fk_grade": 6.9,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "f4fb6b0e",
+   "brief": "B4",
+   "attempt": 2,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9e8fdaf9/4888af3b.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that fails sometimes without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may try to fix code in response to a flaky failure, rerun until the test passes, or weaken an assertion. Flaky required gates also teach agents and people to disregard them.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, assigning it an owner, and setting a date.",
+     true
+    ]
+   },
+   "words": 347,
+   "fk_grade": 7.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "aeddf1d5",
+   "brief": "B4",
+   "attempt": 3,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f72739e7/8ac3a911.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 2,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents act on test results and may try to fix code after a flaky failure, rerun until green, or weaken the assertion without fixing the flaky test.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 363,
+   "fk_grade": 8.4,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "653c62a9",
+   "brief": "B4",
+   "attempt": 3,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-21584d94/6d127bd1.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 1,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may treat a red test as proof that code needs fixing, then rerun until green or weaken the assertion, even though neither establishes whether the test is flaky.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date recorded with the decision.",
+     true
+    ]
+   },
+   "words": 350,
+   "fk_grade": 6.7,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "1974bb53",
+   "brief": "B4",
+   "attempt": 3,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a8ea20b5/2379f6e4.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 2,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may try to fix code when a flaky test fails, rerun tests until they pass, or weaken assertions. An intermittently failing required gate also teaches agents to ignore it.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date. Quarantine includes the work to fix the test.",
+     true
+    ]
+   },
+   "words": 343,
+   "fk_grade": 7.8,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "c85339e0",
+   "brief": "B4",
+   "attempt": 4,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-116091dc/c03104f5.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 5,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents treat a red test as something to fix in the code, even when it is flaky, and tend to rerun until green or weaken the assertion. A required gate that sometimes fails also teaches agents and people to ignore it.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 355,
+   "fk_grade": 8.0,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "407a24ef",
+   "brief": "B4",
+   "attempt": 4,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9a8c295e/5b176a6d.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 3,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents try to fix code after a test fails, even when the failure can occur without code changes. They may rerun until green or weaken assertions, neither of which measures how often the unchanged test fails.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 347,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "f3b3764e",
+   "brief": "B4",
+   "attempt": 4,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-463dd5bd/5f45b592.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may try to fix unchanged code, rerun tests until they pass, or weaken assertions instead of measuring flakiness. A flaky required gate also teaches agents and people to ignore it.",
+     true
+    ],
+    "c": [
+     "Temporarily moving a known-flaky test out of the required gate while it is fixed, with a named owner and a date.",
+     true
+    ]
+   },
+   "words": 329,
+   "fk_grade": 7.5,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "94592a68",
+   "brief": "B4",
+   "attempt": 5,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-73f477d8/be020542.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 2,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 2,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that fails sometimes without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may try to fix the code when the test itself is flaky, rerun until green, or weaken assertions without measuring how often it fails on the same commit.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 347,
+   "fk_grade": 8.4,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "5592ba36",
+   "brief": "B4",
+   "attempt": 5,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8451149b/e2a5f0f6.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.0,
+   "M6_regex_fragments": 1,
+   "M7": 1,
+   "M8": 1,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may respond to a flaky failure by changing code, rerunning until it passes, or weakening assertions. A required gate that sometimes fails also teaches agents and people to ignore it.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 345,
+   "fk_grade": 7.2,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "cb776cfc",
+   "brief": "B4",
+   "attempt": 5,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-3f41743c/b768ff5c.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": null,
+   "M6": 0.107,
+   "M6_regex_fragments": 1,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "A test that sometimes fails without any code change.",
+     true
+    ],
+    "b": [
+     "Agents may try to fix code when the test is flaky, rerun it until it turns green, or weaken the assertion.",
+     true
+    ],
+    "c": [
+     "Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.",
+     true
+    ]
+   },
+   "words": 330,
+   "fk_grade": 7.3,
+   "invented_claims": [],
+   "fragments": [
+    "The test being quarantined.",
+    "The owner responsible for fixing it.",
+    "The date attached to the quarantine."
+   ]
+  }
+ ],
+ "votes": [
+  {
+   "pair": "0117c3dc",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "cd7f254d",
+   "B_build": "1869d53c",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "base",
+   "overall": "base",
+   "reason": "B gives beginners a clearer starting sequence, but A preserves the tool-page structure and provides more complete, precise reference information."
+  },
+  {
+   "pair": "0117c3dc",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "cd7f254d",
+   "B_build": "1869d53c",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "base",
+   "overall": "base",
+   "reason": "B gives first-time readers the necessary start command upfront, while A provides clearer reference sections, more precise wording, and fuller recording details."
+  },
+  {
+   "pair": "0117c3dc",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "cd7f254d",
+   "B_build": "1869d53c",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "base",
+   "overall": "base",
+   "reason": "B is easier for a first-time reader because it runs `portlog start` before the first query, while A's example skips that step. A is more complete and follows the tool page section order more closely: it has the Keys table, the recording method, and the Full reference link."
+  },
+  {
+   "pair": "5c323358",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1869d53c",
+   "B_build": "204336a0",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives readers a clearer start-to-lookup sequence, groups commands consistently, and keeps supporting details focused on useful behavior."
+  },
+  {
+   "pair": "5c323358",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1869d53c",
+   "B_build": "204336a0",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both support the core tasks, but A groups commands more coherently and keeps background details focused on what readers need."
+  },
+  {
+   "pair": "5c323358",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1869d53c",
+   "B_build": "204336a0",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts let a first-time reader install portlog and look up a port, but A is more consistently organized: it groups every command under Commands, while B puts `portlog stop` under How it works and splits the title from the tagline in an awkward way."
+  },
+  {
+   "pair": "53e4731d",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "e617d995",
+   "B_build": "a7cbc576",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both give readers usable commands, but A keeps relevant details easy to find without B\u2019s misleading \u201cKeys\u201d heading and distracting implementation details."
+  },
+  {
+   "pair": "53e4731d",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "e617d995",
+   "B_build": "a7cbc576",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both give readers a usable workflow, but A is more focused and avoids B\u2019s misleading \u201cKeys\u201d heading and distracting implementation details."
+  },
+  {
+   "pair": "53e4731d",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "e617d995",
+   "B_build": "a7cbc576",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts let a first-time reader install portlog and query a port, but B adds a mislabeled 'Keys' section, repeats the history point from its intro, and ends with implementation internals a landing page does not need; A is tighter and more consistent."
+  },
+  {
+   "pair": "19581142",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "0328e284",
+   "B_build": "e617d995",
+   "judge": "astra",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "A guides first-time readers through recording and lookup, clearly limits results to recorded processes, and avoids B\u2019s ambiguous references to ports exiting and stopping the \u201ccurrent process.\u201d"
+  },
+  {
+   "pair": "19581142",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "0328e284",
+   "B_build": "e617d995",
+   "judge": "sol",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "A gives clearer step-by-step guidance, follows the tool page section order more explicitly, and carefully limits history claims to recorded processes."
+  },
+  {
+   "pair": "19581142",
+   "brief": "B1",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "0328e284",
+   "B_build": "e617d995",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts cover install, recording, lookup, freeing a port, and retention; B uses a consistent hero, install, quick start, command table, and notes structure, while A uses headings for its tagline and license line and leans on em dashes."
+  },
+  {
+   "pair": "eea96bfe",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "569dbaea",
+   "B_build": "752ea2a5",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B tells readers to start recording before looking up a port and presents options alongside the commands they modify."
+  },
+  {
+   "pair": "eea96bfe",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "569dbaea",
+   "B_build": "752ea2a5",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B shows readers to start recording before querying history and connects the example directly to the problem the tool solves."
+  },
+  {
+   "pair": "eea96bfe",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "569dbaea",
+   "B_build": "752ea2a5",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B's quick start runs `portlog start` before `portlog who 3000`, so a first-time reader actually gets history; A's quick start skips the recorder, leaves its 'an hour ago' question hanging after the code block, and puts command-line options under an odd 'Keys' heading."
+  },
+  {
+   "pair": "833600ea",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "752ea2a5",
+   "B_build": "cf99033b",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both let a first-time reader complete the tasks, but A presents the same information more cohesively, with a quick start, scannable command table, and less fragmented structure."
+  },
+  {
+   "pair": "833600ea",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "752ea2a5",
+   "B_build": "cf99033b",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives readers a compact start-to-lookup workflow, a scannable command reference, and clear retention and privacy details with less repetition."
+  },
+  {
+   "pair": "833600ea",
+   "brief": "B1",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "752ea2a5",
+   "B_build": "cf99033b",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A gives install, quick start and a scannable command table in a tight hero-first order, while Draft B spreads the same facts over many thin sections and ends with a padded 'Built with Go' heading."
+  },
+  {
+   "pair": "5efcd6f5",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "66074131",
+   "B_build": "9826e5d8",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers the necessary start-recording step before asking them to look up a port\u2019s history."
+  },
+  {
+   "pair": "5efcd6f5",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "66074131",
+   "B_build": "9826e5d8",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A explicitly shows readers how to start recording before looking up a port, making the first-use instructions complete."
+  },
+  {
+   "pair": "5efcd6f5",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "66074131",
+   "B_build": "9826e5d8",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A shows `portlog start` before `portlog who 3000` and lists every command in one table; Draft B's first example skips starting the recorder, so a new reader would find no history, and B moves `who 3000` and the `-y` flag out of the table."
+  },
+  {
+   "pair": "35073b19",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "5c8d5012",
+   "B_build": "66074131",
+   "judge": "astra",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "A gives first-time readers clear task-based sections and places retention details and confirmation behavior beside the commands they affect."
+  },
+  {
+   "pair": "35073b19",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "5c8d5012",
+   "B_build": "66074131",
+   "judge": "sol",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "A makes installation and each task easier to find, keeps explanations beside the commands, and describes stopping a process more precisely."
+  },
+  {
+   "pair": "35073b19",
+   "brief": "B1",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "5c8d5012",
+   "B_build": "66074131",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "vanilla",
+   "overall": "head",
+   "reason": "B follows the usual tool-page order of headline, install, quick start, then a command reference that a first-time reader can scan quickly, while A reads more evenly but spreads single commands across many sections and B's 'Good to know' H3s each hold only one sentence."
+  },
+  {
+   "pair": "60b5b778",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "dfee5813",
+   "B_build": "477f3709",
+   "judge": "astra",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A gives readers a compact path to a time-bounded lookup, a scannable command reference, and more complete sections and recorder details."
+  },
+  {
+   "pair": "60b5b778",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "dfee5813",
+   "B_build": "477f3709",
+   "judge": "sol",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A gives a focused recording-and-lookup example, a scannable command reference, and clearly separated sections for confirmation flags and recorder details."
+  },
+  {
+   "pair": "60b5b778",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "dfee5813",
+   "B_build": "477f3709",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Draft A has a command table that is quick to scan, a more specific headline and the recorder details that B leaves out, though its \"Keys\" heading for the `-y` flag is a small misfit."
+  },
+  {
+   "pair": "ee9fdceb",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "477f3709",
+   "B_build": "95176f49",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A places clear instructions before each command, explicitly demonstrates skipping confirmation, and covers the same facts with less repetition."
+  },
+  {
+   "pair": "ee9fdceb",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "477f3709",
+   "B_build": "95176f49",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide enough information to use the tool, but A states the benefit more directly, avoids repetition, and gives an explicit example for skipping confirmation."
+  },
+  {
+   "pair": "ee9fdceb",
+   "brief": "B1",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "477f3709",
+   "B_build": "95176f49",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts give a first-time reader the install step and every command they need, but A reads as more careful: it puts the facts in a tight hero and quick-start order and puts each instruction before its command. B repeats itself ('even after the process has exited' twice, and 'How it works' repeats the start step), uses sentence fragments and marketing-style dashes, and its Details section is an afterthought."
+  },
+  {
+   "pair": "f7ba62fe",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "49dd7420",
+   "B_build": "8b75fb51",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B adds a concrete invocation example and explains grouping in plain language while preserving the prerequisites, safeguards, and output."
+  },
+  {
+   "pair": "f7ba62fe",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "49dd7420",
+   "B_build": "8b75fb51",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B adds a concrete invocation example and explains the workflow in plain language while preserving the prerequisites, grouping rules, and output boundaries."
+  },
+  {
+   "pair": "f7ba62fe",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "49dd7420",
+   "B_build": "8b75fb51",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives a concrete example command and states the grouping rule plainly (\"more than half\"), while A uses the jargon \"strict-majority rule\" and the awkward \"The code breaks ties by label order\"; A's only real advantage is that it names the `TAG_UNRESOLVED` error code."
+  },
+  {
+   "pair": "260c87e3",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "8b75fb51",
+   "B_build": "99289b44",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete invocation example and clear prerequisites while avoiding B\u2019s distracting implementation details and private ledger."
+  },
+  {
+   "pair": "260c87e3",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "8b75fb51",
+   "B_build": "99289b44",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete example and clear prerequisites while explaining the behavior without B\u2019s distracting commands, internal exit code, and private ledger."
+  },
+  {
+   "pair": "260c87e3",
+   "brief": "B2",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "8b75fb51",
+   "B_build": "99289b44",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A gives a first-time reader the command, a concrete example, prerequisites, and a plain rule for grouping, while Draft B exposes internal details like `git rev-list`, `TAG_UNRESOLVED`, the full `gh pr list` call, and a private ledger path, and it explains the majority rule twice."
+  },
+  {
+   "pair": "ef737edc",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "afc5beff",
+   "B_build": "696d96aa",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A explains the tag placeholders and prerequisites clearly, while B adds an unexplained majority rule and ambiguous label-order tie handling."
+  },
+  {
+   "pair": "ef737edc",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "afc5beff",
+   "B_build": "696d96aa",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A explains the tag placeholders and prerequisites clearly, while B adds an unexplained majority rule and label-order tie-breaker that distract from using the skill."
+  },
+  {
+   "pair": "ef737edc",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "afc5beff",
+   "B_build": "696d96aa",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A explains how to fill in the command arguments and lists the prerequisites in a sensible order, while Draft B adds an unclear strict-majority grouping rule (it says type labels where the rest of the page uses Conventional Commit types) and points to `technical-writing` in What it does instead of When to use it."
+  },
+  {
+   "pair": "55ec5b02",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "03f69f7a",
+   "B_build": "afc5beff",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B explains the tag placeholders, places prose-editing guidance under when to use it, and presents the checks and drafting steps in a clearer sequence."
+  },
+  {
+   "pair": "55ec5b02",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "03f69f7a",
+   "B_build": "afc5beff",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B separates purpose, prerequisites, and workflow more clearly, making the skill easier for a first-time reader to understand and use."
+  },
+  {
+   "pair": "55ec5b02",
+   "brief": "B2",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "03f69f7a",
+   "B_build": "afc5beff",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B explains the tag placeholders, puts the preflight checks in How it works as steps in order, and points prose edits to `technical-writing` under When to use; A puts the `technical-writing` handoff in What it does and the stop conditions in When to use."
+  },
+  {
+   "pair": "41148278",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "566f05b3",
+   "B_build": "7b8ac303",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both support first use, but A preserves the distinction between a strict majority and the most labels and names the missing-tag error."
+  },
+  {
+   "pair": "41148278",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "566f05b3",
+   "B_build": "7b8ac303",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both support first use, but A states the grouping rule more precisely and names the missing-tag error, while B blurs strict majority into most labels."
+  },
+  {
+   "pair": "41148278",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "566f05b3",
+   "B_build": "7b8ac303",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A gives the steps in order, names the TAG_UNRESOLVED stop, and puts each fact in the right section, while B moves the migration-line requirement into What you get and reads it as an unexplained demand; A's only weak spot is the jargon 'strict-majority rule'."
+  },
+  {
+   "pair": "ebdfff46",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "7b8ac303",
+   "B_build": "aabec324",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide enough information to use the skill, but A is more concise and avoids B\u2019s confusing claim that a strict-majority rule needs tie-breaking."
+  },
+  {
+   "pair": "ebdfff46",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "7b8ac303",
+   "B_build": "aabec324",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A explains the workflow plainly and avoids B's confusing combination of a strict-majority rule and tie-breaking by label order."
+  },
+  {
+   "pair": "ebdfff46",
+   "brief": "B2",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "7b8ac303",
+   "B_build": "aabec324",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts let a first-time reader run the skill. A is tighter and internally consistent, while B repeats the grouping rules, says \"strict-majority\" but still mentions breaking ties, and leaks implementation detail with \"the code breaks ties\"."
+  },
+  {
+   "pair": "911722df",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "478ed22a",
+   "B_build": "8a407abc",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete invocation example and explains grouping in plain language, while B introduces implementation details and an unclear strict-majority rule with tie-breaking."
+  },
+  {
+   "pair": "911722df",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "478ed22a",
+   "B_build": "8a407abc",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete invocation example and explains grouping plainly, while B introduces an unexplained error code and a strict-majority rule that sits awkwardly with tie-breaking."
+  },
+  {
+   "pair": "911722df",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "478ed22a",
+   "B_build": "8a407abc",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "head",
+   "overall": "base",
+   "reason": "B gives a first-time reader more to act on: numbered steps, the `TAG_UNRESOLVED` error and the 500-PR fetch limit. A reads cleaner but leaves out the limit, while B repeats its grouping text, says \"the code breaks ties\" (an implementation detail on a user page) and never says what happens when no type has a strict majority."
+  },
+  {
+   "pair": "ba2c1aef",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "b509da3c",
+   "B_build": "478ed22a",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "vanilla",
+   "overall": "head",
+   "reason": "B offers clearer guidance and a concrete invocation example, while A states the strict-majority rule and unresolved-tag error more precisely."
+  },
+  {
+   "pair": "ba2c1aef",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "b509da3c",
+   "B_build": "478ed22a",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B makes first use clearer, but A states the precise strict-majority rule, which B changes to a potentially different plurality rule."
+  },
+  {
+   "pair": "ba2c1aef",
+   "brief": "B2",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "b509da3c",
+   "B_build": "478ed22a",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft B states the prerequisites once, shows a concrete example, and explains how PRs with several type labels are grouped in plain words; Draft A repeats the missing-tag rule, uses 'strict-majority rule' and 'the code' without explaining them, and adds a TAG_UNRESOLVED code that may not exist."
+  },
+  {
+   "pair": "31c5a14b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "648789a5",
+   "B_build": "3f123a13",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "base",
+   "overall": "head",
+   "reason": "B gives first-time readers a clearer flow and a concrete invocation example, while A states the label-selection and tie-breaking rules more precisely."
+  },
+  {
+   "pair": "31c5a14b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "648789a5",
+   "B_build": "3f123a13",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "base",
+   "overall": "head",
+   "reason": "B gives first-time readers clearer instructions and an example, while A more carefully preserves the distinction between strict-majority selection and tie-breaking."
+  },
+  {
+   "pair": "31c5a14b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "648789a5",
+   "B_build": "3f123a13",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives a first-time reader the command, a concrete example, prerequisites, and behavior in plain language; A exposes internal details such as `git rev-list`, `TAG_UNRESOLVED`, and label-order tie-breaking, puts the invocation under When to use, and includes awkward phrases like \"counts labels using a strict-majority rule.\""
+  },
+  {
+   "pair": "cafd9b4b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "3f123a13",
+   "B_build": "38ab1cc7",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete invocation example and clear behavior without B\u2019s unexplained exit code and confusing combination of strict-majority grouping and tie-breaking."
+  },
+  {
+   "pair": "cafd9b4b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "3f123a13",
+   "B_build": "38ab1cc7",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives first-time readers a concrete invocation example and explains the behavior plainly, while B adds distracting exit-code and label-resolution details."
+  },
+  {
+   "pair": "cafd9b4b",
+   "brief": "B2",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "3f123a13",
+   "B_build": "38ab1cc7",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A puts each fact in the right section once and gives a concrete invocation example; Draft B puts the invocation under When to use it, repeats the grouping rule, and gives a confusing majority and tie-break rule with an internal exit code."
+  },
+  {
+   "pair": "9ae71878",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "c22bfdfd",
+   "B_build": "aceb5b25",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide the same actionable steps, but B explains the missing-Node.js behavior more plainly and explicitly applies it to both hosts."
+  },
+  {
+   "pair": "9ae71878",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "c22bfdfd",
+   "B_build": "aceb5b25",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B makes the steps explicit and explains the missing-Node.js behavior in plain language for both platforms."
+  },
+  {
+   "pair": "9ae71878",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "c22bfdfd",
+   "B_build": "aceb5b25",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both drafts give the same correct steps, but A is tighter and states the fail-open caveat in the opening, while B adds wordy lead-ins and puts the caveat at the end of the Codex subsection, where Claude readers may not see it."
+  },
+  {
+   "pair": "33950abe",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "aceb5b25",
+   "B_build": "271be7ea",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both provide usable instructions, but B is more concise and places the missing-Node.js exception beside the claim it qualifies."
+  },
+  {
+   "pair": "33950abe",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "aceb5b25",
+   "B_build": "271be7ea",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both provide usable instructions, but B puts the Node.js limitation beside the blocking claim and presents installation and updates more concisely."
+  },
+  {
+   "pair": "33950abe",
+   "brief": "B3",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "aceb5b25",
+   "B_build": "271be7ea",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both drafts give the same complete install, trust, and update steps, but B is tighter and puts the fail-open caveat in the opening paragraph instead of leaving it at the end of the Codex section, where it reads as if it applies only to Codex."
+  },
+  {
+   "pair": "73a87344",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "a7a11bf3",
+   "B_build": "b92599a6",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both provide the same actionable steps, but B places the Node.js caveat beside the blocking claim and uses concise, consistent labels."
+  },
+  {
+   "pair": "73a87344",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "a7a11bf3",
+   "B_build": "b92599a6",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both provide the same actionable steps, but B places the Node.js limitation beside the blocking claim and uses concise, consistent labels."
+  },
+  {
+   "pair": "73a87344",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "a7a11bf3",
+   "B_build": "b92599a6",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "B puts the Node.js caveat in the opening paragraph, where it covers both hosts, and labels each step the same way throughout; A leaves the caveat at the end of the Codex section, where it reads as Codex-only, and switches between \"To update:\" and \"To update, run:\"."
+  },
+  {
+   "pair": "b78710fe",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "31b910e4",
+   "B_build": "a7a11bf3",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives clearer action-oriented instructions and explains the missing-Node.js behavior in plain language while preserving the same commands and caveats."
+  },
+  {
+   "pair": "b78710fe",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "31b910e4",
+   "B_build": "a7a11bf3",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives clearer action-oriented instructions, makes trusting hooks an explicit step, and explains the Node.js caveat in plain language."
+  },
+  {
+   "pair": "b78710fe",
+   "brief": "B3",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "31b910e4",
+   "B_build": "a7a11bf3",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B states the Codex hook-trust step as an action, which helps a first-time reader, but it puts the Node.js note at the end of the Codex section, where it reads as Codex-only; A states that limit up front for both hosts and stays tighter."
+  },
+  {
+   "pair": "88f19fbd",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "8ab37df8",
+   "B_build": "447fd146",
+   "judge": "astra",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A places the Node.js caveat beside the plugin\u2019s core promise, making its scope clear instead of suggesting it applies only to Codex."
+  },
+  {
+   "pair": "88f19fbd",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "8ab37df8",
+   "B_build": "447fd146",
+   "judge": "sol",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A places the Node.js caveat beside the behavior it qualifies and keeps the installation and update instructions focused."
+  },
+  {
+   "pair": "88f19fbd",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "8ab37df8",
+   "B_build": "447fd146",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Both drafts install and update the plugin the same way, but B puts the Node.js fallback at the end of the Codex section, so it reads as a Codex-only note even though it applies to both hosts, while A states it in the opening paragraph where every reader sees it."
+  },
+  {
+   "pair": "3cfac4aa",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "447fd146",
+   "B_build": "ab48c343",
+   "judge": "astra",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B places the Node.js caveat beside the plugin\u2019s main claim, making its scope clear, and presents installation and update steps concisely."
+  },
+  {
+   "pair": "3cfac4aa",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "447fd146",
+   "B_build": "ab48c343",
+   "judge": "sol",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B places the Node.js limitation beside the blocking claim, makes its scope clear, and keeps installation and update steps concise."
+  },
+  {
+   "pair": "3cfac4aa",
+   "brief": "B3",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "447fd146",
+   "B_build": "ab48c343",
+   "judge": "opus",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both drafts give the same commands, but B puts the Node.js fail-open behavior in the opening paragraph, where it applies to both hosts, while A leaves it at the end of the Codex section, where a reader could take it as Codex-only."
+  },
+  {
+   "pair": "8b2b788c",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "9dca4100",
+   "B_build": "51f160e2",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide the same actionable steps, but A explains the installation sequence more clearly and avoids the unnecessary jargon \u201cfails open.\u201d"
+  },
+  {
+   "pair": "8b2b788c",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "9dca4100",
+   "B_build": "51f160e2",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A avoids unnecessary jargon, explains the marketplace step, and keeps the Codex update and restart instructions together."
+  },
+  {
+   "pair": "8b2b788c",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "9dca4100",
+   "B_build": "51f160e2",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A's lead-in lines describe both commands correctly (\"Add the marketplace, then install the plugin\"), while B labels the two-command blocks only \"Install the plugin\"; B's \"fails open\" adds a little precision but does not outweigh that."
+  },
+  {
+   "pair": "88b67437",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "1192a656",
+   "B_build": "9dca4100",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B preserves the same information while using plain language, making hook trust an explicit action, and tying the restart directly to the update command."
+  },
+  {
+   "pair": "88b67437",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "1192a656",
+   "B_build": "9dca4100",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B uses plain language, makes reviewing and trusting hooks an explicit step, and places the restart instruction alongside the update command."
+  },
+  {
+   "pair": "88b67437",
+   "brief": "B3",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "1192a656",
+   "B_build": "9dca4100",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B makes trusting the Codex hooks an instruction the reader must follow, while A only states that Codex skips them, and B's full lead-in sentences explain each step better than A's bare 'Install:' and 'Update:' labels."
+  },
+  {
+   "pair": "b69593e3",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "f33a05fc",
+   "B_build": "b7cfbb14",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives clearer action-oriented instructions, explicitly tells readers to trust the hooks, and explains the missing-Node.js behavior in plain language."
+  },
+  {
+   "pair": "b69593e3",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "f33a05fc",
+   "B_build": "b7cfbb14",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide the necessary steps, but B gives clearer action-oriented instructions and explains the missing-Node.js behavior in plain language."
+  },
+  {
+   "pair": "b69593e3",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "f33a05fc",
+   "B_build": "b7cfbb14",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Draft B states the Codex trust step as a clear instruction, but it places the Node.js fail-open note under the Codex heading, which wrongly scopes it to Codex. Draft A puts that note in the opening, where it applies to both hosts, and it is tighter overall."
+  },
+  {
+   "pair": "8526d428",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "b7cfbb14",
+   "B_build": "962a0d0c",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both provide the same actionable steps, but B places the Node.js exception beside the blocking claim and uses concise, consistent labels."
+  },
+  {
+   "pair": "8526d428",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "b7cfbb14",
+   "B_build": "962a0d0c",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both provide usable instructions, but B places the Node.js exception beside the blocking claim and uses concise, consistent labels."
+  },
+  {
+   "pair": "8526d428",
+   "brief": "B3",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "b7cfbb14",
+   "B_build": "962a0d0c",
+   "judge": "opus",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both drafts give the same working commands, but B puts the Node.js caveat in the opening, where it applies to both hosts; A puts it at the end of the Codex section, where it looks like it applies only to Codex."
+  },
+  {
+   "pair": "2bfcbdcc",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "0b5ba43f",
+   "B_build": "142c4fd1",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives readers a clearer sequence from measurement to quarantine, explains how reruns and weakened assertions differ, and keeps the rubric attribution from interrupting the lesson."
+  },
+  {
+   "pair": "2bfcbdcc",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "0b5ba43f",
+   "B_build": "142c4fd1",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B follows a clearer sequence from recognizing and measuring flakiness to quarantine, defines the required gate, and gives concrete steps with less repetition."
+  },
+  {
+   "pair": "2bfcbdcc",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "0b5ba43f",
+   "B_build": "142c4fd1",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft B defines the problem before it gives the measurement and quarantine steps, and it ends with a clear numbered procedure, while Draft A opens with a quarantine instruction before it defines flakiness, repeats itself, and puts the rubric note in the middle of the lesson."
+  },
+  {
+   "pair": "a04b0ba0",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "142c4fd1",
+   "B_build": "4e3643e7",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "Both give readers the necessary steps, but B connects the problem, measurement, and quarantine more smoothly and avoids A\u2019s repetitive checklist commentary and abrupt address to auditors."
+  },
+  {
+   "pair": "a04b0ba0",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "142c4fd1",
+   "B_build": "4e3643e7",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A organizes the lesson around two concrete tasks and makes quarantine actionable with explicit steps, while B spends more space repeating the problem."
+  },
+  {
+   "pair": "a04b0ba0",
+   "brief": "B4",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "142c4fd1",
+   "B_build": "4e3643e7",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A gives the reader a clearer path, measuring first and then quarantining with numbered steps; Draft B repeats itself more (for example, it says twice that the agent tries to fix the code) and closes with a vague summary, though both drafts end with an out-of-place note about the rubric."
+  },
+  {
+   "pair": "16bc311d",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f4fb6b0e",
+   "B_build": "8d17dc4f",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A separates measurement from quarantine into actionable sections, while B repeats instructions and adds an unsupported, distracting claim about the rubric\u2019s provenance."
+  },
+  {
+   "pair": "16bc311d",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f4fb6b0e",
+   "B_build": "8d17dc4f",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives each section a clear action and avoids B\u2019s repetitive setup and unexplained claim about the author\u2019s rubric."
+  },
+  {
+   "pair": "16bc311d",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f4fb6b0e",
+   "B_build": "8d17dc4f",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A covers measurement and quarantine in two clear sections with less repetition, while Draft B repeats its framing several times and includes the out-of-place line \"This lesson uses the author's own rubric; it is not from a vendor\"."
+  },
+  {
+   "pair": "5541b7fd",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "2c7e7f0e",
+   "B_build": "f4fb6b0e",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives readers clearer action-oriented sections, defines the required gate, and makes quarantine easy to apply without A\u2019s unexplained rubric disclaimer."
+  },
+  {
+   "pair": "5541b7fd",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "2c7e7f0e",
+   "B_build": "f4fb6b0e",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives first-time readers a clearer sequence of actions, defines the required gate, and avoids A\u2019s unexplained closing claim about a rubric."
+  },
+  {
+   "pair": "5541b7fd",
+   "brief": "B4",
+   "attempt": 2,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "2c7e7f0e",
+   "B_build": "f4fb6b0e",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B puts the measurement step first and gives a concrete quarantine checklist and review checks, while A ends with an odd meta line about a 'vendor rubric' and restates its definitions more often; both drafts still repeat themselves."
+  },
+  {
+   "pair": "00a7f726",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "653c62a9",
+   "B_build": "1974bb53",
+   "judge": "astra",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A separates diagnosis from measurement and quarantine more clearly, repeats less, and provides concrete review questions instead of referring to an unstated rubric."
+  },
+  {
+   "pair": "00a7f726",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "653c62a9",
+   "B_build": "1974bb53",
+   "judge": "sol",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "A separates the problem from the procedure more clearly and provides a usable review checklist, while B repeats measurement instructions across both sections."
+  },
+  {
+   "pair": "00a7f726",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "653c62a9",
+   "B_build": "1974bb53",
+   "judge": "opus",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Draft A explains why a red test is not proof of a bug, then gives one measurement procedure, a quarantine rule and a short review checklist; Draft B repeats the 20-run counting instructions in both sections, defines the required gate only late in section 2, and contains awkward lines like 'would no longer follow this measurement procedure.'"
+  },
+  {
+   "pair": "849652a5",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1974bb53",
+   "B_build": "aeddf1d5",
+   "judge": "astra",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B more clearly connects flaky failures to misguided fixes, then presents measurement and quarantine in a coherent sequence with less repetition."
+  },
+  {
+   "pair": "849652a5",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1974bb53",
+   "B_build": "aeddf1d5",
+   "judge": "sol",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B gives the lesson a clearer progression from why flaky failures mislead agents to how engineers should measure and quarantine them, with less repetition across sections."
+  },
+  {
+   "pair": "849652a5",
+   "brief": "B4",
+   "attempt": 3,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "1974bb53",
+   "B_build": "aeddf1d5",
+   "judge": "opus",
+   "reader": "vanilla",
+   "careful": "vanilla",
+   "overall": "vanilla",
+   "reason": "B explains why the commit must stay fixed and why a flaky gate matters before it gives the procedure, which makes the steps easier to follow; A mostly states rules like 'would no longer follow this measurement procedure' with little reason, though both drafts repeat themselves and both include an out-of-place rubric note."
+  },
+  {
+   "pair": "395ab4d2",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f3b3764e",
+   "B_build": "407a24ef",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A organizes the lesson into clearer actions and makes quarantine easier to carry out, while B repeats its framing and adds an unexplained vendor disclaimer."
+  },
+  {
+   "pair": "395ab4d2",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f3b3764e",
+   "B_build": "407a24ef",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives readers a clearer sequence for measuring failures and arranging quarantine, while B repeats its premise and adds an irrelevant claim about the rubric\u2019s provenance."
+  },
+  {
+   "pair": "395ab4d2",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-base",
+   "A": "head",
+   "B": "base",
+   "A_build": "f3b3764e",
+   "B_build": "407a24ef",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A puts the measurement command and the quarantine steps in a clear order, while Draft B spends its first section repeating the same points and ends with an odd line saying the rubric does not come from a vendor."
+  },
+  {
+   "pair": "8e6f1c21",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "c85339e0",
+   "B_build": "f3b3764e",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives first-time readers a clearer sequence, defines the required gate, and makes quarantine actionable with less repetition and no unexplained claim about the rubric\u2019s provenance."
+  },
+  {
+   "pair": "8e6f1c21",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "c85339e0",
+   "B_build": "f3b3764e",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives first-time readers a clearer sequence for measuring flakiness and arranging quarantine, with less repetition and no unexplained claim about the lesson\u2019s rubric."
+  },
+  {
+   "pair": "8e6f1c21",
+   "brief": "B4",
+   "attempt": 4,
+   "pairing": "head-vs-vanilla",
+   "A": "vanilla",
+   "B": "head",
+   "A_build": "c85339e0",
+   "B_build": "f3b3764e",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft B gives the reader a clear order to follow: measure on the same commit, then quarantine in explicit numbered steps. Draft A repeats its definitions and ends with an unrelated line about the rubric being the author's own."
+  },
+  {
+   "pair": "ae81d654",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "5592ba36",
+   "B_build": "cb776cfc",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives readers a clearer sequence, defines the required gate, and separates measurement from quarantine with less repetition."
+  },
+  {
+   "pair": "ae81d654",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "5592ba36",
+   "B_build": "cb776cfc",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "B gives readers a clearer action sequence, defines the required gate, and separates measurement from quarantine more coherently."
+  },
+  {
+   "pair": "ae81d654",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "5592ba36",
+   "B_build": "cb776cfc",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft B starts with the command and a numbered measurement sequence, then gives a concrete checklist for what to record when a test is quarantined, so a first-time reader can act sooner. Draft A buries its steps under abstract framing and leaks meta lines such as \"Apply the lesson\u2019s rubric through these actions.\""
+  },
+  {
+   "pair": "3144167b",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cb776cfc",
+   "B_build": "94592a68",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives readers a clearer sequence for measurement and quarantine, with actionable checklists and less circular explanation than B."
+  },
+  {
+   "pair": "3144167b",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cb776cfc",
+   "B_build": "94592a68",
+   "judge": "sol",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "A gives readers clearer action-oriented sections and usable steps, while B spends more space repeating the problem before explaining what to do."
+  },
+  {
+   "pair": "3144167b",
+   "brief": "B4",
+   "attempt": 5,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cb776cfc",
+   "B_build": "94592a68",
+   "judge": "opus",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A puts the script and a numbered measurement procedure up front and gives a concrete quarantine checklist, while Draft B spends its first section restating the definition in circles and leaves the reader with less to act on."
+  }
+ ],
+ "aggregate": {
+  "B1/vanilla": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 4,
+   "M5": 1.137,
+   "M6": 0.674,
+   "M7": 5,
+   "M8": 0,
+   "M9": 15,
+   "words": 603
+  },
+  "B1/base": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 4,
+   "M4": 5,
+   "M5": 0.675,
+   "M6": 0.593,
+   "M7": 0,
+   "M8": 0,
+   "M9": 12,
+   "words": 462
+  },
+  "B1/head": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 5,
+   "M5": 1.025,
+   "M6": 0.676,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 450
+  },
+  "B2/vanilla": {
+   "M1": 0.98,
+   "M2": 0,
+   "M3": 10,
+   "M4": 1,
+   "M5": 1.468,
+   "M6": 0.331,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 877
+  },
+  "B2/base": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 10,
+   "M4": 3,
+   "M5": 1.482,
+   "M6": 0.204,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 858
+  },
+  "B2/head": {
+   "M1": 0.98,
+   "M2": 0,
+   "M3": 3,
+   "M4": 5,
+   "M5": 1.451,
+   "M6": 0.195,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 769
+  },
+  "B3/vanilla": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 5,
+   "M5": 1.932,
+   "M6": 0.0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 247
+  },
+  "B3/base": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 5,
+   "M5": 1.9,
+   "M6": 0.222,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 278
+  },
+  "B3/head": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 5,
+   "M5": 1.457,
+   "M6": 0.111,
+   "M7": 0,
+   "M8": 0,
+   "M9": 15,
+   "words": 351
+  },
+  "B4/vanilla": {
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 9,
+   "M4": 5,
+   "M5": null,
+   "M6": 0.0,
+   "M7": 15,
+   "M8": 0,
+   "M9": 15,
+   "words": 1763
+  },
+  "B4/base": {
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 7,
+   "M4": 4,
+   "M5": null,
+   "M6": 0.0,
+   "M7": 13,
+   "M8": 4,
+   "M9": 15,
+   "words": 1727
+  },
+  "B4/head": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 5,
+   "M4": 5,
+   "M5": null,
+   "M6": 0.107,
+   "M7": 3,
+   "M8": 0,
+   "M9": 15,
+   "words": 1684
+  }
+ },
+ "rule": {
+  "per_brief": {
+   "B1": {
+    "base": {
+     "no_harm": true,
+     "better_on": [
+      "M3",
+      "M9"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 9,
+      "base": 6,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M3",
+      "M4",
+      "M5"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 11,
+      "vanilla": 4,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    }
+   },
+   "B2": {
+    "base": {
+     "no_harm": true,
+     "better_on": [
+      "M3",
+      "M4",
+      "M5",
+      "M6"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 11,
+      "base": 4,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M3",
+      "M4",
+      "M5",
+      "M6"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 14,
+      "vanilla": 1,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    }
+   },
+   "B3": {
+    "base": {
+     "no_harm": true,
+     "better_on": [
+      "M5",
+      "M6"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 7,
+      "base": 8,
+      "SAME": 0
+     },
+     "head_majority": false,
+     "other_majority": true,
+     "objective_gain": true
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M5"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 5,
+      "vanilla": 10,
+      "SAME": 0
+     },
+     "head_majority": false,
+     "other_majority": true,
+     "objective_gain": false
+    }
+   },
+   "B4": {
+    "base": {
+     "no_harm": true,
+     "better_on": [
+      "M3",
+      "M4"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 12,
+      "base": 3,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M3"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 11,
+      "vanilla": 4,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": false
+    }
+   }
+  },
+  "vs_base": {
+   "part1_no_harm": true,
+   "part2_objective_gain": true,
+   "part3_judges": false
+  },
+  "vs_vanilla": {
+   "part1_no_harm": true,
+   "part3_judges": false
+  },
+  "briefs_scored": 4,
+  "verdict": "do not ship"
+ },
+ "double_coding": {
+  "builds": [
+   "204336a0",
+   "e617d995",
+   "9826e5d8",
+   "99289b44",
+   "afc5beff",
+   "8a407abc",
+   "271be7ea",
+   "a7a11bf3",
+   "51f160e2",
+   "4e3643e7",
+   "f4fb6b0e",
+   "407a24ef"
+  ],
+  "agreement": 1.0
+ }
+}

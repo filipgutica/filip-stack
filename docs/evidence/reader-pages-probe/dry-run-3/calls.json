@@ -1,0 +1,452 @@
+[
+ {
+  "cell": "build-f4b70a6c",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/build-f4b70a6c.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/builds/f4b70a6c.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-build-f4b70a6c-1",
+    "startedAt": "2026-11-05T18:55:15.536Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-f4b70a6c-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-f4b70a6c-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-build-f4b70a6c-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-f4b70a6c-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:55:54.743Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0023838f0538a31e016aecd122df5887d2a67ba808ea224fe8"
+   }
+  ]
+ },
+ {
+  "cell": "build-9af7fcf3",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/build-9af7fcf3.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/builds/9af7fcf3.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-build-9af7fcf3-1",
+    "startedAt": "2026-11-05T18:55:16.004Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-9af7fcf3-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-9af7fcf3-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-build-9af7fcf3-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-9af7fcf3-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:12.028Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0d78c4667fb2d24a016aecd12c6b4887d29091ec74fbe7698f"
+   }
+  ]
+ },
+ {
+  "cell": "build-6351d7b6",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/build-6351d7b6.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/builds/6351d7b6.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-build-6351d7b6-1",
+    "startedAt": "2026-11-05T18:55:16.461Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-6351d7b6-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-6351d7b6-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-build-6351d7b6-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-build-6351d7b6-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:12.361Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0e1759643d9cef5f016aecd12fe30c87d1b39d560e95392968"
+   }
+  ]
+ },
+ {
+  "cell": "extract-f4b70a6c",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/extract-f4b70a6c.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/extract/f4b70a6c.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-extract-f4b70a6c-1",
+    "startedAt": "2026-11-05T18:56:12.752Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-f4b70a6c-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-f4b70a6c-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-extract-f4b70a6c-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-f4b70a6c-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:46.631Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_080372cebe73f92d016aecd158d6fc87d29d5dce1034b1976a"
+   }
+  ]
+ },
+ {
+  "cell": "comp-f4b70a6c",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/comp-f4b70a6c.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/comp/f4b70a6c.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-comp-f4b70a6c-1",
+    "startedAt": "2026-11-05T18:56:13.231Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-f4b70a6c-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-f4b70a6c-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-comp-f4b70a6c-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-f4b70a6c-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:44.710Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_00722bd390917a14016aecd15180a887d282a12a7cef8cc1cf"
+   }
+  ]
+ },
+ {
+  "cell": "extract-9af7fcf3",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/extract-9af7fcf3.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/extract/9af7fcf3.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-extract-9af7fcf3-1",
+    "startedAt": "2026-11-05T18:56:13.808Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-9af7fcf3-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-9af7fcf3-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-extract-9af7fcf3-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-9af7fcf3-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:54.865Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_077f3e37692932e3016aecd16f3f6087d2822b3ebd3676a355"
+   }
+  ]
+ },
+ {
+  "cell": "comp-9af7fcf3",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/comp-9af7fcf3.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/comp/9af7fcf3.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-comp-9af7fcf3-1",
+    "startedAt": "2026-11-05T18:56:14.467Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-9af7fcf3-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-9af7fcf3-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-comp-9af7fcf3-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-9af7fcf3-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:45.323Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0a883af97c0ec8ca016aecd1528fa087d19522621d7f6209ea"
+   }
+  ]
+ },
+ {
+  "cell": "extract-6351d7b6",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/extract-6351d7b6.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/extract/6351d7b6.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-extract-6351d7b6-1",
+    "startedAt": "2026-11-05T18:56:15.006Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-6351d7b6-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-6351d7b6-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-extract-6351d7b6-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-extract-6351d7b6-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:46.331Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_044d88fdff126af8016aecd159b71c87d1b8d379455873a23b"
+   }
+  ]
+ },
+ {
+  "cell": "comp-6351d7b6",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/comp-6351d7b6.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/comp/6351d7b6.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-comp-6351d7b6-1",
+    "startedAt": "2026-11-05T18:56:15.714Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-6351d7b6-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-6351d7b6-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-comp-6351d7b6-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-comp-6351d7b6-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:45.029Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_04ec57509cdbcd1b016aecd154fc6c87d2878faf902834e9c9"
+   }
+  ]
+ },
+ {
+  "cell": "judge-639ae26b-astra",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-639ae26b.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/639ae26b-astra.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6-astra",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-639ae26b-astra-1",
+    "startedAt": "2026-11-05T18:56:16.652Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-astra-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-astra-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-639ae26b-astra-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-astra-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:45.622Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_04cd1ee209f8d5dd016aecd159e13087d18530cc8cff2b246b"
+   }
+  ]
+ },
+ {
+  "cell": "judge-639ae26b-sol",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-639ae26b.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/639ae26b-sol.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-639ae26b-sol-1",
+    "startedAt": "2026-11-05T18:56:17.391Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-sol-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-sol-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-639ae26b-sol-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-sol-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:56:45.962Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0d626f4b0c46bb05016aecd15a1adc87d28a4edb8ad7504c8e"
+   }
+  ]
+ },
+ {
+  "cell": "judge-639ae26b-opus",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-639ae26b.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/639ae26b-opus.json",
+  "target": {
+   "driverKind": "claudeAgent",
+   "model": "claude-opus-5-5",
+   "options": {
+    "effort": "high",
+    "fastMode": false
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-639ae26b-opus-1",
+    "startedAt": "2026-11-05T18:56:46.901Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-opus-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-opus-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-639ae26b-opus-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-639ae26b-opus-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:57:09.326Z",
+    "replyItemId": "turn-item:provider:claudeAgent:native-item:a7238283-d8b8-48a0-89c7-ab6c18ab426f"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1594062e-astra",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-1594062e.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/1594062e-astra.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6-astra",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-1594062e-astra-1",
+    "startedAt": "2026-11-05T18:56:47.361Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-astra-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-astra-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-1594062e-astra-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-astra-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:57:27.883Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0d29dc2203eec0e4016aecd18f0d3887d2bedbe9a75744d303"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1594062e-sol",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-1594062e.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/1594062e-sol.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-1594062e-sol-1",
+    "startedAt": "2026-11-05T18:56:47.891Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-sol-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-sol-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-1594062e-sol-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-sol-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:57:10.012Z",
+    "replyItemId": "turn-item:provider:codex:native-item:msg_0d2c4559c25a366d016aecd17705ec87d190ea4f0a60fb1511"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1594062e-opus",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/prompts/judge-1594062e.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/dry-run-3/judges/1594062e-opus.json",
+  "target": {
+   "driverKind": "claudeAgent",
+   "model": "claude-opus-5-5",
+   "options": {
+    "effort": "high",
+    "fastMode": false
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-probe-dry-run-3-judge-1594062e-opus-1",
+    "startedAt": "2026-11-05T18:56:48.655Z",
+    "taskId": "node:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-opus-1",
+    "threadId": "thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-opus-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A7be0accf-6046-4280-b4f2-cfdce8871ece%253Adelegate-task%253Arp-probe-dry-run-3-judge-1594062e-opus-1:ordinal:1",
+    "link": "<t3-thread://v2/8cd23d52-70ce-4812-817a-c4839b777ec7/thread:delegated-task:command%3Amcp%3A7be0accf-6046-4280-b4f2-cfdce8871ece%3Adelegate-task%3Arp-probe-dry-run-3-judge-1594062e-opus-1>",
+    "status": "running",
+    "next": "Completion wakes this thread, so end your turn. Do not wait on it or poll it.",
+    "completedAt": "2026-11-05T18:57:09.679Z",
+    "replyItemId": "turn-item:provider:claudeAgent:native-item:7d2d6134-0ea5-438d-bc9a-62623ee38572"
+   }
+  ]
+ }
+]

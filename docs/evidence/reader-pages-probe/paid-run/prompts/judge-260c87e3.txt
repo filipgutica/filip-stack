@@ -1,0 +1,90 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get.
+
+<<<DRAFT A
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from PRs merged between two tags.
+
+## When to use it
+
+Use it when you need a release draft gathered from merged PRs. Use `technical-writing` when you need prose edits.
+
+Run it manually with:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+Illustrative example:
+
+```text
+/release-notes v1.0.0 v1.1.0
+```
+
+You must be signed in to `gh`, and both tags must exist.
+
+## How it works
+
+The skill checks authentication and the tags before drafting. If `gh auth status` fails or either tag is missing, it stops.
+
+It gathers merged PRs, skips those labeled `skip-notes`, and groups them by Conventional Commit type. Features, fixes, and breaking changes come first.
+
+If more than half of a PR’s type labels name one group, the PR goes there. Ties follow label order.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in your working tree and stops. It never publishes.
+DRAFT A>>>
+
+<<<DRAFT B
+# release-notes
+
+## What it does
+
+Drafts release notes from merged PRs between two tags. It groups PRs by Conventional Commit type, with features, fixes, and breaking changes first, and skips PRs labeled `skip-notes`.
+
+## When to use it
+
+Use it to gather merged PRs and draft release notes for a tag range. Invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+Use `technical-writing` to edit prose; `release-notes` gathers the PRs and drafts the notes.
+
+## How it works
+
+The skill requires `gh` to be signed in. It stops if `gh auth status` fails.
+
+It resolves each tag with `git rev-list -n1 <tag>`. If either tag does not exist, it stops before drafting with the exit reason `TAG_UNRESOLVED`.
+
+It fetches merged PRs with:
+
+```sh
+gh pr list --state merged --search "merged:<from>..<to>" --json number,title,labels,body --limit 500
+```
+
+Grouping counts type labels using a strict-majority rule. For PRs with more than one type, the group follows the majority of their labels; the code breaks ties by label order.
+
+Every breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in the working tree and stops. It never publishes.
+
+It also keeps a private ledger at `$TMPDIR/release-notes/<id>/ledger.md`.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

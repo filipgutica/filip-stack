@@ -1,0 +1,92 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the README's opening paragraph and its Install and update section for the `tidy-hooks` plugin.
+
+<<<DRAFT A
+`tidy-hooks` is a Claude and Codex plugin that blocks `git commit` when staged files contain merge markers. If Node.js is missing, the hook fails open and commits proceed.
+
+## Install and update
+
+### Claude
+
+Install:
+
+```sh
+claude plugin marketplace add example/tidy
+claude plugin install tidy-hooks@tidy
+```
+
+Update:
+
+```sh
+claude plugin update tidy-hooks@tidy
+```
+
+### Codex
+
+Install:
+
+```sh
+codex plugin marketplace add example/tidy
+codex plugin add tidy-hooks@tidy
+```
+
+Codex skips plugin hooks until you review and trust them.
+
+Update:
+
+```sh
+codex plugin marketplace upgrade tidy
+```
+
+Then restart Codex.
+DRAFT A>>>
+
+<<<DRAFT B
+`tidy-hooks` is a Claude and Codex plugin that blocks `git commit` when staged files contain merge markers.
+
+## Install and update
+
+### Claude
+
+Add the marketplace, then install the plugin:
+
+```sh
+claude plugin marketplace add example/tidy
+claude plugin install tidy-hooks@tidy
+```
+
+To update:
+
+```sh
+claude plugin update tidy-hooks@tidy
+```
+
+### Codex
+
+Add the marketplace, then install the plugin:
+
+```sh
+codex plugin marketplace add example/tidy
+codex plugin add tidy-hooks@tidy
+```
+
+Review and trust the plugin hooks. Codex skips them until you do.
+
+To update, run:
+
+```sh
+codex plugin marketplace upgrade tidy
+```
+
+Then restart Codex.
+
+If Node.js is missing, commits proceed without the hook blocking them.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

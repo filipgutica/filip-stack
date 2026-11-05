@@ -1,0 +1,44 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# Flaky tests and agents
+
+## 1. Understand what a red test asks the agent to do
+
+Check for flakiness before treating a red test as a request to change the code. A flaky test fails sometimes without any code change. Its failure alone does not establish that the code needs a fix.
+
+An agent that sees a red test tries to fix the code, even when the test is flaky. The agent’s response can therefore start from a false premise: the test failed, so the code must change.
+
+Agents tend to rerun tests until they turn green, or to weaken the assertion. Neither response answers the question you need to ask: does this test sometimes fail on unchanged code? A green rerun is consistent with flakiness. A weaker assertion changes what the test checks.
+
+The required gate matters here. A gate that sometimes fails teaches agents and people to ignore it. Keep that consequence in view when deciding how to handle a known-flaky test.
+
+## 2. Measure flakiness and give quarantine an owner
+
+Measure flakiness by rerunning each test 20 times on the same commit and counting failures. Keep the commit unchanged throughout those runs. The measurement is the failure count across all 20 runs, so continue counting even if a failed run is followed by a passing run.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+Read the results against the question from the first section: which tests fail sometimes without a code change? Do not treat a later passing run as an answer to an earlier failure. Both results belong in the count.
+
+For a known-flaky test, quarantine means moving it out of the required gate while it is fixed. Quarantine includes an owner and a date. Those details belong with the decision to remove the test from the gate.
+
+Use three questions to guide this lesson’s review:
+
+- Was each test rerun 20 times on the same commit, with failures counted?
+- Was each quarantined test already known to be flaky?
+- Does each quarantine have an owner and a date while the test is fixed?
+
+This rubric is the author’s own. It is not from a vendor.
+PAGE>>>
+
+Questions:
+(a) What is a flaky test?
+(b) Why does it matter more with agents?
+(c) What does quarantine mean?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}.

@@ -1,0 +1,74 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get.
+
+<<<DRAFT A
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from merged PRs between two tags.
+
+## When to use it
+
+Use it to gather PRs and prepare a release draft. Use `technical-writing` when you need to edit prose.
+
+The skill runs only when you invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+## How it works
+
+`gh` must be signed in. The skill stops if `gh auth status` fails. If either tag does not exist, it stops before drafting.
+
+It skips PRs labeled `skip-notes` and groups the rest by Conventional Commit type, with features, fixes, and breaking changes first. If a PR has labels for several types, it uses the type named by most labels. Ties follow label order.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in the working tree and stops. It never publishes.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+DRAFT A>>>
+
+<<<DRAFT B
+# release-notes
+
+## What it does
+
+Drafts release notes from merged PRs between two tags. It groups PRs by Conventional Commit type, with features, fixes, and breaking changes first, and skips PRs labeled `skip-notes`.
+
+## When to use it
+
+Use it to gather merged PRs and draft release notes for a tag range. Use `technical-writing` to edit the prose.
+
+The skill is manual only:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+Both tags must exist, and `gh` must be signed in.
+
+## How it works
+
+The skill checks authentication with `gh auth status` and stops if the check fails. It also resolves both tags before drafting. If either tag cannot be resolved, it stops with `TAG_UNRESOLVED`.
+
+It then gathers merged PRs between the tags and groups them by type. For PRs with multiple type labels, grouping counts labels using a strict-majority rule; the code breaks ties by label order.
+
+Every breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+A `RELEASE_NOTES.md` draft in your working tree, with any missing migration lines marked for completion.
+
+The skill stops after writing the file. It never publishes.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

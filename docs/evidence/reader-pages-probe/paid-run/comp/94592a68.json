@@ -1,0 +1,1 @@
+{"a":"A test that fails sometimes without any code change.","b":"Agents may try to fix the code when the test itself is flaky, rerun until green, or weaken assertions without measuring how often it fails on the same commit.","c":"Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date."}

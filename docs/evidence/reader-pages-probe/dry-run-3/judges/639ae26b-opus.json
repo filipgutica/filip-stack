@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "Draft B's Try it section starts the recorder before running a lookup, so a first-time reader can get a result; Draft A's example runs `who` before any recording exists and puts the `-y` flag under a misnamed \"Keys\" section."}

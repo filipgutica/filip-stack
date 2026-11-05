@@ -1,0 +1,45 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# Flaky tests and agents
+
+## 1. Understand what a red test teaches
+
+A flaky test fails sometimes without any code change. When an agent sees a red test, it tries to fix the code, even when the test is flaky. The failure can therefore send the agent into code changes while the test itself needs attention.
+
+Agents tend to respond in two ways: rerun until the test passes, or weaken the assertion. Neither response measures how often the test fails on unchanged code. A passing rerun is still part of the same pattern: the test sometimes fails without a code change.
+
+For engineers working with agents, the required gate matters beyond a single failure. A required gate that sometimes fails teaches agents and people to ignore it. Leaving a known-flaky test in that gate keeps presenting failures that agents try to fix through code changes, repeated runs, or weaker assertions.
+
+Use this distinction throughout the lesson: a red result tells you that a test failed. Measuring flakiness means checking whether failures occur across repeated runs on the same commit.
+
+## 2. Measure flakiness and quarantine known failures
+
+Rerun each test 20 times on the same commit, and count its failures. Keep the commit unchanged across those runs. The measurement is the failure count from that set of 20 runs.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+Read the results as a measurement of failures across repeated runs. Do not substitute “rerun until green” for the full set of 20 runs. That stops at a passing result instead of counting failures across the specified runs.
+
+For a known-flaky test, quarantine means moving it out of the required gate while it is fixed. Quarantine includes an owner and a date. Those details belong with the decision to remove the test from the required gate.
+
+Apply the lesson’s rubric through these actions:
+
+1. Measure each test with 20 runs on the same commit.
+2. Count the failures.
+3. Move a known-flaky test out of the required gate while it is fixed.
+4. Assign an owner and a date.
+
+This rubric is the author’s own. It does not come from a vendor.
+PAGE>>>
+
+Questions:
+(a) What is a flaky test?
+(b) Why does it matter more with agents?
+(c) What does quarantine mean?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}.

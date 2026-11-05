@@ -1,0 +1,29 @@
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from pull requests merged between two tags.
+
+## When to use it
+
+Use it when you need a release draft gathered from merged PRs. For prose edits, use `technical-writing`.
+
+The skill runs only when you invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+Replace `<from-tag>` and `<to-tag>` with the tags for your release range. You must be signed in to `gh`, and both tags must exist.
+
+## How it works
+
+The skill checks authentication and the tags before drafting. It stops if `gh auth status` fails or either tag does not exist.
+
+It gathers the merged PRs, skips those labeled `skip-notes`, and groups the rest by Conventional Commit type. Features, fixes, and breaking changes come first.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in your working tree and stops. It never publishes.

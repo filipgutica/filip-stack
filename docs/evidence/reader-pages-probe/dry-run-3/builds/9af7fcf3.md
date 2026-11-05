@@ -1,0 +1,49 @@
+# See which process held a local TCP port
+
+portlog records port history so you can answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Look back at port 3000
+
+```sh
+portlog who 3000 --since 2h
+```
+
+See every process that held port 3000 in the last two hours, newest first.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `portlog start` | Run the background recorder. |
+| `portlog stop` | Stop the recorder. |
+| `portlog who 3000` | Show every recorded process that held port 3000, newest first. |
+| `portlog who 3000 --since 2h` | Limit the history to the last two hours. |
+| `portlog free 3000` | Stop the process that holds port 3000 now, after confirmation. |
+
+## Keys
+
+`-y` skips confirmation:
+
+```sh
+portlog free 3000 -y
+```
+
+## How recording works
+
+On macOS, the recorder polls `lsof` every 2 seconds. On Linux, it reads `/proc/net/tcp`.
+
+## Good to know
+
+**History retention**  
+History stays in `~/.portlog/` for 7 days.
+
+**Command-line arguments**  
+portlog never records command-line arguments, because they can hold secrets.
+
+[Full reference](README.md)

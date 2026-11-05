@@ -1,0 +1,141 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `portlog`, following the tool page section order.
+
+<<<DRAFT A
+# See which process held a port
+
+portlog records which process held each local TCP port over time. Use it to answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Look up a port
+
+Start the background recorder, then check port 3000:
+
+```sh
+portlog start
+portlog who 3000
+```
+
+The results show every process that held port 3000, newest first.
+
+## Commands
+
+### Limit the history
+
+Show only the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+### Free a port
+
+Stop the process that holds port 3000 now:
+
+```sh
+portlog free 3000
+```
+
+portlog asks for confirmation before stopping the process. To skip confirmation, use:
+
+```sh
+portlog free 3000 -y
+```
+
+### Stop recording
+
+Stop the background recorder:
+
+```sh
+portlog stop
+```
+
+## Good to know
+
+### History
+
+portlog keeps history for 7 days in `~/.portlog/`.
+
+### Command-line arguments
+
+portlog never records command-line arguments because they can hold secrets.
+DRAFT A>>>
+
+<<<DRAFT B
+# portlog
+
+## See what held a port—even after it exits
+
+portlog records which process held each local TCP port over time. Answer “what was on port 3000 an hour ago?” after the process has exited.
+
+## Install
+
+```sh
+brew install example/tap/portlog
+```
+
+## Start recording
+
+Run the background recorder:
+
+```sh
+portlog start
+```
+
+## Look up a port
+
+Show every process that held port 3000, newest first:
+
+```sh
+portlog who 3000
+```
+
+Limit the history to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+## Free a port
+
+Stop the process holding port 3000 now, after confirmation:
+
+```sh
+portlog free 3000
+```
+
+Skip confirmation with `-y`:
+
+```sh
+portlog free 3000 -y
+```
+
+## How it works
+
+The recorder polls `lsof` every two seconds on macOS and reads `/proc/net/tcp` on Linux. History is kept for seven days in `~/.portlog/`.
+
+It never records command-line arguments, because they can hold secrets.
+
+Stop the recorder with:
+
+```sh
+portlog stop
+```
+
+## Details
+
+Runs on macOS and Linux. Written in Go. MIT license.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

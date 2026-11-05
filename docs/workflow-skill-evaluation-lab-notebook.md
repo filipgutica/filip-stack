@@ -1300,7 +1300,7 @@ the example-page changes. It drops the Forms and Data views sections and the
 Tablet row's scrolling-strip line, and keeps base's optional navigation
 wording. The narrowed change has not had its own run.
 
-### 22. Reader pages writing probe: dry runs
+### 22. Reader pages writing probe: dry runs and paid result
 
 Date: 2026-11-04
 
@@ -1349,12 +1349,52 @@ The extractor marked a base leak in a Good to know section as a sources note,
 so M3 undercounts leaks in notes sections. Fixing that definition changes a
 measure after a result, so it waits for Filip's decision.
 
-One attempt per arm is a smoke test, not evidence. The paid run needs 312 calls
-and Filip's approval.
+One attempt per arm is a smoke test, not evidence. Filip approved the paid run on 2026-11-05.
+
+#### Dry run 3 and paid run (2026-11-05)
+
+Main `0fc048d4` was merged into the PR as `f6997da1`, preserving studies 21
+and 22, main's breakpoint and visualization content, and G1–G7. Dry run 3
+rebuilt both arms and completed 15 calls without retries. Every build read
+only its own arm, and the scorer succeeded.
+
+The paid run completed all 312 calls: 60 builds, 60 primary extractions,
+60 comprehension calls, 12 second extractions, and 120 blind judges. It used
+four briefs, three arms, and five attempts. Maximum concurrency was eight,
+and there were no retries. All 60 build traces read only their assigned arm
+file. Scorer and arm hashes stayed fixed. Double-coding agreed on every
+measured fact and opening field; one sentence-count difference left M6 unchanged.
+
+Result: **not supported**. No harm passes against both controls on all four
+briefs. Objective gain passes against base on all four, with no M3/M4
+regression. Judges prefer head on three briefs against each control, but B3
+has opposing majorities, so part 3 fails against both.
+
+| Brief | No harm, base / vanilla | Better measures vs base | Head–base votes | Head–vanilla votes |
+| --- | --- | --- | --- | --- |
+| B1 | pass / pass | M3, M9 | 9–6 | 11–4 |
+| B2 | pass / pass | M3, M4, M5, M6 | 11–4 | 14–1 |
+| B3 | pass / pass | M5, M6 | 7–8 | 5–10 |
+| B4 | pass / pass | M3, M4 | 12–3 | 11–4 |
+
+Votes are overall head–control counts, 15 per pairing. Twenty-two of B3's
+30 judge reasons mention Node.js, often preferring the fail-open caveat beside
+the opening claim rather than under Codex. This is a diagnostic, not a proven
+cause. Routing evaluation was not run, and the PR remains a draft. No guidance
+was revised after the result. A revision to one guidance rule and a B3 rerun are separate work.
+
+The existing clarifications remain: balanced judge order, Yes/No formatting,
+and no M5 on B4. Neither proposed change to notes-section leakage or the B1
+fragment count was applied. Global host guidance remains a shared confound.
+The orchestrator automatically delivered replies into the parent; the runner
+did not print them. Actual token usage and billed cost remain unverified.
 
 Evidence:
 
 - `docs/evidence/reader-pages-probe/prereg.md`
+- `docs/evidence/reader-pages-probe/dry-run-3-report.md`
+- `docs/evidence/reader-pages-probe/paid-run-report.md`
+- `docs/evidence/reader-pages-probe/paid-run/`
 - `docs/evidence/reader-pages-probe/dry-run-report.md`
 - `docs/evidence/reader-pages-probe/dry-run-2-report.md`
 - `docs/evidence/reader-pages-probe/dry-run-2/`
@@ -1486,6 +1526,8 @@ No candidate passed the canary promotion gate.
 | 2026-11-05 | Design language PR narrowed | Breakpoints only: 640 and 800 px, container query, example pages | Not run | Run 2 tied the regressions to Data views and the scrolling-strip line, and showed head kept to the two widths. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
 | 2026-11-04 | Reader pages probe dry run | Reader pages guidance, 1 attempt per arm on one brief | Pipeline worked; head won 0 of 6 judge votes and leaked 4 agent-only facts | No verdict at n=1. Untested hypothesis: a keep-every-fact check works against the write-for-the-reader rule. | `reader-pages-probe/` |
 | 2026-11-04 | Reader pages probe dry run 2 | Revised reader pages guidance, same brief and calls | Head leaked 0 agent-only facts and won 3 of 6 judge votes | No verdict at n=1. The leak did not repeat. The extractor misses leaks in notes sections. | `reader-pages-probe/dry-run-2/` |
+| 2026-11-05 | Reader pages probe dry run 3 | Rebuilt arms after merging main; B1, 1 attempt per arm, 15 calls | Pipeline passed, zero retries; head won 6 of 6 overall judge votes | Smoke test only; all build reads stayed within their arm. | `reader-pages-probe/dry-run-3-report.md` |
+| 2026-11-05 | Reader pages paid probe | Fixed 4 briefs × 3 arms × 5 attempts, 312 calls | Not supported: no harm and objective gain pass, but B3 loses 7–8 to base and 5–10 to vanilla | Part 3 forbids an opposing majority; Node.js caveat placement is a diagnostic for a separate B3 revision. No routing run. | `reader-pages-probe/paid-run-report.md` |
 
 ## Validity threats
 

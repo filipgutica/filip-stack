@@ -1,0 +1,38 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from merged PRs between two tags.
+
+## When to use it
+
+Use it to gather PRs and prepare a release draft. Use `technical-writing` when you need to edit prose.
+
+The skill runs only when you invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+## How it works
+
+`gh` must be signed in. The skill stops if `gh auth status` fails. If either tag does not exist, it stops before drafting.
+
+It skips PRs labeled `skip-notes` and groups the rest by Conventional Commit type, with features, fixes, and breaking changes first. If a PR has labels for several types, it uses the type named by most labels. Ties follow label order.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in the working tree and stops. It never publishes.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+PAGE>>>
+
+Questions:
+(a) Will it publish a release?
+(b) How do you run it?
+(c) What happens to a breaking change with no migration note?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (a) with Yes, No, or Not stated.

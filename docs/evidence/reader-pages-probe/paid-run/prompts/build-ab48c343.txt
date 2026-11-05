@@ -1,0 +1,12 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23eb2738/365cf917.md` and follow it (skip this step when the file is empty). Read no other file. Write the README's opening paragraph and its Install and update section for the `tidy-hooks` plugin. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. `tidy-hooks` is a Claude and Codex plugin. It blocks `git commit` when staged files contain merge markers.
+2. Claude: `claude plugin marketplace add example/tidy`, then `claude plugin install tidy-hooks@tidy`.
+3. Codex: `codex plugin marketplace add example/tidy`, then `codex plugin add tidy-hooks@tidy`.
+4. Codex skips plugin hooks until you review and trust them.
+5. Update in Claude with `claude plugin update tidy-hooks@tidy`. Update in Codex with `codex plugin marketplace upgrade tidy`, then restart Codex.
+6. The hook fails open: if Node.js is missing, commits proceed.
+7. The hook entry is `hooks/pre-tool-use.mjs`, and it parses `bash -c` wrappers with a shell tokenizer.
+8. Hook timeout 5 s, set in `hooks.json`.

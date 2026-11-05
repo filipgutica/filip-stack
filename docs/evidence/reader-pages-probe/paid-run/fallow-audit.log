@@ -1,0 +1,10 @@
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+loaded config: /Users/filip.gutica/code/worktrees/rp-probe/.fallowrc.jsonc
+   0.891959250s  WARN tsconfig chain not fully loaded: Tsconfig not found astro/tsconfigs/strict. Falling back to resolver-less resolution for the affected files. Relative imports, bare imports, and path aliases declared in a discovered root or workspace tsconfig still resolve (fallow applies those project-wide), so this is usually harmless and is common when analyzing before dependencies are installed. Only aliases declared solely in the unreadable inherited config are affected: if imports look misreported, install dependencies so the referenced config resolves, or fix the extends/references chain.
+
+Audit scope: 1328 changed files vs 0fc048d4e2a8 (merge-base with origin/main) (f6997da1..HEAD)
+■ Metrics: dead code 0 · complexity 0 · duplication 0
+
+── Styling ────────────────────────────────────────
+  1 styling candidate (run `fallow health --css` for detail)
+✓ No issues in 1328 changed files (0.94s)

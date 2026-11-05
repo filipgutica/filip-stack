@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "B's quick start runs `portlog start` before `portlog who 3000`, so a first-time reader actually gets history; A's quick start skips the recorder, leaves its 'an hour ago' question hanging after the code block, and puts command-line options under an odd 'Keys' heading."}

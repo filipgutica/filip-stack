@@ -1,0 +1,1 @@
+{"reader": "A", "careful": "A", "overall": "A", "reason": "Draft A shows `portlog start` before `portlog who 3000` and lists every command in one table; Draft B's first example skips starting the recorder, so a new reader would find no history, and B moves `who 3000` and the `-y` flag out of the table."}

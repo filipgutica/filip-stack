@@ -1,0 +1,1 @@
+{"a":"A test that sometimes fails without any code change.","b":"Agents try to fix code after a test fails, even when the failure can occur without code changes. They may rerun until green or weaken assertions, neither of which measures how often the unchanged test fails.","c":"Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date."}

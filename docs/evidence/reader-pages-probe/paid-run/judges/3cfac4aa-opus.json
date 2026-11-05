@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "Both drafts give the same commands, but B puts the Node.js fail-open behavior in the opening paragraph, where it applies to both hosts, while A leaves it at the end of the Codex section, where a reader could take it as Codex-only."}

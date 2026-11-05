@@ -1,0 +1,1 @@
+{"reader": "A", "careful": "A", "overall": "A", "reason": "Both drafts install and update the plugin the same way, but B puts the Node.js fallback at the end of the Codex section, so it reads as a Codex-only note even though it applies to both hosts, while A states it in the opening paragraph where every reader sees it."}

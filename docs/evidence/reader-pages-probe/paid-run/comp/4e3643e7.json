@@ -1,0 +1,1 @@
+{"a":"A test that sometimes fails without any code change.","b":"Agents try to fix code when a test is red, even when it is flaky. They tend to rerun until green or weaken the assertion, neither of which measures how often the test fails on unchanged code.","c":"Moving a known-flaky test out of the required gate while it is fixed, with an owner and a date."}

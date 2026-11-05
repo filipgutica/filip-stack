@@ -1,0 +1,1 @@
+{"reader": "A", "careful": "A", "overall": "A", "reason": "Draft A gives a first-time reader the command, a concrete example, prerequisites, and a plain rule for grouping, while Draft B exposes internal details like `git rev-list`, `TAG_UNRESOLVED`, the full `gh pr list` call, and a private ledger path, and it explains the majority rule twice."}

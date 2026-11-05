@@ -1,0 +1,18 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-71014ef7/d12d4db2.md` and follow it (skip this step when the file is empty). Read no other file. Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. Drafts release notes from merged PRs between two tags.
+2. Manual only: `/release-notes <from-tag> <to-tag>`.
+3. Groups PRs by Conventional Commit type: features, fixes, and breaking changes first.
+4. Skips PRs labeled `skip-notes`.
+5. Never publishes. It writes `RELEASE_NOTES.md` in the working tree and stops.
+6. A breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+7. Requires `gh` signed in. It stops if `gh auth status` fails.
+8. Neighbor: `technical-writing` edits prose. `release-notes` gathers the PRs and drafts.
+9. If either tag does not exist, it stops before drafting.
+10. Resolve the tags with `git rev-list -n1 <tag>`. The exit reason for a missing tag is `TAG_UNRESOLVED`.
+11. Fetch PRs with `gh pr list --state merged --search "merged:<from>..<to>" --json number,title,labels,body --limit 500`.
+12. A PR with labels of more than one type goes in the group that most of its labels name.
+13. The grouping counts labels with a strict-majority rule, and the code breaks ties by label order.
+14. Keep a private ledger at `$TMPDIR/release-notes/<id>/ledger.md`.

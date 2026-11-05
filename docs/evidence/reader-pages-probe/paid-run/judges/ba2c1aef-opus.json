@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "Draft B states the prerequisites once, shows a concrete example, and explains how PRs with several type labels are grouped in plain words; Draft A repeats the missing-tag rule, uses 'strict-majority rule' and 'the code' without explaining them, and adds a TAG_UNRESOLVED code that may not exist."}

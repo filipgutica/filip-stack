@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "B gives a concrete example command and states the grouping rule plainly (\"more than half\"), while A uses the jargon \"strict-majority rule\" and the awkward \"The code breaks ties by label order\"; A's only real advantage is that it names the `TAG_UNRESOLVED` error code."}

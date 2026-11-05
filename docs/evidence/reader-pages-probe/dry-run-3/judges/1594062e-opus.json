@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "A", "overall": "A", "reason": "Both drafts let a first-time reader install, record, look up and free a port; A uses a structured section order (summary with install and facts, Try it, Commands, Good to know) that looks like a tool page template, while B uses its own order and adds lsof and /proc polling details that may not come from the brief."}

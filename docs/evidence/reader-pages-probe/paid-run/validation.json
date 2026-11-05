@@ -1,0 +1,21 @@
+{
+ "cells": 312,
+ "saved": 312,
+ "by_kind": {
+  "build": 60,
+  "extract": 60,
+  "comp": 60,
+  "extract2": 12,
+  "judge": 120
+ },
+ "by_model": {
+  "gpt-6.1-sol": 220,
+  "gpt-6-astra": 52,
+  "claude-opus-5-5": 40
+ },
+ "retries": 0,
+ "max_running": 8,
+ "frozen_inputs_match": true,
+ "scoring_traces_without_commands": 252,
+ "all_scoring_json_valid": true
+}

@@ -1,0 +1,38 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# Flaky tests and agents
+
+## 1. What a red test teaches
+
+An agent that sees a red test tries to fix the code. It does this even when the test is flaky: a test that sometimes fails without any code change. That distinction matters when you ask an agent to work through failing tests. The agent tries to fix the code, but a flaky test can fail while the code stays the same.
+
+Agents tend to respond in two ways: rerun until green, or weaken the assertion. Neither response tells you how often the test fails on unchanged code. A green rerun is one result; measuring flakiness requires counting failures across repeated runs.
+
+For engineers, the problem also concerns the required gate. A required gate that sometimes fails teaches agents and people to ignore it. Keeping a known-flaky test in that gate leaves both responding to a check that sometimes fails without a code change.
+
+Keep these questions separate: “Did this run fail?” and “Does this test sometimes fail on the same commit?” The first identifies a red result. The second is the question the flakiness measurement addresses.
+
+## 2. Measure failures, then quarantine with ownership
+
+To measure flakiness, rerun each test **20 times on the same commit** and count its failures. Keep the commit the same throughout those runs: the measurement is repeated test results without a code change.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+Read the failure count across all 20 runs, rather than rerunning only until a green result appears. The question is how many runs failed on that commit, not whether one of the reruns passed.
+
+For a known-flaky test, quarantine means moving it out of the required gate while it is fixed, **with an owner and a date**. Those details belong together: the test leaves the required gate, the fix has an owner, and the quarantine has a date.
+
+This lesson uses the author’s own rubric, not a vendor’s. Its focus is measuring failures on unchanged code and quarantining known-flaky tests with ownership and a date. Use those terms precisely when discussing a red test with an agent.
+PAGE>>>
+
+Questions:
+(a) What is a flaky test?
+(b) Why does it matter more with agents?
+(c) What does quarantine mean?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}.

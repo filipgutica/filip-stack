@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "A", "overall": "A", "reason": "Both drafts let a first-time reader run the skill. A is tighter and internally consistent, while B repeats the grouping rules, says \"strict-majority\" but still mentions breaking ties, and leaks implementation detail with \"the code breaks ties\"."}

@@ -1,0 +1,82 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the first two sections, about 350 words, of a lesson for engineers titled 'Flaky tests and agents'.
+
+<<<DRAFT A
+# Flaky tests and agents
+
+## Measure failures before changing code
+
+A flaky test fails sometimes without any code change. When an agent sees a red test, it tries to fix the code, even when the test is flaky. Before you act on that failure, measure how the test behaves on the same commit.
+
+Start with the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+Rerun each test 20 times on the same commit and count its failures. Keep the commit unchanged throughout the measurement. This gives you a failure count for each test under that condition.
+
+The count answers a specific question: how many times did this test fail across those 20 runs? Keep that question separate from deciding what code to change. A test can fail while the code stays the same, so a red result alone does not establish that a code change caused it.
+
+Use the full set of runs for the measurement. Stopping when a test turns green replaces the requested failure count with the outcome of one rerun.
+
+## Quarantine known-flaky tests while fixing them
+
+Agents tend to rerun tests until they pass, or to weaken an assertion. Both responses need attention when you review an agent’s work. Check whether it changed the code in response to a flaky failure, stopped after a green rerun, or weakened the assertion.
+
+A required gate is a check that must pass. When that gate sometimes fails, it teaches agents and people to ignore it. The effect reaches beyond the individual red result: the required check becomes something people and agents learn to disregard.
+
+Quarantine means moving a known-flaky test out of the required gate while it is fixed. Give the quarantined test an owner and a date. Keep these parts together:
+
+- Identify the known-flaky test.
+- Move it out of the required gate.
+- Assign an owner.
+- Set a date.
+
+The owner and date are part of quarantine, alongside the move out of the gate. When you review that decision, check all three elements. A green rerun does not carry the same meaning as a test being fixed; flaky tests can pass without a code change.
+DRAFT A>>>
+
+<<<DRAFT B
+# Flaky tests and agents
+
+## 1. Understand what a red test prompts
+
+A flaky test fails sometimes without any code change. An agent that sees a red test tries to fix the code, even when the test is flaky. That combination matters when engineers ask agents to work with required test gates.
+
+The agent sees a failure and starts a code fix. But the test can fail while the code stays the same. Before treating that failure as a reason to change code, measure whether the test fails across repeated runs on one commit.
+
+Agents tend to rerun tests until they turn green, or to weaken the assertion. Neither action measures how often the test fails without a code change. A green rerun is one result; the measurement requires counting failures across repeated runs.
+
+A required gate that sometimes fails teaches agents and people to ignore it. The lesson therefore starts with two actions: measure flakiness, then give known-flaky tests an owner and a date while they are fixed.
+
+## 2. Measure flakiness and quarantine known-flaky tests
+
+To measure flakiness, rerun each test 20 times on the same commit and count its failures. Keep the commit the same throughout those runs.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+Follow this sequence:
+
+1. Run each test 20 times on the same commit.
+2. Count the failures for each test.
+3. For a known-flaky test, use quarantine while it is fixed.
+4. Assign an owner and a date to that quarantine.
+
+Quarantine means moving a known-flaky test out of the required gate while it is fixed, with an owner and a date. Keep those details together: the test, its removal from the required gate, the owner, and the date.
+
+Use the failure count to describe the repeated runs. Do not replace that count with the result of the final rerun. The measurement asks how many failures occurred in 20 runs on the same commit.
+
+This lesson uses the author’s own rubric; it is not from a vendor. Its review questions are: Were failures counted across 20 runs on one commit? Does each quarantined test have an owner and a date?
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

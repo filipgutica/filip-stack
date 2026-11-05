@@ -1,0 +1,72 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get.
+
+<<<DRAFT A
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from pull requests merged between two tags.
+
+## When to use it
+
+Use it when you need a release draft gathered from merged PRs. For prose edits, use `technical-writing`.
+
+The skill runs only when you invoke it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+Replace `<from-tag>` and `<to-tag>` with the tags for your release range. You must be signed in to `gh`, and both tags must exist.
+
+## How it works
+
+The skill checks authentication and the tags before drafting. It stops if `gh auth status` fails or either tag does not exist.
+
+It gathers the merged PRs, skips those labeled `skip-notes`, and groups the rest by Conventional Commit type. Features, fixes, and breaking changes come first.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in your working tree and stops. It never publishes.
+DRAFT A>>>
+
+<<<DRAFT B
+# release-notes
+
+## What it does
+
+`release-notes` drafts release notes from merged PRs between two tags. It gathers the PRs and creates the draft; `technical-writing` edits prose.
+
+## When to use it
+
+Use it when you need a release-notes draft for a tag range. Run it manually:
+
+```text
+/release-notes <from-tag> <to-tag>
+```
+
+You must be signed in to `gh`. The skill stops if `gh auth status` fails or either tag does not exist.
+
+## How it works
+
+The skill gathers merged PRs between the tags and skips PRs labeled `skip-notes`.
+
+It groups PRs by Conventional Commit type, with features, fixes, and breaking changes first. For PRs with multiple type labels, grouping uses a strict-majority rule. Ties follow label order.
+
+Each breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+
+## What you get
+
+The skill writes `RELEASE_NOTES.md` in your working tree and stops. It never publishes.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

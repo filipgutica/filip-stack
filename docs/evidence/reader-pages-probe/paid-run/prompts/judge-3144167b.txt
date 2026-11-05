@@ -1,0 +1,87 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the first two sections, about 350 words, of a lesson for engineers titled 'Flaky tests and agents'.
+
+<<<DRAFT A
+# Flaky tests and agents
+
+## 1. Measure failures on the same commit
+
+A flaky test sometimes fails without any code change. When an agent sees a red test, it tries to fix the code, even when the test is flaky. Engineers need to measure that flakiness before asking an agent to act on the failure.
+
+Start with the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+The measurement is specific: rerun each test 20 times on the same commit, and count its failures. Keep the commit unchanged throughout those runs. For each test, the result you need is the number of failures across all 20 attempts.
+
+Use this sequence:
+
+1. Select the commit to measure.
+2. Run each test 20 times on that commit.
+3. Count the failures for each test.
+
+An agent tends to rerun a failing test until it turns green, or to weaken the assertion. The audit gives those reruns a different stopping point: complete the 20 runs, including failures in the count. A green result partway through the sequence does not end the measurement.
+
+## 2. Keep the required gate meaningful
+
+A required gate is a set of tests that must pass. When that gate sometimes fails, it teaches agents and people to ignore it. A known-flaky test therefore needs an explicit place while someone fixes it.
+
+Quarantine means moving that test out of the required gate while it is fixed, with an owner and a date. Those details belong together: the test leaves the required gate, someone owns the work, and the quarantine has a date.
+
+For a known-flaky test, record:
+
+- The test being quarantined.
+- The owner responsible for fixing it.
+- The date attached to the quarantine.
+
+Keep the response to flakiness explicit when directing an agent. Use the measured failure count, identify the known-flaky test, and specify its quarantine with an owner and a date. Rerunning until green or weakening the assertion does not provide those quarantine details.
+
+<details>
+<summary>For readers checking the rubric</summary>
+
+The lesson’s rubric is the author’s own. It is not from a vendor.
+
+</details>
+DRAFT A>>>
+
+<<<DRAFT B
+# Flaky tests and agents
+
+## 1. Recognize the flaky-test loop
+
+A flaky test fails sometimes without any code change. That definition matters when an agent sees a red test: the agent tries to fix the code, even when the test itself is flaky.
+
+The red result starts the same response, but it does not establish that the code changed. Keep those two points separate. A test can fail, and an agent can try to repair the code, while the test is failing intermittently without a code change.
+
+Agents tend to respond to this situation by rerunning until green or weakening the assertion. Neither response measures how often the test fails on the same commit. Rerunning until green makes the green result the stopping point; measuring flakiness requires counting failures across a fixed set of runs.
+
+The problem also reaches beyond an individual test. A required gate that sometimes fails teaches agents and people to ignore it. The lesson is to recognize intermittent failure before accepting another green rerun as the end of the work.
+
+## 2. Measure failures and quarantine with ownership
+
+To measure flakiness, rerun each test 20 times on the same commit and count its failures. Keep the commit the same throughout those runs: the measurement is about failures without a code change.
+
+Use the audit script:
+
+```sh
+scripts/flake-scan.mjs --runs 20 --json
+```
+
+The count of failures is the measurement. A green result somewhere among the 20 runs does not replace that count. Follow the fixed run count instead of stopping when a rerun turns green.
+
+For a known-flaky test, quarantine means moving it out of the required gate while it is fixed, with an owner and a date. Include all parts of that definition when describing the action: the test is known to be flaky, it leaves the required gate while being fixed, and it has an owner and a date.
+
+Quarantine addresses the known-flaky test’s place in the gate while the fix is pending. Keep that action distinct from rerunning until green or weakening an assertion.
+
+The rubric used in this lesson is the author’s own. It does not come from a vendor.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

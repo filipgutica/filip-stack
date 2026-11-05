@@ -1,0 +1,138 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `portlog`, following the tool page section order.
+
+<<<DRAFT A
+# See which process held a port
+
+portlog records which process held each local TCP port over time.
+
+Use it to answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Start recording
+
+Start the background recorder:
+
+```sh
+portlog start
+```
+
+Show every process that held port 3000, newest first:
+
+```sh
+portlog who 3000
+```
+
+## Commands
+
+Limit the history to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+Stop the process that holds port 3000 now. portlog asks for confirmation first.
+
+```sh
+portlog free 3000
+```
+
+To skip confirmation, add `-y`:
+
+```sh
+portlog free 3000 -y
+```
+
+Stop the recorder:
+
+```sh
+portlog stop
+```
+
+## Good to know
+
+### History
+
+portlog keeps history for 7 days in `~/.portlog/`.
+
+### Command-line arguments
+
+portlog never records command-line arguments, because they can hold secrets.
+DRAFT A>>>
+
+<<<DRAFT B
+# portlog
+
+Know what held a local TCP port—even after the process has exited.
+
+“What was on port 3000 an hour ago?” portlog records which process held each port over time, so you can look back.
+
+## Install
+
+```sh
+brew install example/tap/portlog
+```
+
+Runs on macOS and Linux.
+
+## Usage
+
+### Start recording
+
+```sh
+portlog start
+```
+
+Runs the recorder in the background.
+
+### Look up a port
+
+```sh
+portlog who 3000
+```
+
+See every process that held port 3000, newest first—even processes that have exited.
+
+Limit the results to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+### Free a port
+
+```sh
+portlog free 3000
+```
+
+Stop the process holding port 3000 now, after confirmation. Add `-y` to skip confirmation.
+
+### Stop recording
+
+```sh
+portlog stop
+```
+
+## How it works
+
+Start the background recorder, then query the history when you need it. portlog keeps seven days of history in `~/.portlog/`.
+
+Command-line arguments can hold secrets. portlog never records them.
+
+## Details
+
+Written in Go. MIT license.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}
