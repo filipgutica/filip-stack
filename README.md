@@ -20,8 +20,8 @@ overview and lists every skill.
 
 ## Set up a machine
 
-1. Clone the repository. Host config applies from this checkout, so keep it on
-   `main`.
+1. Clone the repository. Host config runs from this checkout, and
+   `filip-stack update` pulls it, so keep it on `main`.
 
    ```sh
    git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack
@@ -162,7 +162,7 @@ form.
 
 ## Standalone skills
 
-Independent skills live in `skills/<name>/` and install one at a time with the
+Independent skills install one at a time with the
 [skills CLI](https://github.com/vercel-labs/skills):
 
 | Skill | Use |
@@ -197,8 +197,8 @@ have no version and install from `main`, so to update a skill, run the same
 `add` command again. Avoid `npx skills update`: it reinstalls into every agent
 it detects, not only the ones you chose.
 
-The CLI does not offer Workflow, Field Guide, or this repository's development
-skills. They need their plugin or this checkout, so install them that way.
+The CLI does not offer Workflow or Field Guide skills. Install them with their
+plugins.
 
 ## Host config
 
@@ -216,9 +216,7 @@ skills. They need their plugin or this checkout, so install them that way.
 It contains no employer-specific guidance; keep that local to the machine that
 needs it.
 
-The command runs from a checkout, because `update` pulls it. A symlink on your
-`PATH` is enough; see
-[Set up a machine](#set-up-a-machine). Without one, run
+Without the `filip-stack` link from [Set up a machine](#set-up-a-machine), run
 `node scripts/host-config.mjs <command>` from the checkout.
 
 ```sh
@@ -231,16 +229,12 @@ filip-stack field-guide-sync  # import, then export local shared guidance
 Host config has no version. It ships from `main`, so run `filip-stack update`
 to pick up changes.
 
-`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` into
-`~/.claude`, `~/.codex`, `~/.agents`, and `~/design-language`, and replaces
-`{{HOME}}` with the home directory.
-It writes the guidance assembled from `host-config/guidance/` into a marked block
-in `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such
-as the ctx7 block or machine-local notes, stays as it is, and the shared
-guidance tells agents that it overrides the block where they conflict. The manifest in
-`~/.agents/.filip-stack-host-config.json` records the applied commit and a hash
-of each target. Apply removes a file it applied earlier once the repository no
-longer has it.
+`apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,
+and `~/design-language`. It writes the shared guidance into a marked block in
+`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such as
+the ctx7 block or machine-local notes, stays as it is, and the shared guidance
+tells agents that it overrides the block where they conflict. Apply removes a
+file it applied earlier once the repository no longer has it.
 
 When managed text was changed locally, apply prints the diff and stops. Move the
 change into `host-config/` and commit it, or rerun with `--force` to save the

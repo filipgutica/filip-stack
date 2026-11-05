@@ -89,14 +89,12 @@ runtime for linear work.
 
 Default specification, plan, and ticket formats live in Planning's mode
 references; the PR description format lives in Technical-writing's references.
-User instructions and repository or project guidance take precedence over them.
 Technical-writing owns prose quality; planning owns scope, decisions, and
 implementation readiness.
 
 Grill and walkthrough log formats stay beside their skills. The notes folders
-in `~/.engineering-workflow/` need no work-item setup, registry, or task
-tracking. When work resumes from a checkpoint, the agent rechecks current
-evidence.
+in `~/.engineering-workflow/` have no registry or task tracking. When work
+resumes from a checkpoint, the agent rechecks current evidence.
 
 ## Skill budgets
 
@@ -121,6 +119,12 @@ upstream source and the baseline commit. The repository's `upstream-sync` skill
 compares it with upstream.
 
 ## Host config
+
+`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` to
+the targets that [README.md](README.md#host-config) lists, and replaces
+`{{HOME}}` with the home directory. It assembles the guidance block from
+`host-config/guidance/`. The manifest in `~/.agents/.filip-stack-host-config.json`
+records the applied commit and a hash of each target.
 
 Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
 pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
