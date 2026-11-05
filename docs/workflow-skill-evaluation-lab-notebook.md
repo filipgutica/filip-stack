@@ -1295,6 +1295,11 @@ Report and per-build tables:
 screenshots, scorer, ledgers and votes:
 `~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/run-2/`.
 
+On 2026-11-05 PR #96 was narrowed to the two widths, the container query, and
+the example-page changes. It drops the Forms and Data views sections and the
+Tablet row's scrolling-strip line, and keeps base's optional navigation
+wording. The narrowed change has not had its own run.
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1417,6 +1422,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-04 | Design language probe plan | Forms, data views, and breakpoints in `DESIGN.md` | Not run; PluginBench lacks an artifact submission, a browser collector, and host-directory delivery | Host-config guidance needs browser scores that the code-patch harness cannot produce. | `docs/evidence/design-language-probe/study-plan.md` |
 | 2026-11-04 | Design language probe, first run | Forms, data views, and breakpoints in `DESIGN.md`; 18 standalone builds, 27 blind judges | Not supported: head worse on table overflow and border colors; judges preferred base in 3 of 3 probes | Head adopted the 640 and 800 px breakpoints but did not make pages more consistent; one-off run without PluginBench. | `docs/evidence/design-language-probe/probe-run-2026-11-04.md` |
 | 2026-11-04 | Design language probe, second run | Same change; 48 standalone builds with guidance in one file per build, 72 blind judges with the shared guidance | Not supported: head worse on table overflow, phone table clipping, and docs probe checks; judges preferred base in 3 of 3 probes, Opus too | No leakage; head used only 640 and 800 px, but its Data views and rail guidance produced phone-width regressions. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
+| 2026-11-05 | Design language PR narrowed | Breakpoints only: 640 and 800 px, container query, example pages | Not run | Run 2 tied the regressions to Data views and the scrolling-strip line, and showed head kept to the two widths. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
 
 ## Validity threats
 
