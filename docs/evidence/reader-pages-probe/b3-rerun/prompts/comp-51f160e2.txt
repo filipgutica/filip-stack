@@ -1,0 +1,48 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+`tidy-hooks` is a Claude and Codex plugin that blocks `git commit` when staged files contain merge markers. If Node.js is missing, the hook fails open and commits proceed.
+
+## Install and update
+
+### Claude
+
+Install the plugin:
+
+```sh
+claude plugin marketplace add example/tidy
+claude plugin install tidy-hooks@tidy
+```
+
+Update the plugin:
+
+```sh
+claude plugin update tidy-hooks@tidy
+```
+
+### Codex
+
+Install the plugin:
+
+```sh
+codex plugin marketplace add example/tidy
+codex plugin add tidy-hooks@tidy
+```
+
+Review and trust the plugin hooks. Codex skips them until you do.
+
+Update the marketplace:
+
+```sh
+codex plugin marketplace upgrade tidy
+```
+
+Then restart Codex.
+PAGE>>>
+
+Questions:
+(a) What does the plugin stop?
+(b) What extra step does Codex need before the hook runs?
+(c) What happens without Node.js?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}.

@@ -1300,7 +1300,7 @@ the example-page changes. It drops the Forms and Data views sections and the
 Tablet row's scrolling-strip line, and keeps base's optional navigation
 wording. The narrowed change has not had its own run.
 
-### 22. Reader pages writing probe: dry runs and paid result
+### 22. Reader pages writing probe: dry runs, paid result, and B3 rerun
 
 Date: 2026-11-04
 
@@ -1389,8 +1389,40 @@ fragment count was applied. Global host guidance remains a shared confound.
 The orchestrator automatically delivered replies into the parent; the runner
 did not print them. Actual token usage and billed cost remain unverified.
 
+#### One-rule B3 rerun (2026-11-05)
+
+Filip approved the preregistered selective rerun. R4 alone now keeps a caveat
+beside its qualifying claim and places a caveat spanning subsections in their
+shared introduction. The revision is local commit `982af5e0`; the reference is
+1,096 words. The first normal push was blocked by session execution policy,
+so the rerun built that local commit. Publication remains incomplete.
+
+Only five new head pages were built. B3's ten paid-run control pages and their
+scores were reused. The unchanged 20% sampling added one head second
+extraction, and all 30 B3 judge calls ran anew in balanced A/B order. All 46
+new calls completed without retries, with at most eight concurrent calls.
+All build reads stayed within their assigned arm; all 41 scoring traces had
+no commands. Frozen hashes, effective settings, and prompt text match.
+
+Result: **not supported**. B3 head loses 4–11 to base and beats vanilla 12–3.
+No harm passes against both controls. B3 improves only M5, while its fragment
+rate worsens from base's 0.222 to 0.643. The new head preserves every reader
+fact, invents none, and scores 15 of 15 on comprehension. Every new page puts
+the shared caveat in the opening. Judge reasons now often discuss whether
+the trust instruction belongs before or after installation and whether labels
+are consistent; those reasons do not establish causation.
+
+Combining new B3 with saved B1, B2, and B4 passes objective gain on three of
+four briefs, with no M3/M4 regression. Part 3 still fails against base because
+B3 has an opposing majority. The required vanilla comparison now passes.
+B1, B2, and B4 were not rerun under the revised rule, so regression there is
+untested. No second revision, routing evaluation, merge, or ready action ran.
+Actual tokens and billed cost remain unverified. The PR remains a draft.
+
 Evidence:
 
+- `docs/evidence/reader-pages-probe/b3-rerun-report.md`
+- `docs/evidence/reader-pages-probe/b3-rerun/`
 - `docs/evidence/reader-pages-probe/prereg.md`
 - `docs/evidence/reader-pages-probe/dry-run-3-report.md`
 - `docs/evidence/reader-pages-probe/paid-run-report.md`
@@ -1528,6 +1560,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-04 | Reader pages probe dry run 2 | Revised reader pages guidance, same brief and calls | Head leaked 0 agent-only facts and won 3 of 6 judge votes | No verdict at n=1. The leak did not repeat. The extractor misses leaks in notes sections. | `reader-pages-probe/dry-run-2/` |
 | 2026-11-05 | Reader pages probe dry run 3 | Rebuilt arms after merging main; B1, 1 attempt per arm, 15 calls | Pipeline passed, zero retries; head won 6 of 6 overall judge votes | Smoke test only; all build reads stayed within their arm. | `reader-pages-probe/dry-run-3-report.md` |
 | 2026-11-05 | Reader pages paid probe | Fixed 4 briefs × 3 arms × 5 attempts, 312 calls | Not supported: no harm and objective gain pass, but B3 loses 7–8 to base and 5–10 to vanilla | Part 3 forbids an opposing majority; Node.js caveat placement is a diagnostic for a separate B3 revision. No routing run. | `reader-pages-probe/paid-run-report.md` |
+| 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | `reader-pages-probe/b3-rerun-report.md` |
 
 ## Validity threats
 

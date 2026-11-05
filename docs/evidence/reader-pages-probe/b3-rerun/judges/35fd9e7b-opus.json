@@ -1,0 +1,1 @@
+{"reader": "A", "careful": "A", "overall": "A", "reason": "A puts the Codex hook-trust step after install, where the reader has to act on it, while B states it as a fact before install. That leaves B's reader without a clear action at the right time, even though B's \"commits proceed without the check\" is clearer than A's \"fails open\"."}

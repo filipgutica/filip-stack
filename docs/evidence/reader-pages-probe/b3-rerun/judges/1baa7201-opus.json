@@ -1,0 +1,1 @@
+{"reader": "A", "careful": "SAME", "overall": "A", "reason": "Draft A states the Node.js fallback in plain words and says why each install step has two commands, which helps a first-time reader; Draft B is more consistent but terser and uses the jargon \"fails open\"."}

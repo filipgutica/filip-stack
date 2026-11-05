@@ -1,0 +1,270 @@
+[WARN] Failed to replace env in config: ${NPM_TOKEN}
+[WARN] Failed to replace env in config: ${NPM_TOKEN}
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 check /Users/filip.gutica/code/worktrees/rp-probe
+> pnpm test:workflow-contracts && pnpm test:skills && pnpm test:field-guide-boundary && pnpm test:field-guide-contract && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:guardrails && pnpm test:plugin-payload && pnpm test:host-config && pnpm validate-plugins && pnpm test:static
+
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:workflow-contracts /Users/filip.gutica/code/worktrees/rp-probe
+> node tests/workflow/validate-contracts.mjs
+
+Workflow v2 structural contracts passed.
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:skills /Users/filip.gutica/code/worktrees/rp-probe
+> node tests/skills/validate-skills.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'
+
+Standalone skill contracts passed (13 skills, 12 hidden).
+...
+----------------------------------------------------------------------
+Ran 3 tests in 0.002s
+
+OK
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:field-guide-boundary /Users/filip.gutica/code/worktrees/rp-probe
+> node tests/field-guide/validate-plugin-boundary.mjs
+
+Standalone Field Guide plugin boundary passed.
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:field-guide-contract /Users/filip.gutica/code/worktrees/rp-probe
+> node tests/field-guide/validate-contract.mjs
+
+Field Guide contract is valid.
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:field-guide-hooks /Users/filip.gutica/code/worktrees/rp-probe
+> node --test tests/field-guide/field-guide-lifecycle.test.mjs
+
+✔ UserPromptSubmit emits context for Claude and Codex (136.628208ms)
+✔ the default hook command resolves Claude and Codex plugin roots (195.1825ms)
+✔ UserPromptSubmit fails open for an unknown host (44.427416ms)
+✔ the first Stop is silent for both hosts (283.132833ms)
+✔ a repeated Stop is also silent for both hosts (85.721083ms)
+✔ UserPromptSubmit keeps capture, ask, and skip directions internal (76.401ms)
+✔ invalid or unknown input fails open (135.520166ms)
+✔ sensitive hook fields never appear in output for either host (69.759541ms)
+✔ opted-in hook analytics records only invocation metadata (77.664167ms)
+✔ hook analytics write failure preserves lifecycle output (41.0815ms)
+✔ hook analytics does not block on a non-regular event log (47.618292ms)
+✔ lifecycle guidance contains no launcher path or Stop reason (76.820334ms)
+✔ the hook runner resolves an NVM Node installation outside PATH (184.803291ms)
+✔ the hook runner fails open when an explicit Node runtime is unavailable (15.945ms)
+✔ session start injects project guidance and a subject index, then the first prompt adds matching guidance once (972.083625ms)
+✔ a startup that reuses a session ID keeps the parent session state (736.473708ms)
+✔ the first prompt matches its whole text when session start did not run (560.629584ms)
+✔ a first prompt outside Git consumes pending guidance without retrying on later prompts (571.819792ms)
+✔ session start injects nothing without a guide or a supported host (513.156917ms)
+✔ the session start hook matches only startup, clear, and compaction (0.04825ms)
+✔ session start injects the eight newest project records and indexes the rest (1448.114125ms)
+✔ session start keeps project guidance within 1.5 KB and indexes records that do not fit (1049.581958ms)
+✔ the session start subject index stays within one kilobyte (1784.181084ms)
+✔ prompt guidance stays within two kilobytes (787.020667ms)
+✔ session state replaces a planted symlink without writing through it (543.306417ms)
+✔ session state refuses a symlinked sessions directory and prunes only state files (694.508208ms)
+✔ session start prunes old session state and writes none without a guide (620.24375ms)
+✔ session start outside Git writes pending state and prunes old state (484.817417ms)
+ℹ tests 28
+ℹ suites 0
+ℹ pass 28
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 12336.359833
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:field-guide /Users/filip.gutica/code/worktrees/rp-probe
+> node --test tests/field-guide/field-guide.test.mjs tests/field-guide/field-guide-analytics.test.mjs
+
+✔ analytics is opt-in and requires an initialized guide to configure (2.796125ms)
+✔ events contain only bounded metadata and use private local storage permissions (2.199209ms)
+✔ disabled analytics do not append automatic events and manual records require opt-in (1.473833ms)
+✔ impact and review entries validate cross-references and reject duplicates (2.243084ms)
+✔ concurrent processes can create only one impact for a retrieval and guidance pair (68.788ms)
+✔ reports counts, valid denominators, and a date-filtered summary without raw events (5.927583ms)
+✔ confirmed catch reviews require a decision-changed impact and capture cases cannot repeat (1.874458ms)
+✔ automatic event writes fail open when the event path is not writable (0.766708ms)
+✔ malformed stored lines are ignored by reference checks and reports (1.300125ms)
+✔ non-regular analytics files fail open without blocking on FIFOs (102.291834ms)
+Preparing worktree (detached HEAD ba5cd32)
+✔ the shell launcher resolves the standalone plugin Node runner (253.335292ms)
+✔ submit activates an explicit preference and stores sanitized examples (467.410458ms)
+✔ submit accepts inline JSON without a temporary input file (333.3215ms)
+✔ commands reject duplicate options instead of overriding fixed paths (178.395708ms)
+✔ commands reject conflicting or unsupported inline input options (345.320708ms)
+✔ submit recovers a stale JSON cache from canonical Markdown (510.188334ms)
+✔ submit deduplicates one event and promotes a project candidate after a second event (519.747ms)
+✔ manual evidence deduplicates but does not satisfy promotion thresholds (442.597625ms)
+✔ shared inferred guidance activates only after evidence from two repositories (642.152875ms)
+✔ exact matching uses canonical Unicode normalization without compatibility folding (439.259584ms)
+✔ submit rejects pointer fields and unsafe pointer values as a whole (874.105333ms)
+✔ submit fails closed on high-signal sensitive text (936.023125ms)
+✔ submit fails closed when pointers map to different evidence events (528.240875ms)
+✔ submit refuses concurrent writers without changing memory (310.202625ms)
+✔ a confirmed contradiction supersedes active guidance and activates its replacement (858.055083ms)
+✔ undo is reversible history and permanent deletion requires a current preview (987.553792ms)
+✔ semantic submissions reject inactive relationship targets (467.135833ms)
+✔ validate rejects illegal lifecycle edges before replacing canonical state (421.36225ms)
+✔ validate rejects superseded history without linked replacement provenance (485.182625ms)
+✔ retrieve ranks active project, shared, linked, and applicable guidance without evidence (1278.532958ms)
+✔ retrieve uses a concrete query without requiring a subject hint (848.373709ms)
+✔ retrieve requires a subject hint or a concrete query (308.6585ms)
+✔ retrieve enforces whole-record count and byte budgets (1011.238208ms)
+✔ explicit evidence expansion returns at most two complete records within six kilobytes (607.427291ms)
+✔ retrieve accepts version 1 records that predate linked subjects and examples (622.027208ms)
+✔ retrieve rejects conflicting normal and evidence modes (371.81725ms)
+✔ candidates returns bounded active and candidate records for semantic matching (591.619583ms)
+✔ audit is read-only and reports unresolved relationships and broken local pointers (554.7955ms)
+✔ maintain previews archive without writes and requires its current token to apply (775.333209ms)
+✔ maintain previews and repairs only the derived JSON cache (678.567ms)
+✔ validate rejects malformed memory state without replacing it (401.826917ms)
+✔ validate refuses invalid review evidence without changing memory (342.270584ms)
+✔ init creates an indexed guide and preserves existing content (413.440125ms)
+✔ init refuses partial or mismatched memory views without replacing them (484.280334ms)
+✔ validate rejects a missing canonical or cache memory view (429.292541ms)
+✔ validate ignores optional Obsidian vault metadata (325.646583ms)
+✔ worktrees with the same origin resolve to one project guide (465.934375ms)
+✔ repositories with colliding slugs get stable distinct keys (554.599292ms)
+✔ origin normalization preserves case-sensitive repository paths (467.550916ms)
+✔ validate checks index links and commit evidence (636.208375ms)
+✔ validate checks guidance links and shared promotion evidence (1285.653542ms)
+✔ opt-in analytics records retrieval and capture metadata without task text (1258.278291ms)
+✔ export and import sync shared guidance between machines (2129.00225ms)
+✔ import does not create a record that the same export retires (467.585875ms)
+✔ import does not retire the active replacement of superseded guidance (592.769ms)
+ℹ tests 55
+ℹ suites 0
+ℹ pass 55
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 28015.774666
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:guardrails /Users/filip.gutica/code/worktrees/rp-probe
+> node --test tests/guardrails/guardrails.test.mjs
+
+✔ denies AI attribution in commit messages (227.519791ms)
+✔ the deny reason states the fix (33.658083ms)
+✔ denies AI attribution in pull request and issue text (299.354792ms)
+✔ denies attribution that reaches the write through stdin (130.774291ms)
+✔ denies AI attribution in message files (264.837709ms)
+✔ resolves message files from the git -C and cd directories (163.198625ms)
+✔ reads gh api --input JSON and fails open on bad input (230.938167ms)
+✔ skips files that are not small regular files (124.99525ms)
+✔ allows commit and pull request text without AI attribution (304.245459ms)
+✔ inspects only the write command, not the rest of the script (96.705292ms)
+✔ uses stdin only when the write reads its message from stdin (162.274792ms)
+✔ reads message text that a substitution produces (143.373625ms)
+✔ closes a fence only on the same marker of at least the same length (111.855125ms)
+✔ reads a heredoc delimiter word whole and scans past an unclosed heredoc (167.671625ms)
+✔ stays silent on pull request merges (181.765458ms)
+✔ asks before a 1Password CLI call (242.250541ms)
+✔ finds commands after separators, substitutions, and assignments (317.06575ms)
+✔ treats quoted heredoc bodies as data (28.452583ms)
+✔ finds commands inside shell wrappers (367.363ms)
+✔ Codex stays silent only for the plain forms its rule prompts for (349.424583ms)
+✔ the Codex execpolicy rule prompts for the plain forms (33.520667ms)
+✔ fails open on malformed input (95.511708ms)
+✔ the manifest hook command runs for Claude and Codex (168.9865ms)
+✔ both marketplaces list the plugin (0.568167ms)
+✔ the payload imports only Node built-ins and runs only its own files (0.592042ms)
+ℹ tests 25
+ℹ suites 0
+ℹ pass 25
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 4326.091458
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:plugin-payload /Users/filip.gutica/code/worktrees/rp-probe
+> node --test tests/workflow/plugin-payload-policy.test.mjs
+
+✔ runtime payload policy rejects development-only test assets (0.669958ms)
+✔ runtime payload policy allows runtime guidance and utilities (0.061ms)
+ℹ tests 2
+ℹ suites 0
+ℹ pass 2
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 54.440583
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:host-config /Users/filip.gutica/code/worktrees/rp-probe
+> node --test tests/host-config/host-config.test.mjs tests/host-config/data-visualizations.test.mjs
+
+✔ validation rejects missing data, duplicate cells, incomplete captures and aggregate mismatches (1.544042ms)
+✔ percentage formatting preserves zero, tiny failures and incomplete 100% shares (0.071167ms)
+✔ the generated initial state has reconciled counts, provenance and safe embedded content (9.833584ms)
+✔ standalone mode requires tokens; missing aggregate evidence and empty results stay visible (0.784208ms)
+✔ the inline script keeps a __proto__ category as data (0.875791ms)
+✔ apply renders both hosts into an empty home and is idempotent (254.403875ms)
+✔ apply imports shared preferences with XDG_CONFIG_HOME unset (306.989625ms)
+✔ field-guide-sync writes the dotfile and leaves the repository unchanged with XDG_CONFIG_HOME unset (864.844542ms)
+✔ apply imports shared preferences with XDG_CONFIG_HOME empty (288.348958ms)
+✔ field-guide-sync writes the dotfile and leaves the repository unchanged with XDG_CONFIG_HOME empty (863.13675ms)
+✔ apply imports shared preferences with XDG_CONFIG_HOME custom (266.556916ms)
+✔ field-guide-sync writes the dotfile and leaves the repository unchanged with XDG_CONFIG_HOME custom (851.467875ms)
+✔ apply keeps text outside the guidance block and refuses local edits inside it (252.260334ms)
+✔ apply treats only whole delimiter lines as block markers (185.2915ms)
+✔ an interrupted apply keeps the files it wrote in the manifest (35.142375ms)
+✔ apply refuses to replace a guidance file without a block unless forced (126.788209ms)
+✔ apply removes files it applied earlier once the repository drops them (197.304792ms)
+✔ update refuses to pull a checkout that is not on main (68.272375ms)
+✔ update syncs the Field Guide dotfile only when it already exists (1411.758292ms)
+✔ host-config sources contain no machine-specific home paths (1.556459ms)
+ℹ tests 20
+ℹ suites 0
+ℹ pass 20
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 6037.840625
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 validate-plugins /Users/filip.gutica/code/worktrees/rp-probe
+> node scripts/validate-plugins.mjs
+
+Validating plugin manifests...
+All checks passed.
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:static /Users/filip.gutica/code/worktrees/rp-probe
+> pnpm test:static:dead-code && pnpm test:static:health && pnpm test:static:dupes
+
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:static:dead-code /Users/filip.gutica/code/worktrees/rp-probe
+> fallow dead-code --baseline fallow-baselines/dead-code.json --fail-on-issues
+
+loaded config: /Users/filip.gutica/code/worktrees/rp-probe/.fallowrc.jsonc
+Comparing against baseline: fallow-baselines/dead-code.json
+  29 entry points detected (18 package.json, 7 plugin, 4 manual entry)
+
+✓ No issues found (0.02s)
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:static:health /Users/filip.gutica/code/worktrees/rp-probe
+> fallow health --complexity --baseline-mode identity --baseline fallow-baselines/health.json
+
+loaded config: /Users/filip.gutica/code/worktrees/rp-probe/.fallowrc.jsonc
+Comparing against health baseline: fallow-baselines/health.json
+
+✓ No functions exceed complexity thresholds (0.00s)
+  923 functions analyzed (max cyclomatic: 20, max cognitive: 15, max CRAP: 0.0)
+ WARN  Issue while reading "/Users/filip.gutica/.npmrc". Failed to replace env in config: ${NPM_TOKEN}
+
+> filip-stack@3.23.0 test:static:dupes /Users/filip.gutica/code/worktrees/rp-probe
+> node scripts/check-fallow-dupes.mjs
+
+Fallow duplication: 0 new clone groups

@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "B", "overall": "B", "reason": "Both drafts give the same complete install and update steps, but B uses the same Install/Update labels throughout, places the Codex trust note right after installation where it applies, and names the fail-open behavior explicitly, while A switches between 'To update:' and 'To update, run:'."}

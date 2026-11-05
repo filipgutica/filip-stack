@@ -1,0 +1,47 @@
+{
+ "headRefOid": "23e2d4efb7ba53a9b1fc4bae26afd858f5f75029",
+ "isDraft": true,
+ "reviews": [],
+ "statusCheckRollup": [
+  {
+   "__typename": "CheckRun",
+   "completedAt": "2026-11-05T19:37:00Z",
+   "conclusion": "SUCCESS",
+   "detailsUrl": "https://github.com/filipgutica/filip-stack/actions/runs/42095444367/job/127484123988",
+   "name": "validate",
+   "startedAt": "2026-11-05T19:36:09Z",
+   "status": "COMPLETED",
+   "workflowName": "CI"
+  },
+  {
+   "__typename": "CheckRun",
+   "completedAt": "2026-11-05T19:37:45Z",
+   "conclusion": "SUCCESS",
+   "detailsUrl": "https://github.com/filipgutica/filip-stack/actions/runs/42095444235/job/127484123267",
+   "name": "build",
+   "startedAt": "2026-11-05T19:36:09Z",
+   "status": "COMPLETED",
+   "workflowName": "GitHub Pages"
+  },
+  {
+   "__typename": "CheckRun",
+   "completedAt": "2026-11-05T19:37:00Z",
+   "conclusion": "SKIPPED",
+   "detailsUrl": "https://github.com/filipgutica/filip-stack/actions/runs/42095444367/job/127484600055",
+   "name": "release",
+   "startedAt": "2026-11-05T19:37:00Z",
+   "status": "COMPLETED",
+   "workflowName": "CI"
+  },
+  {
+   "__typename": "CheckRun",
+   "completedAt": "2026-11-05T19:37:45Z",
+   "conclusion": "SKIPPED",
+   "detailsUrl": "https://github.com/filipgutica/filip-stack/actions/runs/42095444235/job/127485025183",
+   "name": "deploy",
+   "startedAt": "2026-11-05T19:37:45Z",
+   "status": "COMPLETED",
+   "workflowName": "GitHub Pages"
+  }
+ ]
+}

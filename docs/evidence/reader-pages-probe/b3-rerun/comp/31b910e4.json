@@ -1,0 +1,1 @@
+{"a":"It blocks git commit when staged files contain merge markers.","b":"You must review and trust the plugin hooks.","c":"The hook fails open and commits proceed."}

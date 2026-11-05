@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "A", "overall": "A", "reason": "Both give the same complete commands. A labels Install and Update the same way in both sections, puts the Codex trust note right after the install step it affects, and says the hook fails open, while B mixes 'Install the plugin:' with 'To update:'."}

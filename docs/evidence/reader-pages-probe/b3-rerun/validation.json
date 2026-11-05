@@ -1,0 +1,72 @@
+{
+ "cells": 46,
+ "saved": 46,
+ "by_kind": {
+  "build": 5,
+  "extract": 5,
+  "comp": 5,
+  "extract2": 1,
+  "judge": 30
+ },
+ "by_model": {
+  "gpt-6.1-sol": 25,
+  "gpt-6-astra": 11,
+  "claude-opus-5-5": 10
+ },
+ "retries": 0,
+ "max_running": 8,
+ "reused_files": 32,
+ "frozen_inputs_match": true,
+ "all_effective_settings_match": true,
+ "all_task_texts_match": true,
+ "build_reads": [
+  {
+   "build": "25b109b7",
+   "assigned_file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-721416c8/38e029eb.md",
+   "reads": 2,
+   "commands": [
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-721416c8/38e029eb.md'",
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-721416c8/38e029eb.md'"
+   ]
+  },
+  {
+   "build": "13c57e20",
+   "assigned_file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-7af6974a/2a3dd706.md",
+   "reads": 2,
+   "commands": [
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-7af6974a/2a3dd706.md'",
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-7af6974a/2a3dd706.md'"
+   ]
+  },
+  {
+   "build": "e1fbcb0a",
+   "assigned_file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5ec2e835/be9ff747.md",
+   "reads": 1,
+   "commands": [
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5ec2e835/be9ff747.md'"
+   ]
+  },
+  {
+   "build": "8246a077",
+   "assigned_file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23574ab4/f3e2c484.md",
+   "reads": 2,
+   "commands": [
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23574ab4/f3e2c484.md'",
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-23574ab4/f3e2c484.md'"
+   ]
+  },
+  {
+   "build": "d3ad9ce8",
+   "assigned_file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-6d65c0e9/1e061bc0.md",
+   "reads": 1,
+   "commands": [
+    "$ /bin/zsh -c 'cat /var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-6d65c0e9/1e061bc0.md'"
+   ]
+  }
+ ],
+ "scoring_traces_without_commands": 41,
+ "all_scoring_json_valid": true,
+ "complete_judge_pairs": 10,
+ "head_as_A": 5,
+ "reused_control_metrics_match": true
+}

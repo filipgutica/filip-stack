@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "B lists hook trust as a step after the Codex install, where the reader can act on it, and labels each block the same way; A states the trust rule before the install as a warning, not a step, and alternates between 'To update:' and 'To update, run:'."}
