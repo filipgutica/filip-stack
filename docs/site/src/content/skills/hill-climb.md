@@ -4,54 +4,61 @@ related: [council, sol-loop, merge-council]
 
 ## What it does
 
-Hill climb polishes a change that already works. It runs a few rounds of
-improvement. In each round, a blind council compares the current version with
-a candidate. The skill keeps the candidate only when most judges prefer it and
-every gate still passes.
+The [council](../council/) members suggest improvements and then judge each
+edit. They compare the current and edited versions without knowing which is
+which.
 
 ## When to use it
 
-Use it at the end of a thread when you are satisfied with a change and want a
-little more quality before merge, such as tighter spacing or simpler code.
-Add that focus to the invocation.
+Use it at the end of a thread, once the change works and you want more
+polish, such as tighter spacing or simpler code. Hill climb judges quality,
+taste, and design, so check correctness first, for example with
+[sol-loop](../sol-loop/).
 
-It runs only when you call it by name, with `/hill-climb` or `$hill-climb`.
-It requires [council](../council/) and stops if council is missing. Council
-gives one round of advice and changes nothing. [sol-loop](../sol-loop/) reviews
-for correctness. Hill climb judges quality, taste, and design, and it is not
-for fixing a broken change. [merge-council](../merge-council/) gives a merge
-verdict on a pull request.
+The install command above adds hill-climb alone. To add council too, change
+`-s hill-climb` to `-s hill-climb council`. Then call it and name what to
+improve, for example `/hill-climb tighter spacing on the settings page`. In
+Codex, type `$hill-climb`.
 
 ## How it works
 
-1. Builds and freezes a climb card: goal, three to five criteria, scope, exact
-   gate commands, evidence, a round budget of three (five at most), and a size
-   limit of 30% of the original change or 20 lines, whichever is larger.
-2. Runs every gate on the current version and stops if one fails or cannot
-   run. It saves a snapshot outside the repository and refuses to start when a
-   scoped file has staged changes.
-3. Asks each council member for up to three ranked improvements, then applies
-   the best supported ones as the smallest change within the size limit.
-4. Gates the candidate, then gives each judge a fresh context and a bundle with
-   the two versions labeled A and B in random order. For code, judges see each
-   version's diff from the base. For UI, they see screenshots.
-5. Keeps the candidate when a strict majority of at least two completed judges
-   prefers it. Otherwise it restores the snapshot path by path, without the
-   stash stack or `git clean`.
-6. Stops when proposals run out, after two rejected or void rounds in a row,
-   when most judges see no meaningful difference, or when the budget or size
-   limit is used up.
+First, hill climb writes a *climb card*: the goal, three to five criteria for
+the judges, the files in scope, and the checks to run. It shows you the card
+and keeps it fixed for the whole climb. Then it runs the checks on your change
+as it stands, and it stops before editing anything if a check fails.
 
-The blinding, random order, fresh contexts, and gates reduce judge noise but do
-not remove it. Treat the result as a polish aid, not as proof of quality. A
-five-round climb with three members makes up to 18 member calls.
+In the first round, each member suggests up to three improvements.
+Each round, hill climb applies the best-supported ideas as one small edit,
+runs the checks, and asks the judges. They see diffs for code and screenshots
+for UI. If the edit fails a check or does not win most judges, hill climb puts
+your files back from a saved copy. If something outside the climb changed
+those files, it stops instead, so your changes survive. It never uses your Git
+stash or `git clean`.
+
+The climb stays small. It runs three rounds by default and five at most, and
+it changes at most 30% of your change's lines or 20 lines, whichever is
+larger.
+
+If any edit stayed, the judges also compare your starting version with the
+final one. If most prefer the start, the report says so first and recommends
+dropping the climb.
+
+Judges are noisy. Blind comparisons and checks reduce the noise but do not
+remove it, so treat the result as a polish aid, not as proof of quality. A
+five-round climb with three members makes up to 21 council calls, plus
+retries. The exact rules are in
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/SKILL.md).
 
 ## What you get
 
-- The final version in the working tree, uncommitted unless the thread already
-  authorized commits.
-- The climb card, a round ledger with each judge's preference and reasons, and
-  the decision for each round.
-- Before and after evidence, including paired screenshots for UI.
-- The climb's diff stat, follow-ups declined for size or scope, and lessons the
-  original work missed.
+- The final version in your working tree. Hill climb commits it only when
+  the thread already allowed commits.
+- A report with the climb card, each round's edit and check results, every
+  judge's vote and reason, and the votes on start against final.
+- Before and after evidence, with paired screenshots for UI, and the climb's
+  diff stat.
+- Follow-ups it skipped for size or scope, and lessons the original work
+  missed.
+- A run record in `~/.hill-climb/runs/<id>/`, with a report built from it. If
+  you keep a runs page and your host can publish pages, hill climb offers to
+  republish it.
