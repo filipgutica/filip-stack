@@ -17,8 +17,12 @@ on scope creep.
 - Settle review findings without letting the change grow.
 
 Install it with the command above, then say "sol loop", optionally with what
-the change is for. [full-send](../full-send/) runs it to review a change and its
-PR description together.
+the change is for. An illustrative request:
+
+> sol loop on this branch; it only fixes the retry backoff.
+
+[full-send](../full-send/) runs it to review a change and its PR description
+together.
 
 ## How it works
 
@@ -40,7 +44,7 @@ the diff back if review made it grow.
 The loop runs three rounds by default. It can go to five for security,
 permissions, authentication, data loss, or concurrency work while a blocker or
 should stays open, or when you ask. It stops early when a round returns only
-nits. If no route can run Sol, the agent reports that instead of using a
+nits. If Sol is not available, the agent reports that instead of using a
 different model.
 
 ## What you get

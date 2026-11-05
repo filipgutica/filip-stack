@@ -6,13 +6,13 @@ related: [full-send, sol-loop, babysit-pr]
 
 The agent proves the change, has Sol, OpenAI's GPT Sol model, review the code
 and the PR description, and waits out CI and review bots, just as
-[full-send](../full-send/) does. It finishes with a verdict even when full send
-would have merged.
+[full-send](../full-send/) does. You come back to a PR that is ready for you to
+merge, or to the reason it is not.
 
 ## When to use it
 
-- Finish a change while you are away, but keep the merge decision.
-- Get an existing PR to a readiness verdict with no risk of a merge.
+- Finish a change while you are away, but keep the merge decision yourself.
+- Get an existing PR to a readiness verdict.
 
 Install it together with [full-send](../full-send/), [sol-loop](../sol-loop/),
 and [babysit-pr](../babysit-pr/); full stop stops if any of them is missing.
@@ -21,8 +21,7 @@ goal or a PR link, for example `/full-stop https://github.com/acme/app/pull/42`.
 
 ## How it works
 
-Full stop follows full send's modes, proof, fixes, and rules for asking you,
-with one difference: it always finishes with a verdict instead of a merge.
+Full stop follows full send's modes, proof, fixes, and rules for asking you.
 
 In fix mode, it turns off auto-merge and takes the PR out of any merge queue
 before it starts, and it checks again before each push. On a PR that it may

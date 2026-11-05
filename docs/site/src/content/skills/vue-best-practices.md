@@ -52,7 +52,7 @@ Composition API and `<script setup lang="ts">`. A few of its defaults:
 - Focused checks, such as type checks, lint, and component tests, for the
   behavior and contracts the change touches.
 
-Changes to what users see, or to a component's slots, events, or models, get
-component tests. Existing tests count as intended behavior unless the contract
+Changes to what users see, or to a component's slots, events, or models,
+favor component tests. Existing tests count as intended behavior unless the contract
 is meant to change. The agent keeps public APIs as they are unless you approve
 the change. For a closer look at test value, use [test-audit](../test-audit/).

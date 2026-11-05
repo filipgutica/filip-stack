@@ -4,20 +4,19 @@ related: [review, full-send]
 
 ## What it does
 
-A merge council is the heavy review for a pull request that matters. Your
-agent does not take part. It starts a *chair*, a separate agent that runs the
-council: it freezes the PR at its current commits, so the verdict applies to
-exactly those commits, and applies fixed rules to the reviewers' findings. A
-finding counts as agreed only when all three reviewers agree on the problem,
-the fix, and whether it blocks the merge.
+A merge council is the heavy review for a pull request that matters. It runs
+apart from your agent, which only starts it and acts on the result. The verdict
+covers exactly the commits that were reviewed, and a finding counts as agreed
+only when all three reviewers agree on the problem, the fix, and whether it
+blocks the merge.
 
 ## When to use it
 
 Ask for a merge council by name when you want this depth of review. A plain
 "review this PR" goes to a lighter review, such as [review](../review/).
 
-The council needs a *roster*, the list of models that act as chair and
-reviewers. The first run sets one up for you, and `/merge-council setup` in
+The council needs a *roster*, the list of models that run the council and
+review the PR. The first run sets one up for you, and `/merge-council setup` in
 Claude or `$merge-council setup` in Codex changes it later. Setup proposes a
 model for each role and asks you to confirm or change each one. Call the
 council with a PR, for example
@@ -35,10 +34,10 @@ Each reviewer reads the whole PR and digs deeper into one area:
 | Risk | Blast radius, rollback, compatibility, migrations, security, performance |
 | Simplicity and evidence | Complexity, reuse, dead code, tests, coverage |
 
-On your own open PR, when you can push to it, the council runs in fix mode.
-Findings that all three reviewers agree on and mark as safe to fix go to one
-fixer agent, and each pushed fix starts a new full review. A run pushes at most
-two fixes. On any other PR, the council only reports.
+On your own open PR, when you can push to it, the council runs in fix mode. It
+fixes the findings that all three reviewers agree on and mark as safe to fix,
+pushes the fix, and reviews the whole PR again. A run pushes at most two fixes.
+On any other PR, the council only reports.
 
 A PR that changes instruction files such as `AGENTS.md` or `CLAUDE.md` always
 ends in `NEEDS_HUMAN`, because those files could steer the reviewers. The

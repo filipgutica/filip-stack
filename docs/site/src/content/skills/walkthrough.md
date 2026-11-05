@@ -38,9 +38,8 @@ it. Fixing needs a separate request. After an approved fix changes the code,
 it redoes the parts that the fix affected. The walkthrough ends when every
 changed file is covered and each correction is resolved or deferred.
 
-By default the agent in your thread presents. If you ask for an agent-run
-walkthrough, a fresh read-only agent presents instead, and your thread checks
-its evidence.
+You can ask for a separate, read-only agent to present the walkthrough
+instead. Your agent then checks the evidence it presents.
 
 ## What you get
 

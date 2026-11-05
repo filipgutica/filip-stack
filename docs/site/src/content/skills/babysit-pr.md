@@ -22,9 +22,7 @@ it to see a PR through CI.
 ## How it works
 
 The agent handles the checks and comments that already exist, then waits for
-new ones. It uses one watcher per PR, the host's PR watcher in T3 Code or a
-script that ships with the skill elsewhere, and it never starts its own polling
-loop. When nothing needs action, it stays quiet instead of posting "still
+new ones. When nothing needs action, it stays quiet instead of posting "still
 waiting".
 
 It acts only on checks and comments newer than the latest push. It tells a

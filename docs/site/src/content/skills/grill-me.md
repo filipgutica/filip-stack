@@ -19,9 +19,8 @@ recommends.
 Grill me runs only when you call it: `/workflow:grill-me` in Claude or
 `$workflow:grill-me` in Codex. It comes with the
 [Workflow plugin](../../#install). Point it at the proposal, for example
-`/workflow:grill-me docs/sync-redesign.md`. Ordinary planning, review, and
-requests for quick feedback do not start it. If you want a specification,
-plan, or tickets as the result, use [planning](../planning/).
+`/workflow:grill-me docs/sync-redesign.md`. If you want a specification, plan,
+or tickets as the result, use [planning](../planning/).
 
 ## How it works
 

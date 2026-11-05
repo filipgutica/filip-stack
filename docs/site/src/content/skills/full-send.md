@@ -46,8 +46,8 @@ data or a migration, security, or a dependency, or that removes a test without
 evidence another test covers it, goes to you as a question. It also asks when
 it cannot prove a change, when the next step is outside what full send allows,
 such as deleting data or touching production, or when your goal is ambiguous.
-It asks with the host's question tool, so the question is not lost in a
-message you are not reading.
+It asks a direct question that waits for your answer, so the question is not
+lost in a message you are not reading.
 
 It merges only when the proof covers the whole diff, Sol has approved, required
 checks are green, bots have finished, no human review asks for changes, and the
