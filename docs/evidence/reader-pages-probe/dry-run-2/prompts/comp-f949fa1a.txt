@@ -1,0 +1,68 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# portlog
+
+Know what was on that port.
+
+portlog records which process held each local TCP port over time. Answer “what was on port 3000 an hour ago?” even after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Start recording
+
+Run the recorder in the background:
+
+```sh
+portlog start
+```
+
+Stop it when you’re done:
+
+```sh
+portlog stop
+```
+
+## Look back
+
+See every process that held port 3000, newest first:
+
+```sh
+portlog who 3000
+```
+
+Limit the results to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+## Free a port
+
+Stop the process holding port 3000 now. portlog asks for confirmation first.
+
+```sh
+portlog free 3000
+```
+
+Skip confirmation with `-y`:
+
+```sh
+portlog free 3000 -y
+```
+
+## Keep history, leave out secrets
+
+History stays in `~/.portlog/` for 7 days. portlog never records command-line arguments, because they can hold secrets.
+PAGE>>>
+
+Questions:
+(a) What does portlog do?
+(b) What do you run first after installing it?
+(c) Can it show a process that already exited?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (c) with Yes, No, or Not stated.

@@ -1,0 +1,96 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `portlog`, following the tool page section order.
+
+<<<DRAFT A
+# See which process held a local TCP port
+
+portlog records port history so you can answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## The capture
+
+Start the recorder, then query the last two hours of port 3000’s history:
+
+```sh
+portlog start
+portlog who 3000 --since 2h
+```
+
+Results show every process that held the port during that period, newest first.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `portlog start` | Run the background recorder. |
+| `portlog stop` | Stop the recorder. |
+| `portlog who 3000` | Show every recorded process that held port 3000, newest first. |
+| `portlog who 3000 --since 2h` | Limit the history to the last two hours. |
+| `portlog free 3000` | Stop the process holding port 3000 now, after confirmation. |
+
+## Keys
+
+`-y` skips confirmation when you run `portlog free 3000`.
+
+## Good to know
+
+**History retention**  
+History stays in `~/.portlog/` for 7 days.
+
+**Command-line privacy**  
+portlog never records command-line arguments because they can hold secrets.
+
+**Recording sources**  
+On macOS, the recorder polls `lsof` every 2 seconds. On Linux, it reads `/proc/net/tcp`.
+DRAFT A>>>
+
+<<<DRAFT B
+# See which process held a port
+
+portlog records which process held each local TCP port over time. Use it to answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Start recording and look up a port
+
+```sh
+portlog start
+portlog who 3000
+```
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `portlog start` | Runs a background recorder. |
+| `portlog stop` | Stops the recorder. |
+| `portlog who 3000` | Shows every process that held port 3000, newest first. |
+| `portlog who 3000 --since 2h` | Limits the results to the last two hours. |
+| `portlog free 3000` | Stops the process that holds port 3000 now, after confirmation. |
+| `portlog free 3000 -y` | Stops the current process without confirmation. |
+
+## Good to know
+
+History
+: portlog keeps history for 7 days in `~/.portlog/`.
+
+Command-line arguments
+: portlog never records command-line arguments, because they can hold secrets.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

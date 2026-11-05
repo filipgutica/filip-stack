@@ -1,0 +1,294 @@
+{
+ "builds": [
+  {
+   "build": "f949fa1a",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/tmp/claude-502/writing-probe/g-d4d0b232/6acb9e64.md",
+   "task": "a84a6955-a8b8-4177-b75f-a2ed14db4571",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.217,
+   "M6": 0.077,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "portlog records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port even after the process has exited.",
+     true
+    ]
+   },
+   "words": 111,
+   "fk_grade": 7.9,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "93d1e87b",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/tmp/claude-502/writing-probe/g-b25d4c57/d599c337.md",
+   "task": "5885b72c-c1ff-417c-9c6c-2fdfa8560c65",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.141,
+   "M6": 0.111,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Records local TCP port history so you can see which processes held a port.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show a process that held a port even after the process has exited.",
+     true
+    ]
+   },
+   "words": 114,
+   "fk_grade": 9.2,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  },
+  {
+   "build": "cfa462c7",
+   "brief": "B1",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/tmp/claude-502/writing-probe/g-631b6b80/779f6ea1.md",
+   "task": "317bc110-9dd4-45d8-9313-0ea430f0a19a",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.191,
+   "M6": 0.2,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "portlog records which process held each local TCP port over time.",
+     true
+    ],
+    "b": [
+     "portlog start",
+     true
+    ],
+    "c": [
+     "Yes, it can show which process held a port after that process has exited.",
+     true
+    ]
+   },
+   "words": 72,
+   "fk_grade": 9.5,
+   "invented_claims": [],
+   "fragments": [
+    "macOS and Linux \u00b7 Written in Go \u00b7 MIT license"
+   ]
+  }
+ ],
+ "votes": [
+  {
+   "pair": "7fce915a",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "93d1e87b",
+   "B_build": "cfa462c7",
+   "judge": "astra",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Draft A explains the example and its results, preserves the fuller section structure, and includes recording details missing from Draft B."
+  },
+  {
+   "pair": "7fce915a",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "93d1e87b",
+   "B_build": "cfa462c7",
+   "judge": "sol",
+   "reader": "base",
+   "careful": "base",
+   "overall": "base",
+   "reason": "Draft A gives a clearer worked example, distinguishes recorded history from the current process, and preserves the separate Keys section in the tool page structure."
+  },
+  {
+   "pair": "7fce915a",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "93d1e87b",
+   "B_build": "cfa462c7",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts let a first-time reader install, start recording, and look up a port, but Draft A uses template headings that make no sense to a reader (\"The capture\", and \"Keys\" for a single flag) and includes recorder internals, while Draft B puts the same commands in one clean table with descriptive headings."
+  },
+  {
+   "pair": "2369b246",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cfa462c7",
+   "B_build": "f949fa1a",
+   "judge": "astra",
+   "reader": "head",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Draft A gives readers a concise quick start, a scannable command reference, and clearly separated retention and privacy details."
+  },
+  {
+   "pair": "2369b246",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cfa462c7",
+   "B_build": "f949fa1a",
+   "judge": "sol",
+   "reader": "vanilla",
+   "careful": "SAME",
+   "overall": "vanilla",
+   "reason": "Both are precise, but B guides first-time readers through recording, looking back, and freeing a port with clear instructions beside each command."
+  },
+  {
+   "pair": "2369b246",
+   "brief": "B1",
+   "attempt": 1,
+   "pairing": "head-vs-vanilla",
+   "A": "head",
+   "B": "vanilla",
+   "A_build": "cfa462c7",
+   "B_build": "f949fa1a",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts give a first-time reader the same install, start, lookup, and free steps, but A states them more tightly in a scannable command table without B's tagline and cute headings, though A's definition-list syntax may not render in every Markdown viewer."
+  }
+ ],
+ "aggregate": {
+  "B1/vanilla": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.217,
+   "M6": 0.077,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "words": 111
+  },
+  "B1/base": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.141,
+   "M6": 0.111,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "words": 114
+  },
+  "B1/head": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 1,
+   "M5": 0.191,
+   "M6": 0.2,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "words": 72
+  }
+ },
+ "rule": {
+  "per_brief": {
+   "B1": {
+    "base": {
+     "no_harm": true,
+     "better_on": [],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 1,
+      "base": 2,
+      "SAME": 0
+     },
+     "head_majority": false,
+     "other_majority": true,
+     "objective_gain": false
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M5"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 2,
+      "vanilla": 1,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": false
+    }
+   }
+  },
+  "vs_base": {
+   "part1_no_harm": true,
+   "part2_objective_gain": false,
+   "part3_judges": false
+  },
+  "vs_vanilla": {
+   "part1_no_harm": true,
+   "part3_judges": false
+  },
+  "briefs_scored": 1,
+  "verdict": "not decidable: only 1 of 4 briefs scored"
+ },
+ "double_coding": null
+}

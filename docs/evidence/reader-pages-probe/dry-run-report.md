@@ -4,6 +4,8 @@ Date: 2026-11-04
 
 Status: dry run complete. The paid run has not started. It needs Filip's approval.
 
+A revised guidance commit was rerun in [dry run 2](dry-run-2-report.md). The decisions below are resolved there.
+
 The dry run checks the pipeline: briefs, arms, builder target, file delivery, scoring calls, scorer, and decision rule.
 It ran 1 attempt per arm on B1 only, so it gives no verdict.
 The fixed rule needs 4 briefs and 5 attempts per arm.

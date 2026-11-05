@@ -1205,7 +1205,7 @@ Evidence:
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/quality-report.md`
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-repair-report.md`
 
-### 21. Reader pages writing probe: dry run
+### 22. Reader pages writing probe: dry runs
 
 Date: 2026-11-04
 
@@ -1238,17 +1238,31 @@ over head, and every judge's reason named those internals. Fact recall,
 invented facts, the opening job statement, and comprehension were equal across
 arms.
 
-Hypothesis, untested: the reader-pages check that every source fact stays on
-the page works against its own rule to write for the reader. The paid run
-should either test the current head text as preregistered, or revise that rule
-first and rerun this dry run.
+Hypothesis: the reader-pages check that every source fact stays on the page
+worked against its own rule to write for the reader.
 
-The paid run needs 312 calls and Filip's approval.
+Dry run 2 tested that hypothesis at n=1. The revision rescoped the check to
+facts the reader needs, and R7 now leaves maintainer and agent facts off the
+page, notes sections included. The same 15 calls ran on the same brief, with
+judge A/B order balanced and `role: general` on every call. The head page
+leaked no agent-only facts and kept every reader fact. No judge cited internals
+on the head page. Judges preferred base over head 2 of 3, and head over
+vanilla 2 of 3. The head page was shorter, and two judges preferred base's
+worked example and separate Keys section.
+
+The extractor marked a base leak in a Good to know section as a sources note,
+so M3 undercounts leaks in notes sections. Fixing that definition changes a
+measure after a result, so it waits for Filip's decision.
+
+One attempt per arm is a smoke test, not evidence. The paid run needs 312 calls
+and Filip's approval.
 
 Evidence:
 
 - `docs/evidence/reader-pages-probe/prereg.md`
 - `docs/evidence/reader-pages-probe/dry-run-report.md`
+- `docs/evidence/reader-pages-probe/dry-run-2-report.md`
+- `docs/evidence/reader-pages-probe/dry-run-2/`
 - `docs/evidence/reader-pages-probe/dry-run/`
 - `docs/evidence/reader-pages-probe/scorer/`
 
@@ -1371,7 +1385,8 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Rollback | Initial v2 bundle | Restored | The control failed its indeterminate-result gate, so the micro-skill did not run. | Digest `sha256:60655c...` |
 | 2026-09-03 | Micro engineering loop v2.3 | Eight-step production-owner and test loop | 5 of 5 repairs; 3 of 3 preservation | It matched saturated correctness, reduced repair resources, and passed preservation within the fixed ceilings. | `20260903T153142Z-*`; `20260903T155846Z-*` |
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
-| 2026-11-04 | Reader pages probe dry run | Reader pages guidance, 1 attempt per arm on one brief | Pipeline worked; head lost 0 of 6 judge votes and leaked 4 agent-only facts | No verdict at n=1. Untested hypothesis: a keep-every-fact check works against the write-for-the-reader rule. | `reader-pages-probe/` |
+| 2026-11-04 | Reader pages probe dry run | Reader pages guidance, 1 attempt per arm on one brief | Pipeline worked; head won 0 of 6 judge votes and leaked 4 agent-only facts | No verdict at n=1. Untested hypothesis: a keep-every-fact check works against the write-for-the-reader rule. | `reader-pages-probe/` |
+| 2026-11-04 | Reader pages probe dry run 2 | Revised reader pages guidance, same brief and calls | Head leaked 0 agent-only facts and won 3 of 6 judge votes | No verdict at n=1. The leak did not repeat. The extractor misses leaks in notes sections. | `reader-pages-probe/dry-run-2/` |
 
 ## Validity threats
 
@@ -1468,7 +1483,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Micro v2.3 preservation run | `pluginbench/runs/20260903-workflow-v2-3-micro-loop-preservation/20260903T155846Z-workflow-pytest-preservation-control` |
 | Successful-patch quality evaluator | `pluginbench/src/pluginbench/quality.py`; `pluginbench quality` |
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
-| Reader pages probe preregistration, dry run, and scorer | `docs/evidence/reader-pages-probe/` |
+| Reader pages probe preregistration, dry runs, and scorer | `docs/evidence/reader-pages-probe/` |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `/Users/filip.gutica/.t3/worktrees/filip-stack/t3code-7ed6efb0/plugins/workflow/skills` |
 

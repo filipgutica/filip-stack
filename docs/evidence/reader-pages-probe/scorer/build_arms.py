@@ -1,5 +1,6 @@
 # Build one guidance file per arm from a git ref. Links are rewritten so nothing
-# resolves against a checkout. Usage: build_arms.py <ref> <out-file> [--b1]
+# resolves against a checkout. Run it from the repository root, because git ls-tree
+# lists paths relative to the working directory. Usage: build_arms.py <ref> <out-file> [--b1]
 import re, subprocess, sys
 ref, out = sys.argv[1], sys.argv[2]
 b1 = '--b1' in sys.argv
