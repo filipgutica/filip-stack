@@ -24,7 +24,7 @@ export const sources = {
   harnessEngineering: {
     title: "OpenAI: Harness engineering, leveraging Codex in an agent-first world (February 2026)",
     href: "https://openai.com/index/harness-engineering/",
-    note: "Published before the current model generation.",
+    note: "Published before the current model generation. It is the only source for the advice that an error message should state the fix, and no current source confirms that yet.",
   },
   codexAgentsMd: {
     title: "OpenAI: Codex, AGENTS.md",
@@ -33,6 +33,7 @@ export const sources = {
   codexBestPractices: {
     title: "OpenAI: Codex best practices",
     href: "https://learn.chatgpt.com/guides/best-practices",
+    note: "Allows a description of the repository layout in AGENTS.md. Anthropic's best practices list layout descriptions as outdated advice, and the skill follows Anthropic.",
   },
   agentsMd: {
     title: "Agentic AI Foundation: AGENTS.md",
