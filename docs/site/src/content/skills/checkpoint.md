@@ -4,42 +4,49 @@ related: [review, walkthrough]
 
 ## What it does
 
-Checkpoint captures the current state of work for a pause or handoff. It
-compares conversation claims with current evidence and distinguishes intended,
-attempted, implemented, and verified outcomes.
+When you stop work in the middle, the conversation alone can overstate what
+is done. Checkpoint compares what was said with what the repository and
+checks show now. It labels each outcome as intended, attempted, implemented,
+or verified, so whoever resumes knows what still needs proof.
 
 ## When to use it
 
-- Pause work with a concrete starting point for continuation.
-- Hand off completed outcomes, remaining work, and material decisions.
-- Record what checks actually prove before leaving a task.
+- Pause work and leave a clear starting point for later.
+- Hand work to another person or agent, with the decisions they need.
+- Record what your checks actually prove before you leave a task.
 
-It runs only when you call it by name. The checkpoint stays in conversation
-unless you request a saved file. Evidence from a [review](../review/) or
-[walkthrough](../walkthrough/) can inform the snapshot when its covered state is known.
+Checkpoint runs only when you call it: `/workflow:checkpoint` in Claude or
+`$workflow:checkpoint` in Codex. It comes with the
+[Workflow plugin](../../#install). Add "save it" when you want a file, for
+example `/workflow:checkpoint save it, I'll resume tomorrow`.
 
 ## How it works
 
-1. Identifies the outcome and authoritative sources. For repositories, it checks
-   identity, branch, `HEAD`, dirty state, and relevant files.
-2. Reconciles reported progress with observed state. Plans and agent claims
-   do not establish completion.
-3. Records material decisions, completed outcomes, remaining work, blockers,
-   verification, and the next action. Unrelated dirty changes stay untouched.
-4. Identifies each check's command, result, and covered revision or working-tree
-   state. It uses available evidence without rerunning expensive checks solely
-   to write the checkpoint.
-5. Flags evidence invalidated by later changes. If the tested state is unknown,
-   it labels the result historical and current verification unknown.
-6. Saves a new snapshot only when requested. Earlier snapshots remain intact,
-   and the saved path is returned.
+The agent reads the current state first: for a repository, the branch, the
+current commit, and any uncommitted changes. Plans and earlier agent claims do
+not count as proof that something is done.
+
+For each check, it records the command, the result, and the commit or
+working-tree state it covered. It uses results that already exist instead of
+rerunning slow checks just for the checkpoint. A result that a later change
+made stale is flagged. A required check that never ran is listed as unrun,
+never as passed.
+
+The checkpoint stays in the conversation unless you ask to save it. A saved
+checkpoint is a new Markdown file, by default under
+`~/.engineering-workflow/<project-or-subject>/checkpoints/`, and earlier
+checkpoints are kept.
 
 ## What you get
 
-- A concise checkpoint with source, completed and remaining work, and verification.
-- Material blockers and decisions, plus a concrete next action.
-- Explicit labels for unconfirmed or unrun required checks.
+A checkpoint with these parts, leaving out any that are empty:
 
-A saved checkpoint creates no registry or companion artifacts. On resume,
-the agent rechecks current sources and repository state before acting.
-The skill does not authorize code changes, tracker updates, commits, or publication.
+- Source: the work item, repository, branch, and commit.
+- Completed, with evidence, and Remaining.
+- Blockers and decisions.
+- Verification: what passed, what it covered, and what is unverified.
+- Next action: a concrete place to start.
+
+When you resume from a checkpoint, the agent rechecks the repository before it
+acts, because the checkpoint describes the past. Apart from the saved file,
+checkpoint changes nothing and does not commit or publish.

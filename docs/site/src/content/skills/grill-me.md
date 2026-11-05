@@ -4,42 +4,51 @@ related: [planning]
 
 ## What it does
 
-Grill me stress-tests one idea, design, specification, or plan through focused
-questions. It makes important decisions, assumptions, dependencies, failure
-behavior, and verification explicit.
+A plan can read well and still leave key decisions open. In grill me, the
+agent asks you one question at a time about the decisions that could change
+the plan, such as ownership, data flow, failure behavior, rollout, and how you
+will prove it works. Each question comes with the answer the agent
+recommends.
 
 ## When to use it
 
-- Challenge an architecture or implementation approach before committing to it.
-- Find vague scope, hidden assumptions, or weak verification in a proposal.
-- Resolve decisions that materially change the work.
+- Challenge an architecture or implementation approach before you build it.
+- Find vague scope, hidden assumptions, or weak verification in a plan.
+- Settle the decisions that would change the work.
 
-It runs only when you call it by name. Ordinary planning, review, and quick
-feedback do not activate it. Use [planning](../planning/) when you want a
-specification, implementation plan, or tickets as the deliverable.
+Grill me runs only when you call it: `/workflow:grill-me` in Claude or
+`$workflow:grill-me` in Codex. It comes with the
+[Workflow plugin](../../#install). Point it at the proposal, for example
+`/workflow:grill-me docs/sync-redesign.md`. Ordinary planning, review, and
+requests for quick feedback do not start it. If you want a specification,
+plan, or tickets as the result, use [planning](../planning/).
 
 ## How it works
 
-1. Reads the proposal and its declared sources. It checks code, tests, schemas,
-   configuration, and documentation before asking for repository facts.
-2. Maps the decisions that can change the proposal, including users, ownership,
-   boundaries, data flow, compatibility, rollout, and reversibility.
-3. Asks exactly one consequential question. Each question includes a recommended
-   answer, any unsupported assumption, and why the decision matters.
-4. Resolves the current decision before moving to one that depends on it.
-   The interview follows relevant branches rather than a generic checklist.
-5. Stops when the proposal is coherent, a required fact is unavailable, or
-   you ask to stop.
+The agent reads the proposal and its sources first. It looks up facts in the
+code, tests, and docs itself instead of asking you for them.
 
-Decisions stay in conversation by default. When you request persistence, a
-plain Markdown log records material decisions and changed assumptions. It
-keeps your decision separate from the recommendation and does not store a transcript.
+Each question follows the same shape:
+
+```text
+Question: <one focused question>
+Recommended answer: <the answer and any assumption>
+Why it matters: <the decision or risk>
+```
+
+An answer without evidence behind it is labeled as an assumption. The agent
+settles each decision before it asks about one that depends on it, and it
+follows only the questions that could change the proposal, not a fixed
+checklist. The interview ends when the proposal holds together, when a fact it
+needs is unavailable, or when you ask it to stop.
 
 ## What you get
 
-- Resolved decisions and their rationale.
-- Changed assumptions, remaining risks, and unknowns.
+- The decisions you settled, with their reasons.
+- Assumptions that changed, and the risks and unknowns that remain.
 - Recommended changes to the proposal.
 
-The skill is read-only except for an authorized grill log. It does not
-authorize code changes, specifications, tickets, commits, or publication.
+The decisions stay in the conversation. If you ask for a record, the agent
+saves a short Markdown log of the decisions and changed assumptions, not a
+transcript. Apart from that log, grill me changes no files and does not write
+code, specifications, or tickets.

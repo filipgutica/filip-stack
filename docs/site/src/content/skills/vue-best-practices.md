@@ -4,45 +4,55 @@ related: [review, test-audit]
 
 ## What it does
 
-Vue best practices guides component, composable, and test work in Vue
-applications and libraries. Composables are functions that organize Vue-aware
-state and behavior. The skill keeps ownership and public contracts explicit.
+Vue gives you several ways to do the same thing, and a codebase gets harder to
+follow when every component picks a different one. This skill settles who
+owns each piece of state and what a component promises its parents. Your
+project's own rules and existing public APIs always come first.
 
 ## When to use it
 
-- Build, refactor, or [review](../review/) `.vue` files and supporting TypeScript.
-- Work on reactivity, component data flow, slots, events, or two-way models.
-- Check Vue Router, Pinia, VueUse, or Nuxt integration.
+- Build, refactor, or [review](../review/) `.vue` files and the TypeScript
+  around them.
+- Work on reactivity, data flow between components, slots, events, or
+  two-way bindings.
+- Check how a component uses Vue Router, Pinia, VueUse, or Nuxt.
 - Review component examples and behavior tests.
 
-Project instructions and existing public contracts take precedence. The default
-is Vue 3, Composition API, and `<script setup lang="ts">` unless nearby code
-uses another style.
+Install it with the command above. The agent picks it when you work on Vue
+code, so ask in plain words. An illustrative request:
+
+> Refactor `UserTable.vue` so the sorting logic moves out of the template.
 
 ## How it works
 
-The skill inspects the component, nearby package patterns, and installed Vue
-version before applying version-sensitive guidance. It reads only the references
-needed for the task.
+The agent first reads the component, the patterns nearby, and the installed
+Vue version, because some features need a recent version: for example,
+`defineModel` is stable from Vue 3.4. It then reads only the guidance topics
+the task needs, such as reactivity, composables, component contracts, or
+security.
 
-- Keeps source state minimal. `computed` derives values; `watch` handles
-  side effects.
-- Keeps pure parsing, formatting, mapping, and validation in utilities.
-  Composables own reactive orchestration and lifecycle behavior.
-- Gives reactive-state composables readonly inputs and narrow domain actions
-  by default. Mutable return values need an explicit UI model contract.
-- Uses typed props, events, slots, and models. Ordinary parent-owned updates
-  use props and events; true two-way contracts can use `defineModel`.
-- Keeps templates declarative and preserves consumer-facing component contracts.
-- Checks security-sensitive templates, HTML, URLs, storage, and exposed secrets
-  through the relevant reference.
+Unless nearby code clearly uses another style, it writes Vue 3 with the
+Composition API and `<script setup lang="ts">`. A few of its defaults:
+
+- Keep stored state small. Derive values with `computed`, and use `watch` only
+  for side effects.
+- Put pure logic, such as parsing or formatting, in plain functions. Use a
+  *composable*, a function that holds Vue state and behavior, only when the
+  logic needs Vue itself: reactive state, watchers, side effects, dependency
+  injection, or lifecycle hooks.
+- A composable returns read-only state and named actions, such as `refresh`
+  or `selectRow`, instead of setters like `setLoading`.
+- Type every prop, event, slot, and model. Use props and events for ordinary
+  updates from a parent, and `defineModel` only for true two-way bindings.
+- Keep templates simple, and move branching and formatting into the script.
 
 ## What you get
 
-- Vue changes or review guidance consistent with the surrounding project.
-- Focused verification for affected behavior, types, and component contracts.
+- Vue changes, or review notes, that match the code around them.
+- Focused checks, such as type checks, lint, and component tests, for the
+  behavior and contracts the change touches.
 
-User-visible behavior and slot, event, or model changes favor component tests.
-Existing tests remain intended behavior unless the contract changes. Use
-[test-audit](../test-audit/) alongside this work when coverage value or preservation
-needs closer inspection.
+Changes to what users see, or to a component's slots, events, or models, get
+component tests. Existing tests count as intended behavior unless the contract
+is meant to change. The agent keeps public APIs as they are unless you approve
+the change. For a closer look at test value, use [test-audit](../test-audit/).

@@ -4,42 +4,54 @@ related: [technical-writing, jira-work-links]
 
 ## What it does
 
-Planning turns an engineering request into a bounded direction, specification,
-implementation plan, or set of tickets. It grounds the result in the
-repository and produces only the output you ask for.
+Planning helps you decide what to build before anyone edits code. It reads
+the code, tests, and tracker issues that the work touches, so the result
+describes the repository as it is, and it produces only the one output you
+asked for.
 
 ## When to use it
 
-- Compare approaches before choosing a direction.
-- Define behavior, ownership, and constraints in a specification.
-- Turn an approved direction into changes an engineer can verify.
-- Break approved work into tickets with clear outcomes and dependencies.
+Ask for one of these four outputs:
 
-It does not implement changes or handle ordinary prose editing. Use
-[technical-writing](../technical-writing/) to revise finished prose.
+| Output | Use it to |
+| --- | --- |
+| A direction | Compare approaches and settle decisions in the conversation |
+| A specification | Define behavior, boundaries, and the outcomes you can observe |
+| An implementation plan | List file-by-file changes, each one checkable, from an approved direction |
+| Tickets | Split approved work into owned outcomes with their dependencies |
+
+Planning does not implement anything or polish ordinary prose. To build the
+change, ask for it and [engineering](../engineering/) takes over. To revise
+finished prose, use [technical-writing](../technical-writing/).
+
+Planning comes with the [Workflow plugin](../../#install), and the agent picks
+it when your request matches. An illustrative request:
+
+> Write an implementation plan for adding CSV export to the reports page.
 
 ## How it works
 
-1. Selects one mode: exploration, specification, implementation plan, or tickets.
-   It asks a focused question if the choice materially changes the work.
-2. Confirms the outcome, users, constraints, non-goals, and authorized actions.
-3. Inspects the code, tests, schemas, configuration, documentation, and tracker
-   state that own the proposal.
-4. Separates observed facts, decisions, assumptions, and unresolved questions.
-   It surfaces tradeoffs before they become implementation instructions.
-5. Names owners and observable completion signals. Plans identify affected
-   files or surfaces; tickets describe independently reviewable outcomes.
-6. Removes unsupported work and checks whether another engineer can follow
-   the result without inventing a material decision. Consequential or
-   ambiguous artifacts receive a separate critique.
+The agent first confirms the outcome, the users, the constraints, what is out
+of scope, and what it may change. If the output you want is unclear and the
+answer would change the work, it asks you one question.
 
-Ticket dependencies require real inputs from other work. Relationship checks
-can use [jira-work-links](../jira-work-links/) alongside this work.
+Then it reads the code, tests, schemas, configuration, docs, and tracker state
+behind the proposal. The result keeps observed facts, decisions, assumptions,
+and open questions apart, and it raises a tradeoff with you before turning it
+into an instruction. Every deliverable gets a signal you can observe to know
+it is done.
+
+Before it returns the result, the agent asks whether an engineer could follow
+every instruction literally without guessing. A consequential or ambiguous
+result gets a critique from a separate reviewer first.
 
 ## What you get
 
-- One requested artifact or a bounded direction, with evidence and uncertainty.
-- Verification signals and any decisions that still block implementation.
+- One direction, specification, plan, or set of tickets, with its evidence and
+  its open questions.
+- The decisions that still block the work.
 
-The result stays in conversation unless you request a file or destination.
-Planning does not authorize code changes, commits, publication, or tracker edits.
+The result stays in the conversation unless you ask for a file. Planning does
+not edit code, commit, or publish, and it creates or changes Jira or GitHub
+issues only when you ask. It also stops after the output you asked for: a
+specification does not turn into a plan and tickets on its own.

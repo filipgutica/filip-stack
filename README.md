@@ -85,15 +85,15 @@ without chaining a large collection of procedures together.
 
 | Skill | Use |
 | --- | --- |
-| `engineering` | Implement, debug, refactor, respond to review feedback, and verify authorized code changes. |
-| `planning` | Explore a problem or produce one specification, plan, or ticket set. |
-| `test-audit` | Audit test value for requested cleanup, substantial coverage changes, or uncertain preservation. |
-| `review` | Read-only review or final verification of one exact change range or artifact. |
-| `simplify` | Explicitly simplify selected code with three independent reviews while preserving behavior. |
-| `technical-writing` | Write or revise finished technical prose, including PR descriptions. |
-| `grill-me` | Explicitly stress-test an idea, design, or plan through a focused interview. |
-| `walkthrough` | Explicitly inspect and explain a change one verifiable slice at a time. |
-| `checkpoint` | Explicitly capture an evidence-backed snapshot for pausing or handing off work. |
+| `engineering` | Makes an authorized code change, fix, or refactor and proves it with tests and checks. |
+| `planning` | Turns a problem into a direction, specification, implementation plan, or set of tickets. |
+| `test-audit` | Checks whether your tests protect real behavior, and finds the ones that only add maintenance cost. |
+| `review` | Reviews one exact change or document and reports only the findings it can back with evidence. |
+| `simplify` | Makes code you choose simpler without changing what it does. |
+| `technical-writing` | Writes or revises documentation, reports, and PR descriptions so readers can act on them. |
+| `grill-me` | Stress-tests an idea, design, or plan by questioning you until its decisions hold up. |
+| `walkthrough` | Explains a change to you one part at a time, waiting for your answer before it moves on. |
+| `checkpoint` | Records where the work stands, with evidence, so it can be paused or handed off. |
 
 `engineering`, `planning`, `review`, `test-audit`, and `technical-writing` may be selected
 from a matching request. `grill-me`, `walkthrough`, `checkpoint`, and `simplify` are manual-only.
@@ -200,19 +200,19 @@ Independent skills live in `skills/<name>/` and install one at a time with the
 
 | Skill | Use |
 | --- | --- |
-| `agent-ready-environments` | Audit or set up repositories and engineering guidance so coding agents can verify their work. |
-| `babysit-pr` | Watch a PR through CI and review bots, and fix real findings. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `cli-tool-template` | Create or align Filip's personal CLI tools and their Homebrew tap setup. |
-| `council` | Get independent advice from Astra, Sol 6.1, and Opus 5.5 on a question, decision, or artifact. One round by default. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-send` | Review the code and description with Sol, babysit, and merge the PR, or return PASS or FAIL for human review. Also finishes a merge council's open items. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-stop` | Do the `full-send` work, but stop with the PR ready for you to merge. Never merges. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `agent-ready-environments` | Audits or sets up a repository and its agent guidance so coding agents can check their own work. |
+| `babysit-pr` | Watches a pull request through CI and review bots, and fixes the real problems they find. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `cli-tool-template` | Creates or aligns Filip's personal CLI tools so each follows the same repository, release, and Homebrew conventions. |
+| `council` | Asks three AI models for independent advice on a question, plan, or piece of work, and weighs their answers. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-send` | Takes a change through review and CI to a merged PR, or to a PASS or FAIL verdict, while you are away. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-stop` | Does the `full-send` work but leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `hill-climb` | Polish a change that already works, keeping only the small edits that blind judges prefer. Needs `council`. |
-| `jira-work-links` | Create or review Jira links, blockers, Epic relationships, and Development references. |
-| `merge-council` | Run a three-member review council on a PR when you, a task, or repository guidance asks for one; it returns a merge verdict and fixes agreed findings on your own PRs. |
-| `pr-review-churn` | Analyze recurring GitHub PR review feedback for repositories and a lookback you choose. |
-| `sol-loop` | Review a change with GPT Sol in a loop until both agents agree. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `ux-laws` | Design or review interfaces and flows with established UX laws. |
-| `vue-best-practices` | Apply Vue guidance for reactivity, composables, component contracts, and tests. |
+| `jira-work-links` | Creates or checks Jira issue links, such as blockers and Epics, and the PRs and commits behind each issue. |
+| `merge-council` | Has three AI reviewers review a pull request and return one merge verdict. |
+| `pr-review-churn` | Finds the review objections that keep coming back on your GitHub PRs and proposes guidance to prevent them. |
+| `sol-loop` | Has GPT Sol review your change in rounds until Sol and your agent agree it is correct. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `ux-laws` | Designs or reviews interfaces and user flows with established UX laws. |
+| `vue-best-practices` | Guides your agent's Vue 3 work on components, composables, and their tests. |
 
 ```sh
 npx skills add filipgutica/filip-stack --list

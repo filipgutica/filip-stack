@@ -4,41 +4,51 @@ related: [review, test-audit]
 
 ## What it does
 
-Simplify improves clarity and removes needless complexity from selected code
-while preserving observable behavior. It uses three independent assessments
-before the main thread makes a focused change.
+Simplify targets duplicated logic, extra state, needless branches, and layers
+that add nothing. The agent changes only what three separate reviews support
+and its checks confirm.
 
 ## When to use it
 
-- Simplify a specific target or change range.
-- Remove duplication, redundant state, branches, or unnecessary indirection.
-- Improve the code changed in the current task without changing its contract.
+- Simplify a specific file, function, or range of changes.
+- Clean up the code you changed in the current task before you hand it off.
 
-It runs only when you call it by name. If the target cannot be identified,
-it asks for one before proceeding.
+Simplify runs only when you call it: `/workflow:simplify` in Claude or
+`$workflow:simplify` in Codex. It comes with the
+[Workflow plugin](../../#install). Name the target when you call it, for
+example `/workflow:simplify src/cart/totals.ts`. Without a target it uses the
+code changed in the current task, then your uncommitted changes, and it asks
+you only when it still cannot find one.
 
 ## How it works
 
-1. Reads the target, callers, project instructions, and nearby tests. It maps
-   the APIs, outputs, side effects, errors, ordering, and edge cases to preserve.
-2. Runs a focused existing check when that gives a useful baseline.
-3. Gets three independent, read-only assessments: reuse and ownership, direct
-   simplification, and the behavior contract. Each uses the same bounded target.
-4. Waits for all three assessments. It retries a missing or failed assessment
-   once and stops before editing if the review remains incomplete.
-5. Checks proposals against live code and the behavior map. One writer applies
-   only changes with a concrete benefit and leaves uncertain proposals unapplied.
-6. Runs focused checks and inspects the final diff. A substantive final diff
-   receives an independent read-only [review](../review/).
+The agent reads the target, its callers, and the nearest tests. It lists what
+must not change: public APIs, outputs, side effects, errors, ordering, and
+edge cases. When an existing check gives a useful baseline, it runs that first.
 
-The skill preserves meaningful tests and error handling. It does not add an
-abstraction or dependency just to reduce line count. Use
-[test-audit](../test-audit/) when the value or preservation of coverage is uncertain.
+Then three helper agents review the same code without editing it, each from
+one angle:
+
+| Review | What it looks for |
+| --- | --- |
+| Reuse and ownership | Existing helpers that can replace duplicate code, and abstractions nothing needs yet |
+| Direct simplification | Redundant state, branches, nesting, and indirection |
+| Behavior contract | The behavior and tests a refactor must keep |
+
+The agent waits for all three. If one is still missing after a retry, or the
+host cannot run helper agents, it reports the review as incomplete and edits
+nothing.
+
+The agent then applies only the proposals with a clear benefit and leaves
+uncertain ones alone. It keeps meaningful tests and error handling, and it
+does not add an abstraction or dependency only to save lines. Finally it runs
+the checks that cover the change, and a substantial final diff gets a
+read-only [review](../review/) from an agent that did not make it.
 
 ## What you get
 
-- A focused simplification with the affected behavior preserved and checked.
-- The verification performed and any incomplete result.
-- Proposed changes deliberately left unapplied, with their uncertainties.
+- What became simpler, and the checks that show the behavior did not change.
+- The proposals it left unapplied, and why.
 
-If behavior preservation remains uncertain, the result stays incomplete.
+If a check fails or the agent cannot show that behavior is unchanged, the
+result is reported as incomplete.

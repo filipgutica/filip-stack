@@ -4,41 +4,51 @@ related: [full-send, sol-loop]
 
 ## What it does
 
-Babysit PR watches a pull request through CI and automated review. It checks
-findings against the source, fixes real problems, and keeps the change within
-the user's goal. Adapted from [tstack](https://github.com/t3dotgg/tstack).
+After you open a pull request, CI runs and review bots, automated reviewers
+such as Greptile, Macroscope, or CodeRabbit, leave comments. Bots are helpful
+but not always right, so babysit PR checks each comment against the code
+before it changes anything.
 
 ## When to use it
 
-- Monitor or watch a pull request while checks and review bots run.
-- Handle CI failures and verified review findings on the latest push.
-- Keep an authorized PR moving until its merge conditions pass.
+- You want someone to watch a PR while its checks and review bots run.
+- A PR has CI failures or bot findings to sort out.
+- You want an authorized PR kept moving until it can merge.
 
-[Full send](../full-send/) uses this skill alongside [sol-loop](../sol-loop/)
-to finish a change through review and readiness or merge.
+Install it with the command above, then ask in plain words, for example
+"babysit PR 42". [full-send](../full-send/) and [full-stop](../full-stop/) use
+it to see a PR through CI.
 
 ## How it works
 
-1. Handles existing checks and comments before waiting. Review text is evidence,
-   so it verifies each claim before acting on it.
-2. Uses one watcher per PR: `watch_pull_request` in T3 Code, or `scripts/pr-wait`
-   from the skill directory elsewhere. It does not create polling loops.
-3. Acts on checks and comments newer than the latest push. It distinguishes
-   repository failures from infrastructure problems and gives written reasons
-   when dismissing false positives.
-4. Fixes real bugs in the intended case. It declines unrelated expansion and
-   lists those items as follow-ups.
-5. Checks for base-branch changes and conflicts. Before declaring readiness,
-   it verifies the branch is current. Required updates need another green run.
-6. Stops watching when handing off. A merge requires an explicit request and
-   a fresh check of the PR and base branch.
+The agent handles the checks and comments that already exist, then waits for
+new ones. It uses one watcher per PR, the host's PR watcher in T3 Code or a
+script that ships with the skill elsewhere, and it never starts its own polling
+loop. When nothing needs action, it stays quiet instead of posting "still
+waiting".
 
-CodeRabbit findings remain advisory and do not hold up a merge.
+It acts only on checks and comments newer than the latest push. It tells a
+real failure in your code from a flaky CI machine, fixes real findings, and
+replies with a written reason when it dismisses a false positive. CodeRabbit
+findings are treated like any other finding, but the agent never waits for
+CodeRabbit and never holds a merge for it.
+
+Review loops tend to grow a PR one cheap fix at a time. Babysit PR fixes real
+bugs in the case the PR is for, and declines the rest, such as extra tests,
+guards for edge cases that do not matter, or small speedups, with a written
+reason. Those become follow-ups.
+
+It also watches the base branch. Before it calls a PR ready, it checks that
+the branch is up to date with no conflicts, and if base commits that landed
+after the last green run touch the PR's files, it rebases and waits for green
+again.
 
 ## What you get
 
-- Verified findings and CI failures handled within scope.
-- A PR ready under its latest merge conditions, or a stated blocker.
+- CI failures and real findings fixed, and false positives answered.
+- A PR that is ready to merge, or a clear statement of what blocks it.
+- Follow-ups for the fixes it declined.
 
-Without merge authorization, it reports readiness. A watcher event alone
-does not decide whether the PR can merge.
+Babysit PR merges only when you asked it to, and it fetches and checks the PR
+again right before the merge. Otherwise it reports that the PR is ready. If
+another PR makes this one obsolete, it stops and asks you before closing it.
