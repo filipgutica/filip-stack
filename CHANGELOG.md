@@ -1,3 +1,10 @@
+## [3.20.1](https://github.com/filipgutica/filip-stack/compare/v3.20.0...v3.20.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **site:** derive standalone skill count from catalog ([a1988eb](https://github.com/filipgutica/filip-stack/commit/a1988ebba6a974baee762034a08180f803bc7b65))
+
 # [3.20.0](https://github.com/filipgutica/filip-stack/compare/v3.19.0...v3.20.0) (2026-11-05)
 
 

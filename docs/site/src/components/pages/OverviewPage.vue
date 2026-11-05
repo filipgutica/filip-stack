@@ -228,8 +228,8 @@ onMounted(() => {
       <li>
         <a href="#standalone">Standalone skills</a>
         <p>
-          Nine independent skills for PRs, reviews, Jira, Vue, and UX. Install
-          the ones you use.
+          {{ catalog.standalone.length }} independent skills for PRs, reviews,
+          Jira, Vue, and UX. Install the ones you use.
         </p>
       </li>
       <li>
