@@ -31,7 +31,9 @@ In the first round, each member suggests up to three improvements.
 Each round, hill climb applies the best-supported ideas as one small edit,
 runs the checks, and asks the judges. They see diffs for code and screenshots
 for UI. If the edit fails a check or does not win most judges, hill climb puts
-your files back from a saved copy. It never uses your Git stash or `git clean`.
+your files back from a saved copy. If something outside the climb changed
+those files, it stops instead, so your changes survive. It never uses your Git
+stash or `git clean`.
 
 The climb stays small. It runs three rounds by default and five at most, and
 it changes at most 30% of your change's lines or 20 lines, whichever is
