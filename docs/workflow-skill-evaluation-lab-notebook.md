@@ -1205,6 +1205,101 @@ Evidence:
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/quality-report.md`
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-repair-report.md`
 
+### 21. Design language guidance probe
+
+Date: 2026-11-04
+
+This study asks whether the design-language change that adds Forms, Data views,
+and two named breakpoints makes agents build those pages more consistently.
+The design language is host config, not a Workflow skill, so `pnpm eval:routing`
+does not apply.
+
+The protocol compares base and head `host-config/design-language/` on three fixed
+briefs: a settings form, a data table, and a docs landing page. Each probe is
+built standalone and on the library stack, with 3 attempts per arm. Objective
+browser scores come first; blind screenshot judges are diagnostics only.
+
+No dry run started. PluginBench at `c6a6909` measures only the four reviewed
+DeepSWE verifier contracts, has no browser collector, and delivers guidance as
+one `AGENTS.md`, not as a host directory with sibling examples. A dry run would
+admit tasks that cannot produce one objective score.
+
+The paid run needs 36 coding attempts, or 54 with PluginBench's automatic
+vanilla arm, plus about 54 judge calls. The nominal estimate is at most about $12
+and is an assumption until a dated price table exists.
+
+The study plan, the gap evidence, the smallest PluginBench additions, and the
+cost estimate are in `docs/evidence/design-language-probe/study-plan.md`.
+
+#### First run: one-off probe without PluginBench (2026-11-04)
+
+Filip approved a one-off run outside PluginBench in place of the dry run. It
+built the standalone probes only: 3 probes x 2 arms x 3 attempts = 18 pages,
+with Codex `gpt-6.1-sol` at high reasoning through `delegate_task`. Each build
+read its arm from a randomly named folder. Base was `754754a` and head was
+`c68ccd0`. A Playwright script scored every page against rules written before
+the first build. Then 27 blind judge calls (Astra, Sol 6.1, Opus 5.5) compared
+the 9 base and head pairs from screenshots. All 45 member calls succeeded, with
+no retries and no unread judge files.
+
+Result: **not supported.** Head was worse on the data table: 1 page overflow
+against 0, and 5 border colors against 4. Judges preferred base in all 3
+probes (head won 2, 1, and 0 of 9 overall votes). Head did follow its breakpoint
+rule, with only 640 and 800 px in all 9 builds; base used 420 and 760 px in 4
+builds. The two arms tied on undefined variables, contrast, forced-colors focus,
+and form and table probe checks. Neither arm marked the current docs section.
+After the judges, a check found that all 3 head docs builds set body prose in
+`--text-muted`, which explains most docs votes.
+
+Validity limits: 3 attempts per cell, judges without reference docs, two base
+builds that also read the host `~/design-language/DESIGN.md`, and no
+library-stack build.
+
+Report and per-build tables:
+`docs/evidence/design-language-probe/probe-run-2026-11-04.md`. Screenshots,
+pages, scorer, and the arm ledger:
+`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/`.
+
+#### Second run: larger sample without leakage (2026-11-04)
+
+Filip approved a second one-off run that fixed run 1's flaws: 8 attempts per
+probe and arm (48 builds) with the same builder, base, head and briefs. Each
+build read one bundle file holding its arm's `DESIGN.md`, `tokens.css` and
+example pages, and the prompt said to use only that file for design rules.
+Inline delivery was dropped because `delegate_task` takes only a task string.
+No build read any other guidance path or skill, so none was replaced. Judges got
+the `DESIGN.md` sections that are identical in both arms, and 72 blind calls
+(Astra, Sol 6.1, Opus 5.5) compared the 24 pairs. Two measures were added
+before the first build: phone table clipping at 390 px (a decision measure)
+and the muted share of body text (a diagnostic).
+
+Result: **not supported.** Head was worse on the data table (page overflow 1
+vs 0, phone table columns 6 vs 0) and on the docs page (failed probe checks 5
+vs 4). Judges preferred base in all 3 probes, and Opus alone did too. Head
+used only 640 and 800 px in all 24 builds, against 11 of 24 base builds with
+other widths. The breakpoint change alone holds on the widths but fails the
+pre-registered test, because the table regressions count against it. The
+breakpoint table's Tablet row also tells side navigation to become a scrolling
+strip, and all 8 head docs rails then clipped at phone width. A smaller PR
+would ship the widths without that line and needs its own run.
+
+Diagnostics measured after the judges: all 8 head tables put their state
+messages in a row across a wide table, as head's Data views section asks, and
+at 390 px those messages run past the scroll wrapper. All 8 head docs rails
+scroll sideways at 800 px, where base rails wrap. Muted prose appeared in 7 of
+8 docs builds in both arms, copied from the shared `docs.html`, so run 1's
+head-only pattern did not repeat.
+
+Report and per-build tables:
+`docs/evidence/design-language-probe/probe-run-2-2026-11-04.md`. Pages,
+screenshots, scorer, ledgers and votes:
+`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/run-2/`.
+
+On 2026-11-05 PR #96 was narrowed to the two widths, the container query, and
+the example-page changes. It drops the Forms and Data views sections and the
+Tablet row's scrolling-strip line, and keeps base's optional navigation
+wording. The narrowed change has not had its own run.
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1324,6 +1419,10 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Rollback | Initial v2 bundle | Restored | The control failed its indeterminate-result gate, so the micro-skill did not run. | Digest `sha256:60655c...` |
 | 2026-09-03 | Micro engineering loop v2.3 | Eight-step production-owner and test loop | 5 of 5 repairs; 3 of 3 preservation | It matched saturated correctness, reduced repair resources, and passed preservation within the fixed ceilings. | `20260903T153142Z-*`; `20260903T155846Z-*` |
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
+| 2026-11-04 | Design language probe plan | Forms, data views, and breakpoints in `DESIGN.md` | Not run; PluginBench lacks an artifact submission, a browser collector, and host-directory delivery | Host-config guidance needs browser scores that the code-patch harness cannot produce. | `docs/evidence/design-language-probe/study-plan.md` |
+| 2026-11-04 | Design language probe, first run | Forms, data views, and breakpoints in `DESIGN.md`; 18 standalone builds, 27 blind judges | Not supported: head worse on table overflow and border colors; judges preferred base in 3 of 3 probes | Head adopted the 640 and 800 px breakpoints but did not make pages more consistent; one-off run without PluginBench. | `docs/evidence/design-language-probe/probe-run-2026-11-04.md` |
+| 2026-11-04 | Design language probe, second run | Same change; 48 standalone builds with guidance in one file per build, 72 blind judges with the shared guidance | Not supported: head worse on table overflow, phone table clipping, and docs probe checks; judges preferred base in 3 of 3 probes, Opus too | No leakage; head used only 640 and 800 px, but its Data views and rail guidance produced phone-width regressions. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
+| 2026-11-05 | Design language PR narrowed | Breakpoints only: 640 and 800 px, container query, example pages | Not run | Run 2 tied the regressions to Data views and the scrolling-strip line, and showed head kept to the two widths. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
 
 ## Validity threats
 
@@ -1401,6 +1500,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Evidence | Location |
 | --- | --- |
 | Durable canary reports and arm manifests | `docs/evidence/workflow-skill-evaluation/` |
+| Design language probe plan and PluginBench gaps | `docs/evidence/design-language-probe/study-plan.md` |
 | Original capability report | `pluginbench/reports/2026-08-31-filip-stack-evaluation.md` |
 | Blinded review report | `pluginbench/reports/2026-09-01-filip-stack-blinded-review-evaluation.md` |
 | Pinned hard-task snapshot | `pluginbench/benchmarks/swe-bench-verified-hard/tasks.json` |
