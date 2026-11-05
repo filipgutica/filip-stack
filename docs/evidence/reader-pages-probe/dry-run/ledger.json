@@ -1,0 +1,26 @@
+[
+ {
+  "build": "2ef8d37e",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/tmp/claude-502/writing-probe/g-8de2ee50/f9dda211.md",
+  "task": "73711a94-ef09-449d-be6b-41ee24b75fc3"
+ },
+ {
+  "build": "2ed7d728",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/tmp/claude-502/writing-probe/g-9653f12b/c2eb3129.md",
+  "task": "842c8a83-9157-4c28-aaa1-af06b0304878"
+ },
+ {
+  "build": "714ea11f",
+  "brief": "B1",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/tmp/claude-502/writing-probe/g-4172e6d0/d3374e97.md",
+  "task": "6f28c244-5e85-4533-b0aa-10e85b830c77"
+ }
+]

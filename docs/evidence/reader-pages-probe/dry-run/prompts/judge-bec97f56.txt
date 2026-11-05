@@ -1,0 +1,129 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `portlog`, following the tool page section order.
+
+<<<DRAFT A
+# See which process held a port
+
+portlog records which process held each local TCP port over time. Use it to answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## Try it
+
+Start the recorder, then check port 3000:
+
+```sh
+portlog start
+portlog who 3000
+```
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `portlog start` | Runs a background recorder. |
+| `portlog stop` | Stops the recorder. |
+| `portlog who 3000` | Shows every recorded process that held port 3000, newest first. |
+| `portlog free 3000` | Stops the process that holds port 3000 now, after confirmation. |
+
+## Keys
+
+Use `--since 2h` to limit a history query to the last two hours:
+
+```sh
+portlog who 3000 --since 2h
+```
+
+Use `-y` to skip confirmation when stopping the current process:
+
+```sh
+portlog free 3000 -y
+```
+
+## History and privacy
+
+portlog keeps history for 7 days in `~/.portlog/`.
+
+It never records command-line arguments, because they can hold secrets.
+
+## Good to know
+
+<dl>
+<dt>Recorder</dt>
+<dd>The recorder polls <code>lsof</code> every 2 seconds on macOS and reads <code>/proc/net/tcp</code> on Linux.</dd>
+
+<dt>Storage</dt>
+<dd>The store is SQLite in WAL mode, with a busy timeout of 500 ms.</dd>
+
+<dt>History queries</dt>
+<dd>The <code>who</code> query uses the index <code>idx_port_time</code>.</dd>
+
+<dt>Releases</dt>
+<dd>Releases use release-please, and <code>fix:</code> makes a patch.</dd>
+</dl>
+DRAFT A>>>
+
+<<<DRAFT B
+# See which process held a local TCP port
+
+portlog records port history so you can answer “what was on port 3000 an hour ago?” after the process has exited.
+
+```sh
+brew install example/tap/portlog
+```
+
+macOS and Linux · Written in Go · MIT license
+
+## The capture
+
+Record port activity, then check who held port 3000:
+
+```sh
+portlog start
+portlog who 3000
+```
+
+The history shows every process that held the port, newest first.
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `portlog start` | Run the background recorder. |
+| `portlog stop` | Stop the recorder. |
+| `portlog who 3000` | Show the history for port 3000. |
+| `portlog free 3000` | Stop the process holding port 3000 now, after confirmation. |
+
+## Keys
+
+| Option | Use |
+| --- | --- |
+| `--since 2h` | Limit the history to the last two hours: `portlog who 3000 --since 2h`. |
+| `-y` | Skip confirmation: `portlog free 3000 -y`. |
+
+## History
+
+portlog keeps history for 7 days in `~/.portlog/`.
+
+It never records command-line arguments, because they can hold secrets.
+
+## Good to know
+
+**Recording**  
+On macOS, the recorder polls `lsof` every 2 seconds. On Linux, it reads `/proc/net/tcp`.
+
+**Storage**  
+History uses SQLite in WAL mode, with a busy timeout of 500 ms.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

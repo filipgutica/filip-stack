@@ -1,0 +1,22 @@
+[
+ {
+  "pair": "bec97f56",
+  "brief": "B1",
+  "attempt": 1,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "714ea11f",
+  "B_build": "2ed7d728"
+ },
+ {
+  "pair": "6032d03b",
+  "brief": "B1",
+  "attempt": 1,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "714ea11f",
+  "B_build": "2ef8d37e"
+ }
+]

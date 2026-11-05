@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "B", "overall": "B", "reason": "Both drafts let a first-time reader install, start, and query portlog, but A adds maintainer details (the index name, release-please) that don't belong on a landing page, while B keeps to what a user needs and puts the options in a cleaner table."}

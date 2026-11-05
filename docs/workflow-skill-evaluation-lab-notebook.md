@@ -1205,6 +1205,53 @@ Evidence:
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/quality-report.md`
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-repair-report.md`
 
+### 21. Reader pages writing probe: dry run
+
+Date: 2026-11-04
+
+This study asks whether new writing guidance makes agents write reader pages
+that a first-time reader understands better, with no loss of facts. The
+guidance is a technical-writing `reader-pages.md` reference, its pointer, the
+technical-prose edits, and matching host-config and cli-tool-template lines. It
+comes from a writing audit of Filip's project pages.
+
+The probe runs outside PluginBench. It hands each builder its arm's guidance as
+one randomly named file, so it measures what the guidance says, not whether a
+host routes to it. `pnpm eval:routing` covers routing separately.
+
+Arms are vanilla (no guidance), base (`origin/main`), and head (the guidance
+commit). Briefs are four fictional subjects, so the head examples cannot leak
+answers. The decision rule was fixed before any build: no harm to fact recall
+or invented facts, an objective gain on at least 2 of 5 reader measures on 3 of
+4 briefs, and a judge majority for head on 3 of 4 briefs, against base and
+against vanilla.
+
+The dry run used 1 attempt per arm on one brief, a tool landing page: 3 builds,
+3 extractor calls, 3 comprehension calls, and 6 judge calls. All 15 returned
+usable output with no retries. Each builder trace shows one read: its own arm
+file.
+
+The pipeline works. The single brief gives no verdict, but it gives one strong
+diagnostic. The head build kept all four agent-only facts in a "Good to know"
+section. Base kept two and vanilla one. All six judges preferred the other arm
+over head, and every judge's reason named those internals. Fact recall,
+invented facts, the opening job statement, and comprehension were equal across
+arms.
+
+Hypothesis, untested: the reader-pages check that every source fact stays on
+the page works against its own rule to write for the reader. The paid run
+should either test the current head text as preregistered, or revise that rule
+first and rerun this dry run.
+
+The paid run needs 312 calls and Filip's approval.
+
+Evidence:
+
+- `docs/evidence/reader-pages-probe/prereg.md`
+- `docs/evidence/reader-pages-probe/dry-run-report.md`
+- `docs/evidence/reader-pages-probe/dry-run/`
+- `docs/evidence/reader-pages-probe/scorer/`
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1324,6 +1371,7 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Rollback | Initial v2 bundle | Restored | The control failed its indeterminate-result gate, so the micro-skill did not run. | Digest `sha256:60655c...` |
 | 2026-09-03 | Micro engineering loop v2.3 | Eight-step production-owner and test loop | 5 of 5 repairs; 3 of 3 preservation | It matched saturated correctness, reduced repair resources, and passed preservation within the fixed ceilings. | `20260903T153142Z-*`; `20260903T155846Z-*` |
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
+| 2026-11-04 | Reader pages probe dry run | Reader pages guidance, 1 attempt per arm on one brief | Pipeline worked; head lost 0 of 6 judge votes and leaked 4 agent-only facts | No verdict at n=1. Untested hypothesis: a keep-every-fact check works against the write-for-the-reader rule. | `reader-pages-probe/` |
 
 ## Validity threats
 
@@ -1420,6 +1468,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Micro v2.3 preservation run | `pluginbench/runs/20260903-workflow-v2-3-micro-loop-preservation/20260903T155846Z-workflow-pytest-preservation-control` |
 | Successful-patch quality evaluator | `pluginbench/src/pluginbench/quality.py`; `pluginbench quality` |
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
+| Reader pages probe preregistration, dry run, and scorer | `docs/evidence/reader-pages-probe/` |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `/Users/filip.gutica/.t3/worktrees/filip-stack/t3code-7ed6efb0/plugins/workflow/skills` |
 

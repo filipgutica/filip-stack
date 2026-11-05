@@ -1,0 +1,1 @@
+{"reader": "SAME", "careful": "B", "overall": "B", "reason": "Both drafts let a first-time reader install, start, query, and free a port, but A labels flags as \"Keys\" and fills \"Good to know\" with maintainer internals (WAL busy timeout, index name, release-please), while B keeps only what users of the tool need."}

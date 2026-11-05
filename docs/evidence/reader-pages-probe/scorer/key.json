@@ -1,0 +1,53 @@
+{
+ "B1": {
+  "facts": {
+   "1": "records which process held each local TCP port over time",
+   "2": "answers what was on a port earlier, after the process has exited",
+   "3": "install with brew install example/tap/portlog",
+   "4": "portlog start runs a background recorder; portlog stop stops it",
+   "5": "portlog who 3000 lists every process that held port 3000, newest first",
+   "6": "--since 2h limits who to the last two hours",
+   "7": "portlog free 3000 stops the current holder after confirmation; -y skips it",
+   "8": "history kept 7 days in ~/.portlog/",
+   "9": "macOS and Linux; Go; MIT",
+   "10": "never records command-line arguments, because they can hold secrets"
+  },
+  "agentOnly": {
+   "11": "polls lsof every 2 s on macOS; reads /proc/net/tcp on Linux",
+   "12": "SQLite store in WAL mode, 500 ms busy timeout",
+   "13": "release-please; fix: makes a patch",
+   "14": "who query uses index idx_port_time"
+  },
+  "questions": {
+   "a": "What does portlog do?",
+   "b": "What do you run first after installing it?",
+   "c": "Can it show a process that already exited?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it records or keeps a history of which process held each local port",
+    "all": [
+     "port"
+    ],
+    "any": [
+     "record",
+     "history",
+     "held",
+     "log",
+     "track"
+    ]
+   },
+   "b": {
+    "pass": "names portlog start",
+    "all": [
+     "portlog start"
+    ],
+    "any": []
+   },
+   "c": {
+    "pass": "says yes",
+    "prefix": "yes"
+   }
+  }
+ }
+}
