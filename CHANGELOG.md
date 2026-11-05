@@ -1,3 +1,10 @@
+# [3.20.0](https://github.com/filipgutica/filip-stack/compare/v3.19.0...v3.20.0) (2026-11-05)
+
+
+### Features
+
+* **design-language:** lighten the Graphite Indigo light background ([310d314](https://github.com/filipgutica/filip-stack/commit/310d3148d4c5ac2dd6ad336cab83c6688e4e6d5e)), closes [#f4f5f8](https://github.com/filipgutica/filip-stack/issues/f4f5f8) [#f8f9fb](https://github.com/filipgutica/filip-stack/issues/f8f9fb)
+
 # [3.19.0](https://github.com/filipgutica/filip-stack/compare/v3.18.0...v3.19.0) (2026-11-04)
 
 
