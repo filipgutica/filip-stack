@@ -39,9 +39,8 @@ each pillar from 0 to 3:
 | 2 | Runnable, and the pillar's audit check passes |
 | 3 | Enforced and measured: it blocks the action it guards, such as a merge, and its results are tracked over at least 20 runs or 30 days |
 
-A pillar that does not apply is marked N/A with a reason and left out of the
-total. A check the audit could not run cannot raise a score, and it is listed
-as unverified.
+The [skill's instructions](https://github.com/filipgutica/filip-stack/blob/main/skills/agent-ready-environments/SKILL.md)
+cover pillars that do not apply and checks the audit could not run.
 
 The skill also sorts guidance into two kinds. Advisory guidance, such as an
 `AGENTS.md` line, is something the model may decide does not apply. Enforced

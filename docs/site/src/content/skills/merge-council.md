@@ -26,7 +26,7 @@ agents; if it cannot, the council cannot run there.
 
 ## How it works
 
-Each reviewer reads the whole PR and digs deeper into one area:
+Each reviewer is responsible for the whole PR and digs deeper into one area:
 
 | Reviewer | Digs into |
 | --- | --- |

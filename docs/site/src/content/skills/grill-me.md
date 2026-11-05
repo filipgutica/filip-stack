@@ -27,12 +27,12 @@ or tickets as the result, use [planning](../planning/).
 The agent reads the proposal and its sources first. It looks up facts in the
 code, tests, and docs itself instead of asking you for them.
 
-Each question follows the same shape:
+Each question comes with a recommended answer and why it matters. An illustrative example:
 
 ```text
-Question: <one focused question>
-Recommended answer: <the answer and any assumption>
-Why it matters: <the decision or risk>
+Question: Should the export run on a schedule, or only when someone asks for it?
+Recommended answer: Only on request. Nothing in the proposal needs daily data (assumption).
+Why it matters: A schedule needs a job runner and alerts that the proposal does not cover.
 ```
 
 An answer without evidence behind it is labeled as an assumption. The agent

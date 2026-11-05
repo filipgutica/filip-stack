@@ -16,7 +16,7 @@ items from an earlier merge council.
 ## When to use it
 
 - You have a local change or an existing PR and want it finished.
-- You can merge the PR and want it merged once every check passes.
+- You can merge the PR and want it merged once its required checks pass.
 - You want a verdict on whether a PR is ready for human review.
 
 Install it together with [sol-loop](../sol-loop/) and
@@ -34,12 +34,13 @@ verdict. It checks both again before it finishes:
 | --- | --- | --- |
 | Fix | You wrote the PR, or it does not exist yet, and you can push to it | Commit and push fixes to the PR's branch |
 | Review only | Someone else's PR, or one you cannot push to | Report findings, without pushing |
-| Merge | Fix mode, you can push to the base repository, and no review still blocks the PR | Merge when every check passes |
+| Merge | Fix mode, you can push to the base repository, and no review still blocks the PR | Merge when required checks pass |
 | Verdict | Every case where merge mode does not apply | Finish with `PASS` or `FAIL`, without merging |
 
 Every change needs proof the agent saw itself: a reproduction that fails and
 then passes, the repository's CI checks, or, for UI and runtime behavior, the
-running app. Passing mocked tests alone do not count.
+running app, because passing mocked tests alone do not show what the user
+sees.
 
 The agent fixes routine findings itself. A fix that changes a public contract,
 data or a migration, security, or a dependency, or that removes a test without
