@@ -5,7 +5,7 @@
 /* Layout: one centered column. A runs table on top picks the run; its detail fills the full width below. */
 :root {
   color-scheme: light;
-  --bg: #f4f5f8;
+  --bg: #f8f9fb;
   --surface: #e7e8ec;
   --surface-raised: #ffffff;
   --row-hover: #dfe1e7;
@@ -123,7 +123,7 @@ a:hover { text-decoration: underline; }
   padding-right: max(var(--space-6), env(safe-area-inset-right, 0px));
   gap: var(--space-8);
 }
-.page-head { gap: var(--space-2); }
+.page-head { gap: var(--space-3); }
 .page-head h1 { font-size: var(--text-2xl); }
 .page-head p { color: var(--text-muted); max-width: var(--measure); }
 .path { font-family: var(--font-mono); font-size: var(--text-sm); white-space: nowrap; }
@@ -147,6 +147,9 @@ td.n, th.n { text-align: right; white-space: nowrap; }
 .runs-table tbody tr[aria-current="true"] .run-title { font-weight: var(--weight-medium); }
 .runs-table .run-title { color: var(--text); min-width: 220px; display: inline-block; }
 .runs-table .sub { display: flex; flex-wrap: wrap; gap: 0 var(--space-3); font-size: var(--text-xs); color: var(--text-muted); }
+.runs-table td.summary { min-width: 280px; max-width: 52ch; }
+.runs-table td.summary > div { display: grid; gap: var(--space-1); }
+.runs-table .attention { color: var(--warning); }
 
 .run-head { gap: var(--space-3); border-top: 1px solid var(--border-subtle); }
 .run-head h2 { font-size: var(--text-2xl); padding-top: var(--space-6); }
@@ -220,6 +223,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 .diff .hunk { color: var(--text-muted); }
 .diff .meta { color: var(--text-muted); }
 
+.notes.attention { color: var(--warning); }
 .notes { padding-left: var(--space-5); display: grid; gap: var(--space-1); max-width: var(--measure); color: var(--text-muted); }
 .state { color: var(--text-muted); padding: var(--space-4); }
 
@@ -230,16 +234,26 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
   .prow .rv { grid-column: 2; text-align: left; }
   .criteria { grid-template-columns: minmax(0, 1fr); gap: 0; }
   .criteria dd { margin-bottom: var(--space-2); }
+  /* On phones each run becomes a stacked block, so the verdict is never scrolled off screen. */
+  .runs-table, .runs-table tbody, .runs-table tr, .runs-table td { display: block; }
+  .runs-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+  .runs-table tr { padding: var(--space-3) 0; border-bottom: 1px solid var(--border-subtle); }
+  .runs-table tr:last-child { border-bottom: 0; }
+  .runs-table td { border: 0; padding: var(--space-1) var(--space-3); text-align: left; }
+  .runs-table td.summary { min-width: 0; max-width: none; }
+  .runs-table td[data-label]::before { content: attr(data-label) ": "; color: var(--text-muted); }
+  .runs-table .run-title { min-width: 0; }
 }
 </style>
 
 <div class="shell">
   <header class="page-head">
     <h1>Hill Climb Runs</h1>
-    <p>Each climb's criteria, rounds, judge votes, and what changed. Records live in <span class="path">~/.hill-climb/runs/</span>; this page shows a published copy.</p>
+    <p>A hill climb polishes a pull request that already works. Each round makes a few small edits, and three AI judges compare the result with the version before it without knowing which is new. The edits stay only when most judges prefer them.</p>
+    <p>When the climb ends, the judges compare the pull request as it was before the climb with the final version. That last vote is the verdict below. Select a run to see each round, the votes, and the diff.</p>
   </header>
   <section aria-labelledby="runs-heading">
-    <h3 id="runs-heading">All runs</h3>
+    <h3 id="runs-heading">Climbs, newest first</h3>
     <div class="table-wrap" id="runs"><p class="state">Loading runs…</p></div>
   </section>
   <main class="detail" id="detail"></main>
@@ -281,22 +295,28 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 
   const go = (id) => { if (location.hash.slice(1) !== id) location.hash = id; };
 
+  // The verdict is the start-vs-final vote: did the whole climb make the pull request better?
+  const verdictCell = (run) => {
+    if (!run.final) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
+    const f = run.final;
+    const total = f.final + f.same + f.start;
+    const [cls, word] = f.final > total / 2 ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
+    return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version` })];
+  };
+
   const renderRuns = (activeId) => {
     const head = el('tr', {},
-      el('th', { text: 'Run' }), el('th', { text: 'Date' }), el('th', { class: 'n', text: 'Rounds' }),
-      el('th', { class: 'n', text: 'Accepted' }), el('th', { class: 'n', text: 'Rejected or void' }),
-      el('th', { class: 'n', text: 'Climb size' }), el('th', { text: 'Start vs final' }), el('th', { text: 'Stopped because' }));
+      el('th', { text: 'Pull request' }), el('th', { text: 'What the climb changed' }),
+      el('th', { class: 'n', text: 'Rounds kept' }), el('th', { text: 'Verdict' }));
     const rows = index.map((run) => {
       const tr = el('tr', { 'aria-current': run.id === activeId ? 'true' : null },
         el('td', {}, el('a', { class: 'run-title', href: `#${run.id}`, text: run.title }),
-          el('span', { class: 'sub' }, el('span', { text: `${run.target.repo}${run.target.pr ? ` #${run.target.pr}` : ''}` }), el('span', { text: run.target.branch }))),
-        el('td', { class: 'num', style: 'white-space: nowrap', text: run.date }),
-        el('td', { class: 'n', text: String(run.rounds) }),
-        el('td', { class: 'n', text: String(run.accepted) }),
-        el('td', { class: 'n', text: String(run.rejected + (run.void || 0)) }),
-        el('td', { class: 'n', text: `${run.climbChangedLines} lines` }),
-        el('td', {}, run.final ? el('span', { class: `verdict ${run.final.final > run.final.start ? 'v-final' : run.final.start > run.final.final ? 'v-start' : 'v-same'}`, text: `${run.final.final > run.final.start ? 'Final' : run.final.start > run.final.final ? 'Start' : 'Even'} ${score(run.final, 'final', 'start')}` }) : el('span', { class: 'muted', text: 'Not run' })),
-        el('td', { class: 'muted', text: run.stop }));
+          el('span', { class: 'sub' }, el('span', { text: `${run.target.repo}${run.target.pr ? ` #${run.target.pr}` : ''}` }), el('span', { text: run.date }))),
+        el('td', { class: 'summary' }, el('div', {}, el('span', {}, rich(run.summary ?? '')),
+          (run.attention ?? []).map((a) => el('span', { class: 'attention' }, el('strong', { text: 'Check: ' }), rich(a))),
+          el('span', { class: 'sub', text: `${run.climbChangedLines} lines changed` }))),
+        el('td', { class: 'n', 'data-label': 'Rounds kept' }, `${run.accepted} of ${run.rounds}`),
+        el('td', { 'data-label': 'Verdict' }, verdictCell(run)));
       tr.addEventListener('click', (event) => { if (!event.target.closest('a')) go(run.id); });
       return tr;
     });
@@ -376,6 +396,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
   }));
 
   const renderRun = (run) => {
+    // The index holds the full list: the operator's notes plus the checks the builder derives.
+    const check = index.find((r) => r.id === run.id)?.attention ?? [];
     const accepted = run.rounds.filter((r) => r.decision === 'accepted').length;
     const rejected = run.rounds.filter((r) => r.decision === 'rejected').length;
     const voided = run.rounds.filter((r) => r.decision === 'void').length;
@@ -387,7 +409,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
           run.target.prUrl ? el('a', { href: run.target.prUrl, target: '_blank', rel: 'noopener' }, `${run.target.repo}#${run.target.pr}`) : el('span', { text: run.target.repo }),
           el('span', {}, 'head ', el('code', { text: run.target.head })),
           el('span', {}, el('code', { text: run.target.branch }))),
-        el('p', { class: 'goal' }, rich(run.goal))),
+        el('p', { class: 'goal' }, rich(run.goal)),
+        check.length ? el('ul', { class: 'notes attention' }, check.map((a) => el('li', {}, el('strong', { text: 'Check: ' }), rich(a)))) : null),
       el('dl', { class: 'totals' },
         el('div', {}, el('dt', { text: 'Rounds' }), el('dd', { class: 'num' }, `${run.rounds.length} of ${run.budget.rounds}`)),
         el('div', {}, el('dt', { text: 'Accepted' }), el('dd', { class: 'num' }, String(accepted), el('small', { text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` }))),
@@ -398,8 +421,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
       el('section', {}, el('h3', { text: 'Criteria' }),
         el('dl', { class: 'criteria' }, run.criteria.map((c) => [el('dt', { text: `${c.id} ${c.name}` }), el('dd', {}, rich(c.description))]))),
       el('section', {}, el('h3', { text: 'Rounds' }), run.rounds.map((r) => roundSection(run, r))),
-      run.final ? el('section', {}, el('h3', { text: 'Start vs final' }),
-        el('p', { class: 'muted', text: 'One judge pass after the climb, comparing the starting version with the final one.' }),
+      run.final ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
+        el('p', { class: 'muted', text: 'After the last round, each judge compared the pull request as it was before the climb with the final version, without knowing which was which.' }),
         voteTable(run, run.final.votes),
         run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null) : null,
       el('section', {}, el('h3', { text: 'Result' }),

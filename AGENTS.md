@@ -29,6 +29,15 @@ A standalone skill may require other standalone skills by name, as `full-send` r
 - Removed or renamed skills get no compatibility aliases. A change to an invocation name is a major release.
 - Static contracts do not prove model behavior. Measure that with PluginBench.
 
+## Site pages
+
+- The site in `docs/site/` is written for people choosing or learning a skill.
+- Explain what the skill is for and how to start.
+- Do not copy `SKILL.md` steps. Link the `SKILL.md` for the exact contract.
+- The README skill table row is the page's lede. Keep it to one line about what the skill is for.
+- Do not repeat the lede in "What it does".
+- When a skill's behavior changes, update its page in the same PR.
+
 ## Evaluation
 
 PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Ship a behavior change to Workflow guidance only after an evaluation supports it. For a change to activation text only, meaning skill descriptions and the pointers that choose a reference, a `pnpm eval:routing` run with no regressions is that evaluation; put its table in the PR. Changes to what a skill does need PluginBench.

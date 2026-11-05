@@ -1,3 +1,29 @@
+# [3.21.0](https://github.com/filipgutica/filip-stack/compare/v3.20.1...v3.21.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **hill-climb:** name the text files in the bundle and judge brief ([9a1a8b2](https://github.com/filipgutica/filip-stack/commit/9a1a8b24a12033147f0d5579a8d1cdb49a0d04f9))
+
+
+### Features
+
+* **hill-climb:** make the runs page readable and check claims before judging ([3c4173f](https://github.com/filipgutica/filip-stack/commit/3c4173fba266edb5476e2adb0aafe646595cfc61))
+
+## [3.20.1](https://github.com/filipgutica/filip-stack/compare/v3.20.0...v3.20.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **site:** derive standalone skill count from catalog ([a1988eb](https://github.com/filipgutica/filip-stack/commit/a1988ebba6a974baee762034a08180f803bc7b65))
+
+# [3.20.0](https://github.com/filipgutica/filip-stack/compare/v3.19.0...v3.20.0) (2026-11-05)
+
+
+### Features
+
+* **design-language:** lighten the Graphite Indigo light background ([310d314](https://github.com/filipgutica/filip-stack/commit/310d3148d4c5ac2dd6ad336cab83c6688e4e6d5e)), closes [#f4f5f8](https://github.com/filipgutica/filip-stack/issues/f4f5f8) [#f8f9fb](https://github.com/filipgutica/filip-stack/issues/f8f9fb)
+
 # [3.19.0](https://github.com/filipgutica/filip-stack/compare/v3.18.0...v3.19.0) (2026-11-04)
 
 

@@ -65,7 +65,9 @@ Build the card and freeze it before round 1:
   accessibility checker command if it has one. Record whether screenshots
   come from the repository's tools or the host's browser tools.
 - **Evidence:** for code, each version's diff from the base. For UI,
-  screenshots of each route and state, plus each version's diff. Take every
+  screenshots of each route and state, plus each version's diff. For
+  reader-facing text, each version's text in reading order, with its code
+  blocks and captions, plus each version's diff. Take every
   screenshot from a fresh page load: going to a URL that differs only in its
   hash does not reload the page.
 - **Not covered:** what the gates and evidence do not prove. For example,
@@ -90,7 +92,8 @@ Stop before round 1 and report the item that blocks when:
   you launch with fewer members than its lineup.
 
 Make a work directory outside the repository, `$TMPDIR/hill-climb/<random>/`.
-Judges never see it:
+Keep its path in this thread only: other climbs may share `$TMPDIR`, so never
+write the path to a fixed-name file. Judges never see the directory:
 
 - `start/`: a frozen copy of the scoped files, for the size limit.
 - `now/`: the current scoped files, recreated empty before each measurement.
@@ -157,9 +160,12 @@ Run each round in order:
    restore, mark those proposals declined for size, list them as follow-ups,
    and select again without them. A test the round adds must fail on the
    incumbent and pass on the candidate; check both before you judge.
-6. **Gate.** Run every gate on the candidate. On a failure, restore, record
-   the round as rejected, and mark its proposals declined. End the round
-   there: skip Judge and Decide, and apply the stop rules.
+6. **Gate.** Run every gate on the candidate. Judges see only the bundle, so
+   they cannot tell a true claim from a false one: when the candidate changes
+   reader-facing text, check each changed claim against the code or source it
+   describes, and treat a false claim as a failed gate. On a failure,
+   restore, record the round as rejected, and mark its proposals declined.
+   End the round there: skip Judge and Decide, and apply the stop rules.
 7. **Judge.** Build one bundle per judge and send each the judge brief.
 8. **Decide.** Apply the decision rules.
 
@@ -178,6 +184,8 @@ Choose the A/B order at random for each judge and record it only in
 - UI: `A/` and `B/` with the same screenshot names for each route, state,
   width, and theme, holding only the screenshots that differ, plus `A.diff`
   and `B.diff` as for code. Tell the judge when no screenshot differs.
+- Reader-facing text: `A.txt` and `B.txt`, each version's full text in
+  reading order, plus `A.diff` and `B.diff` as for code.
 
 ### Decide
 
@@ -222,6 +230,7 @@ Use only the files in <bundle path>. Do not read the working tree or the reposit
 A and B are two versions of the same change.
 <Code: A.diff and B.diff are each version's diff from the same base.>
 <UI: A/ and B/ hold the screenshots that differ, with matching names; A.diff and B.diff are each version's diff from the same base.>
+<Text: A.txt and B.txt are each version's full text in reading order; A.diff and B.diff are each version's diff from the same base.>
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
