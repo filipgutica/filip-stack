@@ -1,4 +1,5 @@
 import test from 'node:test'
+import vm from 'node:vm'
 import assert from 'node:assert/strict'
 import { validateSnapshot, formatPercent, renderReport } from '../../host-config/design-language/visualizations/build-count-report.mjs'
 
@@ -43,7 +44,8 @@ test('the generated initial state has reconciled counts, provenance and safe emb
   const initial = html.split('<script>')[0]
   assert.match(initial, /data-summary="" data-count="100"/)
   assert.match(initial, /7 <span class="ov-percent">\(7.00%\)<\/span>/)
-  assert.match(initial, /All-region aggregate cross-check matched/)
+  assert.match(initial, /Independent aggregate cross-check matched/)
+  assert.match(initial, /<label for="ov-region">Group<\/label>/)
   assert.match(initial, /id="ov-mobile"/)
   assert.equal((initial.match(/data-category="408" data-count="7"/g) || []).length, 2)
   assert.match(initial, /&lt;private query&gt;/)
@@ -64,4 +66,13 @@ test('standalone mode requires tokens; missing aggregate evidence and empty resu
   assert.match(empty, /No independent aggregate supplied/)
   value.source.url = 'javascript:alert(1)'
   assert.throws(() => validateSnapshot(value), /HTTP\(S\)/)
+})
+
+test('the inline script keeps a __proto__ category as data', async () => {
+  const value = JSON.parse(JSON.stringify(sample()).replaceAll('"other"', '"__proto__"'))
+  const html = await renderReport(value)
+  const expression = html.match(/const snapshot=(JSON\.parse\(".*?"\)),root=/)[1]
+  const embedded = vm.runInNewContext(expression)
+  assert.ok(Object.hasOwn(embedded.windows[0].rows[0].counts, '__proto__'))
+  assert.equal(embedded.windows[0].rows[0].counts.__proto__, 2)
 })
