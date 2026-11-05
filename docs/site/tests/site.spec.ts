@@ -187,8 +187,8 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/filip-stack/");
-  const trigger = page.getByRole("button", { name: "Menu", exact: true });
-  const drawer = page.getByRole("dialog", { name: "Navigation" });
+  const trigger = page.getByRole("button", { name: "Documentation", exact: true });
+  const drawer = page.getByRole("dialog", { name: "Documentation" });
   await trigger.click();
   await expect(drawer).toBeVisible();
   await expect(drawer.getByRole("link")).toHaveCount(routes.length);
@@ -200,7 +200,7 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
   await expect(page).toHaveURL("/filip-stack/skills/engineering/");
   await expect(drawer).toBeHidden();
   await expect(page.locator("main h1")).toHaveText("engineering");
-  await page.getByRole("button", { name: "Menu", exact: true }).click();
+  await page.getByRole("button", { name: "Documentation", exact: true }).click();
   await expect(drawer.locator('[aria-current="page"]')).toHaveText(
     "engineering",
   );
