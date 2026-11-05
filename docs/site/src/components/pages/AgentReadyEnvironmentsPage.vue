@@ -119,11 +119,12 @@ onMounted(() => {
   <section class="intro" aria-labelledby="agent-ready-environments">
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
-      A coding agent stops when its work looks done. If your repository cannot
-      show it the difference, you find the problems in review, and you become
-      its test suite. This lesson shows how to set up a repository so that
-      looking done and being done are the same thing, and how to check whether
-      yours is there yet.
+      An agent-ready environment is a repository set up so that a coding agent
+      can check its own work. Without one, the agent stops when its work looks
+      done, you find the problems in review, and you become its test suite.
+      This lesson shows how to set up a repository so that looking done and
+      being done are the same thing, and how to check whether yours is there
+      yet.
     </p>
     <p>
       To start now, go to <a href="#where-to-start">Where to start</a>. It has
@@ -557,8 +558,8 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        This is the most durable pillar. No model can observe an app it cannot
-        start, or inspect states the data does not contain. A worktree is a
+        No model can observe an app it cannot start, or inspect states the
+        data does not contain. A worktree is a
         fresh checkout with no installed dependencies. Installing them by trial
         and error is slow, and it can fail outright. A failed setup step may
         not even stop the agent.
@@ -648,11 +649,11 @@ onMounted(() => {
     <div class="prose">
       <p>
         An audit tells you which pillars are weak and what to fix first. The
-        companion skill picks the modes that apply, collects the evidence, scores each
-        pillar, and writes the report described below.
+        companion skill collects the evidence, scores each pillar, and writes
+        the report described below.
       </p>
       <p>
-        An audit has three modes. Pick every mode that applies. The
+        An audit has three modes, and it uses every mode that applies. The
         new-project mode is the list under
         <a href="#where-to-start">Where to start</a>. A repository that ships
         guidance, such as Filip Stack, needs both the existing-repository and the
