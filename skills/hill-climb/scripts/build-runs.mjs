@@ -2,8 +2,8 @@
 // Rebuilds hill-climb run reports from saved run records.
 // Usage: node build-runs.mjs [runs-dir] [--page <dir>]
 // For each <runs-dir>/<id>/run.json, writes <runs-dir>/<id>/report.md, then writes
-// <runs-dir>/index.json. With --page, also copies index.json, each run.json, and
-// assets/runs-page.html (as index.html) into <dir> for publishing.
+// <runs-dir>/index.json. With --page, also writes index.json and each run.json, and copies
+// assets/runs-page.html (as index.html), into <dir> for publishing.
 
 import { copyFileSync, existsSync, mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -14,7 +14,7 @@ const args = process.argv.slice(2)
 const pageFlag = args.indexOf('--page')
 const pageDir = pageFlag >= 0 ? args[pageFlag + 1] : null
 if (pageFlag >= 0 && !pageDir) throw new Error('--page needs a directory')
-const positional = args.filter((_, i) => i !== pageFlag && i !== pageFlag + 1)
+const positional = pageFlag >= 0 ? args.filter((_, i) => i !== pageFlag && i !== pageFlag + 1) : args
 const runsDir = positional[0] ?? join(homedir(), '.hill-climb', 'runs')
 const skillDir = join(dirname(fileURLToPath(import.meta.url)), '..')
 
@@ -93,6 +93,8 @@ if (!existsSync(runsDir)) throw new Error(`No runs directory at ${runsDir}`)
 const runs = readdirSync(runsDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory() && existsSync(join(runsDir, entry.name, 'run.json')))
   .map((entry) => JSON.parse(readFileSync(join(runsDir, entry.name, 'run.json'), 'utf8')))
+// A round that failed a gate has no judge votes; older records leave the field out.
+for (const run of runs) for (const round of run.rounds) round.votes ??= []
 
 const index = runs.map((run) => {
   writeFileSync(join(runsDir, run.id, 'report.md'), report(run))
@@ -121,9 +123,9 @@ if (pageDir) {
   mkdirSync(join(pageDir, 'runs'), { recursive: true })
   copyFileSync(join(skillDir, 'assets', 'runs-page.html'), join(pageDir, 'index.html'))
   writeFileSync(join(pageDir, 'runs', 'index.json'), indexJson)
-  for (const run of index) {
+  for (const run of runs) {
     mkdirSync(join(pageDir, 'runs', run.id), { recursive: true })
-    copyFileSync(join(runsDir, run.id, 'run.json'), join(pageDir, 'runs', run.id, 'run.json'))
+    writeFileSync(join(pageDir, 'runs', run.id, 'run.json'), `${JSON.stringify(run, null, 2)}\n`)
   }
 }
 

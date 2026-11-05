@@ -87,9 +87,13 @@ Stop before round 1 and report the item that blocks when:
 - A scoped path has staged changes: `git diff --cached --name-only -- <scope>`.
 - A required gate or evidence item cannot run, such as a missing tool, route,
   or fixture. A block never counts as a pass.
-- A gate fails on the incumbent.
+- A gate fails on the incumbent. For reader-facing text, this includes a
+  false claim, checked against its source as Gate describes.
 - Fewer than two council members can run. Follow `council` and ask before
   you launch with fewer members than its lineup.
+
+Finish the baseline before you send any propose brief, so a blocked climb
+spends no member calls.
 
 Make a work directory outside the repository, `$TMPDIR/hill-climb/<random>/`.
 Keep its path in this thread only: other climbs may share `$TMPDIR`, so never
@@ -163,9 +167,13 @@ Run each round in order:
 6. **Gate.** Run every gate on the candidate. Judges see only the bundle, so
    they cannot tell a true claim from a false one: when the candidate changes
    reader-facing text, check each changed claim against the code or source it
-   describes, and treat a false claim as a failed gate. On a failure,
-   restore, record the round as rejected, and mark its proposals declined.
-   End the round there: skip Judge and Decide, and apply the stop rules.
+   describes, and treat a false claim as a failed gate. When only that
+   claim check fails, repair once: correct each false claim from its source,
+   or undo only the edit that made it and mark that proposal declined. Record
+   the repair in `ledger.md`, measure as in Apply, and run every gate again.
+   On any other failure, or a second failure, restore, record the round as
+   rejected, and mark its proposals declined. End the round there: skip
+   Judge and Decide, and apply the stop rules.
 7. **Judge.** Build one bundle per judge and send each the judge brief.
 8. **Decide.** Apply the decision rules.
 
