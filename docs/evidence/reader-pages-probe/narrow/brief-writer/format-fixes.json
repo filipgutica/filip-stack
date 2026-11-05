@@ -1,0 +1,24 @@
+{
+ "subjects": {
+  "N1": "Tool landing page: `sackview`, a ZIP archive inspector",
+  "N2": "Skill page: `term-weave`, a glossary drafting skill",
+  "N3": "Lesson opening: stable room identity in the fictional Kestrel directory"
+ },
+ "format_fixes": [
+  {
+   "brief": "N1",
+   "fix": "wrapped [agent-only] tags in backticks so the scorer strips them from build prompts",
+   "count": 4
+  },
+  {
+   "brief": "N2",
+   "fix": "wrapped [agent-only] tags in backticks so the scorer strips them from build prompts",
+   "count": 4
+  },
+  {
+   "brief": "N3",
+   "fix": "wrapped [agent-only] tags in backticks so the scorer strips them from build prompts",
+   "count": 2
+  }
+ ]
+}

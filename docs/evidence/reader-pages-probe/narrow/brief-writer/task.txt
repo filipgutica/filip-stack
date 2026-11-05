@@ -1,0 +1,269 @@
+You are writing three new evaluation briefs for a writing study. You have read this file; do not read, open, or search any other file, do not run commands beyond that one read, do not browse, and do not edit anything. Use only the text in this file.
+
+Below is the Briefs section of the study's pre-registration, with three existing briefs (B1, B2, B4) as format examples. After it is the scoring key for those three briefs, in the JSON format the scorer reads.
+
+Write three new briefs:
+
+- N1: a tool landing page. Use this brief sentence with only the tool name changed: "Write the landing page copy for `<tool>`, following the tool page section order."
+- N2: a skill page. Use this brief sentence with only the skill name changed: "Write the docs-site page for the `<skill>` skill with the sections What it does, When to use it, How it works, and What you get."
+- N3: a guide or lesson opening. Use this brief sentence with only the title changed: "Write the first two sections, about 350 words, of a lesson for engineers titled '<title>'."
+
+Rules:
+
+1. Each subject is fictional and new. Do not reuse the subjects, facts, commands, or topics of B1, B2, or B4 (port history, release notes from PRs, flaky tests), and do not use devps, hill climb, or dev-server tools.
+2. Match the examples in size and kind: N1 and N2 about 14 numbered facts with about 4 tagged `[agent-only]`; N3 about 8 facts with 2 tagged `[agent-only]`. An `[agent-only]` fact is true but belongs on a maintainer or agent page, not a reader page: internals, file paths, exit codes, release mechanics, scoring rubrics. N2's facts are written in the style of contract text, as B2's are.
+3. Each brief has three comprehension questions that a first-time reader of a good page could answer from the reader facts alone, not from the `[agent-only]` facts.
+4. The key grades answers by lowercase substring match: `all` lists words that must all appear, `any` lists words of which at least one must appear (empty means no requirement), and `prefix` grades an answer that must start with that word (use it for Yes/No questions). `pass` says in words what a correct answer says. Give enough synonyms in `any` that a correct answer in other words still passes.
+5. `start` is a regular expression that matches the first install step, command, or invocation on the page, in the style of B1 and B2. Use null when the page type has no command to find, as B4 does.
+6. `facts` holds the reader facts and `agentOnly` the tagged facts, each keyed by its fact number as a string, with a short paraphrase as value. Together they are the M1 checklist.
+
+Reply with only one JSON object, no other text:
+{"N1": {"subject": "<one line>", "brief": "<the brief sentence>", "factsheet": "Fact sheet:\n\n1. ...", "key": {"facts": {}, "agentOnly": {}, "questions": {"a": "", "b": "", "c": ""}, "answerKey": {"a": {"pass": "", "all": [], "any": []}}, "start": null}}, "N2": {...}, "N3": {...}}
+
+<<<BRIEFS SECTION
+## Briefs
+
+The subjects are fictional, so the head guidance's examples (devps, hill-climb, the lesson) cannot leak answers.
+Each fact sheet tags some facts `[agent-only]`. These are true, but a reader page should link them or leave them out. They make leakage measurable.
+
+### B1. Tool landing page: `portlog`
+
+Brief: "Write the landing page copy for `portlog`, following the tool page section order."
+
+Fact sheet:
+
+1. portlog records which process held each local TCP port over time.
+2. It answers "what was on port 3000 an hour ago?" after the process has exited.
+3. Install: `brew install example/tap/portlog`.
+4. `portlog start` runs a background recorder. `portlog stop` stops it.
+5. `portlog who 3000` shows every process that held port 3000, newest first.
+6. `portlog who 3000 --since 2h` limits it to the last two hours.
+7. `portlog free 3000` stops the process that holds port 3000 now, after confirmation. `-y` skips the confirmation.
+8. History is kept for 7 days, in `~/.portlog/`.
+9. Runs on macOS and Linux. Written in Go. MIT license.
+10. It never records command-line arguments, because they can hold secrets.
+11. `[agent-only]` The recorder polls `lsof` every 2 seconds on macOS and reads `/proc/net/tcp` on Linux.
+12. `[agent-only]` The store is SQLite in WAL mode, with a busy timeout of 500 ms.
+13. `[agent-only]` Releases use release-please, and `fix:` makes a patch.
+14. `[agent-only]` The `who` query uses the index `idx_port_time`.
+
+Comprehension questions:
+(a) What does portlog do?
+(b) What do you run first after installing it?
+(c) Can it show a process that already exited?
+
+### B2. Skill page: `release-notes`
+
+Brief: "Write the docs-site page for the `release-notes` skill with the sections What it does, When to use it, How it works, and What you get."
+
+Fact sheet, written in the style of contract text on purpose:
+
+1. Drafts release notes from merged PRs between two tags.
+2. Manual only: `/release-notes <from-tag> <to-tag>`.
+3. Groups PRs by Conventional Commit type: features, fixes, and breaking changes first.
+4. Skips PRs labeled `skip-notes`.
+5. Never publishes. It writes `RELEASE_NOTES.md` in the working tree and stops.
+6. A breaking change needs a migration line. If the PR body has none, the draft marks it `TODO: migration`.
+7. Requires `gh` signed in. It stops if `gh auth status` fails.
+8. Neighbor: `technical-writing` edits prose. `release-notes` gathers the PRs and drafts.
+9. If either tag does not exist, it stops before drafting.
+10. `[agent-only]` Resolve the tags with `git rev-list -n1 <tag>`. The exit reason for a missing tag is `TAG_UNRESOLVED`.
+11. `[agent-only]` Fetch PRs with `gh pr list --state merged --search "merged:<from>..<to>" --json number,title,labels,body --limit 500`.
+12. A PR with labels of more than one type goes in the group that most of its labels name.
+13. `[agent-only]` The grouping counts labels with a strict-majority rule, and the code breaks ties by label order.
+14. `[agent-only]` Keep a private ledger at `$TMPDIR/release-notes/<id>/ledger.md`.
+
+Comprehension questions:
+(a) Will it publish a release?
+(b) How do you run it?
+(c) What happens to a breaking change with no migration note?
+
+### B4. Lesson opening
+
+Brief: "Write the first two sections, about 350 words, of a lesson for engineers titled 'Flaky tests and agents'."
+
+Fact sheet:
+
+1. An agent that sees a red test tries to fix the code, even when the test is flaky.
+2. A flaky test fails sometimes without any code change.
+3. Agents tend to rerun until green, or to weaken the assertion.
+4. Quarantine means moving a known-flaky test out of the required gate while it is fixed, with an owner and a date.
+5. A required gate that sometimes fails teaches agents and people to ignore it.
+6. Measuring flakiness: rerun each test 20 times on the same commit, and count failures.
+7. `[agent-only]` The audit script is `scripts/flake-scan.mjs --runs 20 --json`.
+8. `[agent-only]` This lesson's rubric is the author's own and is not from a vendor.
+
+Comprehension questions:
+(a) What is a flaky test?
+(b) Why does it matter more with agents?
+(c) What does quarantine mean?
+BRIEFS SECTION>>>
+
+<<<SCORING KEY FOR B1, B2, B4
+{
+ "B1": {
+  "facts": {
+   "1": "records which process held each local TCP port over time",
+   "2": "answers what was on a port earlier, after the process has exited",
+   "3": "install with brew install example/tap/portlog",
+   "4": "portlog start runs a background recorder; portlog stop stops it",
+   "5": "portlog who 3000 lists every process that held port 3000, newest first",
+   "6": "--since 2h limits who to the last two hours",
+   "7": "portlog free 3000 stops the current holder after confirmation; -y skips it",
+   "8": "history kept 7 days in ~/.portlog/",
+   "9": "macOS and Linux; Go; MIT",
+   "10": "never records command-line arguments, because they can hold secrets"
+  },
+  "agentOnly": {
+   "11": "polls lsof every 2 s on macOS; reads /proc/net/tcp on Linux",
+   "12": "SQLite store in WAL mode, 500 ms busy timeout",
+   "13": "release-please; fix: makes a patch",
+   "14": "who query uses index idx_port_time"
+  },
+  "questions": {
+   "a": "What does portlog do?",
+   "b": "What do you run first after installing it?",
+   "c": "Can it show a process that already exited?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it records or keeps a history of which process held each local port",
+    "all": [
+     "port"
+    ],
+    "any": [
+     "record",
+     "history",
+     "held",
+     "log",
+     "track"
+    ]
+   },
+   "b": {
+    "pass": "names portlog start",
+    "all": [
+     "portlog start"
+    ],
+    "any": []
+   },
+   "c": {
+    "pass": "says yes",
+    "prefix": "yes"
+   }
+  },
+  "start": "```|`(?:brew|portlog)\\b[^`]*`"
+ },
+ "B2": {
+  "facts": {
+   "1": "drafts release notes from merged PRs between two tags",
+   "2": "manual only: /release-notes <from-tag> <to-tag>",
+   "3": "groups PRs by Conventional Commit type, features, fixes, and breaking changes first",
+   "4": "skips PRs labeled skip-notes",
+   "5": "never publishes; writes RELEASE_NOTES.md in the working tree and stops",
+   "6": "a breaking change with no migration line in the PR body is marked TODO: migration",
+   "7": "requires gh signed in; stops if gh auth status fails",
+   "8": "technical-writing edits prose; release-notes gathers the PRs and drafts",
+   "9": "stops before drafting if either tag does not exist",
+   "12": "a PR with labels of more than one type goes in the group most of its labels name"
+  },
+  "agentOnly": {
+   "10": "resolves tags with git rev-list -n1; missing tag exit reason TAG_UNRESOLVED",
+   "11": "fetches PRs with the exact gh pr list command and --limit 500",
+   "13": "strict-majority label count; ties broken by label order",
+   "14": "private ledger at $TMPDIR/release-notes/<id>/ledger.md"
+  },
+  "questions": {
+   "a": "Will it publish a release?",
+   "b": "How do you run it?",
+   "c": "What happens to a breaking change with no migration note?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says no",
+    "prefix": "no"
+   },
+   "b": {
+    "pass": "names the /release-notes command with two tags",
+    "all": [
+     "release-notes"
+    ],
+    "any": [
+     "tag",
+     "<from"
+    ]
+   },
+   "c": {
+    "pass": "says the draft marks it TODO: migration",
+    "all": [
+     "todo"
+    ],
+    "any": [
+     "migration"
+    ]
+   }
+  },
+  "start": "```|`/release-notes\\b[^`]*`"
+ },
+ "B4": {
+  "facts": {
+   "1": "an agent that sees a red test tries to fix the code, even when the test is flaky",
+   "2": "a flaky test fails sometimes without any code change",
+   "3": "agents tend to rerun until green or weaken the assertion",
+   "4": "quarantine moves a known-flaky test out of the required gate while it is fixed, with an owner and a date",
+   "5": "a required gate that sometimes fails teaches agents and people to ignore it",
+   "6": "measure flakiness by rerunning each test 20 times on the same commit and counting failures"
+  },
+  "agentOnly": {
+   "7": "audit script scripts/flake-scan.mjs --runs 20 --json",
+   "8": "the lesson's rubric is the author's own, not a vendor's"
+  },
+  "questions": {
+   "a": "What is a flaky test?",
+   "b": "Why does it matter more with agents?",
+   "c": "What does quarantine mean?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it fails sometimes without a code change",
+    "all": [
+     "fail"
+    ],
+    "any": [
+     "sometimes",
+     "intermittent",
+     "random",
+     "without any code change",
+     "without a code change",
+     "without code change",
+     "same commit",
+     "same code",
+     "no code change"
+    ]
+   },
+   "b": {
+    "pass": "says agents try to fix the code, rerun, weaken assertions, or learn to ignore the gate",
+    "all": [],
+    "any": [
+     "fix the code",
+     "change the code",
+     "rerun",
+     "re-run",
+     "weaken",
+     "ignore",
+     "assertion"
+    ]
+   },
+   "c": {
+    "pass": "says it moves the test out of the required gate while it is fixed",
+    "all": [],
+    "any": [
+     "gate",
+     "required",
+     "block"
+    ]
+   }
+  },
+  "start": null
+ }
+}
+SCORING KEY FOR B1, B2, B4>>>

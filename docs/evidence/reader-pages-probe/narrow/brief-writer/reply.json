@@ -1,0 +1,177 @@
+{
+  "N1": {
+    "subject": "Tool landing page: `sackview`, a ZIP archive inspector",
+    "brief": "Write the landing page copy for `sackview`, following the tool page section order.",
+    "factsheet": "Fact sheet:\n\n1. sackview shows what is inside a ZIP archive before you unpack it.\n2. Each entry shows its name, compressed size, and unpacked size.\n3. Install: `pipx install sackview`.\n4. `sackview inspect photos.zip` lists the archive's entries.\n5. `sackview inspect photos.zip --largest 10` shows the ten entries with the largest unpacked sizes, largest first.\n6. `sackview inspect photos.zip --find '*.csv'` shows only entries whose names match the pattern.\n7. It displays the total unpacked size so you can check available disk space before extracting elsewhere.\n8. It never extracts entries or changes the archive.\n9. Inspection works offline and sends no archive contents to a service.\n10. It supports ZIP archives only; other archive formats produce an unsupported-format message.\n11. [agent-only] Entry metadata is read through the internal ZipDirectoryReader adapter.\n12. [agent-only] Size totals use unsigned 64-bit accumulators.\n13. [agent-only] Unsupported formats return exit code 24.\n14. [agent-only] The package build copies its command schema from packaging/commands.json.",
+    "key": {
+      "facts": {
+        "1": "shows ZIP archive contents before unpacking",
+        "2": "lists entry names, compressed sizes, and unpacked sizes",
+        "3": "install with pipx install sackview",
+        "4": "sackview inspect photos.zip lists entries",
+        "5": "--largest 10 lists the ten largest entries by unpacked size, largest first",
+        "6": "--find '*.csv' filters entries by a filename pattern",
+        "7": "total unpacked size helps check available disk space",
+        "8": "never extracts entries or changes the archive",
+        "9": "works offline and sends no archive contents to a service",
+        "10": "supports ZIP only and reports other formats as unsupported"
+      },
+      "agentOnly": {
+        "11": "reads metadata through ZipDirectoryReader",
+        "12": "uses unsigned 64-bit size accumulators",
+        "13": "unsupported formats return exit code 24",
+        "14": "build copies the command schema from packaging/commands.json"
+      },
+      "questions": {
+        "a": "What does sackview show you?",
+        "b": "What command lists the entries in photos.zip?",
+        "c": "Does sackview extract files?"
+      },
+      "answerKey": {
+        "a": {
+          "pass": "says it shows the contents or entries of a ZIP archive",
+          "all": [],
+          "any": [
+            "contents",
+            "entries",
+            "inside",
+            "file list",
+            "files in",
+            "filenames",
+            "file names"
+          ]
+        },
+        "b": {
+          "pass": "names sackview inspect photos.zip",
+          "all": [
+            "sackview inspect photos.zip"
+          ],
+          "any": []
+        },
+        "c": {
+          "pass": "says no",
+          "prefix": "no"
+        }
+      },
+      "start": "```|`(?:pipx install sackview|sackview inspect)\\b[^`]*`"
+    }
+  },
+  "N2": {
+    "subject": "Skill page: `term-weave`, a glossary drafting skill",
+    "brief": "Write the docs-site page for the `term-weave` skill with the sections What it does, When to use it, How it works, and What you get.",
+    "factsheet": "Fact sheet:\n\n1. Drafts a glossary of project terms from documents in a supplied folder.\n2. Manual only: `/term-weave <source-folder>`.\n3. Accepts Markdown and plain-text documents. Ignores other file types.\n4. Use when project vocabulary is scattered across documents or newcomers encounter unexplained terms.\n5. Every drafted definition includes a link to the passage that supports it.\n6. Does not invent definitions. Lists terms without a supporting explanation under Unresolved terms.\n7. If sources give conflicting definitions, preserves both definitions in one entry, links each source, and marks the entry Conflict.\n8. Writes GLOSSARY.md in the working directory. Never changes the source documents.\n9. Sorts glossary entries alphabetically. Places Unresolved terms after the defined entries.\n10. [agent-only] Candidate extraction uses the private collectTermCandidates routine.\n11. [agent-only] The source manifest is stored at .term-weave/source-manifest.json.\n12. If the supplied folder is missing or contains no readable supported documents, stops and explains the problem without drafting.\n13. [agent-only] An unreadable input set uses the internal reason INPUT_SET_EMPTY.\n14. [agent-only] Evaluation scores source attribution separately from definition completeness.",
+    "key": {
+      "facts": {
+        "1": "drafts a project glossary from documents in a supplied folder",
+        "2": "manual invocation: /term-weave <source-folder>",
+        "3": "accepts Markdown and plain text; ignores other file types",
+        "4": "use for scattered vocabulary or unexplained terms encountered by newcomers",
+        "5": "each definition links to its supporting passage",
+        "6": "does not invent definitions; unsupported terms go under Unresolved terms",
+        "7": "conflicting definitions stay together, each with a source link, marked Conflict",
+        "8": "writes GLOSSARY.md in the working directory without changing source documents",
+        "9": "sorts entries alphabetically and puts unresolved terms last",
+        "12": "stops without drafting for a missing folder or no readable supported documents"
+      },
+      "agentOnly": {
+        "10": "candidate extraction uses collectTermCandidates",
+        "11": "source manifest is .term-weave/source-manifest.json",
+        "13": "unreadable input set uses INPUT_SET_EMPTY",
+        "14": "evaluation separates attribution and completeness scores"
+      },
+      "questions": {
+        "a": "Will term-weave change the source documents?",
+        "b": "How do you run it?",
+        "c": "What happens when two sources define the same term differently?"
+      },
+      "answerKey": {
+        "a": {
+          "pass": "says no",
+          "prefix": "no"
+        },
+        "b": {
+          "pass": "names /term-weave with a source folder",
+          "all": [
+            "term-weave"
+          ],
+          "any": [
+            "folder",
+            "directory",
+            "source",
+            "path"
+          ]
+        },
+        "c": {
+          "pass": "says it preserves both definitions with their sources and flags the conflict",
+          "all": [],
+          "any": [
+            "conflict",
+            "both definitions",
+            "both meanings",
+            "keeps both",
+            "preserves both",
+            "retains both",
+            "disagreement"
+          ]
+        }
+      },
+      "start": "```|`/term-weave\\b[^`]*`"
+    }
+  },
+  "N3": {
+    "subject": "Lesson opening: stable room identity in the fictional Kestrel directory",
+    "brief": "Write the first two sections, about 350 words, of a lesson for engineers titled 'Renaming rooms in the Kestrel directory'.",
+    "factsheet": "Fact sheet:\n\n1. Kestrel is a fictional directory of shared work rooms; each room has a room key and a display name.\n2. A room key is assigned when the room is created and never changes or gets reused for another room.\n3. A display name is the human-readable label people see, and room owners can change it.\n4. Saved links identify rooms by their keys. Kestrel looks up the key and displays the room's current name when a link is opened.\n5. A link built from a display name can stop finding the room after a rename, because the name has changed.\n6. To verify a rename, save a room link beforehand, rename the room, and open the saved link; it should reach the same room and show the new name.\n7. [agent-only] The storage schema calls the key column room_ref and the display-name column title_text.\n8. [agent-only] The lesson's private grading guide assigns separate marks for identity, naming, and verification.",
+    "key": {
+      "facts": {
+        "1": "Kestrel is a fictional work-room directory with room keys and display names",
+        "2": "room keys are permanent and never reused",
+        "3": "display names are human-readable labels that owners can change",
+        "4": "saved links use room keys and show the current name when opened",
+        "5": "name-based links can break when a room is renamed",
+        "6": "verify a rename by opening a previously saved link and checking the same room shows its new name"
+      },
+      "agentOnly": {
+        "7": "storage columns are room_ref and title_text",
+        "8": "private grading separates identity, naming, and verification"
+      },
+      "questions": {
+        "a": "What stays the same when a room is renamed?",
+        "b": "Can a link built from a display name stop working after a rename?",
+        "c": "Which link should you open to verify that a rename preserved access?"
+      },
+      "answerKey": {
+        "a": {
+          "pass": "names the room key or permanent identifier",
+          "all": [],
+          "any": [
+            "key",
+            "identifier",
+            "room id",
+            "stable id",
+            "permanent id"
+          ]
+        },
+        "b": {
+          "pass": "says yes",
+          "prefix": "yes"
+        },
+        "c": {
+          "pass": "says to open the room link saved before the rename",
+          "all": [],
+          "any": [
+            "saved link",
+            "previously saved",
+            "existing link",
+            "old link",
+            "original link",
+            "bookmark",
+            "before the rename",
+            "before renaming"
+          ]
+        }
+      },
+      "start": null
+    }
+  }
+}

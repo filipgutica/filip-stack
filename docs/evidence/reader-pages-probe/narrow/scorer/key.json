@@ -1,0 +1,162 @@
+{
+ "N1": {
+  "facts": {
+   "1": "shows ZIP archive contents before unpacking",
+   "2": "lists entry names, compressed sizes, and unpacked sizes",
+   "3": "install with pipx install sackview",
+   "4": "sackview inspect photos.zip lists entries",
+   "5": "--largest 10 lists the ten largest entries by unpacked size, largest first",
+   "6": "--find '*.csv' filters entries by a filename pattern",
+   "7": "total unpacked size helps check available disk space",
+   "8": "never extracts entries or changes the archive",
+   "9": "works offline and sends no archive contents to a service",
+   "10": "supports ZIP only and reports other formats as unsupported"
+  },
+  "agentOnly": {
+   "11": "reads metadata through ZipDirectoryReader",
+   "12": "uses unsigned 64-bit size accumulators",
+   "13": "unsupported formats return exit code 24",
+   "14": "build copies the command schema from packaging/commands.json"
+  },
+  "questions": {
+   "a": "What does sackview show you?",
+   "b": "What command lists the entries in photos.zip?",
+   "c": "Does sackview extract files?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it shows the contents or entries of a ZIP archive",
+    "all": [],
+    "any": [
+     "contents",
+     "entries",
+     "inside",
+     "file list",
+     "files in",
+     "filenames",
+     "file names"
+    ]
+   },
+   "b": {
+    "pass": "names sackview inspect photos.zip",
+    "all": [
+     "sackview inspect photos.zip"
+    ],
+    "any": []
+   },
+   "c": {
+    "pass": "says no",
+    "prefix": "no"
+   }
+  },
+  "start": "```|`(?:pipx install sackview|sackview inspect)\\b[^`]*`"
+ },
+ "N2": {
+  "facts": {
+   "1": "drafts a project glossary from documents in a supplied folder",
+   "2": "manual invocation: /term-weave <source-folder>",
+   "3": "accepts Markdown and plain text; ignores other file types",
+   "4": "use for scattered vocabulary or unexplained terms encountered by newcomers",
+   "5": "each definition links to its supporting passage",
+   "6": "does not invent definitions; unsupported terms go under Unresolved terms",
+   "7": "conflicting definitions stay together, each with a source link, marked Conflict",
+   "8": "writes GLOSSARY.md in the working directory without changing source documents",
+   "9": "sorts entries alphabetically and puts unresolved terms last",
+   "12": "stops without drafting for a missing folder or no readable supported documents"
+  },
+  "agentOnly": {
+   "10": "candidate extraction uses collectTermCandidates",
+   "11": "source manifest is .term-weave/source-manifest.json",
+   "13": "unreadable input set uses INPUT_SET_EMPTY",
+   "14": "evaluation separates attribution and completeness scores"
+  },
+  "questions": {
+   "a": "Will term-weave change the source documents?",
+   "b": "How do you run it?",
+   "c": "What happens when two sources define the same term differently?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says no",
+    "prefix": "no"
+   },
+   "b": {
+    "pass": "names /term-weave with a source folder",
+    "all": [
+     "term-weave"
+    ],
+    "any": [
+     "folder",
+     "directory",
+     "source",
+     "path"
+    ]
+   },
+   "c": {
+    "pass": "says it preserves both definitions with their sources and flags the conflict",
+    "all": [],
+    "any": [
+     "conflict",
+     "both definitions",
+     "both meanings",
+     "keeps both",
+     "preserves both",
+     "retains both",
+     "disagreement"
+    ]
+   }
+  },
+  "start": "```|`/term-weave\\b[^`]*`"
+ },
+ "N3": {
+  "facts": {
+   "1": "Kestrel is a fictional work-room directory with room keys and display names",
+   "2": "room keys are permanent and never reused",
+   "3": "display names are human-readable labels that owners can change",
+   "4": "saved links use room keys and show the current name when opened",
+   "5": "name-based links can break when a room is renamed",
+   "6": "verify a rename by opening a previously saved link and checking the same room shows its new name"
+  },
+  "agentOnly": {
+   "7": "storage columns are room_ref and title_text",
+   "8": "private grading separates identity, naming, and verification"
+  },
+  "questions": {
+   "a": "What stays the same when a room is renamed?",
+   "b": "Can a link built from a display name stop working after a rename?",
+   "c": "Which link should you open to verify that a rename preserved access?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "names the room key or permanent identifier",
+    "all": [],
+    "any": [
+     "key",
+     "identifier",
+     "room id",
+     "stable id",
+     "permanent id"
+    ]
+   },
+   "b": {
+    "pass": "says yes",
+    "prefix": "yes"
+   },
+   "c": {
+    "pass": "says to open the room link saved before the rename",
+    "all": [],
+    "any": [
+     "saved link",
+     "previously saved",
+     "existing link",
+     "old link",
+     "original link",
+     "bookmark",
+     "before the rename",
+     "before renaming"
+    ]
+   }
+  },
+  "start": null
+ }
+}
