@@ -28,6 +28,18 @@ const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
 }
 const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
 
+// What a reader should check before trusting the climb: the operator's notes, then any final check
+// that did not favor the final version, or a climb that kept changes but never ran one.
+const attention = (run) => {
+  const items = [...(run.attention ?? [])]
+  const fc = finalCounts(run)
+  const total = fc ? fc.final + fc.same + fc.start : 0
+  if (fc && fc.start > total / 2) items.push('Most judges preferred the starting version; consider dropping the climb.')
+  else if (fc && fc.final <= total / 2) items.push('The final check did not show a clear gain over the starting version.')
+  if (!fc && run.rounds.some((r) => r.decision === 'accepted')) items.push('The climb kept changes but never ran the final check.')
+  return items
+}
+
 const voteTable = (run, votes) => [
   `| Member | ${run.criteria.map((c) => `${c.id} ${c.name}`).join(' | ')} | Overall | Reason |`,
   `| --- | ${run.criteria.map(() => '---').join(' | ')} | --- | --- |`,
@@ -48,13 +60,10 @@ const report = (run) => {
     `- Result: ${run.result.summary} ${run.result.climbChangedLines} changed lines; ${run.result.committed ? 'committed' : 'not committed'}.`,
     `- Member calls: ${run.memberCalls}`,
     '',
-    '## Criteria',
-    '',
-    ...run.criteria.map((c) => `- **${c.id} ${c.name}:** ${c.description}`),
-    '',
-    '## Rounds',
-    '',
   ]
+  const check = attention(run)
+  if (check.length) lines.push('## Check before you rely on it', '', ...check.map((a) => `- ${a}`), '')
+  lines.push('## Criteria', '', ...run.criteria.map((c) => `- **${c.id} ${c.name}:** ${c.description}`), '', '## Rounds', '')
   for (const round of run.rounds) {
     const counts = overall(round.votes)
     lines.push(`### Round ${round.n}: ${round.summary}`, '')
@@ -96,8 +105,11 @@ const index = runs.map((run) => {
     accepted: run.rounds.filter((r) => r.decision === 'accepted').length,
     rejected: run.rounds.filter((r) => r.decision === 'rejected').length,
     void: run.rounds.filter((r) => r.decision === 'void').length,
+    summary: run.result.summary,
     climbChangedLines: run.result.climbChangedLines,
+    sizeLimit: run.budget.sizeLimit,
     final: finalCounts(run),
+    attention: attention(run),
     stop: run.stop,
   }
 }).sort((a, b) => b.date.localeCompare(a.date) || b.id.localeCompare(a.id))

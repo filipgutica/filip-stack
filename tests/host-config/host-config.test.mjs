@@ -40,7 +40,8 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
-  assert.ok(existsSync(join(home, 'design-language/DESIGN.md')))
+  for (const file of ['DESIGN.md', 'visualizations.md', 'visualizations/build-count-report.mjs', 'visualizations/count-snapshots.md', 'visualizations/delivery.md', 'visualizations/report.css'])
+    assert.ok(existsSync(join(home, 'design-language', file)), file)
 
   const before = read(join(home, '.agents/.filip-stack-host-config.json'))
   assert.ok(states(home).every((line) => line.startsWith('current')))

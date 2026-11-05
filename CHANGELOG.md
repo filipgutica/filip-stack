@@ -1,3 +1,55 @@
+# [3.23.0](https://github.com/filipgutica/filip-stack/compare/v3.22.0...v3.23.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **design-language:** drop reference gutters at the phone breakpoint ([85b71b4](https://github.com/filipgutica/filip-stack/commit/85b71b45187b27098a03c047857ff9e51c7f29af))
+* **design-language:** keep tablet content padding-block in the reference ([aaae930](https://github.com/filipgutica/filip-stack/commit/aaae93074c701a0f73917ed761f47a5c5c964c64))
+
+
+### Features
+
+* **design-language:** add forms, data views and breakpoint guidance ([c68ccd0](https://github.com/filipgutica/filip-stack/commit/c68ccd055af55d7557b57b0b8145a1708ae209af))
+* **design-language:** narrow to the two named breakpoints ([9b950a8](https://github.com/filipgutica/filip-stack/commit/9b950a8a027efed89946d77b4a593f17a64f806d))
+
+# [3.22.0](https://github.com/filipgutica/filip-stack/compare/v3.21.0...v3.22.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **host-config:** make count reports domain-neutral and parse embedded data ([7f8718e](https://github.com/filipgutica/filip-stack/commit/7f8718e818066d3fb07c28ccc392117c219b726b))
+
+
+### Features
+
+* **host-config:** add portable data visualization reports ([d4f593e](https://github.com/filipgutica/filip-stack/commit/d4f593e509089d8634940d8de31f53eb5264c1f3))
+
+# [3.21.0](https://github.com/filipgutica/filip-stack/compare/v3.20.1...v3.21.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **hill-climb:** name the text files in the bundle and judge brief ([9a1a8b2](https://github.com/filipgutica/filip-stack/commit/9a1a8b24a12033147f0d5579a8d1cdb49a0d04f9))
+
+
+### Features
+
+* **hill-climb:** make the runs page readable and check claims before judging ([3c4173f](https://github.com/filipgutica/filip-stack/commit/3c4173fba266edb5476e2adb0aafe646595cfc61))
+
+## [3.20.1](https://github.com/filipgutica/filip-stack/compare/v3.20.0...v3.20.1) (2026-11-05)
+
+
+### Bug Fixes
+
+* **site:** derive standalone skill count from catalog ([a1988eb](https://github.com/filipgutica/filip-stack/commit/a1988ebba6a974baee762034a08180f803bc7b65))
+
+# [3.20.0](https://github.com/filipgutica/filip-stack/compare/v3.19.0...v3.20.0) (2026-11-05)
+
+
+### Features
+
+* **design-language:** lighten the Graphite Indigo light background ([310d314](https://github.com/filipgutica/filip-stack/commit/310d3148d4c5ac2dd6ad336cab83c6688e4e6d5e)), closes [#f4f5f8](https://github.com/filipgutica/filip-stack/issues/f4f5f8) [#f8f9fb](https://github.com/filipgutica/filip-stack/issues/f8f9fb)
+
 # [3.19.0](https://github.com/filipgutica/filip-stack/compare/v3.18.0...v3.19.0) (2026-11-04)
 
 
