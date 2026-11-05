@@ -1,6 +1,8 @@
 # Reader pages
 
-Apply this guidance to writing that a person reads to decide whether to use something, or to learn how to use it. That covers product and tool pages, docs pages, guides and lessons, skill pages, and READMEs. It works with [technical prose](technical-prose.md): technical prose keeps each sentence clear, and this guidance decides what the page says and in what order.
+Apply this guidance to pages a reader uses to decide whether to use something or to start learning it: tool and product landing pages, skill pages, and the opening of a guide or lesson. It works with [technical prose](technical-prose.md): technical prose keeps each sentence clear, and this guidance decides what the page says and in what order.
+
+Procedure and reference sections, such as install and update steps, option tables, and changelogs, follow technical prose instead. This holds even when they sit on the same page as a landing section.
 
 ## Page order
 
@@ -21,7 +23,7 @@ Put the answers to 1 to 3 on the first screen. Reference material, such as optio
 
 **R3. Say each point once, across the whole page.** That includes text the page builds from elsewhere: ledes from a README table, captions, generated summaries. When a section's first sentence repeats the lede or its heading, cut one of them.
 
-**R4. Show how to start before the details.** Before rules, options, or internals, give the install step or first command and one real example of using it. The example can be an invocation, a command, or a short output. Label illustrative examples as illustrative. Keep a condition or caveat beside the claim it qualifies, before the reader acts on it. When it applies across subsections, place it in their shared introduction so its scope is clear.
+**R4. Show how to start before the details.** Before rules, options, or internals, give the install step or first command and one real example of using it. The example can be an invocation, a command, or a short output. Label illustrative examples as illustrative.
 
 **R5. Define a term before the page relies on it.** Give each term from the tool's or skill's internals, such as job, gate, climb card, or pillar, a one-clause definition the first time it appears. For example, write "a *job*, meaning a runner and the servers it starts". If a term needs more than a sentence, check whether the page needs it at all.
 
