@@ -373,8 +373,11 @@ apply to them. Each needs a matching name, a description of at most 80 words, a
 and relative links that stay inside its directory. It must not call a plugin
 skill or share a name with one.
 
-The site in `docs/site/` is a separate pnpm package. It reads the skill list
-from each `SKILL.md` when it builds, so it needs no edit when a skill changes.
+The site in `docs/site/` is a separate pnpm package. When it builds, it takes
+the skill list and summaries from the README skill tables and each skill's
+references from its directory. Each page's text in
+`docs/site/src/content/skills/` is written by hand, so update it when the
+skill's behavior changes.
 
 ```sh
 cd docs/site
