@@ -184,6 +184,8 @@ Choose the A/B order at random for each judge and record it only in
 - UI: `A/` and `B/` with the same screenshot names for each route, state,
   width, and theme, holding only the screenshots that differ, plus `A.diff`
   and `B.diff` as for code. Tell the judge when no screenshot differs.
+- Reader-facing text: `A.txt` and `B.txt`, each version's full text in
+  reading order, plus `A.diff` and `B.diff` as for code.
 
 ### Decide
 
@@ -228,6 +230,7 @@ Use only the files in <bundle path>. Do not read the working tree or the reposit
 A and B are two versions of the same change.
 <Code: A.diff and B.diff are each version's diff from the same base.>
 <UI: A/ and B/ hold the screenshots that differ, with matching names; A.diff and B.diff are each version's diff from the same base.>
+<Text: A.txt and B.txt are each version's full text in reading order; A.diff and B.diff are each version's diff from the same base.>
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
