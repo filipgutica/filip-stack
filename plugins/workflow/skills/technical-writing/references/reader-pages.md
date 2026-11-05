@@ -27,11 +27,15 @@ Put the answers to 1 to 3 on the first screen. Reference material, such as optio
 
 **R6. Write sentences, not notes.** Reader-facing copy uses sentences with a subject and a verb. Table cells stay short, but each one reads as a phrase a person would say. Avoid shorthand such as "Search: X. Browse: Y." or "Stop saves. No merge view." Length follows the reader's job. When a terse page leaves the reader guessing, the fix is more words.
 
-**R7. Write for the reader in front of you.** A page for people is not a copy of the agent's contract. For each detail from the source, ask: would this reader do something differently, or trust the tool more, if they knew it?
+**R7. Write for the reader in front of you.** A page for people is not a copy of the agent's contract. Before you place a fact from the source, decide who needs it. Ask: would this reader do something differently if they knew it?
 
 - If yes, keep it in the reader's terms. For example, "path by path, without the stash stack" becomes "it never uses your Git stash".
-- If only an operator, auditor, or agent needs it, link to the `SKILL.md` or reference that owns it, or put it in a disclosure that says who it is for.
-- Put sourcing notes and drafting history in a sources section or a changelog. "The skill defines this rubric itself" and "an earlier draft scored 12 of 24" do not belong in the explanation.
+- If a mechanism matters only because it makes the tool safe or trustworthy, state the effect the reader sees and leave out the mechanism.
+- If only a maintainer, operator, or agent needs it, leave it off the page, and link to the `SKILL.md`, reference, or source that owns it when one exists. Notes sections, such as Good to know or an FAQ, are part of the reader's page and follow the same rule.
+- Use a disclosure only for a second reader of this page, such as someone who audits a lesson by hand, and say in its title who it is for.
+- Put sourcing notes and drafting history in a sources section or a changelog. "An earlier draft scored 12 of 24" does not belong in the explanation.
+
+On a reader page, preserving the source means keeping every fact the reader needs. A fact that only maintainers or agents need is not lost when the page links to its owner or leaves it out.
 
 When the source changes, update the page from the reader's side. Do not copy the new contract wording.
 
@@ -65,5 +69,6 @@ Read the first screen as a newcomer with no access to the source. Confirm that:
 - you can say what it is, who it is for, and what to type or click first
 - every term on that screen is either familiar or defined
 - no paragraph repeats an earlier one, including the generated lede
-- every fact from the source is still on the page, linked, or behind a disclosure, and none is new without a source
+- every fact the reader needs from the source is on the page, and none is new without a source
+- no section, including the notes, explains internals that only a maintainer or agent needs
 - the prose has no not-X-but-Y contrasts, one-line closers, bold-label bullets, or sentences about the page itself; use the `humanizer` skill for this pass when it is available
