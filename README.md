@@ -98,7 +98,7 @@ Each skill loads only the guidance its task needs.
 | `walkthrough` | Explains a change to you one part at a time, waiting for your answer before it moves on. |
 | `checkpoint` | Records where the work stands, with evidence, so it can be paused or handed off. |
 
-The host picks `engineering`, `planning`, `review`, `test-audit`, and
+The host may pick `engineering`, `planning`, `review`, `test-audit`, and
 `technical-writing` when a request matches. `grill-me`, `walkthrough`,
 `checkpoint`, and `simplify` run only when you call them by name, such as
 `/workflow:simplify` in Claude or `$workflow:simplify` in Codex.
@@ -110,7 +110,8 @@ repository's guidance override Workflow's default formats for specifications,
 plans, tickets, and PR descriptions.
 
 When you ask to save a checkpoint, grill log, or walkthrough log and name no
-place, Workflow uses plain notes folders that need no setup:
+place, Workflow defaults to plain notes folders that need no setup. A grill log
+can also go beside the document it questions.
 
 ```text
 ~/.engineering-workflow/<project-or-subject>/
@@ -125,8 +126,9 @@ installs no hooks and never updates these notes on its own.
 ## Field Guide
 
 Field Guide is a separate, optional plugin. It keeps durable preferences,
-corrections, and recurring lessons under `~/.field-guide`. At session start and
-on the first prompt, it adds only the stored guidance that matches the work.
+corrections, and recurring lessons under `~/.field-guide`. At session start, it
+adds the stored guidance for the current repository and a list of other stored
+subjects. On your first prompt, it adds up to three more records that match it.
 Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
 guidance; leaving it uninstalled keeps that context out of normal Workflow use.
 
@@ -217,7 +219,7 @@ needs it.
 The command runs from a checkout, because `update` pulls it. A symlink on your
 `PATH` is enough; see
 [Set up a machine](#set-up-a-machine). Without one, run
-`node scripts/host-config.mjs` from the checkout.
+`node scripts/host-config.mjs <command>` from the checkout.
 
 ```sh
 filip-stack status            # applied commit, then each target's state
@@ -251,7 +253,8 @@ To share Field Guide preferences between machines, keep them in
 manager. `apply` imports the file when it exists; if it is missing, apply prints
 where to put it and continues. `field-guide-sync` imports the file if present,
 then exports this machine's shared guidance to it. `update` runs
-`field-guide-sync` after apply when the file exists.
+`field-guide-sync` after apply when the file exists, so guidance saved on this
+machine reaches the file.
 [CONTRIBUTING.md](CONTRIBUTING.md#share-field-guide-preferences) covers other
 locations for the file and a chezmoi setup.
 

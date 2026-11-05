@@ -16,7 +16,7 @@ pnpm check
 
 The check enforces the nine-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
-Field Guide hooks and state, both plugins' runtime payloads, plugin manifest
+Field Guide hooks and state, all three plugins' runtime payloads, plugin manifest
 validity, and standalone skill contracts. Prompt routing scenarios are
 evaluation inputs; static contracts do not prove model behavior.
 
@@ -135,8 +135,7 @@ When `XDG_CONFIG_HOME` is set and non-empty, the path is
 `<dir>/.config/filip-stack/field-guide.json`.
 
 `field-guide-sync` creates the file's directory when it exports, and it leaves
-the repository unchanged. Because `update` runs it after apply, guidance saved
-on this machine reaches the file.
+the repository unchanged.
 
 To migrate existing preferences, run these commands on a machine that already
 has them in `~/.field-guide`:
@@ -173,11 +172,14 @@ pnpm dev
 CI runs semantic-release after pushes to `main`. Commit messages follow
 [Conventional Commits](https://www.conventionalcommits.org/):
 
-| Commit prefix | Version bump |
+| In the commit message | Version bump |
 | --- | --- |
 | `fix:` | patch |
 | `feat:` | minor |
-| `feat!:` or `BREAKING CHANGE:` | major |
+| A `BREAKING CHANGE:` footer | major |
+
+With the default commit analyzer, a `!` after the type, as in `feat!:`, does
+not trigger a major release on its own. Add the `BREAKING CHANGE:` footer.
 
 When a release is due, CI stamps `package.json`, every plugin manifest, and both
 marketplace registries before creating the GitHub release.
@@ -185,8 +187,8 @@ marketplace registries before creating the GitHub release.
 Standalone skills have no version of their own. The skills CLI installs them
 from `main`, so they ship when they merge. A releasing commit that changes only
 `skills/` still bumps the plugin manifests. Host config also ships from `main`
-without a version. The site deploys from `main` when the site or a skill
-changes.
+without a version. The site deploys from `main` when the site, the README, or
+a skill's `SKILL.md` or references change.
 
 ## Evaluation
 
