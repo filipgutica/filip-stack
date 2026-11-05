@@ -146,6 +146,22 @@
       "expectedReference": "pull-requests.md"
     },
     {
+      "id": "write-tool-landing-page",
+      "prompt": "Rewrite the copy on this CLI tool's landing page so a first-time visitor understands it.",
+      "expectedSkill": "technical-writing",
+      "activation": "implicit",
+      "mode": "reader-pages",
+      "expectedReference": "reader-pages.md"
+    },
+    {
+      "id": "reader-pages-near-miss",
+      "prompt": "Restyle the landing page header spacing.",
+      "expectedSkill": "engineering",
+      "activation": "implicit",
+      "mode": "implementation",
+      "expectedReference": null
+    },
+    {
       "id": "writing-near-miss",
       "prompt": "Implement the parser and tell me when the tests pass.",
       "expectedSkill": "engineering",

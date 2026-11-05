@@ -116,7 +116,7 @@ Token names depend on where the page runs. This file uses the `tokens.css` names
 
 ## Copy and density
 
-- Lead with a plain description and a useful action. Keep one idea per short paragraph. Product pages can explain value without unsupported superlatives or invented statistics.
+- Lead with a plain description and a useful action. On a product or tool page, the first screen says what it is, why a reader would want it, and how to start. Keep one idea per short paragraph, written in full sentences. Product pages can explain value without unsupported superlatives or invented statistics.
 - Say each point once. Put exact payloads, logs, or long reference text behind a useful disclosure when appropriate.
 - Keep table cells short. Put rules, thresholds, and caveats next to what they govern.
 - Label illustrative data and demo outcomes clearly. Credit upstream creators when presenting a derivative product.

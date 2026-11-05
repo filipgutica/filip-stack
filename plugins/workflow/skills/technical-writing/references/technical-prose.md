@@ -7,12 +7,12 @@ Apply this guidance to every written deliverable, including those produced durin
 - Prefer familiar words and active sentences that identify the actor. Use verbs to describe actions.
 - Keep terminology consistent. Define necessary domain terms. Preserve API names and other exact identifiers.
 - Give each instruction its own sentence. Put conditions before the action they control and keep sequences in order.
-- Aim for at most 20 words in procedural sentences and 25 in explanatory sentences. Retain longer wording when splitting or shortening would lose precision.
+- Aim for at most 20 words in procedural sentences and 25 in explanatory sentences. Treat these as ceilings and keep every sentence complete. Retain longer wording when splitting or shortening would lose precision.
 - Keep each paragraph on one topic, with at most six sentences. Use lists for steps and conditions when they aid reading.
 - Replace ambiguous verb phrases with direct verbs. Break up dense noun strings and sentences joined by semicolons.
 - Preserve quantities, exceptions, scope, and uncertainty. Never turn a possibility into a fact or add an unsupported cause.
 
-Procedures, error text, and safety instructions need especially literal wording. Explanatory documents can retain a natural voice. These are STE-based clarity guidelines, not certification against ASD's official dictionary.
+Procedures, error text, and safety instructions need especially literal wording. Explanatory documents and [reader pages](reader-pages.md) use complete, natural sentences. These are STE-based clarity guidelines, not certification against ASD's official dictionary.
 
 ## First-reader review
 
@@ -21,7 +21,7 @@ Before presenting a written deliverable as ready, review it as its intended huma
 Check whether the reader can:
 
 - understand the purpose, expected outcome, and relevant context
-- proceed with actionable work from clear deliverables, scope, constraints, dependencies, and completion criteria
+- proceed with actionable work from clear deliverables, scope, constraints, dependencies, and completion criteria, or, on a reader page, say what it is, why they would want it, and how to start
 - follow instructions without vague wording, unexplained terms, hidden assumptions, or missing decisions
 - understand, review, or pick up the work without reconstructing the author's intent
 
