@@ -145,7 +145,7 @@ The isolation check changes to match. A build may read exactly its prompt file a
 | Item | Calls |
 | --- | ---: |
 | Brief writer, done | 1 |
-| Dry run on N1, 1 attempt per arm | 15 |
+| Dry run on N1, 1 attempt per arm (14 used; see the amendment) | 15 |
 | Builds: 3 briefs × 3 arms × 5 attempts | 45 |
 | Extractor | 45 |
 | Double-coding at 20% | 9 |
@@ -154,3 +154,7 @@ The isolation check changes to match. A build may read exactly its prompt file a
 | **Total** | **250** |
 
 The total equals the approved ceiling, so no call can be retried. If any call fails or times out, the run stops and reports. The dry run continues to the paid run unless the pipeline is broken, as `probe-99-paid.md` defines it; a broken dry run also stops the run, because repeating it would exceed the ceiling.
+
+## Amendment after the dry run, before any paid build
+
+The dry run found one pipeline fault. Its head build read its prompt file but not the arm file the prompt names, because the one-line task said "read no other file". The build task now reads: "Read the file `<path>` and follow its instructions exactly, including reading the one file it names. Read no other file, …". Scoring calls keep the original wording. The faulty head build was set aside in `dry-run/superseded/` and rebuilt once. To stay within budget, the dry run judged only the head–base pair (3 judge calls). The dry run used 14 calls, so the total is 249 of 250, with one call in reserve. Nothing else changed: guidance, briefs, keys, and the rule are as above.

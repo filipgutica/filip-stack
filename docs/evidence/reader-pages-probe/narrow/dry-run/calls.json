@@ -1,0 +1,336 @@
+[
+ {
+  "cell": "build-5cfdc3bc",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/build-5cfdc3bc.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-a625dc27/9e235f0a.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/builds/5cfdc3bc.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-build-5cfdc3bc-1",
+    "startedAt": "2026-11-05T23:28:06Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-build-5cfdc3bc-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-build-5cfdc3bc-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:28:42Z"
+   }
+  ]
+ },
+ {
+  "cell": "build-161b9ef0",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/build-161b9ef0.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-d99a5bee/c5558e21.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/builds/161b9ef0.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-build-161b9ef0-1",
+    "startedAt": "2026-11-05T23:28:06Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-build-161b9ef0-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-build-161b9ef0-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:28:58Z"
+   }
+  ]
+ },
+ {
+  "cell": "build-17db9cde",
+  "kind": "build",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/build-17db9cde.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-ffcc7fb0/d7909ef0.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/builds/17db9cde.md",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "superseded",
+    "clientRequestId": "rp-narrow-dry-run-build-17db9cde-1",
+    "startedAt": "2026-11-05T23:28:06Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-build-17db9cde-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-build-17db9cde-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:28:42Z"
+   },
+   {
+    "attempt": 2,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-build-17db9cde-2",
+    "startedAt": "2026-11-05T23:32:28Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-build-17db9cde-2",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-build-17db9cde-2:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:06Z"
+   }
+  ]
+ },
+ {
+  "cell": "extract-5cfdc3bc",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/extract-5cfdc3bc.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-80b38e92/5fb73898.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/extract/5cfdc3bc.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-extract-5cfdc3bc-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-extract-5cfdc3bc-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-extract-5cfdc3bc-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:36Z"
+   }
+  ]
+ },
+ {
+  "cell": "comp-5cfdc3bc",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/comp-5cfdc3bc.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-10eb5f1b/948445bc.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/comp/5cfdc3bc.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-comp-5cfdc3bc-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-comp-5cfdc3bc-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-comp-5cfdc3bc-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:36Z"
+   }
+  ]
+ },
+ {
+  "cell": "extract-161b9ef0",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/extract-161b9ef0.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-7d0c615d/b1ac07a0.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/extract/161b9ef0.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-extract-161b9ef0-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-extract-161b9ef0-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-extract-161b9ef0-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:58Z"
+   }
+  ]
+ },
+ {
+  "cell": "comp-161b9ef0",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/comp-161b9ef0.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-3d9e16d4/471ff4ef.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/comp/161b9ef0.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-comp-161b9ef0-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-comp-161b9ef0-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-comp-161b9ef0-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:36Z"
+   }
+  ]
+ },
+ {
+  "cell": "extract-17db9cde",
+  "kind": "extract",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/extract-17db9cde.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-aa6d6fa3/dc8f962d.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/extract/17db9cde.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-extract-17db9cde-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-extract-17db9cde-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-extract-17db9cde-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:43Z"
+   }
+  ]
+ },
+ {
+  "cell": "comp-17db9cde",
+  "kind": "comp",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/comp-17db9cde.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-5d4096d6/8a467fe4.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/comp/17db9cde.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "low",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-comp-17db9cde-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-comp-17db9cde-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-comp-17db9cde-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:36Z"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1b29b854-astra",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/judge-1b29b854.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-d6c0377a/66b7bc82.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/judges/1b29b854-astra.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6-astra",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-judge-1b29b854-astra-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-judge-1b29b854-astra-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-judge-1b29b854-astra-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:58Z"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1b29b854-sol",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/judge-1b29b854.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-119f329e/198e3238.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/judges/1b29b854-sol.json",
+  "target": {
+   "driverKind": "codex",
+   "model": "gpt-6.1-sol",
+   "options": {
+    "reasoningEffort": "high",
+    "serviceTier": "default"
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-judge-1b29b854-sol-1",
+    "startedAt": "2026-11-05T23:33:09Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-judge-1b29b854-sol-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-judge-1b29b854-sol-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:58Z"
+   }
+  ]
+ },
+ {
+  "cell": "judge-1b29b854-opus",
+  "kind": "judge",
+  "prompt": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/prompts/judge-1b29b854.txt",
+  "pointer": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-39c5f70e/d518bb04.txt",
+  "reply": "/Users/filip.gutica/code/worktrees/rp-probe/docs/evidence/reader-pages-probe/narrow/dry-run/judges/1b29b854-opus.json",
+  "target": {
+   "driverKind": "claudeAgent",
+   "model": "claude-opus-5-5",
+   "options": {
+    "effort": "high",
+    "fastMode": false
+   }
+  },
+  "runs": [
+   {
+    "attempt": 1,
+    "state": "saved",
+    "clientRequestId": "rp-narrow-dry-run-judge-1b29b854-opus-1",
+    "startedAt": "2026-11-05T23:33:36Z",
+    "threadId": "thread:delegated-task:command%3Amcp%3A1ce974ed-16f3-49d8-820a-4257366094b0%3Adelegate-task%3Arp-narrow-dry-run-judge-1b29b854-opus-1",
+    "runId": "run:thread:thread%3Adelegated-task%3Acommand%253Amcp%253A1ce974ed-16f3-49d8-820a-4257366094b0%253Adelegate-task%253Arp-narrow-dry-run-judge-1b29b854-opus-1:ordinal:1",
+    "status": "completed",
+    "completedAt": "2026-11-05T23:33:58Z"
+   }
+  ]
+ }
+]

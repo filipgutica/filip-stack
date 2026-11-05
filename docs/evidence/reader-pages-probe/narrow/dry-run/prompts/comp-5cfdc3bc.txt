@@ -1,0 +1,54 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# sackview
+
+See what’s inside a ZIP archive before you unpack it.
+
+List entry names, compressed sizes, and unpacked sizes. Check the total unpacked size against available disk space before extracting elsewhere.
+
+## Install
+
+```sh
+pipx install sackview
+```
+
+## Inspect a ZIP archive
+
+```sh
+sackview inspect photos.zip
+```
+
+Lists the archive’s entries with each entry’s name, compressed size, and unpacked size.
+
+## Find the largest entries
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+Shows the ten entries with the largest unpacked sizes, largest first.
+
+## Filter by name
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+Shows only entries whose names match the pattern.
+
+## Inspect offline
+
+sackview works offline and sends no archive contents to a service. It never extracts entries or changes the archive.
+
+## Supported format
+
+sackview supports ZIP archives only. Other archive formats produce an unsupported-format message.
+PAGE>>>
+
+Questions:
+(a) What does sackview show you?
+(b) What command lists the entries in photos.zip?
+(c) Does sackview extract files?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (c) with Yes, No, or Not stated.

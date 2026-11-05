@@ -1,0 +1,120 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `sackview`, following the tool page section order.
+
+<<<DRAFT A
+# See inside a ZIP archive with sackview
+
+Check archive entries and sizes before you unpack them.
+
+```sh
+pipx install sackview
+```
+
+ZIP archives only · Offline inspection · No archive changes
+
+## Inspect an archive
+
+```sh
+sackview inspect photos.zip
+```
+
+Each entry shows its name, compressed size, and unpacked size.
+
+## Commands
+
+### List entries
+
+```sh
+sackview inspect photos.zip
+```
+
+### Find the largest entries
+
+Show the ten entries with the largest unpacked sizes, largest first:
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+### Filter by name
+
+Show only entries whose names match the pattern:
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+## Keys
+
+Keyboard shortcuts are not specified.
+
+## Check disk space before extracting
+
+sackview displays the total unpacked size. Use this total to check available disk space before extracting elsewhere.
+
+## Good to know
+
+- **Archive contents:** sackview never extracts entries or changes the archive.
+- **Privacy:** inspection works offline and sends no archive contents to a service.
+- **Supported formats:** sackview supports ZIP archives only. Other formats produce an unsupported-format message and return exit code `24`.
+DRAFT A>>>
+
+<<<DRAFT B
+# See what is inside a ZIP before you unpack it
+
+sackview shows what is inside a ZIP archive before you unpack it. It displays the total unpacked size so you can check available disk space before extracting elsewhere.
+
+```sh
+pipx install sackview
+```
+
+Each entry shows its name, compressed size, and unpacked size.
+
+## Inspect an archive
+
+```sh
+sackview inspect photos.zip
+```
+
+This command lists the archive’s entries.
+
+## Commands
+
+### Find the largest entries
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+This command shows the ten entries with the largest unpacked sizes, largest first.
+
+### Filter entries by name
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+This command shows only entries whose names match the pattern.
+
+## Good to know
+
+### Archive safety
+
+sackview never extracts entries or changes the archive.
+
+### Privacy
+
+Inspection works offline and sends no archive contents to a service.
+
+### Supported formats
+
+sackview supports ZIP archives only. Other archive formats produce an unsupported-format message and return exit code 24.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

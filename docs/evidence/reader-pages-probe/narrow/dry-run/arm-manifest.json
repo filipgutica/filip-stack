@@ -1,0 +1,33 @@
+{
+ "refs": {
+  "base": "85522f76cc69781ac239ac2cd2f3443b25d499e3",
+  "head": "c926026b6cfcd5d46ee80ee097d2c7a56d91566f"
+ },
+ "arms": {
+  "vanilla-n1": {
+   "words": 0,
+   "sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
+  },
+  "base-n1": {
+   "words": 1707,
+   "sha256": "5bd4a9f4e706d317455c2884f5288b5eee5d1e9320f0d3afca8fccba11a74864"
+  },
+  "head-n1": {
+   "words": 3002,
+   "sha256": "a47c10667311a940aa8d9bf0cfdaf41d45c90b7c164f70791eac3f6597b93603"
+  }
+ },
+ "scorer_sha256": {
+  "briefs.json": "c569718d7ef7e9f6309d0bfd3fea3b555f915cd0eae540a8e4d3f49d6238d755",
+  "build_arms.py": "188d4c00cadaea742ed2a52311e8d9d91c22ab57ffb5ce3135bfcce2c8e2603d",
+  "factsheets/N1.md": "5b70a3a0764b3aef59bdba4ce39d5ed7e1adc30dca391b6e9bfadad7723fd039",
+  "factsheets/N2.md": "5ff8225021db782a9b1eac519ff42bc45fa46257f386425c161e5a5374ea38e1",
+  "factsheets/N3.md": "9128bb9eed329e1e714c72acec6c13507f74facbdeebab81e877900a670164ac",
+  "key.json": "36834a89a99b1f2b0d8caed24cb6a7b39f71a36cce513cbdcf0a9497fc23c62a",
+  "probe.py": "e9f3ec0d2e010beedda298379260523505926d259ea1a70719873f140e3960d7",
+  "prompts.py": "7d58d92a3061237c781a1baa7909559be8b8797d2b0242d6d330e92c233524a0",
+  "tools/metrics.py": "14969504fc202216378bc1f103aed3cb6a13f82d4516c16a2848fff7dd1dba14",
+  "tools/tells.py": "97533022a98a7861ee04f9baa7cb7d9b2d1fedf9d7874c4b753aa72bbb473d38",
+  "tools/vtext.py": "b97f47ed98d04bfd11b43715da8aaa6dfb00c84b8918462634f3ed7f787130f2"
+ }
+}

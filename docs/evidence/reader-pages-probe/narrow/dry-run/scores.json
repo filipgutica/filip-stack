@@ -1,0 +1,251 @@
+{
+ "builds": [
+  {
+   "build": "5cfdc3bc",
+   "brief": "N1",
+   "attempt": 1,
+   "arm": "vanilla",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-85148656/32da34f2.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 0,
+   "M5": 0.241,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "Entry names, compressed sizes, and unpacked sizes inside a ZIP archive.",
+     true
+    ],
+    "b": [
+     "sackview inspect photos.zip",
+     true
+    ],
+    "c": [
+     "No, it never extracts entries.",
+     true
+    ]
+   },
+   "words": 113,
+   "fk_grade": 8.8,
+   "invented_claims": [],
+   "fragments": []
+  },
+  {
+   "build": "161b9ef0",
+   "brief": "N1",
+   "attempt": 1,
+   "arm": "base",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-fe3ac243/e12be42e.md",
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 1,
+   "M4": 0,
+   "M5": 0.094,
+   "M6": 0.091,
+   "M6_regex_fragments": 0,
+   "M7": 3,
+   "M8": 0,
+   "M9": 2,
+   "M9_answers": {
+    "a": [
+     "Archive entry names, compressed sizes, unpacked sizes, and the total unpacked size.",
+     false
+    ],
+    "b": [
+     "sackview inspect photos.zip",
+     true
+    ],
+    "c": [
+     "No, sackview never extracts entries.",
+     true
+    ]
+   },
+   "words": 136,
+   "fk_grade": 10.3,
+   "invented_claims": [
+    "Keyboard shortcuts are not specified."
+   ],
+   "fragments": [
+    "ZIP archives only \u00b7 Offline inspection \u00b7 No archive changes"
+   ]
+  },
+  {
+   "build": "17db9cde",
+   "brief": "N1",
+   "attempt": 1,
+   "arm": "head",
+   "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c886473f/af044e36.md",
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.235,
+   "M6": 0.0,
+   "M6_regex_fragments": 0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "M9_answers": {
+    "a": [
+     "The contents of a ZIP archive, including each entry\u2019s name, compressed size, and unpacked size, plus the total unpacked size.",
+     true
+    ],
+    "b": [
+     "sackview inspect photos.zip",
+     true
+    ],
+    "c": [
+     "No, sackview never extracts entries.",
+     true
+    ]
+   },
+   "words": 133,
+   "fk_grade": 8.8,
+   "invented_claims": [],
+   "fragments": []
+  }
+ ],
+ "votes": [
+  {
+   "pair": "1b29b854",
+   "brief": "N1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "161b9ef0",
+   "B_build": "17db9cde",
+   "judge": "astra",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide usable commands and the same essential facts, but B avoids A\u2019s duplicated command and unhelpful keyboard-shortcut placeholder."
+  },
+  {
+   "pair": "1b29b854",
+   "brief": "N1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "161b9ef0",
+   "B_build": "17db9cde",
+   "judge": "sol",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both provide enough information to use sackview, but B avoids a duplicated command example and an unhelpful keyboard-shortcut placeholder."
+  },
+  {
+   "pair": "1b29b854",
+   "brief": "N1",
+   "attempt": 1,
+   "pairing": "head-vs-base",
+   "A": "base",
+   "B": "head",
+   "A_build": "161b9ef0",
+   "B_build": "17db9cde",
+   "judge": "opus",
+   "reader": "SAME",
+   "careful": "head",
+   "overall": "head",
+   "reason": "Both drafts give a first-time reader the install, the main command and the limits, but Draft A has an empty 'Keys' placeholder section and shows the same inspect command twice, so Draft B reads as more carefully finished despite repeating its opening phrase."
+  }
+ ],
+ "aggregate": {
+  "N1/vanilla": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M4": 0,
+   "M5": 0.241,
+   "M6": 0.0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "words": 113
+  },
+  "N1/base": {
+   "M1": 1.0,
+   "M2": 1,
+   "M3": 1,
+   "M4": 0,
+   "M5": 0.094,
+   "M6": 0.091,
+   "M7": 3,
+   "M8": 0,
+   "M9": 2,
+   "words": 136
+  },
+  "N1/head": {
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 1,
+   "M4": 1,
+   "M5": 0.235,
+   "M6": 0.0,
+   "M7": 0,
+   "M8": 0,
+   "M9": 3,
+   "words": 133
+  }
+ },
+ "rule": {
+  "per_brief": {
+   "N1": {
+    "base": {
+     "no_harm": true,
+     "better_on": [
+      "M4",
+      "M6",
+      "M9"
+     ],
+     "worse_on_M3_or_M4": [],
+     "votes": {
+      "head": 3,
+      "base": 0,
+      "SAME": 0
+     },
+     "head_majority": true,
+     "other_majority": false,
+     "objective_gain": true
+    },
+    "vanilla": {
+     "no_harm": true,
+     "better_on": [
+      "M4",
+      "M5"
+     ],
+     "worse_on_M3_or_M4": [
+      "M3"
+     ],
+     "votes": {
+      "head": 0,
+      "vanilla": 0,
+      "SAME": 0
+     },
+     "head_majority": false,
+     "other_majority": false,
+     "objective_gain": true
+    }
+   }
+  },
+  "vs_base": {
+   "part1_no_harm": true,
+   "part2_objective_gain": false,
+   "part3_judges": false
+  },
+  "vs_vanilla": {
+   "part1_no_harm": true,
+   "part3_judges": false
+  },
+  "briefs_scored": 1,
+  "verdict": "not decidable: only 1 of 3 briefs scored"
+ },
+ "double_coding": null
+}
