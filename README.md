@@ -245,6 +245,7 @@ compares it with upstream.
   Guardrails relies on
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the `~/design-language` files the guidance refers to
+  - [Data visualizations](host-config/design-language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
 
 It contains no employer-specific guidance; keep that local to the machine that
 needs it.
