@@ -170,7 +170,8 @@ Run each round in order:
    describes, and treat a false claim as a failed gate. When only that
    claim check fails, repair once: correct each false claim from its source,
    or undo only the edit that made it and mark that proposal declined. Record
-   the repair in `ledger.md`, measure as in Apply, and run every gate again.
+   the repair in `ledger.md`, rewrite `candidate.tsv`, measure and handle the
+   size limit as in Apply, and run every gate again.
    On any other failure, or a second failure, restore, record the round as
    rejected, and mark its proposals declined. End the round there: skip
    Judge and Decide, and apply the stop rules.

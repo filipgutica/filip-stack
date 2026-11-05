@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync } from 'node:child_process'
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -30,12 +30,15 @@ test('builds the runs-dir argument, including gate-failed rounds without votes',
   mkdirSync(join(runsDir, record.id), { recursive: true })
   writeFileSync(join(runsDir, record.id, 'run.json'), JSON.stringify(record))
 
-  execFileSync(process.execPath, [script, runsDir])
-  const report = readFileSync(join(runsDir, record.id, 'report.md'), 'utf8')
-  assert.match(report, /### Round 1: Round 1\n\n- Decision: \*\*rejected\*\* \(overall votes: 0 candidate/)
+  // A temporary HOME keeps a regression of the runs-dir argument away from real saved runs.
+  const env = { ...process.env, HOME: join(root, 'home') }
+  execFileSync(process.execPath, [script, runsDir], { env })
+  assert.ok(existsSync(join(runsDir, record.id, 'report.md')))
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.equal(built.rejected, 1)
 
   const pageDir = join(root, 'page')
-  execFileSync(process.execPath, [script, runsDir, '--page', pageDir])
+  execFileSync(process.execPath, [script, runsDir, '--page', pageDir], { env })
   const pageRun = JSON.parse(readFileSync(join(pageDir, 'runs', record.id, 'run.json'), 'utf8'))
   assert.deepEqual(pageRun.rounds[0].votes, [])
 })

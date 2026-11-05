@@ -30,8 +30,10 @@ as it stands, and it stops before editing anything if a check fails.
 In the first round, each member suggests up to three improvements.
 Each round, hill climb applies the best-supported ideas as one small edit,
 runs the checks, and asks the judges. They see diffs for code and screenshots
-for UI. If the edit fails a check or does not win most judges, hill climb puts
-your files back from a saved copy. If something outside the climb changed
+for UI. When the only failed check is a false claim in the text, hill climb
+corrects it once and checks again. If the edit still fails a check or does
+not win most judges, hill climb puts your files back from a saved copy. If
+something outside the climb changed
 those files, it stops instead, so your changes survive. It never uses your Git
 stash or `git clean`.
 
