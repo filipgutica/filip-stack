@@ -1,3 +1,15 @@
+# [3.21.0](https://github.com/filipgutica/filip-stack/compare/v3.20.1...v3.21.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **hill-climb:** name the text files in the bundle and judge brief ([9a1a8b2](https://github.com/filipgutica/filip-stack/commit/9a1a8b24a12033147f0d5579a8d1cdb49a0d04f9))
+
+
+### Features
+
+* **hill-climb:** make the runs page readable and check claims before judging ([3c4173f](https://github.com/filipgutica/filip-stack/commit/3c4173fba266edb5476e2adb0aafe646595cfc61))
+
 ## [3.20.1](https://github.com/filipgutica/filip-stack/compare/v3.20.0...v3.20.1) (2026-11-05)
 
 
