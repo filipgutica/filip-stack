@@ -1260,6 +1260,41 @@ Report and per-build tables:
 pages, scorer, and the arm ledger:
 `~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/`.
 
+#### Second run: larger sample without leakage (2026-11-04)
+
+Filip approved a second one-off run that fixed run 1's flaws: 8 attempts per
+probe and arm (48 builds) with the same builder, base, head and briefs. Each
+build read one bundle file holding its arm's `DESIGN.md`, `tokens.css` and
+example pages, and the prompt said to use only that file for design rules.
+Inline delivery was dropped because `delegate_task` takes only a task string.
+No build read any other guidance path or skill, so none was replaced. Judges got
+the `DESIGN.md` sections that are identical in both arms, and 72 blind calls
+(Astra, Sol 6.1, Opus 5.5) compared the 24 pairs. Two measures were added
+before the first build: phone table clipping at 390 px (a decision measure)
+and the muted share of body text (a diagnostic).
+
+Result: **not supported.** Head was worse on the data table (page overflow 1
+vs 0, phone table columns 6 vs 0) and on the docs page (failed probe checks 5
+vs 4). Judges preferred base in all 3 probes, and Opus alone did too. Head
+used only 640 and 800 px in all 24 builds, against 11 of 24 base builds with
+other widths. The breakpoint change alone holds on the widths but fails the
+pre-registered test, because the table regressions count against it. The
+breakpoint table's Tablet row also tells side navigation to become a scrolling
+strip, and all 8 head docs rails then clipped at phone width. A smaller PR
+would ship the widths without that line and needs its own run.
+
+Diagnostics measured after the judges: all 8 head tables put their state
+messages in a row across a wide table, as head's Data views section asks, and
+at 390 px those messages run past the scroll wrapper. All 8 head docs rails
+scroll sideways at 800 px, where base rails wrap. Muted prose appeared in 7 of
+8 docs builds in both arms, copied from the shared `docs.html`, so run 1's
+head-only pattern did not repeat.
+
+Report and per-build tables:
+`docs/evidence/design-language-probe/probe-run-2-2026-11-04.md`. Pages,
+screenshots, scorer, ledgers and votes:
+`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/run-2/`.
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1381,6 +1416,7 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
 | 2026-11-04 | Design language probe plan | Forms, data views, and breakpoints in `DESIGN.md` | Not run; PluginBench lacks an artifact submission, a browser collector, and host-directory delivery | Host-config guidance needs browser scores that the code-patch harness cannot produce. | `docs/evidence/design-language-probe/study-plan.md` |
 | 2026-11-04 | Design language probe, first run | Forms, data views, and breakpoints in `DESIGN.md`; 18 standalone builds, 27 blind judges | Not supported: head worse on table overflow and border colors; judges preferred base in 3 of 3 probes | Head adopted the 640 and 800 px breakpoints but did not make pages more consistent; one-off run without PluginBench. | `docs/evidence/design-language-probe/probe-run-2026-11-04.md` |
+| 2026-11-04 | Design language probe, second run | Same change; 48 standalone builds with guidance in one file per build, 72 blind judges with the shared guidance | Not supported: head worse on table overflow, phone table clipping, and docs probe checks; judges preferred base in 3 of 3 probes, Opus too | No leakage; head used only 640 and 800 px, but its Data views and rail guidance produced phone-width regressions. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
 
 ## Validity threats
 
