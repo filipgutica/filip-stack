@@ -1,3 +1,17 @@
+# [3.23.0](https://github.com/filipgutica/filip-stack/compare/v3.22.0...v3.23.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **design-language:** drop reference gutters at the phone breakpoint ([85b71b4](https://github.com/filipgutica/filip-stack/commit/85b71b45187b27098a03c047857ff9e51c7f29af))
+* **design-language:** keep tablet content padding-block in the reference ([aaae930](https://github.com/filipgutica/filip-stack/commit/aaae93074c701a0f73917ed761f47a5c5c964c64))
+
+
+### Features
+
+* **design-language:** add forms, data views and breakpoint guidance ([c68ccd0](https://github.com/filipgutica/filip-stack/commit/c68ccd055af55d7557b57b0b8145a1708ae209af))
+* **design-language:** narrow to the two named breakpoints ([9b950a8](https://github.com/filipgutica/filip-stack/commit/9b950a8a027efed89946d77b4a593f17a64f806d))
+
 # [3.22.0](https://github.com/filipgutica/filip-stack/compare/v3.21.0...v3.22.0) (2026-11-05)
 
 
