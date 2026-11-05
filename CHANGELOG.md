@@ -1,3 +1,15 @@
+# [3.22.0](https://github.com/filipgutica/filip-stack/compare/v3.21.0...v3.22.0) (2026-11-05)
+
+
+### Bug Fixes
+
+* **host-config:** make count reports domain-neutral and parse embedded data ([7f8718e](https://github.com/filipgutica/filip-stack/commit/7f8718e818066d3fb07c28ccc392117c219b726b))
+
+
+### Features
+
+* **host-config:** add portable data visualization reports ([d4f593e](https://github.com/filipgutica/filip-stack/commit/d4f593e509089d8634940d8de31f53eb5264c1f3))
+
 # [3.21.0](https://github.com/filipgutica/filip-stack/compare/v3.20.1...v3.21.0) (2026-11-05)
 
 
