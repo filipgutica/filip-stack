@@ -21,9 +21,9 @@ Put the answers to 1 to 3 on the first screen. Reference material, such as optio
 
 **R3. Say each point once, across the whole page.** That includes text the page builds from elsewhere: ledes from a README table, captions, generated summaries. When a section's first sentence repeats the lede or its heading, cut one of them.
 
-**R4. Show how to start before the details.** Give the install step or first command, plus one real example of using it, such as an invocation, a command, or a short output, before rules, options, or internals. Label illustrative examples as illustrative.
+**R4. Show how to start before the details.** Before rules, options, or internals, give the install step or first command and one real example of using it. The example can be an invocation, a command, or a short output. Label illustrative examples as illustrative.
 
-**R5. Define a term before the page relies on it.** Give each term from the tool's or skill's internals a one-clause definition the first time it appears ("a *job*, meaning a runner and the servers it starts"). Examples of such terms are job, gate, climb card, and pillar. If a term needs more than a sentence, the page may not need it.
+**R5. Define a term before the page relies on it.** Give each term from the tool's or skill's internals a one-clause definition the first time it appears. For example, write "a *job*, meaning a runner and the servers it starts". Examples of such terms are job, gate, climb card, and pillar. If a term needs more than a sentence, check whether the page needs it at all.
 
 **R6. Write sentences, not notes.** Reader-facing copy uses sentences with a subject and a verb. Table cells stay short, but each one reads as a phrase a person would say. Avoid shorthand such as "Search: X. Browse: Y." or "Stop saves. No merge view." Length follows the reader's job. When a terse page leaves the reader guessing, the fix is more words.
 
@@ -64,7 +64,7 @@ Lesson, auditor detail moved behind a disclosure:
 
 ## Check before you finish
 
-Read the first screen as a newcomer with no access to the source. Confirm that:
+Read the first screen, then the whole page, as a newcomer with no access to the source. Confirm that:
 
 - you can say what it is, who it is for, and what to type or click first
 - every term on that screen is either familiar or defined
