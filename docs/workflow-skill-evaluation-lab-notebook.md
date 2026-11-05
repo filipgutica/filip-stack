@@ -1205,7 +1205,7 @@ Evidence:
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/quality-report.md`
 - `docs/evidence/workflow-skill-evaluation/micro-v2-3-repair-report.md`
 
-### 21. Design language guidance probe (planned)
+### 21. Design language guidance probe
 
 Date: 2026-11-04
 
@@ -1230,6 +1230,35 @@ and is an assumption until a dated price table exists.
 
 The study plan, the gap evidence, the smallest PluginBench additions, and the
 cost estimate are in `docs/evidence/design-language-probe/study-plan.md`.
+
+#### First run: one-off probe without PluginBench (2026-11-04)
+
+Filip approved a one-off run outside PluginBench in place of the dry run. It
+built the standalone probes only: 3 probes x 2 arms x 3 attempts = 18 pages,
+with Codex `gpt-6.1-sol` at high reasoning through `delegate_task`. Each build
+read its arm from a randomly named folder. Base was `754754a` and head was
+`c68ccd0`. A Playwright script scored every page against rules written before
+the first build. Then 27 blind judge calls (Astra, Sol 6.1, Opus 5.5) compared
+the 9 base and head pairs from screenshots. All 45 member calls succeeded, with
+no retries and no unread judge files.
+
+Result: **not supported.** Head was worse on the data table: 1 page overflow
+against 0, and 5 border colors against 4. Judges preferred base in all 3
+probes (head won 2, 1, and 0 of 9 overall votes). Head did follow its breakpoint
+rule, with only 640 and 800 px in all 9 builds; base used 420 and 760 px in 4
+builds. The two arms tied on undefined variables, contrast, forced-colors focus,
+and form and table probe checks. Neither arm marked the current docs section.
+After the judges, a check found that all 3 head docs builds set body prose in
+`--text-muted`, which explains most docs votes.
+
+Validity limits: 3 attempts per cell, judges without reference docs, two base
+builds that also read the host `~/design-language/DESIGN.md`, and no
+library-stack build.
+
+Report and per-build tables:
+`docs/evidence/design-language-probe/probe-run-2026-11-04.md`. Screenshots,
+pages, scorer, and the arm ledger:
+`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/`.
 
 ## Fixed iteration protocol
 
@@ -1351,6 +1380,7 @@ No candidate passed the canary promotion gate.
 | 2026-09-03 | Micro engineering loop v2.3 | Eight-step production-owner and test loop | 5 of 5 repairs; 3 of 3 preservation | It matched saturated correctness, reduced repair resources, and passed preservation within the fixed ceilings. | `20260903T153142Z-*`; `20260903T155846Z-*` |
 | 2026-09-03 | Successful-patch quality | Five resolved attempts in each arm | Candidate median churn was 7 versus 10. The distributions overlapped. | Equal correctness is necessary, but a lower median alone does not show consistent simplicity or lower review burden. | `micro-v2-3-successful-patch-quality/` |
 | 2026-11-04 | Design language probe plan | Forms, data views, and breakpoints in `DESIGN.md` | Not run; PluginBench lacks an artifact submission, a browser collector, and host-directory delivery | Host-config guidance needs browser scores that the code-patch harness cannot produce. | `docs/evidence/design-language-probe/study-plan.md` |
+| 2026-11-04 | Design language probe, first run | Forms, data views, and breakpoints in `DESIGN.md`; 18 standalone builds, 27 blind judges | Not supported: head worse on table overflow and border colors; judges preferred base in 3 of 3 probes | Head adopted the 640 and 800 px breakpoints but did not make pages more consistent; one-off run without PluginBench. | `docs/evidence/design-language-probe/probe-run-2026-11-04.md` |
 
 ## Validity threats
 

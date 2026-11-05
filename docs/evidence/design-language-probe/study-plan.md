@@ -2,7 +2,7 @@
 
 Date: 2026-11-04
 
-Status: planned. No dry run or paid run has started.
+Status: first run complete on 2026-11-04, as a one-off without PluginBench. It covered the standalone build only, and the guidance was not supported. See [probe-run-2026-11-04.md](probe-run-2026-11-04.md).
 
 Paths prefixed with `pluginbench/` are relative to the PluginBench repository at commit `c6a6909`.
 
