@@ -1,6 +1,10 @@
-# Prompt templates for the writing probe's scoring calls. Each takes only the page
-# text and fixed brief material, never the arm or the guidance.
+# Prompt templates for the writing probe's build and scoring calls. A scoring prompt
+# takes only the page text and fixed brief material, never the arm or the guidance.
 import json
+
+BUILD = """Read the file `{file}` and follow it (skip this step when the file is empty). Read no other file. {brief} Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+{facts}"""
 
 EXTRACTOR = """You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
 
@@ -37,7 +41,7 @@ Questions:
 (b) {b}
 (c) {c}
 
-Reply with only JSON: {{"a": "...", "b": "...", "c": "..."}}. Start the answer to (c) with Yes, No, or Not stated."""
+Reply with only JSON: {{"a": "...", "b": "...", "c": "..."}}.{yes_no}"""
 
 JUDGE = """You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
 
@@ -58,7 +62,10 @@ Answer each question with "A", "B", or "SAME":
 
 Reply with only JSON: {{"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}}"""
 
-def facts_text(key):
-    lines = [f"{i}. {t}" for i, t in key['facts'].items()]
-    lines += [f"{i}. [agent-only] {t}" for i, t in key['agentOnly'].items()]
-    return '\n'.join(lines)
+def yes_no(answer_key):
+    """Format note for the questions the key grades by a Yes or No prefix."""
+    qs = [f'({q})' for q, rule in answer_key.items() if 'prefix' in rule]
+    if not qs:
+        return ''
+    which = f'the answer to {qs[0]}' if len(qs) == 1 else 'the answers to ' + ' and '.join(qs)
+    return f' Start {which} with Yes, No, or Not stated.'
