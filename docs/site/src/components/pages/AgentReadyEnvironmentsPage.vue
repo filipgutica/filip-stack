@@ -170,10 +170,6 @@ onMounted(() => {
         the agent runs them, sees the failures, and fixes them. When it can
         start the app with realistic data, it can also open the page and look.
       </p>
-      <p>
-        Take those checks away and the agent still stops when the work looks
-        done. The problems are still there, and they wait for you in review.
-      </p>
     </div>
     <UiFigure class="lesson-figure" :number="1">
       <CatchFigure />
@@ -386,8 +382,7 @@ onMounted(() => {
       <p>
         You can audit each pillar on its own. Each pillar has one job: tell,
         check, or bound. It also has an audit check, an observable test shown
-        with the pillar. A reference file in the skill holds the pillar's
-        sources and anti-patterns.
+        with the pillar.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="3">
