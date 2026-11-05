@@ -44,9 +44,13 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
   await expect(modes.getByRole("tab", { selected: true })).toHaveText(
     "Existing repository",
   );
-  await modes.getByRole("tab", { name: "New project" }).click();
+  await modes.getByRole("tab", { name: "Engineering guidance" }).click();
   await expect(
-    page.getByText("Gates are cheapest to add at zero lines of code."),
+    page.getByText("Check the instruction files, skills, and review gates."),
+  ).toBeVisible();
+  // The new-project steps sit under "Where to start", outside the tabs.
+  await expect(
+    page.getByText("Add the gates before you write code, while they cost the least."),
   ).toBeVisible();
 
   await followPillarFromMap(page, {
