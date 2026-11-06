@@ -456,7 +456,7 @@ onMounted(() => {
                 v-if="hitBoxes[index]"
                 class="map-ring__hit"
                 v-bind="hitBoxes[index]"
-                rx="9"
+                rx="3"
               />
               <circle :cx="step.x" :cy="step.y" r="12" />
               <text class="map-ring__number" :x="step.x" :y="step.y + 4">

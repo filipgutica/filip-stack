@@ -75,7 +75,7 @@ const groups = [
         <OverviewPage v-else :catalog="catalog" />
       </main>
     </div>
-    <footer>
+    <footer class="fg-site-footer">
       <a href="https://github.com/filipgutica">Built by Filip Gutica</a>
       <nav aria-label="Project links">
         <a :href="`${repository}/blob/main/CHANGELOG.md`">Changelog</a>
