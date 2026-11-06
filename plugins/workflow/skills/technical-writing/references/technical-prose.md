@@ -44,7 +44,7 @@ A lesson is usually a tutorial or an explanation. Apply each rule only to the ty
 For all three types:
 
 - Order the sections so each one builds only on terms and ideas that the audience already knows or that earlier sections introduced. Define any other term where it first appears. You can link to a later section, but do not make a section depend on it.
-- Start each section with what the reader needs most from it. Do not restate the heading or, in a procedure, the order of the steps. Refer back to a point that an earlier section made instead of repeating it.
+- Start each section with what the reader needs most from it. Do not restate the heading or, in a tutorial or how-to guide, the order of the steps. Refer back to a point that an earlier section made instead of repeating it.
 - Give each section one reader question or task. Split a section that holds two, and merge sections that divide one.
 - Leave out facts that only the subject's maintainers need, such as internal limits and release details. Link to them when a reader may want them.
 - If the page keeps notes about how it was sourced or drafted, put them in a notes section after the last body section.
