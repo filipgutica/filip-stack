@@ -72,9 +72,10 @@ work. Measure length as `wc -w` over the scoped files.
   behavior to produce beside it.
 - Decide: a candidate with fewer words than the incumbent wins when it is no
   worse. Under `judges`, that means no strict majority of completed judges
-  prefers the incumbent; under `score`, a score at least the incumbent's;
-  under `both`, both. Any other candidate wins only by the rule in
-  `SKILL.md`.
+  prefers the incumbent; under `score`, a score no worse than the
+  incumbent's in the card's direction; under `both`, both. Any other
+  candidate wins only by the rule in `SKILL.md`. A shorter candidate accepted
+  this way does not trigger the `SAME` stop rule.
 - Report the start and final word counts.
 
 ## Costs
