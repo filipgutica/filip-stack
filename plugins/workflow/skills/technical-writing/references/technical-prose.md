@@ -37,7 +37,7 @@ These rules cover the sections after the opening of a guide, lesson, or tutorial
 - Before you explain a concept, say what problem it solves or what question it answers.
 - When the sources give a concrete case, introduce it early and return to it in each later section it applies to. Do not switch to a new example in each section or hold the only example until the end. Do not invent a case or its details.
 - State a point that several sections need in the first section that needs it. In later sections, refer back to it.
-- Give each section one reader question or task. Split a section that holds two, and merge sections that divide one. If the reader does not need a complete option list, rule set, or maintainer procedure to follow the page, move it behind a disclosure or a link.
+- Give each section one reader question or task. Split a section that holds two, and merge sections that divide one. Treat complete option lists, rule sets, and maintainer procedures as reference material. If the reader does not need that material to follow the page, move it behind a disclosure or a link.
 - If the page keeps notes about how it was sourced or drafted, put them in a notes section after the last body section.
 - End the body on what the reader can now do and where to go next, not on a summary of the sections.
 
