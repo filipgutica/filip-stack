@@ -21,22 +21,22 @@ const tables = {
   reference: [
     {
       command: "filip-stack status",
-      description: "Shows the applied commit, then each target's state.",
+      description: "Shows the applied and repository commits, then each target's state.",
     },
     {
       command: "filip-stack apply",
       description:
-        "Writes the targets. Imports your Field Guide preferences if that file exists.",
+        "Writes the setup and imports your preferences dotfile if it exists.",
     },
     {
       command: "filip-stack update",
       description:
-        "On <code>main</code> only: runs <code>git pull --ff-only</code>, then apply, then <code>field-guide-sync</code> when your preferences file exists.",
+        "On <code>main</code>: runs <code>git pull --ff-only</code>, then apply, then <code>field-guide-sync</code> if your preferences dotfile exists.",
     },
     {
       command: "filip-stack field-guide-sync",
       description:
-        "Syncs your shared Field Guide preferences with <code>~/.config/filip-stack/field-guide.json</code>.",
+        "Imports the preferences dotfile if present, then exports this machine's shared preferences to it.",
     },
   ],
   targets: [
@@ -52,7 +52,7 @@ const tables = {
     },
     {
       command: "host-config/codex/",
-      description: "<code>~/.codex</code>: Codex agent profiles.",
+      description: "<code>~/.codex</code>: agent profiles and <code>rules/filip-stack.rules</code>.",
     },
     {
       command: "host-config/agents/",
@@ -72,8 +72,8 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
-      One command that applies the shared agent setup to this machine: global
-      guidance, agent profiles, output styles, and the design language.
+      Use the CLI to set up or update a machine's global guidance, agent
+      profiles, output styles, and design language.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -82,17 +82,13 @@ const tables = {
       </div>
       <div>
         <dt>Runs from</dt>
-        <dd>A checkout of filip-stack on <code>main</code></dd>
+        <dd>A checkout of filip-stack; <code>update</code> needs <code>main</code></dd>
       </div>
     </dl>
   </section>
 
   <section aria-labelledby="install">
     <h2 id="install">Install</h2>
-    <p class="section-intro">
-      The command runs from a checkout, because <code>update</code> pulls it. A
-      link on your <code>PATH</code> is all it needs.
-    </p>
     <ol class="fg-site-steps">
       <li>
         <div>
@@ -121,38 +117,11 @@ const tables = {
       <li>
         <div>
           <p>
-            If <code>~/.local/bin</code> is not on your <code>PATH</code> yet,
+            If <code>~/.local/bin</code> is not on your <code>PATH</code>,
             add it to <code>~/.zshrc</code> and reload your shell.
           </p>
           <UiCodeBlock
             :code="commands.path"
-            language="bash"
-            variant="compact"
-            :copyable="enhanced"
-            :wrap="true"
-          />
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            Check that it works. It prints the applied commit, then the state of
-            each target.
-          </p>
-          <UiCodeBlock
-            :code="commands.status"
-            language="bash"
-            variant="compact"
-            :copyable="enhanced"
-            :wrap="true"
-          />
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>Apply the setup.</p>
-          <UiCodeBlock
-            :code="commands.apply"
             language="bash"
             variant="compact"
             :copyable="enhanced"
@@ -167,62 +136,81 @@ const tables = {
     </p>
   </section>
 
-  <section aria-labelledby="commands">
-    <h2 id="commands">Commands</h2>
-    <UiCommandList
-      :items="tables.reference"
-      :copyable="true"
-      command-header="Command"
-      description-header="What it does"
-    >
-      <template #description="{ item }"
-        ><span v-html="item.description"
-      /></template>
-    </UiCommandList>
-    <p class="hint">
-      <code>apply --force</code> and <code>update --force</code> overwrite
-      managed local edits after saving a backup.
-      <code>--home &lt;dir&gt;</code> applies the setup to another home
-      directory.
-    </p>
-  </section>
-
   <section aria-labelledby="writes">
-    <h2 id="writes">What apply writes</h2>
+    <h2 id="writes">Apply the setup</h2>
+    <ol class="fg-site-steps">
+      <li>
+        <div>
+          <p>Inspect the applied and repository commits and each target's state.</p>
+          <UiCodeBlock
+            :code="commands.status"
+            language="bash"
+            variant="compact"
+            :copyable="enhanced"
+            :wrap="true"
+          />
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>Write the setup to this machine.</p>
+          <UiCodeBlock
+            :code="commands.apply"
+            language="bash"
+            variant="compact"
+            :copyable="enhanced"
+            :wrap="true"
+          />
+        </div>
+      </li>
+    </ol>
     <UiCommandList
       :items="tables.targets"
       :copyable="false"
       command-header="From the checkout"
-      description-header="To"
+      description-header="What apply writes"
     >
       <template #description="{ item }"
         ><span v-html="item.description"
       /></template>
     </UiCommandList>
     <p class="hint">
-      A manifest in <code>~/.agents/.filip-stack-host-config.json</code> records
-      the applied commit and a hash of each file. Apply removes a file it wrote
-      earlier once the repository no longer has it.
+      The manifest at <code>~/.agents/.filip-stack-host-config.json</code>
+      records the applied commit and file hashes. Apply removes previously
+      managed files when the repository removes them.
+    </p>
+  </section>
+
+  <section aria-labelledby="update">
+    <h2 id="update">Keep up to date</h2>
+    <p>
+      Host config ships from <code>main</code> without a version. Run
+      <code>filip-stack update</code> to pull and apply changes.
+    </p>
+    <p class="hint">
+      On another branch or a detached HEAD, <code>update</code> stops before
+      pulling or applying. Switch the checkout to <code>main</code>, or use
+      <code>apply</code> to apply its current contents.
     </p>
   </section>
 
   <section aria-labelledby="sync">
     <h2 id="sync">Sync your Field Guide preferences</h2>
     <p class="section-intro">
-      Preferences that apply on every machine live in one dotfile. The repo
-      ships none, so a new machine starts empty.
+      The repository ships no preferences. To share yours between machines,
+      sync this dotfile with your dotfile manager.
     </p>
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
       <dd>
-        Your shared preferences. Uses <code>$XDG_CONFIG_HOME</code> when it is
-        set.
+        With <code>$XDG_CONFIG_HOME</code> set and nonempty, use
+        <code>$XDG_CONFIG_HOME/filip-stack/field-guide.json</code> instead.
       </dd>
     </dl>
     <ol class="fg-site-steps">
       <li>
         <div>
-          <p>On a machine with preferences you want to keep, export them.</p>
+          <p>On a machine with preferences to keep, export them.</p>
           <UiCodeBlock
             :code="commands.sync"
             language="bash"
@@ -234,7 +222,7 @@ const tables = {
       </li>
       <li>
         <div>
-          <p>Add the file to your dotfile manager, such as chezmoi.</p>
+          <p>Add the file to your dotfile manager, such as chezmoi. Use your configured path.</p>
           <UiCodeBlock
             :code="commands.chezmoi"
             language="bash"
@@ -247,16 +235,17 @@ const tables = {
       <li>
         <div>
           <p>
-            On other machines, let your dotfile manager restore it, then run
-            <code>filip-stack apply</code> to import it.
+            On other machines, restore the dotfile, then run
+            <code>filip-stack apply</code> to import it. Without it, apply
+            prints its expected path and continues.
           </p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            From then on, pull your dotfiles before you update, and add the
-            file back after. <code>update</code> syncs it for you.
+            For later updates, pull your dotfiles first. After
+            <code>update</code> syncs preferences, save the changed dotfile back.
           </p>
           <UiCodeBlock
             :code="commands.routine"
@@ -269,32 +258,53 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      chezmoi keeps its own copy, so it sees a change only after
-      <code>chezmoi re-add</code>. Pulling first lets the sync merge your other
-      machines' preferences, so chezmoi has no conflict to report.
+      Pulling first lets the sync merge other machines' preferences.
+      <code>chezmoi re-add</code> updates chezmoi's own copy of the file.
     </p>
   </section>
 
   <section aria-labelledby="edits">
-    <h2 id="edits">If you edited a managed file</h2>
+    <h2 id="edits">Recover from a local edit</h2>
     <div class="prose">
-      <p>Apply prints the diff and stops. Then choose one:</p>
+      <p>If managed text changed locally, apply prints the diff and stops. Choose one:</p>
       <ul>
         <li>
-          Move the change into <code>host-config/</code> and commit it, so every
-          machine gets it.
+          Move the change into <code>host-config/</code>, commit it, and rerun apply
+          to share it across machines.
         </li>
         <li>
-          Rerun with <code>--force</code>. Apply saves your file as
-          <code>&lt;file&gt;.bak</code>, then overwrites it.
+          Rerun apply with <code>--force</code> to save the local file as
+          <code>&lt;file&gt;.bak</code> and overwrite it.
         </li>
       </ul>
       <p>
-        Machine-local notes belong below the marked block in
-        <code>CLAUDE.md</code> or <code>AGENTS.md</code>. They stay in place and
-        override the shared guidance where they conflict.
+        An existing, nonempty guidance file without a managed block also counts as edited.
+        After forcing, restore machine-local text from the backup below the block.
+      </p>
+      <p>
+        Keep machine-local notes below the marked block in <code>CLAUDE.md</code>
+        or <code>AGENTS.md</code>. They stay in place and override conflicting shared guidance.
       </p>
     </div>
+  </section>
+
+  <section aria-labelledby="commands">
+    <h2 id="commands">Command reference</h2>
+    <UiCommandList
+      :items="tables.reference"
+      :copyable="true"
+      command-header="Command"
+      description-header="What it does"
+    >
+      <template #description="{ item }"
+        ><span v-html="item.description"
+      /></template>
+    </UiCommandList>
+    <p class="hint">
+      <code>apply --force</code> and <code>update --force</code> back up and
+      overwrite managed local edits. Use <code>--home &lt;dir&gt;</code> to
+      target another home directory.
+    </p>
   </section>
 
   <nav class="pager" aria-label="Pages">
