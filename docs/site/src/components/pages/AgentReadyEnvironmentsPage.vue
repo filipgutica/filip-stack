@@ -54,7 +54,7 @@ const scorecard = [
   {
     pillar: 2,
     name: "Static gates",
-    gap: "About 5,700 lines of root scripts and tests had no static check.",
+    gap: "About 4,700 lines of root scripts and tests had no static check.",
     fix: "Add a type check or Fallow to pnpm check.",
     channel: "Enforced",
   },
@@ -402,8 +402,8 @@ onMounted(() => {
         The command that runs these checks is the most useful line in an
         instruction file. A <code>Stop</code> hook makes running the command
         a condition of finishing instead of a request. Codex guidance also
-        asks for completion criteria and the relevant lint, format, and type
-        checks.
+        asks for a “done when” condition and the relevant lint, format, and
+        type checks.
       </p>
       <template #check>
         One command runs every static gate locally, and CI runs the same
@@ -610,7 +610,8 @@ onMounted(() => {
     <h3 id="scoring">How a pillar is scored</h3>
     <div class="prose">
       <p>
-        Each pillar scores from 0 to 3. Higher scores need stronger evidence.
+        Each pillar scores from 0 to 3, and each level builds on the one below
+        it. Higher scores need stronger evidence.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="4">
@@ -684,16 +685,8 @@ onMounted(() => {
         <li>Find the command that runs all static gates. Check the instruction file and the scripts it points to.</li>
         <li>Run it on clean <code>main</code>. Record the commit, command, duration, and result.</li>
         <li>Check that CI runs the same command with the same configuration. Count suppressions by kind: inline directives, disabled rules, and allowlist entries.</li>
-        <li>Compare your evidence with pillar 2's audit check. Choose the highest score whose requirements you have verified.</li>
+        <li>Compare your evidence with pillar 2's audit check and the score ladder in Figure 4. Choose the highest level whose requirements you have verified.</li>
       </ol>
-      <p>
-        With no verified evidence, score 0. A documented command or
-        partly working gate scores 1 if a level 2 requirement remains unmet.
-        Score 2 when one command runs every static gate locally and in CI,
-        clean <code>main</code> is green, and suppressions are counted.
-        Optional CI can support 2. For 3, the check must also block its action,
-        and results must be tracked over at least 20 runs or 30 days.
-      </p>
       <p>
         If you cannot read the CI results or required-check settings, list
         them under Unverified. They cannot raise your score. Write one top
@@ -733,7 +726,7 @@ onMounted(() => {
               <li>Find lines that restate the layout, scripts, or config. Keep the verification commands.</li>
               <li>Find instructions that repeat the same meaning across files.</li>
               <li>Check that review gates sort their findings and push back on over-fixing.</li>
-              <li>Ask for evaluation evidence. A written policy with no results scores 1. No policy scores 0.</li>
+              <li>Ask for evaluation evidence. Without results, a written policy scores 1 and no policy scores 0.</li>
             </ol>
         </div>
       </template>
@@ -752,7 +745,8 @@ onMounted(() => {
         <li>Unverified checks and what you need to run them.</li>
       </ol>
       <p>
-        Order fixes first by the potential damage from a failure. Start with
+        Order fixes first by blast radius, meaning how much damage a miss can
+        do. Start with
         unenforced pillar 7 rules about secrets, protected paths, or
         irreversible actions. Also prioritize defects that hide those rules,
         such as instructions cut off by a size limit. Then order by
@@ -783,8 +777,7 @@ onMounted(() => {
         </p>
       </div>
       <template #caption>
-        After prioritizing potential damage, use the durability ranking
-        introduced earlier.
+        After blast radius, use the durability ranking introduced earlier.
       </template>
     </UiFigure>
   </section>
@@ -809,8 +802,8 @@ onMounted(() => {
     <div class="prose">
       <p>
         A fresh
-        <code>pnpm install --frozen-lockfile</code> failed after three seconds
-        inside Claude Code's sandbox. One dependency ships a
+        <code>pnpm install --frozen-lockfile</code> failed inside Claude Code's
+        sandbox. One dependency ships a
         <code>.env</code> file in its package, and that machine's sandbox
         denies writes to <code>**/.env*</code>. On a workstation the same
         install works. Had the audit timed setup on a workstation, it would
@@ -871,7 +864,8 @@ onMounted(() => {
         <li>
           <a :href="`${repository}/pull/83`">#83</a> added an optional
           guardrails plugin whose hook enforces the attribution and 1Password
-          rules (pillar 7).
+          rules (pillar 7). On Codex, the 1Password prompt comes from a
+          host-config rule, because Codex hooks cannot ask.
         </li>
         <li>
           <a :href="`${repository}/pull/79`">#79</a> put the fresh-worktree
