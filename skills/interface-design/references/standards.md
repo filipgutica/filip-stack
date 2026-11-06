@@ -11,8 +11,9 @@ threshold.
   3:1 for the visual information needed to identify controls, their states,
   and meaningful graphics, except inactive controls; pointer targets at
   least 24 by 24 CSS pixels, or spaced so a 24px circle centered on each
-  does not overlap another target or its circle, except inline links and
-  targets whose size the browser sets; content that reflows at 320 CSS
+  does not overlap another target or its circle, with the exceptions
+  WCAG 2.5.8 lists, such as inline links, an equivalent control that meets
+  the size, and browser-sized targets the author has not modified; content that reflows at 320 CSS
   pixels wide without sideways scrolling, except content such as maps and
   data tables that needs two dimensions; text that resizes to 200% without
   loss; visible focus that other content does not hide.
@@ -30,8 +31,9 @@ threshold.
   recovery, and help.
 - **GOV.UK Design System** ([patterns](https://design-system.service.gov.uk/patterns/))
   and **USWDS** ([patterns](https://designsystem.digital.gov/patterns/)):
-  tested patterns for forms, questions, errors, and navigation. Labels sit
-  above fields and stay visible; errors appear beside the field and in a
+  tested patterns for forms, questions, errors, and navigation. Labels stay
+  visible: above text inputs and selects, beside checkboxes and radios;
+  errors appear beside the field and in a
   summary that links to it.
 - **Apple Human Interface Guidelines** ([design principles](https://developer.apple.com/design/human-interface-guidelines/design-principles)):
   hierarchy, harmony, and consistency. Use HIG platform conventions only for
