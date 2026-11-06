@@ -29,6 +29,18 @@ Resolve gaps using authoritative evidence. Keep unresolved questions explicit an
 
 Keep the review proportional to the artifact: tickets support implementation, PR descriptions support review, and reports support understanding and decisions. Preserve the applicable format; these checks do not require common headings or a checklist in every deliverable.
 
+## Guide and lesson bodies
+
+These rules cover the sections after the opening of a guide, lesson, or tutorial. They do not cover the opening, landing pages, reference pages, or PR descriptions. A required template or heading order takes precedence.
+
+- Order the sections so each one uses only terms and ideas that earlier sections introduced, or defines them where they first appear. A link to a later section is fine; an explanation that depends on one is not.
+- Before you explain a concept, say what problem it solves or what question it answers.
+- When the sources give a concrete case, introduce it early and return to it in each later section it applies to. Do not switch to a new example in each section or hold the only example until the end. Do not invent a case or its details.
+- State a point that several sections need in the first section that needs it. Later sections refer back to it.
+- Give each section one idea, and split a section that holds two. Move complete option lists, rule sets, and maintainer procedures behind a disclosure or a link. Keep on the main path what the reader needs to follow the page.
+- Put notes about sources, dates, and earlier drafts in a notes section at the end.
+- End on what the reader can now do and where to go next, not on a summary of the sections.
+
 ## Finish the prose
 
 Remove filler, inflated claims, repeated explanations, and unnecessary jargon. Use the `humanizer` skill when available for requested natural-language editing or substantial stylistic revision. Keep code, commands, links, quotations, required headings, and structured data intact. Preserve technical meaning and these clarity rules during any final editorial pass. Return the requested deliverable without style labels or editorial notes unless requested.
