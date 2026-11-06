@@ -24,14 +24,32 @@ export const MODES = {
 }
 
 // Runs in every document the context loads, so a mode survives links and reloads inside a task.
+// The styles are an !important stylesheet, which a page's own inline styles cannot override.
 const applyMode = ({ mode, themeAttr }) => {
+  const setTheme = () => {
+    if (mode === 'dark' && themeAttr) document.documentElement.setAttribute(themeAttr, 'dark')
+  }
   window.addEventListener('load', () => {
     const root = document.documentElement
-    // Doubles the page's own root size; text set in px does not grow, which is itself a finding.
-    if (mode === 'text-200') root.style.setProperty('font-size', `${parseFloat(getComputedStyle(root).fontSize) * 2}px`, 'important')
-    if (mode === 'grayscale') root.style.setProperty('filter', 'grayscale(1)', 'important')
-    if (mode === 'dark' && themeAttr) root.setAttribute(themeAttr, 'dark')
+    const css = {
+      // Doubles the page's own root size; text set in px does not grow, which is itself a finding.
+      'text-200': () => `html { font-size: ${parseFloat(getComputedStyle(root).fontSize) * 2}px !important; }`,
+      grayscale: () => 'html { filter: grayscale(1) !important; }',
+    }[mode]
+    if (css) root.append(Object.assign(document.createElement('style'), { textContent: css() }))
+    setTheme()
+    // Runs after the page's own load handlers, which may reset the theme attribute.
+    setTimeout(() => {
+      setTheme()
+      window.__uiModeApplied = true
+    })
   }, { once: true })
+}
+
+// Loads a URL and waits until its mode is applied.
+const open = async (page, url) => {
+  assertLoaded(await page.goto(url, { waitUntil: 'load' }), url)
+  await page.waitForFunction(() => window.__uiModeApplied === true)
 }
 
 export const parseArgs = (argv) => {
@@ -91,13 +109,13 @@ const run = async (opts) => {
         const context = await browser.newContext({ viewport: { width: opts.width, height: 900 }, ...MODES[mode] })
         await context.addInitScript(applyMode, { mode, themeAttr: opts.themeAttr })
         const page = await context.newPage()
-        assertLoaded(await page.goto(url, { waitUntil: 'load' }), url)
+        await open(page, url)
         const screenshot = join(out, `${fileStem(url, index)}-${mode}.png`)
         await page.screenshot({ path: screenshot, fullPage: true })
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
         results.push({ mode, url, check: 'no horizontal overflow', ok: !overflow, screenshot })
         for (const task of tasks) {
-          assertLoaded(await page.goto(url, { waitUntil: 'load' }), url)
+          await open(page, url)
           try {
             await task.run(page)
             results.push({ mode, url, check: task.name, ok: true })

@@ -58,11 +58,13 @@ export const assertLoaded = (response, url) => {
 const offTokenScan = (tokens) => {
   const root = getComputedStyle(document.documentElement)
   const resolved = tokens.map(({ name, value }) => root.getPropertyValue(name).trim() || value).filter((v) => !v.includes('var('))
-  const emFactors = resolved.map((v) => /^(-?\d*\.?\d+)em$/.exec(v)).filter(Boolean).map((m) => Number(m[1]))
+  const em = /^(-?\d*\.?\d+)em$/
+  const emFactors = resolved.map((v) => em.exec(v)).filter(Boolean).map((m) => Number(m[1]))
   const probe = document.createElement('div')
   document.body.append(probe)
   const known = new Set()
-  for (const raw of resolved) {
+  // `em` tokens depend on each element's font size, so they match per element below, not here.
+  for (const raw of resolved.filter((v) => !em.test(v))) {
     for (const prop of ['color', 'font-size', 'border-top-left-radius', 'padding-top']) {
       // An invalid value is rejected here, so it never falls back to an inherited value.
       probe.style.setProperty(prop, raw)
