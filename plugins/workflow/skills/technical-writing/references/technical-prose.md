@@ -37,8 +37,8 @@ These rules cover the sections after the opening of a guide, lesson, or tutorial
 - Before you explain a concept, say what problem it solves or what question it answers.
 - When the sources give a concrete case, introduce it early and return to it in each later section it applies to. Do not switch to a new example in each section or hold the only example until the end. Do not invent a case or its details.
 - State a point that several sections need in the first section that needs it. Later sections refer back to it.
-- Give each section one idea, and split a section that holds two. Move complete option lists, rule sets, and maintainer procedures behind a disclosure or a link. Keep on the main path what the reader needs to follow the page.
-- Put notes about sources, dates, and earlier drafts in a notes section at the end.
+- Give each section one idea. Split a section that holds two, and merge sections that divide one. Move complete option lists, rule sets, and maintainer procedures behind a disclosure or a link. Keep on the main path what the reader needs to follow the page.
+- Put notes about how the page was sourced or drafted in a notes section at the end.
 - End on what the reader can now do and where to go next, not on a summary of the sections.
 
 ## Finish the prose
