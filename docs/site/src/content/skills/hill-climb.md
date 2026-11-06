@@ -37,9 +37,10 @@ something outside the climb changed
 those files, it stops instead, so your changes survive. It never uses your Git
 stash or `git clean`.
 
-The climb stays small. It runs three rounds by default and five at most, and
-it changes at most 30% of your change's lines or 20 lines, whichever is
-larger.
+The climb stays small. It runs three rounds by default and five at most. By
+default it changes at most 30% of your change's lines, or 20 lines when that
+is larger. Ask for a different limit when you call it, for example
+`/hill-climb up to 60 lines, tighten the copy`.
 
 If any edit stayed, the judges also compare your starting version with the
 final one. If most prefer the start, the report says so first and recommends

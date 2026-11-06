@@ -73,9 +73,11 @@ Build the card and freeze it before round 1:
 - **Not covered:** what the gates and evidence do not prove. For example,
   screenshots do not prove keyboard behavior.
 - **Budget:** 3 rounds, or fewer if the user sets fewer. 5 at most.
-- **Size limit:** 30% of the original change's changed lines, or 20 lines,
-  whichever is larger. It caps the whole climb, measured against the
-  starting incumbent.
+- **Size limit:** the most lines the whole climb may change, measured
+  against the starting incumbent. By default, the larger of 30% of the
+  original change's changed lines and 20 lines. Use another limit when the
+  user or the invoking thread sets one, or when the request needs more room,
+  such as a rewrite. Record the reason on the card.
 
 Show the card and continue without waiting. Ask one question first only when
 the thread does not give you enough to derive the criteria.
