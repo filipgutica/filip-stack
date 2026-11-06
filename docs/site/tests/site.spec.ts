@@ -198,7 +198,10 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await page.goto("/filip-stack/");
-  const trigger = page.getByRole("button", { name: "Documentation", exact: true });
+  const trigger = page.getByRole("button", {
+    name: "Documentation: Overview",
+    exact: true,
+  });
   const drawer = page.getByRole("dialog", { name: "Documentation" });
   await trigger.click();
   await expect(drawer).toBeVisible();
@@ -211,10 +214,27 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
   await expect(page).toHaveURL("/filip-stack/skills/engineering/");
   await expect(drawer).toBeHidden();
   await expect(page.locator("main h1")).toHaveText("engineering");
-  await page.getByRole("button", { name: "Documentation", exact: true }).click();
+  await page
+    .getByRole("button", { name: "Documentation: engineering", exact: true })
+    .click();
   await expect(drawer.locator('[aria-current="page"]')).toHaveText(
     "engineering",
   );
+  await drawer
+    .getByRole("link", { name: "Agent-ready environments", exact: true })
+    .click();
+  await page.setViewportSize({ width: 320, height: 812 });
+  const longLabel = page.getByRole("button", {
+    name: "Documentation: Agent-ready environments",
+    exact: true,
+  });
+  await expect(longLabel).toBeVisible();
+  expect(
+    await longLabel.evaluate((element) => element.scrollWidth <= element.clientWidth),
+  ).toBe(true);
+  expect(
+    await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
+  ).toBe(true);
 });
 
 for (const theme of themes)
