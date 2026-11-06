@@ -4,65 +4,61 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 ## What it does
 
-The agent proves the change, has Sol review the code and the PR description,
-opens the PR, and waits out CI and review bots. Sol is OpenAI's GPT Sol model,
-run through [sol-loop](../sol-loop/). Because you are not watching, the agent
-asks you only what it cannot decide alone.
-
-It is the light review path: one Sol reviewer instead of the three reviewers
-that [merge-council](../merge-council/) uses. It can also finish the open
-items from an earlier merge council.
+One Sol reviewer checks the code and PR description through
+[sol-loop](../sol-loop/). The agent then opens or updates the PR, handles CI
+and bot findings, and makes routine decisions while you are away. For three
+reviewers, use [merge-council](../merge-council/); full send can also finish
+its open items.
 
 ## When to use it
 
-- You have a local change or an existing PR and want it finished.
-- You can merge the PR and want it merged once its required checks pass.
-- You want a verdict on whether a PR is ready for human review.
+Use full send for a local change or existing PR you want finished, including
+merging when its mode and checks permit. To keep the merge decision, use
+[full-stop](../full-stop/).
 
-Install it together with [sol-loop](../sol-loop/) and
-[babysit-pr](../babysit-pr/); full send stops if either is missing. Call it by
-name with `/full-send` in Claude or `$full-send` in Codex, with your goal or a
-PR link, for example `/full-send fix the flaky login test`. To keep the merge
-for yourself, use [full-stop](../full-stop/).
+Install `full-send`, `sol-loop`, and `babysit-pr` together: replace
+`-s full-send` in the command above with `-s full-send sol-loop babysit-pr`.
+It stops if either dependency is missing.
+
+Invoke it explicitly with `/full-send` in Claude or `$full-send` in Codex.
+Include a goal or PR link, for example `/full-send fix the flaky login test`.
+
+Calling it authorizes commits and pushes to the PR's branch in fix mode,
+`--force-with-lease` after a rebase of that branch, and merging in merge mode.
 
 ## How it works
 
-When it starts, full send picks two modes, fix or review only, and merge or
-verdict. It checks both again before it finishes:
+The agent selects two modes at the start and checks them again before finishing:
 
-| Mode | When it applies | What it may do |
+| Mode | Applies when | Result |
 | --- | --- | --- |
-| Fix | You wrote the PR, or it does not exist yet, and you can push to it | Commit and push fixes to the PR's branch |
-| Review only | Someone else's PR, or one you cannot push to | Report findings, without pushing |
-| Merge | Fix mode, you can push to the base repository, and no review still blocks the PR | Merge when required checks pass |
-| Verdict | Every case where merge mode does not apply | Finish with `PASS` or `FAIL`, without merging |
+| Fix | You authored the PR, or it does not exist yet, and you can push to its head repository | Commit and push fixes on its branch |
+| Review only | Fix mode does not apply | Report findings without pushing |
+| Merge | Fix mode applies, you can push to the base repository, and the review decision permits it | Merge after the full gate passes |
+| Verdict | Merge mode does not apply | Return PASS or FAIL without merging |
 
-Every change needs proof the agent saw itself: a reproduction that fails and
-then passes, the repository's CI checks, or, for UI and runtime behavior, the
-running app, because passing mocked tests alone do not show what the user
-sees.
+Proof must come from evidence the agent observes in the session: a failing
+then passing reproduction, repository CI checks, or the running app for UI
+and runtime behavior. Mocked tests alone do not prove the user experience.
 
-The agent fixes routine findings itself. A fix that changes a public contract,
-data or a migration, security, or a dependency, or that removes a test without
-evidence another test covers it, goes to you as a question. It also asks when
-it cannot prove a change, when the next step is outside what full send allows,
-such as deleting data or touching production, or when your goal is ambiguous.
-It asks a direct question that waits for your answer, so the question is not
-lost in a message you are not reading.
+Routine fixes stay in the loop. Public-contract, migration, data, security,
+and dependency changes need your decision. So does removing a test without
+proof that a named remaining test covers it. The agent also asks when proof
+is unavailable, the goal is materially ambiguous, or the next action exceeds
+the grant, such as deleting data or touching production. It uses the host's
+question tool; without one or an answer, it leaves the PR open and unmerged.
 
-It merges only when the proof covers the whole diff, Sol has approved, required
-checks are green, bots have finished, no human review asks for changes, and the
-branch is up to date. It never uses `--admin` or another way around those
-checks.
+The final gate requires proof for the whole diff, Sol approval, resolved
+merge-council items, green required checks, completed bot reviews, no human
+changes request, and an up-to-date, mergeable branch. It never bypasses these
+checks with `--admin` or another override.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/SKILL.md)
+defines the grant, mode selection, proof, and complete merge gate.
 
 ## What you get
 
-- A first line of `Merged: <merge commit>`, `PASS: ready for human review`, or
-  `FAIL: <main reason>`.
-- The PR link, the proof, the Sol rounds and what they changed, findings fixed
-  and declined with reasons, and how each merge council item closed.
-- The decisions it made for you, and anything you still need to do.
-
-Calling full send allows commits and pushes to the PR's own branch in fix mode,
-a `--force-with-lease` push to that branch after a rebase, and the merge in
-merge mode.
+- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main reason>`.
+- The PR link, proof, Sol rounds, fixed and declined findings with reasons,
+  and how each earlier merge-council item closed.
+- Decisions made on your behalf and anything you still need to do.

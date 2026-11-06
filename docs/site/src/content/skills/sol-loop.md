@@ -4,57 +4,55 @@ related: [full-send, babysit-pr]
 
 ## What it does
 
-A second model catches bugs the first one missed, but an eager reviewer can
-also grow a small change into a large one. In sol loop, your agent checks
-every finding from Sol, OpenAI's GPT Sol model, against the code before it
-acts. It fixes only the real ones, with the smallest change, and pushes back
-on scope creep.
+Your agent checks each Sol finding against the code, fixes the real problems
+with a small change, and answers disagreements with evidence. Findings outside
+the intended behavior become follow-ups instead of expanding the diff.
 
 ## When to use it
 
-- Ask for a sol loop before you open a PR, or when a change needs another
-  review.
-- Settle review findings without letting the change grow.
-
-Install it with the command above, then say "sol loop", optionally with what
-the change is for. An illustrative request:
+Install the skill with the command above, then say "sol loop" and identify
+the change and its purpose. The agent selects it for that phrase. For example:
 
 > sol loop on this branch; it only fixes the retry backoff.
 
-[full-send](../full-send/) runs it to review a change and its PR description
-together.
+Use it before opening a PR or when an existing change needs another review.
+Your host must be able to run OpenAI's GPT Sol; the skill reports unavailable
+Sol access instead of substituting another model.
+
+[Full-send](../full-send/) uses it to review the code and PR description together.
 
 ## How it works
 
-Your agent first works out exactly which change to review, keeps unrelated
-work out of it, and runs the checks that cover it. Then one Sol reviewer reads
-the diff and labels each finding by severity:
+The agent verifies the change range, excludes unrelated work, and runs
+covering checks before sending the diff to one Sol reviewer. Findings have
+three severities:
 
 | Severity | Meaning |
 | --- | --- |
 | blocker | The intended case is wrong |
-| should | A real bug that callers will hit, within what the change is for |
-| nit | Anything else, such as rare cases or small speedups |
+| should | A real bug callers will hit within the change's intent |
+| nit | Other issues, such as rare cases or small speedups |
 
-Your agent checks each finding itself. It fixes the ones it agrees with,
-answers the ones it disagrees with using evidence, and declines nits and
-out-of-scope items in one line, as follow-ups. It reruns the checks and cuts
-the diff back if review made it grow.
+The agent verifies every finding itself. Agreed findings get the smallest
+fix; disputed findings get an evidence-based response. Nits and out-of-scope
+items are declined with a reason and listed as follow-ups. After fixes, the
+agent reruns checks and reduces any unnecessary diff growth.
 
-The loop runs three rounds by default. It can go to five for security,
-permissions, authentication, data loss, or concurrency work while a blocker or
-should stays open, or when you ask. It stops early when a round returns only
-nits. If Sol is not available, the agent reports that instead of using a
-different model.
+The default budget is three rounds. It can extend to five for security,
+permissions, authentication, data loss, or state and concurrency work while
+an evidenced blocker or should remains open, or when you ask. A round with
+only nits ends the loop early.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/sol-loop/SKILL.md)
+has the exact scope, round, and approval rules.
 
 ## What you get
 
-- Either agreement, meaning Sol approves the current diff with no blocker or
-  should open, or both sides of the disagreement in a few lines for you to
-  decide.
-- The rounds, the model, what Sol changed, the diff size before and after, and
-  the findings fixed and declined, with reasons.
+- Agreement when Sol approves the current behavior diff and no blocker or
+  should remains, or both sides of a disagreement for you to decide.
+- Rounds, the model that ran, changes prompted by review, before-and-after
+  diff size, and fixed or declined findings with reasons.
 
-Running out of rounds is not approval. Sol loop never pushes during review,
-and after agreement it pushes only if you asked it to push or update the PR.
-[babysit-pr](../babysit-pr/) handles CI and review bots after that.
+Exhausting the budget is not approval. The agent never pushes during the
+loop. After agreement, it pushes only if you authorized a push or PR update.
+Use [babysit-pr](../babysit-pr/) for CI and bot review after that.

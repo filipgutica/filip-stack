@@ -4,62 +4,55 @@ related: [hill-climb, review]
 
 ## What it does
 
-Interface design is your agent's guide to screens and flows that people can
-use. It brings three kinds of knowledge to the work:
+The starting point is the user's task: finding information, acting, recovering
+from errors, and recognizing success. UX laws, craft guidance, and public
+standards such as WCAG 2.2 help the agent assess the screen or flow.
 
-- UX laws, such as Hick's law: more choices make a decision slower.
-- Craft rules for emphasis, structure, motion, and the words on the screen.
-- Public standards, such as WCAG 2.2 for accessibility, turned into
-  yes-or-no review questions.
-
-The look stays with your design system, or with the
-[design language](../../design-language/) when the project has none, so the
-skill does not invent a new palette for each page.
+Your repository's design system owns the look. When there is none, the agent
+uses the [design language](../../design-language/) if available. A new screen
+does not get an unrelated palette or visual identity.
 
 ## When to use it
 
-- Design or build a screen, form, or flow.
-- Review a screen or a user journey, with the problems ranked by their effect
-  on users.
-- Check a running app for accessibility and layout problems before it ships.
-
-Install it with the command above, then ask in plain words. An illustrative
-request:
+Install the skill with the command above, then ask to design, build, review,
+or check an interface. The agent selects it when the request matches. For example:
 
 > Review the checkout flow in `src/checkout/` and rank what to fix.
 
-It works the same in React, Vue, or plain HTML projects. To improve an
-interface in measured rounds, pair it with [hill-climb](../hill-climb/): the
-climb can use this skill's questions as the judges' criteria.
+Name the screens or journey and the task people need to complete. The skill
+works with React, Vue, and plain HTML. For measured improvement rounds, pair
+it with [hill-climb](../hill-climb/).
+
+For browser checks, the app must be running. Its project needs `playwright`
+or `@playwright/test`; the accessibility script also needs `@axe-core/playwright`.
 
 ## How it works
 
-Reviews are concrete. Each finding points at a real element on the screen and
-the rule it breaks, so you can see the problem and check the fix, rather
-than read a list of general advice. Problems that block people, such as
-missing focus or low contrast, come before matters of taste.
+Design work covers hierarchy, flow, interface copy, and loading, empty, error,
+and success states. Checks include keyboard and touch, phone and desktop
+widths, supported light and dark themes, and reduced motion.
 
-Your design system stays in charge of how things look. The skill does not
-restyle a project to match a generic idea of good design.
+Reviews point to an actual element and the question or rule it fails. User
+safety and accessibility come first; problems such as missing focus and low
+contrast take priority over taste. The owning design system stays in charge
+of appearance.
 
-Automated tools find only part of the problem. Deque's study found its
-automated testing covered 57% of accessibility issues, so a check tells you
-what it could not test instead of calling the screen accessible.
+Two bundled scripts check a running UI: one for accessibility, sideways
+scrolling, and off-token values; one for key tasks under reduced motion,
+dark mode, 200% text, and grayscale. Unrun checks remain unchecked. Automated
+tools cover only part of accessibility: Deque's study reported 57% coverage,
+so a clean run does not establish accessibility.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/interface-design/SKILL.md)
+links the review questions and exact browser-check instructions.
 
 ## What you get
 
-- For a design: the hierarchy and flow, the rules that shaped them, the edge
-  states, and the riskiest assumption to test.
-- For a review: findings ranked by their effect on users. Each names the
-  element, the rule it breaks, the change to make, and how to check the change
-  helped.
-- For a check: screenshots and each check's result at each width and theme,
-  and what is still unchecked. Two scripts run the checks in a real browser:
-  one for accessibility, sideways scrolling, and off-palette values, and one
-  that runs your key tasks with reduced motion, dark mode, 200% text, and
-  grayscale. Your project needs `playwright` or `@playwright/test`, and
-  `@axe-core/playwright`.
+- For design: the hierarchy, flow, reasons, edge states, and riskiest assumption to test.
+- For review: findings ranked by user impact, each naming the element, rule,
+  proposed fix, and how to verify it helped.
+- For checks: commands, results, screenshots, widths and themes covered,
+  and what remains unchecked.
 
-A law or standard guides a decision but does not prove a design works. The
-skill does not invent user research, so usability testing stays a separate
-step.
+Laws and standards guide decisions; they do not prove usability. The agent
+does not invent user research, and usability testing remains a separate step.

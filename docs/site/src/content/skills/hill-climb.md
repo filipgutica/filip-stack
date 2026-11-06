@@ -4,81 +4,71 @@ related: [council, sol-loop, merge-council]
 
 ## What it does
 
-The [council](../council/) members suggest improvements and then judge each
-edit. They compare the current and edited versions without knowing which is
-which.
+[Council](../council/) members propose improvements and judge versions without
+knowing which is newer. Each round makes one candidate, checks it, and keeps
+it only if it wins under the agreed decision rule. Failed or losing edits
+are restored from a saved copy.
 
 ## When to use it
 
-Use it at the end of a thread, once the change works and you want more
-polish, such as tighter spacing or simpler code. You can also start it with
-no change at all and a goal instead, such as "improve the UX of the settings
-pages". It can also climb guidance, such as a skill: each version is judged
-by the work agents produce while following it, compared with agents that get
-no guidance. A shorter version wins when the work is no worse, so guidance
-loses lines that change nothing. Hill climb judges quality, taste, and design, so check correctness
-first, for example with [sol-loop](../sol-loop/).
+Use it after a change works and you want tighter copy, spacing, or code. You
+can also start from an open-ended goal across named paths, such as improving
+the settings pages. Check correctness first, for example with
+[sol-loop](../sol-loop/); judge preferences do not prove correctness or quality.
 
-The install command above adds hill-climb alone. To add council too, change
-`-s hill-climb` to `-s hill-climb council`. Then call it and name what to
-improve, for example `/hill-climb tighter spacing on the settings page`. In
-Codex, type `$hill-climb`.
+Install hill-climb and council together: replace `-s hill-climb` in the
+command above with `-s hill-climb council`. A missing council skill stops the run.
+
+Invoke it explicitly with `/hill-climb` in Claude or `$hill-climb` in Codex.
+Name the goal and paths, for example `/hill-climb tighter spacing on the settings page`.
+You can also specify a line limit, such as `/hill-climb up to 60 lines, tighten the copy`,
+or cap member calls.
+
+For guidance such as a skill, the evidence is work produced under each version,
+compared with a no-guidance baseline. A shorter version can win when that
+work is no worse.
 
 ## How it works
 
-First, hill climb writes a *climb card*: the goal, three to five criteria for
-the judges, the files in scope, and the checks to run. When your request
-leaves something open, such as which files to change or what "better" means,
-it asks you up to four questions first, each with a suggested answer. It
-shows you the card and keeps it fixed for the whole climb. Then it runs the checks on your change
-as it stands, and it stops before editing anything if a check fails.
+A fixed *climb card* records the goal, three to five criteria, scope, checks,
+decision rule, behavior, and budget. For an open-ended goal, or
+unclear scope, criteria, decision rule, or budget, the agent asks up to four
+questions with suggested answers. It freezes the card after your answers.
+Baseline checks run before edits; a failure stops the climb.
 
-In the first round, each member suggests up to three improvements.
-Each round, hill climb applies the best-supported ideas as one small edit,
-runs the checks, and asks the judges. They see diffs for code and screenshots
-for UI. When the only failed check is a false claim in the text, hill climb
-corrects it once and checks again. If the edit still fails a check or loses,
-hill climb puts your files back from a saved copy. If
-something outside the climb changed
-those files, it stops instead, so your changes survive. It never uses your Git
-stash or `git clean`.
+Choose judges, a deterministic score, or both. A score comes from a fixed
+command that prints one number. With both, an edit must improve the score
+and win a majority of judges. Judges see code diffs, UI screenshots, or text
+in reading order, as appropriate.
 
-Instead of judges, or as well as them, a score can decide each round: a
-command you already have that prints one number, such as an accessibility
-checker's violation count. With both, an edit must improve the score and win
-most judges.
+In round one, each member proposes up to three improvements. The agent applies
+the best-supported ideas as a small edit and runs the checks. If only a false
+claim in text fails, it gets one repair and recheck. Another failure or a
+loss restores the saved version. If outside work changed the same files,
+the agent stops without restoring over it. It never uses Git stash or `git clean`.
 
-The climb stays small. It runs three rounds by default and ten at most. By
-default it changes at most 30% of your change's lines, or 20 lines when that
-is larger. Ask for a different limit when you call it, for example
-`/hill-climb up to 60 lines, tighten the copy`. You can also cap the number
-of council calls. Behavior stays the same unless you name the interactions
-the climb may change, such as focus order in a form.
+The default is three rounds, with ten at most. The default size limit is the
+larger of 30% of the original change's lines and 20 lines. Behavior stays the
+same except for interactions you explicitly allow on the card. A ten-round,
+three-member climb can use up to 36 council calls, plus retries.
 
-If any edit stayed, hill climb compares your starting version with the final
-one. Judges vote on the two versions, a score climb compares their scores
-instead, and a climb that uses both does both. If the start wins, the report
-says so first and recommends dropping the climb.
+After accepted edits, the final comparison checks the starting and final
+versions with judges, scores, or both. If judges prefer the start, the report
+says so first and recommends dropping the climb. A score that fails to beat
+the start is also reported first. Blind comparisons reduce judge noise;
+they do not remove it.
 
-Judges are noisy. Blind comparisons and checks reduce the noise but do not
-remove it, so treat the result as a polish aid, not as proof of quality. A
-ten-round climb with three members makes up to 36 council calls, plus
-retries. The exact rules are in
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/SKILL.md).
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/SKILL.md)
+has the exact budgets, restoration rules, and guidance-evaluation procedure.
 
 ## What you get
 
-- The final version in your working tree. Hill climb commits it only when
-  the thread already allowed commits.
-- A report with the climb card, each round's edit and check results, every
-  judge's vote and reason or each score, and the start-against-final
-  comparison. For UI and guidance climbs, it adds a scorecard: each screen
-  or task scored from 0 to 10 before and after, with its biggest remaining
-  issue.
-- Before and after evidence, with paired screenshots for UI, and the climb's
-  diff stat.
-- Follow-ups it skipped for size or scope, and lessons the original work
-  missed.
-- A run record in `~/.hill-climb/runs/<id>/`, with a report built from it. If
-  you keep a runs page and your host can publish pages, hill climb offers to
+- The final working-tree version. Commits require prior authorization.
+- The climb card, round edits, check results, votes and reasons or scores,
+  and the start-to-final comparison.
+- For UI and guidance, a 0–10 before-and-after scorecard per screen or task,
+  with its biggest remaining issue. UI evidence includes paired screenshots.
+- Diff statistics, skipped follow-ups, and lessons the original work missed.
+- A run record under `~/.hill-climb/runs/<id>/` and a report built from it.
+  If you keep a runs page and the host can publish it, the agent offers to
   republish it.

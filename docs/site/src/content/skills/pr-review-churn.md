@@ -4,48 +4,54 @@ related: [review, technical-writing]
 
 ## What it does
 
-If reviewers keep raising the same objection on your PRs, such as missing
-tests or a pattern the team avoids, a guideline could catch it before review.
-PR review churn reads the review threads on PRs you wrote and groups the human
-comments that object to the same engineering behavior, with examples from the
-real threads.
+Human review threads provide the evidence: the agent groups comments that
+object to the same engineering behavior, counts how many PRs each pattern
+spans, and preserves examples. Proposed guidance comes from repeated
+objections rather than one isolated comment.
 
 ## When to use it
 
-- Find the decisions that reviewers challenge again and again.
-- Measure review churn for the repositories and period you choose.
-- Base new team guidance on review history instead of a single comment.
+Install the skill with the command above. You also need Python 3.9 or later
+and an authenticated GitHub CLI, `gh`.
 
-It needs Python 3.9 or later and the GitHub CLI, `gh`, signed in. Install the
-skill with the command above, then name the repositories and how far back to
-look. The skill has no defaults for either and asks for any you leave out. An
-illustrative request:
+Name the repositories and lookback period in your request. The agent selects
+the skill for review-churn analysis. For example:
 
 > Analyze review churn on acme/web and acme/api for the last 90 days.
 
+Neither repositories nor lookback has a default. If either is missing, the
+agent asks and waits before collecting PRs. It uses your GitHub login as the
+author unless you name someone else.
+
+Use the report to find recurring review objections and choose where team
+guidance might prevent them.
+
 ## How it works
 
-The skill uses your GitHub login as the author unless you name another. A
-bundled script collects the review threads, including file locations and
-whether each thread was resolved or outdated. It selects PRs *created* on or
-after the start date, so reviews left during the period on older PRs are not
-included, and the report says so.
+A bundled collector fetches review threads with file locations and resolved
+or outdated status. Its cohort is PRs created on or after the cutoff date.
+Reviews submitted during that period on older PRs are excluded; the report
+states that limit.
 
-The agent drops bot-only comments, resolved typo nits, and the PR author's own
-comments unless they clarify another reviewer's point. It keeps useful human
-feedback even when the thread is resolved or outdated. It groups comments
-only when the reviewers objected to the same behavior, and counts how many PRs
-each pattern spans. A repository that fails to load is reported as partial
-coverage instead of stopping the whole run.
+The agent filters bot-only comments, resolved typo nits, and author comments
+that do not clarify another reviewer's point. Useful human feedback stays
+even when a thread is resolved or outdated. Comments join a pattern only when
+they object to the same behavior.
+
+A failed repository does not stop the others. The report identifies failed
+or partial coverage rather than treating a successful collector exit as proof
+of completeness.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/pr-review-churn/SKILL.md)
+has the collector and report contract.
 
 ## What you get
 
-- A Markdown report with counts, PR links, and short examples for each
-  pattern.
-- Proposed guidance changes, marked as proposals, each aimed at an existing
-  file such as `AGENTS.md` or a review checklist, plus next steps.
-- Which repositories were fully covered and which were not.
+- A Markdown report with coverage limits, pattern counts, PR links, and short examples.
+- Proposed guidance changes aimed at existing files, such as `AGENTS.md` or
+  a review checklist, and recommended next actions.
+- A distinction between fully covered, partial, and inaccessible repositories.
 
-The analysis is read-only. It does not post comments or edit repositories,
-skills, or guidance files. To write the proposed guidance, follow up with
-[technical-writing](../technical-writing/).
+The analysis is read-only: it posts no comments and changes no repository,
+skill, or guidance file. Request a follow-up implementation to apply proposals;
+[technical-writing](../technical-writing/) can help write the guidance.

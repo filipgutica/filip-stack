@@ -4,54 +4,55 @@ related: [technical-writing, jira-work-links]
 
 ## What it does
 
-Planning helps you decide what to build before anyone edits code. It reads
-the code, tests, and tracker issues that the work touches, so the result
-describes the repository as it is, and it produces only the one output you
-asked for.
+You choose one output, and the agent grounds it in the repository's code,
+tests, and tracker state. A request for a specification ends with that
+specification; it does not start a plan or create tickets automatically.
 
 ## When to use it
 
-Ask for one of these four outputs:
+Install the [Workflow plugin](../../#install), then ask for the output you
+need. The agent selects planning when your request matches.
 
-| Output | Use it to |
+| Output | Ask for it when you need to |
 | --- | --- |
-| A direction | Compare approaches and settle decisions in the conversation |
-| A specification | Define behavior, boundaries, and the outcomes you can observe |
-| An implementation plan | List file-by-file changes, each one checkable, from an approved direction |
-| Tickets | Split approved work into owned outcomes with their dependencies |
+| Direction | Compare approaches and settle decisions in conversation |
+| Specification | Define behavior, boundaries, and observable outcomes |
+| Implementation plan | Turn an approved direction into file-specific, checkable changes |
+| Tickets | Divide approved work into owned outcomes with dependencies |
 
-Planning does not implement anything or polish ordinary prose. To build the
-change, ask for it and [engineering](../engineering/) takes over. To revise
-finished prose, use [technical-writing](../technical-writing/).
-
-Planning comes with the [Workflow plugin](../../#install), and the agent picks
-it when your request matches. An illustrative request:
+For example:
 
 > Write an implementation plan for adding CSV export to the reports page.
 
+Planning makes no code changes. Ask for implementation to use
+[engineering](../engineering/), or use [technical-writing](../technical-writing/)
+to revise finished prose without changing its decisions.
+
 ## How it works
 
-The agent first confirms the outcome, the users, the constraints, what is out
-of scope, and what it may change. If the output you want is unclear and the
-answer would change the work, it asks you one question.
+The agent establishes the outcome, users, constraints, exclusions, and what
+it may change. If ambiguity about the output would change the work, it asks
+one focused question.
 
-Then it reads the code, tests, schemas, configuration, docs, and tracker state
-behind the proposal. The result keeps observed facts, decisions, assumptions,
-and open questions apart, and it raises a tradeoff with you before turning it
-into an instruction. Every deliverable gets a signal you can observe to know
-it is done.
+It reads the sources that own the proposal: code, tests, schemas,
+configuration, documentation, and tracker issues. It separates observed facts
+from decisions, assumptions, and open questions. Material tradeoffs come to
+you before they become implementation instructions. Each deliverable has an
+observable completion signal.
 
-Before it returns the result, the agent asks whether an engineer could follow
-every instruction literally without guessing. A consequential or ambiguous
-result gets a critique from a separate reviewer first.
+Before returning the artifact, the agent checks whether an engineer could
+follow it literally without guessing. A separate reviewer critiques a
+consequential or ambiguous result first.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
+defines the four modes and links their output formats. Your format and the
+repository's format take precedence over those defaults.
 
 ## What you get
 
-- One direction, specification, plan, or set of tickets, with its evidence and
-  its open questions.
-- The decisions that still block the work.
+- The one direction, specification, plan, or set of tickets you requested.
+- Supporting evidence, unresolved questions, and decisions that block the work.
 
-The result stays in the conversation unless you ask for a file. Planning does
-not edit code, commit, or publish, and it creates or changes Jira or GitHub
-issues only when you ask. It also stops after the output you asked for: a
-specification does not turn into a plan and tickets on its own.
+The result stays in conversation unless you request a file. Planning does not
+commit or publish. It creates or changes Jira or GitHub issues only when you
+ask.

@@ -4,49 +4,46 @@ related: [full-send, sol-loop]
 
 ## What it does
 
-After you open a pull request, CI runs and review bots, automated reviewers
-such as Greptile, Macroscope, or CodeRabbit, leave comments. Bots are helpful
-but not always right, so babysit PR checks each comment against the code
-before it changes anything.
+Bot comments are checked against the source before they lead to code changes.
+The agent separates real repository failures from flaky infrastructure and
+keeps fixes within the PR's intended behavior.
 
 ## When to use it
 
-- You want someone to watch a PR while its checks and review bots run.
-- A PR has CI failures or bot findings to sort out.
-- You want an authorized PR kept moving until it can merge.
+Install the skill with the command above, then name the PR and ask the agent
+to watch it. For example: "babysit PR 42". The agent selects the skill for
+requests to monitor, watch, or babysit a PR.
 
-Install it with the command above, then ask in plain words, for example
-"babysit PR 42". [full-send](../full-send/) and [full-stop](../full-stop/) use
-it to see a PR through CI.
+Use it after opening a PR, while CI and automated reviewers run, or when
+failures and bot findings need attention. [Full-send](../full-send/) and
+[full-stop](../full-stop/) use it for this part of their work.
+
+The skill uses T3 Code's PR watcher there, or its bundled `pr-wait` script
+elsewhere. One watcher owns each PR; the agent does not create a polling loop.
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/babysit-pr/SKILL.md)
+has the host-specific waiting and recovery instructions.
 
 ## How it works
 
-The agent handles the checks and comments that already exist, then waits for
-new ones. When nothing needs action, it stays quiet instead of posting "still
-waiting".
+The agent handles existing checks and comments before waiting for new events.
+It acts only on checks and comments newer than the latest push. When nothing
+needs action, it stays quiet.
 
-It acts only on checks and comments newer than the latest push. It tells a
-real failure in your code from a flaky CI machine, fixes real findings, and
-replies with a written reason when it dismisses a false positive. CodeRabbit
-findings are treated like any other finding, but the agent never waits for
-CodeRabbit and never holds a merge for it.
+Real findings get fixes. False positives get a written dismissal. Extra tests,
+unneeded edge-case guards, and small speedups outside the goal become
+follow-ups with reasons. CodeRabbit findings get the same scrutiny, but the
+agent never waits for CodeRabbit or holds a merge for it.
 
-Review loops tend to grow a PR one cheap fix at a time. Babysit PR fixes real
-bugs in the case the PR is for, and declines the rest, such as extra tests,
-guards for edge cases that do not matter, or small speedups, with a written
-reason. Those become follow-ups.
-
-It also watches the base branch. Before it calls a PR ready, it checks that
-the branch is up to date with no conflicts, and if base commits that landed
-after the last green run touch the PR's files, it rebases and waits for green
-again.
+Before reporting readiness, the agent checks the base branch, conflicts, and
+whether the PR is behind. If base commits after the last green run touch the
+PR's files, it rebases, pushes, and waits for green again.
 
 ## What you get
 
-- CI failures and real findings fixed, and false positives answered.
-- A PR that is ready to merge, or a clear statement of what blocks it.
-- Follow-ups for the fixes it declined.
+- Real CI failures and findings resolved, with false positives answered.
+- A ready PR or a concrete blocker.
+- Declined changes recorded as follow-ups.
 
-Babysit PR merges only when you asked it to, and it fetches and checks the PR
-again right before the merge. Otherwise it reports that the PR is ready. If
-another PR makes this one obsolete, it stops and asks you before closing it.
+Merging requires your explicit request. Immediately before a merge, the agent
+fetches and rechecks the PR. If another PR makes this one obsolete, it stops
+and asks before closing it unless closure was already authorized.

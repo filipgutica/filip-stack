@@ -4,59 +4,56 @@ related: [pr-review-churn, test-audit]
 
 ## What it does
 
-An agent stops when its work looks done. Whether looking done means being done
-depends on the repository: whether the agent can start the app, run the tests,
-and get a clear pass or fail. This skill scores how well a repository gives the
-agent those things, and lists the fixes in the order that pays off most.
+The audit scores eight areas an agent needs to finish work with evidence:
+code structure, static checks, tests, documentation, review, a runnable
+environment, bounded autonomy, and evaluated guidance. You get a fix order
+based on the gaps it finds.
 
-The [Agent-ready environments lesson](../../agent-ready-environments/) explains
-the ideas behind it in full.
+For the reasoning behind the audit, read the
+[Agent-ready environments lesson](../../agent-ready-environments/).
 
 ## When to use it
 
-- You are starting a project and want checks in place from the first commit.
-- You want to audit an existing repository.
-- You want to audit your agent guidance: instruction files such as
-  `AGENTS.md` or `CLAUDE.md`, skills, and review steps.
-- A new model has shipped, and you want to check which guidance still helps.
-
-Install it with the command above, then ask for an audit in plain words. An
-illustrative request:
+Install the skill with the command above. Then ask for the audit you need;
+the agent selects it when your request matches. For example:
 
 > Audit this repository for agent readiness. Read-only, please.
 
+Use it when starting a project, auditing an existing repository, or reviewing
+instruction files such as `AGENTS.md` and `CLAUDE.md`, skills, and review gates.
+Revisit guidance after a model release to check what still helps.
+
+For a read-only audit, the agent uses CI results and source inspection and
+lists skipped local runs. Required checks, branch rules, and review history
+need read access to the code host's API, such as `gh api`. Without access,
+those checks stay unverified.
+
 ## How it works
 
-The skill looks at eight *pillars*, the areas an agent depends on, such as
-static checks, tests, documentation, and a reproducible environment, meaning
-the app starts with one command in a fresh checkout, with seed data. It scores
-each pillar from 0 to 3:
+Each area, called a pillar, gets the highest score its verified evidence supports:
 
 | Score | Meaning |
 | --- | --- |
 | 0 | Missing, or no verified evidence |
-| 1 | Present, but not yet runnable as a whole |
-| 2 | Runnable, and the pillar's audit check passes |
-| 3 | Enforced and measured: it blocks the action it guards, such as a merge, and its results are tracked over at least 20 runs or 30 days |
+| 1 | Present, but not runnable as a whole |
+| 2 | Runnable, with its observable audit check met |
+| 3 | Runnable and enforced at the action it guards, with results tracked over at least 20 runs or 30 days |
 
-The [skill's instructions](https://github.com/filipgutica/filip-stack/blob/main/skills/agent-ready-environments/SKILL.md)
-cover pillars that do not apply and checks the audit could not run.
+A fresh checkout must reach a seeded, healthy app with one command for the
+environment pillar's runnable check. Pillars that do not apply are marked
+N/A and excluded from totals. Skipped checks cannot raise a score.
 
-The skill also sorts guidance into two kinds. Advisory guidance, such as an
-`AGENTS.md` line, is something the model may decide does not apply. Enforced
-guidance, such as a hook, a deny rule, or a required CI check, runs whatever
-the model decides. A rule with no exceptions belongs in the enforced kind.
+The audit also distinguishes advisory guidance, which the model may decide
+does not apply, from enforced checks such as hooks, deny rules, and required
+CI. Rules with no exceptions belong in enforcement.
 
-A read-only audit uses CI results and source reading and lists the local runs
-it skipped. Checking required checks, branch rules, and review history needs
-read access to your code host's API, for example `gh api`; without it, those
-items are marked unverified.
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/agent-ready-environments/SKILL.md)
+has the pillar criteria, audit modes, and evidence rules.
 
 ## What you get
 
-- An evidence section, then a table with each pillar's score, evidence, main
-  gap, proposed fix, and whether that fix is advisory or enforced.
-- Fixes in order: rules that protect secrets, protected paths, and actions you
-  cannot undo come first, then the fixes that last longest, then the cheapest.
-- The checks it skipped, what running them needs, and where the skill was hard
-  to apply.
+- An evidence section and a table of scores, gaps, proposed fixes, and whether
+  each fix is advisory or enforced.
+- Fixes ordered first by protection of secrets, protected paths, and irreversible
+  actions, then by durability and cost.
+- Unverified checks, what running them needs, and gaps in the skill itself.
