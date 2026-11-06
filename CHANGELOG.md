@@ -1,3 +1,20 @@
+# [4.0.0](https://github.com/filipgutica/filip-stack/compare/v3.25.0...v4.0.0) (2026-11-06)
+
+
+* feat(skills)!: replace ux-laws with interface-design ([d0fdc5d](https://github.com/filipgutica/filip-stack/commit/d0fdc5dde86c768dbdf1c8751ac616e0d86a7ad5))
+
+
+### Bug Fixes
+
+* **interface-design:** defer target-size exceptions to WCAG 2.5.8 ([9b082e1](https://github.com/filipgutica/filip-stack/commit/9b082e1c8b7f04658bb4028831e7e60f55e3fca9))
+* **interface-design:** match WCAG and source limits in review questions ([034aa14](https://github.com/filipgutica/filip-stack/commit/034aa14081047360cea943fd251f163956653ce0))
+
+
+### BREAKING CHANGES
+
+* the ux-laws skill is removed. Install interface-design
+instead: npx skills add filipgutica/filip-stack -g -a claude-code codex -s interface-design -y
+
 # [3.25.0](https://github.com/filipgutica/filip-stack/compare/v3.24.0...v3.25.0) (2026-11-06)
 
 
