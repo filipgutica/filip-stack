@@ -1252,13 +1252,13 @@ After the judges, a check found that all 3 head docs builds set body prose in
 `--text-muted`, which explains most docs votes.
 
 Validity limits: 3 attempts per cell, judges without reference docs, two base
-builds that also read the host `~/design-language/DESIGN.md`, and no
+builds that also read the host design-language guidance, and no
 library-stack build.
 
 Report and per-build tables:
 `docs/evidence/design-language-probe/probe-run-2026-11-04.md`. Screenshots,
 pages, scorer, and the arm ledger:
-`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/`.
+an external study archive (not retained in this repository).
 
 #### Second run: larger sample without leakage (2026-11-04)
 
@@ -1293,12 +1293,189 @@ head-only pattern did not repeat.
 Report and per-build tables:
 `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md`. Pages,
 screenshots, scorer, ledgers and votes:
-`~/code/design-previews/ui-audit-2026-11-04/impl/probe-study/run-2/`.
+an external study archive (not retained in this repository).
 
 On 2026-11-05 PR #96 was narrowed to the two widths, the container query, and
 the example-page changes. It drops the Forms and Data views sections and the
 Tablet row's scrolling-strip line, and keeps base's optional navigation
 wording. The narrowed change has not had its own run.
+
+### 22. Reader pages writing probe: dry runs, paid result, and B3 rerun
+
+Date: 2026-11-04
+
+Both studies were **not supported**. [PR #99](https://github.com/filipgutica/filip-stack/pull/99) closed unmerged. The tested guidance is not on `main`. Only the study record is retained here. Raw per-call files remain at [its head commit](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/).
+
+This study asks whether new writing guidance makes agents write reader pages
+that a first-time reader understands better, with no loss of facts. The
+guidance is a technical-writing [reader-pages.md reference](https://github.com/filipgutica/filip-stack/blob/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/plugins/workflow/skills/technical-writing/references/reader-pages.md), its pointer, the
+technical-prose edits, and matching host-config and cli-tool-template lines. It
+comes from a writing audit of Filip's project pages.
+
+The probe runs outside PluginBench. It hands each builder its arm's guidance as
+one randomly named file, so it measures what the guidance says, not whether a
+host routes to it. `pnpm eval:routing` covers routing separately.
+
+Arms are vanilla (no guidance), base (`origin/main`), and head (the guidance
+commit). Briefs are four fictional subjects, so the head examples cannot leak
+answers. The decision rule was fixed before any build: no harm to fact recall
+or invented facts, an objective gain on at least 2 of 5 reader measures on 3 of
+4 briefs, and a judge majority for head on 3 of 4 briefs, against base and
+against vanilla.
+
+The dry run used 1 attempt per arm on one brief, a tool landing page: 3 builds,
+3 extractor calls, 3 comprehension calls, and 6 judge calls. All 15 returned
+usable output with no retries. Each builder trace shows one read: its own arm
+file.
+
+The pipeline works. The single brief gives no verdict, but it gives one strong
+diagnostic. The head build kept all four agent-only facts in a "Good to know"
+section. Base kept two and vanilla one. All six judges preferred the other arm
+over head, and every judge's reason named those internals. Fact recall,
+invented facts, the opening job statement, and comprehension were equal across
+arms.
+
+Hypothesis: the reader-pages check that every source fact stays on the page
+worked against its own rule to write for the reader.
+
+Dry run 2 tested that hypothesis at n=1. The revision rescoped the check to
+facts the reader needs, and R7 now leaves maintainer and agent facts off the
+page, notes sections included. The same 15 calls ran on the same brief, with
+judge A/B order balanced and `role: general` on every call. The head page
+leaked no agent-only facts and kept every reader fact. No judge cited internals
+on the head page. Judges preferred base over head 2 of 3, and head over
+vanilla 2 of 3. The head page was shorter, and two judges preferred base's
+worked example and separate Keys section.
+
+The extractor marked a base leak in a Good to know section as a sources note,
+so M3 undercounts leaks in notes sections. Fixing that definition changes a
+measure after a result, so it waits for Filip's decision.
+
+One attempt per arm is a smoke test, not evidence. Filip approved the paid run on 2026-11-05.
+
+#### Dry run 3 and paid run (2026-11-05)
+
+Main `0fc048d4` was merged into the PR as `f6997da1`, preserving studies 21
+and 22, main's breakpoint and visualization content, and G1–G7. Dry run 3
+rebuilt both arms and completed 15 calls without retries. Every build read
+only its own arm, and the scorer succeeded.
+
+The paid run completed all 312 calls: 60 builds, 60 primary extractions,
+60 comprehension calls, 12 second extractions, and 120 blind judges. It used
+four briefs, three arms, and five attempts. Maximum concurrency was eight,
+and there were no retries. All 60 build traces read only their assigned arm
+file. Scorer and arm hashes stayed fixed. Double-coding agreed on every
+measured fact and opening field; one sentence-count difference left M6 unchanged.
+
+Result: **not supported**. No harm passes against both controls on all four
+briefs. Objective gain passes against base on all four, with no M3/M4
+regression. Judges prefer head on three briefs against each control, but B3
+has opposing majorities, so part 3 fails against both.
+
+| Brief | No harm, base / vanilla | Better measures vs base | Head–base votes | Head–vanilla votes |
+| --- | --- | --- | --- | --- |
+| B1 | pass / pass | M3, M9 | 9–6 | 11–4 |
+| B2 | pass / pass | M3, M4, M5, M6 | 11–4 | 14–1 |
+| B3 | pass / pass | M5, M6 | 7–8 | 5–10 |
+| B4 | pass / pass | M3, M4 | 12–3 | 11–4 |
+
+Votes are overall head–control counts, 15 per pairing. Twenty-two of B3's
+30 judge reasons mention Node.js, often preferring the fail-open caveat beside
+the opening claim rather than under Codex. This is a diagnostic, not a proven
+cause. Routing evaluation was not run, and at the time of this run the PR remained a draft. No guidance
+was revised after the result. A revision to one guidance rule and a B3 rerun are separate work.
+
+The existing clarifications remain: balanced judge order, Yes/No formatting,
+and no M5 on B4. Neither proposed change to notes-section leakage or the B1
+fragment count was applied. Global host guidance remains a shared confound.
+The orchestrator automatically delivered replies into the parent; the runner
+did not print them. Actual token usage and billed cost remain unverified.
+
+#### One-rule B3 rerun (2026-11-05)
+
+Filip approved the preregistered selective rerun. R4 alone now keeps a caveat
+beside its qualifying claim and places a caveat spanning subsections in their
+shared introduction. The revision is local commit `982af5e0`; the reference is
+1,096 words. The first normal push was blocked by session execution policy,
+so the rerun built that local commit. Publication remains incomplete.
+
+Only five new head pages were built. B3's ten paid-run control pages and their
+scores were reused. The unchanged 20% sampling added one head second
+extraction, and all 30 B3 judge calls ran anew in balanced A/B order. All 46
+new calls completed without retries, with at most eight concurrent calls.
+All build reads stayed within their assigned arm; all 41 scoring traces had
+no commands. Frozen hashes, effective settings, and prompt text match.
+
+Result: **not supported**. B3 head loses 4–11 to base and beats vanilla 12–3.
+No harm passes against both controls. B3 improves only M5, while its fragment
+rate worsens from base's 0.222 to 0.643. The new head preserves every reader
+fact, invents none, and scores 15 of 15 on comprehension. Every new page puts
+the shared caveat in the opening. Judge reasons now often discuss whether
+the trust instruction belongs before or after installation and whether labels
+are consistent; those reasons do not establish causation.
+
+Combining new B3 with saved B1, B2, and B4 passes objective gain on three of
+four briefs, with no M3/M4 regression. Part 3 still fails against base because
+B3 has an opposing majority. The required vanilla comparison now passes.
+B1, B2, and B4 were not rerun under the revised rule, so regression there is
+untested. No second revision, routing evaluation, merge, or ready action ran.
+Actual tokens and billed cost remain unverified. At the time of this run the PR remained a draft.
+
+Evidence:
+
+- [docs/evidence/reader-pages-probe/b3-rerun-report.md](evidence/reader-pages-probe/b3-rerun-report.md)
+- [docs/evidence/reader-pages-probe/b3-rerun/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/b3-rerun/)
+- [docs/evidence/reader-pages-probe/prereg.md](evidence/reader-pages-probe/prereg.md)
+- [docs/evidence/reader-pages-probe/dry-run-3-report.md](evidence/reader-pages-probe/dry-run-3-report.md)
+- [docs/evidence/reader-pages-probe/paid-run-report.md](evidence/reader-pages-probe/paid-run-report.md)
+- [docs/evidence/reader-pages-probe/paid-run/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/paid-run/)
+- [docs/evidence/reader-pages-probe/dry-run-report.md](evidence/reader-pages-probe/dry-run-report.md)
+- [docs/evidence/reader-pages-probe/dry-run-2-report.md](evidence/reader-pages-probe/dry-run-2-report.md)
+- [docs/evidence/reader-pages-probe/dry-run-2/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/dry-run-2/)
+- [docs/evidence/reader-pages-probe/dry-run/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/dry-run/)
+- [docs/evidence/reader-pages-probe/scorer/](evidence/reader-pages-probe/scorer/)
+
+### 23. Reader pages writing probe: narrowed scope
+
+Date: 2026-11-05. Filip approved a narrowed probe of at most 250 calls.
+
+Both studies were **not supported**. [PR #99](https://github.com/filipgutica/filip-stack/pull/99) closed unmerged. The tested guidance is not on `main`. Only the study record is retained here. Raw per-call files remain at [its head commit](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/).
+
+Commit `c926026b` narrows reader pages to tool and product landing pages,
+skill pages, and the opening of a guide or lesson. Procedure and reference
+sections follow technical prose instead. It also reverts the B3 rerun's R4
+caveat sentences. The `SKILL.md` pointer is unchanged. The reference is 1,093
+words.
+
+The pre-registration fixed three new briefs, all fictional: N1 is a tool
+landing page, N2 a skill page, and N3 a lesson opening. A fresh read-only Sol
+6.1 call wrote them. The design was 5 attempts per arm, and the rule needed
+2 of 3 briefs for parts 2 and 3. A dry run on N1 found one pipeline fault,
+and the fix was amended into the pre-registration before any paid build. The
+paid run made all 234 registered calls with no retries.
+
+Five Sol 6.1 scoring calls on N2 failed: their file reads stalled, and they
+replied that they could not read the file. The pre-registration says the run
+stops on a failure, but the runner checked only that a reply existed, so
+dispatch went on through the judges. No call was retried, because the
+ceiling left 2 calls and completing N2 needed 5. The frozen scorer cannot
+parse the failed replies. `partial.py` reused its functions and bounded the
+rule over the missing cells.
+
+Result: **not supported**. Against base, head passes no harm and judge
+agreement on all three briefs (10–5, 11–4, 10–5). Objective gain is
+undetermined, because it depends on the missing N2 cells. Against vanilla,
+vanilla wins N1 14–1, so part 3 fails. That part uses only judge votes, so
+the missing cells cannot change it. On N1, head beats vanilla on the opening
+statement (5 vs 1) and comprehension (15 vs 10), but the judges still
+preferred vanilla. All five vanilla N1 pages have an install heading; no head
+page does. This is a diagnostic, not a cause. Calls total 248 of 250; the
+pre-registration amendment's 249 was off by one.
+
+Evidence:
+
+- [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md)
+- [docs/evidence/reader-pages-probe/narrow/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/narrow/)
 
 ## Fixed iteration protocol
 
@@ -1423,6 +1600,12 @@ No candidate passed the canary promotion gate.
 | 2026-11-04 | Design language probe, first run | Forms, data views, and breakpoints in `DESIGN.md`; 18 standalone builds, 27 blind judges | Not supported: head worse on table overflow and border colors; judges preferred base in 3 of 3 probes | Head adopted the 640 and 800 px breakpoints but did not make pages more consistent; one-off run without PluginBench. | `docs/evidence/design-language-probe/probe-run-2026-11-04.md` |
 | 2026-11-04 | Design language probe, second run | Same change; 48 standalone builds with guidance in one file per build, 72 blind judges with the shared guidance | Not supported: head worse on table overflow, phone table clipping, and docs probe checks; judges preferred base in 3 of 3 probes, Opus too | No leakage; head used only 640 and 800 px, but its Data views and rail guidance produced phone-width regressions. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
 | 2026-11-05 | Design language PR narrowed | Breakpoints only: 640 and 800 px, container query, example pages | Not run | Run 2 tied the regressions to Data views and the scrolling-strip line, and showed head kept to the two widths. | `docs/evidence/design-language-probe/probe-run-2-2026-11-04.md` |
+| 2026-11-04 | Reader pages probe dry run | Reader pages guidance, 1 attempt per arm on one brief | Pipeline worked; head won 0 of 6 judge votes and leaked 4 agent-only facts | No verdict at n=1. Untested hypothesis: a keep-every-fact check works against the write-for-the-reader rule. | [docs/evidence/reader-pages-probe/](evidence/reader-pages-probe/) |
+| 2026-11-04 | Reader pages probe dry run 2 | Revised reader pages guidance, same brief and calls | Head leaked 0 agent-only facts and won 3 of 6 judge votes | No verdict at n=1. The leak did not repeat. The extractor misses leaks in notes sections. | [docs/evidence/reader-pages-probe/dry-run-2/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/dry-run-2/) |
+| 2026-11-05 | Reader pages probe dry run 3 | Rebuilt arms after merging main; B1, 1 attempt per arm, 15 calls | Pipeline passed, zero retries; head won 6 of 6 overall judge votes | Smoke test only; all build reads stayed within their arm. | [docs/evidence/reader-pages-probe/dry-run-3-report.md](evidence/reader-pages-probe/dry-run-3-report.md) |
+| 2026-11-05 | Reader pages paid probe | Fixed 4 briefs × 3 arms × 5 attempts, 312 calls | Not supported: no harm and objective gain pass, but B3 loses 7–8 to base and 5–10 to vanilla | Part 3 forbids an opposing majority; Node.js caveat placement is a diagnostic for a separate B3 revision. No routing run. | [docs/evidence/reader-pages-probe/paid-run-report.md](evidence/reader-pages-probe/paid-run-report.md) |
+| 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | [docs/evidence/reader-pages-probe/b3-rerun-report.md](evidence/reader-pages-probe/b3-rerun-report.md) |
+| 2026-11-05 | Reader pages narrowed probe | Scope narrowed to landing, skill, and lesson-opening pages; R4 revert; 3 new briefs × 3 arms × 5 attempts, 234 paid calls | Not supported: head beats base 10–5, 11–4, 10–5, but vanilla wins N1 14–1; 5 N2 scoring calls failed and were not retried | Judge agreement against base now passes on all three briefs. Head lost the tool landing page to vanilla, whose pages all had an install heading. Objective gain against base is undetermined. | [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md) |
 
 ## Validity threats
 
@@ -1520,8 +1703,9 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Micro v2.3 preservation run | `pluginbench/runs/20260903-workflow-v2-3-micro-loop-preservation/20260903T155846Z-workflow-pytest-preservation-control` |
 | Successful-patch quality evaluator | `pluginbench/src/pluginbench/quality.py`; `pluginbench quality` |
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
+| Reader pages probe preregistration, dry runs, and scorer | [docs/evidence/reader-pages-probe/](evidence/reader-pages-probe/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
-| Promoted Workflow source | `/Users/filip.gutica/.t3/worktrees/filip-stack/t3code-7ed6efb0/plugins/workflow/skills` |
+| Promoted Workflow source | `plugins/workflow/skills/` |
 
 The PluginBench repository ignores raw `runs/` directories.
 They contain large workspaces, model traces, and host-specific paths.
