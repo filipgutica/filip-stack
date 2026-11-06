@@ -1516,6 +1516,51 @@ Evidence:
 - [docs/evidence/guide-body-probe/calibration.md](evidence/guide-body-probe/calibration.md)
 - [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md)
 
+### 25. UX guidance probe: pre-registration and dry run
+
+Date: 2026-11-06. Plan and free dry run only; no paid call has run.
+
+The probe asks whether `interface-design` (merged in v4.0.0) improves the UI work agents produce. It compares three arms:
+
+- **vanilla:** no guidance.
+- **base:** the guidance it replaced, `ux-laws` before PR #112 plus Anthropic's `frontend-design` at its baseline commit.
+- **head:** `interface-design` at `origin/main`.
+
+Claude Opus 5.5 at high effort makes every attempt. There are two tasks:
+
+- **Review:** three static screens with 9 planted defects and some decoys. The score is defects found minus false findings, under a frozen tally rule.
+- **Build:** an API keys screen in a fixture app. The gates are `interface-design`'s own `ui-check.mjs` and `ui-modes.mjs`. Astra, Sol 6.1, and Opus 5.5 then judge blind pairs with the hill-climb judge brief and scorecard lines.
+
+Isolation is stricter than in the earlier probes, which recorded host guidance as a shared confound:
+
+- Attempts and Opus judges run `claude -p --safe-mode --restricted` with no setting sources and a clean environment.
+- Codex judges run with a scratch `HOME` and `CODEX_HOME`.
+
+The dry run sent each exact command to a local stand-in instead of a model. Results:
+
+- For each task, the first request was identical across the three arms, with no user guidance.
+- `--restricted` refused reads of `~/design-language` and `~/.claude`.
+- The scorer self-test passed 24 of 24, including Markdown-formatted replies.
+- Two reference builds passed both gates, and the bare stub failed `ui-modes.mjs`.
+
+The dry run also changed the design before it was frozen:
+
+- It tightened the tally patterns and made both parsers remove Markdown first.
+- It made the validator separate reads that `--restricted` refused from reads that succeeded.
+- It moved judge bundles out of the run folder.
+- It loosened gate tasks that would fail correct markup.
+- It raised the fixture's control borders to 3:1.
+- It made three plants less literal.
+
+The planted pages and the answer key stay in local calibration files. Only their sha256 hashes are committed.
+
+The paid run is 72 calls: 60 on Opus 5.5, 6 on Astra, and 6 on Sol 6.1. It waits on Filip's approval and a Codex sign-in to a scratch Codex home.
+
+Evidence:
+
+- [docs/evidence/ux-guidance-probe/prereg.md](evidence/ux-guidance-probe/prereg.md)
+- [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1646,6 +1691,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | [docs/evidence/reader-pages-probe/b3-rerun-report.md](evidence/reader-pages-probe/b3-rerun-report.md) |
 | 2026-11-05 | Reader pages narrowed probe | Scope narrowed to landing, skill, and lesson-opening pages; R4 revert; 3 new briefs × 3 arms × 5 attempts, 234 paid calls | Not supported: head beats base 10–5, 11–4, 10–5, but vanilla wins N1 14–1; 5 N2 scoring calls failed and were not retried | Judge agreement against base now passes on all three briefs. Head lost the tool landing page to vanilla, whose pages all had an install heading. Objective gain against base is undetermined. | [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md) |
 | 2026-11-06 | Guide-body probe | Body rules per Diátaxis type in `technical-prose.md`; 3 briefs × 3 arms × 5 attempts; calibrated judges; 325 paid calls | Not supported: head lost 2–8 to base and 2–6 to vanilla on reader success; no harm passed; D3 saturated | Reader tasks hit ceiling, so read depth decided pairs. Head's how-to put the final check last, and its explanations motivated before defining. Head leaked no agent-only facts. | [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md) |
+| 2026-11-06 | UX guidance probe pre-registration and dry run | `interface-design` vs `ux-laws` plus `frontend-design` vs vanilla; review task with planted defects and build task with gates and blind judges; Opus 5.5 attempts | Free dry run passed: identical first requests across arms, self-test 24 of 24, gates pass two reference builds and fail the stub; no paid call | `--safe-mode --restricted` and scratch Codex homes remove host guidance that earlier probes shared across arms. Paid run of 72 calls awaits approval. | [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md) |
 
 ## Validity threats
 
@@ -1745,6 +1791,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
 | Reader pages probe preregistration, dry runs, and scorer | [docs/evidence/reader-pages-probe/](evidence/reader-pages-probe/) |
 | Guide-body probe preregistration, calibration, results, and scorer | [docs/evidence/guide-body-probe/](evidence/guide-body-probe/) |
+| UX guidance probe preregistration, dry run, scorer, and fixture | [docs/evidence/ux-guidance-probe/](evidence/ux-guidance-probe/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |
 
