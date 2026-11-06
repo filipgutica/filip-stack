@@ -315,7 +315,8 @@ Stop at the first of these:
   Under `judges` and `both`, a round costs one call per judge, round 1 adds
   one per proposer, and the final check costs one call per judge. Under
   `score`, only round 1's proposers cost calls. A guidance climb adds its
-  attempts. Before each launch in a
+  attempts and reserves its baseline comparison, as
+  `references/guidance.md` describes. Before each launch in a
   round, including a retry, check that the calls left cover it and still
   leave the final check; otherwise stop. During the final check, the calls
   left need to cover only that check.
@@ -340,6 +341,9 @@ For `score` and `both`, also compare the start's score with the final
 score; under `score`, this comparison is the whole final check. When the
 final score does not beat the start's by the smallest gain that counts, say
 so first in the report.
+
+A guidance climb then compares the final version with its no-guidance
+baseline, as `references/guidance.md` describes.
 
 ## 5. Report
 
