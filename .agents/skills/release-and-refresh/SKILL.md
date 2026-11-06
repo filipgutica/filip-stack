@@ -45,7 +45,7 @@ Run a separate command without `claude-code` for installed skills that have no C
 
 ## Refresh host config
 
-Host config ships from `main` without a version. When the merged PR changed `host-config/` or `scripts/host-config.mjs`, apply it from a checkout on `main`: the first entry of `git worktree list` when it is on `main` and clean.
+Host config ships from `main` without a version. On every release, run `status` from a checkout on `main`: the first entry of `git worktree list` when it is on `main` and clean. It catches drift from a hand edit or an earlier merge that skipped this step. Run `update` when the merged PR changed `host-config/` or `scripts/host-config.mjs`, or when `status` lists any target that is not `current`.
 
 ```sh
 node <main checkout>/scripts/host-config.mjs status
