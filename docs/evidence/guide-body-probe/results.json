@@ -1,0 +1,3469 @@
+{
+ "verdict": "not supported",
+ "rule": {
+  "1_reader_vs_base": false,
+  "2_reader_vs_vanilla": false,
+  "3_no_harm": true,
+  "4_targeted": false
+ },
+ "primary": {
+  "vs_base": {
+   "wins": 2,
+   "losses": 8,
+   "ties": 5,
+   "p_one_sided": 0.9893,
+   "win_share": [
+    0.2,
+    0.057,
+    0.51
+   ]
+  },
+  "vs_vanilla": {
+   "wins": 2,
+   "losses": 6,
+   "ties": 7,
+   "p_one_sided": 0.9648,
+   "win_share": [
+    0.25,
+    0.071,
+    0.591
+   ]
+  },
+  "pairs": {
+   "base": {
+    "G1/1": "tie",
+    "G1/2": "other",
+    "G1/3": "other",
+    "G1/4": "other",
+    "G1/5": "head",
+    "G2/1": "head",
+    "G2/2": "other",
+    "G2/3": "other",
+    "G2/4": "other",
+    "G2/5": "other",
+    "G3/1": "tie",
+    "G3/2": "tie",
+    "G3/3": "tie",
+    "G3/4": "tie",
+    "G3/5": "other"
+   },
+   "vanilla": {
+    "G1/1": "head",
+    "G1/2": "other",
+    "G1/3": "other",
+    "G1/4": "other",
+    "G1/5": "tie",
+    "G2/1": "tie",
+    "G2/2": "other",
+    "G2/3": "tie",
+    "G2/4": "other",
+    "G2/5": "other",
+    "G3/1": "tie",
+    "G3/2": "head",
+    "G3/3": "tie",
+    "G3/4": "tie",
+    "G3/5": "tie"
+   }
+  }
+ },
+ "restatement": {
+  "measure": "D3",
+  "tally": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  }
+ },
+ "judged": {
+  "D1": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "D2": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 0,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "D3": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "D4": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "D5": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "P1": {
+   "wins": 0,
+   "losses": 2,
+   "ties": 13,
+   "p_one_sided": 1.0,
+   "win_share": [
+    0.0,
+    0.0,
+    0.658
+   ]
+  },
+  "P2": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "P3": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 15,
+   "p_one_sided": 1.0,
+   "win_share": null
+  },
+  "P4": {
+   "wins": 2,
+   "losses": 1,
+   "ties": 12,
+   "p_one_sided": 0.5,
+   "win_share": [
+    0.667,
+    0.208,
+    0.939
+   ]
+  },
+  "P5": {
+   "wins": 7,
+   "losses": 0,
+   "ties": 8,
+   "p_one_sided": 0.0078,
+   "win_share": [
+    1.0,
+    0.646,
+    1.0
+   ]
+  },
+  "D7": {
+   "wins": 1,
+   "losses": 0,
+   "ties": 4,
+   "p_one_sided": 0.5,
+   "win_share": [
+    1.0,
+    0.207,
+    1.0
+   ]
+  },
+  "D6": {
+   "wins": 0,
+   "losses": 0,
+   "ties": 5,
+   "p_one_sided": 1.0,
+   "win_share": null
+  }
+ },
+ "no_harm": {
+  "G1/base": true,
+  "G2/base": true,
+  "G3/base": true,
+  "G1/vanilla": true,
+  "G2/vanilla": true,
+  "G3/vanilla": true
+ },
+ "M3_total": {
+  "vanilla": 18,
+  "base": 27,
+  "head": 0
+ },
+ "flags": [],
+ "order_disagreement": {
+  "sol61": [
+   0.081,
+   0.048,
+   0.134
+  ],
+  "astra": [
+   0.113,
+   0.072,
+   0.171
+  ],
+  "opus": [
+   0.163,
+   0.113,
+   0.227
+  ]
+ },
+ "double_coding": {
+  "builds": [
+   "4e5f57dc",
+   "6ebb20ed",
+   "c5f4867b",
+   "bbcfeb86",
+   "f55b27a6",
+   "91861f0e",
+   "0c8cea97",
+   "af1c9668",
+   "d7111346"
+  ],
+  "agreement": [
+   0.988,
+   0.971,
+   0.995
+  ]
+ },
+ "aggregate": {
+  "G1/vanilla": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 285.3,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 0,
+   "M7_sum": 7,
+   "words_mean": 772.0,
+   "fk_mean": 8.24,
+   "motivated_mean": 1.0,
+   "case_mean": 0.828,
+   "endings": {
+    "next_action": 5,
+    "summary": 0,
+    "other": 0
+   }
+  },
+  "G1/base": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 292.9,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 12,
+   "M7_sum": 11,
+   "words_mean": 729.6,
+   "fk_mean": 7.22,
+   "motivated_mean": 1.0,
+   "case_mean": 0.732,
+   "endings": {
+    "next_action": 4,
+    "summary": 0,
+    "other": 1
+   }
+  },
+  "G1/head": {
+   "R1_rate": [
+    0.9,
+    0.596,
+    0.982
+   ],
+   "R2_mean": 402.9,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 0,
+   "M7_sum": 13,
+   "words_mean": 739.2,
+   "fk_mean": 6.86,
+   "motivated_mean": 0.6,
+   "case_mean": 0.8,
+   "endings": {
+    "next_action": 4,
+    "summary": 0,
+    "other": 1
+   }
+  },
+  "G2/vanilla": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 417.6,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 15,
+   "M7_sum": 12,
+   "words_mean": 878.6,
+   "fk_mean": 12.18,
+   "motivated_mean": 0.667,
+   "case_mean": 0.86,
+   "endings": {
+    "next_action": 0,
+    "summary": 5,
+    "other": 0
+   }
+  },
+  "G2/base": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 402.8,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 15,
+   "M7_sum": 6,
+   "words_mean": 837.6,
+   "fk_mean": 11.46,
+   "motivated_mean": 0.933,
+   "case_mean": 0.96,
+   "endings": {
+    "next_action": 0,
+    "summary": 2,
+    "other": 3
+   }
+  },
+  "G2/head": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 484.6,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 0,
+   "M7_sum": 6,
+   "words_mean": 837.0,
+   "fk_mean": 10.86,
+   "motivated_mean": 0.867,
+   "case_mean": 1.0,
+   "endings": {
+    "next_action": 0,
+    "summary": 5,
+    "other": 0
+   }
+  },
+  "G3/vanilla": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 624.0,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 3,
+   "M7_sum": 11,
+   "words_mean": 836.0,
+   "fk_mean": 7.34,
+   "motivated_mean": 0.9,
+   "case_mean": 0.738,
+   "endings": {
+    "next_action": 1,
+    "summary": 3,
+    "other": 1
+   }
+  },
+  "G3/base": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 566.5,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 0,
+   "M7_sum": 25,
+   "words_mean": 803.6,
+   "fk_mean": 6.16,
+   "motivated_mean": 0.9,
+   "case_mean": 0.732,
+   "endings": {
+    "next_action": 0,
+    "summary": 1,
+    "other": 4
+   }
+  },
+  "G3/head": {
+   "R1_rate": [
+    1.0,
+    0.722,
+    1.0
+   ],
+   "R2_mean": 586.6,
+   "M1_mean": 1.0,
+   "M2_sum": 0,
+   "M3_sum": 0,
+   "M7_sum": 34,
+   "words_mean": 826.4,
+   "fk_mean": 5.78,
+   "motivated_mean": 1.0,
+   "case_mean": 0.833,
+   "endings": {
+    "next_action": 5,
+    "summary": 0,
+    "other": 0
+   }
+  }
+ },
+ "verdicts": {
+  "D1": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "D2": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "head",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": null,
+    "builder_only": false
+   }
+  ],
+  "D3": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "D4": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "D5": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "head",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "other",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "P1": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "other",
+     "astra": "other",
+     "opus": "other"
+    },
+    "consensus": "other",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "other",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "other",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "P2": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "P3": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "P4": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "other",
+     "opus": "other"
+    },
+    "consensus": "other",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   }
+  ],
+  "P5": [
+   {
+    "brief": "G1",
+    "attempt": 1,
+    "judges": {
+     "sol61": "head",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": true
+   },
+   {
+    "brief": "G1",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 3,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "other"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G1",
+    "attempt": 5,
+    "judges": {
+     "sol61": "head",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "tie"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "tie"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "tie"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "D7": [
+   {
+    "brief": "G2",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 4,
+    "judges": {
+     "sol61": "head",
+     "astra": "head",
+     "opus": "head"
+    },
+    "consensus": "head",
+    "builder_only": false
+   },
+   {
+    "brief": "G2",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "head"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ],
+  "D6": [
+   {
+    "brief": "G3",
+    "attempt": 1,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 2,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 3,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 4,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   },
+   {
+    "brief": "G3",
+    "attempt": 5,
+    "judges": {
+     "sol61": "tie",
+     "astra": "tie",
+     "opus": "tie"
+    },
+    "consensus": "tie",
+    "builder_only": false
+   }
+  ]
+ },
+ "builds": [
+  {
+   "build": "4e5f57dc",
+   "brief": "G1",
+   "attempt": 1,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 571.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 764,
+   "fk_grade": 7.5,
+   "depth": {
+    "t1": 379,
+    "t2": 764
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "abae10f3",
+   "brief": "G1",
+   "attempt": 1,
+   "arm": "base",
+   "R1": 2,
+   "R2": 224.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 744,
+   "fk_grade": 7.1,
+   "depth": {
+    "t1": 343,
+    "t2": 105
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "0a6676ea",
+   "brief": "G1",
+   "attempt": 1,
+   "arm": "head",
+   "R1": 2,
+   "R2": 237.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 2,
+   "motivated_share": 0.5,
+   "case_share": 0.857,
+   "ending": "other",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 774,
+   "fk_grade": 7.1,
+   "depth": {
+    "t1": 336,
+    "t2": 138
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "40a4e68d",
+   "brief": "G1",
+   "attempt": 2,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 217.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 777,
+   "fk_grade": 8.6,
+   "depth": {
+    "t1": 366,
+    "t2": 69
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "894537da",
+   "brief": "G1",
+   "attempt": 2,
+   "arm": "base",
+   "R1": 2,
+   "R2": 211.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 0.625,
+   "ending": "other",
+   "body_sections": 8,
+   "forward_dependencies": 0,
+   "words": 715,
+   "fk_grade": 7.4,
+   "depth": {
+    "t1": 330,
+    "t2": 92
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "6ebb20ed",
+   "brief": "G1",
+   "attempt": 2,
+   "arm": "head",
+   "R1": 2,
+   "R2": 549.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 0.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 750,
+   "fk_grade": 6.8,
+   "depth": {
+    "t1": 348,
+    "t2": 750
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "30e6ba75",
+   "brief": "G1",
+   "attempt": 3,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 206.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 5,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 767,
+   "fk_grade": 8.3,
+   "depth": {
+    "t1": 361,
+    "t2": 52
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "2370baa4",
+   "brief": "G1",
+   "attempt": 3,
+   "arm": "base",
+   "R1": 2,
+   "R2": 221.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 724,
+   "fk_grade": 7.4,
+   "depth": {
+    "t1": 351,
+    "t2": 91
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "63231523",
+   "brief": "G1",
+   "attempt": 3,
+   "arm": "head",
+   "R1": 1,
+   "R2": 487.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 707,
+   "fk_grade": 6.6,
+   "depth": {
+    "t1": 303,
+    "t2": 671
+   },
+   "passed": {
+    "t1": false,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "96bc6eda",
+   "brief": "G1",
+   "attempt": 4,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 221.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 782,
+   "fk_grade": 8.4,
+   "depth": {
+    "t1": 343,
+    "t2": 100
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "c5f4867b",
+   "brief": "G1",
+   "attempt": 4,
+   "arm": "base",
+   "R1": 2,
+   "R2": 297.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 0.75,
+   "ending": "next_action",
+   "body_sections": 8,
+   "forward_dependencies": 0,
+   "words": 720,
+   "fk_grade": 6.9,
+   "depth": {
+    "t1": 426,
+    "t2": 169
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "ae38e2aa",
+   "brief": "G1",
+   "attempt": 4,
+   "arm": "head",
+   "R1": 2,
+   "R2": 533.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 745,
+   "fk_grade": 6.7,
+   "depth": {
+    "t1": 361,
+    "t2": 705
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "85dbc69a",
+   "brief": "G1",
+   "attempt": 5,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 209.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 770,
+   "fk_grade": 8.4,
+   "depth": {
+    "t1": 366,
+    "t2": 53
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "1a7bf556",
+   "brief": "G1",
+   "attempt": 5,
+   "arm": "base",
+   "R1": 2,
+   "R2": 511.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 745,
+   "fk_grade": 7.3,
+   "depth": {
+    "t1": 338,
+    "t2": 684
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "f8856585",
+   "brief": "G1",
+   "attempt": 5,
+   "arm": "head",
+   "R1": 2,
+   "R2": 208.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 0.5,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 720,
+   "fk_grade": 7.1,
+   "depth": {
+    "t1": 340,
+    "t2": 77
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "bbcfeb86",
+   "brief": "G2",
+   "attempt": 1,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 444.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 2,
+   "motivated_share": 0.333,
+   "case_share": 0.833,
+   "ending": "summary",
+   "body_sections": 6,
+   "forward_dependencies": 2,
+   "words": 871,
+   "fk_grade": 12.3,
+   "depth": {
+    "t1": 375,
+    "t2": 514
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "e01eea22",
+   "brief": "G2",
+   "attempt": 1,
+   "arm": "base",
+   "R1": 2,
+   "R2": 474.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.8,
+   "ending": "other",
+   "body_sections": 5,
+   "forward_dependencies": 1,
+   "words": 843,
+   "fk_grade": 11.3,
+   "depth": {
+    "t1": 437,
+    "t2": 511
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "a13868a8",
+   "brief": "G2",
+   "attempt": 1,
+   "arm": "head",
+   "R1": 2,
+   "R2": 417.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 2,
+   "motivated_share": 0.333,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 1,
+   "words": 857,
+   "fk_grade": 10.8,
+   "depth": {
+    "t1": 314,
+    "t2": 521
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "009ef12e",
+   "brief": "G2",
+   "attempt": 2,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 362.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "summary",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 887,
+   "fk_grade": 11.7,
+   "depth": {
+    "t1": 313,
+    "t2": 411
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "acf95e7c",
+   "brief": "G2",
+   "attempt": 2,
+   "arm": "base",
+   "R1": 2,
+   "R2": 382.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 0,
+   "words": 815,
+   "fk_grade": 11.2,
+   "depth": {
+    "t1": 308,
+    "t2": 456
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "f55b27a6",
+   "brief": "G2",
+   "attempt": 2,
+   "arm": "head",
+   "R1": 2,
+   "R2": 502.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 4,
+   "forward_dependencies": 0,
+   "words": 835,
+   "fk_grade": 11.1,
+   "depth": {
+    "t1": 468,
+    "t2": 537
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "18f3b1cc",
+   "brief": "G2",
+   "attempt": 3,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 452.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 5,
+   "motivated_share": 0.0,
+   "case_share": 0.833,
+   "ending": "summary",
+   "body_sections": 6,
+   "forward_dependencies": 2,
+   "words": 891,
+   "fk_grade": 12.6,
+   "depth": {
+    "t1": 374,
+    "t2": 531
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "2d9a58f9",
+   "brief": "G2",
+   "attempt": 3,
+   "arm": "base",
+   "R1": 2,
+   "R2": 381.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 858,
+   "fk_grade": 11.3,
+   "depth": {
+    "t1": 313,
+    "t2": 450
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "19e2ad68",
+   "brief": "G2",
+   "attempt": 3,
+   "arm": "head",
+   "R1": 2,
+   "R2": 475.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 0,
+   "words": 817,
+   "fk_grade": 10.8,
+   "depth": {
+    "t1": 442,
+    "t2": 509
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "d1df6d1a",
+   "brief": "G2",
+   "attempt": 4,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 395.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 0,
+   "words": 862,
+   "fk_grade": 12.4,
+   "depth": {
+    "t1": 310,
+    "t2": 481
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "91861f0e",
+   "brief": "G2",
+   "attempt": 4,
+   "arm": "base",
+   "R1": 2,
+   "R2": 374.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 3,
+   "motivated_share": 0.667,
+   "case_share": 1.0,
+   "ending": "other",
+   "body_sections": 6,
+   "forward_dependencies": 2,
+   "words": 853,
+   "fk_grade": 11.8,
+   "depth": {
+    "t1": 304,
+    "t2": 444
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "20e64321",
+   "brief": "G2",
+   "attempt": 4,
+   "arm": "head",
+   "R1": 2,
+   "R2": 494.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 4,
+   "forward_dependencies": 0,
+   "words": 836,
+   "fk_grade": 10.0,
+   "depth": {
+    "t1": 468,
+    "t2": 520
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "90ba9b07",
+   "brief": "G2",
+   "attempt": 5,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 433.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.8,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 1,
+   "words": 882,
+   "fk_grade": 11.9,
+   "depth": {
+    "t1": 364,
+    "t2": 503
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "b29c7056",
+   "brief": "G2",
+   "attempt": 5,
+   "arm": "base",
+   "R1": 2,
+   "R2": 402.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "other",
+   "body_sections": 5,
+   "forward_dependencies": 2,
+   "words": 819,
+   "fk_grade": 11.7,
+   "depth": {
+    "t1": 332,
+    "t2": 473
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "493d9c11",
+   "brief": "G2",
+   "attempt": 5,
+   "arm": "head",
+   "R1": 2,
+   "R2": 533.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 1.0,
+   "ending": "summary",
+   "body_sections": 5,
+   "forward_dependencies": 1,
+   "words": 840,
+   "fk_grade": 11.6,
+   "depth": {
+    "t1": 497,
+    "t2": 570
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "0c8cea97",
+   "brief": "G3",
+   "attempt": 1,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 592.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 5,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "summary",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 829,
+   "fk_grade": 6.9,
+   "depth": {
+    "t1": 491,
+    "t2": 693
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "3c2d9c24",
+   "brief": "G3",
+   "attempt": 1,
+   "arm": "base",
+   "R1": 2,
+   "R2": 547.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 6,
+   "motivated_share": 0.5,
+   "case_share": 0.75,
+   "ending": "other",
+   "body_sections": 8,
+   "forward_dependencies": 0,
+   "words": 802,
+   "fk_grade": 6.1,
+   "depth": {
+    "t1": 456,
+    "t2": 638
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "8fd00e6d",
+   "brief": "G3",
+   "attempt": 1,
+   "arm": "head",
+   "R1": 2,
+   "R2": 579.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 5,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "next_action",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 827,
+   "fk_grade": 5.4,
+   "depth": {
+    "t1": 462,
+    "t2": 697
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "8be1ebd4",
+   "brief": "G3",
+   "attempt": 2,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 642.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 2,
+   "motivated_share": 0.5,
+   "case_share": 0.714,
+   "ending": "next_action",
+   "body_sections": 7,
+   "forward_dependencies": 1,
+   "words": 834,
+   "fk_grade": 7.3,
+   "depth": {
+    "t1": 558,
+    "t2": 727
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "4b01eaf8",
+   "brief": "G3",
+   "attempt": 2,
+   "arm": "base",
+   "R1": 2,
+   "R2": 558.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 4,
+   "motivated_share": 1.0,
+   "case_share": 0.625,
+   "ending": "summary",
+   "body_sections": 8,
+   "forward_dependencies": 0,
+   "words": 798,
+   "fk_grade": 6.1,
+   "depth": {
+    "t1": 473,
+    "t2": 644
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "af1c9668",
+   "brief": "G3",
+   "attempt": 2,
+   "arm": "head",
+   "R1": 2,
+   "R2": 575.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 8,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "next_action",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 813,
+   "fk_grade": 5.6,
+   "depth": {
+    "t1": 481,
+    "t2": 670
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "022a3f18",
+   "brief": "G3",
+   "attempt": 3,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 633.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 3,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "other",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 851,
+   "fk_grade": 7.7,
+   "depth": {
+    "t1": 541,
+    "t2": 725
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "59b24589",
+   "brief": "G3",
+   "attempt": 3,
+   "arm": "base",
+   "R1": 2,
+   "R2": 598.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 6,
+   "motivated_share": 1.0,
+   "case_share": 0.571,
+   "ending": "other",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 813,
+   "fk_grade": 6.1,
+   "depth": {
+    "t1": 512,
+    "t2": 684
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "20b211d6",
+   "brief": "G3",
+   "attempt": 3,
+   "arm": "head",
+   "R1": 2,
+   "R2": 589.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 6,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "next_action",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 807,
+   "fk_grade": 6.2,
+   "depth": {
+    "t1": 486,
+    "t2": 693
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "1000d769",
+   "brief": "G3",
+   "attempt": 4,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 629.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 0,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "summary",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 848,
+   "fk_grade": 7.3,
+   "depth": {
+    "t1": 540,
+    "t2": 719
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "d7111346",
+   "brief": "G3",
+   "attempt": 4,
+   "arm": "base",
+   "R1": 2,
+   "R2": 615.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 7,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "other",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 811,
+   "fk_grade": 6.1,
+   "depth": {
+    "t1": 531,
+    "t2": 699
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "91eb4e05",
+   "brief": "G3",
+   "attempt": 4,
+   "arm": "head",
+   "R1": 2,
+   "R2": 586.5,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 11,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "next_action",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 861,
+   "fk_grade": 5.8,
+   "depth": {
+    "t1": 462,
+    "t2": 711
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "0be7a825",
+   "brief": "G3",
+   "attempt": 5,
+   "arm": "vanilla",
+   "R1": 2,
+   "R2": 623.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 3,
+   "M7": 1,
+   "motivated_share": 1.0,
+   "case_share": 0.714,
+   "ending": "summary",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 818,
+   "fk_grade": 7.5,
+   "depth": {
+    "t1": 522,
+    "t2": 724
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "a296a27d",
+   "brief": "G3",
+   "attempt": 5,
+   "arm": "base",
+   "R1": 2,
+   "R2": 514.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 2,
+   "motivated_share": 1.0,
+   "case_share": 0.857,
+   "ending": "other",
+   "body_sections": 7,
+   "forward_dependencies": 0,
+   "words": 794,
+   "fk_grade": 6.4,
+   "depth": {
+    "t1": 419,
+    "t2": 609
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  },
+  {
+   "build": "05cf64fb",
+   "brief": "G3",
+   "attempt": 5,
+   "arm": "head",
+   "R1": 2,
+   "R2": 602.0,
+   "M1": 1.0,
+   "M2": 0,
+   "M3": 0,
+   "M7": 4,
+   "motivated_share": 1.0,
+   "case_share": 0.833,
+   "ending": "next_action",
+   "body_sections": 6,
+   "forward_dependencies": 0,
+   "words": 824,
+   "fk_grade": 5.9,
+   "depth": {
+    "t1": 506,
+    "t2": 698
+   },
+   "passed": {
+    "t1": true,
+    "t2": true
+   },
+   "invented": 0
+  }
+ ]
+}

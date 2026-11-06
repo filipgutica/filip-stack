@@ -1477,6 +1477,45 @@ Evidence:
 - [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md)
 - [docs/evidence/reader-pages-probe/narrow/](https://github.com/filipgutica/filip-stack/tree/11be5512e0cfe0f86a17bcbf5d3566d8ef06cdce/docs/evidence/reader-pages-probe/narrow/)
 
+### 24. Guide-body probe
+
+Date: 2026-11-05 to 2026-11-06. [PR #110](https://github.com/filipgutica/filip-stack/pull/110) adds rules for the bodies of guides and lessons to `technical-prose.md`. They are written per Diátaxis page type: tutorial, how-to guide, and explanation. The guidance was frozen at `5ba65a18` before any build.
+
+The probe measured reader success instead of judge preference. Each page went to a `gpt-5.6-sol` reader with two frozen tasks. R1 counted tasks passed. R2 counted the words read through the block that states the last fact a task needs. The design had 3 fictional briefs (one per page type) × 3 arms (vanilla, base, head) × 5 attempts. Builds used `gpt-6.1-sol`. Before any build, Sol 6.1, Astra, and Opus 5.5 were calibrated as judges on planted defects in well-regarded docs. A judge counts on a question only where it caught the planted defects without too many false alarms.
+
+Result: **not supported**.
+
+- **Part 1 fails:** against base, head won 2 pairs, lost 8, and tied 5 (sign test p = 0.989).
+- **Part 2 fails:** against vanilla, head won 2, lost 6, and tied 7.
+- **Part 3 passes:** no harm on every brief.
+- **Part 4 fails:** D3 was saturated. Every judge flagged every head and base page for restatement, so the judges could not tell the pages apart.
+
+Task success was near ceiling: head 29/30, base and vanilla 30/30. The pair outcome therefore rested on R2, and head pages put the needed fact later:
+
+- **How-to (G1):** the Kestrel-04 check is the last step of the procedure, at 0.64 of the page. Base puts it at 0.31.
+- **Explanation (G2):** head pages state the problem before the defining facts.
+
+The dry run predicted both. Some diagnostics favor head, but none changes the verdict:
+
+- M3 agent-only leaks: head 0, base 27.
+- P5 noun strings: 7–0, with all three judges.
+- Tutorial endings on what the reader can now do: 5 of 5.
+
+One diagnostic runs against head: M7 near-duplicates were 53 for head and 42 for base.
+
+Two protocol deviations, neither touching parts 1–3:
+
+- From the extractor stage on, the runner sent 10 calls at once, above the cap of 8.
+- One judge call had a mistyped path. It was retried without approval, and Amendment 2 is ambiguous on whether it covers that case. The run made 325 calls in all, against an upper limit of 340.
+
+The guidance is not revised or rerun without Filip's approval.
+
+Evidence:
+
+- [docs/evidence/guide-body-probe/prereg.md](evidence/guide-body-probe/prereg.md)
+- [docs/evidence/guide-body-probe/calibration.md](evidence/guide-body-probe/calibration.md)
+- [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1606,6 +1645,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-05 | Reader pages paid probe | Fixed 4 briefs × 3 arms × 5 attempts, 312 calls | Not supported: no harm and objective gain pass, but B3 loses 7–8 to base and 5–10 to vanilla | Part 3 forbids an opposing majority; Node.js caveat placement is a diagnostic for a separate B3 revision. No routing run. | [docs/evidence/reader-pages-probe/paid-run-report.md](evidence/reader-pages-probe/paid-run-report.md) |
 | 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | [docs/evidence/reader-pages-probe/b3-rerun-report.md](evidence/reader-pages-probe/b3-rerun-report.md) |
 | 2026-11-05 | Reader pages narrowed probe | Scope narrowed to landing, skill, and lesson-opening pages; R4 revert; 3 new briefs × 3 arms × 5 attempts, 234 paid calls | Not supported: head beats base 10–5, 11–4, 10–5, but vanilla wins N1 14–1; 5 N2 scoring calls failed and were not retried | Judge agreement against base now passes on all three briefs. Head lost the tool landing page to vanilla, whose pages all had an install heading. Objective gain against base is undetermined. | [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md) |
+| 2026-11-06 | Guide-body probe | Body rules per Diátaxis type in `technical-prose.md`; 3 briefs × 3 arms × 5 attempts; calibrated judges; 325 paid calls | Not supported: head lost 2–8 to base and 2–6 to vanilla on reader success; no harm passed; D3 saturated | Reader tasks hit ceiling, so read depth decided pairs. Head's how-to put the final check last, and its explanations motivated before defining. Head leaked no agent-only facts. | [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md) |
 
 ## Validity threats
 
@@ -1704,6 +1744,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Successful-patch quality evaluator | `pluginbench/src/pluginbench/quality.py`; `pluginbench quality` |
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
 | Reader pages probe preregistration, dry runs, and scorer | [docs/evidence/reader-pages-probe/](evidence/reader-pages-probe/) |
+| Guide-body probe preregistration, calibration, results, and scorer | [docs/evidence/guide-body-probe/](evidence/guide-body-probe/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |
 
