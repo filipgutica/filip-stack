@@ -374,13 +374,15 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     return el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
   };
 
+  // A malformed row shows as missing instead of failing the whole run.
+  const scoreText = (n) => (typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : 'missing');
   // Each screen or task with its mean 0-10 score before and after the climb, and what is left to fix.
   const scorecard = (rows) => el('div', { class: 'block' }, el('div', { class: 'label', text: 'Scorecard' }),
     el('div', { class: 'table-wrap' }, el('table', {},
       el('thead', {}, el('tr', {}, el('th', { text: 'Screen or task' }), el('th', { class: 'n', text: 'Start' }), el('th', { class: 'n', text: 'Final' }), el('th', { text: 'Biggest remaining issue' }))),
       el('tbody', {}, rows.map((s) => el('tr', {},
-        el('td', { class: 'member', text: s.item }), el('td', { class: 'n num', text: s.start.toFixed(1) }),
-        el('td', { class: 'n num', text: s.final.toFixed(1) }), el('td', { class: 'reason' }, rich(s.issue))))))));
+        el('td', { class: 'member', text: s.item }), el('td', { class: 'n num', text: scoreText(s.start) }),
+        el('td', { class: 'n num', text: scoreText(s.final) }), el('td', { class: 'reason' }, rich(s.issue))))))));
 
   const roundSection = (run, r) => {
     const o = overall(r.votes);
@@ -418,7 +420,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     const accepted = run.rounds.filter((r) => r.decision === 'accepted').length;
     const rejected = run.rounds.filter((r) => r.decision === 'rejected').length;
     const voided = run.rounds.filter((r) => r.decision === 'void').length;
-    $detail.replaceChildren(
+    // replaceChildren would print an absent (null) section as text, so drop those first.
+    $detail.replaceChildren(...[
       el('header', { class: 'run-head' },
         el('h2', { text: run.title }),
         el('div', { class: 'facts' },
@@ -438,11 +441,13 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
       el('section', {}, el('h3', { text: 'Criteria' }),
         el('dl', { class: 'criteria' }, run.criteria.map((c) => [el('dt', { text: `${c.id} ${c.name}` }), el('dd', {}, rich(c.description))]))),
       el('section', {}, el('h3', { text: 'Rounds' }), run.rounds.map((r) => roundSection(run, r))),
-      run.final ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
+      run.final?.votes?.length ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
         el('p', { class: 'muted', text: 'After the last round, each judge compared the pull request as it was before the climb with the final version, without knowing which was which.' }),
         voteTable(run, run.final.votes),
         run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null,
         run.final.scorecard?.length ? scorecard(run.final.scorecard) : null) : null,
+      // A scorecard-only final check: no round was accepted, or a score decided the climb.
+      !run.final?.votes?.length && run.final?.scorecard?.length ? el('section', {}, el('h3', { text: 'Scorecard' }), scorecard(run.final.scorecard)) : null,
       // A guidance climb also compares its final version with no guidance at all.
       run.baseline ? el('section', {}, el('h3', { text: 'Final against no guidance' }),
         el('p', { class: 'muted' }, rich(run.baseline.summary)),
@@ -460,7 +465,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
             run.score ? [': ', el('code', { text: run.score.command }), `, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'}`] : null),
           run.mayChange?.length ? [el('dt', { text: 'May change' }), el('dd', { text: run.mayChange.join('; ') })] : null,
           el('dt', { text: 'Not covered' }), el('dd', { text: run.notCovered.join(' ') })),
-        el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n))))));
+        el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n)))))].filter((n) => n != null));
   };
 
   const show = async () => {

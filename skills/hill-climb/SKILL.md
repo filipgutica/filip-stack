@@ -298,13 +298,13 @@ A and B are two versions of the same change.
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
-<Scorecard: Rate each screen (or task) in A and in B from 0 to 10, and name its biggest remaining issue. 10: nothing to fix. 8: minor polish. 6: a user would notice a problem. 4: a task is harder than it should be. 2: a task fails.>
+<Scorecard: Rate each screen (or task) in each version from 0 to 10, and name its biggest remaining issue. 10: nothing to fix. 8: minor polish. 6: a user would notice a problem. 4: a task is harder than it should be. 2: a task fails.>
 If you could not open a bundle file, list it under UNREAD.
 Reply:
 C1 <criterion>: A|B|SAME - <reason>
 OVERALL: A|B|SAME - <reason>
 NEXT: <one improvement>
-<Scorecard: SCORE <screen or task>: A <0-10> - <issue> | B <0-10> - <issue>>
+<Scorecard: SCORE <screen or task>: A <0-10> - <issue>[ | B <0-10> - <issue>]>
 UNREAD: <files, or none>
 ```
 
@@ -320,9 +320,10 @@ Stop at the first of these:
 - The member-call limit could not cover the next round and the final check.
   Under `judges` and `both`, a round costs one call per judge, round 1 adds
   one per proposer, and the final check costs one call per judge. Under
-  `score`, only round 1's proposers cost calls. A guidance climb adds its
-  attempts and reserves its baseline comparison, as
-  `references/guidance.md` describes. Before each launch in a
+  `score`, only round 1's proposers cost calls. A UI or guidance climb's
+  final check costs one call per judge under every rule, for its scorecard.
+  A guidance climb adds its attempts and reserves its baseline comparison,
+  as `references/guidance.md` describes. Before each launch in a
   round, including a retry, check that the calls left cover it and still
   leave the final check; otherwise stop. During the final check, the calls
   left need to cover only that check.
@@ -347,10 +348,16 @@ A UI or guidance climb's final check also builds a scorecard. Put every
 screen's screenshots, or every task's outputs, in `A/` and `B/`, not only
 those that differ, and add the brief's scorecard lines. For each screen or
 task, record the mean score of each version across judges and the issue
-judges cite most for the final version.
+judges cite most for the final version. When the final check sends no judge
+pass, because no round was accepted or the rule is `score`, send each judge
+a scorecard pass anyway: the same bundle, with the brief's scorecard lines in
+place of its comparison and next-improvement lines. With no accepted round,
+put the one version in `A/` alone, tell the judge that only A exists, and
+record its scores as both start and final.
 
 For `score` and `both`, also compare the start's score with the final
-score; under `score`, this comparison is the whole final check. When the
+score; under `score`, this comparison and any scorecard pass are the whole
+final check. When the
 final score does not beat the start's by the smallest gain that counts, say
 so first in the report.
 
