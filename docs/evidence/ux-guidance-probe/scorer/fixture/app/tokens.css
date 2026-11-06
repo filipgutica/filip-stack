@@ -1,0 +1,57 @@
+/* Acme Console design tokens. Every color, size, radius, and gap in the app uses one of these. */
+:root {
+  color-scheme: light dark;
+  --bg: #f6f7f9;
+  --surface: #ffffff;
+  --surface-sunken: #eef0f3;
+  --text: #1b1f24;
+  --text-muted: #4f5866;
+  --border: #c9ced6;
+  --border-strong: #7a8390;
+  --accent: #1f5fbf;
+  --accent-hover: #184c99;
+  --on-accent: #ffffff;
+  --danger: #b42318;
+  --danger-surface: #fdecea;
+  --success: #1a7f37;
+  --success-surface: #e6f4ea;
+  --focus: #1f5fbf;
+
+  --font: system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: ui-monospace, "SF Mono", Menlo, monospace;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.25rem;
+  --text-xl: 1.5rem;
+
+  --space-1: 4px;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --duration: 150ms;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #111418;
+    --surface: #1a1e24;
+    --surface-sunken: #22272e;
+    --text: #e8ebef;
+    --text-muted: #a9b1bc;
+    --border: #3a414b;
+    --border-strong: #6b7480;
+    --accent: #6ea8ff;
+    --accent-hover: #8fbcff;
+    --on-accent: #0b1220;
+    --danger: #ff8a80;
+    --danger-surface: #3a1714;
+    --success: #6fd08c;
+    --success-surface: #12301c;
+    --focus: #6ea8ff;
+  }
+}
