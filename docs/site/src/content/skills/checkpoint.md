@@ -4,49 +4,45 @@ related: [review, walkthrough]
 
 ## What it does
 
-When you stop work in the middle, the conversation alone can overstate what
-is done. Checkpoint compares what was said with what the repository and
-checks show now. It labels each outcome as intended, attempted, implemented,
-or verified, so whoever resumes knows what still needs proof.
+A checkpoint distinguishes intended, attempted, implemented, and verified
+outcomes. It compares conversation claims with current repository and check
+evidence, so the person resuming can see what still needs proof.
 
 ## When to use it
 
-- Pause work and leave a clear starting point for later.
-- Hand work to another person or agent, with the decisions they need.
-- Record what your checks actually prove before you leave a task.
+Install the [Workflow plugin](../../#install). Checkpoint runs only when you
+invoke it: `/workflow:checkpoint` in Claude or `$workflow:checkpoint` in Codex.
+Use it before pausing work, handing it off, or recording what your checks prove.
 
-Checkpoint runs only when you call it: `/workflow:checkpoint` in Claude or
-`$workflow:checkpoint` in Codex. It comes with the
-[Workflow plugin](../../#install). Add "save it" when you want a file, for
-example `/workflow:checkpoint save it, I'll resume tomorrow`.
+The default result stays in conversation. Add a save request for a file, for
+example `/workflow:checkpoint save it, I'll resume tomorrow`. You can supply
+a destination; otherwise a new Markdown snapshot goes under
+`~/.engineering-workflow/<project-or-subject>/checkpoints/`. Earlier snapshots
+stay intact.
 
 ## How it works
 
-The agent reads the current state first: for a repository, the branch, the
-current commit, and any uncommitted changes. Plans and earlier agent claims do
-not count as proof that something is done.
+The agent checks the repository, branch, current commit, and uncommitted
+changes. Plans and earlier agent claims do not prove completion.
 
-For each check, it records the command, the result, and the commit or
-working-tree state it covered. It uses results that already exist instead of
-rerunning slow checks just for the checkpoint. A result that a later change
-made stale is flagged. A required check that never ran is listed as unrun,
-never as passed.
+Each verification result names the command, result, and commit or working-tree
+state it covered. The agent reuses available evidence instead of rerunning
+expensive checks just for the checkpoint. It flags results made stale by later
+changes. A required check that never ran remains unrun, never passed.
 
-The checkpoint stays in the conversation unless you ask to save it. A saved
-checkpoint is a new Markdown file, by default under
-`~/.engineering-workflow/<project-or-subject>/checkpoints/`, and earlier
-checkpoints are kept.
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/checkpoint/SKILL.md)
+has the snapshot format and saving rules.
 
 ## What you get
 
-A checkpoint with these parts, leaving out any that are empty:
+A checkpoint with the applicable parts:
 
-- Source: the work item, repository, branch, and commit.
-- Completed, with evidence, and Remaining.
-- Blockers and decisions.
-- Verification: what passed, what it covered, and what is unverified.
-- Next action: a concrete place to start.
+- Source: work item, repository, branch, commit, and relevant dirty state.
+- Completed outcomes with evidence, and remaining work.
+- Blockers and decisions needed to resume.
+- Verification: what passed, what it covered, and what remains unverified.
+- Next action: a concrete starting point.
 
-When you resume from a checkpoint, the agent rechecks the repository before it
-acts, because the checkpoint describes the past. Apart from the saved file,
-checkpoint changes nothing and does not commit or publish.
+On resume, the agent rechecks live sources before acting; the checkpoint is
+historical. Apart from a requested snapshot, checkpoint changes no files and
+does not commit or publish.

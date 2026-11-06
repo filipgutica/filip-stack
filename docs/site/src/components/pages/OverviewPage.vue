@@ -67,32 +67,32 @@ const steps = [
   {
     name: "Define the boundary",
     detail:
-      "Decide which behavior must not change and which checks prove it, before editing. If no change is needed, stop.",
+      "Before editing, decide what must stay the same and which checks prove it. Stop if no change is needed.",
   },
   {
     name: "Reproduce or test",
     detail:
-      "Run the nearest existing test for the request and record the result. A new regression test must fail before the fix.",
+      "Run the nearest fitting test, if any, and record its result. A new regression test must fail before the fix.",
   },
   {
     name: "Smallest change",
     detail:
-      "Fix the code that owns the behavior. No speculative options, abstractions, dependencies, or nearby cleanup.",
+      "Fix the code that owns the behavior. Avoid speculative options, abstractions, dependencies, and nearby cleanup.",
   },
   {
     name: "Focused checks",
     detail:
-      "Rerun the same test and only the affected checks. Broaden only when the change or a failure calls for it.",
+      "Rerun the same test and only affected checks. Broaden only when the change or a failure calls for it.",
   },
   {
     name: "Read the diff",
     detail:
-      "Look for accidental changes, duplication, dead code, and needless indirection. Rerun checks after any edit.",
+      "Check for accidental changes, duplication, dead code, and needless indirection. Rerun checks after any edit.",
   },
   {
     name: "Review decisions",
     detail:
-      "Send consequential or hard-to-reverse changes to an independent review before calling the work done.",
+      "Get an independent review for consequential or hard-to-reverse changes before calling the work done. If no separate reviewer is available, inspect the diff with care and report that independent review did not run.",
   },
 ].map((step, index) => {
   const { x, y } = pointAt(index * 60);
@@ -167,8 +167,8 @@ onMounted(() => {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Skills and setup for Claude and Codex.</h1>
     <p class="lede">
-      An engineering workflow, standalone skills, optional local memory, and one
-      command that sets up the agent guidance on each machine.
+      Choose what to install for your coding agent. Start with Workflow for
+      planning, changes, review, and writing; these commands install it.
     </p>
     <div class="cmd-pair">
       <div id="install">
@@ -216,37 +216,73 @@ onMounted(() => {
   </section>
 
   <section aria-labelledby="parts">
-    <h2 id="parts">What's included</h2>
+    <h2 id="parts">Choose your setup</h2>
     <ul class="parts">
       <li>
         <a href="#workflow">Workflow</a>
-        <p>
-          A plugin with nine skills for the engineering loop: plan, change,
-          check, and write it up.
-        </p>
+        <p>Install it to get all nine Workflow skills.</p>
       </li>
       <li>
         <a href="#standalone">Standalone skills</a>
         <p>
-          {{ catalog.standalone.length }} independent skills for PRs, reviews,
-          Jira, Vue, and UX. Install the ones you use.
+          Choose individual tools for PRs, Jira, Vue, and UX. They install
+          separately from Workflow.
+        </p>
+      </li>
+      <li>
+        <a href="#field-guide">Field Guide</a>
+        <p>
+          Add this optional plugin to keep preferences and lessons across sessions.
         </p>
       </li>
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          Applies shared guidance, agent profiles, output styles, and the design
-          language to each machine.
+          Run it to apply shared guidance, agent profiles,
+          output styles, and the design language on each machine.
         </p>
       </li>
       <li>
         <a href="/filip-stack/design-language/">Design language</a>
         <p>
-          The visual rules agents follow for pages, mockups, and explainers,
-          installed to <code>~/design-language</code>.
+          Shared visual rules for pages, mockups, and explainers. The CLI
+          installs them to <code>~/design-language</code>.
         </p>
       </li>
     </ul>
+  </section>
+
+  <section id="standalone" aria-labelledby="standalone-title">
+    <h2 id="standalone-title">Standalone skills</h2>
+    <p class="section-intro">
+      Replace <code>&lt;name&gt;</code> with a skill below. Run the same command
+      again to update it.
+    </p>
+    <UiCodeBlock
+      :code="commands.standalone"
+      language="bash"
+      variant="compact"
+      :copyable="enhanced"
+      :wrap="true"
+    />
+    <SkillList :skills="catalog.standalone" />
+  </section>
+
+  <section id="field-guide" aria-labelledby="fg-title">
+    <h2 id="fg-title">Field Guide</h2>
+    <div class="prose">
+      <p>
+        Field Guide stores preferences, corrections, and recurring lessons under
+        <code>~/.field-guide</code>. Its hooks add repository guidance at session
+        start and matching records on your first prompt. Current instructions
+        and live code take priority.
+      </p>
+      <p>
+        Install <code>field-guide@filip-stack</code> through the same marketplace.
+        Workflow does not depend on it.
+        <a href="/filip-stack/field-guide/">How Field Guide works</a>.
+      </p>
+    </div>
   </section>
 
   <section aria-labelledby="guides">
@@ -267,8 +303,8 @@ onMounted(() => {
   <section id="workflow" aria-labelledby="workflow-title">
     <h2 id="workflow-title">How Workflow works</h2>
     <p class="section-intro">
-      You describe the task, and the host routes it to the skill for that
-      stage. Each skill loads only the guidance the task needs.
+      Describe your task in Claude or Codex. The host selects a matching skill,
+      which loads only the guidance that task needs.
     </p>
     <UiCard class="workflow-map" :class="{ 'is-enhanced': enhanced }">
       <div v-if="enhanced" class="map-requests">
@@ -459,15 +495,15 @@ onMounted(() => {
           <h3 class="map-label">What the host loads</h3>
           <div class="map-load">
             <strong>Skill names and descriptions</strong>
-            <span>Always loaded, except for manual skills. This is all the host reads to choose.</span>
+            <span>Always loaded, except for manual skills. The host uses these to choose.</span>
             <div class="map-load">
               <strong><code>{{ selectedSkill }}</code> SKILL.md</strong>
-              <span>Only the chosen skill's rules.</span>
+              <span>The rules for the selected skill.</span>
               <div class="map-load">
                 <strong
                   ><code>{{ loadedReference }}</code></strong
                 >
-                <span>A reference, only when the task's mode needs one.</span>
+                <span>A reference loads only when the task needs it.</span>
               </div>
             </div>
           </div>
@@ -480,37 +516,5 @@ onMounted(() => {
       <code>$workflow:simplify</code> in Codex. The others are picked when a
       request matches.
     </p>
-  </section>
-
-  <section id="standalone" aria-labelledby="standalone-title">
-    <h2 id="standalone-title">Standalone skills</h2>
-    <p class="section-intro">
-      Each one installs on its own. Run the same command again to update it.
-    </p>
-    <UiCodeBlock
-      :code="commands.standalone"
-      language="bash"
-      variant="compact"
-      :copyable="enhanced"
-      :wrap="true"
-    />
-    <SkillList :skills="catalog.standalone" />
-  </section>
-
-  <section id="field-guide" aria-labelledby="fg-title">
-    <h2 id="fg-title">Field Guide</h2>
-    <div class="prose">
-      <p>
-        An optional plugin that keeps your durable preferences, corrections, and
-        lessons under <code>~/.field-guide</code>. At the start of a session, it
-        adds the stored guidance that matches the work. Current instructions and
-        live code still take priority.
-      </p>
-      <p>
-        Install <code>field-guide@filip-stack</code> the same way as Workflow.
-        Workflow does not depend on it.
-        <a href="/filip-stack/field-guide/">How Field Guide works</a>.
-      </p>
-    </div>
   </section>
 </template>

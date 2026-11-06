@@ -4,57 +4,54 @@ related: [review, simplify]
 
 ## What it does
 
-Every test costs time to run, read, and update. Typical low-value tests repeat
-another test's proof, or break when you rename a private function even though
-the behavior did not change. Test audit also flags production code that
-exists only so a test can reach it.
+A test can duplicate another test's proof or fail after a private function
+is renamed while behavior stays the same. The audit checks these maintenance
+costs and production code exposed only for tests. A suspicious test stays
+when it is the only protection for a real contract.
 
 ## When to use it
 
-- You want to audit or clean up a set of tests.
-- A change adds, removes, or rewrites a lot of tests.
-- You are unsure whether a new test adds anything, or whether deleting one
-  would lose the last proof of a behavior.
+Install the [Workflow plugin](../../#install), then name the tests or change
+to audit. The agent selects test-audit when your request matches.
+[Engineering](../engineering/) and [review](../review/) also use it for
+substantial coverage changes or uncertain test value.
 
-Test audit comes with the [Workflow plugin](../../#install). The agent picks
-it when your request matches, and [engineering](../engineering/) and
-[review](../review/) call it for large test changes. An illustrative request:
+For a report without edits, say so:
 
-> Audit the tests in `src/billing/` for duplicates and tests that only mirror
-> the implementation.
+> Audit the tests in `src/billing/` for duplicates and implementation-coupled
+> assertions. Read-only, please.
+
+Use it when adding or removing many tests, or when you cannot tell whether a
+test adds distinct coverage. A cleanup request must authorize edits separately
+from a read-only audit.
 
 ## How it works
 
-Test audit works in one of three modes:
-
-| Mode | What it covers |
+| Mode | Scope |
 | --- | --- |
-| Authoring | Each new or changed test, as it is written |
-| Audit | A focused sweep of existing tests in the files or change you name |
-| Campaign | Every test one subsystem owns; runs only when you ask for it |
+| Authoring | Each new or changed test as it is written |
+| Audit | Existing tests in the files or change you name |
+| Campaign | Every test owned by one subsystem; only on explicit request |
 
-For each test, it asks four questions. What behavior does it protect? What
-real regression would make it fail? Why does no other test already catch that
-failure? Does it need an export, flag, or hook in production code that only
-the test uses? A new test without good answers is not added yet, and a test
-that needs such a hook moves to the real boundary instead. It also checks
-each test against a list of common low-value patterns, such as a test with no
-assertions or a test whose expected value comes from the code under test.
+The agent reads the whole test, its production owner, callers, and overlapping
+coverage before judging it. It asks what behavior the test protects, which
+credible regression breaks it, and why existing coverage misses that failure.
+It also checks for production exports, flags, or hooks needed only by tests.
 
-Before it judges a test, it reads the whole test, the production code it
-covers, the callers, and any overlapping tests. A suspicious test stays when it
-is the only test that guards a real behavior. When it removes a test, it names
-the remaining test that would still fail if that behavior broke, or the change
-that retired the behavior.
+A new test without those answers is not added. A test that needs a
+production seam, such as an export, flag, or hook, that no production caller
+needs moves to the real boundary instead. Patterns such as missing
+assertions or expected values calculated by the code under test need scrutiny.
+Before removing coverage, the agent identifies the remaining test that would
+catch the failure, or the change that retired the contract.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/test-audit/SKILL.md)
+links the full value criteria and validation procedure.
 
 ## What you get
 
-- The tests audited, the findings, the suspicious tests it kept and why, and
-  the limits of what it checked.
-- For edits, one line per added or removed test that says what still protects
-  that behavior.
-- For edits, production and test lines changed, counted separately, and the
-  follow-ups it found.
+- The audited range, findings, suspicious tests retained with reasons, and limits.
+- For edits, a coverage record for each added or removed test.
+- For edits, production and test lines changed, reported separately, plus follow-ups.
 
-A read-only audit reports findings and changes nothing. Test audit commits,
-pushes, or opens a PR only when you ask.
+A read-only audit changes nothing. Commits, pushes, and PRs need your request.

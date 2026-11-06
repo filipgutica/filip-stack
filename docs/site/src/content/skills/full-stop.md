@@ -4,41 +4,51 @@ related: [full-send, sol-loop, babysit-pr]
 
 ## What it does
 
-The agent proves the change, has Sol, OpenAI's GPT Sol model, review the code
-and the PR description, and waits out CI and review bots, just as
-[full-send](../full-send/) does. You come back to a PR that is ready for you to
-merge, or to the reason it is not.
+Sol reviews the code and PR description, and the agent handles CI and bot
+findings through the same process as [full-send](../full-send/). The final
+check confirms whether the PR is ready for your merge decision.
 
 ## When to use it
 
-- Finish a change while you are away, but keep the merge decision yourself.
-- Get an existing PR to a readiness verdict.
+Use it to finish a local change or existing PR while you are away and leave
+the PR open for you.
 
-Install it together with [full-send](../full-send/), [sol-loop](../sol-loop/),
-and [babysit-pr](../babysit-pr/); full stop stops if any of them is missing.
-Call it by name with `/full-stop` in Claude or `$full-stop` in Codex, with your
-goal or a PR link, for example `/full-stop https://github.com/acme/app/pull/42`.
+Install `full-stop`, `full-send`, `sol-loop`, and `babysit-pr` together: replace
+`-s full-stop` in the command above with
+`-s full-stop full-send sol-loop babysit-pr`. A missing dependency stops the run.
+
+Invoke it explicitly with `/full-stop` in Claude or `$full-stop` in Codex,
+followed by the goal or PR link. For example:
+`/full-stop https://github.com/acme/app/pull/42`.
+
+The invocation authorizes commits and pushes to the PR's own branch in fix
+mode. It never authorizes merging, auto-merge, a merge queue, or a push to the
+default branch.
 
 ## How it works
 
-Full stop follows full send's modes, proof, fixes, and rules for asking you.
+Full stop follows full send's modes, proof requirements, routine fixes, and
+rules for asking you. It always returns a verdict instead of merging.
 
-In fix mode, it turns off auto-merge and takes the PR out of any merge queue
-before it starts, and it checks again before each push. On a PR that it may
-not change, it reports those settings instead. If it cannot stop the PR from
-merging without you, it asks before it continues.
+In fix mode, it disables auto-merge and removes the PR from a merge queue
+before work begins, then rechecks before each push. In review-only mode, it
+reports those settings without changing them. If it cannot prevent a merge
+without your help, it asks before proceeding.
 
-It uses full send's merge checks as its readiness check, and its proof and Sol
-review must cover the final diff. Before it hands the PR back, it checks the
-live PR: open, not a draft, and not set to merge on its own.
+Full send's merge gate becomes the readiness check. Proof and Sol review must
+cover the final diff. Before handoff, the agent checks the live PR, including
+that it is open, not a draft, and not set to merge automatically. If someone
+else merged it, the agent reports that instead.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/full-stop/SKILL.md)
+has the exact overrides to full send's contract.
 
 ## What you get
 
-- A first line of `PASS: ready to merge`, `PASS: ready for human review` when
-  only a required human approval remains, or `FAIL: <main reason>`.
-- Everything full send reports, plus the final commit and confirmation that the
-  PR is still open and unmerged.
+- `PASS: ready to merge` when the gate passes.
+- `PASS: ready for human review` when only required human approval remains.
+- `FAIL: <main reason>` otherwise.
 
-Calling full stop allows commits and pushes to the PR's own branch in fix mode.
-It never merges, turns on auto-merge, adds the PR to a merge queue, or pushes
-to the default branch.
+The report includes full send's evidence and findings, the final head commit,
+and confirmation that the PR remains open and unmerged, unless another actor
+merged it.

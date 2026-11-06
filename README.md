@@ -88,15 +88,15 @@ Each skill loads only the guidance its task needs.
 
 | Skill | Use |
 | --- | --- |
-| `engineering` | Makes an authorized code change, fix, or refactor and proves it with tests and checks. |
-| `planning` | Turns a problem into a direction, specification, implementation plan, or set of tickets. |
-| `test-audit` | Checks whether your tests protect real behavior, and finds the ones that only add maintenance cost. |
+| `engineering` | Makes an authorized code change and verifies the requested behavior with tests and checks. |
+| `planning` | Develops a direction, specification, implementation plan, or tickets from repository evidence. |
+| `test-audit` | Audits test value and identifies duplicate coverage, implementation-coupled tests, and test-only production code. |
 | `review` | Reviews one exact change or document and reports only the findings it can back with evidence. |
-| `simplify` | Makes code you choose simpler without changing what it does. |
-| `technical-writing` | Writes or revises documentation, reports, and PR descriptions so readers can act on them. |
-| `grill-me` | Stress-tests an idea, design, or plan by questioning you until its decisions hold up. |
-| `walkthrough` | Explains a change to you one part at a time, waiting for your answer before it moves on. |
-| `checkpoint` | Records where the work stands, with evidence, so it can be paused or handed off. |
+| `simplify` | Simplifies selected code while preserving its observable behavior. |
+| `technical-writing` | Writes or revises technical documents so readers can act on them without guessing. |
+| `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. |
+| `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
+| `checkpoint` | Captures current work, evidence, and next actions for a pause or handoff. |
 
 The host may pick `engineering`, `planning`, `review`, `test-audit`, and
 `technical-writing` when a request matches. `grill-me`, `walkthrough`,
@@ -167,19 +167,19 @@ Independent skills install one at a time with the
 
 | Skill | Use |
 | --- | --- |
-| `agent-ready-environments` | Audits or sets up a repository and its agent guidance so coding agents can check their own work. |
-| `babysit-pr` | Watches a pull request through CI and review bots, and fixes the real problems they find. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `cli-tool-template` | Creates or aligns Filip's personal CLI tools so each follows the same repository, release, and Homebrew conventions. |
-| `council` | Asks three AI models for independent advice on a question, plan, or piece of work, and weighs their answers. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-send` | Takes a change through review and CI to a merged PR, or to a PASS or FAIL verdict, while you are away. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-stop` | Does the `full-send` work but leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `hill-climb` | Improve a working change or an open-ended goal in small rounds, keeping only edits that win blind judges, a score, or both. Needs `council`. |
-| `interface-design` | Designs, builds, reviews, and checks interfaces for clear hierarchy, flows, states, copy, and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
-| `jira-work-links` | Creates or checks Jira issue links, such as blockers and Epics, and the PRs and commits behind each issue. |
-| `merge-council` | Has three AI reviewers review a pull request and return one merge verdict. |
-| `pr-review-churn` | Finds the review objections that keep coming back on your GitHub PRs and proposes guidance to prevent them. |
-| `sol-loop` | Has GPT Sol review your change in rounds until Sol and your agent agree it is correct. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `vue-best-practices` | Guides your agent's Vue 3 work on components, composables, and their tests. |
+| `agent-ready-environments` | Audits or sets up repositories and agent guidance so agents can verify their work. |
+| `babysit-pr` | Monitors a PR through CI and automated review, fixing verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
+| `council` | Gathers independent model opinions and synthesizes advice on a question or artifact. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-send` | Finishes a change or PR through review and CI, then merges or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-stop` | Finishes a change or PR through review and CI and leaves merging to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `hill-climb` | Improves a working change or named goal in bounded rounds judged by blind comparisons, a score, or both. Needs `council`. |
+| `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
+| `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
+| `merge-council` | Runs an independent three-reviewer PR council with a verdict tied to the reviewed commits. |
+| `pr-review-churn` | Analyzes recurring human review objections on GitHub PRs and proposes guidance changes. |
+| `sol-loop` | Checks a change through GPT Sol review rounds and resolves findings within scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
 
 List the skills, install one by name, or install a skill together with the
 skills it needs:

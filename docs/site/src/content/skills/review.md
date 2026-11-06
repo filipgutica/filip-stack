@@ -4,51 +4,49 @@ related: [test-audit, walkthrough]
 
 ## What it does
 
-Review gives you a second look at a change before you accept it. It checks
-the change against your request and the repository's own rules, such as
-`AGENTS.md` or `CLAUDE.md`, and it leaves the files exactly as they were.
+The agent checks a bounded change against your request and the repository's
+rules, including applicable `AGENTS.md` or `CLAUDE.md` guidance. Files stay as
+they are; findings are evidence for a later decision or fix.
 
 ## When to use it
 
-Use it to review one of these:
-
-- your working tree, a branch, a pull request, a commit, or a commit range
-- a document or other file
-- a finished change, as a final check before you accept it
-
-Review only reports. To apply its findings, ask for the fixes and
-[engineering](../engineering/) makes them. To have a change explained to you
-one part at a time, use [walkthrough](../walkthrough/).
-
-Review comes with the [Workflow plugin](../../#install), and the agent picks
-it when your request matches. An illustrative request:
+Install the [Workflow plugin](../../#install), then name what to review. The
+agent selects review when the request matches. For example:
 
 > Review this branch against main before I open the PR.
 
+You can name a working tree, branch, PR, commit, commit range, or existing
+document. Use it for a final check before accepting work. To apply findings,
+ask for fixes through [engineering](../engineering/). For an interactive
+explanation of the change, use [walkthrough](../walkthrough/).
+
 ## How it works
 
-The agent first pins down exactly what it is reviewing, such as a branch from
-the commit it shares with `main` to its head. It reports changes outside that
-range instead of quietly including them.
+The agent verifies the exact subject first. For a branch, that means its
+verified merge base through its head. It reports unrelated or dirty changes
+outside the selected range instead of including them silently.
 
-It reads every changed file and follows the affected behavior to the code that
-owns it, including callers, tests, types, and docs when they could change the
-answer. For changed or removed tests, it asks whether the behavior is still
-protected, and large coverage changes get a [test-audit](../test-audit/)
-pass. It runs the narrowest checks that fit, plus complexity, dead-code, and
-duplication analysis when the repository has those tools.
+It reads every changed file and traces affected behavior through the owning
+code, callers, tests, types, configuration, and documentation. Changed or
+removed tests must still leave the behavior protected, unless the contract
+they checked is now obsolete. Substantial coverage
+changes get a read-only [test-audit](../test-audit/).
 
-A finding names the file and line or the command output, the behavior it
-breaks, and why that matters. Style preferences and scope creep are not
-findings. A check that was blocked or could not run is listed as a limit,
-never as a pass.
+Checks stay focused on the selected contract. Available complexity, dead-code,
+and duplication tools contribute evidence. A blocked or unavailable check is
+a limitation, never a pass. Style preferences and requests to expand scope do
+not count as findings.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/review/SKILL.md)
+has the exact scope and evidence requirements.
 
 ## What you get
 
-- Findings ordered by impact, each with its evidence and a precise next step,
-  or a statement that the evidence supports no findings.
-- What was reviewed, the exact check results, and the limits of the review.
-- Whether the review was independent, meaning an agent that did not write the
-  change inspected it.
+- Findings ordered by impact, each with a file and line or command evidence,
+  the consequence, and a precise next action.
+- A statement that no findings are supported, when that is what the evidence shows.
+- The reviewed subject, exact check results, and limits, including whether
+  the reviewer was independent of the author.
 
-Review does not edit files, commit, push, publish, or post comments.
+Review does not edit files, commit, push, publish, post comments, or accept
+the change for you.

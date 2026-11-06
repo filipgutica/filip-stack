@@ -4,55 +4,52 @@ related: [planning, review]
 
 ## What it does
 
-Jira boards collect links that mean different things: an Epic that holds the
-work, a ticket that gives context, a ticket that really cannot start yet.
-When all of them look like blockers, nobody can tell what is waiting on what.
-This skill gives each link the one meaning it should have.
+An Epic describes scope, a related issue can supply context, and a blocker
+must supply unfinished work another issue needs. The agent distinguishes
+those relationships using issue details and source-repository evidence.
 
 ## When to use it
 
-- Create, correct, or review blockers and other issue links.
-- Check parent, child, or Epic relationships while you plan work.
-- Find the pull requests and commits behind an issue.
-- Check that an issue's Development section, the Jira panel that lists linked
-  branches, commits, and PRs, shows the right work.
-
-A plain summary of an issue does not need this skill. The agent needs access
-to your Jira site and to the code host, such as GitHub. Install the skill with
-the command above, then ask in plain words. An illustrative request:
+Install the skill with the command above. The agent needs access to your Jira
+site and code host, such as GitHub. Ask for the issue keys and the action you
+want; the agent selects the skill when the request matches. For example:
 
 > Check the links on PROJ-120 to PROJ-128 and fix any blockers that are wrong.
 
+Use it to create or check issue links, dependency order, parent or Epic
+relationships, and the PRs and commits behind an issue. It also checks Jira's
+Development section, which shows associated code. A plain issue summary
+does not need this skill.
+
+State whether you want a report or edits. Reading issues and code does not
+authorize link or status changes; the agent changes only what you request.
+
 ## How it works
 
-The agent reads every issue you name first: its type, status, parent, links,
-and Development section. When an issue lists no code, it searches the code
-host for the issue key in PR titles, descriptions, branch names, and commits,
-then for the product terms the issue uses. It sketches the intended links
-before it changes any.
+The agent reads every named issue's type, status, parent, description, links,
+and Development section. If code references are missing, it searches the code
+host for issue keys in PR titles, descriptions, branches, and commits, then
+for relevant product terms. It sketches the intended relationships before writing.
 
-It follows a few rules:
+The link rules keep scope separate from order:
 
-- An issue *blocks* another only when it has an unfinished piece of work that
-  the other issue needs, and the agent names that piece of work.
-- Epics, specifications, context, parallel work, and code that already merged
-  use *relates to*, unless that issue produces the unfinished work another
-  issue needs.
-- Parent and child links describe scope, not order.
-- A merged PR shows the code exists. It does not show the issue is validated,
-  released, or meets every acceptance criterion.
+- `blocks` requires a named unfinished artifact that the other issue needs.
+- `relates to` covers Epics, specifications, context, parallel work, and merged
+  implementation unless they produce that unfinished artifact.
+- Parent and child relationships describe hierarchy, not dependency order.
+- A merged PR proves implementation exists. It does not prove validation,
+  release, or every acceptance criterion is complete.
 
-The agent changes only what you allowed. After each change, it reloads both
-issues and checks that each side shows the link the right way round, for
-example "blocks PROJ-124" on one issue and "is blocked by PROJ-120" on the
-other. A link that shows the wrong way is removed and created again.
+After an authorized write, the agent reloads both issues to verify direction:
+for example, "blocks PROJ-124" on one and "is blocked by PROJ-120" on the other.
+An incorrect link is removed and recreated.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/jira-work-links/SKILL.md)
+has the exact link rules and Development-evidence requirements.
 
 ## What you get
 
-- The link map, explained in plain words.
-- Each PR reference with its repository and state checked.
-- For each blocker, the unfinished work it names, and any validation or release
-  work that remains.
-
-Reading issues does not give the agent permission to edit them. It changes
-links or status only when you ask.
+- The final relationship map in plain words.
+- PR references with their repository and state verified.
+- The unfinished artifact behind each blocker and remaining validation or
+  release work.

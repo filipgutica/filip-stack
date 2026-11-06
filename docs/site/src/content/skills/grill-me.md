@@ -4,50 +4,48 @@ related: [planning]
 
 ## What it does
 
-A plan can read well and still leave key decisions open. In grill me, the
-agent asks you one question at a time about the decisions that could change
-the plan, such as ownership, data flow, failure behavior, rollout, and how you
-will prove it works. Each question comes with the answer the agent
-recommends.
+The interview focuses on decisions that could change your proposal: ownership,
+data flow, failure behavior, rollout, and proof. Each question includes a
+recommended answer and explains why the decision matters.
 
 ## When to use it
 
-- Challenge an architecture or implementation approach before you build it.
-- Find vague scope, hidden assumptions, or weak verification in a plan.
-- Settle the decisions that would change the work.
+Install the [Workflow plugin](../../#install). Invoke grill me explicitly with
+`/workflow:grill-me` in Claude or `$workflow:grill-me` in Codex. Point it at
+the proposal, for example `/workflow:grill-me docs/sync-redesign.md`.
 
-Grill me runs only when you call it: `/workflow:grill-me` in Claude or
-`$workflow:grill-me` in Codex. It comes with the
-[Workflow plugin](../../#install). Point it at the proposal, for example
-`/workflow:grill-me docs/sync-redesign.md`. If you want a specification, plan,
-or tickets as the result, use [planning](../planning/).
+Use it to challenge an architecture or implementation approach, uncover vague
+scope or hidden assumptions, and settle decisions before building. If you
+need a specification, plan, or tickets as the result, use
+[planning](../planning/).
 
 ## How it works
 
-The agent reads the proposal and its sources first. It looks up facts in the
-code, tests, and docs itself instead of asking you for them.
-
-Each question comes with a recommended answer and why it matters. An illustrative example:
+The agent reads the proposal and its sources first. It looks up repository
+facts in code, tests, and documentation instead of asking you to find them.
+Then it asks one consequential question at a time. For example:
 
 ```text
-Question: Should the export run on a schedule, or only when someone asks for it?
-Recommended answer: Only on request. Nothing in the proposal needs daily data (assumption).
-Why it matters: A schedule needs a job runner and alerts that the proposal does not cover.
+Question: Should exports run on a schedule or only on request?
+Recommended answer: Only on request; daily data is not needed (assumption).
+Why it matters: A schedule adds a job runner and alerts to the proposal.
 ```
 
-An answer without evidence behind it is labeled as an assumption. The agent
-settles each decision before it asks about one that depends on it, and it
-follows only the questions that could change the proposal, not a fixed
-checklist. The interview ends when the proposal holds together, when a fact it
-needs is unavailable, or when you ask it to stop.
+An answer without evidence is labeled as an assumption. The agent settles a
+decision before asking one that depends on it. Questions follow the proposal's
+open decisions; they are not a fixed checklist. The interview stops when the
+proposal is coherent, a required fact is unavailable, or you ask it to stop.
+
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/grill-me/SKILL.md)
+has the interview and log contract.
 
 ## What you get
 
-- The decisions you settled, with their reasons.
-- Assumptions that changed, and the risks and unknowns that remain.
+- Resolved decisions and their reasons.
+- Changed assumptions, remaining risks, and unknowns.
 - Recommended changes to the proposal.
 
-The decisions stay in the conversation. If you ask for a record, the agent
-saves a short Markdown log of the decisions and changed assumptions, not a
-transcript. Apart from that log, grill me changes no files and does not write
-code, specifications, or tickets.
+Decisions stay in conversation unless you request a record. A saved Markdown
+log records material decisions and changed assumptions, not a transcript.
+Apart from that log, grill me changes no files. It does not write code,
+specifications, or tickets.

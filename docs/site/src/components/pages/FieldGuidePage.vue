@@ -13,17 +13,17 @@ onMounted(() => {
 const tables = {
   management: [
     {
-      command: "Say “undo that learning”",
-      description: "Reverses the last thing it saved.",
+      command: "/field-guide:field-guide audit",
+      description: "Lists stored guidance without changing it.",
     },
     {
-      command: "/field-guide:field-guide audit",
-      description: "A read-only report on what's stored. Changes nothing.",
+      command: "Say “undo that learning”",
+      description: "Reverses the last saved learning.",
     },
     {
       command: "filip-stack field-guide-sync",
       description:
-        'Syncs your shared preferences with <code>~/.config/filip-stack/field-guide.json</code>, which your dotfile manager carries between machines. See <a href="/filip-stack/cli/#sync">Sync your Field Guide preferences</a>.',
+        'Imports shared preferences from <code>~/.config/filip-stack/field-guide.json</code> if present, then exports local shared guidance to that file. Sync it between machines with your dotfile manager. See <a href="/filip-stack/cli/#sync">Sync your Field Guide preferences</a>.',
     },
   ],
 };
@@ -33,8 +33,8 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Field Guide</h1>
     <p class="lede">
-      An optional plugin that remembers your durable preferences, corrections,
-      and recurring lessons, and brings back the ones that match the work.
+      Use the optional Field Guide plugin when you want agents to remember
+      durable preferences, corrections, and recurring lessons across sessions.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -52,11 +52,77 @@ const tables = {
     </dl>
   </section>
 
+  <section aria-labelledby="decide">
+    <h2 id="decide">What it keeps</h2>
+    <dl class="fg-site-definitions">
+      <dt>Capture</dt>
+      <dd>
+        The agent saves a clear, durable correction or preference automatically
+        and tells you in one line.
+      </dd>
+      <dt>Ask</dt>
+      <dd>
+        If scope or wording is unclear, the agent asks one question. It saves
+        nothing until you answer.
+      </dd>
+      <dt>Skip</dt>
+      <dd>
+        Anything task-specific, tentative, sensitive, or already covered by your
+        instructions or the code.
+      </dd>
+    </dl>
+    <UiAlert tone="info"
+      >It stores short paraphrases, never transcripts, prompts, credentials, or
+      code dumps. Your current request and the live code always outrank anything
+      it remembers.</UiAlert
+    >
+    <p class="hint">
+      Local analytics are off until you turn them on. They record metadata only,
+      never prompts or guidance text.
+    </p>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="fg-site-steps">
+      <li>
+        <div>
+          <p>
+            <strong>Session start.</strong> With an initialized guide, the hook
+            adds up to eight stored records for the current repository. It also
+            adds a one-line list of other subjects the agent can look up.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>First prompt.</strong> The hook searches with your prompt
+            and adds up to three matching records not already in context.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>Before each final reply.</strong> The agent chooses
+            capture, ask, or skip. The hook adds this reminder to each prompt,
+            but nothing enforces the decision.
+          </p>
+        </div>
+      </li>
+    </ol>
+    <p class="hint">
+      Later prompts get only that last reminder until the next session start,
+      <code>/clear</code>, or compaction.
+    </p>
+  </section>
+
   <section aria-labelledby="install">
     <h2 id="install">Install</h2>
     <p class="section-intro">
-      Add the marketplace first if you haven't, as on the
-      <a href="/filip-stack/">overview</a>.
+      If you haven't added the marketplace, follow the
+      <a href="/filip-stack/">overview</a> first. Then run the command for your host.
     </p>
     <div class="cmd-pair">
       <div>
@@ -81,71 +147,10 @@ const tables = {
       </div>
     </div>
     <p class="hint">
-      Installing it turns on its session hooks. Codex runs them only after you
-      review and trust them. Leave the plugin out to keep that context out of
+      Installing the plugin enables its session hooks. Codex runs them only after
+      you review and trust them. Leave it uninstalled to keep that context out of
       your sessions.
     </p>
-  </section>
-
-  <section aria-labelledby="how">
-    <h2 id="how">How it works</h2>
-    <ol class="fg-site-steps">
-      <li>
-        <div>
-          <p>
-            <strong>Session start.</strong> It adds up to eight stored records
-            for the current repository, plus a one-line list of other subjects
-            the agent can look up.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            <strong>First prompt.</strong> It uses your prompt as a search and
-            adds up to three matching records that are not already in context.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            <strong>Before each final reply.</strong> The agent decides whether
-            anything from the task is worth keeping.
-          </p>
-        </div>
-      </li>
-    </ol>
-    <p class="hint">
-      Later prompts get only that last reminder until the next session start,
-      <code>/clear</code>, or compaction.
-    </p>
-  </section>
-
-  <section aria-labelledby="decide">
-    <h2 id="decide">What it keeps</h2>
-    <dl class="fg-site-definitions">
-      <dt>Capture</dt>
-      <dd>
-        A clear, durable correction or preference. It's saved, and the agent
-        tells you in one line.
-      </dd>
-      <dt>Ask</dt>
-      <dd>
-        Something that might be durable, but the scope or wording is unclear.
-        The agent asks one question and saves nothing until you answer.
-      </dd>
-      <dt>Skip</dt>
-      <dd>
-        Anything task-specific, tentative, sensitive, or already covered by your
-        instructions or the code.
-      </dd>
-    </dl>
-    <UiAlert tone="info"
-      >It stores short paraphrases, never transcripts, prompts, credentials, or
-      code dumps. Your current request and the live code always outrank anything
-      it remembers.</UiAlert
-    >
   </section>
 
   <section aria-labelledby="manage">
@@ -163,10 +168,6 @@ const tables = {
     <p class="hint">
       The dotfile uses <code>$XDG_CONFIG_HOME</code> when set.
       <code>filip-stack apply</code> imports it only if it exists.
-    </p>
-    <p class="hint">
-      Local analytics are off until you turn them on. They record metadata only,
-      never prompts or guidance text.
     </p>
   </section>
 

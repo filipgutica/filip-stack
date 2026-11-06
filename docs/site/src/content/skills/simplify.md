@@ -4,51 +4,52 @@ related: [review, test-audit]
 
 ## What it does
 
-Simplify targets duplicated logic, extra state, needless branches, and layers
-that add nothing. The agent changes only what three separate reviews support
-and its checks confirm.
+Three independent reviews look for duplicate logic, redundant state and
+branches, unnecessary layers, and behavior a refactor must preserve. The
+agent applies proposals only when their benefit is clear and checks support
+the result.
 
 ## When to use it
 
-- Simplify a specific file, function, or range of changes.
-- Clean up the code you changed in the current task before you hand it off.
+Install the [Workflow plugin](../../#install). Invoke simplify explicitly with
+`/workflow:simplify` in Claude or `$workflow:simplify` in Codex. Name a file,
+function, or change range, for example `/workflow:simplify src/cart/totals.ts`.
 
-Simplify runs only when you call it: `/workflow:simplify` in Claude or
-`$workflow:simplify` in Codex. It comes with the
-[Workflow plugin](../../#install). Name the target when you call it, for
-example `/workflow:simplify src/cart/totals.ts`. Without a target it uses the
-code changed in the current task, then your uncommitted changes, and it asks
-you only when it still cannot find one.
+Use it for focused simplification or cleanup of code changed in the current
+task. Without a target, it uses that task's changes, then uncommitted changes.
+If no target can be identified, it asks you before proceeding. Unrelated work
+stays outside the scope.
+
+The host must support helper agents. All three reviews must finish before
+editing; after one retry, a missing review ends the run as incomplete.
 
 ## How it works
 
-The agent reads the target, its callers, and the nearest tests. It lists what
-must not change: public APIs, outputs, side effects, errors, ordering, and
-edge cases. When an existing check gives a useful baseline, it runs that first.
+The agent reads the target, callers, project guidance, and nearest tests. It
+records the behavior to preserve: APIs, outputs, side effects, errors,
+ordering, concurrency, and important edge cases. A useful existing check runs
+first as a baseline.
 
-Then three helper agents review the same code without editing it, each from
-one angle:
+The reviewers inspect the same target read-only from three angles:
 
-| Review | What it looks for |
+| Review | Purpose |
 | --- | --- |
-| Reuse and ownership | Existing helpers that can replace duplicate code, and abstractions nothing needs yet |
-| Direct simplification | Redundant state, branches, nesting, and indirection |
-| Behavior contract | The behavior and tests a refactor must keep |
+| Reuse and ownership | Find existing helpers and abstractions with no current need |
+| Direct simplification | Find redundant state, branches, nesting, and indirection |
+| Behavior contract | Identify invariants and tests the refactor must preserve |
 
-The agent waits for all three. If one is still missing after a retry, or the
-host cannot run helper agents, it reports the review as incomplete and edits
-nothing.
+The agent checks proposals against live code and leaves uncertain changes
+unapplied. Meaningful tests and error handling stay. A new abstraction or
+dependency needs a reason beyond saving lines. After focused checks, a
+substantial final diff gets an independent read-only [review](../review/).
 
-The agent then applies only the proposals with a clear benefit and leaves
-uncertain ones alone. It keeps meaningful tests and error handling, and it
-does not add an abstraction or dependency only to save lines. Finally it runs
-the checks that cover the change, and a substantial final diff gets a
-read-only [review](../review/) from an agent that did not make it.
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/simplify/SKILL.md)
+has the exact review and verification requirements.
 
 ## What you get
 
-- What became simpler, and the checks that show the behavior did not change.
-- The proposals it left unapplied, and why.
+- What became simpler and the checks supporting unchanged behavior.
+- Proposals left unapplied, with reasons.
 
-If a check fails or the agent cannot show that behavior is unchanged, the
-result is reported as incomplete.
+A failed check or uncertainty about preserved behavior leaves the result
+incomplete.
