@@ -238,7 +238,7 @@ onMounted(() => {
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          Use this command-line tool to apply shared guidance, agent profiles,
+          Run it to apply shared guidance, agent profiles,
           output styles, and the design language on each machine.
         </p>
       </li>
@@ -279,7 +279,7 @@ onMounted(() => {
       </p>
       <p>
         Install <code>field-guide@filip-stack</code> through the same marketplace.
-        It is optional; Workflow does not depend on it.
+        Workflow does not depend on it.
         <a href="/filip-stack/field-guide/">How Field Guide works</a>.
       </p>
     </div>
