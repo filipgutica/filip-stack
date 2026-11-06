@@ -3,7 +3,7 @@
 Status: plan only. Nothing has run. A dry run and a paid run each need Filip's approval (AGENTS.md, Evaluation).
 `scorer/probe.py` still implements the replaced plan. It is rewritten for this plan after Filip approves the call count, and before the dry run.
 Revision: on 2026-11-05 this plan replaced the one at commit `0f495b7c`, before any call ran. The change follows an evals review: it measures reader success, calibrates the judges on planted defects, and asks yes/no questions instead of preferences.
-Amendment 1 (2026-11-05, before any call): Filip asked for Codex Sol models for every call. The reader, double-coder, and judges below were changed to the three Sol models Codex offers. The builder and extractor did not change.
+Amendment 1 (2026-11-05, before any call): at Filip's request, the reader moved from Claude Haiku 5.5 to Codex `gpt-5.6-sol`. The other roles keep the registered models.
 Model: the [reader-pages probe](../reader-pages-probe/prereg.md), lab notebook studies 22 and 23.
 
 ## Question
@@ -89,11 +89,11 @@ Each measure is computed per build. A pair is one brief and one attempt index, i
 **Primary pair outcome.** Head wins a pair when it passes more tasks. When both pass the same number, head wins when its R2 is at least 10% lower, and loses when its R2 is at least 10% higher. Anything else is a tie. If every build passes both tasks, R1 is at its ceiling and the outcome rests on R2 alone.
 
 Extractor: `gpt-6.1-sol`, reasoning high, prompt `EXTRACTOR`. It gets the tagged fact sheet, the case, the concepts, and the page with numbered blocks, never the arm or the guidance.
-Double-coding: `gpt-6-sol`, reasoning high, re-extracts every fifth build in ledger order (9 builds). Agreement is reported on fact presence, fact block, and motivated-first.
+Double-coding: `gpt-6-astra`, reasoning high, re-extracts every fifth build in ledger order (9 builds). Agreement is reported on fact presence, fact block, and motivated-first.
 
 ## Judges
 
-`gpt-6.1-sol`, `gpt-6-sol`, and `gpt-5.6-sol`, all through Codex at reasoning high, each reported separately.
+Sol 6.1 (`gpt-6.1-sol` high), Astra (`gpt-6-astra` high), and Opus 5.5 (`claude-opus-5-5` high), each reported separately.
 
 Each judge call shows two pages, the brief, the page type, and the fact sheet, with prompt `JUDGE`. It asks yes/no questions for each page:
 
@@ -210,7 +210,7 @@ The paid sequence is calibration, builds, extraction and double-coding, reading,
 | **Registered paid total** | **324** |
 | **Upper limit**, including 16 spare calls for approved retries | **340** |
 
-By model, the paid run uses `gpt-6.1-sol` for 150 calls, `gpt-6-sol` for 69, and `gpt-5.6-sol` for 105.
+By model, the paid run uses `gpt-6.1-sol` for 150 calls, `gpt-6-astra` for 69, `claude-opus-5-5` for 60, and `gpt-5.6-sol` for 45.
 
 The dry run checks:
 
@@ -225,17 +225,32 @@ It gives no verdict. If the dry run shows a pipeline fault, the fix is a dated a
 
 The dry run used 25 calls, and none failed. It wrote `scorer/tasks.json`, which is frozen from here on.
 
-- **Pipeline:** every stage ran. Every judge "yes" quote was found in its page (36 of 36).
-- **Calibration pages:** all three judges flagged the same lines in the clean tutorial: two filler sentences, one restatement, and a sentence the cleaning step had added. Under the registered cleaning step, those lines were removed before paid calibration, along with two similar filler sentences in the how-to. Each edit is recorded with the local calibration files.
+- **Pipeline:** every stage ran. The dry run's judges were `gpt-6.1-sol`, `gpt-6-sol`, and `gpt-5.6-sol`, and `gpt-6-sol` did the double-coding. The paid run uses the registered judges and double-coder, with the reader from Amendment 1. Every judge "yes" quote was found in its page (36 of 36).
+- **Calibration pages:** all three judges flagged the same lines in the clean tutorial: two filler sentences, one restatement, and a sentence the cleaning step had added. This is a fault in the calibration materials. Amendment 2 below fixes it.
 - **Not a verdict:** the dry-run builds are not reused, and their scores decide nothing.
+
+## Amendment 2 (2026-11-05, after the dry run, before any paid call; approved by Filip)
+
+The clean calibration pages were not clean enough. Left as they were, they would raise false alarms on every pair that uses them. The fixes:
+
+- **Tutorial:** remove the two filler sentences and the restatement that the dry-run judges flagged. Also remove the sentence the cleaning step had added in place of the second directory listing.
+- **How-to:** remove two filler sentences and fix the reference that one removal left dangling.
+- **Explanation:** remove the second opening paragraph, which restates the "Django's role" list, and one filler sentence.
+- **Fact sheets:** add two details that the how-to states but its fact sheet left out, so they do not count as unsupported claims.
+
+The broken copies are rebuilt from the new clean pages with the same planted defects. Each edit is recorded with the local calibration files.
+
+**Retries.** A call that fails in transport may be retried once from the spare calls without asking: a timeout, an empty reply, or no reply file. Any other unusable reply still stops the run.
 
 ## Known limits
 
 - Global host guidance reaches every arm, vanilla included, through the builder's own instruction files. All arms share this confound. Build traces are checked to confirm that each builder read only its own arm file.
 - Five attempts on three briefs is a probe, not a benchmark. See the detection floor above.
-- Every model is from one family. The judges and the reader share the builder's family, so a preference for that family's writing cannot be ruled out. Per-judge results and the builder-model flag show how much a result rests on the builder's own model.
+- The reader and two of the three judges are OpenAI models, like the builder. Opus 5.5 is the only judge from another provider, so a preference for OpenAI writing cannot be ruled out. Per-judge results and the builder-model flag show how much a result rests on the builder's own model.
 - Calibration uses human-written Django pages with planted defects. Catch rates may not carry over to agent-written pages about fictional subjects.
 - With 4 planted defects per type, the reliability rule rests on small counts, and its intervals are wide.
+- The clean tutorial was edited using the dry-run judges' own flags, so its false-alarm rate is optimistic.
+- Each calibration pair differs only by its planted defects, so a judge can find them by comparing the two pages. Head and base pages are written separately, so the catch rates likely overstate how sensitive the judges are in the main run.
 - The reader is a model, not a person. R2 measures where the needed facts sit on the page, not how a person scans it.
 - The operator plants the defects and knows their spans. The judges never see the spans.
 - Actual token use and billed cost are not measured.

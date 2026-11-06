@@ -23,7 +23,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 TOOLS = os.path.join(HERE, 'tools')
 ARMS = ['vanilla', 'base', 'head']
 # Judges, by the name used in call ids. BUILDER_JUDGE is the builder's own model.
-JUDGES = {'sol61': 'gpt-6.1-sol', 'sol6': 'gpt-6-sol', 'sol56': 'gpt-5.6-sol'}
+JUDGES = {'sol61': 'gpt-6.1-sol', 'astra': 'gpt-6-astra', 'opus': 'claude-opus-5-5'}
 BUILDER_JUDGE = 'sol61'
 PAGE_TYPE = {'G1': 'how-to', 'G2': 'explanation', 'G3': 'tutorial'}
 TYPE_LABEL = {'how-to': 'how-to guide', 'explanation': 'explanation', 'tutorial': 'tutorial'}
