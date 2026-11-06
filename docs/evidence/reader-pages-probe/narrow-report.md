@@ -102,7 +102,7 @@ N3, lesson opening, complete. N3 has no start pattern by design (prereg: "M5 sta
 | M9, comprehension, of 15 | 15 | 15 | 15 |
 | Prose words | 1,694 | 1,810 | 1,766 |
 
-The second extraction agrees with the first on every measured field of all 9 sampled builds (agreement 1.000). None of the sampled builds is one of the failed cells.
+The second extraction agrees with the first on every fact, placement, and opening field of all 9 sampled builds (agreement 1.000). The scorer does not compare fragment counts, sentence counts, or invented claims. None of the sampled builds is one of the failed cells.
 
 ## Judges
 
@@ -123,7 +123,7 @@ Overall votes, head first, five per judge and 15 per comparison. There are no SA
 | N3 | Opus 5.5 | 2–3 | 1–4 |
 | N3 | **Total** | **10–5** | **11–4** |
 
-Opus 5.5 is the least favourable judge in every comparison. It prefers base on N1 and N3 and vanilla on N3.
+Opus 5.5 is the least favourable judge, or tied for it, in every comparison. It prefers base on N1 and N3, and vanilla on N1 and N3.
 
 Because the dry run judged only head against base, the paid run was the first to exercise head-versus-vanilla judging. A script checked that every one of the 90 judge prompts contains the exact text of its two ledger pages, in the A and B order the ledger records. All 90 passed. On N1, vanilla was page A in two pairs and page B in three.
 
@@ -163,7 +163,7 @@ No call was retried. The registered ceiling is 250 calls. With 248 used, 2 remai
 
 ## Isolation
 
-All 229 completed calls stayed within their assigned files. Each of the 45 builds read exactly its prompt file and its arm file. Each of the other 184 scoring calls read only its prompt file. The five failed calls have no completed command in their traces. The trace drops a command that never returns, so their isolation cannot be fully verified; their replies contain no page content. [isolation-check.json](narrow/paid-run/isolation-check.json) lists these five as missing reads, not as violations.
+All 229 completed calls stayed within their assigned files. Each of the 45 builds read exactly its prompt file and its arm file. Each of the other 184 scoring calls read only its prompt file. The five failed calls have no completed command in their traces. The trace drops a command that never returns, so their isolation cannot be fully verified; their replies contain no page content. [isolation-check.json](narrow/paid-run/isolation-check.json) records them as five `missing_read` entries in its violations list. They are failed reads, not reads of other files.
 
 Every pointer file the calls read matches its saved prompt byte for byte. All calls used the registered settings; [validation.json](narrow/paid-run/validation.json) lists them per call type.
 
