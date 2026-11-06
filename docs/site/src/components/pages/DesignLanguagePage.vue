@@ -6,7 +6,7 @@ const tables = {
     {
       command: "DESIGN.md",
       description:
-        "The rules: format, type, color, spacing, components, motion, copy, and an acceptance checklist.",
+        "Rules for choosing a format, styling the work, and checking the result.",
     },
     {
       command: "tokens.css",
@@ -22,7 +22,7 @@ const tables = {
     },
     {
       command: "reference.html",
-      description: "Application components to copy, built only from tokens.",
+      description: "Application components to copy and tokens to inspect.",
     },
   ],
   formats: [
@@ -50,9 +50,9 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Design language</h1>
     <p class="lede">
-      The visual rules Claude and Codex follow when they build pages, mockups,
-      prototypes, charts, and explainers, so everything they make looks like it
-      belongs together.
+      Use this shared language when asking Claude or Codex for visual work.
+      It defines the look of personal pages, mockups, prototypes, charts,
+      and explainers.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -77,8 +77,8 @@ const tables = {
     <div class="prose">
       <p>
         The shared guidance tells agents to read
-        <code>~/design-language/DESIGN.md</code> before any UX or visual work.
-        For interaction, flows, states, copy, and accessibility they also use
+        <code>~/design-language/DESIGN.md</code> before UX or visual work.
+        For interaction, flows, states, interface copy, and accessibility, they also use
         the <a href="/filip-stack/skills/interface-design/">interface-design</a>
         skill. <code>DESIGN.md</code> owns the look;
         <code>interface-design</code> owns the behavior and its checks.
@@ -102,17 +102,37 @@ const tables = {
         <div>
           <p>
             <strong>The design language</strong> covers all other personal work.
+            Use its palette, type, and components consistently across projects.
           </p>
         </div>
       </li>
     </ol>
   </section>
 
-  <section aria-labelledby="theme">
-    <h2 id="theme">The theme</h2>
+  <section aria-labelledby="formats">
+    <h2 id="formats">Pick the format first</h2>
     <p class="section-intro">
-      Quiet graphite surfaces, one indigo accent for actions, and blue for links
-      and focus. Switch the appearance in the header to compare light and dark.
+      Choose the format before styling. It determines the density and what the
+      reader sees first.
+    </p>
+    <UiCommandList
+      :items="tables.formats"
+      :copyable="false"
+      command-header="Format"
+      description-header="Lead with"
+    >
+      <template #description="{ item }"
+        ><span v-html="item.description"
+      /></template>
+    </UiCommandList>
+  </section>
+
+  <section aria-labelledby="theme">
+    <h2 id="theme">Theme and token names</h2>
+    <p class="section-intro">
+      Graphite surfaces separate regions. Indigo marks primary actions;
+      blue marks links and keyboard focus. Switch the appearance in the header
+      to compare light and dark.
     </p>
     <UiCard title="Graphite Indigo tokens">
       <template #actions>From <code>@filipgutica/ui</code></template>
@@ -160,8 +180,9 @@ const tables = {
       </div>
     </UiCard>
     <p class="hint">
-      The values live in <code>@filipgutica/ui</code>.
+      The labels above use standalone token names. The values live in <code>@filipgutica/ui</code>.
       <code>tokens.css</code> is a generated copy for standalone HTML.
+      On library sites, use the first variable in each token's <code>ui:</code> comment.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.
@@ -169,7 +190,7 @@ const tables = {
   </section>
 
   <section aria-labelledby="files">
-    <h2 id="files">What's in the folder</h2>
+    <h2 id="files">Rules and examples in the folder</h2>
     <UiCommandList
       :items="tables.files"
       :copyable="false"
@@ -182,28 +203,15 @@ const tables = {
     </UiCommandList>
   </section>
 
-  <section aria-labelledby="formats">
-    <h2 id="formats">Pick the format first</h2>
-    <UiCommandList
-      :items="tables.formats"
-      :copyable="false"
-      command-header="Format"
-      description-header="Lead with"
-    >
-      <template #description="{ item }"
-        ><span v-html="item.description"
-      /></template>
-    </UiCommandList>
-  </section>
-
   <section aria-labelledby="change">
-    <h2 id="change">Change it</h2>
+    <h2 id="change">Where to make changes</h2>
     <div class="prose">
       <p>
         Edit the rules and examples in
-        <code>host-config/design-language/</code> in filip-stack, then run
-        <code>filip-stack apply</code> on each machine. Change theme values in
-        <code>@filipgutica/ui</code> and regenerate <code>tokens.css</code>.
+        <code>host-config/design-language/</code> in filip-stack.
+        For theme values, edit <code>@filipgutica/ui</code> and regenerate
+        <code>tokens.css</code> using the library's generation procedure.
+        Then run <code>filip-stack apply</code> on each machine to install the updated folder.
       </p>
     </div>
   </section>
