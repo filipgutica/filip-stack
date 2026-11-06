@@ -18,7 +18,7 @@ const positional = pageFlag >= 0 ? args.filter((_, i) => i !== pageFlag && i !==
 const runsDir = positional[0] ?? join(homedir(), '.hill-climb', 'runs')
 const skillDir = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same', final: 'Final', start: 'Start' }
+const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same', final: 'Final', start: 'Start', baseline: 'No guidance' }
 
 // Counts overall votes. A round votes candidate/same/incumbent; the final check votes final/same/start.
 const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
@@ -47,6 +47,10 @@ const attention = (run) => {
   if (fc && fc.start > total / 2) items.push('Most judges preferred the starting version; consider dropping the climb.')
   else if (fc && fc.final <= total / 2) items.push('The final check did not show a clear gain over the starting version.')
   if (sc && !sc.gained) items.push('The final score did not beat the start score.')
+  // A guidance climb must beat no guidance, by judges, by score, or both.
+  const bl = run.baseline
+  if (bl?.votes?.length && overall(bl.votes, ['final', 'same', 'baseline']).final <= bl.votes.length / 2) items.push('Most judges did not prefer the final version to no guidance.')
+  if (bl?.score != null && run.score?.final != null && !scoreCheck({ score: { ...run.score, start: bl.score } }).gained) items.push('The final score did not beat no guidance.')
   // `both` needs both final checks, so report each one that is missing.
   const rule = run.decisionRule ?? 'judges'
   const kept = run.rounds.some((r) => r.decision === 'accepted')
@@ -102,6 +106,14 @@ const report = (run) => {
   if (fc) {
     lines.push('## Start vs final', '', `Overall votes: ${fc.final} final, ${fc.same} same, ${fc.start} start.`, '', ...voteTable(run, run.final.votes), '')
     if (run.final.notes?.length) lines.push(...run.final.notes.map((n) => `- ${n}`), '')
+  }
+  if (run.baseline) {
+    lines.push('## Final vs no guidance', '', run.baseline.summary, '')
+    if (run.baseline.score != null) lines.push(`Score: ${run.score?.final ?? 'not measured'} final, ${run.baseline.score} with no guidance.`, '')
+    if (run.baseline.votes?.length) {
+      const bc = overall(run.baseline.votes, ['final', 'same', 'baseline'])
+      lines.push(`Overall votes: ${bc.final} final, ${bc.same} same, ${bc.baseline} no guidance.`, '', ...voteTable(run, run.baseline.votes), '')
+    }
   }
   lines.push('## Follow-ups', '', ...run.followUps.map((f) => `- ${f}`), '')
   lines.push('## Notes', '', ...run.notes.map((n) => `- ${n}`), '')

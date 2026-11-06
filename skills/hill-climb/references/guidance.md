@@ -58,9 +58,10 @@ the final comparison.
 
 ## Costs
 
-Attempts count as member calls: each round adds one per attempt for the
-candidate. Reserve the baseline's attempts and the baseline comparison with
-the final check.
+Attempts count as member calls. Before round 1, the starting version's
+attempts and the baseline's attempts are a one-time cost. Each round then
+adds one call per attempt for the candidate. Reserve the baseline comparison
+with the final check.
 
 ## Compare with the baseline
 
@@ -69,4 +70,4 @@ no round was accepted, so the report always shows whether the guidance beats
 no guidance. Under `judges` and `both`, send one more judge pass, built like
 a round's bundle, with the baseline as one version. Under `score` and `both`,
 compare the two scores. Report this comparison in its own section, and record
-it in the run record's `final.notes`.
+it in the run record's `baseline` field.

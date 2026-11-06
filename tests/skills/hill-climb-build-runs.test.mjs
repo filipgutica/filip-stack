@@ -82,3 +82,19 @@ test('flags a both-rule climb that measured the final score but skipped the fina
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.deepEqual(built.attention, ['The climb kept changes but never ran the final check.'])
 })
+
+test('reports a guidance climb against no guidance, even with no accepted round', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const guidance = {
+    ...record, id: 'run-guidance', kind: 'guidance', rounds: [round(1, 'rejected')],
+    baseline: { summary: 'No guidance did as well.', votes: [{ ...vote, overall: 'baseline' }, { ...vote, overall: 'final' }] },
+  }
+  mkdirSync(join(runsDir, guidance.id), { recursive: true })
+  writeFileSync(join(runsDir, guidance.id, 'run.json'), JSON.stringify(guidance))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  assert.match(readFileSync(join(runsDir, guidance.id, 'report.md'), 'utf8'), /## Final vs no guidance[\s\S]*1 final, 0 same, 1 no guidance/)
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['Most judges did not prefer the final version to no guidance.'])
+})
