@@ -5,8 +5,9 @@ description: Design, build, review, or check user interfaces and flows, covering
 
 # Interface Design
 
-Help people finish their task with the interface. The look comes from the
-owning design system: the repository's own, else
+Judge every choice by whether the primary user completes their task: they
+find what they need, act, recover from errors, and can tell it worked. The
+look comes from the owning design system: the repository's own, else
 `~/design-language/DESIGN.md` when it exists. Use its tokens and components.
 This skill owns hierarchy, interaction, states, interface copy, and
 accessibility.

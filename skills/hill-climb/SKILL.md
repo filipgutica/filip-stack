@@ -1,14 +1,15 @@
 ---
 name: hill-climb
-description: Polish a finished change in a few bounded rounds. A blind council compares the current version with a candidate, and the skill keeps only the changes most judges prefer while every gate passes. Needs council. Manual only, so invoke it with `/hill-climb` or `$hill-climb`.
+description: Improve a finished change, or climb toward an open-ended goal such as better UX across named paths, in a few bounded rounds. A blind council proposes and judges; a candidate wins by judge majority, a deterministic score, or both, and only while every gate passes. Needs council. Manual only, so invoke it with `/hill-climb` or `$hill-climb`.
 disable-model-invocation: true
 ---
 
 # Hill Climb
 
-Polish the thread's change after it already works. Each round makes one
-candidate, gates it, and asks blind judges to compare it with the incumbent.
-Keep the candidate only when most judges prefer it and every gate passes.
+Polish the thread's change after it already works, or climb toward a goal
+the user names, such as better UX across a set of paths. Each round makes one
+candidate, gates it, and compares it with the incumbent. Keep the candidate
+only when it wins under the card's decision rule and every gate passes.
 The user may add a focus, such as "tighter spacing" or "simpler code".
 
 Requires the `council` skill. If it is missing, stop and say so.
@@ -21,21 +22,26 @@ Requires the `council` skill. If it is missing, stop and say so.
 - **Gate:** a pass/fail check, such as tests, lint, type checks, or
   screenshot capture.
 - **Criteria:** three to five named qualities the judges compare.
+- **Score:** one number that a frozen command prints for a version, such as
+  an accessibility violation count.
+- **Fresh start:** the starting incumbent has no changed lines against the
+  base, as in an open-ended climb.
 - **Queue:** the ranked proposals, each marked open, applied, declined, or
   exhausted.
 
 ## Authority
 
 - Only this thread edits files. Council members propose and judge read-only.
-- Invoking the skill authorizes the round budget, so `council`'s one-round
-  default does not apply.
+- Invoking the skill authorizes the card's round budget and member calls, so
+  `council`'s one-round default does not apply.
 - Commit only when the thread already authorized commits. Push or merge only
   when the thread authorized that.
 - Change the working tree only, inside the scope. Undo a candidate with the
   Restore steps only, never with the Git stash stack, `git clean`, or a broad
   checkout.
-- Keep behavior, public interfaces, and features as they are. A broken change
-  or a new feature is outside the climb.
+- Keep public interfaces and features as they are. Keep behavior as it is,
+  except the interactions the card's Behavior field names. A broken change or
+  a new feature is outside the climb.
 
 ## 1. Climb card
 
@@ -45,15 +51,18 @@ Find the base after `git fetch origin`:
   `gh pr view --json baseRefName`.
 - Local: `git merge-base HEAD origin/<default-branch>`.
 - No remote: a base the user names, or `HEAD` for uncommitted changes only.
+- Open-ended goal, with no change to polish: `HEAD`. The scope is the files
+  under the paths the user names, listed when the card freezes.
 
 The change is base to working tree, with untracked files. Its paths are the
-scope. Changed lines are added plus deleted text lines from
-`git diff --numstat <base> -- <scope>`, counting each untracked file's lines
-as added.
+scope, unless the user names the paths. Changed lines are added plus deleted
+text lines from `git diff --numstat <base> -- <scope>`, counting each
+untracked file's lines as added.
 
 Build the card and freeze it before round 1:
 
-- **Goal:** one sentence, from the thread's original request.
+- **Goal:** one sentence, from the thread's original request or the user's
+  goal.
 - **Criteria:** three to five, from the request, the focus, and the guidance
   that owns the work. For UI: the repository's design system, else
   `~/design-language/DESIGN.md` when it exists. For code: repository
@@ -69,18 +78,35 @@ Build the card and freeze it before round 1:
   reader-facing text, each version's text in reading order, with its code
   blocks and captions, plus each version's diff. Take every
   screenshot from a fresh page load: going to a URL that differs only in its
-  hash does not reload the page.
+  hash does not reload the page. For guidance, such as a skill or an
+  instruction file, the evidence is agents' work under each version, as
+  [references/guidance.md](references/guidance.md) describes.
 - **Not covered:** what the gates and evidence do not prove. For example,
   screenshots do not prove keyboard behavior.
-- **Budget:** 3 rounds, or fewer if the user sets fewer. 5 at most.
+- **Decision rule:** how a candidate wins: `judges` (the default), `score`,
+  or `both`. See Decide.
+- **Score:** for `score` and `both`, the exact command, which prints the
+  number as its last line of output; whether higher or lower is better; and
+  the smallest gain that counts, a positive number. The command and its
+  scripts and fixtures sit outside the scope. A guidance climb uses the
+  answer-key tally from `references/guidance.md` in place of a command.
+- **Behavior:** `keep` (the default), or the interactions the climb may
+  change, such as "focus order in the settings form". Put the tests that
+  assert those interactions in the scope.
+- **Budget:** 3 rounds by default, 10 at most. Member calls: a limit only
+  when the user sets one.
 - **Size limit:** the most lines the whole climb may change, measured
   against the starting incumbent. By default, the larger of 30% of the
   original change's changed lines and 20 lines. Use another limit when the
   user or the invoking thread sets one, or when the request needs more room,
-  such as a rewrite. Record the reason on the card.
+  such as a rewrite or a fresh start. Record the reason on the card. A
+  guidance climb counts only added lines, so a cut never exceeds it.
 
-Show the card and continue without waiting. Ask one question first only when
-the thread does not give you enough to derive the criteria.
+When the request gives no change to polish, or leaves the scope, the
+criteria, the decision rule, or the budget unclear, ask the questions in
+[references/intake.md](references/intake.md) and wait for the answers.
+Otherwise derive the card from the thread. Show the card and continue
+without waiting.
 
 ## 2. Baseline
 
@@ -91,6 +117,9 @@ Stop before round 1 and report the item that blocks when:
   or fixture. A block never counts as a pass.
 - A gate fails on the incumbent. For reader-facing text, this includes a
   false claim, checked against its source as Gate describes.
+- For `score` and `both`: the score command fails, prints no number, or
+  gives two different numbers in two runs on the incumbent. Record the
+  incumbent's score.
 - Fewer than two council members can run. Follow `council` and ask before
   you launch with fewer members than its lineup.
 
@@ -165,7 +194,9 @@ Run each round in order:
    `git diff --no-index --numstat start now`. If it exceeds the size limit,
    restore, mark those proposals declined for size, list them as follow-ups,
    and select again without them. A test the round adds must fail on the
-   incumbent and pass on the candidate; check both before you judge.
+   incumbent and pass on the candidate; check both before you judge. A test
+   changes only when it asserts an interaction the card's Behavior field
+   names; record each such test in `ledger.md` for the report.
 6. **Gate.** Run every gate on the candidate. Judges see only the bundle, so
    they cannot tell a true claim from a false one: when the candidate changes
    reader-facing text, check each changed claim against the code or source it
@@ -177,7 +208,10 @@ Run each round in order:
    On any other failure, or a second failure, restore, record the round as
    rejected, and mark its proposals declined. End the round there: skip
    Judge and Decide, and apply the stop rules.
-7. **Judge.** Build one bundle per judge and send each the judge brief.
+   For `score` and `both`, run the score command on the candidate once the
+   gates pass. A command that fails or prints no number fails the gate.
+7. **Judge.** For `judges` and `both`, build one bundle per judge and send
+   each the judge brief.
 8. **Decide.** Apply the decision rules.
 
 ### Bundle
@@ -197,17 +231,31 @@ Choose the A/B order at random for each judge and record it only in
   and `B.diff` as for code. Tell the judge when no screenshot differs.
 - Reader-facing text: `A.txt` and `B.txt`, each version's full text in
   reading order, plus `A.diff` and `B.diff` as for code.
+- Fresh start: in place of `A.diff` and `B.diff`, `A-files/` and `B-files/`
+  hold each version's copy of the scoped files that differ between the two,
+  under the same relative paths. An empty diff would show which version is
+  the incumbent.
+- Guidance: each version's attempt outputs, as `references/guidance.md`
+  describes.
 
 ### Decide
 
 - A judge completes when it replies in the format and lists no unread files.
   A judge that fails, times out, or could not read the bundle is missing.
-- With fewer than two completed judges, the round is void. Restore.
-- The candidate wins when a strict majority of completed judges prefers it
-  overall. It becomes the incumbent: refresh the snapshot and mark its
-  proposals applied. Once the remaining votes cannot change the outcome, you
-  may decide; record each late vote when it arrives. When the majority rests
-  on two members from the same provider, say so in the report.
+- For `judges` and `both`, with fewer than two completed judges, the round
+  is void. Restore.
+- The candidate wins under the card's decision rule:
+  - `judges`: a strict majority of completed judges prefers it overall.
+  - `score`: its score beats the incumbent's by at least the smallest gain
+    that counts. A tie loses.
+  - `both`: both of the above.
+  - A guidance climb also accepts a shorter candidate that is no worse, as
+    `references/guidance.md` describes.
+- A winning candidate becomes the incumbent: refresh the snapshot, record
+  its score as the incumbent's, and mark its proposals applied. Once the
+  remaining votes cannot change the outcome, you may decide; record each
+  late vote when it arrives. When the majority rests on two members from the
+  same provider, say so in the report.
 - Otherwise, restore, record the round as rejected, and mark the round's
   proposals declined.
 - Add a judge's `NEXT` to the queue only when it applies to the incumbent
@@ -224,7 +272,11 @@ See: git diff <base> -- <scope>; read the untracked scoped files: <list>.
 <UI: screenshots of each route and state: <dir>>
 Goal: <goal>
 Criteria: <criteria>
-Keep behavior, public interfaces, and features as they are. Stay in scope.
+<Score: <command>; <higher|lower> is better; the incumbent scores <n>.>
+Keep public interfaces and features as they are. Stay in scope.
+<Behavior keep: Keep behavior as it is.>
+<Behavior names interactions: Only these interactions may change: <list>.>
+<Guidance: the outputs folders and the cut line from references/guidance.md.>
 Return up to three improvements against the criteria, best first.
 If nothing would clearly improve the change, reply NONE.
 <UI: if you could not open a screenshot, list it under UNREAD.>
@@ -242,14 +294,17 @@ A and B are two versions of the same change.
 <Code: A.diff and B.diff are each version's diff from the same base.>
 <UI: A/ and B/ hold the screenshots that differ, with matching names; A.diff and B.diff are each version's diff from the same base.>
 <Text: A.txt and B.txt are each version's full text in reading order; A.diff and B.diff are each version's diff from the same base.>
+<Fresh start: A-files/ and B-files/ hold each version's copy of the files that differ, in place of A.diff and B.diff.>
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
+<Scorecard: Rate each screen (or task) in each version from 0 to 10, and name its biggest remaining issue. 10: nothing to fix. 8: minor polish. 6: a user would notice a problem. 4: a task is harder than it should be. 2: a task fails.>
 If you could not open a bundle file, list it under UNREAD.
 Reply:
 C1 <criterion>: A|B|SAME - <reason>
 OVERALL: A|B|SAME - <reason>
 NEXT: <one improvement>
+<Scorecard: SCORE <screen or task>: A <0-10> - <issue>[ | B <0-10> - <issue>]>
 UNREAD: <files, or none>
 ```
 
@@ -259,8 +314,19 @@ Stop at the first of these:
 
 - The queue has no open proposals.
 - Two rejected or void rounds in a row.
-- A strict majority of completed judges answers `SAME` overall.
+- For `judges` and `both`: a strict majority of completed judges answers
+  `SAME` overall, unless the round accepted a shorter guidance candidate.
 - The round budget is spent.
+- The member-call limit could not cover the next round and the final check.
+  Under `judges` and `both`, a round costs one call per judge, round 1 adds
+  one per proposer, and the final check costs one call per judge. Under
+  `score`, only round 1's proposers cost calls. A UI or guidance climb's
+  final check costs one call per judge under every rule, for its scorecard.
+  A guidance climb adds its attempts and reserves its baseline comparison,
+  as `references/guidance.md` describes. Before each launch in a
+  round, including a retry, check that the calls left cover it and still
+  leave the final check; otherwise stop. During the final check, the calls
+  left need to cover only that check.
 - The incumbent's changed lines against `start/` reach the size limit.
   After a restore, measure the incumbent as in Apply.
 
@@ -272,20 +338,44 @@ committed, and run their gates.
 
 Each round compares a candidate only with the version before it, so the
 rounds do not show whether the whole climb helped. When at least one round
-was accepted, run one more judge pass: the starting incumbent against the
-final incumbent. Build the bundles and send the judge brief as in a round,
-with `start/` as one version, and map each vote back to `final`, `same`, or
-`start`. Change no files. When a strict majority prefers the start, say so
+was accepted under `judges` or `both`, run one more judge pass: the starting
+incumbent against the final incumbent. Build the bundles and send the judge
+brief as in a round, with `start/` as one version, and map each vote back to
+`final`, `same`, or `start`. Change no files. When a strict majority prefers the start, say so
 first in the report and recommend dropping the climb.
+
+A UI or guidance climb's final check also builds a scorecard. Put every
+screen's screenshots, or every task's outputs, in `A/` and `B/`, not only
+those that differ, and add the brief's scorecard lines. For each screen or
+task, record the mean score of each version across judges and the issue
+judges cite most for the final version. When the final check sends no judge
+pass, because no round was accepted or the rule is `score`, send each judge
+a scorecard pass anyway: the same bundle, with the brief's scorecard lines in
+place of its comparison and next-improvement lines. With no accepted round,
+put the one version in `A/` alone, tell the judge that only A exists, and
+record its scores as both start and final.
+
+For `score` and `both`, also compare the start's score with the final
+score; under `score`, this comparison and any scorecard pass are the whole
+final check. When the
+final score does not beat the start's by the smallest gain that counts, say
+so first in the report.
+
+A guidance climb then compares the final version with its no-guidance
+baseline, as `references/guidance.md` describes.
 
 ## 5. Report
 
 The final reply contains:
 
 - The climb card, including what it does not cover.
-- The round ledger: proposals, what changed, gate results, each judge's
-  preference attributed to the model that ran, and the decision.
-- The final check's votes, attributed to the model that ran.
+- The round ledger: proposals, what changed, gate results, each score, each
+  judge's preference attributed to the model that ran, and the decision.
+- Tests the climb changed because the Behavior field let an interaction
+  change, listed for the user to check.
+- The final check's votes, attributed to the model that ran, and for UI or
+  guidance climbs the scorecard: each screen or task with its start and
+  final scores and its biggest remaining issue.
 - Before and after evidence. For UI, paired screenshots.
 - The climb's diff stat against the starting incumbent.
 - Follow-ups declined for size or scope.

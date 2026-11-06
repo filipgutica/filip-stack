@@ -2,7 +2,7 @@
 // SKILL.md owns whether the host may select the skill on its own.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { marked, type Tokens } from "marked";
+import { marked, Renderer, type Tokens } from "marked";
 
 export interface CatalogSkill {
   name: string;
@@ -98,6 +98,19 @@ const headings = [
   "What you get",
 ];
 
+// Wide tables scroll inside this wrapper instead of widening the page. The wrapper takes
+// keyboard focus and a name so keyboard readers can scroll it.
+class ContentRenderer extends Renderer {
+  constructor(private readonly section: string) {
+    super();
+  }
+
+  override table(token: Tokens.Table): string {
+    // Headings are the fixed section names checked above, so they need no escaping.
+    return `<div class="table-scroll" tabindex="0" role="region" aria-label="${this.section} table">${super.table(token)}</div>`;
+  }
+}
+
 const loadContent = ({
   name,
   names,
@@ -155,6 +168,7 @@ const loadContent = ({
             ? tokens.indexOf(sections[index + 1]!)
             : undefined,
         ),
+        { renderer: new ContentRenderer(section.text) },
       ),
     })),
   };

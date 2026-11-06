@@ -24,6 +24,16 @@ const record = {
   followUps: [], notes: [], memberCalls: 3,
 }
 
+// Writes one record to a fresh runs directory, builds its report, and returns the directory.
+const buildOne = (run) => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  mkdirSync(join(runsDir, run.id), { recursive: true })
+  writeFileSync(join(runsDir, run.id, 'run.json'), JSON.stringify(run))
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  return runsDir
+}
+
 test('builds the runs-dir argument, including gate-failed rounds without votes', () => {
   const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
   const runsDir = join(root, 'runs')
@@ -33,12 +43,92 @@ test('builds the runs-dir argument, including gate-failed rounds without votes',
   // A temporary HOME keeps a regression of the runs-dir argument away from real saved runs.
   const env = { ...process.env, HOME: join(root, 'home') }
   execFileSync(process.execPath, [script, runsDir], { env })
-  assert.ok(existsSync(join(runsDir, record.id, 'report.md')))
+  // A record from before decision rules keeps its report unchanged.
+  assert.doesNotMatch(readFileSync(join(runsDir, record.id, 'report.md'), 'utf8'), /Decision rule/)
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.equal(built.rejected, 1)
+  // The runs page reads the rule from the index; records from before decision rules use judges.
+  assert.equal(built.decisionRule, 'judges')
 
   const pageDir = join(root, 'page')
   execFileSync(process.execPath, [script, runsDir, '--page', pageDir], { env })
   const pageRun = JSON.parse(readFileSync(join(pageDir, 'runs', record.id, 'run.json'), 'utf8'))
   assert.deepEqual(pageRun.rounds[0].votes, [])
+})
+
+test('reports a score-decided climb by its scores, not as missing votes or a missing final check', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const scored = {
+    ...record, id: 'run-score', decisionRule: 'score',
+    // A tie, which loses even with a minimum gain of 0.
+    score: { command: 'pnpm a11y:count', direction: 'lower', minGain: 0, start: 7, final: 7 },
+    rounds: [{ ...round(1, 'accepted', []), score: 5 }],
+  }
+  mkdirSync(join(runsDir, scored.id), { recursive: true })
+  writeFileSync(join(runsDir, scored.id, 'run.json'), JSON.stringify(scored))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  const report = readFileSync(join(runsDir, scored.id, 'report.md'), 'utf8')
+  assert.match(report, /Decision rule: score/)
+  assert.match(report, /Score: 5/)
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['The final score did not beat the start score.'])
+  assert.deepEqual(built.score, { direction: 'lower', start: 7, final: 7, gained: false })
+})
+
+test('flags a both-rule climb that measured the final score but skipped the final judges', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const both = {
+    ...record, id: 'run-both', decisionRule: 'both',
+    score: { command: 'pnpm a11y:count', direction: 'higher', minGain: 1, start: 80, final: 90 },
+    rounds: [{ ...round(1, 'accepted', [vote]), score: 90 }],
+  }
+  mkdirSync(join(runsDir, both.id), { recursive: true })
+  writeFileSync(join(runsDir, both.id, 'run.json'), JSON.stringify(both))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['The climb kept changes but never ran the final check.'])
+})
+
+test('reports a guidance climb against no guidance, even with no accepted round', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const guidance = {
+    ...record, id: 'run-guidance', kind: 'guidance', rounds: [round(1, 'rejected')],
+    baseline: { summary: 'No guidance did as well.', votes: [{ ...vote, overall: 'baseline' }, { ...vote, overall: 'final' }] },
+  }
+  mkdirSync(join(runsDir, guidance.id), { recursive: true })
+  writeFileSync(join(runsDir, guidance.id, 'run.json'), JSON.stringify(guidance))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  assert.match(readFileSync(join(runsDir, guidance.id, 'report.md'), 'utf8'), /## Final vs no guidance[\s\S]*1 final, 0 same, 1 no guidance/)
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['Most judges did not prefer the final version to no guidance.'])
+})
+
+test('reports the final scorecard with start and final scores per screen', () => {
+  const ui = {
+    ...record, id: 'run-ui', kind: 'ui',
+    final: { votes: [{ ...vote, overall: 'final', criteria: { C1: 'final' } }], scorecard: [{ item: 'Today, mobile', start: 7.25, final: 8.8, issue: 'Cards push the session below the fold.' }] },
+  }
+  const runsDir = buildOne(ui)
+  assert.match(readFileSync(join(runsDir, ui.id, 'report.md'), 'utf8'), /\| Today, mobile \| 7\.3 \| 8\.8 \| Cards push the session below the fold\. \|/)
+})
+
+test('renders a scorecard-only final check and keeps malformed rows readable', () => {
+  const ui = {
+    ...record, id: 'run-ui-card', kind: 'ui',
+    // No round was accepted, so the final check is the scorecard alone.
+    rounds: record.rounds.map((r) => ({ ...r, decision: 'rejected' })),
+    final: { votes: [], scorecard: [{ item: 'Settings | mobile', start: null, final: 6, issue: 'Labels wrap\nunder the fields.' }] },
+  }
+  const runsDir = buildOne(ui)
+  const report = readFileSync(join(runsDir, ui.id, 'report.md'), 'utf8')
+  assert.match(report, /\| Settings \\\| mobile \| missing \| 6\.0 \| Labels wrap under the fields\. \|/)
+  assert.doesNotMatch(report, /## Start vs final/)
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['A scorecard row is missing a score.'])
 })
