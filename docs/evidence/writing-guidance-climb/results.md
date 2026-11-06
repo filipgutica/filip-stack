@@ -52,7 +52,24 @@ The probe used four fresh briefs from a new writer call, with no product reused 
 | 2. Head beats vanilla the same way | 14/20, +1.33, sign p = 0.058 | Fail |
 | 3. No harm: total ≥ base − 1, no brief more than 1 worse | 92 vs 90 overall; reference 21 vs 25 | Fail |
 
-Flags: page length was even (405 vs 406 words). Head beat base on 2 of 4 briefs (explanation 5/5 pairs, how-to 3/5, tutorial 2/5, reference 1/5).
+Flags: page length was even (405 vs 406 words). `probe.py` counts a brief as won when head takes most of its pairs; it does not check the mean gain per brief. Head won 2 of 4 briefs, which raises the brief-only flag. Both won briefs also have a mean gain of at least 1.0, so the count is the same with that check:
+
+| Brief | Head wins vs base | Mean pair difference |
+| --- | --- | --- |
+| Explanation | 5/5 | +12.70 |
+| How-to | 3/5 | +7.12 |
+| Tutorial | 2/5 | −0.52 |
+| Reference | 1/5 | −10.83 |
+
+Mean depth as a share of the page, over all tasks, passed or failed. A smaller share means that the reader stopped earlier:
+
+| Arm | Tutorial | How-to | Reference | Explanation | All |
+| --- | --- | --- | --- | --- | --- |
+| Vanilla | 0.57 | 0.47 | 0.52 | 0.74 | 0.58 |
+| Base | 0.58 | 0.41 | 0.51 | 0.70 | 0.55 |
+| Head | 0.45 | 0.40 | 0.49 | 0.73 | 0.52 |
+
+[prereg.md](prereg.md) asked for this measure per task type. The briefs do not label tasks by type, so it is reported per page type.
 
 Where the arms differed:
 
