@@ -72,7 +72,7 @@ const steps = [
   {
     name: "Reproduce or test",
     detail:
-      "Run the nearest existing test and record its result. A new regression test must fail before the fix.",
+      "Run the nearest fitting test, if any, and record its result. A new regression test must fail before the fix.",
   },
   {
     name: "Smallest change",
@@ -92,7 +92,7 @@ const steps = [
   {
     name: "Review decisions",
     detail:
-      "Get an independent review for consequential or hard-to-reverse changes before calling the work done.",
+      "Before finishing consequential or hard-to-reverse changes, get an independent review, or report that none ran.",
   },
 ].map((step, index) => {
   const { x, y } = pointAt(index * 60);
@@ -220,7 +220,7 @@ onMounted(() => {
     <ul class="parts">
       <li>
         <a href="#workflow">Workflow</a>
-        <p>Install this plugin to get all nine Workflow skills.</p>
+        <p>Install it to get all nine Workflow skills.</p>
       </li>
       <li>
         <a href="#standalone">Standalone skills</a>
