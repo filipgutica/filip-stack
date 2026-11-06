@@ -353,7 +353,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
           el('div', { class: 'size' }, el('div', { style: `width:${sizePct}%` }))),
         el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : r.score != null ? `Score ${r.score}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
     });
-    if (run.final) {
+    if (run.final?.votes?.length) {
       const t = overall(run.final.votes);
       rows.push(el('div', { class: 'prow final' },
         el('div', { class: 'rl' }, 'Whole climb', el('small', { text: 'Start vs final' })),
