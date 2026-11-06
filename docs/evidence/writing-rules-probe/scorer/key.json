@@ -1,0 +1,892 @@
+{
+  "briefs": [
+    {
+      "id": "H1",
+      "type": "how-to",
+      "wordLimit": 440,
+      "scenario": {
+        "startingState": "Quaylet is installed in interactive zsh with an empty writable working directory. The operator has edge-lab credentials but no saved login, activated hook, or startup block. north-api has three routes, blue is healthy, and its reservation is valid.",
+        "goal": "Move north-api to blue, observe completed rollout, and prepare integration for both the current and future interactive zsh sessions."
+      },
+      "harderScenario": {
+        "startingState": "A fresh replacement machine has the offline installer, installation permission, interactive zsh, and ~/.local/bin on PATH, but no Quaylet, saved login, active hook, or startup block. The directory is empty and writable. The same fleet has an expired renewable blue reservation. Open a new login shell after setup and before selecting north-api.",
+        "goal": "Install Quaylet, observe automatic hook loading in a new shell, renew the expired destination reservation after approval, and confirm the blue rollout is complete."
+      },
+      "items": {
+        "checklist": [
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for edge-lab account before operational commands and retain its credential.",
+            "after": [],
+            "command": "quaylet auth login --account edge-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the service-context hook into the original running shell and observe its ready marker.",
+            "after": [],
+            "command": "eval \"$(quaylet shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the service-context hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [],
+            "command": "quaylet shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "context",
+            "meaning": "This selects an existing service in this shell without changing traffic. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate"
+            ],
+            "command": "quaylet service select north-api",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "quaylet route preview --pool blue --out north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "quaylet plan inspect north-blue.plan",
+            "observe": {
+              "service": "north-api",
+              "destination": "blue",
+              "affected_routes": "3"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "quaylet plan approve north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve"
+            ],
+            "command": "quaylet plan execute north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together.",
+            "after": [
+              "execute"
+            ],
+            "command": "quaylet service status north-api --format plain",
+            "observe": {
+              "pool": "blue",
+              "rollout": "complete"
+            }
+          }
+        ],
+        "harderChecklist": [
+          {
+            "id": "install",
+            "meaning": "Install the quaylet executable from the supplied offline kit before any tool invocation.",
+            "after": [],
+            "command": "sh /opt/training-kits/quaylet-2.8.1.run --user",
+            "observe": {}
+          },
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for edge-lab account before operational commands and retain its credential.",
+            "after": [
+              "install"
+            ],
+            "command": "quaylet auth login --account edge-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the service-context hook into the original running shell and observe its ready marker.",
+            "after": [
+              "install"
+            ],
+            "command": "eval \"$(quaylet shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the service-context hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [
+              "install"
+            ],
+            "command": "quaylet shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "new_shell",
+            "meaning": "After current activation and saved startup setup, replace the shell with a login zsh session; observe automatic service-context hook loading through its ready banner before task context is established.",
+            "after": [
+              "activate",
+              "persist"
+            ],
+            "command": "exec zsh -l",
+            "observe": {
+              "QUAYLET_SESSION": "ready"
+            }
+          },
+          {
+            "id": "context",
+            "meaning": "This selects an existing service in this shell without changing traffic. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate",
+              "new_shell"
+            ],
+            "command": "quaylet service select north-api",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "quaylet route preview --pool blue --out north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "quaylet plan inspect north-blue.plan",
+            "observe": {
+              "service": "north-api",
+              "destination": "blue",
+              "affected_routes": "3"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "quaylet plan approve north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "recover",
+            "meaning": "Following approval's expired-reservation warning, renew the destination reservation for the same approved plan and observe its valid marker before execution.",
+            "after": [
+              "approve"
+            ],
+            "command": "quaylet reservation renew --plan north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve",
+              "recover"
+            ],
+            "command": "quaylet plan execute north-blue.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together.",
+            "after": [
+              "execute"
+            ],
+            "command": "quaylet service status north-api --format plain",
+            "observe": {
+              "pool": "blue",
+              "rollout": "complete"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "H2",
+      "type": "how-to",
+      "wordLimit": 430,
+      "scenario": {
+        "startingState": "Retainro is installed in interactive zsh with an empty writable working directory. The operator has archive-lab credentials but no saved login, active resolver, or startup block. invoices-2025 contains 240 records and has a valid index reservation.",
+        "goal": "Apply 90-day retention to invoices-2025, observe its active policy, and prepare integration for the current and future interactive zsh sessions."
+      },
+      "harderScenario": {
+        "startingState": "A fresh replacement machine has the offline installer, installation permission, interactive zsh, and ~/.local/bin on PATH, but no Retainro, saved login, active resolver, or startup block. The empty writable directory and archive match the ordinary case except that the index reservation is expired and renewable. Open a new login shell after setup and before selecting invoices-2025.",
+        "goal": "Install Retainro, observe automatic resolver loading in a new shell, renew the expired index reservation after approval, and confirm 90-day retention is active."
+      },
+      "items": {
+        "checklist": [
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for archive-lab account before operational commands and retain its credential.",
+            "after": [],
+            "command": "retainro auth login --account archive-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the archive-context resolver into the original running shell and observe its ready marker.",
+            "after": [],
+            "command": "eval \"$(retainro shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the archive-context resolver in future interactive zsh sessions; observe the saved marker.",
+            "after": [],
+            "command": "retainro shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "context",
+            "meaning": "This selects the existing collection in this shell and does not modify its records. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate"
+            ],
+            "command": "retainro collection select invoices-2025",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "retainro policy preview --days 90 --out invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "retainro plan inspect invoices-retention.plan",
+            "observe": {
+              "collection": "invoices-2025",
+              "retention_days": "90",
+              "affected_records": "240"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "retainro plan approve invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve"
+            ],
+            "command": "retainro plan execute invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together.",
+            "after": [
+              "execute"
+            ],
+            "command": "retainro collection status invoices-2025 --format plain",
+            "observe": {
+              "retention_days": "90",
+              "policy_state": "active"
+            }
+          }
+        ],
+        "harderChecklist": [
+          {
+            "id": "install",
+            "meaning": "Install the retainro executable from the supplied offline kit before any tool invocation.",
+            "after": [],
+            "command": "sh /opt/training-kits/retainro-4.3.run --user",
+            "observe": {}
+          },
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for archive-lab account before operational commands and retain its credential.",
+            "after": [
+              "install"
+            ],
+            "command": "retainro auth login --account archive-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the archive-context resolver into the original running shell and observe its ready marker.",
+            "after": [
+              "install"
+            ],
+            "command": "eval \"$(retainro shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the archive-context resolver in future interactive zsh sessions; observe the saved marker.",
+            "after": [
+              "install"
+            ],
+            "command": "retainro shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "new_shell",
+            "meaning": "After current activation and saved startup setup, replace the shell with a login zsh session; observe automatic archive-context resolver loading through its ready banner before task context is established.",
+            "after": [
+              "activate",
+              "persist"
+            ],
+            "command": "exec zsh -l",
+            "observe": {
+              "RETAINRO_SESSION": "ready"
+            }
+          },
+          {
+            "id": "context",
+            "meaning": "This selects the existing collection in this shell and does not modify its records. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate",
+              "new_shell"
+            ],
+            "command": "retainro collection select invoices-2025",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "retainro policy preview --days 90 --out invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "retainro plan inspect invoices-retention.plan",
+            "observe": {
+              "collection": "invoices-2025",
+              "retention_days": "90",
+              "affected_records": "240"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "retainro plan approve invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "recover",
+            "meaning": "Following approval's expired-reservation warning, renew the index reservation for the same approved plan and observe its valid marker before execution.",
+            "after": [
+              "approve"
+            ],
+            "command": "retainro reservation renew --plan invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve",
+              "recover"
+            ],
+            "command": "retainro plan execute invoices-retention.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together.",
+            "after": [
+              "execute"
+            ],
+            "command": "retainro collection status invoices-2025 --format plain",
+            "observe": {
+              "retention_days": "90",
+              "policy_state": "active"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "T1",
+      "type": "tutorial",
+      "wordLimit": 470,
+      "scenario": {
+        "startingState": "Glowfolio is installed in interactive zsh, the six supplied photographs are present, and the working directory is empty and writable. The newcomer has photo-lab credentials but no saved login, active hook, or startup block. No harbor sheet exists remotely and its upload slot is valid.",
+        "goal": "Create harbor with the plain theme, publish its six-photo proof sheet, record the live view URL, and enable integration now and for future shells."
+      },
+      "harderScenario": {
+        "startingState": "A fresh machine has the offline installer, installation permission, interactive zsh, ~/.local/bin on PATH, the six supplied photographs, and an empty writable directory. Glowfolio, saved login, active hook, and startup block are absent. No harbor sheet exists remotely; its upload slot is expired but renewable. Open a new login shell after setup and before creating harbor.",
+        "goal": "Install Glowfolio, observe automatic hook loading in a new shell, renew the expired upload slot after approval, and publish and observe the same six-photo harbor sheet."
+      },
+      "items": {
+        "checklist": [
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for photo-lab account before operational commands and retain its credential.",
+            "after": [],
+            "command": "glowfolio auth login --account photo-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the draft-directory hook into the original running shell and observe its ready marker.",
+            "after": [],
+            "command": "eval \"$(glowfolio shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the draft-directory hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [],
+            "command": "glowfolio shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "context",
+            "meaning": "This creates a local draft from six supplied photographs, binds it to this shell, and uploads nothing. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate"
+            ],
+            "command": "glowfolio sheet create harbor --from /opt/tutorial-data/harbor --theme plain",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "glowfolio sheet preview harbor --out harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "glowfolio plan inspect harbor-proof.plan",
+            "observe": {
+              "title": "harbor",
+              "theme": "plain",
+              "photos": "6"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "glowfolio plan approve harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve"
+            ],
+            "command": "glowfolio plan execute harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together; record the returned URL.",
+            "after": [
+              "execute"
+            ],
+            "command": "glowfolio sheet status harbor --format plain",
+            "observe": {
+              "photos": "6",
+              "publication": "live",
+              "view_url": "NONEMPTY"
+            }
+          }
+        ],
+        "harderChecklist": [
+          {
+            "id": "install",
+            "meaning": "Install the glowfolio executable from the supplied offline kit before any tool invocation.",
+            "after": [],
+            "command": "sh /opt/training-kits/glowfolio-1.6.run --user",
+            "observe": {}
+          },
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for photo-lab account before operational commands and retain its credential.",
+            "after": [
+              "install"
+            ],
+            "command": "glowfolio auth login --account photo-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the draft-directory hook into the original running shell and observe its ready marker.",
+            "after": [
+              "install"
+            ],
+            "command": "eval \"$(glowfolio shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the draft-directory hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [
+              "install"
+            ],
+            "command": "glowfolio shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "new_shell",
+            "meaning": "After current activation and saved startup setup, replace the shell with a login zsh session; observe automatic draft-directory hook loading through its ready banner before task context is established.",
+            "after": [
+              "activate",
+              "persist"
+            ],
+            "command": "exec zsh -l",
+            "observe": {
+              "GLOWFOLIO_SESSION": "ready"
+            }
+          },
+          {
+            "id": "context",
+            "meaning": "This creates a local draft from six supplied photographs, binds it to this shell, and uploads nothing. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate",
+              "new_shell"
+            ],
+            "command": "glowfolio sheet create harbor --from /opt/tutorial-data/harbor --theme plain",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "glowfolio sheet preview harbor --out harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "glowfolio plan inspect harbor-proof.plan",
+            "observe": {
+              "title": "harbor",
+              "theme": "plain",
+              "photos": "6"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "glowfolio plan approve harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "recover",
+            "meaning": "Following approval's expired-reservation warning, renew the upload slot for the same approved plan and observe its valid marker before execution.",
+            "after": [
+              "approve"
+            ],
+            "command": "glowfolio slot renew --plan harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve",
+              "recover"
+            ],
+            "command": "glowfolio plan execute harbor-proof.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together; record the returned URL.",
+            "after": [
+              "execute"
+            ],
+            "command": "glowfolio sheet status harbor --format plain",
+            "observe": {
+              "photos": "6",
+              "publication": "live",
+              "view_url": "NONEMPTY"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "id": "T2",
+      "type": "tutorial",
+      "wordLimit": 460,
+      "scenario": {
+        "startingState": "Tidecards is installed in interactive zsh, the eight-row reef.tsv is present, and the working directory is empty and writable. The newcomer has classroom-lab credentials but no saved login, active hook, or startup block. tide-lab exists, no reef deck exists remotely, and its delivery reservation is valid.",
+        "goal": "Create and publish the eight-card reef deck in tide-lab, record its practice URL, and enable integration now and for future interactive zsh sessions."
+      },
+      "harderScenario": {
+        "startingState": "A fresh machine has the offline installer, installation permission, interactive zsh, ~/.local/bin on PATH, reef.tsv, and an empty writable directory. Tidecards, saved login, active hook, and startup block are absent. tide-lab exists with no reef deck; its delivery reservation is expired but renewable. Open a new login shell after setup and before creating reef.",
+        "goal": "Install Tidecards, observe automatic hook loading in a new shell, renew the expired delivery reservation after approval, and confirm the same eight-card deck is published with its practice URL."
+      },
+      "items": {
+        "checklist": [
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for classroom-lab account before operational commands and retain its credential.",
+            "after": [],
+            "command": "tidecards auth login --account classroom-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the draft-context hook into the original running shell and observe its ready marker.",
+            "after": [],
+            "command": "eval \"$(tidecards shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the draft-context hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [],
+            "command": "tidecards shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "context",
+            "meaning": "This reads the supplied UTF-8 tab-separated file into a local draft, binds reef to this shell, and sends no cards to the room. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate"
+            ],
+            "command": "tidecards deck create reef --from /opt/tutorial-data/reef.tsv --room tide-lab",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "tidecards deck preview reef --out reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "tidecards plan inspect reef-publish.plan",
+            "observe": {
+              "deck": "reef",
+              "room": "tide-lab",
+              "cards": "8"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "tidecards plan approve reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve"
+            ],
+            "command": "tidecards plan execute reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together; record the returned URL.",
+            "after": [
+              "execute"
+            ],
+            "command": "tidecards deck status reef --format plain",
+            "observe": {
+              "cards": "8",
+              "state": "published",
+              "practice_url": "NONEMPTY"
+            }
+          }
+        ],
+        "harderChecklist": [
+          {
+            "id": "install",
+            "meaning": "Install the tidecards executable from the supplied offline kit before any tool invocation.",
+            "after": [],
+            "command": "sh /opt/training-kits/tidecards-3.2.run --user",
+            "observe": {}
+          },
+          {
+            "id": "auth",
+            "meaning": "Complete device-code sign-in for classroom-lab account before operational commands and retain its credential.",
+            "after": [
+              "install"
+            ],
+            "command": "tidecards auth login --account classroom-lab",
+            "observe": {}
+          },
+          {
+            "id": "activate",
+            "meaning": "Load the draft-context hook into the original running shell and observe its ready marker.",
+            "after": [
+              "install"
+            ],
+            "command": "eval \"$(tidecards shell init zsh)\"",
+            "observe": {}
+          },
+          {
+            "id": "persist",
+            "meaning": "Save startup configuration that loads the draft-context hook in future interactive zsh sessions; observe the saved marker.",
+            "after": [
+              "install"
+            ],
+            "command": "tidecards shell persist --shell zsh",
+            "observe": {}
+          },
+          {
+            "id": "new_shell",
+            "meaning": "After current activation and saved startup setup, replace the shell with a login zsh session; observe automatic draft-context hook loading through its ready banner before task context is established.",
+            "after": [
+              "activate",
+              "persist"
+            ],
+            "command": "exec zsh -l",
+            "observe": {
+              "TIDECARDS_SESSION": "ready"
+            }
+          },
+          {
+            "id": "context",
+            "meaning": "This reads the supplied UTF-8 tab-separated file into a local draft, binds reef to this shell, and sends no cards to the room. Use the precise object and inputs specified by this worked case.",
+            "after": [
+              "auth",
+              "activate",
+              "new_shell"
+            ],
+            "command": "tidecards deck create reef --from /opt/tutorial-data/reef.tsv --room tide-lab",
+            "observe": {}
+          },
+          {
+            "id": "preview",
+            "meaning": "Generate a read-only proposal for the specified task, writing the named plan for all later steps.",
+            "after": [
+              "context"
+            ],
+            "command": "tidecards deck preview reef --out reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "inspect",
+            "meaning": "Inspect the generated proposal and verify every required task field before approving it.",
+            "after": [
+              "preview"
+            ],
+            "command": "tidecards plan inspect reef-publish.plan",
+            "observe": {
+              "deck": "reef",
+              "room": "tide-lab",
+              "cards": "8"
+            }
+          },
+          {
+            "id": "approve",
+            "meaning": "Approve the same proposal file after inspecting and confirming its contents.",
+            "after": [
+              "inspect"
+            ],
+            "command": "tidecards plan approve reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "recover",
+            "meaning": "Following approval's expired-reservation warning, renew the delivery reservation for the same approved plan and observe its valid marker before execution.",
+            "after": [
+              "approve"
+            ],
+            "command": "tidecards delivery renew --plan reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "execute",
+            "meaning": "Execute the same approved plan to perform the remote change.",
+            "after": [
+              "approve",
+              "recover"
+            ],
+            "command": "tidecards plan execute reef-publish.plan",
+            "observe": {}
+          },
+          {
+            "id": "verify",
+            "meaning": "Read remote status and repeat during the documented transient state; observe the completed fields together; record the returned URL.",
+            "after": [
+              "execute"
+            ],
+            "command": "tidecards deck status reef --format plain",
+            "observe": {
+              "cards": "8",
+              "state": "published",
+              "practice_url": "NONEMPTY"
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

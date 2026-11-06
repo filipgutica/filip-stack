@@ -1,0 +1,9 @@
+{
+  "prereg.md": "82017428a294d6afdad5e8799b4a2fe5771d9020d39447c0e2f0742729b5611b",
+  "head-technical-prose.md": "b3610980c1d1ef86d63df952745952dd20f224aac8e9de29ac8ca930bda8c4ac",
+  "inputs.json": "202dfd26ab71367bc321bf5fc76c6c9adf0e1f9c2430d4d0b2340051ff23d6cd",
+  "scorer/key.json": "d3893dc48b81c41a9f28718977d292cc1a44486196caf4dd9360f67b7cb33f5c",
+  "scorer/test_scoring.py": "67c0b4664c5637af7087a1fa9b9c797809f2645e8eab1481f532192919c054c0",
+  "scorer/prompts.py": "14107da45b7e6525f4a748a030ef21deedb1c5966d300bbcb93ebcb44d1481c0",
+  "scorer/probe.py": "be5617b1958c52e4896aa7db044d63e61be2bc67d839316943c4e8a981ffa303"
+}

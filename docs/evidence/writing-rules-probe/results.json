@@ -1,0 +1,90 @@
+{
+  "calibration": {
+    "sol61": {
+      "path": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      },
+      "entry": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      }
+    },
+    "astra": {
+      "path": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      },
+      "entry": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      }
+    },
+    "opus": {
+      "path": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      },
+      "entry": {
+        "caught": 2,
+        "cleanFalseAlarms": 0,
+        "eligible": true
+      }
+    }
+  },
+  "dryRuns": [
+    {
+      "scenario": "initial",
+      "passed": 4,
+      "tasks": 4,
+      "perBrief": {
+        "H1": {
+          "passed": 2,
+          "tasks": 2
+        },
+        "T1": {
+          "passed": 2,
+          "tasks": 2
+        }
+      },
+      "meanWords": 455.0
+    },
+    {
+      "scenario": "harder",
+      "passed": 4,
+      "tasks": 4,
+      "perBrief": {
+        "H1": {
+          "passed": 2,
+          "tasks": 2
+        },
+        "T1": {
+          "passed": 2,
+          "tasks": 2
+        }
+      },
+      "meanWords": 391.75
+    }
+  ],
+  "headroomSufficient": false,
+  "paidProbeStarted": false,
+  "callsUsed": 23,
+  "callCap": 171,
+  "modelRetries": 0,
+  "codexTiers": {
+    "priority": 21,
+    "default": 0
+  },
+  "opusCalls": 2,
+  "instrumentationDiagnostics": {
+    "initialCitationGatedPassed": 1,
+    "initialCitationGatedTasks": 4,
+    "harderTruncatedKeyPassed": 0,
+    "harderTruncatedKeyTasks": 4
+  }
+}

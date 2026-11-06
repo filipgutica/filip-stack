@@ -1584,6 +1584,24 @@ Evidence:
 - [docs/evidence/ux-guidance-probe/prereg.md](evidence/ux-guidance-probe/prereg.md)
 - [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md)
 
+### 27. Two writing rules: pre-registration, calibration and headroom
+
+Date: 2026-11-06. This preparation freezes two additions to `technical-prose.md`: start requirements at the entry point, and a complete how-to task path before optional reference. A fresh writer produced two how-to and two tutorial briefs for fictional CLIs. The head remains an evidence snapshot; no live guidance changed.
+
+Astra, Sol 6.1 and Opus 5.5 each caught 2/2 planted defects with 0/2 clean false alarms on both targeted judge items. All three are eligible on both items. The calibration uses shortened adaptations of #110's two Django exemplars.
+
+Base passed 4/4 execution tasks in the initial headroom run. That triggered the single pre-registered harder rerun, adding a fresh machine, a new shell boundary and expired-reservation recovery. Base again passed 4/4. There is still no headroom, so the design is not ready for a paid efficacy probe. H2/T2 and head/vanilla were not built.
+
+Two scorer repairs precede any paid data: citation copying was separated from semantic completion, and renewal filenames truncated by a key-conversion regex were restored from the original sources/checklists. Original diagnostic scores (1/4 and 0/4) are retained externally. Outer dispatch text exposed the base-arm label, and ambient host guidance was not isolated. These preparation limits need parent review.
+
+Calls: 23 of a 171 cap; 21 Codex calls used priority before the 23:00 UTC tier boundary, and two Opus calls served only calibration. New Codex calls from that boundary use default. No paid probe or writing-rule release ran.
+
+Evidence:
+
+- [Pre-registration](evidence/writing-rules-probe/prereg.md)
+- [Calibration and headroom results](evidence/writing-rules-probe/results.md)
+- [Aggregate results](evidence/writing-rules-probe/results.json)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
