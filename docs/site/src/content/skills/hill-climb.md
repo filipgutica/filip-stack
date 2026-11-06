@@ -13,7 +13,9 @@ which.
 Use it at the end of a thread, once the change works and you want more
 polish, such as tighter spacing or simpler code. You can also start it with
 no change at all and a goal instead, such as "improve the UX of the settings
-pages". Hill climb judges quality, taste, and design, so check correctness
+pages". It can also climb guidance, such as a skill: each version is judged
+by the work agents produce while following it, compared with agents that get
+no guidance. Hill climb judges quality, taste, and design, so check correctness
 first, for example with [sol-loop](../sol-loop/).
 
 The install command above adds hill-climb alone. To add council too, change

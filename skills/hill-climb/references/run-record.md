@@ -82,7 +82,7 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
 
 Field notes:
 
-- `kind`: `code` or `ui`.
+- `kind`: `code`, `ui`, or `guidance`.
 - `budget.maxCalls`: optional; the card's member-call limit.
 - `decisionRule`: optional; `judges`, `score`, or `both`. Leave it out for `judges`.
 - `score`: required for `score` and `both`, otherwise left out. `direction` is `higher` or `lower`; `minGain` is the smallest gain that counts; `start` and `final` are the starting and final incumbents' scores.

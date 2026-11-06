@@ -78,15 +78,18 @@ Build the card and freeze it before round 1:
   reader-facing text, each version's text in reading order, with its code
   blocks and captions, plus each version's diff. Take every
   screenshot from a fresh page load: going to a URL that differs only in its
-  hash does not reload the page.
+  hash does not reload the page. For guidance, such as a skill or an
+  instruction file, the evidence is agents' work under each version, as
+  [references/guidance.md](references/guidance.md) describes.
 - **Not covered:** what the gates and evidence do not prove. For example,
   screenshots do not prove keyboard behavior.
 - **Decision rule:** how a candidate wins: `judges` (the default), `score`,
   or `both`. See Decide.
 - **Score:** for `score` and `both`, the exact command, which prints the
   number as its last line of output; whether higher or lower is better; and
-  the smallest gain that counts, a positive number. The command and its scripts and fixtures
-  sit outside the scope.
+  the smallest gain that counts, a positive number. The command and its
+  scripts and fixtures sit outside the scope. A guidance climb uses the
+  answer-key tally from `references/guidance.md` in place of a command.
 - **Behavior:** `keep` (the default), or the interactions the climb may
   change, such as "focus order in the settings form". Put the tests that
   assert those interactions in the scope.
@@ -231,6 +234,8 @@ Choose the A/B order at random for each judge and record it only in
   hold each version's copy of the scoped files that differ between the two,
   under the same relative paths. An empty diff would show which version is
   the incumbent.
+- Guidance: each version's attempt outputs, as `references/guidance.md`
+  describes.
 
 ### Decide
 
@@ -309,7 +314,8 @@ Stop at the first of these:
 - The member-call limit could not cover the next round and the final check.
   Under `judges` and `both`, a round costs one call per judge, round 1 adds
   one per proposer, and the final check costs one call per judge. Under
-  `score`, only round 1's proposers cost calls. Before each launch in a
+  `score`, only round 1's proposers cost calls. A guidance climb adds its
+  attempts. Before each launch in a
   round, including a retry, check that the calls left cover it and still
   leave the final check; otherwise stop. During the final check, the calls
   left need to cover only that check.
