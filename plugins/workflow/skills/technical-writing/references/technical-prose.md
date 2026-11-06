@@ -31,15 +31,41 @@ Keep the review proportional to the artifact: tickets support implementation, PR
 
 ## Guide and lesson bodies
 
-These rules cover the sections after the opening of a guide, lesson, or tutorial. They do not cover the opening, landing pages, reference pages, or PR descriptions. A required template or heading order takes precedence.
+These rules cover the sections after the opening of a tutorial, how-to guide, or explanation. They do not cover the opening, landing pages, reference pages, or PR descriptions. A required template or heading order takes precedence.
+
+Classify the page before you apply them. Ask whether it guides action or builds understanding, and whether the reader is learning or doing work:
+
+- A tutorial guides action while the reader learns, through one project.
+- A how-to guide directs a competent reader through a real task.
+- An explanation builds understanding of a topic, away from any task.
+
+A lesson is usually a tutorial or an explanation. Apply each rule only to the types it names.
+
+For all three types:
 
 - Order the sections so each one builds only on terms and ideas that the audience already knows or that earlier sections introduced. Define any other term where it first appears. You can link to a later section, but do not make an explanation depend on that section.
-- Before you explain a concept, say what problem it solves or what question it answers.
-- When the sources give a concrete case, introduce it early and return to it in each later section it applies to. Do not switch to a new example in each section or hold the only example until the end. Do not invent a case or its details.
-- State a point that several sections need in the first section that needs it. In later sections, refer back to it.
-- Give each section one reader question or task. Split a section that holds two, and merge sections that divide one. Treat complete option lists, rule sets, and maintainer procedures as reference material. If the reader does not need that material to follow the page, move it behind a disclosure or a link.
+- Start each section with what the reader needs most from it. Do not restate the heading, the order of the steps, or a point that an earlier section made. Refer back to it instead.
+- Give each section one reader question or task. Split a section that holds two, and merge sections that divide one.
+- Leave out facts that only the subject's maintainers need, such as internal limits and release details. Link to them when a reader may want them.
 - If the page keeps notes about how it was sourced or drafted, put them in a notes section after the last body section.
-- End the body on what the reader can now do and where to go next, not on a summary of the sections.
+
+For a tutorial:
+
+- When the sources give a concrete project or case, use it in every step it applies to. Do not switch to a new example or invent a case or its details.
+- Keep explanation to a short reason in plain words, and link to a fuller explanation. Leave out options and alternatives.
+- End the body on what the reader has built and can now do.
+
+For a how-to guide:
+
+- Leave out teaching, background, and complete option lists. Link to an explanation or a reference page instead.
+- End where the task ends, then say where to go next.
+
+For an explanation:
+
+- Before you explain a concept, say what problem it solves or what question it answers.
+- Keep instructions out, and link to the how-to guide that has them.
+
+The three types follow the [Diátaxis](https://diataxis.fr) framework.
 
 ## Finish the prose
 
