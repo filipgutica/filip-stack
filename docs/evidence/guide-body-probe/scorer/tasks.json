@@ -1,0 +1,106 @@
+{
+ "G1": [
+  {
+   "id": "t1",
+   "situation": "During setup, the sorter indicates that it cannot see the reference clearly.",
+   "question": "What should you do before adding the batch?",
+   "factIds": [
+    "11"
+   ],
+   "rule": {
+    "all": [
+     "remov",
+     "scanner window",
+     "dry cloth",
+     "reinsert"
+    ],
+    "any": [
+     "repeat",
+     "again"
+    ]
+   },
+   "pass": "Remove the baseline card, wipe the scanner window with the supplied dry cloth, reinsert the card, and repeat Step 2 before loading beads."
+  },
+  {
+   "id": "t2",
+   "situation": "You have finished sorting the Kestrel batch and are checking its displayed results.",
+   "question": "What counts and record label should you confirm before saving?",
+   "factIds": [
+    "18"
+   ],
+   "rule": {
+    "all": [
+     "40",
+     "28",
+     "12",
+     "kestrel-04"
+    ],
+    "any": [
+     "outlet"
+    ]
+   },
+   "pass": "Confirm 40 beads overall, 28 at outlet A, and 12 at outlet B, and save the completion record as Kestrel-04."
+  }
+ ],
+ "G2": [
+  {
+   "id": "t1",
+   "situation": "Tram Aster has 10 total parcel spaces, 4 reserved spaces, and 9 waiting ordinary parcels. Tram Belin has 20 total parcel spaces, 2 reserved spaces, and 12 waiting ordinary parcels.",
+   "question": "Does Aster have the higher queue ratio despite its shorter queue?",
+   "factIds": [
+    "1",
+    "2",
+    "10"
+   ],
+   "rule": {
+    "prefix": "yes"
+   },
+   "pass": "Yes, Aster's queue ratio is 1.5, while Belin's is approximately 0.67."
+  },
+  {
+   "id": "t2",
+   "situation": "Two trams are still at the station, and their waiting parcels are bound for the same destination but have different delivery deadlines.",
+   "question": "Are these trams eligible for balanced transfer?",
+   "factIds": [
+    "11"
+   ],
+   "rule": {
+    "prefix": "no"
+   },
+   "pass": "No, balanced transfer requires the waiting parcels to share both a destination and a delivery deadline."
+  }
+ ],
+ "G3": [
+  {
+   "id": "t1",
+   "situation": "You are attaching the three clear holders beneath the board's headings.",
+   "question": "How should you position them so volunteers can insert and read the cards?",
+   "factIds": [
+    "7"
+   ],
+   "rule": {
+    "all": [
+     "open",
+     "top",
+     "visib"
+    ],
+    "any": [
+     "front"
+    ]
+   },
+   "pass": "Position each pocket with its opening at the top and its cards visible through the front."
+  },
+  {
+   "id": "t2",
+   "situation": "During the Temba test on Day 13, Reel-8 and Reel-11 share a pocket, while Reel-3 sits alone in another.",
+   "question": "Has the placement check passed?",
+   "factIds": [
+    "18"
+   ],
+   "rule": {
+    "prefix": "no"
+   },
+   "pass": "No; Reel-3 belongs in Returned, Reel-8 in Due, and Reel-11 in Later."
+  }
+ ]
+}

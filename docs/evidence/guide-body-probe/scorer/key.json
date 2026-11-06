@@ -1,0 +1,321 @@
+{
+ "G1": {
+  "brief": "Write an approximately 800-word how-to guide for new craft cooperative operators completing one batch sort with the fictional Tavrel bead sorter.",
+  "facts": {
+   "1": "A baseline card supplies a known width reference.",
+   "2": "A route map assigns every width to exactly one outlet range.",
+   "4": "The baseline prevents reference drift from changing measurements.",
+   "5": "The route map prevents incorrect outlet delivery.",
+   "6": "Start with Ready status, clean dry beads, an empty tray, and the specified card.",
+   "7": "Step 4 loads only the intended batch.",
+   "8": "Step 1 seats and latches the empty tray.",
+   "10": "Step 3 selects and previews the route map.",
+   "11": "Clear Reference obscured by wiping the window and repeating calibration.",
+   "12": "Step 6 checks counts and saves a matching completion record.",
+   "13": "Step 2 reads the baseline card and checks Baseline ready.",
+   "15": "Step 5 starts sorting and waits for Batch complete.",
+   "16": "Kestrel contains 28 five-millimeter beads and 12 eight-millimeter beads.",
+   "17": "Kestrel uses Luma-6 and Loom Split with a six-millimeter boundary.",
+   "18": "Kestrel-04 must record 40 total, 28 at A, and 12 at B."
+  },
+  "agentOnly": {
+   "3": "Baseline readings use unsigned 12-bit storage.",
+   "9": "The scanner lamp has a 4,000-hour replacement interval.",
+   "14": "Maintenance assigns route map revision checksums."
+  },
+  "case": {
+   "name": "Kestrel batch",
+   "detailIds": [
+    "16",
+    "17",
+    "18"
+   ]
+  },
+  "concepts": [
+   {
+    "name": "Baseline card",
+    "motivationIds": [
+     "4"
+    ],
+    "explanationIds": [
+     "1"
+    ]
+   },
+   {
+    "name": "Route map",
+    "motivationIds": [
+     "5"
+    ],
+    "explanationIds": [
+     "2"
+    ]
+   }
+  ],
+  "steps": [
+   "8",
+   "13",
+   "10",
+   "7",
+   "15",
+   "12"
+  ],
+  "questions": {
+   "a": "Which action comes immediately after Step 4, loading the batch into the hopper?",
+   "b": "What should the operator do when Read reference reports Reference obscured?",
+   "c": "Does the baseline card determine which outlet receives each bead?",
+   "d": "Should a successful Kestrel-04 record show 40 beads overall, 28 at outlet A, and 12 at outlet B?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "Press Sort and wait for Batch complete, which is Step 5.",
+    "all": [
+     "sort"
+    ],
+    "any": []
+   },
+   "b": {
+    "pass": "Remove the card, wipe the scanner window with the supplied dry cloth, reinsert the card, and repeat Step 2 before loading beads.",
+    "all": [
+     "window"
+    ],
+    "any": [
+     "wipe",
+     "clean"
+    ]
+   },
+   "c": {
+    "pass": "No; the route map determines outlet assignments.",
+    "prefix": "no"
+   },
+   "d": {
+    "pass": "Yes; those are the required total and outlet counts.",
+    "prefix": "yes"
+   }
+  },
+  "checklist": [
+   "Presents one complete batch sort in the six correct steps.",
+   "States the prerequisites and checks Baseline ready immediately after calibration.",
+   "Explains the separate purposes of the baseline card and route map.",
+   "Carries Kestrel through calibration, outlet setup, and completion verification using the exact settings and counts.",
+   "Includes the Reference obscured fix and omits maintainer details and unsupported claims."
+  ]
+ },
+ "G2": {
+  "brief": "Write an approximately 900-word conceptual lesson for trainee dispatchers learning usable capacity, queue ratio, and balanced transfer in the fictional Orvane parcel tram service.",
+  "facts": {
+   "1": "Usable capacity excludes reserved parcel spaces.",
+   "2": "Queue ratio divides waiting parcels by usable capacity.",
+   "3": "Balanced transfer reduces the larger ratio through permitted whole-parcel moves.",
+   "5": "A ratio above one means the current queue exceeds available spaces.",
+   "6": "Usable capacity prevents reserved spaces being counted as available.",
+   "7": "Queue ratio permits comparison across different tram sizes.",
+   "8": "Balanced transfer redistributes demand toward available room.",
+   "9": "The ratio denominator must exclude reserved spaces.",
+   "10": "Raw queue size alone does not establish relative demand.",
+   "11": "Transfers require matching destination and deadline before departure.",
+   "12": "Transfers preserve total parcels and both usable capacities.",
+   "13": "Recalculate both ratios after every parcel transfer.",
+   "16": "Nemi has six usable spaces and Pavo has twelve.",
+   "17": "Copper Loop starts with queues of twelve and six eligible parcels.",
+   "18": "Moving six parcels produces queues of six and twelve and equal ratios."
+  },
+  "agentOnly": {
+   "4": "The simulator stores ratios to six decimal places.",
+   "14": "Regression checks use a 0.000001 tolerance.",
+   "15": "Vesk Operations publishes quarterly reference tables."
+  },
+  "case": {
+   "name": "Copper Loop scenario",
+   "detailIds": [
+    "16",
+    "17",
+    "18"
+   ]
+  },
+  "concepts": [
+   {
+    "name": "Usable capacity",
+    "motivationIds": [
+     "6"
+    ],
+    "explanationIds": [
+     "1"
+    ]
+   },
+   {
+    "name": "Queue ratio",
+    "motivationIds": [
+     "7"
+    ],
+    "explanationIds": [
+     "2",
+     "5",
+     "9",
+     "10"
+    ]
+   },
+   {
+    "name": "Balanced transfer",
+    "motivationIds": [
+     "8"
+    ],
+    "explanationIds": [
+     "3",
+     "11",
+     "12",
+     "13"
+    ]
+   }
+  ],
+  "steps": [],
+  "questions": {
+   "a": "How is a tram's usable capacity calculated?",
+   "b": "Does the tram with the larger raw queue always have the larger queue ratio?",
+   "c": "Why does balanced transfer need queue ratio when comparing trams with different usable capacities?",
+   "d": "Would transferring only three parcels from Nemi to Pavo make their queue ratios equal in Copper Loop?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "Subtract reserved spaces from total parcel spaces.",
+    "all": [
+     "reserv"
+    ],
+    "any": [
+     "subtract",
+     "minus",
+     "deduct",
+     "remov"
+    ]
+   },
+   "b": {
+    "pass": "No; queue ratio also depends on usable capacity.",
+    "prefix": "no"
+   },
+   "c": {
+    "pass": "Queue ratio expresses demand relative to usable capacity, so balanced transfer can compare differently sized trams and identify moves that reduce the larger relative load.",
+    "all": [],
+    "any": [
+     "relativ",
+     "proportion",
+     "normali",
+     "divid",
+     "per space",
+     "per usable",
+     "scale"
+    ],
+    "amended": "Brief writer's key used any of ratio/relativ/proportion/normaliz/normalis; 'ratio' appears in the question, so any echo passed. Replaced before any build."
+   },
+   "d": {
+    "pass": "No; three transfers leave ratios of 1.5 and 0.75, while six transfers produce equal ratios of one.",
+    "prefix": "no"
+   }
+  },
+  "checklist": [
+   "Explains the three concepts and the specific problem each solves.",
+   "Makes the dependency from usable capacity to queue ratio to balanced transfer explicit.",
+   "Uses Copper Loop to calculate capacities, compare initial ratios, and explain the six-parcel transfer.",
+   "Preserves transfer eligibility, whole-parcel moves, recalculation, and the stopping rule.",
+   "Omits maintainer details and introduces no unsupported operating rules."
+  ]
+ },
+ "G3": {
+  "brief": "Write an approximately 900-word tutorial for volunteer equipment librarians building and testing a small physical Dovren return board for three borrowed items.",
+  "facts": {
+   "1": "One identity token records one active loan's identifier, due day, and return mark.",
+   "2": "Due and Later depend on the current day, with Returned overriding dates.",
+   "4": "Identity tokens distinguish similar items and their loans.",
+   "5": "Date bands make loans needing attention visible without rereading dates.",
+   "6": "Building requires backing, pockets, cards, tape, a pen, and a current-day display.",
+   "7": "Step 3 attaches visible pockets beneath the headings.",
+   "8": "Step 1 labels the board and displays the starting day.",
+   "10": "Step 4 sorts sample tokens into their initial pockets.",
+   "11": "Day changes affect placement rather than recorded due dates.",
+   "12": "Step 2 creates the three unreturned identity tokens.",
+   "13": "Every token occupies one pocket and the visible count remains three.",
+   "15": "Step 5 advances the day, records a return, and checks the result.",
+   "16": "Temba starts on Day 12 with three specified item identifiers and due days.",
+   "17": "Initially Reel-3 is Due and the other two items are Later.",
+   "18": "After the test Reel-3 is Returned, Reel-8 is Due, and Reel-11 is Later."
+  },
+  "agentOnly": {
+   "3": "Archived pocket outlines use a two-millimeter grid.",
+   "9": "Pocket master width tolerance is one millimeter.",
+   "14": "Pellis Pattern uses year and issue numbers for archive releases."
+  },
+  "case": {
+   "name": "Temba loan set",
+   "detailIds": [
+    "16",
+    "17",
+    "18"
+   ]
+  },
+  "concepts": [
+   {
+    "name": "Identity token",
+    "motivationIds": [
+     "4"
+    ],
+    "explanationIds": [
+     "1"
+    ]
+   },
+   {
+    "name": "Date bands",
+    "motivationIds": [
+     "5"
+    ],
+    "explanationIds": [
+     "2",
+     "11"
+    ]
+   }
+  ],
+  "steps": [
+   "8",
+   "12",
+   "7",
+   "10",
+   "15"
+  ],
+  "questions": {
+   "a": "Which action comes immediately after Step 2, making the identity tokens?",
+   "b": "Where does the finished board place each Temba item after the Day 13 test?",
+   "c": "Can two similar-looking items share one identity token while both loans are active?",
+   "d": "Should advancing the current-day card change the due dates written on the tokens?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "Attach one clear pocket beneath each column heading, which is Step 3.",
+    "all": [
+     "pocket"
+    ],
+    "any": []
+   },
+   "b": {
+    "pass": "Reel-3 is in Returned, Reel-8 is in Due, and Reel-11 is in Later.",
+    "patterns": [
+     "reel-3[^;.\\n]*?return",
+     "reel-8[^;.\\n]*?\\bdue\\b",
+     "reel-11[^;.\\n]*?later"
+    ],
+    "amended": "Brief writer's key required only the words return, due, and later, which a mismatched answer also contains. Replaced before any build with one pattern per item."
+   },
+   "c": {
+    "pass": "No; each active loan requires its own identity token.",
+    "prefix": "no"
+   },
+   "d": {
+    "pass": "No; advancing the day can change placement but preserves the written due dates.",
+    "prefix": "no"
+   }
+  },
+  "checklist": [
+   "Builds and tests one complete physical board in the five correct steps.",
+   "Includes the materials and explains why identity tokens and date bands are needed.",
+   "Uses Temba identifiers and dates when making tokens, loading pockets, and testing the finished board.",
+   "Checks the exact final positions and three-token count while preserving the written due dates.",
+   "Explains the Returned override and omits maintainer details and unsupported features."
+  ]
+ }
+}
