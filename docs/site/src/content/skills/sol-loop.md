@@ -53,6 +53,7 @@ has the exact scope, round, and approval rules.
 - Rounds, the model that ran, changes prompted by review, before-and-after
   diff size, and fixed or declined findings with reasons.
 
-Exhausting the budget is not approval. The agent never pushes during the
+Exhausting the budget is not approval: you get both sides of any open
+disagreement to decide. The agent never pushes during the
 loop. After agreement, it pushes only if you authorized a push or PR update.
 Use [babysit-pr](../babysit-pr/) for CI and bot review after that.

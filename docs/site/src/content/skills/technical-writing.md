@@ -38,8 +38,9 @@ The final pass takes the reader's position: could someone act on the text
 without seeing your conversation or guessing what the author meant?
 
 For PR descriptions, the problem comes before the resulting behavior. Any
-verification instructions give an action and its expected result. Checks
-already reported by CI are not repeated.
+verification instructions give an action and its expected result. Routine
+checks that CI already reports are not repeated, but a material verification
+gap is stated.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/technical-writing/SKILL.md)
 links the prose rules and PR-description guidance.

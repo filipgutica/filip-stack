@@ -38,8 +38,9 @@ coverage before judging it. It asks what behavior the test protects, which
 credible regression breaks it, and why existing coverage misses that failure.
 It also checks for production exports, flags, or hooks needed only by tests.
 
-A new test without those answers is not added. Tests that require unnecessary
-access to internals move to the real boundary. Patterns such as missing
+A new test without those answers is not added. A test that needs a
+production seam, such as an export, flag, or hook, that no production caller
+needs moves to the real boundary instead. Patterns such as missing
 assertions or expected values calculated by the code under test need scrutiny.
 Before removing coverage, the agent identifies the remaining test that would
 catch the failure, or the change that retired the contract.

@@ -28,7 +28,8 @@ outside the selected range instead of including them silently.
 
 It reads every changed file and traces affected behavior through the owning
 code, callers, tests, types, configuration, and documentation. Changed or
-removed tests must still leave the behavior protected. Substantial coverage
+removed tests must still leave the behavior protected, unless the contract
+they checked is now obsolete. Substantial coverage
 changes get a read-only [test-audit](../test-audit/).
 
 Checks stay focused on the selected contract. Available complexity, dead-code,

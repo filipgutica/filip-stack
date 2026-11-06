@@ -37,7 +37,8 @@ questions with suggested answers. It freezes the card after your answers.
 Baseline checks run before edits; a failure stops the climb.
 
 Choose judges, a deterministic score, or both. A score comes from a fixed
-command that prints one number. With both, an edit must improve the score
+command that prints one number. A guidance climb uses an answer-key tally
+instead. With both, an edit must improve the score
 and win a majority of judges. Judges see code diffs, UI screenshots, or text
 in reading order, as appropriate.
 
@@ -50,7 +51,8 @@ the agent stops without restoring over it. It never uses Git stash or `git clean
 The default is three rounds, with ten at most. The default size limit is the
 larger of 30% of the original change's lines and 20 lines. Behavior stays the
 same except for interactions you explicitly allow on the card. A ten-round,
-three-member climb can use up to 36 council calls, plus retries.
+three-member climb can use up to 36 council calls, plus retries. A guidance
+climb adds calls for its readers and baseline.
 
 After accepted edits, the final comparison checks the starting and final
 versions with judges, scores, or both. If judges prefer the start, the report
