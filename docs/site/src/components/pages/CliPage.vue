@@ -162,8 +162,8 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      Without the link, run <code>node scripts/host-config.mjs</code> from the
-      checkout.
+      Without the link, run <code>node scripts/host-config.mjs &lt;command&gt;</code>
+      from the checkout, such as <code>node scripts/host-config.mjs status</code>.
     </p>
   </section>
 
