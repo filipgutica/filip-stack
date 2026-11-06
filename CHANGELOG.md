@@ -1,3 +1,16 @@
+# [3.24.0](https://github.com/filipgutica/filip-stack/compare/v3.23.0...v3.24.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **hill-climb:** address review of the claim-repair rule and test ([ac8e52b](https://github.com/filipgutica/filip-stack/commit/ac8e52b2fe1f040067df4618c12a2538a5575535))
+* **hill-climb:** keep gate-failed rounds and baselines from wasting calls ([06c7294](https://github.com/filipgutica/filip-stack/commit/06c7294ef1ad6d012b14883144e7d4e0a57b59c6))
+
+
+### Features
+
+* **hill-climb:** let the caller set the climb's size limit ([896fff7](https://github.com/filipgutica/filip-stack/commit/896fff71d5e6437efe29375fec21a37109111dc8))
+
 # [3.23.0](https://github.com/filipgutica/filip-stack/compare/v3.22.0...v3.23.0) (2026-11-05)
 
 
