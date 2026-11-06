@@ -1,3 +1,27 @@
+# [3.25.0](https://github.com/filipgutica/filip-stack/compare/v3.24.0...v3.25.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **hill-climb:** address review of open-ended climbs ([d334e4e](https://github.com/filipgutica/filip-stack/commit/d334e4e1115429ad02375720a5ed57a6ac6f7fba))
+* **hill-climb:** isolate and fully specify guidance climbs ([28fd7aa](https://github.com/filipgutica/filip-stack/commit/28fd7aadd992fd2f9827fa463ea8f51921291320))
+* **hill-climb:** keep pruning guidance in the score's direction ([0c9606e](https://github.com/filipgutica/filip-stack/commit/0c9606e4a03de33af27127ac6186abab829fe080))
+* **hill-climb:** keep scorecard-only final checks in the record ([28f574d](https://github.com/filipgutica/filip-stack/commit/28f574d552fc28490b016793897a01bd97a39189))
+* **hill-climb:** record the no-guidance comparison in its own field ([3e0b1b1](https://github.com/filipgutica/filip-stack/commit/3e0b1b1ed65e43925c14b605664d063e660aa51c))
+* **hill-climb:** require both final checks for a both-rule verdict ([a59803d](https://github.com/filipgutica/filip-stack/commit/a59803d7140ef6e780de29ca6705786a52044fa3))
+* **hill-climb:** score every UI and guidance climb and render malformed scorecards ([dba122c](https://github.com/filipgutica/filip-stack/commit/dba122c4c321daf021cbf36e9cec1969d811013b))
+* **hill-climb:** show the no-guidance comparison on the runs page ([6137902](https://github.com/filipgutica/filip-stack/commit/6137902e3684906dad40f0469dc110f02ba664ce))
+* **site:** let keyboard readers scroll wide tables ([587aa36](https://github.com/filipgutica/filip-stack/commit/587aa36cb77b4a7e26ced7629328d3ab94a74e91))
+* **site:** style Markdown tables on skill pages ([6874751](https://github.com/filipgutica/filip-stack/commit/68747511fd13ea1f091693ad031af1d81a6b7c06))
+
+
+### Features
+
+* **hill-climb:** climb guidance by the work agents produce under it ([985c847](https://github.com/filipgutica/filip-stack/commit/985c847540b8a28659b337630072dd359225e12f))
+* **hill-climb:** climb open-ended goals with intake, score rule, and limits ([d9bf33b](https://github.com/filipgutica/filip-stack/commit/d9bf33b83ff86703c930db0245cf57a71f3f975a))
+* **hill-climb:** prune guidance that does not change the work ([d99b836](https://github.com/filipgutica/filip-stack/commit/d99b836701fe49a2e387706d54014ae71c1c2f9b))
+* **hill-climb:** score each screen or task in the final check ([7993d84](https://github.com/filipgutica/filip-stack/commit/7993d840543d8c238175d2f899bc0cb5ed4fb3c2))
+
 # [3.24.0](https://github.com/filipgutica/filip-stack/compare/v3.23.0...v3.24.0) (2026-11-06)
 
 
