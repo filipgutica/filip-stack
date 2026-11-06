@@ -73,9 +73,11 @@ Build the card and freeze it before round 1:
 - **Not covered:** what the gates and evidence do not prove. For example,
   screenshots do not prove keyboard behavior.
 - **Budget:** 3 rounds, or fewer if the user sets fewer. 5 at most.
-- **Size limit:** 30% of the original change's changed lines, or 20 lines,
-  whichever is larger. It caps the whole climb, measured against the
-  starting incumbent.
+- **Size limit:** the most lines the whole climb may change, measured
+  against the starting incumbent. By default, the larger of 30% of the
+  original change's changed lines and 20 lines. Use another limit when the
+  user or the invoking thread sets one, or when the request needs more room,
+  such as a rewrite. Record the reason on the card.
 
 Show the card and continue without waiting. Ask one question first only when
 the thread does not give you enough to derive the criteria.
@@ -87,9 +89,13 @@ Stop before round 1 and report the item that blocks when:
 - A scoped path has staged changes: `git diff --cached --name-only -- <scope>`.
 - A required gate or evidence item cannot run, such as a missing tool, route,
   or fixture. A block never counts as a pass.
-- A gate fails on the incumbent.
+- A gate fails on the incumbent. For reader-facing text, this includes a
+  false claim, checked against its source as Gate describes.
 - Fewer than two council members can run. Follow `council` and ask before
   you launch with fewer members than its lineup.
+
+Finish the baseline before you send any propose brief, so a blocked climb
+spends no member calls.
 
 Make a work directory outside the repository, `$TMPDIR/hill-climb/<random>/`.
 Keep its path in this thread only: other climbs may share `$TMPDIR`, so never
@@ -163,9 +169,14 @@ Run each round in order:
 6. **Gate.** Run every gate on the candidate. Judges see only the bundle, so
    they cannot tell a true claim from a false one: when the candidate changes
    reader-facing text, check each changed claim against the code or source it
-   describes, and treat a false claim as a failed gate. On a failure,
-   restore, record the round as rejected, and mark its proposals declined.
-   End the round there: skip Judge and Decide, and apply the stop rules.
+   describes, and treat a false claim as a failed gate. When only that
+   claim check fails, repair once: correct each false claim from its source,
+   or undo only the edit that made it and mark that proposal declined. Record
+   the repair in `ledger.md`, rewrite `candidate.tsv`, measure and handle the
+   size limit as in Apply, and run every gate again.
+   On any other failure, or a second failure, restore, record the round as
+   rejected, and mark its proposals declined. End the round there: skip
+   Judge and Decide, and apply the stop rules.
 7. **Judge.** Build one bundle per judge and send each the judge brief.
 8. **Decide.** Apply the decision rules.
 

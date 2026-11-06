@@ -14,7 +14,7 @@
     "host-config": "node scripts/host-config.mjs",
     "eval:routing": "node scripts/eval-routing.mjs",
     "test:workflow-contracts": "node tests/workflow/validate-contracts.mjs",
-    "test:skills": "node tests/skills/validate-skills.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'",
+    "test:skills": "node tests/skills/validate-skills.mjs && node --test tests/skills/hill-climb-build-runs.test.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'",
     "test:field-guide-boundary": "node tests/field-guide/validate-plugin-boundary.mjs",
     "test:field-guide-contract": "node tests/field-guide/validate-contract.mjs",
     "test:field-guide-hooks": "node --test tests/field-guide/field-guide-lifecycle.test.mjs",
