@@ -92,7 +92,7 @@ const steps = [
   {
     name: "Review decisions",
     detail:
-      "Before finishing consequential or hard-to-reverse changes, get an independent review, or report that none ran.",
+      "Get an independent review for consequential or hard-to-reverse changes before calling the work done. If no separate reviewer is available, inspect the diff with care and report that independent review did not run.",
   },
 ].map((step, index) => {
   const { x, y } = pointAt(index * 60);
