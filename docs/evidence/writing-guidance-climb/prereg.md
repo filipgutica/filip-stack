@@ -52,3 +52,17 @@ These are reported and do not change the verdict:
 - At most 8 calls at once, counted from completion notices.
 - Any call that leaves no usable reply file gets one retry from the spare calls. A second failure stops the probe.
 - Raw prompts, pages, and replies stay on the machine that ran the probe. Only summary numbers are committed.
+
+## Amendment, 2026-11-06, before the first probe build
+
+The climb's final check finished after this file froze. It used no probe data.
+
+- Scorecard pass, start against final. Each judge's overall preference: Sol 6.1 chose the final version; Opus 5.5 and Astra chose the start.
+- All three preferred the final version on read depth and the start on fit to the page type. All three rated the two the same on reader task success and on facts beyond the sources.
+- The fit finding comes from the tutorial and how-to placement lines. The final version puts recovery before the main path in those page types, which breaks the order a learner or operator works in.
+- Mean task scores across judges, from 0 to 10: start 9.15, final 9.38.
+
+Fit to the page type is a card criterion, and the probe's score does not measure it. This amendment only makes the ship rule stricter:
+
+- If the decision rule above fails, nothing ships.
+- If it passes, the change does not merge on its own. The user decides. Following the `hill-climb` rule for a final check where a majority prefers the start, the recommendation is to drop the climb. The other options are to ship with the trade-off stated in the PR, or to run a follow-up climb under the `both` rule.
