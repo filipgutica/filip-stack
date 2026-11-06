@@ -1,3 +1,10 @@
+# [4.2.0](https://github.com/filipgutica/filip-stack/compare/v4.1.1...v4.2.0) (2026-11-06)
+
+
+### Features
+
+* **site:** adopt the ui 1.13 terminal folio theme ([235d60c](https://github.com/filipgutica/filip-stack/commit/235d60cf70941eabc268005bd792e1cb0255e527))
+
 ## [4.1.1](https://github.com/filipgutica/filip-stack/compare/v4.1.0...v4.1.1) (2026-11-06)
 
 
