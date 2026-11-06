@@ -49,7 +49,9 @@ node <skill-directory>/scripts/ui-modes.mjs --url http://localhost:5173/settings
 
 It loads each URL at 375px in four modes: reduced motion, dark, 200% text,
 and grayscale. Each mode applies to every page the browser loads, so it
-holds when a task follows a link. Pass `--theme-attr` for apps that switch
+holds when a task follows a link. The script confirms the mode before the
+screenshot and after each task; when the page removes it, the run exits 2
+or the task fails. Pass `--theme-attr` for apps that switch
 themes with an attribute. In each mode it saves a screenshot, checks for
 sideways scrolling, and runs every task from a fresh load of the URL.
 

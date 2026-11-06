@@ -24,32 +24,38 @@ export const MODES = {
 }
 
 // Runs in every document the context loads, so a mode survives links and reloads inside a task.
-// The styles are an !important stylesheet, which a page's own inline styles cannot override.
+// After the page's own load handlers finish, it sets inline !important declarations, which no page
+// stylesheet can override, then records whether the computed style shows the mode.
 const applyMode = ({ mode, themeAttr }) => {
-  const setTheme = () => {
-    if (mode === 'dark' && themeAttr) document.documentElement.setAttribute(themeAttr, 'dark')
-  }
   window.addEventListener('load', () => {
     const root = document.documentElement
-    const css = {
-      // Doubles the page's own root size; text set in px does not grow, which is itself a finding.
-      'text-200': () => `html { font-size: ${parseFloat(getComputedStyle(root).fontSize) * 2}px !important; }`,
-      grayscale: () => 'html { filter: grayscale(1) !important; }',
-    }[mode]
-    if (css) root.append(Object.assign(document.createElement('style'), { textContent: css() }))
-    setTheme()
-    // Runs after the page's own load handlers, which may reset the theme attribute.
+    // Doubles the page's own root size; text set in px does not grow, which is itself a finding.
+    const fontSize = `${parseFloat(getComputedStyle(root).fontSize) * 2}px`
     setTimeout(() => {
-      setTheme()
-      window.__uiModeApplied = true
+      if (mode === 'text-200') root.style.setProperty('font-size', fontSize, 'important')
+      if (mode === 'grayscale') root.style.setProperty('filter', 'grayscale(1)', 'important')
+      if (mode === 'dark' && themeAttr) root.setAttribute(themeAttr, 'dark')
+      // The run checks the mode again before the screenshot and after each task.
+      window.__uiModeHolds = () => {
+        const style = getComputedStyle(root)
+        return mode === 'text-200' ? style.fontSize === fontSize
+          : mode === 'grayscale' ? style.filter === 'grayscale(1)'
+          : mode !== 'dark' || !themeAttr || root.getAttribute(themeAttr) === 'dark'
+      }
+      window.__uiModeApplied = window.__uiModeHolds()
     })
   }, { once: true })
 }
 
-// Loads a URL and waits until its mode is applied.
-const open = async (page, url) => {
+// Whether the page still shows its mode; true when the page has no mode check, such as about:blank.
+const modeHolds = (page) => page.evaluate(() => (window.__uiModeHolds ? window.__uiModeHolds() : true))
+
+// Loads a URL and waits until its mode is applied. A mode that did not take cannot run, so it never
+// passes without the mode.
+const open = async (page, url, mode) => {
   assertLoaded(await page.goto(url, { waitUntil: 'load' }), url)
-  await page.waitForFunction(() => window.__uiModeApplied === true)
+  await page.waitForFunction(() => window.__uiModeApplied !== undefined)
+  if (!(await page.evaluate(() => window.__uiModeApplied))) throw new Error(`Cannot apply ${mode} mode to ${url}`)
 }
 
 export const parseArgs = (argv) => {
@@ -109,15 +115,17 @@ const run = async (opts) => {
         const context = await browser.newContext({ viewport: { width: opts.width, height: 900 }, ...MODES[mode] })
         await context.addInitScript(applyMode, { mode, themeAttr: opts.themeAttr })
         const page = await context.newPage()
-        await open(page, url)
+        await open(page, url, mode)
+        if (!(await modeHolds(page))) throw new Error(`${url} removed the ${mode} mode after load`)
         const screenshot = join(out, `${fileStem(url, index)}-${mode}.png`)
         await page.screenshot({ path: screenshot, fullPage: true })
         const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
         results.push({ mode, url, check: 'no horizontal overflow', ok: !overflow, screenshot })
         for (const task of tasks) {
-          await open(page, url)
+          await open(page, url, mode)
           try {
             await task.run(page)
+            if (!(await modeHolds(page))) throw new Error(`the page removed the ${mode} mode during the task`)
             results.push({ mode, url, check: task.name, ok: true })
           } catch (err) {
             results.push({ mode, url, check: task.name, ok: false, error: err.message })
