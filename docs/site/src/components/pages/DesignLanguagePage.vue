@@ -78,10 +78,10 @@ const tables = {
       <p>
         The shared guidance tells agents to read
         <code>~/design-language/DESIGN.md</code> before any UX or visual work.
-        For interaction, flows, and states they also use the
-        <a href="/filip-stack/skills/ux-laws/">ux-laws</a> skill.
-        <code>DESIGN.md</code> owns the look; <code>ux-laws</code> owns the
-        behavior.
+        For interaction, flows, states, copy, and accessibility they also use
+        the <a href="/filip-stack/skills/interface-design/">interface-design</a>
+        skill. <code>DESIGN.md</code> owns the look;
+        <code>interface-design</code> owns the behavior and its checks.
       </p>
     </div>
     <ol class="fg-site-steps" aria-label="Which rules win">

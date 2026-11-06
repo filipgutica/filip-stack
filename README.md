@@ -174,11 +174,11 @@ Independent skills install one at a time with the
 | `full-send` | Takes a change through review and CI to a merged PR, or to a PASS or FAIL verdict, while you are away. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Does the `full-send` work but leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `hill-climb` | Improve a working change or an open-ended goal in small rounds, keeping only edits that win blind judges, a score, or both. Needs `council`. |
+| `interface-design` | Designs, builds, reviews, and checks interfaces for clear hierarchy, flows, states, copy, and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira issue links, such as blockers and Epics, and the PRs and commits behind each issue. |
 | `merge-council` | Has three AI reviewers review a pull request and return one merge verdict. |
 | `pr-review-churn` | Finds the review objections that keep coming back on your GitHub PRs and proposes guidance to prevent them. |
 | `sol-loop` | Has GPT Sol review your change in rounds until Sol and your agent agree it is correct. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `ux-laws` | Designs or reviews interfaces and user flows with established UX laws. |
 | `vue-best-practices` | Guides your agent's Vue 3 work on components, composables, and their tests. |
 
 List the skills, install one by name, or install a skill together with the

@@ -1,0 +1,4 @@
+interface:
+  display_name: "Interface Design"
+  short_description: "Design, review, and check usable, accessible interfaces"
+  default_prompt: "Use $interface-design to design or review this interface."

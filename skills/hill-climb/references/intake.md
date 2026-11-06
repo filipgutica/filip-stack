@@ -12,7 +12,8 @@ Read what the defaults need, so each question carries a concrete proposal:
 
 - The paths the user named, and the repository's design system or
   `~/design-language/DESIGN.md`.
-- `ux-laws` when it is installed, for interaction and flow criteria.
+- `interface-design` when it is installed, for interaction, state, copy,
+  and accessibility criteria.
 - The repository's gate and check commands, from its package scripts, CI,
   and contributor guidance.
 
@@ -22,7 +23,7 @@ Read what the defaults need, so each question carries a concrete proposal:
    paths that holds the goal. For UI, also the routes, states, widths, and
    themes to capture.
 2. **What better means.** Propose three to five criteria from the design
-   system or `DESIGN.md`, plus `ux-laws` for interaction work, and the
+   system or `DESIGN.md`, plus `interface-design` for interaction work, and the
    user's focus. The user confirms or edits them.
 3. **How a candidate wins.** Propose one decision rule:
    - `judges`: blind council judges. The default. Name the lineup, which
