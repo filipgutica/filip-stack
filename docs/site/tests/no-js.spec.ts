@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { pageTypes, routes, widths } from "./pages";
+import { openPageType, pageTypes, routes, widths } from "./pages";
 import {
   expectSkillLinks,
   followPillarFromMap,
@@ -15,9 +15,7 @@ for (const width of widths)
     test(`${entry.path || "overview"} is readable and navigable at ${width}px without JavaScript`, async ({
       page,
     }) => {
-      await page.setViewportSize({ width, height: 900 });
-      await page.goto(`/filip-stack/${entry.path}`);
-      await expect(page.locator("main h1")).toHaveText(entry.title);
+      await openPageType({ page, entry, width });
       await expect(page.getByRole("button", { name: /^Copy / })).toHaveCount(
         0,
       );
