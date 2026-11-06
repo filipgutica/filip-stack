@@ -3,6 +3,7 @@
 Status: plan only. Nothing has run. A dry run and a paid run each need Filip's approval (AGENTS.md, Evaluation).
 `scorer/probe.py` still implements the replaced plan. It is rewritten for this plan after Filip approves the call count, and before the dry run.
 Revision: on 2026-11-05 this plan replaced the one at commit `0f495b7c`, before any call ran. The change follows an evals review: it measures reader success, calibrates the judges on planted defects, and asks yes/no questions instead of preferences.
+Amendment 1 (2026-11-05, before any call): Filip asked for Codex Sol models for every call. The reader, double-coder, and judges below were changed to the three Sol models Codex offers. The builder and extractor did not change.
 Model: the [reader-pages probe](../reader-pages-probe/prereg.md), lab notebook studies 22 and 23.
 
 ## Question
@@ -68,7 +69,7 @@ Each [fact sheet](scorer/factsheets/) has 18 facts, 3 of them tagged `[agent-onl
 
 - Builder: `delegate_task`, Codex `gpt-6.1-sol`, reasoning `high`, service tier `default`, a fresh context for each call. Prompt `BUILD`, identical across arms except for the file path.
 - Reader tasks: one fresh, read-only Sol 6.1 call per brief, prompt `TASK_WRITER`. It sees the brief, the page type, and the tagged fact sheet, never a page or the guidance. It writes 2 tasks that together need at most half of the reader facts, each with a pattern answer key.
-- Reader: Claude `claude-haiku-5-5`, effort `low`, prompt `READER`. It is outside the Sol and judge models, and it gets only the page and the 2 tasks.
+- Reader: Codex `gpt-5.6-sol`, reasoning `low`, prompt `READER`. It is an older, smaller-effort model than the builder, and it gets only the page and the 2 tasks.
 
 ## Measures
 
@@ -88,11 +89,11 @@ Each measure is computed per build. A pair is one brief and one attempt index, i
 **Primary pair outcome.** Head wins a pair when it passes more tasks. When both pass the same number, head wins when its R2 is at least 10% lower, and loses when its R2 is at least 10% higher. Anything else is a tie. If every build passes both tasks, R1 is at its ceiling and the outcome rests on R2 alone.
 
 Extractor: `gpt-6.1-sol`, reasoning high, prompt `EXTRACTOR`. It gets the tagged fact sheet, the case, the concepts, and the page with numbered blocks, never the arm or the guidance.
-Double-coding: `gpt-6-astra`, reasoning high, re-extracts every fifth build in ledger order (9 builds). Agreement is reported on fact presence, fact block, and motivated-first.
+Double-coding: `gpt-6-sol`, reasoning high, re-extracts every fifth build in ledger order (9 builds). Agreement is reported on fact presence, fact block, and motivated-first.
 
 ## Judges
 
-Astra (`gpt-6-astra` high), Sol 6.1 (`gpt-6.1-sol` high), and Opus 5.5 (`claude-opus-5-5` high), each reported separately.
+`gpt-6.1-sol`, `gpt-6-sol`, and `gpt-5.6-sol`, all through Codex at reasoning high, each reported separately.
 
 Each judge call shows two pages, the brief, the page type, and the fact sheet, with prompt `JUDGE`. It asks yes/no questions for each page:
 
@@ -159,7 +160,7 @@ Otherwise the result is **not supported**. The run then stops and reports, and t
 
 **Flags.** These do not change the verdict. When one is raised, the report names it, and the PR must name it too:
 
-- **Sol only:** a J3 or diagnostic win in which Sol 6.1 is the only judge voting for head. Sol also builds the pages.
+- **Builder model only:** a J3 or diagnostic win in which `gpt-6.1-sol` is the only counted judge voting for head. That model also builds the pages.
 - **Length:** head's mean words on a brief are more than 20% above the other arm's, on a brief where head won a majority of primary pairs.
 - **Order:** a judge's two orders disagree on more than 30% of its question verdicts.
 
@@ -209,7 +210,7 @@ The paid sequence is calibration, builds, extraction and double-coding, reading,
 | **Registered paid total** | **324** |
 | **Upper limit**, including 16 spare calls for approved retries | **340** |
 
-By model, the paid run uses Sol 6.1 for 150 calls, Astra for 69, Opus 5.5 for 60, and Haiku 5.5 for 45.
+By model, the paid run uses `gpt-6.1-sol` for 150 calls, `gpt-6-sol` for 69, and `gpt-5.6-sol` for 105.
 
 The dry run checks:
 
@@ -220,10 +221,19 @@ The dry run checks:
 
 It gives no verdict. If the dry run shows a pipeline fault, the fix is a dated amendment to this file. It is made before any paid call and needs Filip's approval. A fault in the guidance is not a pipeline fault. The dry-run builds are not reused.
 
+## Dry run (2026-11-05)
+
+The dry run used 25 calls, and none failed. It wrote `scorer/tasks.json`, which is frozen from here on.
+
+- **Pipeline:** every stage ran. Every judge "yes" quote was found in its page (36 of 36).
+- **Calibration pages:** all three judges flagged the same lines in the clean tutorial: two filler sentences, one restatement, and a sentence the cleaning step had added. Under the registered cleaning step, those lines were removed before paid calibration, along with two similar filler sentences in the how-to. Each edit is recorded with the local calibration files.
+- **Not a verdict:** the dry-run builds are not reused, and their scores decide nothing.
+
 ## Known limits
 
 - Global host guidance reaches every arm, vanilla included, through the builder's own instruction files. All arms share this confound. Build traces are checked to confirm that each builder read only its own arm file.
 - Five attempts on three briefs is a probe, not a benchmark. See the detection floor above.
+- Every model is from one family. The judges and the reader share the builder's family, so a preference for that family's writing cannot be ruled out. Per-judge results and the builder-model flag show how much a result rests on the builder's own model.
 - Calibration uses human-written Django pages with planted defects. Catch rates may not carry over to agent-written pages about fictional subjects.
 - With 4 planted defects per type, the reliability rule rests on small counts, and its intervals are wide.
 - The reader is a model, not a person. R2 measures where the needed facts sit on the page, not how a person scans it.
