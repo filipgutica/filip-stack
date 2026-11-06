@@ -21,18 +21,25 @@ const fieldReportsError = (page) => field(page).evaluate((el) => {
   })
 })
 
-const secretShown = (page) => page.evaluate(() => {
+// Returns the visible new secret, or null; a hidden input does not count as shown.
+const shownSecret = (page) => page.evaluate(() => {
   const secret = /sk_live_[0-9a-f]{8,}/
-  return secret.test(document.body.innerText) || [...document.querySelectorAll('input, textarea')].some((el) =>
-    el.type !== 'hidden' && el.checkVisibility() && el.getBoundingClientRect().width > 0 && secret.test(el.value))
+  const fields = [...document.querySelectorAll('input, textarea')].filter((el) =>
+    el.type !== 'hidden' && el.checkVisibility() && el.getBoundingClientRect().width > 0)
+  return [document.body.innerText, ...fields.map((el) => el.value)].map((text) => text.match(secret)?.[0]).find(Boolean) ?? null
 })
-// A list entry is a visible row or list item that names the key; a status message that names it is not.
+const secretShown = async (page) => (await shownSecret(page)) !== null
+// The brief lists each key with its name, created date and last four characters. A list entry is any
+// visible element that shows the name and the last four of the shown secret, whatever its markup; a
+// message that only names the key is not one. Elements that also hold the full secret are skipped.
 const listed = async (page, name) => {
-  for (const role of ['row', 'listitem']) {
-    const entries = page.getByRole(role).filter({ hasText: name })
-    if (await entries.evaluateAll((els) => els.some((el) => el.checkVisibility() && el.getBoundingClientRect().width > 0))) return true
-  }
-  return false
+  const secret = await shownSecret(page)
+  if (!secret) return false
+  return page.evaluate(({ name, secret }) => [...document.body.querySelectorAll('*')].some((el) => {
+    const text = el.innerText ?? ''
+    return text.includes(name) && text.includes(secret.slice(-4)) && !text.includes(secret) &&
+      el.checkVisibility() && el.getBoundingClientRect().width > 0
+  }), { name, secret })
 }
 const FAILURE = /unavailable|error|fail|couldn.t|could not|try again|went wrong|problem/i
 const failureLines = (page) => page.evaluate((source) =>

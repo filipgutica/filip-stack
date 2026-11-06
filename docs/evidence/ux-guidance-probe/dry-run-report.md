@@ -44,6 +44,7 @@ Each entry names its owning boundary. No production export, flag, or hook exists
 | `calibrate.mjs:hidden-secret` | A hidden input cannot satisfy the user-visible secret outcome. | The readonly-input reference proves permitted markup, not hidden-output rejection. Original task accepted it. |
 | `calibrate.mjs:hidden-list` | Hidden text cannot satisfy the visible key-list outcome. | Existing name-count matching accepted hidden text. Original task accepted it. |
 | `calibrate.mjs:message-list` | A status message that names the key cannot stand in for a visible list entry, on create or on retry. | `hidden-list` hides the entry but keeps it in a list; text matching anywhere still passed here. The `f61efd6` task accepted both cases. |
+| `calibrate.mjs:definition-list` | A visible entry in other list markup, here `dl`/`dt`/`dd`, counts as listed on create and on retry. | The other builds all use `ul`/`li`. The `5a4551d` row-or-list-item task rejected both cases. |
 | `calibrate.mjs:stale-alert` | An unchanged hidden alert cannot satisfy failure reporting. | Existing live-region text matching ignored visibility and freshness. Original task accepted it. |
 | `calibrate.mjs:no-retry` | An enabled button whose second submission does nothing fails recovery. | The old task never retried. Original task accepted it. |
 | `calibrate.mjs:delayed-overflow` | The actual frozen scanner must see seeded rows before scanning populated overflow. | Static clean/planted review pages cannot expose asynchronous scan timing. Unadapted exit 0; adapted exit 1 with overflow. |
@@ -101,7 +102,7 @@ The rerun completed prepare → fake attempts → validate → tally → gates �
 | Blind bundles | 2 pairs; 0 residual markers. Head vs vanilla has 30 screenshots and 3 source files. |
 | Judges | 2 Opus replies through the fake model; 4 Codex requests captured and refused locally, followed by synthetic replies solely for scoring. |
 | Final score | `not supported; positive review gain waived against saturated controls; no-harm retained`. No void pair or short review arm. This is a synthetic pipeline result, not a guidance verdict. |
-| Frozen files | All 19 scorer-file hashes and 129 local calibration-file hashes verify; original arm bundle hashes still match. |
+| Frozen files | All 19 scorer-file hashes and 136 local calibration-file hashes verify; original arm bundle hashes still match. |
 | Repository checks | `pnpm install --frozen-lockfile`, `pnpm check`, and `git diff --check` pass. Fallow 3.18.0 audit passes; its configured scope excludes `docs/evidence`, so it adds no scorer correctness evidence. Its `doctor` subcommand is unavailable in this installed version. |
 
 One preliminary free rerun was stopped before completion while readiness and task timeout handling were finalized. The results above come from the subsequent complete rerun. All endpoints in both reruns were local; no paid call occurred.
