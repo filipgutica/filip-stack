@@ -263,7 +263,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 (() => {
   const $runs = document.getElementById('runs');
   const $detail = document.getElementById('detail');
-  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent', final: 'Final', start: 'Start' };
+  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent', final: 'Final', start: 'Start', baseline: 'No guidance' };
   const cache = new Map();
   let index = [];
 
@@ -434,6 +434,11 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('p', { class: 'muted', text: 'After the last round, each judge compared the pull request as it was before the climb with the final version, without knowing which was which.' }),
         voteTable(run, run.final.votes),
         run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null) : null,
+      // A guidance climb also compares its final version with no guidance at all.
+      run.baseline ? el('section', {}, el('h3', { text: 'Final against no guidance' }),
+        el('p', { class: 'muted' }, rich(run.baseline.summary)),
+        run.baseline.score != null ? el('p', { class: 'num' }, `Score: ${run.score?.final ?? 'not measured'} final, ${run.baseline.score} with no guidance.`) : null,
+        run.baseline.votes?.length ? voteTable(run, run.baseline.votes) : null) : null,
       el('section', {}, el('h3', { text: 'Result' }),
         el('p', { class: 'goal' }, rich(run.result.summary)),
         run.result.diff ? el('details', {}, el('summary', { text: 'Climb diff' }), diffView(run.result.diff)) : null),
