@@ -51,10 +51,11 @@ It loads each URL at 375px in four modes: reduced motion, dark, 200% text,
 and grayscale. Each mode applies to every page the browser loads, so it
 holds when a task follows a link. Pass `--theme-attr` for apps that switch
 themes with an attribute. In each mode it saves a screenshot, checks for
-sideways scrolling, and runs every task from a fresh load of the URL. A tasks module default-exports
-`[{ name, run: async (page) => {} }]`, using the Playwright `page` API; a task
-fails when `run` throws. A module without that default export exits 2.
-Write two or three tasks that a real user must
+sideways scrolling, and runs every task from a fresh load of the URL.
+
+A tasks module default-exports `[{ name, run: async (page) => {} }]`, using
+the Playwright `page` API; a task fails when `run` throws. A module without
+that default export exits 2. Write two or three tasks that a real user must
 complete on these screens.
 
 A version passes only when every task passes in every mode. The script
