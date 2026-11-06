@@ -173,7 +173,7 @@ Independent skills install one at a time with the
 | `council` | Asks three AI models for independent advice on a question, plan, or piece of work, and weighs their answers. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-send` | Takes a change through review and CI to a merged PR, or to a PASS or FAIL verdict, while you are away. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Does the `full-send` work but leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `hill-climb` | Polish a change that already works, keeping only the small edits that blind judges prefer. Needs `council`. |
+| `hill-climb` | Improve a working change or an open-ended goal in small rounds, keeping only edits that win blind judges, a score, or both. Needs `council`. |
 | `jira-work-links` | Creates or checks Jira issue links, such as blockers and Epics, and the PRs and commits behind each issue. |
 | `merge-council` | Has three AI reviewers review a pull request and return one merge verdict. |
 | `pr-review-churn` | Finds the review objections that keep coming back on your GitHub PRs and proposes guidance to prevent them. |
