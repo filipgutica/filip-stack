@@ -99,7 +99,8 @@ Build the card and freeze it before round 1:
   against the starting incumbent. By default, the larger of 30% of the
   original change's changed lines and 20 lines. Use another limit when the
   user or the invoking thread sets one, or when the request needs more room,
-  such as a rewrite or a fresh start. Record the reason on the card.
+  such as a rewrite or a fresh start. Record the reason on the card. A
+  guidance climb counts only added lines, so a cut never exceeds it.
 
 When the request gives no change to polish, or leaves the scope, the
 criteria, the decision rule, or the budget unclear, ask the questions in
@@ -248,6 +249,8 @@ Choose the A/B order at random for each judge and record it only in
   - `score`: its score beats the incumbent's by at least the smallest gain
     that counts. A tie loses.
   - `both`: both of the above.
+  - A guidance climb also accepts a shorter candidate that is no worse, as
+    `references/guidance.md` describes.
 - A winning candidate becomes the incumbent: refresh the snapshot, record
   its score as the incumbent's, and mark its proposals applied. Once the
   remaining votes cannot change the outcome, you may decide; record each
@@ -273,6 +276,7 @@ Criteria: <criteria>
 Keep public interfaces and features as they are. Stay in scope.
 <Behavior keep: Keep behavior as it is.>
 <Behavior names interactions: Only these interactions may change: <list>.>
+<Guidance: the outputs folders and the cut line from references/guidance.md.>
 Return up to three improvements against the criteria, best first.
 If nothing would clearly improve the change, reply NONE.
 <UI: if you could not open a screenshot, list it under UNREAD.>

@@ -56,6 +56,27 @@ the final comparison.
   rates the work against the task, not the instructions.
 - Gates: the guidance's own checks, such as the repository's validators.
 
+## Prune
+
+A guidance climb looks for the shortest guidance that still improves the
+work. Measure length as `wc -w` over the scoped files.
+
+- Propose: give each member copies of the baseline's outputs and the
+  incumbent's, labelled as such, and add this line to the brief: `Propose
+  cuts as well as additions. Cut a line when the no-guidance outputs already
+  do what it asks, when another line says the same, or when no output shows
+  its effect. Rewrite a prohibition as the behavior to produce. Include at
+  least one cut when one exists.`
+- Apply: write each added or rewritten line as the behavior to produce. Keep
+  a prohibition only for a hard limit that has no positive form, and put the
+  behavior to produce beside it.
+- Decide: a candidate with fewer words than the incumbent wins when it is no
+  worse. Under `judges`, that means no strict majority of completed judges
+  prefers the incumbent; under `score`, a score at least the incumbent's;
+  under `both`, both. Any other candidate wins only by the rule in
+  `SKILL.md`.
+- Report the start and final word counts.
+
 ## Costs
 
 Attempts count as member calls. Before round 1, the starting version's
