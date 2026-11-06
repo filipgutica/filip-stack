@@ -1,0 +1,227 @@
+{
+ "B1": {
+  "facts": {
+   "1": "records which process held each local TCP port over time",
+   "2": "answers what was on a port earlier, after the process has exited",
+   "3": "install with brew install example/tap/portlog",
+   "4": "portlog start runs a background recorder; portlog stop stops it",
+   "5": "portlog who 3000 lists every process that held port 3000, newest first",
+   "6": "--since 2h limits who to the last two hours",
+   "7": "portlog free 3000 stops the current holder after confirmation; -y skips it",
+   "8": "history kept 7 days in <user-home>/.portlog/",
+   "9": "macOS and Linux; Go; MIT",
+   "10": "never records command-line arguments, because they can hold secrets"
+  },
+  "agentOnly": {
+   "11": "polls lsof every 2 s on macOS; reads the procfs TCP table on Linux",
+   "12": "SQLite store in WAL mode, 500 ms busy timeout",
+   "13": "release-please; fix: makes a patch",
+   "14": "who query uses index idx_port_time"
+  },
+  "questions": {
+   "a": "What does portlog do?",
+   "b": "What do you run first after installing it?",
+   "c": "Can it show a process that already exited?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it records or keeps a history of which process held each local port",
+    "all": [
+     "port"
+    ],
+    "any": [
+     "record",
+     "history",
+     "held",
+     "log",
+     "track"
+    ]
+   },
+   "b": {
+    "pass": "names portlog start",
+    "all": [
+     "portlog start"
+    ],
+    "any": []
+   },
+   "c": {
+    "pass": "says yes",
+    "prefix": "yes"
+   }
+  },
+  "start": "```|`(?:brew|portlog)\\b[^`]*`"
+ },
+ "B2": {
+  "facts": {
+   "1": "drafts release notes from merged PRs between two tags",
+   "2": "manual only: /release-notes <from-tag> <to-tag>",
+   "3": "groups PRs by Conventional Commit type, features, fixes, and breaking changes first",
+   "4": "skips PRs labeled skip-notes",
+   "5": "never publishes; writes RELEASE_NOTES.md in the working tree and stops",
+   "6": "a breaking change with no migration line in the PR body is marked TODO: migration",
+   "7": "requires gh signed in; stops if gh auth status fails",
+   "8": "technical-writing edits prose; release-notes gathers the PRs and drafts",
+   "9": "stops before drafting if either tag does not exist",
+   "12": "a PR with labels of more than one type goes in the group most of its labels name"
+  },
+  "agentOnly": {
+   "10": "resolves tags with git rev-list -n1; missing tag exit reason TAG_UNRESOLVED",
+   "11": "fetches PRs with the exact gh pr list command and --limit 500",
+   "13": "strict-majority label count; ties broken by label order",
+   "14": "private ledger at <temporary-directory>/release-notes/<id>/ledger.md"
+  },
+  "questions": {
+   "a": "Will it publish a release?",
+   "b": "How do you run it?",
+   "c": "What happens to a breaking change with no migration note?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says no",
+    "prefix": "no"
+   },
+   "b": {
+    "pass": "names the /release-notes command with two tags",
+    "all": [
+     "release-notes"
+    ],
+    "any": [
+     "tag",
+     "<from"
+    ]
+   },
+   "c": {
+    "pass": "says the draft marks it TODO: migration",
+    "all": [
+     "todo"
+    ],
+    "any": [
+     "migration"
+    ]
+   }
+  },
+  "start": "```|`/release-notes\\b[^`]*`"
+ },
+ "B3": {
+  "facts": {
+   "1": "Claude and Codex plugin that blocks git commit when staged files contain merge markers",
+   "2": "Claude install: marketplace add example/tidy, then plugin install tidy-hooks@tidy",
+   "3": "Codex install: marketplace add example/tidy, then plugin add tidy-hooks@tidy",
+   "4": "Codex skips plugin hooks until you review and trust them",
+   "5": "update: claude plugin update tidy-hooks@tidy; Codex marketplace upgrade tidy, then restart Codex",
+   "6": "fails open: if Node.js is missing, commits proceed"
+  },
+  "agentOnly": {
+   "7": "hook entry hooks/pre-tool-use.mjs parses bash -c wrappers with a shell tokenizer",
+   "8": "hook timeout 5 s, set in hooks.json"
+  },
+  "questions": {
+   "a": "What does the plugin stop?",
+   "b": "What extra step does Codex need before the hook runs?",
+   "c": "What happens without Node.js?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it stops a commit when staged files hold merge markers",
+    "all": [
+     "commit"
+    ],
+    "any": [
+     "merge marker",
+     "conflict marker",
+     "merge-marker",
+     "conflict-marker"
+    ]
+   },
+   "b": {
+    "pass": "says you review and trust the hooks",
+    "all": [],
+    "any": [
+     "trust",
+     "approve"
+    ]
+   },
+   "c": {
+    "pass": "says commits proceed, or the hook fails open",
+    "all": [],
+    "any": [
+     "proceed",
+     "fail open",
+     "fails open",
+     "go through",
+     "goes through",
+     "allowed",
+     "still commit",
+     "still go",
+     "not block",
+     "not blocked",
+     "doesn't block",
+     "won't block",
+     "skip"
+    ]
+   }
+  },
+  "start": "```|`(?:claude|codex)\\b[^`]*`"
+ },
+ "B4": {
+  "facts": {
+   "1": "an agent that sees a red test tries to fix the code, even when the test is flaky",
+   "2": "a flaky test fails sometimes without any code change",
+   "3": "agents tend to rerun until green or weaken the assertion",
+   "4": "quarantine moves a known-flaky test out of the required gate while it is fixed, with an owner and a date",
+   "5": "a required gate that sometimes fails teaches agents and people to ignore it",
+   "6": "measure flakiness by rerunning each test 20 times on the same commit and counting failures"
+  },
+  "agentOnly": {
+   "7": "audit script scripts/flake-scan.mjs --runs 20 --json",
+   "8": "the lesson's rubric is the author's own, not a vendor's"
+  },
+  "questions": {
+   "a": "What is a flaky test?",
+   "b": "Why does it matter more with agents?",
+   "c": "What does quarantine mean?"
+  },
+  "answerKey": {
+   "a": {
+    "pass": "says it fails sometimes without a code change",
+    "all": [
+     "fail"
+    ],
+    "any": [
+     "sometimes",
+     "intermittent",
+     "random",
+     "without any code change",
+     "without a code change",
+     "without code change",
+     "same commit",
+     "same code",
+     "no code change"
+    ]
+   },
+   "b": {
+    "pass": "says agents try to fix the code, rerun, weaken assertions, or learn to ignore the gate",
+    "all": [],
+    "any": [
+     "fix the code",
+     "change the code",
+     "rerun",
+     "re-run",
+     "weaken",
+     "ignore",
+     "assertion"
+    ]
+   },
+   "c": {
+    "pass": "says it moves the test out of the required gate while it is fixed",
+    "all": [],
+    "any": [
+     "gate",
+     "required",
+     "block"
+    ]
+   }
+  },
+  "start": null
+ }
+}
