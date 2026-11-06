@@ -1,3 +1,14 @@
+## [4.1.1](https://github.com/filipgutica/filip-stack/compare/v4.1.0...v4.1.1) (2026-11-06)
+
+
+### Bug Fixes
+
+* **evaluation:** accept any visible list markup in the UX probe key-list check ([ff02633](https://github.com/filipgutica/filip-stack/commit/ff02633cd340c7f6c5e9296bcf1fea24e05523ba))
+* **evaluation:** find the key list from seeded keys in the UX probe ([22267b9](https://github.com/filipgutica/filip-stack/commit/22267b936a74138a94b64e52a03c9146d1567b6b))
+* **evaluation:** harden UX probe scoring and gates ([f61efd6](https://github.com/filipgutica/filip-stack/commit/f61efd67a1de558782f2a2b104764bd5602842be))
+* **evaluation:** require a list entry in the UX probe key-list check ([5a4551d](https://github.com/filipgutica/filip-stack/commit/5a4551d502901c3de4f46491de2670e98c6d4797))
+* **evaluation:** use the full secret in the UX probe key-list check ([21d7979](https://github.com/filipgutica/filip-stack/commit/21d7979dda0290b04fc85de4e4f82b0ab0ed7d70))
+
 # [4.1.0](https://github.com/filipgutica/filip-stack/compare/v4.0.0...v4.1.0) (2026-11-06)
 
 
