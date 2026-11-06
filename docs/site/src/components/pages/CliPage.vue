@@ -203,8 +203,8 @@ const tables = {
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
       <dd>
-        With <code>$XDG_CONFIG_HOME</code> set and nonempty, use
-        <code>$XDG_CONFIG_HOME/filip-stack/field-guide.json</code> instead.
+        With <code>$XDG_CONFIG_HOME</code> set and nonempty, the file is
+        <code>filip-stack/field-guide.json</code> in that folder instead.
       </dd>
     </dl>
     <ol class="fg-site-steps">
