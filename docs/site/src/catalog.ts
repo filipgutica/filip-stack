@@ -2,7 +2,7 @@
 // SKILL.md owns whether the host may select the skill on its own.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { join, resolve } from "node:path";
-import { marked, type Tokens } from "marked";
+import { marked, Renderer, type Tokens } from "marked";
 
 export interface CatalogSkill {
   name: string;
@@ -98,6 +98,13 @@ const headings = [
   "What you get",
 ];
 
+// Wide tables scroll inside this wrapper instead of widening the page.
+class ContentRenderer extends Renderer {
+  override table(token: Tokens.Table): string {
+    return `<div class="table-scroll">${super.table(token)}</div>`;
+  }
+}
+
 const loadContent = ({
   name,
   names,
@@ -155,6 +162,7 @@ const loadContent = ({
             ? tokens.indexOf(sections[index + 1]!)
             : undefined,
         ),
+        { renderer: new ContentRenderer() },
       ),
     })),
   };
