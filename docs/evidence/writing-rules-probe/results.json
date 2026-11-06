@@ -1,0 +1,182 @@
+{
+  "rules": {
+    "R1": {
+      "baseWins": 12.5,
+      "vanillaWins": 12.5,
+      "controlDifference": 2.5,
+      "specificityPass": false,
+      "verdict": "not supported"
+    },
+    "R2": {
+      "baseWins": 10.0,
+      "vanillaWins": 10.0,
+      "controlDifference": 0.0,
+      "specificityPass": false,
+      "verdict": "not supported"
+    }
+  },
+  "counts": {
+    "R1": {
+      "base": {
+        "wins": 12.5,
+        "headWins": 5,
+        "comparisonWins": 0,
+        "ties": 15,
+        "pairs": 20
+      },
+      "vanilla": {
+        "wins": 12.5,
+        "headWins": 5,
+        "comparisonWins": 0,
+        "ties": 15,
+        "pairs": 20
+      }
+    },
+    "R2": {
+      "base": {
+        "wins": 10.0,
+        "headWins": 0,
+        "comparisonWins": 0,
+        "ties": 20,
+        "pairs": 20
+      },
+      "vanilla": {
+        "wins": 10.0,
+        "headWins": 0,
+        "comparisonWins": 0,
+        "ties": 20,
+        "pairs": 20
+      }
+    },
+    "C": {
+      "base": {
+        "wins": 10.0,
+        "headWins": 0,
+        "comparisonWins": 0,
+        "ties": 20,
+        "pairs": 20
+      },
+      "vanilla": {
+        "wins": 10.0,
+        "headWins": 0,
+        "comparisonWins": 0,
+        "ties": 20,
+        "pairs": 20
+      }
+    }
+  },
+  "noHarm": true,
+  "briefDifferences": {
+    "H1": 0,
+    "H2": 0,
+    "T1": 0,
+    "T2": 0
+  },
+  "overallDifference": 0,
+  "readerTotals": {
+    "vanilla": 20,
+    "base": 20,
+    "head": 20
+  },
+  "meanWords": {
+    "vanilla": 394.05,
+    "base": 396.6,
+    "head": 395.85
+  },
+  "lengthFlag": false,
+  "controlBlocksBoth": false,
+  "callsUsed": 167,
+  "callCap": 171,
+  "preparationCalls": 23,
+  "paidCalls": 144,
+  "amendmentCommit": "ba7537e627916feaec1b2aa14b51eab463d7b817",
+  "codexTiers": {
+    "priority": 21,
+    "default": 136
+  },
+  "opusCalls": 10,
+  "retries": [],
+  "perBriefReaders": {
+    "H1": {
+      "head": 5,
+      "base": 5,
+      "vanilla": 5
+    },
+    "H2": {
+      "head": 5,
+      "base": 5,
+      "vanilla": 5
+    },
+    "T1": {
+      "head": 5,
+      "base": 5,
+      "vanilla": 5
+    },
+    "T2": {
+      "head": 5,
+      "base": 5,
+      "vanilla": 5
+    }
+  },
+  "readerFailureItems": {
+    "head": {},
+    "base": {},
+    "vanilla": {}
+  },
+  "judgeCitationDiagnostics": {
+    "grounded": 155,
+    "quoteFields": 720,
+    "nonemptyQuoteFields": 160
+  },
+  "verification": {
+    "calls": 167,
+    "paidCalls": 144,
+    "peakConcurrentPaidCalls": 3,
+    "amendmentBeforeFirstPaidCall": true,
+    "allNewCodexCallsDefault": true,
+    "allPaidDispatchLabelsNeutral": true,
+    "fullReaderGrid": true,
+    "frozenArtifactsMatch": true,
+    "paidStartUtc": "2026-11-06T20:42:57.629818+00:00",
+    "lastCompletionUtc": "2026-11-06T21:55:32.110873+00:00",
+    "separateRawVoteRecountMatches": true,
+    "focusedTestsPassed": 13,
+    "nodeVersion": "24.19.0",
+    "pnpmCheckExit": 0,
+    "fallowAuditExit": 0
+  },
+  "R1MajorityByBrief": {
+    "base": {
+      "H1": {
+        "tie": 4,
+        "head": 1
+      },
+      "H2": {
+        "tie": 1,
+        "head": 4
+      },
+      "T1": {
+        "tie": 5
+      },
+      "T2": {
+        "tie": 5
+      }
+    },
+    "vanilla": {
+      "H1": {
+        "tie": 4,
+        "head": 1
+      },
+      "H2": {
+        "tie": 1,
+        "head": 4
+      },
+      "T1": {
+        "tie": 5
+      },
+      "T2": {
+        "tie": 5
+      }
+    }
+  }
+}

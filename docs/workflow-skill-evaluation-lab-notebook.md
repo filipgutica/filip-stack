@@ -1584,6 +1584,34 @@ Evidence:
 - [docs/evidence/ux-guidance-probe/prereg.md](evidence/ux-guidance-probe/prereg.md)
 - [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md)
 
+### 27. Two writing rules: preparation and judge-led paid probe
+
+Date: 2026-11-06. This study tested two additions to `technical-prose.md`: start requirements at the entry point, and a complete how-to task path before optional reference. A fresh writer supplied two how-to and two tutorial briefs for fictional CLIs. The head remained an evidence snapshot; no live guidance changed.
+
+Preparation used 23 calls. Base passed 4/4 execution tasks on the original scenarios and again on the single harder rerun. Two instrument repairs preceded paid data: exact citation copying became diagnostic rather than task completion, and truncated `.plan` renewal keys were restored from the original source/checklist. The original diagnostic scores, 1/4 and 0/4, remain in the external run record. Preparation dispatch text exposed the arm label.
+
+Filip then approved a judge-led primary measure, a word-choice/tone control C, and readers only as a no-harm floor. The dated amendment and scorer were frozen at `ba7537e627916feaec1b2aa14b51eab463d7b817` before any paid call. Paid execution built/read 4 briefs × 3 arms × 5 attempts, followed by 24 judge calls: each judge saw one brief's five matched pairs against base or vanilla. Every pair randomized A/B separately. Paid builder/reader dispatches used neutral labels.
+
+Astra, Sol 6.1 and Opus 5.5 each caught 2/2 planted defects with 0/2 clean false alarms on both target items; all were eligible. C had no separate calibration. Pair outcomes use strict judge majorities, with ties contributing half a win.
+
+Result: **neither rule supported**.
+
+- R1: five majority wins, zero losses and fifteen ties against each comparison: **12.5/20 weighted wins** against base and vanilla, below 15. Its margin over C against base was **2.5**, below four.
+- R2: twenty majority ties against each comparison: **10/20** against base and vanilla, with a zero margin over C.
+- C: twenty majority ties against each comparison: **10/20**. It did not reach the 15/20 blocking threshold.
+- Reader no harm passed: head, base and vanilla each completed **20/20** tasks, five per brief. The reader measure remained at ceiling.
+- No length flag: mean words were head 395.85, base 396.60 and vanilla 394.05.
+
+Calls: **167/171**, comprising 23 preparation and 144 paid calls; no retries. All 136 new Codex calls used default as explicitly required by the approval, in addition to 21 earlier priority calls. Ten Opus calls served only judge seats. The recorded paid dispatch/completion window was 20:42–21:55 UTC. Peak paid concurrency was three; a separate raw-vote decoding reproduced every aggregate.
+
+Ambient host guidance was not isolated. The four workflows share a strong template; calibration was small and did not directly validate fine-grained ranking or C. The bundled treatment and closed CLI reader rubric limit causal and usability claims. Raw per-call artifacts remain external. No writing rule was shipped or pushed.
+
+Evidence:
+
+- [Pre-registration and approved amendment](evidence/writing-rules-probe/prereg.md)
+- [Judge-led results and implementation ledger](evidence/writing-rules-probe/results.md)
+- [Aggregate results](evidence/writing-rules-probe/results.json)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1716,6 +1744,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-06 | Guide-body probe | Body rules per Diátaxis type in `technical-prose.md`; 3 briefs × 3 arms × 5 attempts; calibrated judges; 325 paid calls | Not supported: head lost 2–8 to base and 2–6 to vanilla on reader success; no harm passed; D3 saturated | Reader tasks hit ceiling, so read depth decided pairs. Head's how-to put the final check last, and its explanations motivated before defining. Head leaked no agent-only facts. | [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md) |
 | 2026-11-06 | Writing-guidance climb and probe | Answer placement per Diátaxis type in `technical-prose.md`; climb under `score` on 4 briefs, then 4 fresh briefs × 3 arms × 5 attempts, 121 probe calls | Not supported: head beat base 11/20 and vanilla 14/20; reference lost 4 tasks to base | Climb gain (+5.37) did not hold on fresh briefs; scorecard judges preferred `main` on page-type fit; some failures were key literalism. | [docs/evidence/writing-guidance-climb/results.md](evidence/writing-guidance-climb/results.md) |
 | 2026-11-06 | UX guidance probe pre-registration and dry run | `interface-design` vs `ux-laws` plus `frontend-design` vs vanilla; review task with planted defects and build task with gates and blind judges; Opus 5.5 attempts | Free dry run passed: identical first requests across arms, self-test 24 of 24, gates pass two reference builds and fail the stub; no paid call | `--safe-mode --restricted` and scratch Codex homes remove host guidance that earlier probes shared across arms. Paid run of 72 calls awaits approval. | [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md) |
+| 2026-11-06 | Two writing rules, judge-led probe | Four briefs × three arms × five attempts; 24 five-pair judge batches; 167 total calls | Neither rule supported: R1 12.5/20 and R2 10/20 weighted wins against both base and vanilla; reader no harm passed | C remained at 10/20; all reader arms passed 20/20. No writing rule shipped. | [Study record](evidence/writing-rules-probe/results.md) |
 
 ## Validity threats
 

@@ -1,0 +1,11 @@
+{
+  "baseCommit": "d80c974e",
+  "baseSha256": "57dbbc5883dac1468b08340379080c7a364230651b8ef3cf5256f48fbaff40e3",
+  "headSha256": "b3610980c1d1ef86d63df952745952dd20f224aac8e9de29ac8ca930bda8c4ac",
+  "briefsSha256": "2338cc544f5415dbd1a07cb613c6ece878bd69b4ec9b68b1b4d67b24ba9a783b",
+  "callCap": 171,
+  "seed": 20261106,
+  "writerModel": "gpt-6.1-sol",
+  "writerTier": "priority",
+  "approvedAmendmentSha256": "b4b071b2433ab7b8ec85506af3098d4715c2e5ec89abbe95e5a057530e613cbf"
+}
