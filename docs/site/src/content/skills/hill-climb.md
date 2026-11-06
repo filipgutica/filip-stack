@@ -53,8 +53,8 @@ of council calls. Behavior stays the same unless you name the interactions
 the climb may change, such as focus order in a form.
 
 If any edit stayed, the judges also compare your starting version with the
-final one. If most prefer the start, the report says so first and recommends
-dropping the climb.
+final one, and a score climb compares their scores. If the start wins, the
+report says so first and recommends dropping the climb.
 
 Judges are noisy. Blind comparisons and checks reduce the noise but do not
 remove it, so treat the result as a polish aid, not as proof of quality. A
@@ -67,7 +67,8 @@ retries. The exact rules are in
 - The final version in your working tree. Hill climb commits it only when
   the thread already allowed commits.
 - A report with the climb card, each round's edit and check results, every
-  judge's vote and reason, and the votes on start against final.
+  judge's vote and reason or each score, and the start-against-final
+  comparison.
 - Before and after evidence, with paired screenshots for UI, and the climb's
   diff stat.
 - Follow-ups it skipped for size or scope, and lessons the original work

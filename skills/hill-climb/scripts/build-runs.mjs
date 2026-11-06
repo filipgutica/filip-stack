@@ -29,11 +29,12 @@ const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
 const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
 
 // Score-decided climbs: whether the final score beat the start by the smallest gain that counts.
+// A tie never counts, even when a record sets minGain to 0.
 const scoreCheck = (run) => {
   if (run.score?.final == null) return null
   const { direction, start, final, minGain } = run.score
   const gain = direction === 'lower' ? start - final : final - start
-  return { direction, start, final, gained: gain >= minGain }
+  return { direction, start, final, gained: gain > 0 && gain >= minGain }
 }
 
 // What a reader should check before trusting the climb: the operator's notes, then any final check
@@ -46,7 +47,11 @@ const attention = (run) => {
   if (fc && fc.start > total / 2) items.push('Most judges preferred the starting version; consider dropping the climb.')
   else if (fc && fc.final <= total / 2) items.push('The final check did not show a clear gain over the starting version.')
   if (sc && !sc.gained) items.push('The final score did not beat the start score.')
-  if (!fc && !sc && run.rounds.some((r) => r.decision === 'accepted')) items.push('The climb kept changes but never ran the final check.')
+  // `both` needs both final checks, so report each one that is missing.
+  const rule = run.decisionRule ?? 'judges'
+  const kept = run.rounds.some((r) => r.decision === 'accepted')
+  if (kept && rule !== 'score' && !fc) items.push('The climb kept changes but never ran the final check.')
+  if (kept && rule !== 'judges' && !sc) items.push('The climb kept changes but never measured the final score.')
   return items
 }
 
@@ -64,7 +69,8 @@ const report = (run) => {
     `- Target: ${run.target.repo}${run.target.pr ? ` PR #${run.target.pr}` : ''}, branch \`${run.target.branch}\`, head \`${run.target.head}\``,
     `- Goal: ${run.goal}`,
     `- Budget: ${run.budget.rounds} rounds; size limit ${run.budget.sizeLimit} lines (original change ${run.budget.originalChangedLines} lines)${run.budget.maxCalls ? `; at most ${run.budget.maxCalls} member calls` : ''}`,
-    `- Decision rule: ${run.decisionRule ?? 'judges'}${run.score ? ` (\`${run.score.command}\`, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'})` : ''}`,
+    // Records from before decision rules leave both fields out; keep their reports unchanged.
+    ...(run.decisionRule || run.score ? [`- Decision rule: ${run.decisionRule ?? 'judges'}${run.score ? ` (\`${run.score.command}\`, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'})` : ''}`] : []),
     ...(run.mayChange?.length ? [`- May change: ${run.mayChange.join('; ')}`] : []),
     `- Gates: ${run.gates.map((gate) => `\`${gate}\``).join(', ')}`,
     `- Lineup: ${run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ')}`,

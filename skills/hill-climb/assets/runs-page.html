@@ -305,8 +305,10 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     if (!run.final) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
     const f = run.final;
     const total = f.final + f.same + f.start;
-    const [cls, word] = f.final > total / 2 ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
-    return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version` })];
+    // Under `both`, the climb is better only when the score also improved.
+    const better = f.final > total / 2 && (!run.score || run.score.gained);
+    const [cls, word] = better ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
+    return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version${run.score ? `; score ${run.score.start} to ${run.score.final}` : ''}` })];
   };
 
   const renderRuns = (activeId) => {
@@ -420,7 +422,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('div', {}, el('dt', { text: 'Rounds' }), el('dd', { class: 'num' }, `${run.rounds.length} of ${run.budget.rounds}`)),
         el('div', {}, el('dt', { text: 'Accepted' }), el('dd', { class: 'num' }, String(accepted), el('small', { text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` }))),
         el('div', {}, el('dt', { text: 'Climb size' }), el('dd', { class: 'num' }, `${run.result.climbChangedLines} lines`, el('small', { text: `Limit ${run.budget.sizeLimit}, original change ${run.budget.originalChangedLines}` }))),
-        el('div', {}, el('dt', { text: 'Member calls' }), el('dd', { class: 'num' }, String(run.memberCalls), el('small', { text: run.result.committed ? 'Committed' : 'Not committed' })))),
+        el('div', {}, el('dt', { text: 'Member calls' }), el('dd', { class: 'num' }, String(run.memberCalls), el('small', { text: `${run.budget.maxCalls ? `Limit ${run.budget.maxCalls}. ` : ''}${run.result.committed ? 'Committed' : 'Not committed'}` })))),
       el('p', { class: 'muted' }, el('strong', { text: 'Stopped: ' }), rich(run.stop)),
       el('section', {}, el('h3', { text: 'How the rounds went' }), progress(run)),
       el('section', {}, el('h3', { text: 'Criteria' }),

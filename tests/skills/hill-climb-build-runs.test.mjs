@@ -33,7 +33,8 @@ test('builds the runs-dir argument, including gate-failed rounds without votes',
   // A temporary HOME keeps a regression of the runs-dir argument away from real saved runs.
   const env = { ...process.env, HOME: join(root, 'home') }
   execFileSync(process.execPath, [script, runsDir], { env })
-  assert.ok(existsSync(join(runsDir, record.id, 'report.md')))
+  // A record from before decision rules keeps its report unchanged.
+  assert.doesNotMatch(readFileSync(join(runsDir, record.id, 'report.md'), 'utf8'), /Decision rule/)
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.equal(built.rejected, 1)
 
@@ -48,8 +49,8 @@ test('reports a score-decided climb by its scores, not as missing votes or a mis
   const runsDir = join(root, 'runs')
   const scored = {
     ...record, id: 'run-score', decisionRule: 'score',
-    // Lower is better and the climb ended no lower than it started, so the final check failed.
-    score: { command: 'pnpm a11y:count', direction: 'lower', minGain: 1, start: 7, final: 7 },
+    // A tie, which loses even with a minimum gain of 0.
+    score: { command: 'pnpm a11y:count', direction: 'lower', minGain: 0, start: 7, final: 7 },
     rounds: [{ ...round(1, 'accepted', []), score: 5 }],
   }
   mkdirSync(join(runsDir, scored.id), { recursive: true })
@@ -62,4 +63,20 @@ test('reports a score-decided climb by its scores, not as missing votes or a mis
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.deepEqual(built.attention, ['The final score did not beat the start score.'])
   assert.deepEqual(built.score, { direction: 'lower', start: 7, final: 7, gained: false })
+})
+
+test('flags a both-rule climb that measured the final score but skipped the final judges', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const both = {
+    ...record, id: 'run-both', decisionRule: 'both',
+    score: { command: 'pnpm a11y:count', direction: 'higher', minGain: 1, start: 80, final: 90 },
+    rounds: [{ ...round(1, 'accepted', [vote]), score: 90 }],
+  }
+  mkdirSync(join(runsDir, both.id), { recursive: true })
+  writeFileSync(join(runsDir, both.id, 'run.json'), JSON.stringify(both))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['The climb kept changes but never ran the final check.'])
 })

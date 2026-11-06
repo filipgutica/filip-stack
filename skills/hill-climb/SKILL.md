@@ -85,7 +85,7 @@ Build the card and freeze it before round 1:
   or `both`. See Decide.
 - **Score:** for `score` and `both`, the exact command, which prints the
   number as its last line of output; whether higher or lower is better; and
-  the smallest gain that counts. The command and its scripts and fixtures
+  the smallest gain that counts, a positive number. The command and its scripts and fixtures
   sit outside the scope.
 - **Behavior:** `keep` (the default), or the interactions the climb may
   change, such as "focus order in the settings form". Put the tests that
@@ -307,8 +307,11 @@ Stop at the first of these:
   `SAME` overall.
 - The round budget is spent.
 - The member-call limit could not cover the next round and the final check.
-  A round costs one call per judge; round 1 adds one per proposer. The final
-  check costs one call per judge, and none under `score`.
+  Under `judges` and `both`, a round costs one call per judge, round 1 adds
+  one per proposer, and the final check costs one call per judge. Under
+  `score`, only round 1's proposers cost calls. Before each launch, including
+  a retry, check that the calls left still cover it and the final check;
+  otherwise stop.
 - The incumbent's changed lines against `start/` reach the size limit.
   After a restore, measure the incumbent as in Apply.
 
