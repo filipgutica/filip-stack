@@ -295,18 +295,20 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 
   const go = (id) => { if (location.hash.slice(1) !== id) location.hash = id; };
 
-  // The verdict is the start-vs-final vote: did the whole climb make the pull request better?
+  // The verdict is the start-vs-final check: did the whole climb make the pull request better?
+  // The decision rule says which checks it needs: judge votes, a score comparison, or both.
   const verdictCell = (run) => {
-    // A score-decided climb compares the start and final scores instead of calling judges.
-    if (!run.final && run.score) {
+    const rule = run.decisionRule ?? 'judges';
+    const needsJudges = rule !== 'score';
+    const needsScore = rule !== 'judges';
+    if ((needsJudges && !run.final) || (needsScore && !run.score)) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
+    if (!needsJudges) {
       return [el('span', { class: `verdict ${run.score.gained ? 'v-final' : 'v-same'}`, text: run.score.gained ? 'Better' : 'No clear gain' }),
         el('small', { class: 'sub', text: `Score ${run.score.start} to ${run.score.final}, ${run.score.direction} is better` })];
     }
-    if (!run.final) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
     const f = run.final;
     const total = f.final + f.same + f.start;
-    // Under `both`, the climb is better only when the score also improved.
-    const better = f.final > total / 2 && (!run.score || run.score.gained);
+    const better = f.final > total / 2 && (!needsScore || run.score.gained);
     const [cls, word] = better ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
     return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version${run.score ? `; score ${run.score.start} to ${run.score.final}` : ''}` })];
   };

@@ -52,9 +52,10 @@ is larger. Ask for a different limit when you call it, for example
 of council calls. Behavior stays the same unless you name the interactions
 the climb may change, such as focus order in a form.
 
-If any edit stayed, the judges also compare your starting version with the
-final one, and a score climb compares their scores. If the start wins, the
-report says so first and recommends dropping the climb.
+If any edit stayed, hill climb compares your starting version with the final
+one. Judges vote on the two versions, a score climb compares their scores
+instead, and a climb that uses both does both. If the start wins, the report
+says so first and recommends dropping the climb.
 
 Judges are noisy. Blind comparisons and checks reduce the noise but do not
 remove it, so treat the result as a polish aid, not as proof of quality. A

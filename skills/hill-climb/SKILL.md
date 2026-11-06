@@ -309,9 +309,10 @@ Stop at the first of these:
 - The member-call limit could not cover the next round and the final check.
   Under `judges` and `both`, a round costs one call per judge, round 1 adds
   one per proposer, and the final check costs one call per judge. Under
-  `score`, only round 1's proposers cost calls. Before each launch, including
-  a retry, check that the calls left still cover it and the final check;
-  otherwise stop.
+  `score`, only round 1's proposers cost calls. Before each launch in a
+  round, including a retry, check that the calls left cover it and still
+  leave the final check; otherwise stop. During the final check, the calls
+  left need to cover only that check.
 - The incumbent's changed lines against `start/` reach the size limit.
   After a restore, measure the incumbent as in Apply.
 

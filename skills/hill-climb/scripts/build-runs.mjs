@@ -130,6 +130,7 @@ const index = runs.map((run) => {
     summary: run.result.summary,
     climbChangedLines: run.result.climbChangedLines,
     sizeLimit: run.budget.sizeLimit,
+    decisionRule: run.decisionRule ?? 'judges',
     final: finalCounts(run),
     score: scoreCheck(run),
     attention: attention(run),

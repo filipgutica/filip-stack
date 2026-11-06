@@ -37,6 +37,8 @@ test('builds the runs-dir argument, including gate-failed rounds without votes',
   assert.doesNotMatch(readFileSync(join(runsDir, record.id, 'report.md'), 'utf8'), /Decision rule/)
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.equal(built.rejected, 1)
+  // The runs page reads the rule from the index; records from before decision rules use judges.
+  assert.equal(built.decisionRule, 'judges')
 
   const pageDir = join(root, 'page')
   execFileSync(process.execPath, [script, runsDir, '--page', pageDir], { env })
