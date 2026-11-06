@@ -26,8 +26,14 @@ const secretShown = (page) => page.evaluate(() => {
   return secret.test(document.body.innerText) || [...document.querySelectorAll('input, textarea')].some((el) =>
     el.type !== 'hidden' && el.checkVisibility() && el.getBoundingClientRect().width > 0 && secret.test(el.value))
 })
-const listed = (page, name) => page.getByText(name, { exact: false }).evaluateAll((els) =>
-  els.some((el) => el.checkVisibility() && el.getBoundingClientRect().width > 0))
+// A list entry is a visible row or list item that names the key; a status message that names it is not.
+const listed = async (page, name) => {
+  for (const role of ['row', 'listitem']) {
+    const entries = page.getByRole(role).filter({ hasText: name })
+    if (await entries.evaluateAll((els) => els.some((el) => el.checkVisibility() && el.getBoundingClientRect().width > 0))) return true
+  }
+  return false
+}
 const FAILURE = /unavailable|error|fail|couldn.t|could not|try again|went wrong|problem/i
 const failureLines = (page) => page.evaluate((source) =>
   document.body.innerText.split('\n').map((line) => line.trim()).filter((line) => new RegExp(source, 'i').test(line)), FAILURE.source)

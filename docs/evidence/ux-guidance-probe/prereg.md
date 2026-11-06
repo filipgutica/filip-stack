@@ -302,6 +302,8 @@ These amendments follow review of `a070ca6`, before any paid call. The guidance 
 | S8 | Drop all `ui-modes` overflow counting. `ui-check` owns ordinary reflow; no per-defect evidence establishes a distinct mode-specific overflow risk. Text-200 overflow is therefore diagnostic too. Behavioral tasks still run in all four modes. |
 | S9 | Replace the PR's repeated CI results with free, runnable self-test, hash verification, and local browser calibration steps. |
 
+A second review of `f61efd6` found that a status message naming the key passed the list check. The create and retry tasks now require a visible row or list item that names the key, and a local `message-list` calibration build shows the false pass. Frozen hashes were updated; no paid call intervened.
+
 No skill, skill script, or arm hash changed. The scorer adds owner-boundary regressions for verdicts, judge isolation, and bundle blindness. See the [coverage record](dry-run-report.md#coverage-record) for tests added and removed, baseline failures, and remaining proof.
 
 ## Frozen hashes
@@ -329,7 +331,7 @@ f98c453b1b00d22aca76c4dfd634a450b6c1366c636a97d72cd1716a98efe5f7  prompts.py
 275bb57a20944a9bf540ef96c602f54b506d4bb0eb537dc8be989ec011bdf590  run-codex-judge.sh
 df251d95b057aeeeec5d2404fce6de8c7038aa4243bbdb8800f258204bfbcd59  scorer_test.py
 38fdfed24d8b0dfb78d7ec7dbdb0b02319fb08e35d22fd0bd68836549c5a51be  serve.mjs
-29eaa7cfd348bba9e410178c85ba1d94d6f6d38460dca7c24a57658fec691b13  ux-tasks.mjs
+840b60cb076fe3fca1f14aeb85100000ea0d4a5bbcc3390056a394d4c84dab2e  ux-tasks.mjs
 ```
 
 ### Arms
@@ -351,7 +353,7 @@ Bundle hashes: base `88f344a4a02d80f8fa9ff37264297eb45f23aaa5a1740c4b96c1d6f0c50
 
 ### Frozen calibration hashes
 
-The 122 files in the local calibration folder. The sha256 of this list, including its final newline, is `fa18f02f440a49f4fdbf08adb72b28c73d96af3299422903d4f6e2c81774132e`. Only hashes are committed.
+The 129 files in the local calibration folder. The sha256 of this list, including its final newline, is `654b8721b6d979fbddbf0661e34173f7715cdb24b6c9ea6a62a2b1f9bfc44829`. Only hashes are committed.
 
 ```
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/bad-error/BRIEF.md
@@ -382,6 +384,13 @@ f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/hidden-s
 33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/hidden-secret/index.html
 163788e807c4b2bf372c6f4aa3c5753d54c95dd4d3220ffccaa048076ec7553d  build/hidden-secret/screen.js
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/hidden-secret/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/message-list/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/message-list/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/message-list/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/message-list/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/message-list/index.html
+f93f011450a3a24f4c61e516e5ba25f59530739ad6c9719f66f1af3e73550b3c  build/message-list/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/message-list/tokens.css
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/no-retry/BRIEF.md
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/no-retry/DESIGN.md
 6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/no-retry/api.js
@@ -410,7 +419,7 @@ f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/stale-al
 2bb2aff083f2e7b8d55af48a2974865047d3599ce7da40e6a0ee8fd5b3436fda  build/stale-alert/index.html
 c217c0507b0f2bab1f08e30ef9e9d02ddc848dc388ab4c750fbc9895a06a92a9  build/stale-alert/screen.js
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/stale-alert/tokens.css
-13593f36396cbde8b79e92c33d6cf44cfe8df13159d864443bf46ee4069cb6e7  build-cases.json
+0ab23389d214883a24f4af2b9556d768075294b9efd26bbbefee6976ea8bff96  build-cases.json
 9ce9cf45bedb4ac8a4ab13f2da3e1972f5fad755202abcec719b69c83b01fd6f  key.json
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  review/R1/clean/DESIGN.md
 f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  review/R1/clean/app.css
