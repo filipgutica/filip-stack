@@ -2,215 +2,119 @@
 
 Date: 2026-11-06
 
-Status: free dry run complete. **No paid model call ran.** The paid run needs Filip's approval; see [Stop point](#stop-point).
+Status: scorer repairs verified and the final free pipeline completed. No paid model call has run. The paid run remains outside this PR, after merge and Filip's approval, with a hard ceiling of 72 calls.
 
-The dry run used the exact commands the paid run will use, with one change: the model endpoint pointed at a local program instead of a model.
+## Changes since the original freeze
 
-- Claude calls went to a scripted stand-in, [`mock.mjs`](scorer/mock.mjs). It saves each request and answers with fixed tool calls and replies, so every step after the model runs for real.
-- Codex calls went to a listener, [`listen.mjs`](scorer/listen.mjs). It saves each request and refuses it.
-- Raw requests, traces, workspaces, and screenshots stay on the local machine, as for earlier probes.
+The original freeze was `a070ca6`. The [pre-registration amendment table](prereg.md#stated-changes-since-the-original-freeze) records every change. Guidance files and scripts under test are unchanged.
 
-## Result
-
-Every check the brief asked for passed:
-
-| Check | Result |
+| Finding | Repair and direct evidence |
 | --- | --- |
-| Arms build, with hashes | Pass. Vanilla is empty, base has 3 files and 2,441 words, and head has 7 files and 3,180 words. The bundle hashes are stable. |
-| Isolation, per arm | Pass. For each task, the first request is identical across vanilla, base, and head, and it holds no user guidance. Guidance appears only after an attempt reads its own folder. |
-| Confinement | Pass. Scripted reads of `~/design-language/DESIGN.md`, `~/.claude/CLAUDE.md`, and `~/.agents` are refused, and so is a write outside the workspace. The validator counts refused calls as a diagnostic and flags calls that succeed as a breach. |
-| Scorer self-test | Pass, 24 of 24. A perfect answer scores 3, an empty answer 0, and each false finding −1. Markdown-formatted replies parse, and a reply with no `FINDING` line is marked unparsed. |
-| Gates on the fixture | Pass. Two reference builds pass `ui-check.mjs` (0 violations) and `ui-modes.mjs` (16 of 16). The bare stub fails `ui-modes.mjs` (4 of 16). |
-| Pipeline end to end | Pass. Prepare, attempts, validate, tally, gates, screenshots, bundles, judges, and score all ran on 1 attempt per task per arm. |
-| Paid-run budget | 72 calls. See [Paid-run budget](#paid-run-budget). |
+| S1 | `where` matches only the element; `what` matches only the problem. Fix text earns no credit. D6 requires an asserted token/palette problem rather than bare colour descriptors. All three added adversarial answers scored +1 on the original scorer and −1 after repair. |
+| S2 | Saturation waives positive gain only against the saturated control. Review no-harm against both controls and at least 2 successful head builds remain required. Artifact-based scoring regressions reproduce the original false support. |
+| S3 | Every Codex judge tool event invalidates the run; all inputs are attached or inline. The validator rejects discovery commands, relative reads, and shell expansion. `validate` now exits nonzero on a problem. |
+| S4 | A residual guidance identifier stops bundling before judge prompts, ledger, or commands are produced. The check covers identical files too, and removes stale runnable commands from earlier bundles. |
+| S5 | Fixture secrets and created dates are deterministic. Captures use a fixed clock, 2026-11-06T12:00:00Z. Identical-build evidence is checked below. |
+| S6 | Tasks require current field errors, visible secrets and list entries, and a successful second submission after a visible failure. A `?fail=once` API scenario permits recovery without changing the page URL. |
+| S7 | A scorer-side navigation adapter waits for all three seeded names before the unchanged `ui-check` screenshots and scans. A defect appearing after a 4-second API delay fails the adapted scan; the unadapted scan incorrectly exits 0. |
+| S8 | All 4 `ui-modes` overflow rows are excluded from scoring, including text-200. Ordinary reflow belongs to `ui-check`. No independent calibration established extra mode-specific overflow detection, so that evidence is not claimed. The 12 behavioral task checks remain. |
+| S9 | The PR replaces repeated CI results with runnable, free reviewer steps for self-tests, frozen hashes, and local browser calibration. |
 
-## Arms
+The key's rule text and D6 patterns, three adversarial answers, two duplicate-case removals, and new build calibration files change the local hash manifest. The review pages and decoys are unchanged. Their content remains outside Git.
 
-Built by [`build_arms.py`](scorer/build_arms.py); per-file hashes are in the [pre-registration](prereg.md#arms-1).
+## Scorer and test value
 
-| Arm | Source | Files | Words | Bundle sha256 |
-| --- | --- | ---: | ---: | --- |
-| vanilla | none | 0 | 0 | `e3b0c442…b855` |
-| base | `ux-laws` at `94617e16`, `frontend-design` at `41bbe19d1a1a` | 3 | 2,441 | `88f344a4…a74d` |
-| head | `interface-design` at `48453586` | 7 | 3,180 | `47748d82…a7b9` |
+`probe.py selftest` passes 25 of 25 cases: 20 local review answers and 5 judge parsing cases. The original scorer passed its original 24 cases while mis-scoring all three new false findings.
 
-The `frontend-design` file was fetched from `anthropics/skills` at the pinned commit. Its sha256 matched `d9197063…10c1d3`.
+`scorer_test.py` passes three owner-boundary tests. Running those tests against the original scorer produces eight failing subcases: four unsupported verdicts, three accepted commands, and one unblocked bundle.
 
-## Isolation
+### Coverage record
 
-### How it was checked
+Each entry names its owning boundary. No production export, flag, or hook exists only for tests.
 
-Each attempt ran through [`run-claude.sh`](scorer/run-claude.sh) in its own workspace, against the scripted stand-in. The stand-in saved every request body the command sent, and the check read those bodies directly.
-
-| Task | First request, all three arms | Size | User-guidance markers in vanilla |
-| --- | --- | ---: | --- |
-| R1, R2, R3 | Identical after normalizing the folder name, workspace name, and session IDs | 15,475 bytes | None. `DESIGN.md` appears once: the prompt names the fixture's own file. |
-| B1 | Identical, as above | 14,980 bytes | None |
-
-What the requests contained:
-
-- **System prompt:** Claude Code's built-in prompt, 4,451 characters, the same for every arm.
-- **Tools:** `Read`, `Edit`, `Write`, `Glob`, `Grep`, and the CLI's internal placeholder. No `Skill`, `Agent`, `Bash`, web, or MCP tool.
-- **Trace start event:** no skills, no MCP servers, and only built-in plugins (`cc-plugin-*@builtin`).
-- **Model and effort:** `claude-opus-5-5` with `output_config.effort: high`.
-- **Sign-in:** an `authorization` header was present. Its value was not recorded.
-- **Harness reminders:** the account email and the commit attribution note. They are the same for every arm and hold no UI guidance.
-
-Guidance arrived only through each attempt's own reads:
-
-| Arm | Markers in the last request of a review attempt |
-| --- | --- |
-| vanilla | `DESIGN.md` only |
-| base | Also `ux-laws`, `frontend-design`, `UX law`, `Fitts`, `Hick` |
-| head | Also `interface-design`, `WCAG`, `design-language`, `ux-laws`, `UX law`, `Fitts`, `Hick` |
-
-### Confinement and the validator
-
-A planted run used the first workspace and scripted three reads outside it: `~/design-language/DESIGN.md`, another attempt's page, and `~/.claude`. Two versions of the run show both outcomes:
-
-| Command | What happened | `probe.py validate` |
+| Added or changed test | Behavior and regression protected | Existing coverage that missed it |
 | --- | --- | --- |
-| `run-claude.sh`, with `--restricted` | Each call refused | No problem; 3 refused calls counted as a diagnostic |
-| A local copy without `--restricted` | Both reads succeeded | 2 breaches: `Read outside workspace` for each path |
+| `selftest/R1-fix-leak.txt` | A false contrast finding about summary labels remains −1 even when its fix names legal-text contrast. | `R1-nearmiss` did not put the planted element in fix text. Original result: +1. |
+| `selftest/R2-fix-leak.txt` | Purple role badges claimed to rely on colour alone are X3, not D6, including when the problem repeats “purple”. | `R2-nearmiss` omitted purple; field separation alone still credited the descriptor in the problem. Original result: +1. |
+| `selftest/R3-fix-leak.txt` | A false Save prominence finding remains −1 when its fix suggests a focus ring. | `R3-nearmiss` did not suggest the planted defect's fix. Original result: +1. |
+| `scorer_test.py:test_saturation_retains_no_harm_and_build_success` | Real score artifacts cannot support review harm against either control or 0/1 successful head builds; saturated ties with 2 builds and unsaturated positive gains remain eligible. | The old self-test covered tally and judge parsing, not final verdicts. Four negative subcases were falsely supported on baseline. |
+| `scorer_test.py:test_codex_judge_rejects_all_execution` | Judge traces reject discovery, relative reads, and shell expansion, while plain reasoning/replies remain allowed. | Existing path heuristics accepted all three commands. No new shell allowlist duplicates confinement. |
+| `scorer_test.py:test_bundle_blocks_residual_markers_even_in_identical_files` | A trailing identifier blocks the actual bundle operation, including identical source files and stale commands. | Existing marker counts did not stop judge preparation. Baseline produced bundles. |
+| `calibrate.mjs:bad-error` | An existing `aria-errormessage` without a current error fails the empty-name task. | Valid reference builds cannot expose this false pass. Original task accepted it. |
+| `calibrate.mjs:hidden-secret` | A hidden input cannot satisfy the user-visible secret outcome. | The readonly-input reference proves permitted markup, not hidden-output rejection. Original task accepted it. |
+| `calibrate.mjs:hidden-list` | Hidden text cannot satisfy the visible key-list outcome. | Existing name-count matching accepted hidden text. Original task accepted it. |
+| `calibrate.mjs:stale-alert` | An unchanged hidden alert cannot satisfy failure reporting. | Existing live-region text matching ignored visibility and freshness. Original task accepted it. |
+| `calibrate.mjs:no-retry` | An enabled button whose second submission does nothing fails recovery. | The old task never retried. Original task accepted it. |
+| `calibrate.mjs:delayed-overflow` | The actual frozen scanner must see seeded rows before scanning populated overflow. | Static clean/planted review pages cannot expose asynchronous scan timing. Unadapted exit 0; adapted exit 1 with overflow. |
+| `ux-tasks.mjs:empty name` | Native `:user-invalid` or current visible associated error text establishes submission feedback. | Existing bare ARIA-reference/invalid-state checks could pass without feedback. Owned by the task's browser calibration above. |
+| `ux-tasks.mjs:create` | Both secret and listed name must be visible after submission. | Hidden input values and hidden text counts passed before. Owned by the two distinct output calibrations above. |
+| `ux-tasks.mjs:failure recovery` | A newly visible failure keeps the name; a second submission creates the key. | Enabled-button-only proof never observed a retry. Owned by stale-alert and no-retry calibrations. |
 
-A refused call is isolation working, so it does not stop the run. This matters most for head: its `SKILL.md` and `checks.md` name `~/design-language/DESIGN.md`, so a head attempt may try that read.
-
-All 12 dry-run attempt traces, both Opus judge traces, and all four Codex judge traces passed with no problems.
-
-### Codex judges
-
-Each Codex judge ran through [`run-codex-judge.sh`](scorer/run-codex-judge.sh) with a scratch `HOME` and `CODEX_HOME`, against the listener. The captured request:
-
-- holds no `AGENTS.md` text, user skills, or user files
-- lists only Codex's four built-in system skills: `imagegen`, `openai-docs`, `skill-creator`, and `skill-installer`
-- names `DESIGN.md` because the bundle's design files are inline
-- carries `gpt-6-astra` or `gpt-6.1-sol` with reasoning effort high, and all 30 screenshots as images
-
-Three earlier captures showed why each setting is there:
-
-| Setup | What leaked |
+| Removed test or gate | Remaining proof or retired contract |
 | --- | --- |
-| Real `HOME` and `CODEX_HOME` | The run could not start inside the agent sandbox, so it was not captured |
-| Scratch `CODEX_HOME`, real `HOME` | Every skill in `~/.agents/skills`, including `interface-design` |
-| Scratch `HOME` and `CODEX_HOME` | Nothing beyond the four system skills |
+| `selftest/R2-empty.txt` | `R1-empty.txt` runs the identical `NONE` input through the same shared finding parser and expects score 0, false 0. No page-specific pattern runs for `NONE`. |
+| `selftest/R3-empty.txt` | Same canonical `R1-empty.txt` proof; both removed files had identical inputs and expectations. |
+| `ui-modes:no horizontal overflow`, all 4 modes | Drop the overlapping counted gate. `ui-check` retains ordinary reflow at 320/375/1280 in light/dark, empty/populated. Mode-specific overflow has no independent calibrated risk and is diagnostic only. |
 
-Two limits remain:
+The local build calibration runs 12 outcomes: six valid reference tasks, five targeted adversarial tasks, and one delayed populated scan. All match. Each adversarial case fails with the original task/scanner and passes with the repair. References use custom field errors and native validation respectively; one shows the secret in a readonly input. Cross-product mutant checks were omitted because each defect has one task owner.
 
-- The capture used a custom provider with a dummy key. The paid run uses the ChatGPT login. The script turns off the account-linked features (apps, plugins, memories, hooks, browser use, computer use), but only a paid call can show the login adds nothing else. The protocol therefore runs the first Codex judge alone and checks it before the rest.
-- The captured requests listed no tools, so the dry run could not confirm that Codex judges can read files here. They get screenshots attached and text inline instead, which needs no tools.
-- `validate` scans Codex traces for commands that reach outside the bundle. On synthetic traces it passed a command inside the bundle and flagged `cat ../../judge-ledger.json` and an absolute path to the run folder. The event format it reads is not confirmed for this Codex version, so the first paid Codex judge's trace is read by hand.
-- Bundles go in their own folder outside the run folder, as hill-climb's Bundle section asks, so the ledgers are not next to them. `bundle` refuses a bundle root inside the run folder.
+## Guidance and isolation
 
-## Scorer
+The arms rebuilt to the original bundle hashes:
 
-### Self-test
+| Arm | Files | Markdown words | Bundle sha256 |
+| --- | ---: | ---: | --- |
+| vanilla | 0 | 0 | `e3b0c442…b855` |
+| base | 3 | 2,441 | `88f344a4…a74d` |
+| head | 7 | 3,180 | `47748d82…a7b9` |
 
-`probe.py selftest` on the frozen key and 15 fixed answers:
+`interface-design`, `ui-check.mjs`, and `ui-modes.mjs` are byte-identical to the original freeze. The scorer-side adapter changes when scanning starts; the skill's checks stay untouched.
 
-| Answer type | Pages | Expected | Result |
-| --- | --- | --- | --- |
-| Perfect | R1, R2, R3 | 3 | 3, 3, 3 |
-| Paraphrased | R1, R2, R3 | 3 | 3, 3, 3 |
-| Empty (`NONE`) | R1, R2, R3 | 0 | 0, 0, 0 |
-| With false findings | R1, R2, R3 | 2, 2, 1 | 2, 2, 1 |
-| Near misses | R1, R2, R3 | −1 (one false, the rest unmatched) | −1, −1, −1 |
-| Markdown: numbered in a fence, bold with code marks, quoted under a heading | R1, R2, R3 | 3 | 3, 3, 3 |
-| Prose with no `FINDING` line | R3 | Unparsed | Unparsed |
+The free rerun points Claude's exact command at `mock.mjs`. Codex's exact command points at the refusing `listen.mjs` provider, using a dummy local key, empty judge HOME, and scratch CODEX_HOME. No credentials are copied. Synthetic Codex replies exercise score parsing after capture; they are not model judgments.
 
-Judge replies, through `parse_judge`:
+First-request equivalence is checked after normalizing random folder/workspace names and session identifiers. The original confinement evidence remains: restricted outside reads/writes are refused, and successful outside reads invalidate the trace. Any paid Codex tool event now invalidates the run, regardless of path. The first real Codex trace still needs manual inspection for event-format and login contamination, as preregistered.
 
-| Reply | Expected | Result |
-| --- | --- | --- |
-| Plain | `OVERALL` A, C2 B, C3 SAME, complete | As expected |
-| Markdown bullets with bold labels | `OVERALL` A, C2 B, complete | As expected |
-| In a code fence | `OVERALL` A, complete | As expected |
-| Lists an unread file | Incomplete | Incomplete |
-| No `OVERALL` line | Incomplete | Incomplete |
+## Gates and evidence
 
-Reviews of the dry run changed the scorer before it was frozen:
+Browser tools: Playwright 1.65.0, `@axe-core/playwright` 4.14.0, Chromium 158.0.8127.18. They are installed in scratch space. All browser verification ran outside the sandbox; no Chromium check remains blocked.
 
-- One paraphrased answer for the colour-only category went unmatched. That pattern was widened.
-- Loose patterns would have credited unrelated findings, such as any line with "primary" or "focus". The patterns were tightened, and the near-miss answers were added to keep them tight.
-- A numbered or bold `FINDING` line would have scored 0 without any error, and a bold `OVERALL` line would have left a judge incomplete. Both parsers now remove Markdown first, and an unparsed review reply stops the run.
-- The validator would have stopped the run on reads that `--restricted` refused. It now separates refused calls from breaches.
-- Bundles were first written inside the run folder, next to the ledgers. They now go in their own folder.
+The second valid reference independently passes the frozen runners: `ui-check` reports 0 axe nodes, 0 of 12 overflowing pages, and 6 off-token values; `ui-modes` reports 16 raw passes, with 12 behavioral passes counted. Token values remain diagnostic, as preregistered.
 
-### Tally in the pipeline
+Ordinary reflow has one counted owner, `ui-check`. We dropped `ui-modes` overflow counting rather than claim extra defect coverage without a per-defect, per-mode calibration. Its raw four overflow results remain available for inspection. Behavioral tasks still exercise reduced motion, dark, text-200, and grayscale.
 
-The dry run's scripted replies were the perfect answers, so every arm scored a mean of 3.0, with no false findings. This tests the tally, not the guidance.
+The original static review-page calibration is unchanged: clean pages had 0 axe nodes, 0 of 18 overflowing views, and 0 off-token values; planted pages had 27, 4 of 18, and 12. `ui-check` reports evidence for four planted defects; three affect its exit status. Off-token colour remains diagnostic. Five planted defects need judgment.
 
-## Gates
+## Final pipeline rerun
 
-The gates ran with Playwright 1.65.0, `@axe-core/playwright`, and headless Chromium, installed in a scratch folder. Chromium could not start inside the agent's sandbox, so the gates ran outside it.
+The rerun completed prepare → fake attempts → validate → tally → gates → screenshots → blind bundles → fake/captured judges → validate → score. It used one attempt per task per arm, without a paid endpoint. After tightening D6, tally and score reran against the final key with the same results.
 
-| Build | `ui-check.mjs` | `ui-modes.mjs` | States reached | Gates |
-| --- | --- | --- | ---: | --- |
-| Reference 1: own status region, `aria-invalid` | Exit 0; 0 axe nodes, 0 of 12 pages overflow, 0 off-token | Exit 0; 16 of 16 | 15 of 15 | Pass |
-| Reference 2: readonly secret input, native validation, its own error text | Exit 0; 0, 0, 0 | Exit 0; 16 of 16 | 15 of 15 | Pass |
-| Bare stub | Exit 0; 0, 0, 0 | Exit 1; 4 of 16 | 6 of 15 | Fail |
-
-The second reference build exists because the first gate tasks would have failed correct markup. For example, they could not see a secret shown in an input. The tasks were loosened and both builds rerun.
-
-### Review pages through the gates
-
-Totals over the three pages, each checked at 320, 375, and 1280 px in light and dark:
-
-| Version | axe nodes | Page views that overflow | Off-token values |
-| --- | ---: | ---: | ---: |
-| Clean | 0 | 0 of 18 | 0 |
-| Planted | 27 | 4 of 18 | 12 |
-
-The gates catch 4 of the 9 planted defects. The other 5 need judgment, which is where guidance can help.
-
-Two faults in the first calibration pages were fixed before the key was frozen:
-
-- The fixture's control borders measured 1.6:1, below WCAG 1.4.11. A `--border-strong` token at 3.8:1 light and 3.5:1 dark now draws inputs, buttons, and switch tracks.
-- One page had an input with no error state that was not meant as a plant. It was given one, so a true finding about it is not counted against the key.
-
-Three defects were also made less literal, so a careful vanilla review would not find them from a single obvious line: contrast, focus, and motion.
-
-## Pipeline end to end
-
-| Stage | Dry-run result |
+| Stage | Result |
 | --- | --- |
-| `prepare` | 12 workspaces (R1–R3 and B1, one attempt per arm), prompts, a private ledger, and `commands.sh` |
-| Attempts | 12 runs of `run-claude.sh` through the stand-in, plus the planted violation run |
-| `validate` | 18 traces clean: 12 attempts, 2 Opus judges, 4 Codex judges. The planted run's 3 refused calls are counted. |
-| `tally` | 9 review replies scored, none unparsed |
-| `gates` | 3 builds. Head and base wrote the reference builds and passed. Vanilla wrote nothing and failed. |
-| `bundle` | 2 pairs, in a folder outside the run folder. Head vs base: identical code, so only the success screenshots differ, because each secret is random. Head vs vanilla: 30 screenshots and the differing files. 0 marker hits before or after stripping. |
-| Judges | 2 Opus judges through the stand-in, which read the bundle; 4 Codex requests captured |
-| `score` | Runs on the Opus replies plus synthetic Codex replies, to test the parser and the rule. Synthetic votes are not results. |
+| Prepare and attempts | 12 workspaces and 12 exact Claude commands against the local fake model. |
+| First requests | Identical within each task after normalization. Reviews: 15,502 bytes; builds: 15,007. No user-guidance marker; the fixture's `DESIGN.md` is expected. |
+| Tally | 9 scored review replies, mean 3.0 in every arm, 0 false findings, 0 unparsed replies. |
+| Isolation | 18 traces checked: 12 attempts, 2 fake Opus judges, 4 capture-only Codex judges. No problems. |
+| Head and base builds | Both `ui-check` exit 0, 0 axe nodes, 0 of 12 overflow; both 12/12 counted behavioral tasks; both 15/15 screenshot states. |
+| Bare vanilla stub | `ui-check` exit 2 because seeded rows never appear; 0/12 behavioral tasks; 6/15 screenshot states. Fails gates. |
+| Deterministic evidence | Head and base wrote identical implementations. All 15 PNG pairs are byte-identical. Their bundle contains 0 differing screenshots and 0 differing source files. |
+| Blind bundles | 2 pairs; 0 residual markers. Head vs vanilla has 30 screenshots and 3 source files. |
+| Judges | 2 Opus replies through the fake model; 4 Codex requests captured and refused locally, followed by synthetic replies solely for scoring. |
+| Final score | `not supported; positive review gain waived against saturated controls; no-harm retained`. No void pair or short review arm. This is a synthetic pipeline result, not a guidance verdict. |
+| Frozen files | All 19 scorer-file hashes and 122 local calibration-file hashes verify; original arm bundle hashes still match. |
+| Repository checks | `pnpm install --frozen-lockfile`, `pnpm check`, and `git diff --check` pass. Fallow 3.18.0 audit passes; its configured scope excludes `docs/evidence`, so it adds no scorer correctness evidence. Its `doctor` subcommand is unavailable in this installed version. |
 
-The comment stripper and marker scan were also checked on a planted build. A CSS comment that names Fitts, WCAG, and `interface-design`, and an HTML comment that names `ux-laws` and Hick, were all counted and then stripped. A trailing `//` comment is kept, so URLs are not broken, and the residual scan reports any marker left in it.
+One preliminary free rerun was stopped before completion while readiness and task timeout handling were finalized. The results above come from the subsequent complete rerun. All endpoints in both reruns were local; no paid call occurred.
 
-## Paid-run budget
+## Engineering ledger
 
-| Calls | vanilla | base | head | Total |
-| --- | ---: | ---: | ---: | ---: |
-| Review attempts: 3 pages × 5 | 15 | 15 | 15 | 45 |
-| Build attempts | 3 | 3 | 3 | 9 |
-| Judges, head vs base: 3 pairs × 3 | | | | 9 |
-| Judges, head vs vanilla: 3 pairs × 3 | | | | 9 |
-| **Total** | | | | **72** |
+- **Simpler version:** splitting tally fields fixes S1 alone, but leaves false support, judge contamination, invisible task outcomes, and asynchronous scans. A fixed sleep before scanning does not prove populated content arrived. The unchanged scanner exposes no readiness option, so the scorer adapts its navigation boundary.
+- **Readability:** `review_gain_waived` records the saturation exception beside the always-required review result. `raw_exit` and `counted` distinguish the runner's 16 raw checks from 12 scored behavioral checks.
+- **Scope:** only study scorer/fixture/test support and the two study records change. No skill or guidance file changes. Public calibration content stays local. Against `a070ca6`: tooling/fixture +90/−27 lines; gates, regressions, and calibration support +171/−33; records +190/−207. The only adjacent cleanup closes judge reply files, whose repeated reads exposed resource warnings in verdict regression runs.
+- **Reuse:** reuse `ui-check` and `ui-modes` unchanged, their real CLI boundaries, existing `waitFor`, and the local fake model. `ready-check.mjs` owns readiness because the frozen CLI has no hook. `listed` replaces a raw count with a browser visibility predicate. `failureLines` replaces stale live-region matching with current rendered text. `calibrate.mjs` runs the same task module against local pages; `scorer_test.py` consumes real run artifacts rather than duplicating the verdict algorithm.
+- **Coverage:** the tables above map every added/changed check and both removed tests to observable behavior and baseline evidence. No independent review ran in this implementation sub-agent; final acceptance belongs to the parent.
 
-| Model | Calls |
-| --- | ---: |
-| Claude Opus 5.5, effort high: 54 attempts and 6 judges | 60 |
-| GPT-6 Astra, reasoning high, default tier | 6 |
-| GPT-6.1 Sol, reasoning high, default tier | 6 |
-| **Total** | **72** |
+## Paid-run stop point
 
-- The ceiling is 72. A failed call is not retried without approval.
-- Tokens were not measured, because the stand-in reports none.
-- Request sizes from the captures: an attempt's first request is about 15 KB. Its guidance adds 2,441 words for base and 3,180 for head, plus about 17 KB of scripts if head reads them. A Codex judge request with 30 screenshots is 1.1 to 1.4 MB.
+No paid call or merge is authorized here. The paid run remains 54 attempts plus 18 judges: 60 Opus calls, 6 Astra calls, and 6 Sol calls, at the registered effort. No retry fits beyond the hard 72-call ceiling without separate approval.
 
-## Stop point
-
-The work stops here. The paid run starts only after Filip:
-
-1. approves the 72-call run above;
-2. signs Codex in to a scratch Codex home with `CODEX_HOME=<scratch-codex-home> codex login` (this PR copies no credentials);
-3. runs the gates where Chromium can start, outside the agent sandbox.
-
-The paid run then follows the [run protocol](prereg.md#run-protocol). Its first three calls, R1 attempt 1 in each arm, check that the sign-in works and that real replies parse.
+After merge, Filip must approve the paid run and sign Codex in to a scratch home. The protocol runs the first three review attempts and first Codex judge as stop checks. Raw requests, traces, workspaces, screenshots, calibration pages, decoys, and the answer key remain local.

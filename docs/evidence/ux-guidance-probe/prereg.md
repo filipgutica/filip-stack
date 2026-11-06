@@ -72,7 +72,7 @@ User guidance reaches agents through several channels on this machine: `~/.claud
 - `HOME` is an empty scratch folder, so `~/.agents/skills` and other user files do not load.
 - `CODEX_HOME` is a scratch folder that holds only the login, so `~/.codex/AGENTS.md`, its config, rules, and skills do not load.
 - `--ignore-user-config`, `--ignore-rules`, `--ephemeral`, read-only sandbox, and `--disable` for apps, plugins, memories, hooks, browser use, and computer use.
-- Screenshots are attached with `-i`, and text files are inline in the prompt. The dry run could not confirm that Codex file tools work in this setup without a paid call.
+- Screenshots are attached with `-i`, and text files are inline in the prompt. The dry run could not confirm that Codex file tools work in this setup without a paid call. No judge command is permitted; any tool execution invalidates the run.
 
 ### What still reaches every call
 
@@ -90,7 +90,7 @@ The free dry run must show, and did show:
 3. A scripted read of `~/design-language/DESIGN.md`, `~/.claude/CLAUDE.md`, or `~/.agents` is refused, and a write outside the workspace is refused.
 4. The validator tells the two outcomes of an outside call apart. A call that `--restricted` refused shows isolation working; it is counted per arm as a diagnostic. A call that succeeded is a breach. A planted run shows both, the second through a local copy of the command without `--restricted`.
 
-In the paid run, `probe.py validate` checks every Claude trace for the tool set, empty skills and MCP servers, built-in plugins only, model, working directory, and every tool path. It checks every Codex trace for commands that reach outside the bundle. Any problem stops the run.
+In the paid run, `probe.py validate` checks every Claude trace for the tool set, empty skills and MCP servers, built-in plugins only, model, working directory, and every tool path. It rejects every Codex judge tool execution, including commands confined to the bundle, because all input is attached or inline. `validate` exits nonzero on any isolation problem. Any problem stops the run.
 
 Head is the arm most likely to try an outside read, because its `SKILL.md` and `checks.md` name `~/design-language/DESIGN.md`. Those reads are refused, so they do not stop the run, and the report gives their count per arm.
 
@@ -109,7 +109,7 @@ Three static screens of a fictional app, Acme, with its own design system: [`DES
 - Each page was built clean first. On every clean page, `ui-check.mjs` reports 0 axe nodes, 0 overflowing pages, and 0 off-token values at 320, 375, and 1280 px in light and dark.
 - Then 9 defects were planted, 3 per page, drawn from these categories: low text contrast, missing visible focus, main action not the most prominent element, missing error state, off-token colour, overflow at 375 px, broken dark mode, motion that ignores reduced motion, and colour as the only signal.
 - Each page also has 2 or 3 decoys. A decoy is a claim that looks like a defect but is false on this page, such as low contrast on text that measures above 7:1.
-- The gates catch 4 of the 9 planted defects. The other 5 need judgment.
+- `ui-check` reports evidence for 4 of the 9 planted defects. Three affect its exit status; off-token colour is diagnostic only. The other 5 need judgment.
 - Each attempt gets the page's HTML, CSS, and JavaScript, the design system files, and three screenshots: desktop light, desktop dark, and a 375 px phone in light.
 
 The pages, decoys, and answer key stay outside the repository, in the local hill-climb calibration folder for this study, `~/.hill-climb/calibration/ux-guidance-probe/`. Their sha256 hashes are frozen [below](#frozen-calibration-hashes). The attempts cannot read the repository, because `--restricted` confines them to their workspace.
@@ -145,7 +145,7 @@ The prompt does not list the categories. That would turn the review into a check
 From the key's `rule` field, applied by `probe.py tally`:
 
 1. A finding is one `FINDING` line. Only the first 12 lines count.
-2. Each key entry has `where` and `what` patterns: case-insensitive regular expressions matched against the whole line.
+2. Each key entry has `where` and `what` patterns: case-insensitive regular expressions matched against separate fields: `where` against the element, `what` against the asserted problem. Fix text never earns credit.
 3. A finding credits the first defect, in key order, that is not yet found and whose `where` and `what` both match.
 4. Else, if it matches a defect already found, it is a duplicate and scores 0.
 5. Else, if it matches a decoy, it is a false finding and scores −1.
@@ -164,9 +164,9 @@ Diagnostics, reported but not in the rule:
 - unmatched findings and duplicates
 - hits per category
 
-The self-test (`probe.py selftest`) checks 24 fixed cases:
+The self-test (`probe.py selftest`) checks 25 fixed cases after the stated amendments below:
 
-- 19 review answers: for each page, a perfect, a paraphrased, an empty, a false-finding, a near-miss, and a Markdown-formatted answer, plus one prose reply with no `FINDING` line. A near miss names the right category on the wrong element, uses a key word in an unrelated complaint, or makes a false but plausible claim. Each answer must score exactly its expected tally; the prose reply must be unparsed.
+- 20 review answers: perfect, paraphrased, false-finding, near-miss, Markdown, and adversarial fix-leak answers for each page, one shared empty answer, and one prose reply with no `FINDING` line. A near miss names the right category on the wrong element, uses a key word in an unrelated complaint, or makes a false but plausible claim. The three adversarial answers must each score −1, not +1. Each answer must score exactly its expected tally; the prose reply must be unparsed.
 - 5 judge replies: plain, Markdown, fenced, one with an unread file, and one with no `OVERALL` line. Each must parse to its expected votes and completeness.
 
 ## Build task (B1)
@@ -176,20 +176,20 @@ The self-test (`probe.py selftest`) checks 24 fixed cases:
 [`fixture/app/`](scorer/fixture/app/) is a stub Acme screen with a mock API and no answer key:
 
 - `BRIEF.md`: build the API keys screen. List keys, create one with a field labelled `Key name` and a button labelled `Create key`, show the secret once, and let the user recover when `createKey` fails.
-- `api.js`: `listKeys` and `createKey`. URL parameters select the scenario: `?keys=3` seeds three keys, and `?fail=create` makes `createKey` fail.
+- `api.js`: `listKeys` and `createKey`. URL parameters select the scenario: `?keys=3` seeds three keys, and `?fail=create` makes `createKey` fail. `?fail=once` fails the first create and permits a successful retry. Secrets and created dates are deterministic.
 - `DESIGN.md`, `tokens.css`, and `app.css`: the design system.
 - `index.html`: the shell with an empty main area.
 
 ### Gates
 
-The gates are `interface-design`'s own scripts at `origin/main`, run on each build (`probe.py gates`):
+The gates use `interface-design`'s unchanged scripts at frozen head `48453586`, run on each build (`probe.py gates`). The scorer waits for all three seeded names to become visible before populated `ui-check` scans:
 
 | Gate | Command | Passes when |
 | --- | --- | --- |
 | `ui-check.mjs` | `?keys=0` and `?keys=3`; 320, 375, and 1280 px; light and dark; `--tokens` the fixture's frozen `tokens.css` | Exit 0: no axe WCAG 2.2 AA nodes and no sideways overflow |
-| `ui-modes.mjs` | `?keys=0`, with [`ux-tasks.mjs`](scorer/ux-tasks.mjs) | Exit 0: 16 of 16 checks, meaning 3 tasks plus overflow, in each of 4 modes |
+| `ui-modes.mjs` | `?keys=0`, with [`ux-tasks.mjs`](scorer/ux-tasks.mjs) | 12 of 12 behavioral checks: 3 tasks in each of 4 modes. The scorer excludes all 4 overflow rows, including text-200; raw results remain diagnostic |
 
-A build passes the gates when both exit 0. The three tasks are: an empty name is refused with an error tied to the field; creating a key shows its secret and lists it; and a failed create keeps the name and lets the user retry. They use only what the brief fixes, and they accept any markup that meets it. Two reference builds with different markup both pass. One uses a readonly input for the secret, native validation, its own error text, and names inside longer text.
+A build passes when `ui-check` exits 0 and all 12 counted `ui-modes` task checks pass. A runtime error in either runner fails the build. The three tasks are: an empty name triggers a current error tied to the field; creating a key visibly shows its secret and lists it; and a failed create visibly reports failure, keeps the name, and succeeds on a second submission. They use only what the brief fixes, and they accept any markup that meets it. Two reference builds with different markup both pass. One uses a readonly input for the secret, native validation, its own error text, and names inside longer text.
 
 Diagnostics: the `ui-check` violation count, the `ui-modes` passed count, off-token values, and any fixture file the build changed.
 
@@ -207,7 +207,7 @@ Diagnostics: the `ui-check` violation count, the `ui-modes` passed count, off-to
 - `A/` and `B/` hold the screenshots that differ, with matching names.
 - `A-files/` and `B-files/` hold each version's copy of the app files that differ.
 - The A/B order is balanced, so head is A in half the pairs.
-- Comments are stripped from every arm's HTML, CSS, and JavaScript alike. Marker words, such as law names or skill names, are counted before stripping and again after, and both counts are reported. No output is edited by hand.
+- Comments are stripped from every arm's HTML, CSS, and JavaScript alike. Marker words are counted before stripping and again after. Any residual marker stops bundling before judge prompts or commands are produced, including markers in identical files. No output is edited by hand.
 
 Pairs: head against base, and head against vanilla, for each attempt number.
 
@@ -229,11 +229,11 @@ Each judge gets the [hill-climb judge brief](../../../skills/hill-climb/SKILL.md
 
 | Part | Holds when |
 | --- | --- |
-| 1. Review gain | Head's review score minus the other arm's is at least 0.5 |
-| 2. Gates, no harm | Head's gate passes, out of 3, are at least the other arm's |
+| 1. Review gain and no harm | Head minus the control is at least 0.5, or at least 0 when that control scores 2.5 or more |
+| 2. Gates, success and no harm | Head passes at least 2 of 3 builds and at least as many as each control |
 | 3. Judges | A strict majority of completed `OVERALL` votes in non-void pairs prefers head. `SAME` counts for neither. |
 
-- **Saturation:** if vanilla's review score is 2.5 or more, part 1 is uninformative, not failed. It is left out of the rule, and the verdict says so.
+- **Saturation:** waive only positive gain against a control whose review score is 2.5 or more. Head must still match or exceed both controls. The verdict names the waiver; it never omits review no-harm or build success.
 - **Not decidable:** more than a third of the pairs are void, or an arm has fewer than 10 of its 15 review attempts scored.
 - When a judge majority rests on Astra and Sol, which are both OpenAI models, the report says so, as hill-climb asks.
 
@@ -286,29 +286,50 @@ By model: Opus 5.5 makes 60 calls (54 attempts and 6 judges), Astra 6, and Sol 6
 - No arm can run a browser, so the probe does not measure head's Check route.
 - Routing is not tested. `interface-design` is a standalone skill, so `pnpm eval:routing`, which compares Workflow skills, does not apply.
 
+## Stated changes since the original freeze
+
+These amendments follow review of `a070ca6`, before any paid call. The guidance bundles, review pages, decoys, prompts, matched task counts, and 72-call ceiling stay fixed.
+
+| Finding | Amendment and reason |
+| --- | --- |
+| S1 | Match element and problem separately; ignore fixes. Tighten D6 to an asserted token/palette problem rather than bare colour descriptors. Add three local adversarial false findings that each changed from +1 to −1. Remove two duplicate `NONE` cases; retain R1's shared parser case. Update the key's rule text and local hashes. |
+| S2 | Saturation waives only positive gain against the saturated control. Retain no-harm against both controls and require at least two successful head builds. |
+| S3 | Reject every Codex judge tool event and exit validation nonzero. Attached and inline inputs require no command execution. |
+| S4 | Stop bundling on residual guidance markers, including identical files; remove stale judge commands and ledger before a rerun. |
+| S5 | Freeze fixture secrets and created dates, and fix the screenshot clock to 2026-11-06T12:00:00Z. |
+| S6 | Require current visible errors, visible secrets and list entries, and a successful second submission after `?fail=once`. Keep gate calibration pages local. |
+| S7 | Add a scorer-side navigation adapter that waits for all seeded names before the unchanged `ui-check` captures and scans. |
+| S8 | Drop all `ui-modes` overflow counting. `ui-check` owns ordinary reflow; no per-defect evidence establishes a distinct mode-specific overflow risk. Text-200 overflow is therefore diagnostic too. Behavioral tasks still run in all four modes. |
+| S9 | Replace the PR's repeated CI results with free, runnable self-test, hash verification, and local browser calibration steps. |
+
+No skill, skill script, or arm hash changed. The scorer adds owner-boundary regressions for verdicts, judge isolation, and bundle blindness. See the [coverage record](dry-run-report.md#coverage-record) for tests added and removed, baseline failures, and remaining proof.
+
 ## Frozen hashes
 
 ### Scorer
 
-The scorer files are frozen at the commit that adds this record. Their sha256 hashes:
+The scorer files are refrozen after the review amendments listed above. The original freeze was `a070ca6`; no paid call intervened. Their sha256 hashes:
 
 ```
 f64da8002042e4417f080616f7c98c39b16a4c243358724fe9fdfcb17301c161  build_arms.py
-c27263554a8531a28747076bf492927a2b057b19b2e290b6755fc4033c79c7d1  capture-states.mjs
+5ae7b0946641b37f4c366f41098913e01030a4a24a87c060aa6f84a5b7fd8d44  calibrate.mjs
+d9de1cf362781501006248a40c8ee9363df0c2fa0b886abca6464046ce533ffd  capture-states.mjs
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  fixture/app/BRIEF.md
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  fixture/app/DESIGN.md
-317443965821fe47bd01eb57454215a0ebd0988c7041283b58d0af16f47fdc72  fixture/app/api.js
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  fixture/app/api.js
 f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  fixture/app/app.css
 ce4e0b3111db4c94ed192d2f86269169331b0f8c972c8a6bbf8734f2880b9cdd  fixture/app/index.html
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  fixture/app/tokens.css
 3c30f82e3e029e299bcaac169213b29eba911cda6fabc205252aa3582bfbc986  listen.mjs
 bc07d68792f01122f4b69788e7ceadce501ba7938edae9f03c23c6a2d112cfbb  mock.mjs
-ada8583555da1f7bdc9418c1d0973a5aef92bc29bc2ed7bc1359dbf0c36bdd12  probe.py
+ac767db716eb25772c875137a48c098632bb0d5ea1407b00cea30daa0813937d  probe.py
 f98c453b1b00d22aca76c4dfd634a450b6c1366c636a97d72cd1716a98efe5f7  prompts.py
+363fe49a9627e887cac9773b11dcf116d8d464bb85f72bcb5b9f96f36f034f55  ready-check.mjs
 5b100539db1be64cee47fa33f3ee071940fd7c97a5aefdaca6a91f1a029c08a4  run-claude.sh
 275bb57a20944a9bf540ef96c602f54b506d4bb0eb537dc8be989ec011bdf590  run-codex-judge.sh
+df251d95b057aeeeec5d2404fce6de8c7038aa4243bbdb8800f258204bfbcd59  scorer_test.py
 38fdfed24d8b0dfb78d7ec7dbdb0b02319fb08e35d22fd0bd68836549c5a51be  serve.mjs
-1cedc09a71b0baa1f32692834d8bb7ee28a5e06141acd84bc3d0f76388948d44  ux-tasks.mjs
+29eaa7cfd348bba9e410178c85ba1d94d6f6d38460dca7c24a57658fec691b13  ux-tasks.mjs
 ```
 
 ### Arms
@@ -330,10 +351,67 @@ Bundle hashes: base `88f344a4a02d80f8fa9ff37264297eb45f23aaa5a1740c4b96c1d6f0c50
 
 ### Frozen calibration hashes
 
-The 64 files in the calibration folder. The sha256 of this list, as `shasum -a 256` prints it, is `386ed6bcec0c392e89d492b9b6114699c0fdd6bc6b00bb162a5b78808c3c03a4`.
+The 122 files in the local calibration folder. The sha256 of this list, including its final newline, is `fa18f02f440a49f4fdbf08adb72b28c73d96af3299422903d4f6e2c81774132e`. Only hashes are committed.
 
 ```
-69c6e2815e2eea6282a7ac848f187516999e1b49c023e68c3c1d48a4ec99628f  key.json
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/bad-error/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/bad-error/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/bad-error/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/bad-error/app.css
+0ed97ba5d81e450af895892d50ba5ed525c74be7ec5a526bfc496f0ecb93dca8  build/bad-error/index.html
+1653d402e34002ca074198ddc15e9e2d482205a29af6aa258fea04a1bdb992db  build/bad-error/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/bad-error/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/delayed-overflow/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/delayed-overflow/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/delayed-overflow/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/delayed-overflow/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/delayed-overflow/index.html
+7a7cbd7a655c2c08b0b17f12d689f5be69979f9069c441aa6da0c627ca55d45d  build/delayed-overflow/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/delayed-overflow/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/hidden-list/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/hidden-list/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/hidden-list/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/hidden-list/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/hidden-list/index.html
+feef38fa787cc6925984af4f2b7561285e081d6fe6e15b3680f55fd1f857a37b  build/hidden-list/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/hidden-list/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/hidden-secret/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/hidden-secret/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/hidden-secret/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/hidden-secret/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/hidden-secret/index.html
+163788e807c4b2bf372c6f4aa3c5753d54c95dd4d3220ffccaa048076ec7553d  build/hidden-secret/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/hidden-secret/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/no-retry/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/no-retry/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/no-retry/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/no-retry/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/no-retry/index.html
+f67b1959ec568c11ca9488acfb485959c3618b59611f344dda728179fca61d24  build/no-retry/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/no-retry/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/reference1/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/reference1/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/reference1/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/reference1/app.css
+33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/reference1/index.html
+9a6a47da555930c19c6546095510d743b5daac36a09a85c7a2916c32b64cc7ba  build/reference1/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/reference1/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/reference2/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/reference2/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/reference2/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/reference2/app.css
+a628aea4e8832d727cbaae0193281f461b7c692a233906b81f3fde37eb033740  build/reference2/index.html
+d65dcbada85749c2b2d7669a87870f5d3cb0af28ad3aff445d08d642095923bb  build/reference2/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/reference2/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/stale-alert/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/stale-alert/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/stale-alert/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/stale-alert/app.css
+2bb2aff083f2e7b8d55af48a2974865047d3599ce7da40e6a0ee8fd5b3436fda  build/stale-alert/index.html
+c217c0507b0f2bab1f08e30ef9e9d02ddc848dc388ab4c750fbc9895a06a92a9  build/stale-alert/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/stale-alert/tokens.css
+13593f36396cbde8b79e92c33d6cf44cfe8df13159d864443bf46ee4069cb6e7  build-cases.json
+9ce9cf45bedb4ac8a4ab13f2da3e1972f5fad755202abcec719b69c83b01fd6f  key.json
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  review/R1/clean/DESIGN.md
 f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  review/R1/clean/app.css
 7ad665d75c3042f3bae5bd72186a05aacd9b8530e5dbc599544c9eeee44238e7  review/R1/clean/page.css
@@ -379,22 +457,23 @@ e3e0971d5490e01b0d18349239658b6674e16f545ff86310161ad5f9ce08c490  review/R3/plan
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  review/R3/planted/tokens.css
 77f8a5de4dc321df7dad23af4c9d8bb40d4bc1d839009d4ce23abe040c8bf9f1  selftest/R1-decoy.txt
 51cfd463b6af8a57b3380487f986abf10f137073e9be453e44a7e9a5b4c0e72b  selftest/R1-empty.txt
+8491a050bfbe246075ce2b9ffaf7ad3dea2c21eb74f41b0d40891f5e3a4ccb63  selftest/R1-fix-leak.txt
 9f402418402b6e22952df99ddeb5d7c97e54dad58af86fb131abe11c80d20506  selftest/R1-markdown.txt
 1ffb79b5793f7d01c39a4c2aa3a68ed4e5ce847ccdfdf630ce63abe5055114d0  selftest/R1-nearmiss.txt
 76a31595a47e147ddfb20f658a56e74aa25724e6eb8e4eaf96104f620611e9fb  selftest/R1-paraphrase.txt
 296ef28505ff07bd2a8bbfafbc650aa9ccc582d5419de9cc4f655606894fca46  selftest/R1-perfect.txt
 1a942bf013388e01ad7c3ded068c3fedcebf4398e14194ad379a79405f77c9b6  selftest/R2-decoy.txt
-51cfd463b6af8a57b3380487f986abf10f137073e9be453e44a7e9a5b4c0e72b  selftest/R2-empty.txt
+39ab9bafa34265f7a09b51eee8a496c1996a1ef4b52e40e9ca707d2367a58fbc  selftest/R2-fix-leak.txt
 10dc058eb6f5a9d678242c9811fbcb07ecce1c5bc56805d56f822a5145ac4fdf  selftest/R2-markdown.txt
 a669e0f186b242ae1e3bc8c334b4af5663dd594e3c99c6f016420485cf2b9837  selftest/R2-nearmiss.txt
 bd3a1d15f0d436522c28526ae5d7d09c37c4964dc5e6959d9c87dfff667c411b  selftest/R2-paraphrase.txt
 7e56fbde7e549a979e401b39e28583455f6e57fb804385ce7071b77201ff44f2  selftest/R2-perfect.txt
 bde5c2375817627c6a3bfbcae5bc6d8a6ad3d1e5b5833c4e6bcc3237f318ada7  selftest/R3-decoy.txt
-51cfd463b6af8a57b3380487f986abf10f137073e9be453e44a7e9a5b4c0e72b  selftest/R3-empty.txt
+7ef55d68f08ed614c6799f69e57fb4e4aa733e980ce13530ed3d1f17434a82d4  selftest/R3-fix-leak.txt
 e0e7ec0c34727b235a11f561e280dc43ee2c7ab3539c25bf21e20639cb8f0bea  selftest/R3-markdown.txt
 179d8ad9563699c68680455213434630c48a6008a5bd834d3342dd3d1e8dd68a  selftest/R3-nearmiss.txt
 b6b492339ed39c5a13147d9fedc020ba0f48c586457edd7f490a6701c16cb343  selftest/R3-paraphrase.txt
 1e75c941ee38d1b886b6133564e76f40b82826eea59de8e7249a8b1e044fed58  selftest/R3-perfect.txt
 8525c6866e10277f7ebcf05181609537ad37155bd4dab86a28feb7d92b16afc1  selftest/R3-prose.txt
-e74d4cccaa6504d35f78d20ce972e6291871f97be8232170b42735e100d9ab26  selftest/expected.json
+df830839992d45ac9f45f7cf5080a9ceb07704b6b4c1311738e4105a0216ee11  selftest/expected.json
 ```

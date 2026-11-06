@@ -40,6 +40,7 @@ if (base && out) {
     for (const state of STATES) {
       const context = await browser.newContext({ viewport: { width: view.width, height: 800 }, colorScheme: view.scheme })
       const page = await context.newPage()
+      await page.clock.setFixedTime(new Date('2026-11-06T12:00:00Z'))
       const entry = { state: state.name, view: view.name, error: null }
       try {
         await page.goto(new URL(state.query, base).href)

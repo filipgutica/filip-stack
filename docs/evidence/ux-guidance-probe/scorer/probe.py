@@ -21,7 +21,7 @@ FIXTURE = os.path.join(HERE, 'fixture', 'app')
 ARMS = ['vanilla', 'base', 'head']
 REVIEW_TASKS = ['R1', 'R2', 'R3']
 PAIRINGS = ['base', 'vanilla']
-SATURATED = 2.5  # a vanilla review mean at or above this leaves too little room for a 0.5 gain
+SATURATED = 2.5  # waive positive gain only against a control at this ceiling
 MIN_GAIN = 0.5
 JUDGES = {'opus': 'claude-opus-5-5', 'astra': 'gpt-6-astra', 'sol': 'gpt-6.1-sol'}
 ATTEMPT_TOOLS = 'Read,Edit,Write,Glob,Grep'
@@ -188,19 +188,15 @@ def check_trace(path, root, tools, guide=None):
 
 
 def check_codex_trace(path, bundle):
-    """Problems in a Codex --json trace. Its inputs are attached or inline, so it needs no command;
-    a command that reaches outside the bundle (an absolute path elsewhere, or ..) is a breach."""
-    problems, commands, bundle = [], [], os.path.realpath(bundle)
-    system = ('/bin/', '/usr/', '/opt/', '/dev/', '/System/')  # shells and tools a command names, not data
+    """All judge input is attached or inline. Any tool execution invalidates the run."""
+    problems, commands = [], []
     for e in events(path):
         item = e.get('item') or {}
-        if e.get('type') == 'item.completed' and item.get('type') not in (None, 'agent_message', 'reasoning'):
+        if e.get('type') in ('item.started', 'item.completed') and item.get('type') not in (None, 'agent_message', 'reasoning'):
             cmd = str(item.get('command') or item.get('path') or item)
             commands.append(cmd[:120])
-            paths = [p for p in re.findall(r'(?<![\w.])/[\w./-]+', cmd) if not p.startswith(system)]
-            reaches_out = '..' in cmd or any(not inside(p, bundle) for p in paths)
-            if reaches_out:
-                problems.append(f"{item.get('type')} outside bundle: {cmd[:120]}")
+            problems.append(f"judge tool execution: {item.get('type')} {cmd[:120]}")
+
     return problems, commands
 
 
@@ -250,8 +246,12 @@ def unparsed(text):
 
 
 def matches(line, entry):
-    hit = lambda pats: any(re.search(p, line, re.I) for p in pats)
-    return hit(entry['where']) and hit(entry['what'])
+    fields = line.split('|')
+    if len(fields) != 4:
+        return False
+    _, element, problem, _fix = fields
+    return (any(re.search(p, element, re.I) for p in entry['where'])
+            and any(re.search(p, problem, re.I) for p in entry['what']))
 
 
 def tally(text, page, cap):
@@ -373,10 +373,17 @@ def gates(run):
         time.sleep(1)
         url = f'http://127.0.0.1:{port}/'
         try:
-            check = node([f'{scripts}/ui-check.mjs', '--url', f'{url}?keys=0', '--url', f'{url}?keys=3', '--widths', '320,375,1280',
+            check = node([f'{HERE}/ready-check.mjs', f'{scripts}/ui-check.mjs', '--url', f'{url}?keys=0', '--url', f'{url}?keys=3', '--widths', '320,375,1280',
                           '--themes', 'light,dark', '--tokens', tokens, '--project', tools, '--out', f'{out}/check'], f'{out}/ui-check.log')
             modes = node([f'{scripts}/ui-modes.mjs', '--url', f'{url}?keys=0', '--tasks', f'{HERE}/ux-tasks.mjs',
                           '--project', tools, '--out', f'{out}/modes'], f'{out}/ui-modes.log')
+            # ui-check owns ordinary reflow. Discard ui-modes' overlapping overflow rows.
+            mode_results = f'{out}/modes/results.json'
+            if modes['exit'] in (0, 1) and os.path.exists(mode_results):
+                rows = [r for r in load(mode_results)['results'] if r['check'] != 'no horizontal overflow']
+                modes['raw_exit'] = modes['exit']
+                modes['counted'] = {'passed': sum(r['ok'] for r in rows), 'total': len(rows)}
+                modes['exit'] = 0 if len(rows) == 12 and all(r['ok'] for r in rows) else 1
             shots = node([f'{HERE}/capture-states.mjs', '--url', url, '--out', f'{out}/shots', '--project', tools], f'{out}/capture.log')
         finally:
             server.terminate()
@@ -423,9 +430,22 @@ def marker_counts(app):
 
 
 def bundle(run):
+    # A rerun must not leave runnable commands from an earlier bundle.
+    for name in ('judge-commands.sh', 'judge-ledger.json'):
+        if os.path.exists(f'{run}/{name}'):
+            os.remove(f'{run}/{name}')
     ledger = [a for a in load(f'{run}/ledger.json') if a['task'] == 'B1']
     by = {(a['attempt'], a['arm']): a for a in ledger}
     pairs, markers = [], {a['id']: marker_counts(os.path.join(a['workspace'], 'app')) for a in ledger}
+    residual = {}
+    for a in ledger:
+        for rel, text in app_files(os.path.join(a['workspace'], 'app')).items():
+            hits = [m for m in ARM_MARKERS if m.lower() in strip_comments(rel, text).lower()]
+            if hits:
+                residual[f"{a['id']}/{rel}"] = hits
+    dump(f'{run}/markers.json', {'before': markers, 'residual': residual})
+    if residual:
+        sys.exit('Residual arm identifiers: stop before judging; see markers.json')
     # hill-climb keeps each bundle away from the work directory, so a judge cannot reach the ledgers.
     bundle_root = os.path.realpath(opt('--bundle-root') or tempfile.mkdtemp(prefix='b-'))
     if inside(bundle_root, os.path.realpath(run)):
@@ -481,13 +501,10 @@ def bundle(run):
             files = ''.join(f'\n<<<FILE {rel}\n{t}\nFILE {rel}>>>\n' for rel, t in inline.items())
             with open(f'{run}/prompts/judge-{pair}-codex.txt', 'w') as f:
                 f.write(brief + CODEX_ATTACHED.format(images=', '.join(images) or 'none', files=files) + '\n')
-            # Marker words left after stripping comments, such as in a trailing // comment or in page copy.
-            residual = {rel: [m for m in ARM_MARKERS if m.lower() in t.lower()] for rel, t in texts.items()}
             pairs.append({'pair': pair, 'attempt': n, 'pairing': f'head-vs-{other}', 'A': a['arm'], 'B': b['arm'],
                           'A_id': a['id'], 'B_id': b['id'], 'bundle': root, 'images': [f'{root}/{x}' for x in images],
-                          'residual_markers': {k: v for k, v in residual.items() if v}})
+                          'residual_markers': {}})
     dump(f'{run}/judge-ledger.json', pairs)
-    dump(f'{run}/markers.json', markers)
     run_abs = os.path.realpath(run)
     with open(f'{run}/judge-commands.sh', 'w') as f:
         for p in pairs:
@@ -520,7 +537,10 @@ def judge_text(run, pair, judge):
         r = next((e for e in events(path) if e.get('type') == 'result'), None) if os.path.exists(path) else None
         return r.get('result') if r and not r.get('is_error') else None
     path = f'{run}/judges/{pair}-{judge}.txt'
-    return open(path).read() if os.path.exists(path) else None
+    if os.path.exists(path):
+        with open(path) as f:
+            return f.read()
+    return None
 
 
 def score(run):
@@ -541,7 +561,8 @@ def score(run):
                           'overall': arm(r['overall']), **{c: arm(r[c]) if r[c] else None for c in ('C1', 'C2', 'C3', 'C4')},
                           'scores': {s: {p['A']: v['A'], p['B']: v['B']} for s, v in r['scores'].items()}})
     gate_pass = {arm: sum(gates_[a['id']]['pass'] for a in ledger if a['task'] == 'B1' and a['arm'] == arm and a['id'] in gates_) for arm in ARMS}
-    saturated = review['vanilla']['mean_score'] is not None and review['vanilla']['mean_score'] >= SATURATED
+    expected_builds = sum(a['task'] == 'B1' and a['arm'] == 'head' for a in ledger)
+    saturated = any(review[o]['mean_score'] is not None and review[o]['mean_score'] >= SATURATED for o in PAIRINGS)
     out = {'review': review, 'review_saturated': saturated, 'gate_pass': gate_pass, 'pairings': {}}
     for other in PAIRINGS:
         vs = [v for v in votes if v['pairing'] == f'head-vs-{other}']
@@ -553,8 +574,10 @@ def score(run):
         heads, others = overall.count('head'), overall.count(other)
         gain = round(review['head']['mean_score'] - review[other]['mean_score'], 3) if review['head']['mean_score'] is not None and review[other]['mean_score'] is not None else None
         out['pairings'][other] = {
-            'review_gain': gain, 'review_part': None if saturated else (gain is not None and gain >= MIN_GAIN),
-            'gate_part': gate_pass['head'] >= gate_pass[other],
+            'review_gain': gain,
+            'review_gain_waived': review[other]['mean_score'] is not None and review[other]['mean_score'] >= SATURATED,
+            'review_part': gain is not None and gain >= (0 if review[other]['mean_score'] >= SATURATED else MIN_GAIN),
+            'gate_part': gate_pass['head'] >= gate_pass[other] and gate_pass['head'] * 3 >= expected_builds * 2,
             'votes': {'head': heads, other: others, 'SAME': overall.count('SAME'), 'completed': len(overall)},
             'judge_part': heads * 2 > len(overall) and len(overall) > 0,
             'by_judge': {j: [v['overall'] for v in valid if v['judge'] == j] for j in JUDGES},
@@ -565,7 +588,7 @@ def score(run):
         }
     expected_pairs = len([a for a in ledger if a['task'] == 'B1' and a['arm'] == 'head']) * len(PAIRINGS)
     void = expected_pairs - len({v['pair'] for v in votes if sum(1 for w in votes if w['pair'] == v['pair']) >= 2})
-    # A saturated review part is left out of the rule and reported as uninformative, not as failed.
+    # Saturation waives positive gain against that control, never no-harm or build success.
     parts = [out['pairings'][o][k] for o in PAIRINGS for k in ('review_part', 'gate_part', 'judge_part') if out['pairings'][o][k] is not None]
     out['void_pairs'] = void
     expected_reviews = len([a for a in ledger if a['task'] != 'B1' and a['arm'] == 'head'])
@@ -573,7 +596,7 @@ def score(run):
     out['review_arms_short'] = short
     undecidable = void * 3 > expected_pairs or bool(short)
     verdict = 'not decidable' if undecidable else ('supported' if all(parts) else 'not supported')
-    out['verdict'] = verdict + ('; review part uninformative (vanilla saturated)' if saturated and verdict != 'not decidable' else '')
+    out['verdict'] = verdict + ('; positive review gain waived against saturated controls; no-harm retained' if saturated and verdict != 'not decidable' else '')
     dump(f'{run}/scores.json', {**out, 'votes': votes})
     print(json.dumps(out, indent=1))
 
@@ -586,6 +609,8 @@ if __name__ == '__main__':
     cmd = sys.argv[1]
     if cmd == 'selftest':
         selftest()
+    elif cmd == 'validate':
+        sys.exit(1 if validate(sys.argv[2]) else 0)
     elif cmd == 'context':
         context(sys.argv[2])
     elif cmd == 'tally':
