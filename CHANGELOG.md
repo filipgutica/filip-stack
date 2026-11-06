@@ -1,3 +1,17 @@
+# [4.1.0](https://github.com/filipgutica/filip-stack/compare/v4.0.0...v4.1.0) (2026-11-06)
+
+
+### Bug Fixes
+
+* **interface-design:** close false passes in the browser checks ([09151b2](https://github.com/filipgutica/filip-stack/commit/09151b20e8ac476632f81fbab2b0090e768bb740))
+* **interface-design:** confirm each mode holds before it counts ([986b7a1](https://github.com/filipgutica/filip-stack/commit/986b7a11b663a484d1d7823947c785ff208a89dd))
+* **interface-design:** keep modes over page load handlers ([0fc2edb](https://github.com/filipgutica/filip-stack/commit/0fc2edb337945d1438f9f9b76c53b394cc5d0865))
+
+
+### Features
+
+* **interface-design:** add browser checks for accessibility and modes ([5515a19](https://github.com/filipgutica/filip-stack/commit/5515a197983e6411c55835b92e05814cea4cf145))
+
 # [4.0.0](https://github.com/filipgutica/filip-stack/compare/v3.25.0...v4.0.0) (2026-11-06)
 
 
