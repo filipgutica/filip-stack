@@ -8,10 +8,14 @@ threshold.
 
 - **WCAG 2.2, level AA** ([W3C](https://www.w3.org/TR/WCAG22/)). Thresholds:
   text contrast 4.5:1, or 3:1 for large text (24px, or about 18.7px bold);
-  3:1 for control boundaries, states, and meaningful graphics; targets at
-  least 24 by 24 CSS pixels or spaced to match; content that reflows at
-  320 CSS pixels wide without sideways scrolling; text that resizes to 200%
-  without loss; visible focus that other content does not hide.
+  3:1 for the visual information needed to identify controls, their states,
+  and meaningful graphics, except inactive controls; pointer targets at
+  least 24 by 24 CSS pixels, or spaced so a 24px circle centered on each
+  does not overlap another target or its circle, except inline links and
+  targets whose size the browser sets; content that reflows at 320 CSS
+  pixels wide without sideways scrolling, except content such as maps and
+  data tables that needs two dimensions; text that resizes to 200% without
+  loss; visible focus that other content does not hide.
 - **Automated checks find only part of the problem.** Deque's 2021 study of
   about 2,000 audits found that its automated testing covered 57% of
   accessibility issues on average ([Deque](https://www.deque.com/blog/automated-testing-study-identifies-57-percent-of-digital-accessibility-issues/)).
@@ -41,10 +45,13 @@ threshold.
   shortlist of 14 tests for a quick audit.
 - **Draco** ([uwdata.github.io/draco](https://uwdata.github.io/draco/)):
   visualization design knowledge written as constraints over Vega-Lite
-  specifications; a hard-constraint violation marks a chart that misleads.
+  specifications. A hard-constraint violation means the chart breaks one of
+  the model's validity or design rules; call a chart misleading only with
+  evidence of what a reader would misjudge.
 - **VLAT and Mini-VLAT** ([arXiv:2304.07905](https://arxiv.org/abs/2304.07905)):
-  chart literacy questions such as value lookup, comparison, and trend. A
-  reader who cannot answer them from the chart reveals a chart problem.
+  measures a reader's chart literacy with tasks such as value lookup,
+  comparison, and trend. Use those task types as comprehension probes; a
+  wrong answer is evidence to investigate, not proof of a chart defect.
 
 ## Review questions
 
@@ -54,8 +61,9 @@ user impact.
 
 ### Hierarchy and copy
 
-1. Is the main action the most visually prominent element on the screen? Name
-   it. (Apple HIG hierarchy)
+1. Within each decision group, is the primary action the most prominent
+   control, and does the screen's hierarchy follow the user's task? Name the
+   action and the focal element. (Apple HIG hierarchy, owning design system)
 2. Does only one element compete for first attention? (UX laws: Von Restorff)
 3. Do labels and messages use the user's words rather than system terms?
    (Nielsen 2)
@@ -74,8 +82,9 @@ user impact.
 
 ### Forms, errors, and states
 
-9. Does every field have a visible label above it that stays when the user
-   types? (GOV.UK, USWDS)
+9. Does every field have a visible label that stays when the user types,
+   placed as the pattern for that control places it: above text inputs and
+   selects, beside checkboxes and radios? (GOV.UK, USWDS)
 10. Does each error say what went wrong and how to fix it, next to the field?
     (Nielsen 9, GOV.UK)
 11. Do empty, error, and success states exist and point to a next step?
@@ -85,13 +94,17 @@ user impact.
 
 ### Accessibility
 
-13. Does all text and every control boundary meet the WCAG contrast
-    thresholds in both themes? (WCAG 1.4.3, 1.4.11)
+13. Do text and the visual information needed to identify each control and
+    its state meet the WCAG contrast thresholds in both themes, apart from
+    the documented exceptions? (WCAG 1.4.3, 1.4.11)
 14. Is keyboard focus visible on every interactive element and never hidden?
     (WCAG 2.4.7, 2.4.11)
-15. Are targets at least 24 by 24 CSS pixels, or spaced to match? (WCAG 2.5.8)
-16. Does the layout work at 375px without sideways scrolling, and with text
-    at 200%? (WCAG 1.4.10, 1.4.4)
+15. Is each pointer target at least 24 by 24 CSS pixels, or does it pass the
+    24px circle spacing test, apart from the documented exceptions?
+    (WCAG 2.5.8)
+16. Does the content reflow at 320 CSS pixels wide without sideways
+    scrolling, apart from content that needs two dimensions, and work with
+    text at 200%? (WCAG 1.4.10, 1.4.4)
 17. Is every state or series told apart by more than color? (WCAG 1.4.1)
 18. Does motion stop or reduce when reduced motion is on? (Apple labels,
     WCAG 2.3.3)

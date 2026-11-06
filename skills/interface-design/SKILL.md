@@ -19,8 +19,8 @@ accessibility.
    look. Keep its palette, type, and layout concepts; a new brief does not
    earn a new visual identity.
 3. Cover the whole path: loading, empty, error, and success states; keyboard
-   and touch; 375px and desktop widths; light and dark themes where
-   supported; reduced motion.
+   and touch; 320px for reflow, 375px, and desktop widths; light and dark
+   themes where supported; reduced motion.
 
 ## Routes
 

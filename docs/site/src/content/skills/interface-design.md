@@ -34,20 +34,17 @@ climb can use this skill's questions as the judges' criteria.
 
 ## How it works
 
-The agent first names the main user, their task, and the constraints, then
-reads the project's design system. It covers the whole path: loading, empty,
-error, and success states, keyboard and touch, phone and desktop widths,
-light and dark themes, and reduced motion.
+Reviews are concrete. Each finding points at a real element on the screen and
+the rule it breaks, so you can see the problem and check the fix, rather
+than read a list of general advice. Problems that block people, such as
+missing focus or low contrast, come before matters of taste.
 
-For a review, it answers each question that applies with yes or no and quotes
-the element that decides it, for example "Is the main action the most visually
-prominent element on the screen? Name it." When rules conflict, safety and
-accessibility come first, then what the user is trying to do, then the design
-system, then the laws and craft rules.
+Your design system stays in charge of how things look. The skill does not
+restyle a project to match a generic idea of good design.
 
 Automated tools find only part of the problem. Deque's study found its
-automated testing covered 57% of accessibility issues. So a check names what
-it could not test instead of calling the screen accessible.
+automated testing covered 57% of accessibility issues, so a check tells you
+what it could not test instead of calling the screen accessible.
 
 ## What you get
 
