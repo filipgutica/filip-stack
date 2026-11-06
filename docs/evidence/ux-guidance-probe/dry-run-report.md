@@ -47,6 +47,7 @@ Each entry names its owning boundary. No production export, flag, or hook exists
 | `calibrate.mjs:definition-list` | A visible entry in other list markup, here `dl`/`dt`/`dd`, counts as listed on create and on retry. | The other builds all use `ul`/`li`. The `5a4551d` row-or-list-item task rejected both cases. |
 | `calibrate.mjs:masked-list` | A list that shows a masked secret ending in the last four counts as listed; the masked copy does not replace the full secret. | `reference2` shows no masked copy. The `ff02633` task took the masked match and rejected both cases. |
 | `calibrate.mjs:secret-panel` | A secret panel that shows the name and last four beside the full secret in a field is not a list entry, on create or on retry. | `message-list` names the key without the last four. The `ff02633` task accepted both cases. |
+| `calibrate.mjs:paragraph-panel` | A secret panel that repeats the name and last four in its own paragraph is not a list entry, on create or on retry. | `secret-panel` puts that text directly in the panel. The `21d7979` task accepted both cases. |
 | `calibrate.mjs:stale-alert` | An unchanged hidden alert cannot satisfy failure reporting. | Existing live-region text matching ignored visibility and freshness. Original task accepted it. |
 | `calibrate.mjs:no-retry` | An enabled button whose second submission does nothing fails recovery. | The old task never retried. Original task accepted it. |
 | `calibrate.mjs:delayed-overflow` | The actual frozen scanner must see seeded rows before scanning populated overflow. | Static clean/planted review pages cannot expose asynchronous scan timing. Unadapted exit 0; adapted exit 1 with overflow. |
@@ -60,7 +61,7 @@ Each entry names its owning boundary. No production export, flag, or hook exists
 | `selftest/R3-empty.txt` | Same canonical `R1-empty.txt` proof; both removed files had identical inputs and expectations. |
 | `ui-modes:no horizontal overflow`, all 4 modes | Drop the overlapping counted gate. `ui-check` retains ordinary reflow at 320/375/1280 in light/dark, empty/populated. Mode-specific overflow has no independent calibrated risk and is diagnostic only. |
 
-The local build calibration runs 20 outcomes: ten valid tasks (two references, `definition-list`, and `masked-list`), nine targeted adversarial tasks, and one delayed populated scan. All match. Each adversarial case fails with the original task/scanner and passes with the repair. References use custom field errors and native validation respectively; one shows the secret in a readonly input. Cross-product mutant checks were omitted because each defect has one task owner.
+The local build calibration runs 22 outcomes: ten valid tasks (two references, `definition-list`, and `masked-list`), eleven targeted adversarial tasks, and one delayed populated scan. Create and retry tasks start with two seeded keys. All match. Each adversarial case fails with the original task/scanner and passes with the repair. References use custom field errors and native validation respectively; one shows the secret in a readonly input. Cross-product mutant checks were omitted because each defect has one task owner.
 
 ## Guidance and isolation
 
@@ -104,7 +105,7 @@ The rerun completed prepare → fake attempts → validate → tally → gates �
 | Blind bundles | 2 pairs; 0 residual markers. Head vs vanilla has 30 screenshots and 3 source files. |
 | Judges | 2 Opus replies through the fake model; 4 Codex requests captured and refused locally, followed by synthetic replies solely for scoring. |
 | Final score | `not supported; positive review gain waived against saturated controls; no-harm retained`. No void pair or short review arm. This is a synthetic pipeline result, not a guidance verdict. |
-| Frozen files | All 19 scorer-file hashes and 150 local calibration-file hashes verify; original arm bundle hashes still match. |
+| Frozen files | All 19 scorer-file hashes and 157 local calibration-file hashes verify; original arm bundle hashes still match. |
 | Repository checks | `pnpm install --frozen-lockfile`, `pnpm check`, and `git diff --check` pass. Fallow 3.18.0 audit passes; its configured scope excludes `docs/evidence`, so it adds no scorer correctness evidence. Its `doctor` subcommand is unavailable in this installed version. |
 
 One preliminary free rerun was stopped before completion while readiness and task timeout handling were finalized. The results above come from the subsequent complete rerun. All endpoints in both reruns were local; no paid call occurred.

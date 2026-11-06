@@ -31,20 +31,25 @@ const shownSecret = (page) => page.evaluate(() => {
   return found.sort((x, y) => y.length - x.length)[0] ?? null
 })
 const secretShown = async (page) => (await shownSecret(page)) !== null
-// The brief lists each key with its name, created date and last four characters. A list entry is any
-// visible element that shows the name and the last four of the shown secret, whatever its markup; a
-// message that only names the key is not one. Elements that hold the full secret, in text or in a
-// field, are the secret panel rather than the list and are skipped.
+// Create tasks start with two seeded keys (api.js). The list is the smallest visible element that shows
+// both seeded names, whatever its markup, so a secret panel or status message cannot stand in for it.
+// The new key is listed when that element shows its name and the last four of the shown secret, as the
+// brief requires every entry to show.
+const SEEDED = '?keys=2'
 const listed = async (page, name) => {
   const secret = await shownSecret(page)
   if (!secret) return false
-  return page.evaluate(({ name, secret }) => [...document.body.querySelectorAll('*')].some((el) => {
-    const text = el.innerText ?? ''
-    const values = [...el.querySelectorAll('input, textarea')].map((field) => field.value)
-    return text.includes(name) && text.includes(secret.slice(-4)) &&
-      ![text, ...values].some((value) => value.includes(secret)) &&
-      el.checkVisibility() && el.getBoundingClientRect().width > 0
-  }), { name, secret })
+  return page.evaluate(({ name, last4, seeded }) => {
+    const visible = (el) => el.checkVisibility() && el.getBoundingClientRect().width > 0
+    const deepest = (text) => [...document.body.querySelectorAll('*')]
+      .filter((el) => visible(el) && (el.innerText ?? '').includes(text))
+      .find((el) => ![...el.children].some((child) => visible(child) && (child.innerText ?? '').includes(text)))
+    const [first, second] = seeded.map(deepest)
+    if (!first || !second) return false
+    let list = first
+    while (!list.contains(second)) list = list.parentElement
+    return visible(list) && list.innerText.includes(name) && list.innerText.includes(last4)
+  }, { name, last4: secret.slice(-4), seeded: ['Production deploy', 'Staging CI'] })
 }
 const FAILURE = /unavailable|error|fail|couldn.t|could not|try again|went wrong|problem/i
 const failureLines = (page) => page.evaluate((source) =>
@@ -65,6 +70,7 @@ export default [
   {
     name: 'creating a key shows its secret and lists it',
     run: async (page) => {
+      await page.goto(new URL(SEEDED, page.url()).href)
       await field(page).fill('Deploy bot', { timeout: TIMEOUT })
       await button(page).click()
       await waitFor(() => secretShown(page), 'the visible new secret')
@@ -74,7 +80,7 @@ export default [
   {
     name: 'a failed create keeps the name and a second submission succeeds',
     run: async (page) => {
-      const url = new URL(page.url())
+      const url = new URL(SEEDED, page.url())
       url.searchParams.set('fail', 'once')
       await page.goto(url.href)
       await field(page).fill('CI runner', { timeout: TIMEOUT })
