@@ -70,7 +70,8 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
   },
   "final": {
     "votes": [{ "member": "Astra", "overall": "final", "criteria": { "C1": "final" }, "reason": "The judge's overall reason." }],
-    "notes": ["Optional: how the start and final evidence were built."]
+    "notes": ["Optional: how the start and final evidence were built."],
+    "scorecard": [{ "item": "Settings, mobile dark", "start": 7.3, "final": 8.7, "issue": "The Save button sits below the first viewport." }]
   },
   "result": {
     "summary": "What the climb changed, in one or two sentences.",
@@ -101,6 +102,7 @@ Field notes:
 - `attention`: optional. Add an item when the result needs a second look, such as a change made after the climb or a fact the gates could not check. The builder adds an item when the final check does not favor the final version.
 - `final`: the final check's judge votes. Votes are `final`, `same`, or `start`. Optional: leave it out when no round was accepted or under `score`, where `score.final` against `score.start` is the final check.
 - `baseline`: required for a guidance climb, otherwise left out. Votes are `final`, `same`, or `baseline`; leave `votes` out under `score`. `score` is the baseline's score; leave it out under `judges`.
+- `final.scorecard`: optional, for UI and guidance climbs. One entry per screen and state, or per task. `start` and `final` are the mean 0–10 scores across judges, and `issue` is the issue judges cite most for the final version.
 - `memberCalls`: every propose and judge call, including the final check and retries.
 
 ## Build the reports

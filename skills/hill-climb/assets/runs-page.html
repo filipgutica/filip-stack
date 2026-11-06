@@ -374,6 +374,14 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     return el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
   };
 
+  // Each screen or task with its mean 0-10 score before and after the climb, and what is left to fix.
+  const scorecard = (rows) => el('div', { class: 'block' }, el('div', { class: 'label', text: 'Scorecard' }),
+    el('div', { class: 'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, el('th', { text: 'Screen or task' }), el('th', { class: 'n', text: 'Start' }), el('th', { class: 'n', text: 'Final' }), el('th', { text: 'Biggest remaining issue' }))),
+      el('tbody', {}, rows.map((s) => el('tr', {},
+        el('td', { class: 'member', text: s.item }), el('td', { class: 'n num', text: s.start.toFixed(1) }),
+        el('td', { class: 'n num', text: s.final.toFixed(1) }), el('td', { class: 'reason' }, rich(s.issue))))))));
+
   const roundSection = (run, r) => {
     const o = overall(r.votes);
     const parts = [
@@ -433,7 +441,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
       run.final ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
         el('p', { class: 'muted', text: 'After the last round, each judge compared the pull request as it was before the climb with the final version, without knowing which was which.' }),
         voteTable(run, run.final.votes),
-        run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null) : null,
+        run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null,
+        run.final.scorecard?.length ? scorecard(run.final.scorecard) : null) : null,
       // A guidance climb also compares its final version with no guidance at all.
       run.baseline ? el('section', {}, el('h3', { text: 'Final against no guidance' }),
         el('p', { class: 'muted' }, rich(run.baseline.summary)),

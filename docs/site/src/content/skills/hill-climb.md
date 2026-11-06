@@ -71,7 +71,9 @@ retries. The exact rules are in
   the thread already allowed commits.
 - A report with the climb card, each round's edit and check results, every
   judge's vote and reason or each score, and the start-against-final
-  comparison.
+  comparison. For UI and guidance climbs, it adds a scorecard: each screen
+  or task scored from 0 to 10 before and after, with its biggest remaining
+  issue.
 - Before and after evidence, with paired screenshots for UI, and the climb's
   diff stat.
 - Follow-ups it skipped for size or scope, and lessons the original work

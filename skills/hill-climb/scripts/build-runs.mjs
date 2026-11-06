@@ -106,6 +106,10 @@ const report = (run) => {
   if (fc) {
     lines.push('## Start vs final', '', `Overall votes: ${fc.final} final, ${fc.same} same, ${fc.start} start.`, '', ...voteTable(run, run.final.votes), '')
     if (run.final.notes?.length) lines.push(...run.final.notes.map((n) => `- ${n}`), '')
+    if (run.final.scorecard?.length) {
+      lines.push('### Scorecard', '', '| Screen or task | Start | Final | Biggest remaining issue |', '| --- | --- | --- | --- |')
+      lines.push(...run.final.scorecard.map((s) => `| ${s.item} | ${s.start.toFixed(1)} | ${s.final.toFixed(1)} | ${s.issue} |`), '')
+    }
   }
   if (run.baseline) {
     lines.push('## Final vs no guidance', '', run.baseline.summary, '')

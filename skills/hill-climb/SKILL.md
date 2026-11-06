@@ -294,11 +294,13 @@ A and B are two versions of the same change.
 Compare them against each criterion in criteria.md, then overall.
 Answer A, B, or SAME (no meaningful difference), with one reason each.
 Then name one improvement you would make next to the version you prefer.
+<Scorecard: Rate each screen (or task) in A and in B from 0 to 10, and name its biggest remaining issue. 10: nothing to fix. 8: minor polish. 6: a user would notice a problem. 4: a task is harder than it should be. 2: a task fails.>
 If you could not open a bundle file, list it under UNREAD.
 Reply:
 C1 <criterion>: A|B|SAME - <reason>
 OVERALL: A|B|SAME - <reason>
 NEXT: <one improvement>
+<Scorecard: SCORE <screen or task>: A <0-10> - <issue> | B <0-10> - <issue>>
 UNREAD: <files, or none>
 ```
 
@@ -337,6 +339,12 @@ brief as in a round, with `start/` as one version, and map each vote back to
 `final`, `same`, or `start`. Change no files. When a strict majority prefers the start, say so
 first in the report and recommend dropping the climb.
 
+A UI or guidance climb's final check also builds a scorecard. Put every
+screen's screenshots, or every task's outputs, in `A/` and `B/`, not only
+those that differ, and add the brief's scorecard lines. For each screen or
+task, record the mean score of each version across judges and the issue
+judges cite most for the final version.
+
 For `score` and `both`, also compare the start's score with the final
 score; under `score`, this comparison is the whole final check. When the
 final score does not beat the start's by the smallest gain that counts, say
@@ -354,7 +362,9 @@ The final reply contains:
   judge's preference attributed to the model that ran, and the decision.
 - Tests the climb changed because the Behavior field let an interaction
   change, listed for the user to check.
-- The final check's votes, attributed to the model that ran.
+- The final check's votes, attributed to the model that ran, and for UI or
+  guidance climbs the scorecard: each screen or task with its start and
+  final scores and its biggest remaining issue.
 - Before and after evidence. For UI, paired screenshots.
 - The climb's diff stat against the starting incumbent.
 - Follow-ups declined for size or scope.

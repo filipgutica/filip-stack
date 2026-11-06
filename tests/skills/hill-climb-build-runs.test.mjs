@@ -98,3 +98,17 @@ test('reports a guidance climb against no guidance, even with no accepted round'
   const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
   assert.deepEqual(built.attention, ['Most judges did not prefer the final version to no guidance.'])
 })
+
+test('reports the final scorecard with start and final scores per screen', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const ui = {
+    ...record, id: 'run-ui', kind: 'ui',
+    final: { votes: [{ ...vote, overall: 'final', criteria: { C1: 'final' } }], scorecard: [{ item: 'Today, mobile', start: 7.25, final: 8.8, issue: 'Cards push the session below the fold.' }] },
+  }
+  mkdirSync(join(runsDir, ui.id), { recursive: true })
+  writeFileSync(join(runsDir, ui.id, 'run.json'), JSON.stringify(ui))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  assert.match(readFileSync(join(runsDir, ui.id, 'report.md'), 'utf8'), /\| Today, mobile \| 7\.3 \| 8\.8 \| Cards push the session below the fold\. \|/)
+})
