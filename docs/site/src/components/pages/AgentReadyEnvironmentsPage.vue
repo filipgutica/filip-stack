@@ -23,10 +23,10 @@ const contents = [
   { id: "tell-check-bound", label: "Three jobs: tell, check, bound" },
   { id: "placement-advisory-or-enforced", label: "Advisory or enforced" },
   { id: "durable-and-decaying-guidance", label: "Durable and decaying guidance" },
-  { id: "where-to-start", label: "Where to start" },
   { id: "the-pillars", label: "The eight pillars" },
   { id: "audit-procedure", label: "Audit a repository" },
   { id: "worked-example", label: "Worked example: this repository" },
+  { id: "where-to-start", label: "Where to start" },
   { id: "maintenance", label: "Keeping guidance current" },
 ];
 const scorecard = [
@@ -119,17 +119,16 @@ onMounted(() => {
   <section class="intro" aria-labelledby="agent-ready-environments">
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
-      An agent-ready environment is a repository set up so that a coding agent
-      can check its own work. Without one, the agent stops when its work looks
-      done, you find the problems in review, and you become its test suite.
-      This lesson shows how to set up a repository so that looking done and
-      being done are the same thing, and how to check whether yours is there
-      yet.
+      An agent-ready environment lets a coding agent check its own work in
+      the repository. Without one, the agent stops when its work looks done,
+      you find the problems in review, and you become its test suite. This
+      lesson is for engineers who want to understand what makes a repository
+      checkable and learn to audit their own. You will score one pillar by
+      hand before using the companion skill for a full audit.
     </p>
     <p>
-      To start now, go to <a href="#where-to-start">Where to start</a>. It has
-      the command that installs the audit skill, and the first steps for a new
-      project.
+      <a href="#where-to-start">Where to start</a> has the audit skill's
+      install command and the first steps for a new project.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -159,16 +158,15 @@ onMounted(() => {
     <h2 id="why-agents-stop-early">Why agents stop early</h2>
     <div class="prose">
       <p>
-        Ask a coding agent for a feature and it edits files, runs whatever it
-        can, and tells you it is finished. It stops when the work
-        <em>looks</em> done. It cannot judge
-        anything it has no way to see.
+        When you ask a coding agent for a feature, it edits files and runs
+        the checks it can. It stops when the work <em>looks</em> done.
+        It cannot judge behavior it cannot observe.
       </p>
       <p>
-        The environment decides whether “looks done” means “is done”. When the
-        repository has a type-check command and tests that cover the behavior,
-        the agent runs them, sees the failures, and fixes them. When it can
-        start the app with realistic data, it can also open the page and look.
+        The repository's checks let the agent test whether the work is done.
+        With a type-check command and tests that cover the behavior, the agent
+        can find and fix failures. With a running app and realistic data, it
+        can also inspect the page.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="1">
@@ -184,41 +182,41 @@ onMounted(() => {
     <h2 id="tell-check-bound">Three jobs: tell, check, bound</h2>
     <div class="prose">
       <p>
-        Each part of an agent-ready environment does one of three jobs. The
-        work falls into eight areas, called pillars, and each pillar does one
-        of these jobs.
+        An agent-ready environment has eight areas, called pillars. Each
+        pillar does one of three jobs.
       </p>
     </div>
     <dl class="jobs">
       <div>
         <dt>Tell</dt>
         <dd>
-          Give the agent what it cannot see in the repository. For example,
-          the command that runs every check, or why an old helper must not be
-          copied.
+          Give the agent information it cannot see in the repository, such as
+          why it must not copy an old helper. Also give it the command that
+          runs every check.
         </dd>
       </div>
       <div>
         <dt>Check</dt>
         <dd>
-          Return red or green on the work. For example, a type checker, a test,
-          or a health check after setup.
+          Return a pass or fail result through a type checker, a test, or a
+          health check after setup.
         </dd>
       </div>
       <div>
         <dt>Bound</dt>
         <dd>
-          Limit what the agent can touch, and name who signs off. For example,
-          a deny rule on <code>.env</code> files, or a person who authorizes
-          the merge.
+          Limit what the agent can access or change, and name who approves
+          the result. For example, deny access to <code>.env</code> files or
+          require a person's authorization to merge.
         </dd>
       </div>
     </dl>
     <div class="prose">
       <p>
-        In Figure 1, the check command, the tests, and the seeded app do the
-        check job, and the deny rule bounds. None of the four tells. Telling
-        helps the agent aim, but it cannot show the agent that it missed.
+        In Figure 1, the check command, tests, and seeded app check the work.
+        The deny rule limits the agent's actions. None of these four does the
+        tell job. Instructions guide the agent's work but cannot verify the
+        result.
       </p>
     </div>
   </section>
@@ -227,13 +225,13 @@ onMounted(() => {
     <h2 id="placement-advisory-or-enforced">Advisory or enforced</h2>
     <div class="prose">
       <p>
-        A rule reaches the agent on one of two channels. <strong>Advisory</strong> guidance is
-        text the model reads: the prompt, <code>AGENTS.md</code> or
-        <code>CLAUDE.md</code>, and skills. The agent weighs it and may decide
-        it does not apply. <strong>Enforced</strong> guidance is a mechanism:
-        hooks, deny rules, the sandbox, the type checker, linters, and required
-        CI checks. Each mechanism runs at an action boundary, such as a tool
-        call, a commit, or a merge. It runs whatever the agent decided.
+        A rule reaches the agent on one of two channels. <strong>Advisory</strong>
+        guidance is text in the prompt, <code>AGENTS.md</code> or
+        <code>CLAUDE.md</code>, and skills. The agent reads it and may decide
+        it does not apply. <strong>Enforced</strong> guidance uses hooks,
+        deny rules, the sandbox, the type checker, linters, or required CI
+        checks. Each mechanism runs at an action boundary, such as a tool
+        call, commit, or merge, regardless of the agent's decision.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="2">
@@ -256,34 +254,33 @@ onMounted(() => {
         </li>
       </ol>
       <template #caption>
-        Advisory guidance feeds the agent's decision, and the agent can set it
-        aside. Enforced checks sit between the decision and the action, so
-        they run either way.
+        The agent can disregard advisory guidance. Enforced checks run
+        between its decision and the action, regardless of that decision.
       </template>
     </UiFigure>
     <div class="prose">
       <p>Put each rule on the channel that matches its exceptions.</p>
       <ul>
         <li>
-          A rule with no exceptions is enforced. When documentation falls
-          short, the rule becomes code, as OpenAI's
+          Enforce rules that have no exceptions. When documentation does not
+          make the agent follow a rule, implement it in code, as OpenAI's
           <a :href="sources.harnessEngineering.href">harness engineering article</a>
           describes.
         </li>
         <li>
-          When the agent keeps missing an advisory line, there are two possible
-          causes. If the line is a rule that cannot bend, move it into a hook
-          or a deny rule. If the file has grown long enough to bury it, shorten
-          the file. Adding emphasis fixes neither cause.
+          When the agent repeatedly misses an advisory line, check for two
+          causes. If the rule has no exceptions, enforce it with a hook or
+          deny rule. If the file's length makes the line hard to find, shorten
+          the file. Emphasis fixes neither cause.
         </li>
         <li>
           Keep preferences advisory. A large enforced set is a sign that
-          preferences have leaked into it. Every hook sometimes fires when it
-          should not, and someone has to maintain it.
+          preferences have leaked into it. Hooks sometimes block valid
+          actions, and someone must maintain them.
         </li>
         <li>
-          Write enforced checks for the agent to read. An error message that
-          states the fix lets the agent repair its own work.
+          Write error messages that tell the agent how to fix the failure,
+          so it can repair its own work.
         </li>
       </ul>
     </div>
@@ -293,13 +290,13 @@ onMounted(() => {
     <h2 id="durable-and-decaying-guidance">Durable and decaying guidance</h2>
     <div class="prose">
       <p>
-        Some guidance makes up for something the model cannot yet do well.
-        Other guidance gives the model something it could never get by itself.
-        Vendors now separate the two:
+        Some guidance compensates for model weaknesses. Other guidance
+        provides information or tools the model cannot get by itself. Vendors
+        now separate the two:
         <a :href="sources.claudeCodeBestPractices.href">Anthropic's Claude Code best practices</a>
-        include a list called “What you can stop doing”. The first kind is
-        decaying guidance: it loses value as models improve. The second kind
-        is durable, so invest there.
+        include “What you can stop doing”. The first kind is decaying
+        guidance: it loses value as models improve. The second kind is
+        durable guidance. Invest in that kind.
       </p>
     </div>
     <div class="lesson-table">
@@ -336,53 +333,20 @@ onMounted(() => {
     </div>
     <div class="prose">
       <p>
-        A reproducible environment (pillar 6) is the most durable investment,
-        and the static and test gates that make the work checkable come next.
-        Documentation loses value as models read code better.
+        The skill ranks a reproducible environment (pillar 6) as the most
+        durable investment. Static and test gates come next because they
+        make the work checkable. Documentation loses value as models get
+        better at reading code.
       </p>
     </div>
-  </section>
-
-  <section aria-labelledby="where-to-start">
-    <h2 id="where-to-start">Where to start</h2>
-    <div class="prose">
-      <p>
-        For an existing repository, start with an audit. Install the companion
-        skill, then ask your agent to audit the repository for agent
-        readiness. <a href="#audit-procedure">Audit a repository</a> explains
-        what it checks and what the report contains.
-      </p>
-    </div>
-    <UiCodeBlock
-      :code="install"
-      language="bash"
-      variant="compact"
-      :copyable="enhanced"
-      :wrap="true"
-    />
-    <h3 id="new-project">New project</h3>
-    <div class="prose">
-      <p>
-        Add the gates before you write code, while they cost the least. In
-        this order:
-      </p>
-    </div>
-    <ol class="fg-site-steps">
-      <li>Pillar 6: one command for setup, run, and teardown, with a seed script and a health check, proven inside the agent's sandbox.</li>
-      <li>Pillars 2 and 3: strict types, lint, dead-code and boundary tools, and a single-file test command, behind one <code>check</code> command that CI runs and requires.</li>
-      <li>Pillar 7: deny rules and sandbox limits for every “never” rule.</li>
-      <li>Pillar 4: a short <code>AGENTS.md</code> with those commands. Add a line only after you have corrected the agent twice.</li>
-      <li>Pillars 1 and 5 grow with the code. Record each decision when you make it, and add review angles as risk appears.</li>
-    </ol>
   </section>
 
   <section aria-labelledby="the-pillars">
     <h2 id="the-pillars">The eight pillars</h2>
     <div class="prose">
       <p>
-        You can audit each pillar on its own. Each pillar has one job: tell,
-        check, or bound. It also has an audit check, an observable test shown
-        with the pillar.
+        You can audit each pillar on its own. Each has a job (tell, check,
+        or bound) and an observable audit check.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="3">
@@ -410,21 +374,21 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Agents learn the conventions by reading the code, and they copy what
-        they find, including patterns the team is moving away from. When there is one way to do each job,
-        the nearest example is the right example.
+        Agents learn conventions from the code and copy the patterns they
+        find, including ones the team is replacing. With one pattern for each
+        job, the nearest example is the right one to copy.
       </p>
       <template #check>
-        For three recent features, each decision they touch, such as a
-        validation rule, a permission check, or a state transition, is made in
-        one place. Duplication and boundary tools pass.
+        In three recent features, each decision is made in one place.
+        Decisions include validation rules, permission checks, and state
+        transitions. Duplication and boundary tools pass.
       </template>
       <template #good>
         <ul>
-          <li>Each concept has one owning module. Others call it rather than reimplement it.</li>
+          <li>Each concept has one owning module. Other modules call it instead of implementing the same concept again.</li>
           <li>Dependency direction is declared and enforced, for example with ESLint boundary rules, dependency-cruiser, or Fallow in TypeScript, import-linter in Python, <code>internal/</code> packages in Go, or ArchUnit on the JVM.</li>
           <li>Data enters at one validated boundary and flows one way through named layers.</li>
-          <li>Legacy areas are marked “do not copy”, and a lint rule that bans the old import enforces it where possible.</li>
+          <li>Mark legacy areas “do not copy”. Where possible, enforce this with a lint rule that bans the old import.</li>
         </ul>
       </template>
     </PillarSection>
@@ -434,11 +398,11 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        A build exit code and a linter are checks the agent can run and read.
-        The most useful line in an instruction file is the command that runs
-        them. With a <code>Stop</code> hook, running the command becomes a
-        condition of finishing instead of a request. Codex guidance also asks
-        for a “done when” condition and the relevant lint, format, and type
+        The agent can read a build's exit code and a linter's results.
+        The command that runs these checks is the most useful line in an
+        instruction file. A <code>Stop</code> hook makes running the command
+        a condition of finishing instead of a request. Codex guidance also
+        asks for completion criteria and the relevant lint, format, and type
         checks.
       </p>
       <template #check>
@@ -449,7 +413,7 @@ onMounted(() => {
         <ul>
           <li>Strict typing: TypeScript <code>strict</code>, mypy or Pyright strict, <code>go vet</code> with staticcheck, Clippy with warnings denied.</li>
           <li>Lint, dead code and unused dependencies, complexity limits, and duplication checks.</li>
-          <li>One <code>check</code> command runs locally and in CI with the same configuration, with a changed-files mode to keep it fast.</li>
+          <li>One <code>check</code> command runs locally and in CI with the same configuration. A changed-files mode keeps it fast.</li>
           <li>Warnings fail the build or do not exist.</li>
           <li>Each suppression carries a reason, and the total is tracked.</li>
           <li>Error messages say how to fix the problem.</li>
@@ -462,11 +426,10 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Tests are the main red-or-green check.
-        Agents tend to call a feature complete after unit tests or a
-        <code>curl</code> call, and they catch more bugs when they test end to
-        end as a user would. The agent runs and trusts every test, so a test
-        that cannot fail gives it a false green.
+        Tests are the main pass-or-fail check. Agents tend to call a feature
+        complete after unit tests or a <code>curl</code> call. They catch more
+        bugs when they test end to end as a user would. The agent runs and
+        trusts every test, so a test that cannot fail gives false confidence.
       </p>
       <template #check>
         A single test file runs with one command. A sample of tests each maps
@@ -474,7 +437,7 @@ onMounted(() => {
       </template>
       <template #good>
         <ul>
-          <li>Each layer owns a different risk: unit tests for pure logic, component tests for one unit's public contract, integration or contract tests for boundaries with real dependencies, and a few end-to-end user journeys.</li>
+          <li>Each layer owns a different risk. Unit tests check pure logic. Component tests check one unit's public contract. Integration or contract tests check boundaries with real dependencies. A few end-to-end tests check user journeys.</li>
           <li>Each contract has one primary test at the strongest boundary that reaches it.</li>
           <li>A regression test fails on the code before the fix.</li>
           <li>Tests are fast and deterministic, and coverage is measured on changed lines.</li>
@@ -489,21 +452,19 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        Instruction files load into every session, so every line takes a
-        little attention on every task. Keep only the lines that earn that
-        cost, and load the rest when a task needs it. To decide whether a line
-        earns its place, ask two questions:
+        Instruction files load into every session, so each line uses the
+        agent's attention on every task. Keep the file short and load
+        task-specific detail only when needed. For each line, ask two questions:
       </p>
       <ol>
         <li>Could the agent find this by reading the code?</li>
         <li>Would it actually go and look?</li>
       </ol>
       <p>
-        If both answers are yes, delete the line. The verification commands
-        are the exception. <code>package.json</code> holds them, but they are
-        the most useful lines, so keep them. Judge global behavior rules,
-        which no repository can show, with the
-        <a href="#maintenance">decay test</a> instead.
+        If both answers are yes, delete the line. Keep verification commands
+        even though <code>package.json</code> contains them: they are the most
+        useful lines. For global behavior rules that no repository can show,
+        use the <a href="#maintenance">decay test</a>.
       </p>
       <template #check>
         Every always-loaded line passes the two-question test or the decay
@@ -511,12 +472,12 @@ onMounted(() => {
       </template>
       <template #good>
         <ul>
-          <li>The always-loaded file holds the commands (install, single test, typecheck, lint, run the app), misleading places in the code, decisions the code does not show, and anything corrected twice.</li>
+          <li>In the file that always loads, keep commands for install, single test, typecheck, lint, and running the app. Describe misleading parts of the code, decisions the code does not show, and anything corrected twice.</li>
           <li>Repeated procedures live in skills, which load only when a task needs them.</li>
           <li>Decision records explain why. A glossary maps domain terms to code names where they differ.</li>
           <li>CI runs the documented commands and checks the links.</li>
           <li>No dated advice in the body. Version requirements that are still true stay.</li>
-          <li>Layout is left out, because it is the easiest thing to discover and the quickest to go stale. A short pointer to an unusual layout is fine.</li>
+          <li>Leave out layout descriptions: agents can find the layout easily, and descriptions become outdated quickly. A short pointer to an unusual layout is fine.</li>
         </ul>
       </template>
     </PillarSection>
@@ -526,11 +487,11 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        A reviewer in a fresh context never saw the reasoning that produced
-        the code, so that reasoning cannot sway it. Read-only tools make sure
-        it cannot edit. A reviewer asked to find problems always finds some.
-        Fixing every finding adds layers and tests for impossible cases, so
-        the review prompt should say what to skip.
+        A reviewer in a fresh context has not seen the author's reasoning,
+        so that reasoning cannot influence its review. Read-only tools prevent
+        edits. A reviewer asked to find problems always finds some. Fixing
+        every finding adds abstraction layers and tests for impossible cases.
+        State what the reviewer should skip in the review prompt.
       </p>
       <template #check>
         Each review angle has a trigger, runs read-only in a fresh context, and
@@ -539,8 +500,8 @@ onMounted(() => {
       <template #good>
         <ul>
           <li>Leave anything a tool can check to a gate (pillar 2).</li>
-          <li>Contract adherence, the diff against the spec or ticket, runs on every change.</li>
-          <li>Other angles run when the diff carries their risk: simplicity and reuse for a new abstraction or dependency, test value when tests change, security for authentication, input, secrets, or permissions, performance for hot paths and unbounded loops, coding standards for rules no linter can express.</li>
+          <li>On every change, check that the diff meets the spec or ticket.</li>
+          <li>Run other review angles when the diff carries their risks. Check simplicity and reuse for a new abstraction or dependency. Check test value when tests change. Review security for authentication, input, secrets, or permissions. Review performance for hot paths and unbounded loops. Check coding standards for rules no linter can express.</li>
           <li>The reviewer gets the spec and the diff, not the author's reasoning.</li>
           <li>Each finding is checked against the code before anyone fixes it.</li>
           <li>A person authorizes the merge, either each time or in advance under the scoped authorization in pillar 7.</li>
@@ -553,29 +514,27 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <p>
-        No model can observe an app it cannot start, or inspect states the
-        data does not contain. A worktree is a
-        fresh checkout with no installed dependencies. Installing them by trial
-        and error is slow, and it can fail outright. A failed setup step may
-        not even stop the agent.
+        The agent needs a running app and data that covers the states it must
+        inspect. A fresh worktree has no installed dependencies, and
+        installing them by trial and error is slow and can fail. A setup
+        failure may not stop the agent:
         <a :href="sources.copilotEnvironment.href">GitHub's Copilot documentation</a>
-        says the agent carries on in a partial environment. That is why setup
-        ends with a health check.
+        says it continues in a partial environment. End setup with a health
+        check to detect these failures.
       </p>
       <template #check>
-        A fresh worktree, inside the agent's own sandbox, reaches a seeded,
-        healthy, running app with one command, and two worktrees run at once
-        without collisions.
+        Inside the agent's sandbox, one command starts a seeded, healthy app
+        from a fresh worktree. Two worktrees run at once without collisions.
       </template>
       <template #good>
         <ul>
-          <li>One command takes a clean checkout to a running, seeded app, in the agent's sandbox as well as on a workstation, with isolated ports, databases, and profiles per worktree.</li>
-          <li>Cold setup (from nothing) and warm setup (dependencies already present) are both scripted, and setup ends with a health check that fails loudly.</li>
+          <li>One command starts a running, seeded app from a clean checkout, both in the agent's sandbox and on a workstation. Each worktree has isolated ports, databases, and profiles.</li>
+          <li>Script both cold setup (from nothing) and warm setup (dependencies already present). End setup with a health check that fails loudly.</li>
           <li>A deterministic seed, versioned with the schema, covers the states that matter: empty, error, large, each permission level, each locale. It contains no production personal data.</li>
           <li>The agent can observe the app: browser automation, logs, metrics, and traces from the command line.</li>
-          <li>One teardown command, and a preview environment per pull request for human reviewers.</li>
+          <li>Provide one teardown command and a preview environment for human reviewers on each pull request.</li>
           <li>The recipe lives in a script or a project skill, not a README paragraph.</li>
-          <li>For a repository that ships guidance rather than an app, the environment is a throwaway host home where the guidance applies, plus a harness that runs agents against it.</li>
+          <li>For a repository that ships guidance instead of an app, use a throwaway host home where the guidance applies. Add a harness that runs agents against it.</li>
         </ul>
       </template>
     </PillarSection>
@@ -608,7 +567,7 @@ onMounted(() => {
           <li>Deny rules for secrets and protected paths.</li>
           <li>Worktree or container isolation, and least-privilege tokens.</li>
           <li>Turn or spend caps on unattended runs.</li>
-          <li>A person authorizes merges, deploys, and anything irreversible. They can do it each time, or in advance with a stated scope, an enforced boundary, a run cap, and a named sign-off on the result. Missing authorization is a gap. Running without a repeated approval prompt is not a gap.</li>
+          <li>A person authorizes merges, deploys, and anything irreversible. They can authorize each action or give advance authorization with a stated scope, an enforced boundary, a run cap, and a named sign-off on the result. Missing authorization is a gap. Running without a repeated approval prompt is not a gap.</li>
         </ul>
       </template>
     </PillarSection>
@@ -619,11 +578,11 @@ onMounted(() => {
     >
       <p>
         <a :href="sources.skillAuthoring.href">Anthropic's skill authoring guide</a>
-        recommends this order. First, measure the agent without the guidance.
-        Then write the minimum that closes the gaps you saw, and iterate
-        against that baseline. Test with every model the guidance targets,
-        because what one model needs another finds redundant. Advice that made
-        up for older models becomes overhead.
+        recommends measuring the agent without guidance first. Then write the
+        minimum guidance that addresses the failures you observed. Compare
+        each revision with that baseline. Test with every model the guidance
+        targets: an instruction one model needs may be redundant for another.
+        Guidance that compensated for older models can become unnecessary.
       </p>
       <template #check>
         Each instruction file or skill has evidence that it changes behavior
@@ -633,7 +592,7 @@ onMounted(() => {
         <ul>
           <li>Evaluations compare guidance with no guidance on matched tasks, model, and harness.</li>
           <li>Routing evaluations check that skill descriptions trigger when they should.</li>
-          <li>A periodic pruning pass removes lines the current model already follows by default.</li>
+          <li>Periodically remove instructions the current model already follows by default.</li>
         </ul>
       </template>
     </PillarSection>
@@ -643,50 +602,15 @@ onMounted(() => {
     <h2 id="audit-procedure">Audit a repository</h2>
     <div class="prose">
       <p>
-        An audit tells you which pillars are weak and what to fix first. The
-        companion skill collects the evidence, scores each pillar, and writes
-        the report described below.
-      </p>
-      <p>
-        An audit has three modes, and it uses every mode that applies. The
-        new-project mode is the list under
-        <a href="#where-to-start">Where to start</a>. A repository that ships
-        guidance, such as Filip Stack, needs both the existing-repository and the
-        engineering-guidance modes.
+        An audit turns the pillar checks into a score and a fix order. Learn
+        the scoring rules first, then try one pillar in your own repository.
+        The companion skill uses the same rubric for a full audit.
       </p>
     </div>
-    <UiTabs v-model="mode" :items="modes" label="Audit mode" class="modes">
-      <template #panel="{ value }">
-        <div v-if="value === 'existing'" class="modes__panel">
-            <p class="hint">Measure what is there before you change anything.</p>
-            <ol class="fg-site-steps">
-              <li>Time a fresh worktree to a seeded, running app inside the agent's sandbox. Record cold and warm setup separately, with each manual step.</li>
-              <li>Run every gate on clean <code>main</code>. Record how long each takes and what fails.</li>
-              <li>Count suppressions by kind.</li>
-              <li>Check twenty sample tests and three recent features against pillars 1 and 3.</li>
-              <li>Look for repeated comments in recent human reviews. Treat each repeat as a hypothesis (a missing rule, test, or decision, or a wrong review), and check it.</li>
-              <li>Score every pillar.</li>
-            </ol>
-        </div>
-        <div v-else class="modes__panel">
-            <p class="hint">Check the instruction files, skills, and review gates.</p>
-            <ol class="fg-site-steps">
-              <li>Measure what each host actually loads every session, not only the file sizes. In Claude Code, <code>/context</code> shows it, as the <a :href="sources.claudeCodeBestPractices.href">Claude Code best practices</a> describe.</li>
-              <li>Classify each instruction as durable or decaying, and as advisory or enforced.</li>
-              <li>List every “always” or “never” rule that is only advisory. Each one is in the wrong place, or it is a preference worded too strongly.</li>
-              <li>Find lines that restate the layout, scripts, or config. Keep the verification commands.</li>
-              <li>Find any meaning stated in more than one file.</li>
-              <li>Check that review gates sort their findings and push back on over-fixing.</li>
-              <li>Ask for evaluation evidence. A written policy with no results scores 1. No policy scores 0.</li>
-            </ol>
-        </div>
-      </template>
-    </UiTabs>
     <h3 id="scoring">How a pillar is scored</h3>
     <div class="prose">
       <p>
-        Each pillar scores from 0 to 3, and each level builds on the one below
-        it.
+        Each pillar scores from 0 to 3. Higher scores need stronger evidence.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="4">
@@ -720,9 +644,9 @@ onMounted(() => {
     </UiFigure>
     <div class="prose">
       <p>
-        A pillar gets the highest level that its verified evidence fully
-        meets. An unverified check cannot raise a score. The report lists it
-        under Unverified instead.
+        Give each pillar the highest score for which the verified evidence
+        meets every requirement. List unverified checks under Unverified.
+        They cannot raise the score.
       </p>
     </div>
     <details class="lesson-disclosure">
@@ -731,17 +655,17 @@ onMounted(() => {
         <p>
           The skill applies these rules for you. Its
           <a :href="skill.source">SKILL.md</a> holds the full rubric, and each
-          pillar's reference file holds that pillar's longer checks.
+          pillar's reference file has its detailed checks.
         </p>
         <ul>
-          <li>Levels 2 and 3 depend on the audit check shown with each pillar. The longer checks in each pillar's reference file diagnose the top gap. They decide a level only where that file says so.</li>
-          <li>When a pillar covers several artifacts, such as several instruction files, score the weakest one that applies. If an artifact the audit check needs is missing, the pillar stays below level 2, but that alone does not score it 0.</li>
-          <li>Mark a pillar N/A when it does not apply, give a one-line reason, and leave it out of the total. When it applies only in part, score the parts that apply and name the checks you dropped.</li>
-          <li>For pillar 7, count a rule as enforced when the host or forge reports it active, such as a ruleset read with <code>gh api</code> or the host's effective deny rules. A rule stated only in prose is level 1.</li>
-          <li>A failed fresh setup is scored once, in pillar 6. Other pillars can still reach level 2 on CI results for the exact commit audited, or on a local run with dependencies supplied another way, labelled as such.</li>
+          <li>For levels 2 and 3, the pillar must pass its audit check. Use the detailed reference checks to identify the top gap. They affect the score only where the reference says so.</li>
+          <li>When a pillar covers several artifacts, such as instruction files, score the weakest applicable artifact. If the audit check needs a missing artifact, the pillar stays below level 2. The missing artifact alone does not require a score of 0.</li>
+          <li>Mark a pillar N/A when it does not apply. Give a one-line reason and exclude it from the total. When only part applies, score that part and name the checks you omitted.</li>
+          <li>For pillar 7, count a rule as enforced when the host or forge reports it active. Examples include a ruleset read with <code>gh api</code> or the host's effective deny rules. A rule stated only in prose is level 1.</li>
+          <li>Score a failed fresh setup once, in pillar 6. Other pillars can reach level 2 using CI results for the exact commit audited. They can also use a local run with dependencies supplied another way, labelled as such.</li>
           <li>Required checks, branch rules, and review history need read access to the forge API, such as <code>gh api</code>. Without that access, mark them unverified.</li>
         </ul>
-        <p>Evidence also has a strength. From strongest to weakest:</p>
+        <p>Evidence, from strongest to weakest:</p>
         <ol>
           <li>A local run in a fresh checkout, inside the agent's sandbox. Record the sandbox configuration, so a failure can be traced to the repository or to the auditor's machine.</li>
           <li>CI results on the exact commit audited.</li>
@@ -750,6 +674,70 @@ onMounted(() => {
         </ol>
       </div>
     </details>
+    <h3>Try it: score your static gates</h3>
+    <div class="prose">
+      <p>
+        Use one repository you work in. Your result will be a score for
+        pillar 2, the evidence behind it, and one gap to fix.
+      </p>
+      <ol>
+        <li>Find the command that runs all static gates. Check the instruction file and the scripts it points to.</li>
+        <li>Run it on clean <code>main</code>. Record the commit, command, duration, and result.</li>
+        <li>Check that CI runs the same command with the same configuration. Count suppressions by kind: inline directives, disabled rules, and allowlist entries.</li>
+        <li>Compare your evidence with pillar 2's audit check. Choose the highest score whose requirements you have verified.</li>
+      </ol>
+      <p>
+        With no verified evidence, score 0. A documented command or
+        partly working gate scores 1 if a level 2 requirement remains unmet.
+        Score 2 when one command runs every static gate locally and in CI,
+        clean <code>main</code> is green, and suppressions are counted.
+        Optional CI can support 2. For 3, the check must also block its action,
+        and results must be tracked over at least 20 runs or 30 days.
+      </p>
+      <p>
+        If you cannot read the CI results or required-check settings, list
+        them under Unverified. They cannot raise your score. Write one top
+        gap and a fix: for example, make an optional check required. Its
+        channel is Enforced, because the proposed fix would block merge.
+      </p>
+    </div>
+    <h3>Choose the full audit's modes</h3>
+    <div class="prose">
+      <p>
+        An audit has three modes. Use every mode that applies. The
+        new-project mode is under
+        <a href="#where-to-start">Where to start</a>. A repository that ships
+        guidance, such as Filip Stack, needs both the existing-repository and
+        engineering-guidance modes.
+      </p>
+    </div>
+    <UiTabs v-model="mode" :items="modes" label="Audit mode" class="modes">
+      <template #panel="{ value }">
+        <div v-if="value === 'existing'" class="modes__panel">
+            <p class="hint">Measure what is there before you change anything.</p>
+            <ol class="fg-site-steps">
+              <li>In the agent's sandbox, measure the time from a fresh worktree to a seeded, running app. Record cold and warm setup separately, including each manual step.</li>
+              <li>Run every gate on clean <code>main</code>. Record how long each takes and what fails.</li>
+              <li>Count suppressions by kind.</li>
+              <li>Check twenty sample tests and three recent features against pillars 1 and 3.</li>
+              <li>Look for repeated comments in recent human reviews. Each may indicate a missing rule, test, or documented decision, or an incorrect review. Verify the cause.</li>
+              <li>Score every pillar.</li>
+            </ol>
+        </div>
+        <div v-else class="modes__panel">
+            <p class="hint">Check the instruction files, skills, and review gates.</p>
+            <ol class="fg-site-steps">
+              <li>Measure what each host loads every session. File sizes alone do not show this. In Claude Code, <code>/context</code> shows what loaded, as the <a :href="sources.claudeCodeBestPractices.href">Claude Code best practices</a> describe.</li>
+              <li>Classify each instruction as durable or decaying, and as advisory or enforced.</li>
+              <li>List every “always” or “never” rule that is only advisory. Each one is in the wrong place, or it is a preference worded too strongly.</li>
+              <li>Find lines that restate the layout, scripts, or config. Keep the verification commands.</li>
+              <li>Find instructions that repeat the same meaning across files.</li>
+              <li>Check that review gates sort their findings and push back on over-fixing.</li>
+              <li>Ask for evaluation evidence. A written policy with no results scores 1. No policy scores 0.</li>
+            </ol>
+        </div>
+      </template>
+    </UiTabs>
     <h3 id="report">What the report contains</h3>
     <div class="prose">
       <p>The report has four parts, in this order:</p>
@@ -761,14 +749,14 @@ onMounted(() => {
           current state.
         </li>
         <li>The places where the skill was hard to apply.</li>
-        <li>Everything left unverified, and what running it needs.</li>
+        <li>Unverified checks and what you need to run them.</li>
       </ol>
       <p>
-        Order the fixes by blast radius first, meaning how much damage a miss
-        can do. Any unenforced pillar 7 rule about secrets, protected paths,
-        or irreversible actions comes first, together with any defect that
-        can hide such a rule from the agent, such as instructions cut off by a
-        size limit. Then order by durability, then by cost.
+        Order fixes first by the potential damage from a failure. Start with
+        unenforced pillar 7 rules about secrets, protected paths, or
+        irreversible actions. Also prioritize defects that hide those rules,
+        such as instructions cut off by a size limit. Then order by
+        durability, then by cost.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="5">
@@ -795,8 +783,8 @@ onMounted(() => {
         </p>
       </div>
       <template #caption>
-        The fix order. After blast radius, it follows the durability ranking
-        from the durable and decaying section.
+        After prioritizing potential damage, use the durability ranking
+        introduced earlier.
       </template>
     </UiFigure>
   </section>
@@ -820,7 +808,7 @@ onMounted(() => {
     </UiAlert>
     <div class="prose">
       <p>
-        The first finding was the most useful. A fresh
+        A fresh
         <code>pnpm install --frozen-lockfile</code> failed after three seconds
         inside Claude Code's sandbox. One dependency ships a
         <code>.env</code> file in its package, and that machine's sandbox
@@ -906,6 +894,39 @@ onMounted(() => {
     </div>
   </section>
 
+  <section aria-labelledby="where-to-start">
+    <h2 id="where-to-start">Where to start</h2>
+    <div class="prose">
+      <p>
+        For an existing repository, start with an audit. Install the companion
+        skill, then ask your agent to audit the repository for agent
+        readiness. <a href="#audit-procedure">Audit a repository</a> explains
+        what it checks and what the report contains.
+      </p>
+    </div>
+    <UiCodeBlock
+      :code="install"
+      language="bash"
+      variant="compact"
+      :copyable="enhanced"
+      :wrap="true"
+    />
+    <h3 id="new-project">New project</h3>
+    <div class="prose">
+      <p>
+        Add the gates before you write code, while they cost the least. In
+        this order:
+      </p>
+    </div>
+    <ol class="fg-site-steps">
+      <li>Pillar 6: provide one command for setup, run, and teardown. Include a seed script and a health check. Verify it inside the agent's sandbox.</li>
+      <li>Pillars 2 and 3: add strict types, lint, dead-code and boundary tools, and a single-file test command. Run them through one <code>check</code> command that CI also runs and requires.</li>
+      <li>Pillar 7: deny rules and sandbox limits for every “never” rule.</li>
+      <li>Pillar 4: a short <code>AGENTS.md</code> with those commands. Add a line only after you have corrected the agent twice.</li>
+      <li>Pillars 1 and 5 grow with the code. Record each decision when you make it. Add review angles as risk appears.</li>
+    </ol>
+  </section>
+
   <section aria-labelledby="maintenance">
     <h2 id="maintenance">Keeping guidance current</h2>
     <div class="prose">
@@ -918,13 +939,13 @@ onMounted(() => {
       <dt>Drift</dt>
       <dd>A source changes, so a cited claim no longer matches what the vendor says.</dd>
       <dt>Decay</dt>
-      <dd>A new model follows some guidance by default, so a line becomes a no-op or does more harm than good.</dd>
+      <dd>A new model follows an instruction by default, so the instruction adds no value or does more harm than good.</dd>
     </dl>
     <div class="prose">
       <p>
-        Vendors retire their own advice as models catch up. Pillar 8 applies
-        to this guidance too. Test it against the models it targets, and add
-        instructions only where you have seen a failure.
+        Vendors retire advice as models improve. Pillar 8 applies to this
+        guidance too. Test it with the models it targets. Add instructions
+        only where you have observed a failure.
       </p>
       <p>Review the guidance when any of these happens:</p>
       <ul>
@@ -936,15 +957,16 @@ onMounted(() => {
       <p>
         The review steps are in the skill's
         <a :href="`${referenceBase}${maintenanceFile}`">maintenance procedure</a>.
-        One of them is the decay test. Fix the task set and the budget first,
-        run the guidance against no guidance, then remove one section at a
-        time. Delete a section only when removing it makes no difference.
+        For the decay test, set the tasks and budget first. Compare runs
+        with guidance against runs without it. Then test the effect of
+        removing one section at a time. Delete a section only when its
+        removal makes no difference.
       </p>
       <p>
-        A scheduled agent can re-verify the sources and collect new guidance
-        every month, then open a pull request with what it found. The rest of
-        the review needs judgment and a person's approval. The decay test
-        also costs money, because it runs paid evaluations.
+        Each month, a scheduled agent can recheck sources, collect new
+        guidance, and open a pull request with its findings. The remaining
+        review steps need judgment and a person's approval. The decay test
+        costs money because it runs paid evaluations.
       </p>
     </div>
   </section>
@@ -953,8 +975,8 @@ onMounted(() => {
     <h2 id="next-steps">Next steps</h2>
     <div class="prose">
       <p>
-        The <code>agent-ready-environments</code> skill is this lesson written
-        for an agent. The install command is under
+        The <code>agent-ready-environments</code> skill gives agents the
+        procedure taught in this lesson. Its install command is under
         <a href="#where-to-start">Where to start</a>.
       </p>
     </div>
