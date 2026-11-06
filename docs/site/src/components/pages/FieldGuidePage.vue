@@ -81,8 +81,9 @@ const tables = {
       </div>
     </div>
     <p class="hint">
-      Installing it turns on its session hooks. Leave it out to keep that
-      context out of your sessions.
+      Installing it turns on its session hooks. Codex runs them only after you
+      review and trust them. Leave the plugin out to keep that context out of
+      your sessions.
     </p>
   </section>
 

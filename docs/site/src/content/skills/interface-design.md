@@ -57,7 +57,8 @@ what it could not test instead of calling the screen accessible.
   and what is still unchecked. Two scripts run the checks in a real browser:
   one for accessibility, sideways scrolling, and off-palette values, and one
   that runs your key tasks with reduced motion, dark mode, 200% text, and
-  grayscale. Your project needs Playwright and axe-core installed.
+  grayscale. Your project needs `playwright` or `@playwright/test`, and
+  `@axe-core/playwright`.
 
 A law or standard guides a decision but does not prove a design works. The
 skill does not invent user research, so usability testing stays a separate
