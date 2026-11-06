@@ -27,7 +27,7 @@ Report, for every fact id 1 to {nfacts}:
 Also report:
 - "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, transitions, and calls to action are not claims. An example detail that is not on the fact sheet is a claim.
 - "sections": the page's top-level sections below the title, in order. Use its second-level headings; when it has none, use its third-level headings. Put any text before the first such heading first, as one section with heading "(opening)". For each: {{"heading": "...", "kind": "opening" | "body" | "notes", "uses_case": true when the section uses the worked case by name or by its specific details}}. "notes" means a notes, sources, references, or further-reading section.
-- "concepts": for each concept named above, {{"name": "...", "explained": true when the page explains it, "motivated_first": true when, before or where the page first explains it, the page says what problem it solves or what question it answers}}.
+- "concepts": for each concept named above, {{"name": "<the name exactly as written above>", "explained": true when the page explains it, "motivated_first": true when, before or where the page first explains it, the page says what problem it solves or what question it answers}}.
 - "ending": what the last "body" section does: "next_action" when it ends on what the reader can now do or where to go next, "summary" when it recaps the sections, or "other".
 - "forward_dependencies": each term the page uses in an explanation before it defines it, when the brief's audience would not already know it, quoted briefly.
 

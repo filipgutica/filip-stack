@@ -67,12 +67,12 @@ Every measure is computed per build. Shares are averaged and counts are summed o
 | M2 | Invented facts | Claims not on the fact sheet, including invented example details, from the extractor | Lower |
 | M3 | Agent-only leaks | Agent-only facts anywhere on the page. A fact in a disclosure, a notes section, or link text counts as a leak. This is fixed now because the head guidance invites disclosures. `M3_main`, main text only, is reported but not in the rule. | Lower |
 | M4 | Comprehension | A fresh `gpt-6.1-sol` call at low reasoning gets only the page and the 4 questions. The fixed key grades its answers (0–4). One question per brief tests the step order (G1, G3) or the dependency between concepts (G2). | Higher |
-| M5 | Case carried through | Share of body sections that use the worked case by name or by its details, from the extractor. The opening and notes sections are excluded. A page with no body sections scores 0. | Higher |
+| M5 | Case carried through | 1 per build when the worked case appears early (in the opening or the first half of the body sections) and is used in at least two body sections, by name or by its details. From the extractor's section list; notes sections are excluded. Summed over attempts (0–5). Splitting a section does not lower it. `M5_share`, the share of body sections that use the case, is reported but not in the rule. | Higher |
 | M6 | Motivated first | Share of the brief's concepts where the page states the problem the concept solves before, or where, it first explains the concept. From the extractor. | Higher |
 | M7 | Repetition | Number of prose sentence pairs with a word-set Jaccard similarity of 0.6 or more | Lower |
 | — | Diagnostics | Words, Flesch-Kincaid grade, body-section count, ending type (next action, summary, or other), and forward dependencies. Reported, but not in the rule. | — |
 
-Extractor: `gpt-6.1-sol`, reasoning high, prompt `EXTRACTOR`. It gets the tagged fact sheet, the case name, and the concept names, never the arm or the guidance.
+Extractor: `gpt-6.1-sol`, reasoning high, prompt `EXTRACTOR`. It gets the tagged fact sheet, the case name, and the concept names, never the arm or the guidance. The scorer matches concept names without regard to case, plurals, or extra words.
 Double-coding: `gpt-6-astra`, reasoning high, re-extracts every fifth build in ledger order (9 builds). Agreement is reported on fact presence and location, motivated-first, and case-section counts.
 
 ## Judges
@@ -105,7 +105,7 @@ Otherwise the result is **not supported**. The run then stops and reports, and t
 
 The parent agent dispatches every call. Each call's task is one line: read one prompt file and follow it. Each prompt file sits alone in its own random folder outside the repository (`prompts.json` maps calls to files). At most 8 calls run at once.
 
-Every reply is checked with `probe.py check` as soon as it arrives. A reply is unusable when it is empty, unreadable, or a refusal or read failure. A build reply under 250 words is unusable. A scoring reply is unusable when it has no JSON or is missing a required field.
+Every reply is checked with `python3 -B probe.py check` as soon as it arrives. A reply is unusable when it is empty, unreadable, or opens with a first-person refusal or read failure. A build reply under 250 words is unusable. A scoring reply is unusable when it has no JSON or is missing a required field.
 An unusable reply is a failed call, as is a timeout or an error. On the first failed call, the runner dispatches nothing more and reports. A retry needs Filip's approval and comes out of the spare calls below.
 
 ## Calls
@@ -130,4 +130,5 @@ The dry-run builds are not reused in the paid run.
 - Global host guidance reaches every arm, vanilla included, through the builder's own instruction files. This confound is shared by all arms, as in the reader-pages probe. Build traces are checked to confirm that each builder read only its own arm file.
 - Five attempts on three briefs is a probe, not a benchmark. A null result does not show that the guidance has no effect.
 - M5 and M6 depend on the extractor's judgment. Double-coding reports how often a second model agrees.
+- M4 may reach its ceiling (the reader-pages probe saw 15 of 15), and M7 is often 0 for every arm. If so, part 2 in effect needs head to beat base on both M5 and M6.
 - Actual token use and billed cost are not measured.

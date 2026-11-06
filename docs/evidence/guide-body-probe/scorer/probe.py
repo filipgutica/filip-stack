@@ -23,7 +23,8 @@ GAIN = ['M4', 'M5', 'M6', 'M7']
 LOWER = {'M2', 'M3', 'M7'}
 WHERE = {'main', 'disclosure', 'notes', 'link', 'effect_only', 'absent'}
 VOTE = {'A', 'B', 'SAME'}
-REFUSAL = re.compile(r"\b(i can(no|')t|i am unable|i'm unable|unable to (read|open|access)|could not (read|open|access)|cannot (read|open|access))\b", re.I)
+# First person only, so page text such as "if the scanner cannot read the card" passes.
+REFUSAL = re.compile(r"\b(i can(no|')t|i am unable|i'm unable|i was unable|i could not|i couldn't)\b", re.I)
 
 
 def load(path):
@@ -44,6 +45,12 @@ def key():
 def reply_json(path):
     text = open(path).read()
     return json.loads(re.search(r'\{[\s\S]*\}', text).group(0))
+
+
+def concept_named(kb_name, names):
+    """Match a key concept to an extracted name, ignoring case, plurals, and extra words."""
+    stem = kb_name.lower().rstrip('s')
+    return next((n for n in names if stem in n.lower() or n.lower().rstrip('s') in kb_name.lower()), None)
 
 
 def factsheet(brief, tagged):
@@ -148,8 +155,8 @@ def check(kind, path, brief=None):
             return 'missing list field'
         if not r.get('sections') or any(s.get('kind') not in ('opening', 'body', 'notes') for s in r['sections']):
             return 'bad sections'
-        names = {c.get('name', '').lower() for c in r.get('concepts', [])}
-        if not {c['name'].lower() for c in kb['concepts']} <= names:
+        names = [c.get('name', '') for c in r.get('concepts', []) if c.get('name')]
+        if not all(concept_named(c['name'], names) for c in kb['concepts']):
             return 'missing concepts'
         return None if r.get('ending') in ('next_action', 'summary', 'other') else 'bad ending'
     if kind == 'comp':
@@ -198,7 +205,10 @@ def per_build(run, b, k):
     facts = {str(f['id']): f for f in ex['facts']}
     present = lambda i: facts.get(i, {}).get('present') and facts[i].get('where') != 'absent'
     body = [s for s in ex['sections'] if s['kind'] == 'body']
-    concepts = {c['name'].lower(): c for c in ex['concepts']}
+    concepts = {c['name']: c for c in ex['concepts'] if c.get('name')}
+    motivated = lambda name: bool(concepts.get(concept_named(name, list(concepts)) or '', {}).get('motivated_first'))
+    uses = [i for i, s in enumerate(body) if s.get('uses_case')]
+    opening_uses = any(s['kind'] == 'opening' and s.get('uses_case') for s in ex['sections'])
     graded = {q: grade(comp.get(q, ''), kb['answerKey'][q]) for q in kb['questions']}
     words, fk = words_and_grade(path)
     return {
@@ -209,9 +219,11 @@ def per_build(run, b, k):
         'M3': sum(1 for i in kb['agentOnly'] if present(i) and facts[i].get('where') != 'effect_only'),
         'M3_main': sum(1 for i in kb['agentOnly'] if present(i) and facts[i].get('where') == 'main'),
         'M4': sum(graded.values()),
-        'M5': round(sum(1 for s in body if s.get('uses_case')) / len(body), 3) if body else 0.0,
-        'M6': round(sum(1 for c in kb['concepts'] if concepts.get(c['name'].lower(), {}).get('motivated_first'))
-                    / len(kb['concepts']), 3),
+        # 1 when the case appears early (the opening or the first half of the body sections)
+        # and is used in at least two body sections. Splitting sections does not lower it.
+        'M5': int((opening_uses or bool(uses and uses[0] < len(body) / 2)) and len(uses) >= 2),
+        'M5_share': round(len(uses) / len(body), 3) if body else 0.0,
+        'M6': round(sum(1 for c in kb['concepts'] if motivated(c['name'])) / len(kb['concepts']), 3),
         'M7': repetition(open(path).read()),
         'body_sections': len(body), 'ending': ex['ending'],
         'forward_dependencies': len(ex['forward_dependencies']),
@@ -223,7 +235,7 @@ def per_build(run, b, k):
 
 def aggregate(m, values):
     # Shares are averaged over attempts; counts are summed.
-    return round(sum(values) / len(values), 3) if m in ('M1', 'M5', 'M6') else round(sum(values), 3)
+    return round(sum(values) / len(values), 3) if m in ('M1', 'M5_share', 'M6') else round(sum(values), 3)
 
 
 def better(m, h, o):
@@ -285,9 +297,11 @@ def double_code_agreement(run, k):
             for field in ('present', 'where'):
                 same += f1.get(i, {}).get(field) == f2.get(i, {}).get(field)
                 total += 1
-        c1, c2 = ({c['name'].lower(): c for c in e['concepts']} for e in (one, two))
+        def mot(e, name):
+            cs = {c['name']: c for c in e['concepts'] if c.get('name')}
+            return bool(cs.get(concept_named(name, list(cs)) or '', {}).get('motivated_first'))
         for c in kb['concepts']:
-            same += bool(c1.get(c['name'].lower(), {}).get('motivated_first')) == bool(c2.get(c['name'].lower(), {}).get('motivated_first'))
+            same += mot(one, c['name']) == mot(two, c['name'])
             total += 1
         uses = lambda e: sum(1 for s in e['sections'] if s['kind'] == 'body' and s.get('uses_case'))
         same += uses(one) == uses(two)
@@ -313,7 +327,7 @@ def score(run):
             rows = [b for b in builds if b['brief'] == brief and b['arm'] == arm]
             if rows:
                 agg[f'{brief}/{arm}'] = {m: aggregate(m, [r[m] for r in rows])
-                                         for m in ['M1', 'M2', 'M3', 'M3_main', 'M4', 'M5', 'M6', 'M7', 'words']}
+                                         for m in ['M1', 'M2', 'M3', 'M3_main', 'M4', 'M5', 'M5_share', 'M6', 'M7', 'words']}
     rule = decision(agg, votes, total_briefs=int(os.environ.get('PROBE_BRIEFS', '3')))
     agreement = double_code_agreement(run, k)
     dump(f'{run}/scores.json', {'builds': builds, 'votes': votes, 'aggregate': agg, 'rule': rule, 'double_coding': agreement})
