@@ -35,7 +35,7 @@ These rules cover the sections after the opening of a tutorial, how-to guide, or
 
 Classify the page before you apply them. Ask whether it guides action or builds understanding, and whether the reader is learning or doing work:
 
-- A tutorial guides action while the reader learns, through one project.
+- A tutorial guides action while the reader learns, through one concrete project or case.
 - A how-to guide directs a competent reader through a real task.
 - An explanation builds understanding of a topic, away from any task.
 
@@ -43,8 +43,8 @@ A lesson is usually a tutorial or an explanation. Apply each rule only to the ty
 
 For all three types:
 
-- Order the sections so each one builds only on terms and ideas that the audience already knows or that earlier sections introduced. Define any other term where it first appears. You can link to a later section, but do not make an explanation depend on that section.
-- Start each section with what the reader needs most from it. Do not restate the heading, the order of the steps, or a point that an earlier section made. Refer back to it instead.
+- Order the sections so each one builds only on terms and ideas that the audience already knows or that earlier sections introduced. Define any other term where it first appears. You can link to a later section, but do not make a section depend on it.
+- Start each section with what the reader needs most from it. Do not restate the heading or, in a procedure, the order of the steps. Refer back to a point that an earlier section made instead of repeating it.
 - Give each section one reader question or task. Split a section that holds two, and merge sections that divide one.
 - Leave out facts that only the subject's maintainers need, such as internal limits and release details. Link to them when a reader may want them.
 - If the page keeps notes about how it was sourced or drafted, put them in a notes section after the last body section.
@@ -53,7 +53,7 @@ For a tutorial:
 
 - When the sources give a concrete project or case, use it in every step it applies to. Do not switch to a new example or invent a case or its details.
 - Keep explanation to a short reason in plain words, and link to a fuller explanation. Leave out options and alternatives.
-- End the body on what the reader has built and can now do.
+- End the body on what the reader has achieved and can now do.
 
 For a how-to guide:
 
