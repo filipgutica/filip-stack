@@ -1,5 +1,6 @@
+import { readFileSync } from "node:fs";
 import { expect, test } from "@playwright/test";
-import { pageTypes, routes, themes, widths } from "./pages";
+import { pageTypes, routes, widths } from "./pages";
 import {
   expectSkillLinks,
   followPillarFromMap,
@@ -7,47 +8,66 @@ import {
   openMaintenanceFromContents,
 } from "./guide";
 
-for (const theme of themes)
-  for (const width of widths)
-    for (const entry of pageTypes) {
-      test(`${entry.path || "overview"} is readable and navigable at ${width}px in ${theme} without JavaScript`, async ({
-        page,
-      }) => {
-        await page.emulateMedia({ colorScheme: theme });
-        await page.setViewportSize({ width, height: 900 });
-        await page.goto(`/filip-stack/${entry.path}`);
-        await expect(page.locator("main h1")).toHaveText(entry.title);
-        await expect(page.getByRole("button", { name: /^Copy / })).toHaveCount(
-          0,
-        );
-        if (width <= 800) await page.locator(".fg-site-rail__summary").click();
-        const nav = page.getByRole("navigation", {
-          name: "Documentation",
-          exact: true,
-        });
-        await expect(nav.getByRole("link")).toHaveCount(routes.length);
-        await expect(nav.locator('[aria-current="page"]')).toHaveAttribute(
-          "href",
-          `/filip-stack/${entry.path}`,
-        );
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
-        await nav
-          .getByRole("link", { name: "filip-stack CLI", exact: true })
-          .click();
-        await expect(page).toHaveURL("/filip-stack/cli/");
-        await expect(page.locator("main h1")).toHaveText("filip-stack CLI");
+// The dark theme changes only color tokens, so layout and navigation run in one theme;
+// the OS theme test below covers dark mode without JavaScript.
+for (const width of widths)
+  for (const entry of pageTypes) {
+    test(`${entry.path || "overview"} is readable and navigable at ${width}px without JavaScript`, async ({
+      page,
+    }) => {
+      await page.setViewportSize({ width, height: 900 });
+      await page.goto(`/filip-stack/${entry.path}`);
+      await expect(page.locator("main h1")).toHaveText(entry.title);
+      await expect(page.getByRole("button", { name: /^Copy / })).toHaveCount(
+        0,
+      );
+      if (width <= 800) await page.locator(".fg-site-rail__summary").click();
+      const nav = page.getByRole("navigation", {
+        name: "Documentation",
+        exact: true,
       });
-    }
+      await expect(nav.getByRole("link")).toHaveCount(routes.length);
+      await expect(nav.locator('[aria-current="page"]')).toHaveAttribute(
+        "href",
+        `/filip-stack/${entry.path}`,
+      );
+      expect(
+        await page.evaluate(
+          () => document.documentElement.scrollWidth <= innerWidth,
+        ),
+      ).toBe(true);
+      await nav
+        .getByRole("link", { name: "filip-stack CLI", exact: true })
+        .click();
+      await expect(page).toHaveURL("/filip-stack/cli/");
+      await expect(page.locator("main h1")).toHaveText("filip-stack CLI");
+    });
+  }
+
+// A skill page's lede is its README skill-table row. Read the rows as plain text here,
+// apart from the site's catalog, so a page that stops showing its row fails.
+const readmeLedes = new Map(
+  readFileSync("../../README.md", "utf8")
+    .split("\n")
+    .flatMap((line) => {
+      const row = line.match(/^\| `([a-z-]+)` \| (.+) \|$/);
+      if (!row) return [];
+      const text = row[2]!
+        .replace(/\[([^\]]+)\]\([^)]+\)/g, "$1")
+        .replaceAll("`", "");
+      return [[row[1]!, text] as const];
+    }),
+);
 
 test("all skill prose and README traits render without JavaScript", async ({
   page,
 }) => {
   for (const route of routes.filter((route) => route.startsWith("skills/"))) {
     await page.goto(`/filip-stack/${route}`);
+    const name = route.slice("skills/".length, -1);
+    await expect(page.locator("main .lede")).toHaveText(
+      readmeLedes.get(name) ?? `no README row for ${name}`,
+    );
     await expect(page.locator("main > section > h2")).toHaveText([
       "What it does",
       "When to use it",
