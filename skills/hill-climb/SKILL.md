@@ -315,7 +315,7 @@ Stop at the first of these:
 - The queue has no open proposals.
 - Two rejected or void rounds in a row.
 - For `judges` and `both`: a strict majority of completed judges answers
-  `SAME` overall.
+  `SAME` overall, unless the round accepted a shorter guidance candidate.
 - The round budget is spent.
 - The member-call limit could not cover the next round and the final check.
   Under `judges` and `both`, a round costs one call per judge, round 1 adds
