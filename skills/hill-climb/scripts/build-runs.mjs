@@ -26,7 +26,12 @@ const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
   for (const vote of votes) counts[vote.overall] += 1
   return counts
 }
-const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
+// A scorecard-only final check has no votes, so it has no counts either.
+const finalCounts = (run) => (run.final?.votes?.length ? overall(run.final.votes, ['final', 'same', 'start']) : null)
+const isScore = (n) => typeof n === 'number' && Number.isFinite(n)
+// One Markdown table cell: pipes and line breaks would split the row.
+const cell = (text) => String(text ?? '').replace(/\r?\n/g, ' ').replace(/\|/g, '\\|')
+const scoreCell = (n) => (isScore(n) ? n.toFixed(1) : 'missing')
 
 // Score-decided climbs: whether the final score beat the start by the smallest gain that counts.
 // A tie never counts, even when a record sets minGain to 0.
@@ -56,6 +61,7 @@ const attention = (run) => {
   const kept = run.rounds.some((r) => r.decision === 'accepted')
   if (kept && rule !== 'score' && !fc) items.push('The climb kept changes but never ran the final check.')
   if (kept && rule !== 'judges' && !sc) items.push('The climb kept changes but never measured the final score.')
+  if (run.final?.scorecard?.some((s) => !isScore(s.start) || !isScore(s.final))) items.push('A scorecard row is missing a score.')
   return items
 }
 
@@ -106,6 +112,10 @@ const report = (run) => {
   if (fc) {
     lines.push('## Start vs final', '', `Overall votes: ${fc.final} final, ${fc.same} same, ${fc.start} start.`, '', ...voteTable(run, run.final.votes), '')
     if (run.final.notes?.length) lines.push(...run.final.notes.map((n) => `- ${n}`), '')
+  }
+  if (run.final?.scorecard?.length) {
+    lines.push('## Scorecard', '', '| Screen or task | Start | Final | Biggest remaining issue |', '| --- | --- | --- | --- |')
+    lines.push(...run.final.scorecard.map((s) => `| ${cell(s.item)} | ${scoreCell(s.start)} | ${scoreCell(s.final)} | ${cell(s.issue)} |`), '')
   }
   if (run.baseline) {
     lines.push('## Final vs no guidance', '', run.baseline.summary, '')
