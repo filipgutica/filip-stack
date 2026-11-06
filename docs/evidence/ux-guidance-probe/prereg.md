@@ -302,7 +302,7 @@ These amendments follow review of `a070ca6`, before any paid call. The guidance 
 | S8 | Drop all `ui-modes` overflow counting. `ui-check` owns ordinary reflow; no per-defect evidence establishes a distinct mode-specific overflow risk. Text-200 overflow is therefore diagnostic too. Behavioral tasks still run in all four modes. |
 | S9 | Replace the PR's repeated CI results with free, runnable self-test, hash verification, and local browser calibration steps. |
 
-A second review of `f61efd6` found that a status message naming the key passed the list check. The create and retry tasks first required a visible row or list item that names the key, and a local `message-list` calibration build shows the false pass. A third review found that this rejected valid list markup, such as a definition list. A list entry is now any visible element that shows the key's name and the last four characters of the shown secret, which the brief requires every entry to show, and does not hold the full secret. A local `definition-list` build passes on create and retry and failed the row-or-list-item check. Frozen hashes were updated; no paid call intervened.
+A second review of `f61efd6` found that a status message naming the key passed the list check. The create and retry tasks first required a visible row or list item that names the key, and a local `message-list` calibration build shows the false pass. A third review found that this rejected valid list markup, such as a definition list. A list entry is now any visible element that shows the key's name and the last four characters of the shown secret, which the brief requires every entry to show, and does not hold the full secret. A local `definition-list` build passes on create and retry and failed the row-or-list-item check. A fourth review found two errors in that predicate, now fixed: a masked copy of the secret could set the last four, so the longest visible secret is used; and a secret panel could count as an entry when the full secret sat in a field, so field values count toward the full-secret exclusion. Local `masked-list` (valid) and `secret-panel` (empty list, name and last four shown beside the secret field) builds cover them. A separate element inside the secret panel that repeats the name and last four still counts as listed; the brief's own one-time secret display makes that rare. Frozen hashes were updated; no paid call intervened.
 
 No skill, skill script, or arm hash changed. The scorer adds owner-boundary regressions for verdicts, judge isolation, and bundle blindness. See the [coverage record](dry-run-report.md#coverage-record) for tests added and removed, baseline failures, and remaining proof.
 
@@ -331,7 +331,7 @@ f98c453b1b00d22aca76c4dfd634a450b6c1366c636a97d72cd1716a98efe5f7  prompts.py
 275bb57a20944a9bf540ef96c602f54b506d4bb0eb537dc8be989ec011bdf590  run-codex-judge.sh
 df251d95b057aeeeec5d2404fce6de8c7038aa4243bbdb8800f258204bfbcd59  scorer_test.py
 38fdfed24d8b0dfb78d7ec7dbdb0b02319fb08e35d22fd0bd68836549c5a51be  serve.mjs
-63d432dc6efbcba8b61569405e15a80027c1766cb129922b68101ddd599237a0  ux-tasks.mjs
+f9dd7aaedb4fbfe711d5b23eb3e1abce5ba8aef8988e854ea30f57a8c652b473  ux-tasks.mjs
 ```
 
 ### Arms
@@ -353,7 +353,7 @@ Bundle hashes: base `88f344a4a02d80f8fa9ff37264297eb45f23aaa5a1740c4b96c1d6f0c50
 
 ### Frozen calibration hashes
 
-The 136 files in the local calibration folder. The sha256 of this list, including its final newline, is `2f54567b6db2559b2f3901ee807fff1f2fffcbd0c1c9b4f7cf3ab1262d31178d`. Only hashes are committed.
+The 150 files in the local calibration folder. The sha256 of this list, including its final newline, is `1a07858cddd23a54919e76056e3a3b00f7395363002a1c1e0eea4cba0f7d9d16`. Only hashes are committed.
 
 ```
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/bad-error/BRIEF.md
@@ -391,6 +391,13 @@ f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/hidden-s
 33e4e97594ac9dba2d5a45d5bbec83fe4371b491a44de89f512562c95260b652  build/hidden-secret/index.html
 163788e807c4b2bf372c6f4aa3c5753d54c95dd4d3220ffccaa048076ec7553d  build/hidden-secret/screen.js
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/hidden-secret/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/masked-list/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/masked-list/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/masked-list/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/masked-list/app.css
+a628aea4e8832d727cbaae0193281f461b7c692a233906b81f3fde37eb033740  build/masked-list/index.html
+e83a5f24a67a231c4dad13d8e9255515bcb0e411c5b5434807f05e3616b51080  build/masked-list/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/masked-list/tokens.css
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/message-list/BRIEF.md
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/message-list/DESIGN.md
 6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/message-list/api.js
@@ -419,6 +426,13 @@ f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/referenc
 a628aea4e8832d727cbaae0193281f461b7c692a233906b81f3fde37eb033740  build/reference2/index.html
 d65dcbada85749c2b2d7669a87870f5d3cb0af28ad3aff445d08d642095923bb  build/reference2/screen.js
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/reference2/tokens.css
+fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/secret-panel/BRIEF.md
+1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/secret-panel/DESIGN.md
+6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/secret-panel/api.js
+f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/secret-panel/app.css
+a628aea4e8832d727cbaae0193281f461b7c692a233906b81f3fde37eb033740  build/secret-panel/index.html
+681fbe3f637599783cb0aa3871d3dd4e7f3ad58e396e4a387c2d7d8bc0c33951  build/secret-panel/screen.js
+1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/secret-panel/tokens.css
 fc5b2bd212b0aa8f44b30ddcf7f7599789b7794b0b9e09a0f30d1b1a254ba38b  build/stale-alert/BRIEF.md
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  build/stale-alert/DESIGN.md
 6dee7f62e00c57ae75242ee9f8de3227b76bf0cd3c2633d16053d1841f9272cb  build/stale-alert/api.js
@@ -426,7 +440,7 @@ f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  build/stale-al
 2bb2aff083f2e7b8d55af48a2974865047d3599ce7da40e6a0ee8fd5b3436fda  build/stale-alert/index.html
 c217c0507b0f2bab1f08e30ef9e9d02ddc848dc388ab4c750fbc9895a06a92a9  build/stale-alert/screen.js
 1a6fb6f0b73ef445925f883f0e978af25bca954bd996f93d561a79ba7589052b  build/stale-alert/tokens.css
-3af26517d590a7b4dcc853bc39af1d946a3c69b52ed96315e8f7560dbfae4346  build-cases.json
+1d91db29634c1b257d1aadda371d7a44f2bd9c58febef9b71278c740aa347dd8  build-cases.json
 9ce9cf45bedb4ac8a4ab13f2da3e1972f5fad755202abcec719b69c83b01fd6f  key.json
 1fd1d6c9fd24e97f036c0d31646de0124ad93bb1a9a8a46226c5b17cce20593d  review/R1/clean/DESIGN.md
 f184eeb57368be735ceeebd1c8729067627938e519277ed8cba05f01f84f9f53  review/R1/clean/app.css

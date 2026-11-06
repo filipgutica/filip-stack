@@ -21,23 +21,28 @@ const fieldReportsError = (page) => field(page).evaluate((el) => {
   })
 })
 
-// Returns the visible new secret, or null; a hidden input does not count as shown.
+// Returns the longest visible secret, or null, so a masked copy cannot stand in for the full one.
+// A hidden input does not count as shown.
 const shownSecret = (page) => page.evaluate(() => {
-  const secret = /sk_live_[0-9a-f]{8,}/
+  const secret = /sk_live_[0-9a-f]{8,}/g
   const fields = [...document.querySelectorAll('input, textarea')].filter((el) =>
     el.type !== 'hidden' && el.checkVisibility() && el.getBoundingClientRect().width > 0)
-  return [document.body.innerText, ...fields.map((el) => el.value)].map((text) => text.match(secret)?.[0]).find(Boolean) ?? null
+  const found = [document.body.innerText, ...fields.map((el) => el.value)].flatMap((text) => text.match(secret) ?? [])
+  return found.sort((x, y) => y.length - x.length)[0] ?? null
 })
 const secretShown = async (page) => (await shownSecret(page)) !== null
 // The brief lists each key with its name, created date and last four characters. A list entry is any
 // visible element that shows the name and the last four of the shown secret, whatever its markup; a
-// message that only names the key is not one. Elements that also hold the full secret are skipped.
+// message that only names the key is not one. Elements that hold the full secret, in text or in a
+// field, are the secret panel rather than the list and are skipped.
 const listed = async (page, name) => {
   const secret = await shownSecret(page)
   if (!secret) return false
   return page.evaluate(({ name, secret }) => [...document.body.querySelectorAll('*')].some((el) => {
     const text = el.innerText ?? ''
-    return text.includes(name) && text.includes(secret.slice(-4)) && !text.includes(secret) &&
+    const values = [...el.querySelectorAll('input, textarea')].map((field) => field.value)
+    return text.includes(name) && text.includes(secret.slice(-4)) &&
+      ![text, ...values].some((value) => value.includes(secret)) &&
       el.checkVisibility() && el.getBoundingClientRect().width > 0
   }), { name, secret })
 }
