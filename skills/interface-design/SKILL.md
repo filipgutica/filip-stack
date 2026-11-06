@@ -32,9 +32,10 @@ accessibility.
   answer each question that applies to the screens in scope. Read
   `laws.md` when a finding needs a law to explain it.
 - **Check.** Run the repository's own accessibility, lint, and visual checks
-  on the running UI, at the widths and themes above. Compare the results with
-  the thresholds in `standards.md`. Name each check that could not run; an
-  unrun check is not a pass.
+  on the running UI. Then run this skill's scripts as
+  [references/checks.md](references/checks.md) describes, at the widths and
+  themes above. Name each check that could not run; an unrun check is not a
+  pass.
 
 ## Resolve conflicts
 
