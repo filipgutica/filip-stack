@@ -61,7 +61,7 @@ Each entry names its owning boundary. No production export, flag, or hook exists
 | `selftest/R3-empty.txt` | Same canonical `R1-empty.txt` proof; both removed files had identical inputs and expectations. |
 | `ui-modes:no horizontal overflow`, all 4 modes | Drop the overlapping counted gate. `ui-check` retains ordinary reflow at 320/375/1280 in light/dark, empty/populated. Mode-specific overflow has no independent calibrated risk and is diagnostic only. |
 
-The local build calibration runs 22 outcomes: ten valid tasks (two references, `definition-list`, and `masked-list`), eleven targeted adversarial tasks, and one delayed populated scan. Create and retry tasks start with two seeded keys. All match. Each adversarial case fails with the original task/scanner and passes with the repair. References use custom field errors and native validation respectively; one shows the secret in a readonly input. Cross-product mutant checks were omitted because each defect has one task owner.
+The local build calibration runs 22 outcomes: ten valid tasks (two references, `definition-list`, and `masked-list`), eleven targeted adversarial tasks, and one delayed populated scan. Create and retry tasks start with two seeded keys. Two accepted limits of the list check are stated in the prereg: a seeded name shown outside the list, and a list grouped by month. All match. Each adversarial case fails with the original task/scanner and passes with the repair. References use custom field errors and native validation respectively; one shows the secret in a readonly input. Cross-product mutant checks were omitted because each defect has one task owner.
 
 ## Guidance and isolation
 
