@@ -1433,6 +1433,46 @@ Evidence:
 - `docs/evidence/reader-pages-probe/dry-run/`
 - `docs/evidence/reader-pages-probe/scorer/`
 
+### 23. Reader pages writing probe: narrowed scope
+
+Date: 2026-11-05. Filip approved a narrowed probe of at most 250 calls.
+
+Commit `c926026b` narrows reader pages to tool and product landing pages,
+skill pages, and the opening of a guide or lesson. Procedure and reference
+sections follow technical prose instead. It also reverts the B3 rerun's R4
+caveat sentences. The `SKILL.md` pointer is unchanged. The reference is 1,093
+words.
+
+The pre-registration fixed three new briefs, all fictional: N1 is a tool
+landing page, N2 a skill page, and N3 a lesson opening. A fresh read-only Sol
+6.1 call wrote them. The design was 5 attempts per arm, and the rule needed
+2 of 3 briefs for parts 2 and 3. A dry run on N1 found one pipeline fault,
+and the fix was amended into the pre-registration before any paid build. The
+paid run made all 234 registered calls with no retries.
+
+Five Sol 6.1 scoring calls on N2 failed: their file reads stalled, and they
+replied that they could not read the file. The pre-registration says the run
+stops on a failure, but the runner checked only that a reply existed, so
+dispatch went on through the judges. No call was retried, because the
+ceiling left 2 calls and completing N2 needed 5. The frozen scorer cannot
+parse the failed replies. `partial.py` reused its functions and bounded the
+rule over the missing cells.
+
+Result: **not supported**. Against base, head passes no harm and judge
+agreement on all three briefs (10–5, 11–4, 10–5). Objective gain is
+undetermined, because it depends on the missing N2 cells. Against vanilla,
+vanilla wins N1 14–1, so part 3 fails. That part uses only judge votes, so
+the missing cells cannot change it. On N1, head beats vanilla on the opening
+statement (5 vs 1) and comprehension (15 vs 10), but the judges still
+preferred vanilla. All five vanilla N1 pages have an install heading; no head
+page does. This is a diagnostic, not a cause. Calls total 248 of 250; the
+pre-registration amendment's 249 was off by one.
+
+Evidence:
+
+- `docs/evidence/reader-pages-probe/narrow-report.md`
+- `docs/evidence/reader-pages-probe/narrow/`
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1561,6 +1601,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-05 | Reader pages probe dry run 3 | Rebuilt arms after merging main; B1, 1 attempt per arm, 15 calls | Pipeline passed, zero retries; head won 6 of 6 overall judge votes | Smoke test only; all build reads stayed within their arm. | `reader-pages-probe/dry-run-3-report.md` |
 | 2026-11-05 | Reader pages paid probe | Fixed 4 briefs × 3 arms × 5 attempts, 312 calls | Not supported: no harm and objective gain pass, but B3 loses 7–8 to base and 5–10 to vanilla | Part 3 forbids an opposing majority; Node.js caveat placement is a diagnostic for a separate B3 revision. No routing run. | `reader-pages-probe/paid-run-report.md` |
 | 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | `reader-pages-probe/b3-rerun-report.md` |
+| 2026-11-05 | Reader pages narrowed probe | Scope narrowed to landing, skill, and lesson-opening pages; R4 revert; 3 new briefs × 3 arms × 5 attempts, 234 paid calls | Not supported: head beats base 10–5, 11–4, 10–5, but vanilla wins N1 14–1; 5 N2 scoring calls failed and were not retried | Judge agreement against base now passes on all three briefs. Head lost the tool landing page to vanilla, whose pages all had an install heading. Objective gain against base is undetermined. | `reader-pages-probe/narrow-report.md` |
 
 ## Validity threats
 

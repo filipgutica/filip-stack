@@ -1,0 +1,38 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# Renaming rooms in the Kestrel directory
+
+## Start with a saved room link
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key that identifies it and a display name, the human-readable label people see. Room owners can change the display name.
+
+When you rename a room, a saved link should still reach that room and show its new name. Use this check to verify the result:
+
+1. Save a link to the room before you rename it.
+2. Change the room’s display name as its owner.
+3. Open the saved link.
+4. Confirm that the link reaches the same room.
+5. Confirm that the room shows its new display name.
+
+For an illustrative example, suppose a room’s display name is “Planning.” Its owner changes that name to “Project planning.” Opening the link saved before the change should reach the original room and display “Project planning.”
+
+Check both the destination and the displayed name. Reaching the same room verifies that the saved link still identifies it. Seeing the new name verifies that Kestrel displays the current label when you open that link.
+
+## Understand what the link identifies
+
+Kestrel assigns a room key when it creates a room. That key never changes, and Kestrel never reuses it for another room. The key therefore continues to identify the room through a rename.
+
+A saved room link contains the key. When someone opens the link, Kestrel looks up that key and displays the room’s current name. The name visible when the link was saved does not determine which room the link reaches.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. When you examine a link affected by a rename, identify whether it uses the room key or the display name.
+
+In the storage schema, `room_ref` is the key column, and `title_text` is the display-name column. Use these mappings when reading the stored fields: `room_ref` holds the room’s permanent identity, while `title_text` holds the label its owner can change.
+PAGE>>>
+
+Questions:
+(a) What stays the same when a room is renamed?
+(b) Can a link built from a display name stop working after a rename?
+(c) Which link should you open to verify that a rename preserved access?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (b) with Yes, No, or Not stated.

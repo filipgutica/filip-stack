@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "A", "overall": "B", "reason": "B is easier to scan: each command has its own heading, the output description follows the command it describes, and disk-space checking gets its own section, though it repeats the basic inspect command; A is tighter but describes the entry fields before the reader has run anything."}

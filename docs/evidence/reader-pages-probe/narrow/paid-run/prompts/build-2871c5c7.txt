@@ -1,0 +1,18 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d8cb54b/90ea63fa.md` and follow it (skip this step when the file is empty). Read no other file. Write the landing page copy for `sackview`, following the tool page section order. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. sackview shows what is inside a ZIP archive before you unpack it.
+2. Each entry shows its name, compressed size, and unpacked size.
+3. Install: `pipx install sackview`.
+4. `sackview inspect photos.zip` lists the archive's entries.
+5. `sackview inspect photos.zip --largest 10` shows the ten entries with the largest unpacked sizes, largest first.
+6. `sackview inspect photos.zip --find '*.csv'` shows only entries whose names match the pattern.
+7. It displays the total unpacked size so you can check available disk space before extracting elsewhere.
+8. It never extracts entries or changes the archive.
+9. Inspection works offline and sends no archive contents to a service.
+10. It supports ZIP archives only; other archive formats produce an unsupported-format message.
+11. Entry metadata is read through the internal ZipDirectoryReader adapter.
+12. Size totals use unsigned 64-bit accumulators.
+13. Unsupported formats return exit code 24.
+14. The package build copies its command schema from packaging/commands.json.

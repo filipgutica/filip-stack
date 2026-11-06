@@ -1,0 +1,69 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the first two sections, about 350 words, of a lesson for engineers titled 'Renaming rooms in the Kestrel directory'.
+
+<<<DRAFT A
+# Renaming rooms in the Kestrel directory
+
+## Start with a saved room link
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key that identifies it and a display name, the human-readable label people see. Room owners can change the display name.
+
+When you rename a room, a saved link should still reach that room and show its new name. Use this check to verify the result:
+
+1. Save a link to the room before you rename it.
+2. Change the room’s display name as its owner.
+3. Open the saved link.
+4. Confirm that the link reaches the same room.
+5. Confirm that the room shows its new display name.
+
+For an illustrative example, suppose a room’s display name is “Planning.” Its owner changes that name to “Project planning.” Opening the link saved before the change should reach the original room and display “Project planning.”
+
+Check both the destination and the displayed name. Reaching the same room verifies that the saved link still identifies it. Seeing the new name verifies that Kestrel displays the current label when you open that link.
+
+## Understand what the link identifies
+
+Kestrel assigns a room key when it creates a room. That key never changes, and Kestrel never reuses it for another room. The key therefore continues to identify the room through a rename.
+
+A saved room link contains the key. When someone opens the link, Kestrel looks up that key and displays the room’s current name. The name visible when the link was saved does not determine which room the link reaches.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. When you examine a link affected by a rename, identify whether it uses the room key or the display name.
+
+In the storage schema, `room_ref` is the key column, and `title_text` is the display-name column. Use these mappings when reading the stored fields: `room_ref` holds the room’s permanent identity, while `title_text` holds the label its owner can change.
+DRAFT A>>>
+
+<<<DRAFT B
+# Renaming rooms in the Kestrel directory
+
+## 1. Keep room identity separate from its name
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key and a display name. These values serve different purposes: the key identifies the room, while the display name is the human-readable label people see.
+
+A room receives its key when it is created. That key never changes and is never reused for another room. Room owners can change the display name, so a room can have a new label while keeping the same identity.
+
+This distinction matters when building links. Saved room links identify rooms by their keys. When someone opens one, Kestrel looks up the key and displays the room’s current name. The name shown when the link opens can therefore differ from the name shown when the link was saved.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. Use the room key to identify the destination.
+
+In the storage schema, `room_ref` holds the room key and `title_text` holds the display name. Read those columns according to their roles: `room_ref` identifies the room; `title_text` supplies its changeable label.
+
+## 2. Verify the rename with a saved link
+
+Verify a rename by opening a room link saved before the change. The expected result has two parts: the link reaches the same room, and that room shows its new display name.
+
+1. Before renaming the room, save a link that identifies it by its room key.
+2. Rename the room.
+3. Open the saved link.
+4. Check that it reaches the same room and displays the new name.
+
+Saving the link beforehand makes this a check of an existing link across the rename. A link saved only afterward does not check what happens to a link saved under the previous name.
+
+Check both the destination and the displayed label. Reaching the same room verifies that the saved link still identifies it. Seeing the new name verifies that Kestrel displays the current label when the link opens. Together, these observations verify the expected behavior: the room keeps its identity while its visible name changes.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

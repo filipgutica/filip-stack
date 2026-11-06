@@ -1,0 +1,317 @@
+[
+ {
+  "build": "887cd13e",
+  "brief": "N1",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4036c2f6/3dc5da95.md"
+ },
+ {
+  "build": "ea5a6cb5",
+  "brief": "N1",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-3c56f7f4/485c86d7.md"
+ },
+ {
+  "build": "8ca4ae28",
+  "brief": "N1",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e65dacbd/14f49669.md"
+ },
+ {
+  "build": "fbc1bbec",
+  "brief": "N1",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-6f13cf5f/09888beb.md"
+ },
+ {
+  "build": "2871c5c7",
+  "brief": "N1",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2d8cb54b/90ea63fa.md"
+ },
+ {
+  "build": "2dd7d209",
+  "brief": "N1",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-92687e04/4fac7fe2.md"
+ },
+ {
+  "build": "ee309ab8",
+  "brief": "N1",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a9f4f9ff/e7e41632.md"
+ },
+ {
+  "build": "d9e54666",
+  "brief": "N1",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-5564fef6/61000bb3.md"
+ },
+ {
+  "build": "6ae8e4d0",
+  "brief": "N1",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-fd192583/ab3930d8.md"
+ },
+ {
+  "build": "cf44ba2d",
+  "brief": "N1",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-fb9bfc50/4ead24d4.md"
+ },
+ {
+  "build": "814d8fdc",
+  "brief": "N1",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-eba58975/b776c3da.md"
+ },
+ {
+  "build": "4db2e475",
+  "brief": "N1",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-08517d46/9d0e4aeb.md"
+ },
+ {
+  "build": "54e5f24f",
+  "brief": "N1",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-dd15580a/2454be20.md"
+ },
+ {
+  "build": "42f961d0",
+  "brief": "N1",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-d7542cfe/ce6167f5.md"
+ },
+ {
+  "build": "2caaec3b",
+  "brief": "N1",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-bb1b7096/783e19cb.md"
+ },
+ {
+  "build": "d33e2dc9",
+  "brief": "N2",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-216a9a83/34a2edf3.md"
+ },
+ {
+  "build": "1df209fd",
+  "brief": "N2",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-31b7f024/06bc7f17.md"
+ },
+ {
+  "build": "d9144b27",
+  "brief": "N2",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f23724fc/f3467213.md"
+ },
+ {
+  "build": "cfaddc98",
+  "brief": "N2",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-cb068361/de7e4d53.md"
+ },
+ {
+  "build": "b5eb61b1",
+  "brief": "N2",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a80831f1/a5b881a2.md"
+ },
+ {
+  "build": "64ec865f",
+  "brief": "N2",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-a3880083/45fb47e8.md"
+ },
+ {
+  "build": "cfdcfc2f",
+  "brief": "N2",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-008698f4/9e8e47ab.md"
+ },
+ {
+  "build": "aa2547d3",
+  "brief": "N2",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-07d74d7c/baa5c0eb.md"
+ },
+ {
+  "build": "d1e5fe87",
+  "brief": "N2",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-af1e4631/93d2b8c0.md"
+ },
+ {
+  "build": "f6c2fdc5",
+  "brief": "N2",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-f274d5db/01c0d283.md"
+ },
+ {
+  "build": "de73c26c",
+  "brief": "N2",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-750a5d15/fda6f21b.md"
+ },
+ {
+  "build": "9318d9b6",
+  "brief": "N2",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-6bace574/f13d9265.md"
+ },
+ {
+  "build": "773bd276",
+  "brief": "N2",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-46254c49/9018a1ac.md"
+ },
+ {
+  "build": "3a6e4de9",
+  "brief": "N2",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-dbb375eb/e9b29772.md"
+ },
+ {
+  "build": "95ff4214",
+  "brief": "N2",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-c83ef6ec/df6db7df.md"
+ },
+ {
+  "build": "c4a95dac",
+  "brief": "N3",
+  "attempt": 1,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-ebeca875/b6899549.md"
+ },
+ {
+  "build": "b5f42e99",
+  "brief": "N3",
+  "attempt": 1,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-bde9fdf6/859bf0dd.md"
+ },
+ {
+  "build": "25c43f89",
+  "brief": "N3",
+  "attempt": 1,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-6f069382/6ab0a99b.md"
+ },
+ {
+  "build": "060a9d46",
+  "brief": "N3",
+  "attempt": 2,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-4eea610c/44890353.md"
+ },
+ {
+  "build": "dd89c745",
+  "brief": "N3",
+  "attempt": 2,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-2ddfc4ec/48b441f6.md"
+ },
+ {
+  "build": "1f453dd3",
+  "brief": "N3",
+  "attempt": 2,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-8c43bb48/e5613e7c.md"
+ },
+ {
+  "build": "9b57f0be",
+  "brief": "N3",
+  "attempt": 3,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-de1f31fa/e313c93a.md"
+ },
+ {
+  "build": "e8d7193e",
+  "brief": "N3",
+  "attempt": 3,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-dcc7018b/e36895ab.md"
+ },
+ {
+  "build": "784f9aea",
+  "brief": "N3",
+  "attempt": 3,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-e88515f3/4a02395c.md"
+ },
+ {
+  "build": "257e93d9",
+  "brief": "N3",
+  "attempt": 4,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-aad81cf7/0922c9ba.md"
+ },
+ {
+  "build": "6d002f3d",
+  "brief": "N3",
+  "attempt": 4,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-15a505d4/e3472724.md"
+ },
+ {
+  "build": "26ffe7ca",
+  "brief": "N3",
+  "attempt": 4,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-9d9fcefc/c3c6f549.md"
+ },
+ {
+  "build": "ecb17ec9",
+  "brief": "N3",
+  "attempt": 5,
+  "arm": "vanilla",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-7f97557f/cc65e408.md"
+ },
+ {
+  "build": "97aa11ae",
+  "brief": "N3",
+  "attempt": 5,
+  "arm": "base",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-14eca96a/d18ade13.md"
+ },
+ {
+  "build": "736ad876",
+  "brief": "N3",
+  "attempt": 5,
+  "arm": "head",
+  "file": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-575020ef/7effc03b.md"
+ }
+]

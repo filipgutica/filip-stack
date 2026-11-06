@@ -1,0 +1,28 @@
+# Renaming rooms in the Kestrel directory
+
+## 1. Identify a room by its key
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key and a display name. Before renaming a room, understand which value identifies it and which value people see.
+
+The room key is assigned when the room is created. It never changes, and it is never reused for another room. A rename therefore leaves the room’s key unchanged: the room has a new label, but the key still identifies the same room.
+
+The display name is the human-readable label shown to people. Room owners can change it. When you work with the storage schema, these concepts have different column names: `room_ref` holds the room key, and `title_text` holds the display name.
+
+Keep that distinction clear when working with links. A saved room link identifies its destination by the room key. When someone opens it, Kestrel looks up that key and displays the room’s current name. The name shown when the link opens can therefore differ from the name the room had when the link was saved.
+
+## 2. Verify a rename with a saved link
+
+To verify a rename, start before changing the display name. Save a link to the room, then rename the room and open that saved link.
+
+Use this sequence:
+
+1. Save a room link before the rename.
+2. Change the room’s display name.
+3. Open the link you saved.
+4. Check that it reaches the same room and shows the new name.
+
+Both parts of the final check matter. Reaching the same room verifies that the saved link still identifies its destination after the rename. Seeing the new name verifies that Kestrel displays the room’s current label when the link opens.
+
+A link built from a display name can stop finding the room after a rename because the name has changed. For this verification, use the saved room link that identifies the room by its key.
+
+The expected result is straightforward: the link saved before the rename reaches the same room afterward, and Kestrel shows the new display name. The key remains unchanged throughout.

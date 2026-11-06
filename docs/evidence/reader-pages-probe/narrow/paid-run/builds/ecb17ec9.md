@@ -1,0 +1,26 @@
+# Renaming rooms in the Kestrel directory
+
+## 1. Keep room identity separate from its name
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key and a display name. These values serve different purposes: the key identifies the room, while the display name is the human-readable label people see.
+
+A room receives its key when it is created. That key never changes and is never reused for another room. Room owners can change the display name, so a room can have a new label while keeping the same identity.
+
+This distinction matters when building links. Saved room links identify rooms by their keys. When someone opens one, Kestrel looks up the key and displays the room’s current name. The name shown when the link opens can therefore differ from the name shown when the link was saved.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. Use the room key to identify the destination.
+
+In the storage schema, `room_ref` holds the room key and `title_text` holds the display name. Read those columns according to their roles: `room_ref` identifies the room; `title_text` supplies its changeable label.
+
+## 2. Verify the rename with a saved link
+
+Verify a rename by opening a room link saved before the change. The expected result has two parts: the link reaches the same room, and that room shows its new display name.
+
+1. Before renaming the room, save a link that identifies it by its room key.
+2. Rename the room.
+3. Open the saved link.
+4. Check that it reaches the same room and displays the new name.
+
+Saving the link beforehand makes this a check of an existing link across the rename. A link saved only afterward does not check what happens to a link saved under the previous name.
+
+Check both the destination and the displayed label. Reaching the same room verifies that the saved link still identifies it. Seeing the new name verifies that Kestrel displays the current label when the link opens. Together, these observations verify the expected behavior: the room keeps its identity while its visible name changes.

@@ -1,0 +1,302 @@
+[
+ {
+  "pair": "f5d766ce",
+  "brief": "N1",
+  "attempt": 1,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "ea5a6cb5",
+  "B_build": "8ca4ae28"
+ },
+ {
+  "pair": "ec0aa11b",
+  "brief": "N1",
+  "attempt": 1,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "8ca4ae28",
+  "B_build": "887cd13e"
+ },
+ {
+  "pair": "134e7cb9",
+  "brief": "N1",
+  "attempt": 2,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "2dd7d209",
+  "B_build": "2871c5c7"
+ },
+ {
+  "pair": "73baa038",
+  "brief": "N1",
+  "attempt": 2,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "fbc1bbec",
+  "B_build": "2dd7d209"
+ },
+ {
+  "pair": "c8811de0",
+  "brief": "N1",
+  "attempt": 3,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "d9e54666",
+  "B_build": "6ae8e4d0"
+ },
+ {
+  "pair": "7b3ce637",
+  "brief": "N1",
+  "attempt": 3,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "6ae8e4d0",
+  "B_build": "ee309ab8"
+ },
+ {
+  "pair": "50242318",
+  "brief": "N1",
+  "attempt": 4,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "4db2e475",
+  "B_build": "814d8fdc"
+ },
+ {
+  "pair": "5e0d7b2b",
+  "brief": "N1",
+  "attempt": 4,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "cf44ba2d",
+  "B_build": "4db2e475"
+ },
+ {
+  "pair": "406800ec",
+  "brief": "N1",
+  "attempt": 5,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "42f961d0",
+  "B_build": "2caaec3b"
+ },
+ {
+  "pair": "0df6eb2c",
+  "brief": "N1",
+  "attempt": 5,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "2caaec3b",
+  "B_build": "54e5f24f"
+ },
+ {
+  "pair": "232a8e48",
+  "brief": "N2",
+  "attempt": 1,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "1df209fd",
+  "B_build": "d9144b27"
+ },
+ {
+  "pair": "eb0d697c",
+  "brief": "N2",
+  "attempt": 1,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "d9144b27",
+  "B_build": "d33e2dc9"
+ },
+ {
+  "pair": "b85b0861",
+  "brief": "N2",
+  "attempt": 2,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "64ec865f",
+  "B_build": "b5eb61b1"
+ },
+ {
+  "pair": "5c034439",
+  "brief": "N2",
+  "attempt": 2,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "cfaddc98",
+  "B_build": "64ec865f"
+ },
+ {
+  "pair": "ac5359b1",
+  "brief": "N2",
+  "attempt": 3,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "aa2547d3",
+  "B_build": "d1e5fe87"
+ },
+ {
+  "pair": "57401d40",
+  "brief": "N2",
+  "attempt": 3,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "d1e5fe87",
+  "B_build": "cfdcfc2f"
+ },
+ {
+  "pair": "4f971da7",
+  "brief": "N2",
+  "attempt": 4,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "9318d9b6",
+  "B_build": "de73c26c"
+ },
+ {
+  "pair": "77f31f23",
+  "brief": "N2",
+  "attempt": 4,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "f6c2fdc5",
+  "B_build": "9318d9b6"
+ },
+ {
+  "pair": "8b96bbcc",
+  "brief": "N2",
+  "attempt": 5,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "3a6e4de9",
+  "B_build": "95ff4214"
+ },
+ {
+  "pair": "6d891fc8",
+  "brief": "N2",
+  "attempt": 5,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "95ff4214",
+  "B_build": "773bd276"
+ },
+ {
+  "pair": "9e2635fa",
+  "brief": "N3",
+  "attempt": 1,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "b5f42e99",
+  "B_build": "25c43f89"
+ },
+ {
+  "pair": "351ff56b",
+  "brief": "N3",
+  "attempt": 1,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "25c43f89",
+  "B_build": "c4a95dac"
+ },
+ {
+  "pair": "8466404d",
+  "brief": "N3",
+  "attempt": 2,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "1f453dd3",
+  "B_build": "dd89c745"
+ },
+ {
+  "pair": "cf7565a1",
+  "brief": "N3",
+  "attempt": 2,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "060a9d46",
+  "B_build": "1f453dd3"
+ },
+ {
+  "pair": "97edd37c",
+  "brief": "N3",
+  "attempt": 3,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "e8d7193e",
+  "B_build": "784f9aea"
+ },
+ {
+  "pair": "71a218a6",
+  "brief": "N3",
+  "attempt": 3,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "784f9aea",
+  "B_build": "9b57f0be"
+ },
+ {
+  "pair": "693911d8",
+  "brief": "N3",
+  "attempt": 4,
+  "pairing": "head-vs-base",
+  "A": "head",
+  "B": "base",
+  "A_build": "26ffe7ca",
+  "B_build": "6d002f3d"
+ },
+ {
+  "pair": "3f5647fa",
+  "brief": "N3",
+  "attempt": 4,
+  "pairing": "head-vs-vanilla",
+  "A": "vanilla",
+  "B": "head",
+  "A_build": "257e93d9",
+  "B_build": "26ffe7ca"
+ },
+ {
+  "pair": "2b80033b",
+  "brief": "N3",
+  "attempt": 5,
+  "pairing": "head-vs-base",
+  "A": "base",
+  "B": "head",
+  "A_build": "97aa11ae",
+  "B_build": "736ad876"
+ },
+ {
+  "pair": "cae21abc",
+  "brief": "N3",
+  "attempt": 5,
+  "pairing": "head-vs-vanilla",
+  "A": "head",
+  "B": "vanilla",
+  "A_build": "736ad876",
+  "B_build": "ecb17ec9"
+ }
+]

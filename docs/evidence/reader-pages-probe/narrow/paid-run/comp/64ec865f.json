@@ -1,0 +1,1 @@
+{"a":"No, it never changes the source documents.","b":"Run it manually with /term-weave <source-folder>, for example /term-weave ./project-docs.","c":"It preserves both definitions in one entry, links each source, and marks the entry Conflict."}

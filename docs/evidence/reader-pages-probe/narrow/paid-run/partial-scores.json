@@ -1,0 +1,507 @@
+{
+ "missing": [
+  {
+   "build": "d9144b27",
+   "brief": "N2",
+   "arm": "head",
+   "attempt": 1,
+   "unknown": [
+    "M9"
+   ]
+  },
+  {
+   "build": "cfaddc98",
+   "brief": "N2",
+   "arm": "vanilla",
+   "attempt": 2,
+   "unknown": [
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M6",
+    "M9"
+   ]
+  },
+  {
+   "build": "b5eb61b1",
+   "brief": "N2",
+   "arm": "base",
+   "attempt": 2,
+   "unknown": [
+    "M1",
+    "M2",
+    "M3",
+    "M4",
+    "M6",
+    "M9"
+   ]
+  }
+ ],
+ "votes_counted": 90,
+ "favour_head": {
+  "aggregate": {
+   "N1/vanilla": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 1,
+    "M4": 1,
+    "M5": 1.114,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 10,
+    "words": 555
+   },
+   "N1/base": {
+    "M1": 1.0,
+    "M2": 2,
+    "M3": 4,
+    "M4": 4,
+    "M5": 0.622,
+    "M6": 0.504,
+    "M7": 0,
+    "M8": 0,
+    "M9": 12,
+    "words": 592
+   },
+   "N1/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 3,
+    "M4": 5,
+    "M5": 1.2,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 519
+   },
+   "N2/vanilla": {
+    "M1": 0.8,
+    "M2": 99,
+    "M3": 4,
+    "M4": 2,
+    "M5": 1.833,
+    "M6": 1.364,
+    "M7": 0,
+    "M8": 0,
+    "M9": 12,
+    "words": 713
+   },
+   "N2/base": {
+    "M1": 0.8,
+    "M2": 99,
+    "M3": 4,
+    "M4": 4,
+    "M5": 1.852,
+    "M6": 1.091,
+    "M7": 0,
+    "M8": 0,
+    "M9": 12,
+    "words": 714
+   },
+   "N2/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 0,
+    "M4": 5,
+    "M5": 1.454,
+    "M6": 0.16,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 778
+   },
+   "N3/vanilla": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 5,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 1810
+   },
+   "N3/base": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 1,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 1694
+   },
+   "N3/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 5,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 1,
+    "M8": 0,
+    "M9": 15,
+    "words": 1766
+   }
+  },
+  "rule": {
+   "per_brief": {
+    "N1": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M3",
+       "M4",
+       "M6",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 10,
+       "base": 5,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": true
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [
+       "M4",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [
+       "M3"
+      ],
+      "votes": {
+       "head": 1,
+       "vanilla": 14,
+       "SAME": 0
+      },
+      "head_majority": false,
+      "other_majority": true,
+      "objective_gain": true
+     }
+    },
+    "N2": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M3",
+       "M4",
+       "M5",
+       "M6",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 11,
+       "base": 4,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": true
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [
+       "M3",
+       "M4",
+       "M5",
+       "M6",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 13,
+       "vanilla": 2,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": true
+     }
+    },
+    "N3": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M4"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 10,
+       "base": 5,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": false
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 11,
+       "vanilla": 4,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": false
+     }
+    }
+   },
+   "vs_base": {
+    "part1_no_harm": true,
+    "part2_objective_gain": true,
+    "part3_judges": true
+   },
+   "vs_vanilla": {
+    "part1_no_harm": true,
+    "part3_judges": false
+   },
+   "briefs_scored": 3,
+   "verdict": "do not ship"
+  }
+ },
+ "favour_other": {
+  "aggregate": {
+   "N1/vanilla": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 1,
+    "M4": 1,
+    "M5": 1.114,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 10,
+    "words": 555
+   },
+   "N1/base": {
+    "M1": 1.0,
+    "M2": 2,
+    "M3": 4,
+    "M4": 4,
+    "M5": 0.622,
+    "M6": 0.504,
+    "M7": 0,
+    "M8": 0,
+    "M9": 12,
+    "words": 592
+   },
+   "N1/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 3,
+    "M4": 5,
+    "M5": 1.2,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 519
+   },
+   "N2/vanilla": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 0,
+    "M4": 3,
+    "M5": 1.833,
+    "M6": 0.364,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 713
+   },
+   "N2/base": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 0,
+    "M4": 5,
+    "M5": 1.852,
+    "M6": 0.091,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 714
+   },
+   "N2/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 0,
+    "M4": 5,
+    "M5": 1.454,
+    "M6": 0.16,
+    "M7": 0,
+    "M8": 0,
+    "M9": 12,
+    "words": 778
+   },
+   "N3/vanilla": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 5,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 1810
+   },
+   "N3/base": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 1,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 0,
+    "M8": 0,
+    "M9": 15,
+    "words": 1694
+   },
+   "N3/head": {
+    "M1": 1.0,
+    "M2": 0,
+    "M3": 5,
+    "M4": 5,
+    "M5": null,
+    "M6": 0.0,
+    "M7": 1,
+    "M8": 0,
+    "M9": 15,
+    "words": 1766
+   }
+  },
+  "rule": {
+   "per_brief": {
+    "N1": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M3",
+       "M4",
+       "M6",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 10,
+       "base": 5,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": true
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [
+       "M4",
+       "M9"
+      ],
+      "worse_on_M3_or_M4": [
+       "M3"
+      ],
+      "votes": {
+       "head": 1,
+       "vanilla": 14,
+       "SAME": 0
+      },
+      "head_majority": false,
+      "other_majority": true,
+      "objective_gain": true
+     }
+    },
+    "N2": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M5"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 11,
+       "base": 4,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": false
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [
+       "M4",
+       "M5",
+       "M6"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 13,
+       "vanilla": 2,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": true
+     }
+    },
+    "N3": {
+     "base": {
+      "no_harm": true,
+      "better_on": [
+       "M4"
+      ],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 10,
+       "base": 5,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": false
+     },
+     "vanilla": {
+      "no_harm": true,
+      "better_on": [],
+      "worse_on_M3_or_M4": [],
+      "votes": {
+       "head": 11,
+       "vanilla": 4,
+       "SAME": 0
+      },
+      "head_majority": true,
+      "other_majority": false,
+      "objective_gain": false
+     }
+    }
+   },
+   "vs_base": {
+    "part1_no_harm": true,
+    "part2_objective_gain": false,
+    "part3_judges": true
+   },
+   "vs_vanilla": {
+    "part1_no_harm": true,
+    "part3_judges": false
+   },
+   "briefs_scored": 3,
+   "verdict": "do not ship"
+  }
+ },
+ "verdict_fixed": true
+}

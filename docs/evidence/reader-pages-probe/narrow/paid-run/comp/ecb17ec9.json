@@ -1,0 +1,1 @@
+{"a":"The room key and the room’s identity stay the same.","b":"Yes, a link built from a display name can stop finding the room after a rename because the name has changed.","c":"Open a link saved before the rename that identifies the room by its room key."}

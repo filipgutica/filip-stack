@@ -1,0 +1,31 @@
+{
+ "calls": 234,
+ "actions": 274,
+ "violations": [
+  {
+   "cell": "comp-d9144b27",
+   "missing_read": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-128c6b12/7932107e.txt"
+  },
+  {
+   "cell": "extract-cfaddc98",
+   "missing_read": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-7c21496e/83b4a91b.txt"
+  },
+  {
+   "cell": "comp-cfaddc98",
+   "missing_read": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-3a4d49fa/7f994580.txt"
+  },
+  {
+   "cell": "extract-b5eb61b1",
+   "missing_read": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-129717bf/d92aea4b.txt"
+  },
+  {
+   "cell": "comp-b5eb61b1",
+   "missing_read": "/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/p-51565a89/3c97efbb.txt"
+  }
+ ],
+ "reads_per_call": {
+  "0": 5,
+  "1": 184,
+  "2": 45
+ }
+}

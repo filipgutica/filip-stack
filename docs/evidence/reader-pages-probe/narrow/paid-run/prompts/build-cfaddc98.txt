@@ -1,0 +1,18 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-cb068361/de7e4d53.md` and follow it (skip this step when the file is empty). Read no other file. Write the docs-site page for the `term-weave` skill with the sections What it does, When to use it, How it works, and What you get. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. Drafts a glossary of project terms from documents in a supplied folder.
+2. Manual only: `/term-weave <source-folder>`.
+3. Accepts Markdown and plain-text documents. Ignores other file types.
+4. Use when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+5. Every drafted definition includes a link to the passage that supports it.
+6. Does not invent definitions. Lists terms without a supporting explanation under Unresolved terms.
+7. If sources give conflicting definitions, preserves both definitions in one entry, links each source, and marks the entry Conflict.
+8. Writes GLOSSARY.md in the working directory. Never changes the source documents.
+9. Sorts glossary entries alphabetically. Places Unresolved terms after the defined entries.
+10. Candidate extraction uses the private collectTermCandidates routine.
+11. The source manifest is stored at .term-weave/source-manifest.json.
+12. If the supplied folder is missing or contains no readable supported documents, stops and explains the problem without drafting.
+13. An unreadable input set uses the internal reason INPUT_SET_EMPTY.
+14. Evaluation scores source attribution separately from definition completeness.

@@ -1,0 +1,42 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+# Renaming rooms in the Kestrel directory
+
+## 1. Identify a room by its key
+
+Use a room’s key when you build a saved link. The key continues to identify the same room after its display name changes.
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key and a display name. The key is assigned when the room is created. It never changes, and Kestrel never reuses it for another room.
+
+The display name is the human-readable label that people see. Room owners can change this label. A rename therefore changes how people see the room’s name while its key continues to identify it.
+
+When someone opens a saved link, Kestrel looks up the room by its key and displays its current name. The link can remain the same even though the name shown to the person has changed.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. Use the stable key to identify the room, and use the display name as its visible label.
+
+In the storage schema, `room_ref` is the key column and `title_text` is the display-name column. Keep these meanings clear when you work with room data.
+
+## 2. Verify a rename with a saved link
+
+Verify both the room reached by the link and the name that Kestrel displays. Seeing a new name alone does not establish that a previously saved link still reaches the same room.
+
+Use this sequence:
+
+1. Before the rename, save a link that identifies the room by its key.
+2. Have a room owner change the room’s display name.
+3. Open the link saved before the rename.
+4. Confirm that it reaches the same room.
+5. Confirm that the room shows its new display name.
+
+The expected result combines continuity and change: the saved link reaches the same room, and Kestrel shows the updated label.
+
+Use the saved link for this check. A link created after the rename does not verify what happens to the link saved beforehand. The earlier link demonstrates whether the room remains reachable through its unchanged key.
+PAGE>>>
+
+Questions:
+(a) What stays the same when a room is renamed?
+(b) Can a link built from a display name stop working after a rename?
+(c) Which link should you open to verify that a rename preserved access?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (b) with Yes, No, or Not stated.

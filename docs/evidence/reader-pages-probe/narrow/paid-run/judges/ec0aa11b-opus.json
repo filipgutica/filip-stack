@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "Draft B groups the install step and all inspect commands under clear headings, while Draft A describes the output before the first command, puts its Commands heading after that command, and packs its caveats into a table; A's only extra detail is exit code 24."}

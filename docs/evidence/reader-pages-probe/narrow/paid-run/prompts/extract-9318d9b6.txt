@@ -1,0 +1,66 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the docs-site page for the `term-weave` skill with the sections What it does, When to use it, How it works, and What you get.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. Drafts a glossary of project terms from documents in a supplied folder.
+2. Manual only: `/term-weave <source-folder>`.
+3. Accepts Markdown and plain-text documents. Ignores other file types.
+4. Use when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+5. Every drafted definition includes a link to the passage that supports it.
+6. Does not invent definitions. Lists terms without a supporting explanation under Unresolved terms.
+7. If sources give conflicting definitions, preserves both definitions in one entry, links each source, and marks the entry Conflict.
+8. Writes GLOSSARY.md in the working directory. Never changes the source documents.
+9. Sorts glossary entries alphabetically. Places Unresolved terms after the defined entries.
+10. `[agent-only]` Candidate extraction uses the private collectTermCandidates routine.
+11. `[agent-only]` The source manifest is stored at .term-weave/source-manifest.json.
+12. If the supplied folder is missing or contains no readable supported documents, stops and explains the problem without drafting.
+13. `[agent-only]` An unreadable input set uses the internal reason INPUT_SET_EMPTY.
+14. `[agent-only]` Evaluation scores source attribution separately from definition completeness.
+
+Draft page:
+<<<PAGE
+# term-weave
+
+## What it does
+
+`term-weave` drafts a glossary of project terms from documents in a folder you supply.
+
+## When to use it
+
+Use it when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+
+## How it works
+
+Run the skill manually with `/term-weave <source-folder>`.
+
+Illustrative example, with documents in `./project-docs`:
+
+```text
+/term-weave ./project-docs
+```
+
+It reads Markdown and plain-text documents and ignores other file types. If the folder is missing or contains no readable supported documents, it stops and explains the problem without drafting.
+
+Every drafted definition links to the passage that supports it. The skill does not invent definitions: terms without a supporting explanation appear under **Unresolved terms**.
+
+When sources give conflicting definitions, it preserves both in one entry, links each source, and marks the entry **Conflict**.
+
+## What you get
+
+The skill writes `GLOSSARY.md` in your working directory. It sorts defined entries alphabetically and places **Unresolved terms** after them. It never changes your source documents.
+PAGE>>>
+
+Report, for every fact id 1 to 14:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

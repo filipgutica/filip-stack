@@ -1,0 +1,1 @@
+{"reader": "B", "careful": "B", "overall": "B", "reason": "B defines the room key and display name before the procedure uses them, and its prose is tighter. A asks the reader to save a link by room key before explaining what a room key is, and it has clumsy lines such as \"For an illustrative example\" and the circular explanation of why name-based links break."}

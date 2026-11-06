@@ -1,0 +1,12 @@
+Read the file `/var/folders/3g/vf36b0b14wzd0fgsgtdp06h00000gp/T/writing-probe/g-575020ef/7effc03b.md` and follow it (skip this step when the file is empty). Read no other file. Write the first two sections, about 350 words, of a lesson for engineers titled 'Renaming rooms in the Kestrel directory'. Use only the facts in the fact sheet below; do not add facts. Reply with the page copy as Markdown and nothing else. Do not edit files, start subagents, or browse.
+
+Fact sheet:
+
+1. Kestrel is a fictional directory of shared work rooms; each room has a room key and a display name.
+2. A room key is assigned when the room is created and never changes or gets reused for another room.
+3. A display name is the human-readable label people see, and room owners can change it.
+4. Saved links identify rooms by their keys. Kestrel looks up the key and displays the room's current name when a link is opened.
+5. A link built from a display name can stop finding the room after a rename, because the name has changed.
+6. To verify a rename, save a room link beforehand, rename the room, and open the saved link; it should reach the same room and show the new name.
+7. The storage schema calls the key column room_ref and the display-name column title_text.
+8. The lesson's private grading guide assigns separate marks for identity, naming, and verification.

@@ -1,0 +1,27 @@
+# term-weave
+
+## What it does
+
+`term-weave` drafts a glossary of project terms from documents in a supplied folder. Every drafted definition links to the passage that supports it.
+
+## When to use it
+
+Use it when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+
+## How it works
+
+Run it manually with:
+
+```text
+/term-weave <source-folder>
+```
+
+It reads Markdown and plain-text documents and ignores other file types. It never changes the source documents.
+
+It does not invent definitions. Terms without a supporting explanation appear under **Unresolved terms**. When sources give conflicting definitions, it preserves both in one entry, links each source, and marks the entry **Conflict**.
+
+If the folder is missing or contains no readable supported documents, it stops and explains the problem without drafting.
+
+## What you get
+
+A `GLOSSARY.md` file in the working directory, with entries sorted alphabetically and **Unresolved terms** after the defined entries.

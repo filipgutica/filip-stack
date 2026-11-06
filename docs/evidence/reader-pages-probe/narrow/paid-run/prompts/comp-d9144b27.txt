@@ -1,0 +1,42 @@
+Read only the page below. Read no other file, and do not run commands or browse. Answer each question from the page alone. When the page does not say, answer "Not stated".
+
+<<<PAGE
+## What it does
+
+`term-weave` drafts a glossary of project terms from documents in a folder you supply.
+
+## When to use it
+
+Use it when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+
+## How it works
+
+Run the skill manually with a source folder:
+
+```text
+/term-weave <source-folder>
+```
+
+For example, if your documents are in `./docs`, run:
+
+```text
+/term-weave ./docs
+```
+
+The skill reads Markdown and plain-text documents and ignores other file types. If the folder is missing or contains no readable supported documents, it stops and explains the problem without drafting.
+
+Each drafted definition links to the passage that supports it. The skill does not invent definitions. It places terms without a supporting explanation under **Unresolved terms**.
+
+When sources give conflicting definitions, it keeps both in one entry, links each source, and marks the entry **Conflict**.
+
+## What you get
+
+The skill writes `GLOSSARY.md` in your working directory. Defined entries appear alphabetically, followed by **Unresolved terms**. Your source documents remain unchanged.
+PAGE>>>
+
+Questions:
+(a) Will term-weave change the source documents?
+(b) How do you run it?
+(c) What happens when two sources define the same term differently?
+
+Reply with only JSON: {"a": "...", "b": "...", "c": "..."}. Start the answer to (a) with Yes, No, or Not stated.

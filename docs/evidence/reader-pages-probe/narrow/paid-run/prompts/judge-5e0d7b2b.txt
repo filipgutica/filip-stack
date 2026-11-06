@@ -1,0 +1,102 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the landing page copy for `sackview`, following the tool page section order.
+
+<<<DRAFT A
+# sackview
+
+See what is inside a ZIP archive before you unpack it. Check entry names, compressed and unpacked sizes, and the total unpacked size.
+
+## Install
+
+```sh
+pipx install sackview
+```
+
+## Inspect an archive
+
+List the entries in a ZIP archive:
+
+```sh
+sackview inspect photos.zip
+```
+
+Each entry shows its name, compressed size, and unpacked size. The total unpacked size helps you check available disk space before extracting elsewhere.
+
+## Find the largest entries
+
+Show the ten entries with the largest unpacked sizes, largest first:
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+## Filter by name
+
+Show only entries whose names match a pattern:
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+## Inspect without extracting
+
+sackview never extracts entries or changes the archive. Inspection works offline and sends no archive contents to a service.
+
+## Supported format
+
+sackview supports ZIP archives only. Other archive formats produce an unsupported-format message.
+DRAFT A>>>
+
+<<<DRAFT B
+# See inside a ZIP archive before unpacking it
+
+sackview shows what is inside a ZIP archive before you unpack it. Use the total unpacked size to check available disk space before extracting elsewhere.
+
+```sh
+pipx install sackview
+```
+
+Each entry shows its name, compressed size, and unpacked size.
+
+```sh
+sackview inspect photos.zip
+```
+
+This command lists the archive’s entries.
+
+## Commands
+
+Show the ten entries with the largest unpacked sizes, largest first:
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+Show only entries whose names match a pattern:
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+## Good to know
+
+### Archive safety
+
+sackview never extracts entries or changes the archive.
+
+### Offline inspection
+
+Inspection works offline and sends no archive contents to a service.
+
+### Supported formats
+
+sackview supports ZIP archives only. Other archive formats produce an unsupported-format message.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}

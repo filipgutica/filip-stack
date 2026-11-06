@@ -1,0 +1,68 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the first two sections, about 350 words, of a lesson for engineers titled 'Renaming rooms in the Kestrel directory'.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. Kestrel is a fictional directory of shared work rooms; each room has a room key and a display name.
+2. A room key is assigned when the room is created and never changes or gets reused for another room.
+3. A display name is the human-readable label people see, and room owners can change it.
+4. Saved links identify rooms by their keys. Kestrel looks up the key and displays the room's current name when a link is opened.
+5. A link built from a display name can stop finding the room after a rename, because the name has changed.
+6. To verify a rename, save a room link beforehand, rename the room, and open the saved link; it should reach the same room and show the new name.
+7. `[agent-only]` The storage schema calls the key column room_ref and the display-name column title_text.
+8. `[agent-only]` The lesson's private grading guide assigns separate marks for identity, naming, and verification.
+
+Draft page:
+<<<PAGE
+# Renaming rooms in the Kestrel directory
+
+## 1. Identify the room by its key
+
+Use the room key when you build a room link. Use the display name as the label people see.
+
+Kestrel is a fictional directory of shared work rooms. Each room has a room key and a display name. Kestrel assigns the key when it creates the room. That key never changes, and Kestrel never reuses it for another room.
+
+The display name is the room’s human-readable label. Room owners can change it. A rename therefore changes what people see while the room keeps its assigned key.
+
+When you work with the storage schema, these concepts have different column names:
+
+| Concept | Storage column | Behavior |
+| --- | --- | --- |
+| Room key | `room_ref` | Never changes or gets reused |
+| Display name | `title_text` | Room owners can change it |
+
+Saved links identify rooms by their keys. When someone opens a saved link, Kestrel looks up the key and displays the room’s current name. The saved link can therefore reach the room after its display name changes.
+
+A link built from a display name can stop finding the room after a rename because that name has changed. Keep this distinction in mind when you choose the value that identifies a room in a link.
+
+## 2. Verify a rename with a saved link
+
+Save a room link before you rename the room. This gives you a link from before the change to open afterward.
+
+Follow these steps:
+
+1. Open the room you intend to rename.
+2. Save its room link.
+3. Rename the room as its owner.
+4. Open the link you saved before the rename.
+5. Confirm that it reaches the same room.
+6. Confirm that the room shows its new display name.
+
+Check both results. Reaching the same room verifies that the saved link still identifies it. Seeing the new name verifies that Kestrel displays the current label when the link opens.
+
+Use the previously saved link for this check. A link saved only after the rename does not verify what happens to a link saved beforehand.
+PAGE>>>
+
+Report, for every fact id 1 to 8:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

@@ -1,0 +1,80 @@
+You are scoring a draft page against its fact sheet. Read no other file, and do not run commands or browse; use only the text below.
+
+Brief the writer received: Write the landing page copy for `sackview`, following the tool page section order.
+
+Fact sheet (facts tagged [agent-only] are true but belong in a sources note, a link, or a disclosure on a reader page, or should be left out):
+Fact sheet:
+
+1. sackview shows what is inside a ZIP archive before you unpack it.
+2. Each entry shows its name, compressed size, and unpacked size.
+3. Install: `pipx install sackview`.
+4. `sackview inspect photos.zip` lists the archive's entries.
+5. `sackview inspect photos.zip --largest 10` shows the ten entries with the largest unpacked sizes, largest first.
+6. `sackview inspect photos.zip --find '*.csv'` shows only entries whose names match the pattern.
+7. It displays the total unpacked size so you can check available disk space before extracting elsewhere.
+8. It never extracts entries or changes the archive.
+9. Inspection works offline and sends no archive contents to a service.
+10. It supports ZIP archives only; other archive formats produce an unsupported-format message.
+11. `[agent-only]` Entry metadata is read through the internal ZipDirectoryReader adapter.
+12. `[agent-only]` Size totals use unsigned 64-bit accumulators.
+13. `[agent-only]` Unsupported formats return exit code 24.
+14. `[agent-only]` The package build copies its command schema from packaging/commands.json.
+
+Draft page:
+<<<PAGE
+# See inside a ZIP archive before unpacking it
+
+sackview shows what is inside a ZIP archive before you unpack it. Use the total unpacked size to check available disk space before extracting elsewhere.
+
+```sh
+pipx install sackview
+```
+
+Each entry shows its name, compressed size, and unpacked size.
+
+```sh
+sackview inspect photos.zip
+```
+
+This command lists the archive’s entries.
+
+## Commands
+
+Show the ten entries with the largest unpacked sizes, largest first:
+
+```sh
+sackview inspect photos.zip --largest 10
+```
+
+Show only entries whose names match a pattern:
+
+```sh
+sackview inspect photos.zip --find '*.csv'
+```
+
+## Good to know
+
+### Archive safety
+
+sackview never extracts entries or changes the archive.
+
+### Offline inspection
+
+Inspection works offline and sends no archive contents to a service.
+
+### Supported formats
+
+sackview supports ZIP archives only. Other archive formats produce an unsupported-format message.
+PAGE>>>
+
+Report, for every fact id 1 to 14:
+- "present": true when the page states the fact, in whole or as its reader-observable effect.
+- "where": "explanation" when it is stated in the main text; "sources_note", "link", or "disclosure" when it appears only there; "effect_only" when the page states only what a reader observes (for example "it never slows your machine"), not the mechanism; "absent" when not present.
+
+Also report:
+- "invented_claims": each claim on the page that the fact sheet does not support, quoted briefly. Rewording, headings, and calls to action are not claims.
+- "opening": {"first_two_sentences": the first two prose sentences after the title, quoted; "names_subject_and_job": true when those two sentences name the subject and say what it does; "reason_within_first_120_words": true when a reason a reader would want it appears in the first 120 words}.
+- "sentences": the number of prose sentences and prose list items, not counting headings, code, or table cells.
+- "fragments": each of those sentences or list items that has no finite verb, quoted.
+
+Reply with only JSON: {"facts": [{"id": "1", "present": true, "where": "explanation"}], "invented_claims": [], "opening": {}, "sentences": 0, "fragments": []}

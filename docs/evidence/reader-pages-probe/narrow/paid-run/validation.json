@@ -1,0 +1,84 @@
+{
+ "calls": 234,
+ "by_kind": {
+  "build": 45,
+  "extract": 45,
+  "comp": 45,
+  "extract2": 9,
+  "judge": 90
+ },
+ "retries": 0,
+ "saved_cells": 234,
+ "failed_in_substance": [
+  {
+   "cell": "extract-cfaddc98",
+   "reply": "could not read the prompt file; read command stalled"
+  },
+  {
+   "cell": "comp-cfaddc98",
+   "reply": "could not read the prompt file; read command stalled"
+  },
+  {
+   "cell": "extract-b5eb61b1",
+   "reply": "could not read the prompt file; read command stalled"
+  },
+  {
+   "cell": "comp-b5eb61b1",
+   "reply": "could not read the prompt file; read command stalled"
+  },
+  {
+   "cell": "comp-d9144b27",
+   "reply": "could not read the prompt file; read command stalled"
+  }
+ ],
+ "settings": {
+  "{\"driverKind\": \"codex\", \"kind\": \"build\", \"model\": \"gpt-6.1-sol\", \"options\": {\"reasoningEffort\": \"high\", \"serviceTier\": \"default\"}}": 45,
+  "{\"driverKind\": \"codex\", \"kind\": \"extract\", \"model\": \"gpt-6.1-sol\", \"options\": {\"reasoningEffort\": \"high\", \"serviceTier\": \"default\"}}": 45,
+  "{\"driverKind\": \"codex\", \"kind\": \"comp\", \"model\": \"gpt-6.1-sol\", \"options\": {\"reasoningEffort\": \"low\", \"serviceTier\": \"default\"}}": 45,
+  "{\"driverKind\": \"codex\", \"kind\": \"extract2\", \"model\": \"gpt-6-astra\", \"options\": {\"reasoningEffort\": \"high\", \"serviceTier\": \"default\"}}": 9,
+  "{\"driverKind\": \"codex\", \"kind\": \"judge\", \"model\": \"gpt-6-astra\", \"options\": {\"reasoningEffort\": \"high\", \"serviceTier\": \"default\"}}": 30,
+  "{\"driverKind\": \"codex\", \"kind\": \"judge\", \"model\": \"gpt-6.1-sol\", \"options\": {\"reasoningEffort\": \"high\", \"serviceTier\": \"default\"}}": 30,
+  "{\"driverKind\": \"claudeAgent\", \"kind\": \"judge\", \"model\": \"claude-opus-5-5\", \"options\": {\"effort\": \"high\", \"fastMode\": false}}": 30
+ },
+ "judge_prompts_with_both_pages_in_ab_order": 90,
+ "pointer_files_match_saved_prompts": true,
+ "double_coding": {
+  "builds": [
+   "887cd13e",
+   "2dd7d209",
+   "814d8fdc",
+   "d33e2dc9",
+   "64ec865f",
+   "de73c26c",
+   "c4a95dac",
+   "1f453dd3",
+   "6d002f3d"
+  ],
+  "agreement": 1.0
+ },
+ "scorer_sha256": {
+  "scorer/briefs.json": "c569718d7ef7e9f6309d0bfd3fea3b555f915cd0eae540a8e4d3f49d6238d755",
+  "scorer/build_arms.py": "188d4c00cadaea742ed2a52311e8d9d91c22ab57ffb5ce3135bfcce2c8e2603d",
+  "scorer/key.json": "36834a89a99b1f2b0d8caed24cb6a7b39f71a36cce513cbdcf0a9497fc23c62a",
+  "scorer/probe.py": "e9f3ec0d2e010beedda298379260523505926d259ea1a70719873f140e3960d7",
+  "scorer/prompts.py": "7d58d92a3061237c781a1baa7909559be8b8797d2b0242d6d330e92c233524a0",
+  "scorer/tools/metrics.py": "14969504fc202216378bc1f103aed3cb6a13f82d4516c16a2848fff7dd1dba14",
+  "scorer/tools/tells.py": "97533022a98a7861ee04f9baa7cb7d9b2d1fedf9d7874c4b753aa72bbb473d38",
+  "scorer/tools/vtext.py": "b97f47ed98d04bfd11b43715da8aaa6dfb00c84b8918462634f3ed7f787130f2"
+ },
+ "scorer_matches_parent_copy": {
+  "prompts.py": true,
+  "build_arms.py": true
+ },
+ "refs": {
+  "base": "85522f76cc69781ac239ac2cd2f3443b25d499e3",
+  "head": "c926026b6cfcd5d46ee80ee097d2c7a56d91566f"
+ },
+ "call_totals": {
+  "brief_writer": 1,
+  "dry_run": 13,
+  "paid_run": 234,
+  "total": 248,
+  "ceiling": 250
+ }
+}

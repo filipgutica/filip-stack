@@ -1,0 +1,74 @@
+You are comparing two drafts written from the same brief. Read no other file, and do not run commands or browse; judge only the text below.
+
+Brief: Write the docs-site page for the `term-weave` skill with the sections What it does, When to use it, How it works, and What you get.
+
+<<<DRAFT A
+# term-weave
+
+## What it does
+
+`term-weave` drafts a glossary of project terms from documents in a folder you supply. Every drafted definition links to the passage that supports it.
+
+## When to use it
+
+Use it when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+
+## How it works
+
+Run the skill manually:
+
+```text
+/term-weave <source-folder>
+```
+
+It reads Markdown and plain-text documents and ignores other file types. It never changes the source documents.
+
+If the folder is missing or contains no readable supported documents, it stops and explains the problem without drafting.
+
+## What you get
+
+The skill writes `GLOSSARY.md` in the working directory, with entries sorted alphabetically.
+
+It does not invent definitions. Terms without a supporting explanation appear under **Unresolved terms**, after the defined entries.
+
+If sources give conflicting definitions, the skill preserves both in one entry, links each source, and marks the entry **Conflict**.
+DRAFT A>>>
+
+<<<DRAFT B
+## What it does
+
+`term-weave` drafts a glossary of project terms from documents in a folder you supply.
+
+## When to use it
+
+Use it when project vocabulary is scattered across documents or newcomers encounter unexplained terms.
+
+## How it works
+
+Run the skill manually with `/term-weave <source-folder>`.
+
+For example, if your documents are in `./project-docs`:
+
+```text
+/term-weave ./project-docs
+```
+
+It reads Markdown and plain-text documents and ignores other file types. If the folder is missing or contains no readable supported documents, it stops and explains the problem without drafting.
+
+Every drafted definition includes a link to the passage that supports it. The skill does not invent definitions.
+
+If sources give conflicting definitions, it preserves both in one entry, links each source, and marks the entry **Conflict**.
+
+## What you get
+
+The skill writes `GLOSSARY.md` in the working directory. It never changes the source documents.
+
+Glossary entries appear alphabetically. Terms without a supporting explanation appear under **Unresolved terms**, after the defined entries.
+DRAFT B>>>
+
+Answer each question with "A", "B", or "SAME":
+- "reader": Could a first-time reader do what they came to do?
+- "careful": Does it read like a careful person wrote it?
+- "overall": Which draft is better overall?
+
+Reply with only JSON: {"reader": "A", "careful": "A", "overall": "A", "reason": "<one sentence>"}
