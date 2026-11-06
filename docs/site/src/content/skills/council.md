@@ -6,16 +6,9 @@ related: [merge-council]
 
 One model can be confidently wrong. In a council, each member answers in its
 own context, with no view of the others' answers, and your agent weighs the
-reasoning instead of counting votes. The default members are:
-
-| Member | Model |
-| --- | --- |
-| Astra | OpenAI's GPT-6 Astra |
-| Sol 6.1 | OpenAI's GPT-6.1 Sol |
-| Opus 5.5 | Anthropic's Claude Opus 5.5 |
-
-All three run at high reasoning effort. You can name different members when
-you ask.
+reasoning instead of counting votes. The default members are OpenAI's GPT-6
+Astra and GPT-6.1 Sol, and Anthropic's Claude Opus 5.5, all at high reasoning
+effort. You can name different members when you ask.
 
 ## When to use it
 

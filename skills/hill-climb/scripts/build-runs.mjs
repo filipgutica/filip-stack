@@ -18,7 +18,7 @@ const positional = pageFlag >= 0 ? args.filter((_, i) => i !== pageFlag && i !==
 const runsDir = positional[0] ?? join(homedir(), '.hill-climb', 'runs')
 const skillDir = join(dirname(fileURLToPath(import.meta.url)), '..')
 
-const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same', final: 'Final', start: 'Start' }
+const label = { candidate: 'Candidate', incumbent: 'Incumbent', same: 'Same', final: 'Final', start: 'Start', baseline: 'No guidance' }
 
 // Counts overall votes. A round votes candidate/same/incumbent; the final check votes final/same/start.
 const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
@@ -26,17 +26,42 @@ const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
   for (const vote of votes) counts[vote.overall] += 1
   return counts
 }
-const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
+// A scorecard-only final check has no votes, so it has no counts either.
+const finalCounts = (run) => (run.final?.votes?.length ? overall(run.final.votes, ['final', 'same', 'start']) : null)
+const isScore = (n) => typeof n === 'number' && Number.isFinite(n)
+// One Markdown table cell: pipes and line breaks would split the row.
+const cell = (text) => String(text ?? '').replace(/\r?\n/g, ' ').replace(/\|/g, '\\|')
+const scoreCell = (n) => (isScore(n) ? n.toFixed(1) : 'missing')
+
+// Score-decided climbs: whether the final score beat the start by the smallest gain that counts.
+// A tie never counts, even when a record sets minGain to 0.
+const scoreCheck = (run) => {
+  if (run.score?.final == null) return null
+  const { direction, start, final, minGain } = run.score
+  const gain = direction === 'lower' ? start - final : final - start
+  return { direction, start, final, gained: gain > 0 && gain >= minGain }
+}
 
 // What a reader should check before trusting the climb: the operator's notes, then any final check
 // that did not favor the final version, or a climb that kept changes but never ran one.
 const attention = (run) => {
   const items = [...(run.attention ?? [])]
   const fc = finalCounts(run)
+  const sc = scoreCheck(run)
   const total = fc ? fc.final + fc.same + fc.start : 0
   if (fc && fc.start > total / 2) items.push('Most judges preferred the starting version; consider dropping the climb.')
   else if (fc && fc.final <= total / 2) items.push('The final check did not show a clear gain over the starting version.')
-  if (!fc && run.rounds.some((r) => r.decision === 'accepted')) items.push('The climb kept changes but never ran the final check.')
+  if (sc && !sc.gained) items.push('The final score did not beat the start score.')
+  // A guidance climb must beat no guidance, by judges, by score, or both.
+  const bl = run.baseline
+  if (bl?.votes?.length && overall(bl.votes, ['final', 'same', 'baseline']).final <= bl.votes.length / 2) items.push('Most judges did not prefer the final version to no guidance.')
+  if (bl?.score != null && run.score?.final != null && !scoreCheck({ score: { ...run.score, start: bl.score } }).gained) items.push('The final score did not beat no guidance.')
+  // `both` needs both final checks, so report each one that is missing.
+  const rule = run.decisionRule ?? 'judges'
+  const kept = run.rounds.some((r) => r.decision === 'accepted')
+  if (kept && rule !== 'score' && !fc) items.push('The climb kept changes but never ran the final check.')
+  if (kept && rule !== 'judges' && !sc) items.push('The climb kept changes but never measured the final score.')
+  if (run.final?.scorecard?.some((s) => !isScore(s.start) || !isScore(s.final))) items.push('A scorecard row is missing a score.')
   return items
 }
 
@@ -53,7 +78,10 @@ const report = (run) => {
     `- Date: ${run.date}`,
     `- Target: ${run.target.repo}${run.target.pr ? ` PR #${run.target.pr}` : ''}, branch \`${run.target.branch}\`, head \`${run.target.head}\``,
     `- Goal: ${run.goal}`,
-    `- Budget: ${run.budget.rounds} rounds; size limit ${run.budget.sizeLimit} lines (original change ${run.budget.originalChangedLines} lines)`,
+    `- Budget: ${run.budget.rounds} rounds; size limit ${run.budget.sizeLimit} lines (original change ${run.budget.originalChangedLines} lines)${run.budget.maxCalls ? `; at most ${run.budget.maxCalls} member calls` : ''}`,
+    // Records from before decision rules leave both fields out; keep their reports unchanged.
+    ...(run.decisionRule || run.score ? [`- Decision rule: ${run.decisionRule ?? 'judges'}${run.score ? ` (\`${run.score.command}\`, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'})` : ''}`] : []),
+    ...(run.mayChange?.length ? [`- May change: ${run.mayChange.join('; ')}`] : []),
     `- Gates: ${run.gates.map((gate) => `\`${gate}\``).join(', ')}`,
     `- Lineup: ${run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ')}`,
     `- Stop: ${run.stop}`,
@@ -67,7 +95,9 @@ const report = (run) => {
   for (const round of run.rounds) {
     const counts = overall(round.votes)
     lines.push(`### Round ${round.n}: ${round.summary}`, '')
-    lines.push(`- Decision: **${round.decision}** (overall votes: ${counts.candidate} candidate, ${counts.same} same, ${counts.incumbent} incumbent)`)
+    const votes = round.votes.length ? ` (overall votes: ${counts.candidate} candidate, ${counts.same} same, ${counts.incumbent} incumbent)` : ''
+    lines.push(`- Decision: **${round.decision}**${votes}`)
+    if (round.score != null) lines.push(`- Score: ${round.score}`)
     lines.push(`- Climb size after this round: ${round.climbChangedLines} / ${run.budget.sizeLimit} lines. Gates: ${round.gates}.`)
     if (round.restore) lines.push(`- Restore: ${round.restore}`)
     lines.push('- Applied:', ...round.applied.map((item) => `  - ${item}`))
@@ -82,6 +112,18 @@ const report = (run) => {
   if (fc) {
     lines.push('## Start vs final', '', `Overall votes: ${fc.final} final, ${fc.same} same, ${fc.start} start.`, '', ...voteTable(run, run.final.votes), '')
     if (run.final.notes?.length) lines.push(...run.final.notes.map((n) => `- ${n}`), '')
+  }
+  if (run.final?.scorecard?.length) {
+    lines.push('## Scorecard', '', '| Screen or task | Start | Final | Biggest remaining issue |', '| --- | --- | --- | --- |')
+    lines.push(...run.final.scorecard.map((s) => `| ${cell(s.item)} | ${scoreCell(s.start)} | ${scoreCell(s.final)} | ${cell(s.issue)} |`), '')
+  }
+  if (run.baseline) {
+    lines.push('## Final vs no guidance', '', run.baseline.summary, '')
+    if (run.baseline.score != null) lines.push(`Score: ${run.score?.final ?? 'not measured'} final, ${run.baseline.score} with no guidance.`, '')
+    if (run.baseline.votes?.length) {
+      const bc = overall(run.baseline.votes, ['final', 'same', 'baseline'])
+      lines.push(`Overall votes: ${bc.final} final, ${bc.same} same, ${bc.baseline} no guidance.`, '', ...voteTable(run, run.baseline.votes), '')
+    }
   }
   lines.push('## Follow-ups', '', ...run.followUps.map((f) => `- ${f}`), '')
   lines.push('## Notes', '', ...run.notes.map((n) => `- ${n}`), '')
@@ -110,7 +152,9 @@ const index = runs.map((run) => {
     summary: run.result.summary,
     climbChangedLines: run.result.climbChangedLines,
     sizeLimit: run.budget.sizeLimit,
+    decisionRule: run.decisionRule ?? 'judges',
     final: finalCounts(run),
+    score: scoreCheck(run),
     attention: attention(run),
     stop: run.stop,
   }

@@ -249,8 +249,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 <div class="shell">
   <header class="page-head">
     <h1>Hill Climb Runs</h1>
-    <p>A hill climb polishes a pull request that already works. Each round makes a few small edits, and three AI judges compare the result with the version before it without knowing which is new. The edits stay only when most judges prefer them.</p>
-    <p>When the climb ends, the judges compare the pull request as it was before the climb with the final version. That last vote is the verdict below. Select a run to see each round, the votes, and the diff.</p>
+    <p>A hill climb improves a pull request that already works, or works toward a goal from scratch. Each round makes a few small edits, and three AI judges compare the result with the version before it without knowing which is new. The edits stay only when most judges prefer them. Some climbs use a score instead, such as an accessibility violation count, or require both.</p>
+    <p>When the climb ends, the judges compare the version from before the climb with the final version, or the climb compares their scores. That comparison is the verdict below. Select a run to see each round, the votes, and the diff.</p>
   </header>
   <section aria-labelledby="runs-heading">
     <h3 id="runs-heading">Climbs, newest first</h3>
@@ -263,7 +263,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 (() => {
   const $runs = document.getElementById('runs');
   const $detail = document.getElementById('detail');
-  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent', final: 'Final', start: 'Start' };
+  const LABEL = { candidate: 'Candidate', same: 'Same', incumbent: 'Incumbent', final: 'Final', start: 'Start', baseline: 'No guidance' };
   const cache = new Map();
   let index = [];
 
@@ -295,13 +295,22 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 
   const go = (id) => { if (location.hash.slice(1) !== id) location.hash = id; };
 
-  // The verdict is the start-vs-final vote: did the whole climb make the pull request better?
+  // The verdict is the start-vs-final check: did the whole climb make the pull request better?
+  // The decision rule says which checks it needs: judge votes, a score comparison, or both.
   const verdictCell = (run) => {
-    if (!run.final) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
+    const rule = run.decisionRule ?? 'judges';
+    const needsJudges = rule !== 'score';
+    const needsScore = rule !== 'judges';
+    if ((needsJudges && !run.final) || (needsScore && !run.score)) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
+    if (!needsJudges) {
+      return [el('span', { class: `verdict ${run.score.gained ? 'v-final' : 'v-same'}`, text: run.score.gained ? 'Better' : 'No clear gain' }),
+        el('small', { class: 'sub', text: `Score ${run.score.start} to ${run.score.final}, ${run.score.direction} is better` })];
+    }
     const f = run.final;
     const total = f.final + f.same + f.start;
-    const [cls, word] = f.final > total / 2 ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
-    return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version` })];
+    const better = f.final > total / 2 && (!needsScore || run.score.gained);
+    const [cls, word] = better ? ['v-final', 'Better'] : f.start > total / 2 ? ['v-start', 'Worse'] : ['v-same', 'No clear gain'];
+    return [el('span', { class: `verdict ${cls}`, text: word }), el('small', { class: 'sub', text: `${f.final} of ${total} judges preferred the final version${run.score ? `; score ${run.score.start} to ${run.score.final}` : ''}` })];
   };
 
   const renderRuns = (activeId) => {
@@ -342,9 +351,9 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('div', { class: 'bars', role: 'img', 'aria-label': `Round ${r.n}: ${t.candidate} judges preferred the candidate, ${t.same} same, ${t.incumbent} preferred the incumbent; climb ${r.climbChangedLines} of ${run.budget.sizeLimit} lines` },
           bar(t, 'candidate', 'incumbent'),
           el('div', { class: 'size' }, el('div', { style: `width:${sizePct}%` }))),
-        el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
+        el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : r.score != null ? `Score ${r.score}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
     });
-    if (run.final) {
+    if (run.final?.votes?.length) {
       const t = overall(run.final.votes);
       rows.push(el('div', { class: 'prow final' },
         el('div', { class: 'rl' }, 'Whole climb', el('small', { text: 'Start vs final' })),
@@ -365,12 +374,22 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     return el('div', { class: 'table-wrap' }, el('table', {}, el('thead', {}, head), el('tbody', {}, body)));
   };
 
+  // A malformed row shows as missing instead of failing the whole run.
+  const scoreText = (n) => (typeof n === 'number' && Number.isFinite(n) ? n.toFixed(1) : 'missing');
+  // Each screen or task with its mean 0-10 score before and after the climb, and what is left to fix.
+  const scorecard = (rows) => el('div', { class: 'block' }, el('div', { class: 'label', text: 'Scorecard' }),
+    el('div', { class: 'table-wrap' }, el('table', {},
+      el('thead', {}, el('tr', {}, el('th', { text: 'Screen or task' }), el('th', { class: 'n', text: 'Start' }), el('th', { class: 'n', text: 'Final' }), el('th', { text: 'Biggest remaining issue' }))),
+      el('tbody', {}, rows.map((s) => el('tr', {},
+        el('td', { class: 'member', text: s.item }), el('td', { class: 'n num', text: scoreText(s.start) }),
+        el('td', { class: 'n num', text: scoreText(s.final) }), el('td', { class: 'reason' }, rich(s.issue))))))));
+
   const roundSection = (run, r) => {
     const o = overall(r.votes);
     const parts = [
       el('div', { class: 'round-head' },
         el('h4', { text: `Round ${r.n}` }),
-        el('span', { class: `verdict d-${r.decision}`, text: `${cap(r.decision)}${r.votes.length ? ` ${score(o, 'candidate', 'incumbent')}` : ''}` }),
+        el('span', { class: `verdict d-${r.decision}`, text: `${cap(r.decision)}${r.votes.length ? ` ${score(o, 'candidate', 'incumbent')}` : ''}${r.score != null ? `, score ${r.score}` : ''}` }),
         el('span', { class: 'muted' }, rich(r.summary))),
       el('div', { class: 'block' }, el('div', { class: 'label', text: 'Changed in the candidate' }),
         el('ul', { class: 'applied' }, r.applied.map((a) => el('li', {}, rich(a))))),
@@ -401,7 +420,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     const accepted = run.rounds.filter((r) => r.decision === 'accepted').length;
     const rejected = run.rounds.filter((r) => r.decision === 'rejected').length;
     const voided = run.rounds.filter((r) => r.decision === 'void').length;
-    $detail.replaceChildren(
+    // replaceChildren would print an absent (null) section as text, so drop those first.
+    $detail.replaceChildren(...[
       el('header', { class: 'run-head' },
         el('h2', { text: run.title }),
         el('div', { class: 'facts' },
@@ -415,16 +435,24 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('div', {}, el('dt', { text: 'Rounds' }), el('dd', { class: 'num' }, `${run.rounds.length} of ${run.budget.rounds}`)),
         el('div', {}, el('dt', { text: 'Accepted' }), el('dd', { class: 'num' }, String(accepted), el('small', { text: `${rejected} rejected${voided ? `, ${voided} void` : ''}` }))),
         el('div', {}, el('dt', { text: 'Climb size' }), el('dd', { class: 'num' }, `${run.result.climbChangedLines} lines`, el('small', { text: `Limit ${run.budget.sizeLimit}, original change ${run.budget.originalChangedLines}` }))),
-        el('div', {}, el('dt', { text: 'Member calls' }), el('dd', { class: 'num' }, String(run.memberCalls), el('small', { text: run.result.committed ? 'Committed' : 'Not committed' })))),
+        el('div', {}, el('dt', { text: 'Member calls' }), el('dd', { class: 'num' }, String(run.memberCalls), el('small', { text: `${run.budget.maxCalls ? `Limit ${run.budget.maxCalls}. ` : ''}${run.result.committed ? 'Committed' : 'Not committed'}` })))),
       el('p', { class: 'muted' }, el('strong', { text: 'Stopped: ' }), rich(run.stop)),
       el('section', {}, el('h3', { text: 'How the rounds went' }), progress(run)),
       el('section', {}, el('h3', { text: 'Criteria' }),
         el('dl', { class: 'criteria' }, run.criteria.map((c) => [el('dt', { text: `${c.id} ${c.name}` }), el('dd', {}, rich(c.description))]))),
       el('section', {}, el('h3', { text: 'Rounds' }), run.rounds.map((r) => roundSection(run, r))),
-      run.final ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
+      run.final?.votes?.length ? el('section', {}, el('h3', { text: 'Verdict: start against final' }),
         el('p', { class: 'muted', text: 'After the last round, each judge compared the pull request as it was before the climb with the final version, without knowing which was which.' }),
         voteTable(run, run.final.votes),
-        run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null) : null,
+        run.final.notes?.length ? el('ul', { class: 'notes' }, run.final.notes.map((n) => el('li', {}, rich(n)))) : null,
+        run.final.scorecard?.length ? scorecard(run.final.scorecard) : null) : null,
+      // A scorecard-only final check: no round was accepted, or a score decided the climb.
+      !run.final?.votes?.length && run.final?.scorecard?.length ? el('section', {}, el('h3', { text: 'Scorecard' }), scorecard(run.final.scorecard)) : null,
+      // A guidance climb also compares its final version with no guidance at all.
+      run.baseline ? el('section', {}, el('h3', { text: 'Final against no guidance' }),
+        el('p', { class: 'muted' }, rich(run.baseline.summary)),
+        run.baseline.score != null ? el('p', { class: 'num' }, `Score: ${run.score?.final ?? 'not measured'} final, ${run.baseline.score} with no guidance.`) : null,
+        run.baseline.votes?.length ? voteTable(run, run.baseline.votes) : null) : null,
       el('section', {}, el('h3', { text: 'Result' }),
         el('p', { class: 'goal' }, rich(run.result.summary)),
         run.result.diff ? el('details', {}, el('summary', { text: 'Climb diff' }), diffView(run.result.diff)) : null),
@@ -433,8 +461,11 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('dl', { class: 'criteria' },
           el('dt', { text: 'Lineup' }), el('dd', { text: run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ') }),
           el('dt', { text: 'Gates' }), el('dd', {}, run.gates.map((g, i) => [i ? ', ' : '', el('code', { text: g })])),
+          el('dt', { text: 'Decision rule' }), el('dd', {}, run.decisionRule ?? 'judges',
+            run.score ? [': ', el('code', { text: run.score.command }), `, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'}`] : null),
+          run.mayChange?.length ? [el('dt', { text: 'May change' }), el('dd', { text: run.mayChange.join('; ') })] : null,
           el('dt', { text: 'Not covered' }), el('dd', { text: run.notCovered.join(' ') })),
-        el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n))))));
+        el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n)))))].filter((n) => n != null));
   };
 
   const show = async () => {

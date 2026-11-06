@@ -34,7 +34,10 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
   "goal": "One sentence from the climb card.",
   "criteria": [{ "id": "C1", "name": "Clarity", "description": "From the climb card." }],
   "lineup": [{ "member": "Astra", "model": "gpt-6-astra", "effort": "high", "provider": "OpenAI" }],
-  "budget": { "rounds": 3, "sizeLimit": 20, "originalChangedLines": 8 },
+  "budget": { "rounds": 3, "sizeLimit": 20, "originalChangedLines": 8, "maxCalls": 20 },
+  "decisionRule": "judges",
+  "score": { "command": "pnpm a11y:count", "direction": "lower", "minGain": 1, "start": 7, "final": 2 },
+  "mayChange": ["Focus order in the settings form"],
   "gates": ["pnpm check"],
   "notCovered": ["From the climb card."],
   "rounds": [
@@ -45,6 +48,7 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
       "applied": ["What the candidate changed, one item per change."],
       "climbChangedLines": 2,
       "gates": "pass",
+      "score": 4,
       "votes": [
         {
           "member": "Astra",
@@ -59,9 +63,15 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
     }
   ],
   "stop": "The stop rule that ended the climb.",
+  "baseline": {
+    "summary": "Optional, guidance climbs only: the final version against no guidance.",
+    "votes": [{ "member": "Astra", "overall": "final", "criteria": { "C1": "final" }, "reason": "The judge's overall reason." }],
+    "score": 1.5
+  },
   "final": {
     "votes": [{ "member": "Astra", "overall": "final", "criteria": { "C1": "final" }, "reason": "The judge's overall reason." }],
-    "notes": ["Optional: how the start and final evidence were built."]
+    "notes": ["Optional: how the start and final evidence were built."],
+    "scorecard": [{ "item": "Settings, mobile dark", "start": 7.3, "final": 8.7, "issue": "The Save button sits below the first viewport." }]
   },
   "result": {
     "summary": "What the climb changed, in one or two sentences.",
@@ -78,14 +88,21 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
 
 Field notes:
 
-- `kind`: `code` or `ui`.
+- `kind`: `code`, `ui`, or `guidance`.
+- `budget.maxCalls`: optional; the card's member-call limit.
+- `decisionRule`: optional; `judges`, `score`, or `both`. Leave it out for `judges`.
+- `score`: required for `score` and `both`, otherwise left out. `direction` is `higher` or `lower`; `minGain` is the smallest gain that counts; `start` and `final` are the starting and final incumbents' scores.
+- `mayChange`: optional; the interactions the card's Behavior field lets the climb change. Leave it out when behavior stays the same, and list each test the climb changed for it under `attention`.
+- `rounds[].score`: optional; the candidate's score, for `score` and `both`. Leave it out when a gate failed first.
 - `target.pr` and `target.prUrl`: use `null` for a climb on uncommitted work.
 - `proposals`: round 1 holds the propose results; later rounds use `[]`. Statuses are `none`, `applied`, `declined`, `exhausted`, or `applied in round <n>`.
 - `gates`: `pass`, `fail`, or `blocked`.
-- `decision`: `accepted`, `rejected`, or `void`. A round that fails a gate is `rejected` with `"votes": []`.
+- `decision`: `accepted`, `rejected`, or `void`. A round that fails a gate is `rejected` with `"votes": []`. Under `score`, every round has `"votes": []`.
 - `result.summary`: the runs list shows it beside the PR title. Write it for someone who has not read the PR: what the climb changed, not how.
 - `attention`: optional. Add an item when the result needs a second look, such as a change made after the climb or a fact the gates could not check. The builder adds an item when the final check does not favor the final version.
-- `final`: the final check. Votes are `final`, `same`, or `start`. Optional: leave it out when no round was accepted.
+- `final`: the final check's judge votes. Votes are `final`, `same`, or `start`. When no round was accepted, or under `score`, where `score.final` against `score.start` is the final check, keep `final` with `"votes": []` for a UI or guidance climb's scorecard, and leave it out otherwise.
+- `baseline`: required for a guidance climb, otherwise left out. Votes are `final`, `same`, or `baseline`; leave `votes` out under `score`. `score` is the baseline's score; leave it out under `judges`.
+- `final.scorecard`: optional, for UI and guidance climbs. One entry per screen and state, or per task. `start` and `final` are the mean 0–10 scores across judges, and `issue` is the issue judges cite most for the final version. A scorecard-only pass leaves `final.votes` empty.
 - `memberCalls`: every propose and judge call, including the final check and retries.
 
 ## Build the reports
