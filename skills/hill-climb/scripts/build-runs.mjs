@@ -28,15 +28,25 @@ const overall = (votes, keys = ['candidate', 'same', 'incumbent']) => {
 }
 const finalCounts = (run) => (run.final ? overall(run.final.votes, ['final', 'same', 'start']) : null)
 
+// Score-decided climbs: whether the final score beat the start by the smallest gain that counts.
+const scoreCheck = (run) => {
+  if (run.score?.final == null) return null
+  const { direction, start, final, minGain } = run.score
+  const gain = direction === 'lower' ? start - final : final - start
+  return { direction, start, final, gained: gain >= minGain }
+}
+
 // What a reader should check before trusting the climb: the operator's notes, then any final check
 // that did not favor the final version, or a climb that kept changes but never ran one.
 const attention = (run) => {
   const items = [...(run.attention ?? [])]
   const fc = finalCounts(run)
+  const sc = scoreCheck(run)
   const total = fc ? fc.final + fc.same + fc.start : 0
   if (fc && fc.start > total / 2) items.push('Most judges preferred the starting version; consider dropping the climb.')
   else if (fc && fc.final <= total / 2) items.push('The final check did not show a clear gain over the starting version.')
-  if (!fc && run.rounds.some((r) => r.decision === 'accepted')) items.push('The climb kept changes but never ran the final check.')
+  if (sc && !sc.gained) items.push('The final score did not beat the start score.')
+  if (!fc && !sc && run.rounds.some((r) => r.decision === 'accepted')) items.push('The climb kept changes but never ran the final check.')
   return items
 }
 
@@ -53,7 +63,9 @@ const report = (run) => {
     `- Date: ${run.date}`,
     `- Target: ${run.target.repo}${run.target.pr ? ` PR #${run.target.pr}` : ''}, branch \`${run.target.branch}\`, head \`${run.target.head}\``,
     `- Goal: ${run.goal}`,
-    `- Budget: ${run.budget.rounds} rounds; size limit ${run.budget.sizeLimit} lines (original change ${run.budget.originalChangedLines} lines)`,
+    `- Budget: ${run.budget.rounds} rounds; size limit ${run.budget.sizeLimit} lines (original change ${run.budget.originalChangedLines} lines)${run.budget.maxCalls ? `; at most ${run.budget.maxCalls} member calls` : ''}`,
+    `- Decision rule: ${run.decisionRule ?? 'judges'}${run.score ? ` (\`${run.score.command}\`, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'})` : ''}`,
+    ...(run.mayChange?.length ? [`- May change: ${run.mayChange.join('; ')}`] : []),
     `- Gates: ${run.gates.map((gate) => `\`${gate}\``).join(', ')}`,
     `- Lineup: ${run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ')}`,
     `- Stop: ${run.stop}`,
@@ -67,7 +79,9 @@ const report = (run) => {
   for (const round of run.rounds) {
     const counts = overall(round.votes)
     lines.push(`### Round ${round.n}: ${round.summary}`, '')
-    lines.push(`- Decision: **${round.decision}** (overall votes: ${counts.candidate} candidate, ${counts.same} same, ${counts.incumbent} incumbent)`)
+    const votes = round.votes.length ? ` (overall votes: ${counts.candidate} candidate, ${counts.same} same, ${counts.incumbent} incumbent)` : ''
+    lines.push(`- Decision: **${round.decision}**${votes}`)
+    if (round.score != null) lines.push(`- Score: ${round.score}`)
     lines.push(`- Climb size after this round: ${round.climbChangedLines} / ${run.budget.sizeLimit} lines. Gates: ${round.gates}.`)
     if (round.restore) lines.push(`- Restore: ${round.restore}`)
     lines.push('- Applied:', ...round.applied.map((item) => `  - ${item}`))
@@ -111,6 +125,7 @@ const index = runs.map((run) => {
     climbChangedLines: run.result.climbChangedLines,
     sizeLimit: run.budget.sizeLimit,
     final: finalCounts(run),
+    score: scoreCheck(run),
     attention: attention(run),
     stop: run.stop,
   }

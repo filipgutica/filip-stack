@@ -42,3 +42,24 @@ test('builds the runs-dir argument, including gate-failed rounds without votes',
   const pageRun = JSON.parse(readFileSync(join(pageDir, 'runs', record.id, 'run.json'), 'utf8'))
   assert.deepEqual(pageRun.rounds[0].votes, [])
 })
+
+test('reports a score-decided climb by its scores, not as missing votes or a missing final check', () => {
+  const root = mkdtempSync(join(tmpdir(), 'hill-climb-runs-'))
+  const runsDir = join(root, 'runs')
+  const scored = {
+    ...record, id: 'run-score', decisionRule: 'score',
+    // Lower is better and the climb ended no lower than it started, so the final check failed.
+    score: { command: 'pnpm a11y:count', direction: 'lower', minGain: 1, start: 7, final: 7 },
+    rounds: [{ ...round(1, 'accepted', []), score: 5 }],
+  }
+  mkdirSync(join(runsDir, scored.id), { recursive: true })
+  writeFileSync(join(runsDir, scored.id, 'run.json'), JSON.stringify(scored))
+
+  execFileSync(process.execPath, [script, runsDir], { env: { ...process.env, HOME: join(root, 'home') } })
+  const report = readFileSync(join(runsDir, scored.id, 'report.md'), 'utf8')
+  assert.match(report, /Decision rule: score/)
+  assert.match(report, /Score: 5/)
+  const [built] = JSON.parse(readFileSync(join(runsDir, 'index.json'), 'utf8')).runs
+  assert.deepEqual(built.attention, ['The final score did not beat the start score.'])
+  assert.deepEqual(built.score, { direction: 'lower', start: 7, final: 7, gained: false })
+})

@@ -249,8 +249,8 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 <div class="shell">
   <header class="page-head">
     <h1>Hill Climb Runs</h1>
-    <p>A hill climb polishes a pull request that already works. Each round makes a few small edits, and three AI judges compare the result with the version before it without knowing which is new. The edits stay only when most judges prefer them.</p>
-    <p>When the climb ends, the judges compare the pull request as it was before the climb with the final version. That last vote is the verdict below. Select a run to see each round, the votes, and the diff.</p>
+    <p>A hill climb improves a pull request that already works, or works toward a goal from scratch. Each round makes a few small edits, and three AI judges compare the result with the version before it without knowing which is new. The edits stay only when most judges prefer them. Some climbs use a score instead, such as an accessibility violation count, or require both.</p>
+    <p>When the climb ends, the judges compare the version from before the climb with the final version, or the climb compares their scores. That comparison is the verdict below. Select a run to see each round, the votes, and the diff.</p>
   </header>
   <section aria-labelledby="runs-heading">
     <h3 id="runs-heading">Climbs, newest first</h3>
@@ -297,6 +297,11 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
 
   // The verdict is the start-vs-final vote: did the whole climb make the pull request better?
   const verdictCell = (run) => {
+    // A score-decided climb compares the start and final scores instead of calling judges.
+    if (!run.final && run.score) {
+      return [el('span', { class: `verdict ${run.score.gained ? 'v-final' : 'v-same'}`, text: run.score.gained ? 'Better' : 'No clear gain' }),
+        el('small', { class: 'sub', text: `Score ${run.score.start} to ${run.score.final}, ${run.score.direction} is better` })];
+    }
     if (!run.final) return el('span', { class: 'muted', text: run.accepted ? 'Not checked' : 'No changes kept' });
     const f = run.final;
     const total = f.final + f.same + f.start;
@@ -342,7 +347,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('div', { class: 'bars', role: 'img', 'aria-label': `Round ${r.n}: ${t.candidate} judges preferred the candidate, ${t.same} same, ${t.incumbent} preferred the incumbent; climb ${r.climbChangedLines} of ${run.budget.sizeLimit} lines` },
           bar(t, 'candidate', 'incumbent'),
           el('div', { class: 'size' }, el('div', { style: `width:${sizePct}%` }))),
-        el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
+        el('div', { class: 'rv num' }, r.votes.length ? `Candidate ${score(t, 'candidate', 'incumbent')}` : r.score != null ? `Score ${r.score}` : 'No votes', el('br'), `${r.climbChangedLines} of ${run.budget.sizeLimit} lines`));
     });
     if (run.final) {
       const t = overall(run.final.votes);
@@ -370,7 +375,7 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
     const parts = [
       el('div', { class: 'round-head' },
         el('h4', { text: `Round ${r.n}` }),
-        el('span', { class: `verdict d-${r.decision}`, text: `${cap(r.decision)}${r.votes.length ? ` ${score(o, 'candidate', 'incumbent')}` : ''}` }),
+        el('span', { class: `verdict d-${r.decision}`, text: `${cap(r.decision)}${r.votes.length ? ` ${score(o, 'candidate', 'incumbent')}` : ''}${r.score != null ? `, score ${r.score}` : ''}` }),
         el('span', { class: 'muted' }, rich(r.summary))),
       el('div', { class: 'block' }, el('div', { class: 'label', text: 'Changed in the candidate' }),
         el('ul', { class: 'applied' }, r.applied.map((a) => el('li', {}, rich(a))))),
@@ -433,6 +438,9 @@ details[open] > summary { border-bottom: 1px solid var(--border-subtle); }
         el('dl', { class: 'criteria' },
           el('dt', { text: 'Lineup' }), el('dd', { text: run.lineup.map((m) => `${m.member} (${m.model}, ${m.effort}, ${m.provider})`).join('; ') }),
           el('dt', { text: 'Gates' }), el('dd', {}, run.gates.map((g, i) => [i ? ', ' : '', el('code', { text: g })])),
+          el('dt', { text: 'Decision rule' }), el('dd', {}, run.decisionRule ?? 'judges',
+            run.score ? [': ', el('code', { text: run.score.command }), `, ${run.score.direction} is better by at least ${run.score.minGain}; start ${run.score.start}, final ${run.score.final ?? 'not measured'}`] : null),
+          run.mayChange?.length ? [el('dt', { text: 'May change' }), el('dd', { text: run.mayChange.join('; ') })] : null,
           el('dt', { text: 'Not covered' }), el('dd', { text: run.notCovered.join(' ') })),
         el('ul', { class: 'notes' }, run.notes.map((n) => el('li', {}, rich(n))))));
   };
