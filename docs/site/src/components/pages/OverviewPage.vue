@@ -458,8 +458,8 @@ onMounted(() => {
         <div>
           <h3 class="map-label">What the host loads</h3>
           <div class="map-load">
-            <strong>Every skill's name and description</strong>
-            <span>Always loaded. This is all the host reads to choose.</span>
+            <strong>Skill names and descriptions</strong>
+            <span>Always loaded, except for manual skills. This is all the host reads to choose.</span>
             <div class="map-load">
               <strong><code>{{ selectedSkill }}</code> SKILL.md</strong>
               <span>Only the chosen skill's rules.</span>

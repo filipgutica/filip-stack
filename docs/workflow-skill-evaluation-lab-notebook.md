@@ -1516,7 +1516,30 @@ Evidence:
 - [docs/evidence/guide-body-probe/calibration.md](evidence/guide-body-probe/calibration.md)
 - [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md)
 
-### 25. UX guidance probe: pre-registration and dry run
+### 25. Writing-guidance climb and probe
+
+Date: 2026-11-06. This study followed the addenda: vanilla error analysis first, reader-task success as the main measure, rules per Diátaxis type, and no judging of rule text on its own. A guidance climb under the `score` rule changed `technical-prose.md`. Each version was scored by the pages agents wrote on four fixed briefs with answer keys. Each task scored 0 on a wrong answer; a pass scored 1 − 0.4 × min(depth ÷ word limit, 1). The climb chose its final version on its own briefs, so a pre-registered probe on four fresh briefs decided shipping.
+
+- **Climb:** baseline 78.55, `main` 79.51, round 1 84.88 (accepted), round 2 85.56 (rejected, below the 1.0 bar). Round 1 added a section, "Place answers in documentation pages", with one rule per page type.
+- **Final-check scorecard:** two of three judges preferred `main` overall. All three preferred `main` on fit to the page type, because recovery-first tutorials and how-to guides break the reader's working order. The probe's ship rule was tightened before its first build.
+
+Result: **not supported**. The probe made 121 of 135 calls with no retries.
+
+- **Part 1 fails:** head beat base in 11 of 20 pairs (+2.12, sign p = 0.41).
+- **Part 2 fails:** head beat vanilla in 14 of 20 pairs (+1.33, p = 0.058).
+- **Part 3 fails:** head passed 21 reference tasks against base's 25.
+
+Several head failures were key literalism ("same retained cursor" against a key that needs "same cursor"). A post hoc depth-only check still gives head only 13 of 20 pairs against base. The climb's depth gain did not hold on fresh briefs. `main` keeps its `technical-prose.md`.
+
+Lesson: a reader scored on depth rewards answer-first order, which works against tutorial and how-to sequence. A future placement climb should use the `both` rule.
+
+Evidence:
+
+- [docs/evidence/writing-guidance-climb/card.md](evidence/writing-guidance-climb/card.md)
+- [docs/evidence/writing-guidance-climb/prereg.md](evidence/writing-guidance-climb/prereg.md)
+- [docs/evidence/writing-guidance-climb/results.md](evidence/writing-guidance-climb/results.md)
+
+### 26. UX guidance probe: pre-registration and dry run
 
 Date: 2026-11-06. Plan and free dry run only; no paid call has run.
 
@@ -1691,6 +1714,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-05 | Reader pages B3 rerun | R4 caveat placement only; five new head builds, reused controls, 46 new calls | Not supported: B3 loses 4–11 to base and wins 12–3 against vanilla; zero retries | Combined no harm and objective gain pass; base judge agreement fails. B1, B2, B4 were not rerun. Push blocked by session policy; no routing run. | [docs/evidence/reader-pages-probe/b3-rerun-report.md](evidence/reader-pages-probe/b3-rerun-report.md) |
 | 2026-11-05 | Reader pages narrowed probe | Scope narrowed to landing, skill, and lesson-opening pages; R4 revert; 3 new briefs × 3 arms × 5 attempts, 234 paid calls | Not supported: head beats base 10–5, 11–4, 10–5, but vanilla wins N1 14–1; 5 N2 scoring calls failed and were not retried | Judge agreement against base now passes on all three briefs. Head lost the tool landing page to vanilla, whose pages all had an install heading. Objective gain against base is undetermined. | [docs/evidence/reader-pages-probe/narrow-report.md](evidence/reader-pages-probe/narrow-report.md) |
 | 2026-11-06 | Guide-body probe | Body rules per Diátaxis type in `technical-prose.md`; 3 briefs × 3 arms × 5 attempts; calibrated judges; 325 paid calls | Not supported: head lost 2–8 to base and 2–6 to vanilla on reader success; no harm passed; D3 saturated | Reader tasks hit ceiling, so read depth decided pairs. Head's how-to put the final check last, and its explanations motivated before defining. Head leaked no agent-only facts. | [docs/evidence/guide-body-probe/results.md](evidence/guide-body-probe/results.md) |
+| 2026-11-06 | Writing-guidance climb and probe | Answer placement per Diátaxis type in `technical-prose.md`; climb under `score` on 4 briefs, then 4 fresh briefs × 3 arms × 5 attempts, 121 probe calls | Not supported: head beat base 11/20 and vanilla 14/20; reference lost 4 tasks to base | Climb gain (+5.37) did not hold on fresh briefs; scorecard judges preferred `main` on page-type fit; some failures were key literalism. | [docs/evidence/writing-guidance-climb/results.md](evidence/writing-guidance-climb/results.md) |
 | 2026-11-06 | UX guidance probe pre-registration and dry run | `interface-design` vs `ux-laws` plus `frontend-design` vs vanilla; review task with planted defects and build task with gates and blind judges; Opus 5.5 attempts | Free dry run passed: identical first requests across arms, self-test 24 of 24, gates pass two reference builds and fail the stub; no paid call | `--safe-mode --restricted` and scratch Codex homes remove host guidance that earlier probes shared across arms. Paid run of 72 calls awaits approval. | [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md) |
 
 ## Validity threats
@@ -1791,6 +1815,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Micro v2.3 successful-patch quality report | `docs/evidence/workflow-skill-evaluation/micro-v2-3-successful-patch-quality/` |
 | Reader pages probe preregistration, dry runs, and scorer | [docs/evidence/reader-pages-probe/](evidence/reader-pages-probe/) |
 | Guide-body probe preregistration, calibration, results, and scorer | [docs/evidence/guide-body-probe/](evidence/guide-body-probe/) |
+| Writing-guidance climb card, probe preregistration, results, and scorer | [docs/evidence/writing-guidance-climb/](evidence/writing-guidance-climb/) |
 | UX guidance probe preregistration, dry run, scorer, and fixture | [docs/evidence/ux-guidance-probe/](evidence/ux-guidance-probe/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |

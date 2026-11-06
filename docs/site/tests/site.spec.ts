@@ -1,5 +1,12 @@
 import { expect, test } from "@playwright/test";
-import { pageTypes, routes, skillNames, themes, widths } from "./pages";
+import {
+  openPageType,
+  pageTypes,
+  routes,
+  skillNames,
+  themes,
+  widths,
+} from "./pages";
 import {
   expectSkillLinks,
   followPillarFromMap,
@@ -223,9 +230,7 @@ for (const theme of themes)
             errors.push(message.text());
         });
         await page.emulateMedia({ colorScheme: theme });
-        await page.setViewportSize({ width, height: 900 });
-        await page.goto(`/filip-stack/${entry.path}`);
-        await expect(page.locator("main h1")).toHaveText(entry.title);
+        await openPageType({ page, entry, width });
         await expect(
           page.getByRole("group", { name: "Color theme" }),
         ).toBeVisible();
