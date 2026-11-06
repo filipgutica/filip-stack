@@ -6,5 +6,6 @@
   "callCap": 171,
   "seed": 20261106,
   "writerModel": "gpt-6.1-sol",
-  "writerTier": "priority"
+  "writerTier": "priority",
+  "approvedAmendmentSha256": "b4b071b2433ab7b8ec85506af3098d4715c2e5ec89abbe95e5a057530e613cbf"
 }

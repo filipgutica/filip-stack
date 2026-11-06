@@ -57,3 +57,36 @@ Reply JSON only: {{"pages":[{{"label":"A","path":{{"defect":false,"quote":"","re
 """
 
 TASK = "Read only {prompt} and follow it exactly. Your only permitted write is your complete response to {reply}. Then reply SAVED. No agents or repository edits."
+
+PAID_ITEMS = {
+    "R1": "Start requirements at the entry point: necessary prerequisites, authentication, installation/activation and first invocation are grouped before use-case lists or internals. Distinguish current-session setup from future-session setup when both matter.",
+    "R2": "A complete task path before optional reference: an ordered path from the stated starting state through decisions and actions to observable confirmation. Keep optional command/feature reference after that path or linked away. A tutorial's learning sequence is valid; do not demand that it put results first.",
+    "C": "Word choice and tone only: familiar, precise wording and a direct, calm, audience-appropriate voice. Ignore task order, placement, completeness and factual coverage for this control item.",
+}
+
+BATCH_JUDGE = """Role: Reviewer (blinded documentation judge). Use only this prompt.
+Read no other files, browse nothing, use no skills and start no agents. Edit no repository file.
+You receive five independent pairs of pages for one brief. Evaluate each pair separately.
+A and B labels are independently randomized in every pair; they do not identify a treatment.
+For each item, vote A, B, or tie according to which draft better satisfies that item.
+Use tie when neither has a meaningful advantage. Do not cast an overall-preference vote.
+R1 and R2 target structure and task use. C targets only word choice and tone.
+Do not let a preference on one item determine another item's vote.
+Preserve tutorial learning order. Confirmation belongs after execution, not at the top.
+Support a non-tied vote with short quotations from both drafts and a specific reason.
+For an omission, quote the nearby entry/path where the missing material is needed.
+Quotation copying is diagnostic; your vote must reflect the item's meaning.
+
+Brief, scenario and sources:
+{context}
+
+Items:
+{items}
+
+{pairs}
+
+Return JSON only, exactly five pair entries q1 through q5:
+{{"pairs":[{{"id":"q1","R1":{{"preference":"A","A_quote":"...","B_quote":"...","reason":"..."}},
+"R2":{{"preference":"tie","A_quote":"","B_quote":"","reason":"..."}},
+"C":{{"preference":"B","A_quote":"...","B_quote":"...","reason":"..."}}}}]}}.
+"""

@@ -10,10 +10,9 @@ import random
 import re
 import secrets
 import shlex
-from datetime import datetime, timezone
 from pathlib import Path
 
-from prompts import BUILD, ITEMS, JUDGE, READER, TASK
+from prompts import BUILD, ITEMS, JUDGE, PAID_ITEMS, BATCH_JUDGE, READER, TASK
 
 HERE = Path(__file__).resolve().parent
 STUDY = HERE.parent
@@ -143,8 +142,14 @@ def score_reader(page, reply, items):
 
 
 def tier():
-    # 4pm fixed MST on the study date is 23:00 UTC, not daylight-saving Mountain time.
-    return "priority" if datetime.now(timezone.utc) < datetime(2026, 11, 6, 23, tzinfo=timezone.utc) else "default"
+    # The approved amendment requires default for every new Codex call.
+    return "default"
+
+
+def active_calls(run):
+    calls = load(run / "calls.json")
+    replaced = {c["replaces"] for c in calls if "replaces" in c}
+    return [c for c in calls if c["id"] not in replaced]
 
 
 def reserve(run, call_id, kind, prompt, model, **metadata):
@@ -202,7 +207,10 @@ def prepare_builds(run, paid=False):
         batch = "dry2"
     harder = batch == "dry2" or (paid and (run / "dry2-summary.json").exists())
     calls = []
-    for b, attempt, arm in jobs:
+    for number, (b, attempt, arm) in enumerate(jobs, 1):
+        call_id = f"p{number:02d}" if paid else f"{batch}-build-{b['id']}-{attempt}-{arm}"
+        if any(c["id"] == call_id for c in load(run / "calls.json")):
+            continue
         folder = run / secrets.token_hex(8)
         folder.mkdir()
         guidance = folder / "guidance.md"
@@ -215,29 +223,31 @@ def prepare_builds(run, paid=False):
         brief += f"\nThe page must cover this starting state: {scenario['startingState']}\nGoal: {scenario['goal']}"
         text = BUILD.format(guidance=guidance, brief=brief, sources="\n\n".join(
             s["name"] + "\n" + s["text"] for s in b["sources"]))
-        calls.append(reserve(run, f"{batch}-build-{b['id']}-{attempt}-{arm}", "build", text,
+        calls.append(reserve(run, call_id, "build", text,
                              "gpt-6.1-sol", brief=b["id"], attempt=attempt, arm=arm, batch=batch))
     return calls
 
 
 def prepare_readers(run):
-    calls = load(run / "calls.json")
+    calls = active_calls(run)
     out = []
     for build in calls:
-        if build["kind"] != "build" or any(c["id"] == build["id"].replace("-build-", "-reader-") for c in calls):
+        if build["kind"] != "build":
+            continue
+        if any(c.get("build") == build["id"] for c in calls if c["kind"] == "reader"):
             continue
         b = key()[build["brief"]]
-        scenario = b["harderScenario" if build["batch"] == "dry2" or (
-            build["batch"] == "paid" and (run / "dry2-summary.json").exists()) else "scenario"]
+        scenario = b["harderScenario" if build["batch"] in ("dry2", "paid") else "scenario"]
         text = READER.format(page=Path(build["reply"]).read_text(), **scenario)
-        out.append(reserve(run, build["id"].replace("-build-", "-reader-"), "reader", text,
-                           "gpt-5.6-sol", build=build["id"], brief=b["id"], batch=build["batch"],
-                           attempt=build["attempt"], arm=build["arm"]))
+        logical_id = build.get("replaces", build["id"])
+        call_id = "r" + logical_id[1:] if build["batch"] == "paid" else build["id"].replace("-build-", "-reader-")
+        out.append(reserve(run, call_id, "reader", text, "gpt-5.6-sol", build=build["id"],
+                           brief=b["id"], batch=build["batch"], attempt=build["attempt"], arm=build["arm"]))
     return out
 
 
 def scored_rows(run, batch):
-    calls = load(run / "calls.json")
+    calls = active_calls(run)
     lookup = {c["id"]: c for c in calls}
     rows = []
     harder = batch == "dry2" or (batch == "paid" and (run / "dry2-summary.json").exists())
@@ -307,87 +317,144 @@ def calibration_score(run):
 
 
 def prepare_judges(run):
-    calls = load(run / "calls.json")
+    calls = active_calls(run)
+    builds = {(c["brief"], c["attempt"], c["arm"]): c for c in calls
+              if c["kind"] == "build" and c["batch"] == "paid"}
+    expected = {(b, a, arm) for b in key() for a in range(1, 6) for arm in ARMS}
+    if set(builds) != expected:
+        raise ValueError("all sixty paid builds required before judges")
+    briefs = {b["id"]: b for b in load(run / "briefs.json")["briefs"]}
+    jobs = [(b, j, comparison) for b in key() for j in JUDGES for comparison in ("base", "vanilla")]
+    random.Random(20261108).shuffle(jobs)
     out = []
-    for brief in key():
-        pages = {c["arm"]: Path(c["reply"]).read_text() for c in calls if c["kind"] == "build"
-                 and c["batch"] == "paid" and c["brief"] == brief and c["attempt"] == 1}
-        if set(pages) != set(ARMS):
-            raise ValueError("all attempt-1 paid builds required before judges")
-        for name, model in JUDGES.items():
-            order = ["head", "base"]
-            random.Random(f"20261106-{name}-{brief}").shuffle(order)
-            out.append(reserve(run, f"judge-{name}-{brief}", "judge",
-                               judge_prompt([(chr(65 + i), pages[arm]) for i, arm in enumerate(order)]),
-                               model, judge=name, brief=brief, labels=dict(zip(("A", "B"), order))))
+    for number, (brief, judge, comparison) in enumerate(jobs, 1):
+        call_id = f"j{number:02d}"
+        if any(c["id"] == call_id for c in load(run / "calls.json")):
+            continue
+        pairs, labels = [], {}
+        for attempt in range(1, 6):
+            order = ["head", comparison]
+            random.Random(f"20261108-{judge}-{brief}-{comparison}-{attempt}").shuffle(order)
+            labels[str(attempt)] = dict(zip(("A", "B"), order))
+            pages = [(label, Path(builds[brief, attempt, arm]["reply"]).read_text())
+                     for label, arm in labels[str(attempt)].items()]
+            pairs.append(f"PAIR q{attempt}\n" + "\n\n".join(
+                f"<<<DRAFT {label}\n{page}\nDRAFT {label}>>>" for label, page in pages))
+        b = briefs[brief]
+        context = (b["brief"].split(" with ", 1)[0].removesuffix(" starting") +
+                   ".\n" + json.dumps(b["harderScenario"]) + "\nSources:\n" +
+                   "\n\n".join(x["name"] + "\n" + x["text"] for x in b["sources"]))
+        prompt = BATCH_JUDGE.format(context=context, items="\n".join(f"{k}: {v}" for k, v in PAID_ITEMS.items()),
+                                    pairs="\n\n".join(pairs))
+        out.append(reserve(run, call_id, "judge", prompt, JUDGES[judge], batch="paid",
+                           judge=judge, brief=brief, comparison=comparison, pairs=labels))
     return out
 
 
+def majority_counts(votes, eligible, item, comparison):
+    outcomes = []
+    for brief in key():
+        for attempt in range(1, 6):
+            chosen = [v["preference"] for v in votes if v["judge"] in eligible and
+                      (v["brief"], v["attempt"], v["item"], v["comparison"]) ==
+                      (brief, attempt, item, comparison)]
+            head = chosen.count("head") > len(eligible) / 2
+            other = chosen.count(comparison) > len(eligible) / 2
+            outcomes.append({"brief": brief, "attempt": attempt,
+                             "outcome": "head" if head else comparison if other else "tie"})
+    wins = sum(x["outcome"] == "head" for x in outcomes)
+    losses = sum(x["outcome"] == comparison for x in outcomes)
+    ties = len(outcomes) - wins - losses
+    return {"wins": wins + .5 * ties, "headWins": wins, "comparisonWins": losses,
+            "ties": ties, "pairs": len(outcomes), "outcomes": outcomes}
+
+
 def decision(rows, votes, calibration):
-    expected = {(b, a, arm) for b in key() for a in range(1, 6) for arm in ARMS}
-    if len(rows) != 60 or {(r["brief"], r["attempt"], r["arm"]) for r in rows} != expected:
-        raise ValueError("incomplete/duplicate paid cells; no verdict")
+    cells = {(b, a, arm) for b in key() for a in range(1, 6) for arm in ARMS}
+    if len(rows) != 60 or {(r["brief"], r["attempt"], r["arm"]) for r in rows} != cells:
+        raise ValueError("incomplete/duplicate paid reader cells; no verdict")
+    vote_cells = {(b, a, j, item, comp) for b in key() for a in range(1, 6)
+                  for j in JUDGES for item in PAID_ITEMS for comp in ("base", "vanilla")}
+    actual = {(v["brief"], v["attempt"], v["judge"], v["item"], v["comparison"]) for v in votes}
+    if len(votes) != len(vote_cells) or actual != vote_cells:
+        raise ValueError("incomplete/duplicate judge votes; no verdict")
+    counts = {}
+    for item in PAID_ITEMS:
+        calibration_item = {"R1": "entry", "R2": "path"}.get(item)
+        eligible = [j for j in JUDGES if calibration_item is None or calibration[j][calibration_item]["eligible"]]
+        if not eligible:
+            raise ValueError("no eligible judges for " + item)
+        counts[item] = {comp: majority_counts(votes, eligible, item, comp) for comp in ("base", "vanilla")}
     outcomes = {(r["brief"], r["attempt"], r["arm"]): int(r["pass"]) for r in rows}
-    comparisons = {}
-    for arm in ("base", "vanilla"):
-        diffs = [outcomes[b, a, "head"] - outcomes[b, a, arm] for b in key() for a in range(1, 6)]
-        wins = sum(1 if d > 0 else .5 if d == 0 else 0 for d in diffs)
-        comparisons[arm] = {"wins": wins, "meanDifference": sum(diffs) / 20,
-                            "pass": wins >= 15 and sum(diffs) / 20 >= 1}
     harm = {b: sum(outcomes[b, a, "head"] - outcomes[b, a, "base"] for a in range(1, 6)) for b in key()}
-    support, judge_gate = {}, {}
-    for item in ITEMS:
-        eligible = [j for j in JUDGES if calibration[j][item]["eligible"]]
-        selected = [v for v in votes if v["item"] == item and v["judge"] in eligible]
-        if {(v["judge"], v["brief"]) for v in selected} != {(j, b) for j in eligible for b in key()} or len(
-                selected) != 4 * len(eligible):
-            raise ValueError("incomplete/duplicate judge cells")
-        # A base preference blocks; a rule needs at least one head preference to be supported.
-        judge_gate[item] = bool(eligible) and not any(v["preference"] == "base" for v in selected)
-        support[item] = judge_gate[item] and any(v["preference"] == "head" and (
-            item != "path" or key()[v["brief"]]["type"] == "how-to") for v in selected)
+    no_harm = sum(harm.values()) >= -1 and all(d >= -1 for d in harm.values())
+    control_wins = counts["C"]["base"]["wins"]
+    rules = {}
+    for item in ("R1", "R2"):
+        base, vanilla = (counts[item][c]["wins"] for c in ("base", "vanilla"))
+        specific = base - control_wins >= 4 and control_wins < 15
+        rules[item] = {"baseWins": base, "vanillaWins": vanilla, "controlDifference": base - control_wins,
+                       "specificityPass": specific,
+                       "verdict": "supported" if base >= 15 and vanilla >= 15 and specific and no_harm else "not supported"}
     means = {arm: sum(r["words"] for r in rows if r["arm"] == arm) / 20 for arm in ARMS}
-    return {"comparisons": comparisons, "noHarm": all(d >= -1 for d in harm.values()),
-            "briefDifferences": harm, "supportedItems": support, "judgeGate": judge_gate, "meanWords": means,
-            "lengthFlag": abs(means["head"] / means["base"] - 1) > .10,
-            "pass": all(c["pass"] for c in comparisons.values()) and all(d >= -1 for d in harm.values())
-                    and all(judge_gate.values())}
+    return {"rules": rules, "counts": counts, "noHarm": no_harm, "briefDifferences": harm,
+            "overallDifference": sum(harm.values()), "readerTotals": {
+                arm: sum(r["pass"] for r in rows if r["arm"] == arm) for arm in ARMS},
+            "meanWords": means, "lengthFlag": abs(means["head"] / means["base"] - 1) > .10,
+            "controlBlocksBoth": control_wins >= 15}
 
 
 def collect_votes(run):
-    calls = load(run / "calls.json")
-    judges = [c for c in calls if c["kind"] == "judge"]
-    if len(judges) != 12:
-        raise ValueError("twelve judge calls required")
-    pages = {(c["brief"], c["arm"]): Path(c["reply"]).read_text() for c in calls
-             if c["kind"] == "build" and c["batch"] == "paid" and c["attempt"] == 1}
+    calls = active_calls(run)
+    judges = [c for c in calls if c["kind"] == "judge" and c.get("batch") == "paid"]
+    if len(judges) != 24:
+        raise ValueError("twenty-four judge batches required")
+    builds = {(c["brief"], c["attempt"], c["arm"]): Path(c["reply"]).read_text() for c in calls
+              if c["kind"] == "build" and c["batch"] == "paid"}
     votes = []
     for call in judges:
-        response = load(call["reply"])["pages"]
-        answers = {p["label"]: p for p in response}
-        if set(answers) != {"A", "B"} or len(response) != 2:
-            raise ValueError("invalid judge labels")
-        by_arm = {arm: answers[label] for label, arm in call["labels"].items()}
-        for item in ITEMS:
-            for arm, answer in by_arm.items():
-                finding = answer[item]
-                if not isinstance(finding["defect"], bool):
-                    raise ValueError("defect must be boolean")
-                if finding["defect"] and not (normalize(finding["quote"]) and
-                    normalize(finding["quote"]) in normalize(pages[call["brief"], arm])):
-                    raise ValueError("ungrounded judge finding")
-            head, base = (by_arm[arm][item]["defect"] for arm in ("head", "base"))
-            preference = "tie" if head == base else "base" if head else "head"
-            votes.append({"brief": call["brief"], "judge": call["judge"], "item": item,
-                          "preference": preference})
+        response = load(call["reply"])["pairs"]
+        answers = {p["id"]: p for p in response}
+        if set(answers) != {f"q{a}" for a in range(1, 6)} or len(response) != 5:
+            raise ValueError("invalid judge pair ids: " + call["id"])
+        for attempt in range(1, 6):
+            labels = call["pairs"][str(attempt)]
+            for item in PAID_ITEMS:
+                answer = answers[f"q{attempt}"][item]
+                preference = answer["preference"].strip()
+                if preference not in ("A", "B", "tie"):
+                    raise ValueError("invalid preference: " + call["id"])
+                if not all(isinstance(answer[k], str) for k in ("A_quote", "B_quote", "reason")):
+                    raise ValueError("invalid judge evidence schema: " + call["id"])
+                grounded = {label: grounded_quote(answer[label + "_quote"], builds[call["brief"], attempt, arm])
+                            for label, arm in labels.items()}
+                votes.append({"brief": call["brief"], "attempt": attempt, "judge": call["judge"], "item": item,
+                              "comparison": call["comparison"], "preference": labels.get(preference, "tie"),
+                              "citationGrounded": grounded})
     return votes
+
+
+def retry(run, call_id):
+    ledger = load(run / "calls.json")
+    call = next(c for c in active_calls(run) if c["id"] == call_id)
+    if call.get("batch") != "paid":
+        raise ValueError("only the approved paid stages have a spare")
+    if Path(call["reply"]).exists() and not (run / "invalid" / (call_id + ".json")).exists():
+        raise ValueError("response exists; record its schema failure before a retry")
+    if any(c.get("replaces") and c["kind"] == call["kind"] for c in ledger):
+        raise ValueError("stage spare already used; stop")
+    metadata = {k: v for k, v in call.items() if k not in
+                ("id", "kind", "model", "options", "prompt", "reply", "task")}
+    metadata["replaces"] = call_id
+    return reserve(run, call_id + "x", call["kind"], Path(call["prompt"]).read_text(), call["model"], **metadata)
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("run", type=Path)
     parser.add_argument("stage", choices=("init", "calibration", "builds", "readers", "dry-score",
-                                          "calibration-score", "paid-plan", "judges", "score"))
+                                          "calibration-score", "paid-plan", "judges", "score", "retry"))
+    parser.add_argument("call_id", nargs="?")
     args = parser.parse_args()
     run, stage = args.run.resolve(), args.stage
     if stage == "init":
@@ -406,6 +473,8 @@ def main():
         result = calibration_score(run)
     elif stage == "judges":
         result = prepare_judges(run)
+    elif stage == "retry":
+        result = retry(run, args.call_id)
     else:
         result = decision(scored_rows(run, "paid"), collect_votes(run),
                           load(run / "calibration-summary.json"))

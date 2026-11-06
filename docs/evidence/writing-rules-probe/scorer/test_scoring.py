@@ -1,8 +1,12 @@
 """Boundary checks for failure modes that invalidated earlier writing studies."""
 import copy
 import unittest
+import json
+import re
+import tempfile
+from pathlib import Path
 
-from probe import command_meaning, decision, grounded_quote, key, score_reader
+from probe import command_meaning, decision, grounded_quote, key, score_reader, prepare_builds, reserve
 
 
 class ScoringTests(unittest.TestCase):
@@ -72,21 +76,98 @@ class ScoringTests(unittest.TestCase):
         self.assertFalse(grounded_quote('Confirm authorized. [...] Inspect the plan.', page))
         self.assertFalse(grounded_quote('[...]', page))
 
-    def test_literal_binary_gate_and_incomplete_data(self):
-        rows = [{"brief": b, "attempt": a, "arm": arm, "pass": arm == "head", "words": 400}
+    def experiment(self, targets=None):
+        targets = targets or {"R1": 15, "R2": 16, "C": 12}
+        rows = [{"brief": b, "attempt": a, "arm": arm, "pass": True, "words": 400}
                 for b in key() for a in range(1, 6) for arm in ("base", "head", "vanilla")]
         calibration = {j: {item: {"eligible": True} for item in ("entry", "path")}
                        for j in ("astra", "sol61", "opus")}
-        votes = [{"brief": b, "judge": j, "item": item, "preference": "head"}
-                 for b in key() for j in calibration for item in ("entry", "path")]
-        self.assertTrue(decision(rows, votes, calibration)["pass"])
-        tutorial_only = [{**v, "preference": "tie" if v["brief"].startswith("H") else "head"}
-                         for v in votes]
-        self.assertFalse(decision(rows, tutorial_only, calibration)["supportedItems"]["path"])
-        with self.assertRaises(ValueError):
-            decision(rows[:-1], votes, calibration)
-        rows[0]["pass"] = True  # One base success makes mean improvement < 1 task.
-        self.assertFalse(decision(rows, votes, calibration)["pass"])
+        votes = [{"brief": b, "attempt": a, "judge": j, "item": item, "comparison": comp,
+                  "preference": "head" if index < targets[item] else comp}
+                 for index, (b, a) in enumerate((b, a) for b in key() for a in range(1, 6))
+                 for j in calibration for item in targets for comp in ("base", "vanilla")]
+        return rows, votes, calibration
+
+    def test_per_rule_specificity_with_no_reader_gain(self):
+        rows, votes, calibration = self.experiment()
+        result = decision(rows, votes, calibration)
+        self.assertTrue(result["noHarm"])
+        self.assertEqual(result["rules"]["R1"]["baseWins"], 15)
+        self.assertEqual(result["rules"]["R1"]["controlDifference"], 3)
+        self.assertEqual(result["rules"]["R1"]["verdict"], "not supported")
+        self.assertEqual(result["rules"]["R2"]["controlDifference"], 4)
+        self.assertEqual(result["rules"]["R2"]["verdict"], "supported")
+
+    def test_majority_ties_count_half(self):
+        rows, votes, calibration = self.experiment({"R1": 10, "R2": 10, "C": 11})
+        for vote in votes:
+            if vote["item"] != "C" and vote["preference"] != "head":
+                vote["preference"] = {"astra": "head", "sol61": vote["comparison"], "opus": "tie"}[vote["judge"]]
+        result = decision(rows, votes, calibration)
+        for rule in ("R1", "R2"):
+            self.assertEqual(result["counts"][rule]["base"]["ties"], 10)
+            self.assertEqual(result["counts"][rule]["base"]["wins"], 15)
+            self.assertEqual(result["rules"][rule]["verdict"], "supported")
+
+    def test_control_fifteen_blocks_both_and_vanilla_is_required(self):
+        rows, votes, calibration = self.experiment({"R1": 20, "R2": 20, "C": 15})
+        result = decision(rows, votes, calibration)
+        self.assertTrue(result["controlBlocksBoth"])
+        self.assertTrue(all(r["verdict"] == "not supported" for r in result["rules"].values()))
+        rows, votes, calibration = self.experiment({"R1": 20, "R2": 20, "C": 0})
+        for vote in votes:
+            if vote["comparison"] == "vanilla" and (vote["brief"], vote["attempt"]) in {
+                    ("T1", 5), *(('T2', a) for a in range(1, 6))}:
+                vote["preference"] = "vanilla"
+        result = decision(rows, votes, calibration)
+        self.assertEqual(result["rules"]["R1"]["vanillaWins"], 14)
+        self.assertEqual(result["rules"]["R1"]["verdict"], "not supported")
+
+    def test_no_harm_needs_overall_and_each_brief(self):
+        rows, votes, calibration = self.experiment({"R1": 20, "R2": 20, "C": 0})
+        for row in rows:
+            if (row["brief"], row["arm"]) in (("H1", "head"), ("H2", "base")) and row["attempt"] <= 2:
+                row["pass"] = False
+        result = decision(rows, votes, calibration)
+        self.assertEqual(result["overallDifference"], 0)
+        self.assertFalse(result["noHarm"])
+        rows, votes, calibration = self.experiment({"R1": 20, "R2": 20, "C": 0})
+        for row in rows:
+            if row["arm"] == "head" and row["attempt"] == 1:
+                row["pass"] = False
+        result = decision(rows, votes, calibration)
+        self.assertTrue(all(x == -1 for x in result["briefDifferences"].values()))
+        self.assertFalse(result["noHarm"])
+
+    def test_incomplete_or_duplicate_cells_have_no_verdict(self):
+        rows, votes, calibration = self.experiment()
+        for r, v in ((rows[:-1], votes), (rows, votes[:-1]), (rows, votes[:-1] + votes[:1])):
+            with self.assertRaises(ValueError):
+                decision(r, v, calibration)
+
+    def test_paid_dispatches_are_neutral_and_default_tier(self):
+        with tempfile.TemporaryDirectory() as folder:
+            run = Path(folder)
+            (run / "calls.json").write_text("[]")
+            (run / "briefs.json").write_text(json.dumps({"briefs": [
+                {"id": b, "type": "how-to", "wordLimit": 400, "brief": "Write a guide with one example.",
+                 "harderScenario": {"startingState": "New machine", "goal": "Finish the example"},
+                 "sources": [{"name": "Manual", "text": "Use the fictional CLI."}]} for b in key()]}))
+            (run / "dry2-summary.json").write_text("{}")
+            for arm, text in (("head", "Sentence A"), ("base", "Sentence B"), ("vanilla", "")):
+                (run / (arm + ".md")).write_text(text)
+            calls = prepare_builds(run, paid=True)
+            self.assertEqual(len(calls), 60)
+            self.assertEqual(len({(c['brief'], c['attempt'], c['arm']) for c in calls}), 60)
+            for call in calls:
+                self.assertRegex(call["id"], r"^p[0-9]{2}$")
+                self.assertEqual(call["options"]["serviceTier"], "default")
+                for visible in (call["task"], call["prompt"], call["reply"], Path(call["prompt"]).read_text()):
+                    self.assertIsNone(re.search(r"\b(head|base|vanilla)\b", visible, re.I))
+            self.assertEqual(prepare_builds(run, paid=True), [])
+            (run / "calls.json").write_text(json.dumps([{"id": str(i)} for i in range(171)]))
+            with self.assertRaises(ValueError):
+                reserve(run, "p61", "build", "text", "gpt-6.1-sol")
 
 
 if __name__ == "__main__":
