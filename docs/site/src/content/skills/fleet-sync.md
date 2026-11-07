@@ -4,27 +4,34 @@ related: [agent-ready-environments]
 
 ## What it does
 
-Fleet Sync uses the same local updater on every enrolled machine. It keeps a
-roster of environment IDs and labels, while T3 Code keeps connection credentials
-and access grants. The result includes offline and unlinked machines.
+Fleet Sync applies one declared baseline through the same local updater on
+every enrolled machine. T3 Code keeps connection credentials and grants;
+your policy file owns the selections and exceptions. The result includes
+offline and unlinked machines.
 
 ## When to use it
 
 Install the skill, then ask:
 
-> Sync filip-stack across my fleet.
+> $fleet-sync
 
 The agent reads your roster from `~/.config/filip-stack/fleet.json`, or from
 `$XDG_CONFIG_HOME/filip-stack/fleet.json`. On first use, identify the machines
-to enroll. T3 may ask you to grant access to a machine. Valid grants are reused.
+to enroll and choose the shared baseline. T3 may ask you to grant access to a
+machine. Valid grants and the saved selection are reused on later runs.
 
 ## How it works
 
-Each machine runs `filip-stack sync --json`. That command updates its clean
-main checkout, applies managed guidance, and refreshes its existing filip-stack
-standalone skills and Claude/Codex plugins. It preserves local guidance and
-installation choices. Local edits stop the affected component and appear in
-the result.
+Each machine runs `filip-stack sync --json` with the shared policy and its
+environment ID. Missing baseline skills and plugins are installed; existing
+extras remain. Per-machine agent targets and skill/plugin exclusions preserve
+exceptions. Existing scopes, enabled states, and explicit pins remain intact.
+Missing clients and local edits appear as incomplete components.
+
+The workflow uses a separate clean main clone when a development checkout is
+busy. Guidance applied from an unmerged revision is retained until the selected
+source contains it or already matches all managed content. Other components
+can update while that guidance remains blocked.
 Custom Claude/Codex configuration directories require a guidance migration;
 the updater reports that component as blocked before writing default locations.
 
@@ -33,13 +40,15 @@ not fetch upstream changes or prove that installed versions are current.
 
 ## What you get
 
-A result for every enrolled machine, with source commits, plugin versions,
-skill selections, and any remaining conflicts or access problems. The command
+A result for every enrolled machine, with the shared policy digest, source
+commits, plugin versions, selections, and remaining conflicts or access problems. The command
 saves each machine's last result in
 `~/.local/state/filip-stack/last-sync.json`, respecting `XDG_STATE_HOME`.
 
-Shared Field Guide preferences still use your configured dotfile transport.
-The updater merges the local preferences file; it does not distribute that file.
+When chezmoi already transports shared Field Guide preferences, the fleet
+workflow pulls that source and merges its preferences through the Field Guide
+owner. Local unpublished guidance is preserved. Other dotfiles remain outside
+that preference refresh, and uninitialized setup phases are left untouched.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/fleet-sync/SKILL.md)
 defines the complete workflow.

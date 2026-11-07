@@ -1,16 +1,17 @@
 #!/usr/bin/env node
-// Refresh existing filip-stack installations without replacing machine-local choices.
+// Refresh filip-stack installations and an optional shared fleet baseline.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { parseArgs } from 'node:util'
 import { isDevelopmentOnlyPluginPath } from './plugin-payload-policy.mjs'
+import { loadFleetConfig } from './fleet-config.mjs'
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const script = fileURLToPath(import.meta.url)
-const loadedModules = [script, join(repository, 'scripts/plugin-payload-policy.mjs')].map((path) => ({ path, content: readFileSync(path) }))
 const home = homedir()
 const codexHome = process.env.CODEX_HOME || join(home, '.codex')
 const claudeHome = process.env.CLAUDE_CONFIG_DIR || join(home, '.claude')
@@ -19,12 +20,15 @@ const json = process.argv.includes('--json')
 const report = { host: hostname(), dryRun, startedAt: new Date().toISOString(), components: [] }
 const stateRoot = join(process.env.XDG_STATE_HOME || join(home, '.local', 'state'), 'filip-stack')
 const lock = join(stateRoot, 'sync.lock')
+let policy
 
 const readJson = (path, fallback) => existsSync(path) ? JSON.parse(readFileSync(path, 'utf8')) : fallback
 const run = (command, args, options = {}) => {
-  const result = spawnSync(command, args, { cwd: repository, encoding: 'utf8', timeout: 60000, maxBuffer: 16 * 1024 * 1024, ...options })
+  const { includeOutputOnError = false, ...spawnOptions } = options
+  const result = spawnSync(command, args, { cwd: repository, encoding: 'utf8', timeout: 60000, maxBuffer: 16 * 1024 * 1024, ...spawnOptions })
   if (result.error || result.status !== 0) {
-    throw new Error(`${command} ${args.join(' ')}: ${result.error?.message || result.stderr.trim() || `exit ${result.status}`}`)
+    const output = includeOutputOnError && result.stdout.trim() ? `\n${result.stdout.trim()}` : ''
+    throw new Error(`${command} ${args.join(' ')}: ${result.error?.message || result.stderr.trim() || `exit ${result.status}`}${output}`)
   }
   return result.stdout.trim()
 }
@@ -74,19 +78,41 @@ const treeHash = (directory) => {
 const refreshSource = () => {
   const branch = git('branch', '--show-current')
   const dirty = Boolean(git('status', '--porcelain'))
-  if (dryRun) return { commit: git('rev-parse', 'HEAD'), branch, clean: !dirty, updateAllowed: branch === 'main' && !dirty }
+  const head = git('rev-parse', 'HEAD')
+  const upstream = spawnSync('git', ['-C', repository, 'rev-parse', '@{upstream}'], { encoding: 'utf8', timeout: 10000 })
+  if (dryRun) return { commit: head, branch, clean: !dirty, updateAllowed: branch === 'main' && !dirty && upstream.status === 0 && upstream.stdout.trim() === head }
   if (branch !== 'main') throw new Error('sync requires the canonical checkout on main')
   if (dirty) throw new Error('checkout has local changes; commit or move them before syncing')
   git('pull', '--ff-only')
-  return { commit: git('rev-parse', 'HEAD') }
+  const commit = git('rev-parse', 'HEAD')
+  if (commit !== git('rev-parse', '@{upstream}')) throw new Error('local main has unpublished commits; preserve them and select a separate clean main checkout')
+  return { commit, previousCommit: head }
+}
+
+const assertGuidanceRevision = (status) => {
+  const states = status.split('\n').slice(2)
+  // Recording main is safe after squash/rebase too when no managed content
+  // changes. Locally edited targets instead go through apply's diff guard.
+  if (states.every((line) => line.startsWith('current ')) || states.some((line) => line.startsWith('edited'))) return
+  const applied = readJson(join(home, '.agents/.filip-stack-host-config.json'), {}).commit
+  if (!applied) return
+  const selected = git('rev-parse', 'HEAD')
+  if (!/^[0-9a-f]{7,40}$/u.test(applied)) throw new Error(`unverified applied guidance ${applied}; selected source ${selected}; guidance preserved`)
+  const ancestry = spawnSync('git', ['-C', repository, 'merge-base', '--is-ancestor', applied, selected], { encoding: 'utf8', timeout: 10000 })
+  if (ancestry.status !== 0) {
+    const reason = ancestry.status === 1 ? 'is not contained in selected source' : 'could not be verified against selected source'
+    throw new Error(`applied guidance ${applied} ${reason} ${selected}; guidance preserved until its changes are accepted`)
+  }
 }
 
 const refreshGuidance = () => {
   if (resolve(codexHome) !== join(home, '.codex') || resolve(claudeHome) !== join(home, '.claude')) {
     throw new Error('host-config targets ~/.codex and ~/.claude; custom CODEX_HOME or CLAUDE_CONFIG_DIR guidance requires an explicit migration')
   }
-  if (dryRun) return { status: run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'status']) }
-  run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'apply'])
+  const before = run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'status'])
+  assertGuidanceRevision(before)
+  if (dryRun) return { status: before }
+  run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'apply'], { includeOutputOnError: true })
   const preferences = join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'field-guide.json')
   if (existsSync(preferences)) run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'field-guide-sync'])
   const status = run(process.execPath, [join(repository, 'scripts/host-config.mjs'), 'status'])
@@ -99,33 +125,65 @@ const skillHosts = (name) => {
   const canonical = join(home, '.agents', 'skills', name)
   const claude = join(claudeHome, 'skills', name)
   const hosts = ['codex']
-  if (existsSync(claude)) {
-    if (realpathSync(claude) !== realpathSync(canonical)) throw new Error(`${claude} is a separate installation; migrate it explicitly`)
+  if (lstatSync(claude, { throwIfNoEntry: false })) {
+    if (!existsSync(canonical) || !existsSync(claude) || realpathSync(claude) !== realpathSync(canonical)) throw new Error(`${claude} is a separate installation; migrate it explicitly`)
     hosts.push('claude-code')
   }
   return hosts
 }
 
-const refreshSkill = ({ name, entry, lockPath }) => {
-  const path = join(home, '.agents', 'skills', name)
-  if (entry.ref && entry.ref !== 'main') return { name, state: 'pinned', ref: entry.ref }
-  if (!/^[0-9a-f]{40}$/u.test(entry.skillFolderHash || '') || treeHash(path).toString('hex') !== entry.skillFolderHash) {
+const assertSkillOwnership = ({ name, entry, path }) => {
+  if (entry && entry.source !== 'filipgutica/filip-stack') throw new Error(`${name} belongs to ${entry.source}; baseline cannot replace it`)
+  if (!entry && existsSync(path)) throw new Error(`${name} is an unmanaged installation; baseline cannot replace it`)
+  if (!entry && lstatSync(join(claudeHome, 'skills', name), { throwIfNoEntry: false })) throw new Error(`${name} has an unmanaged Claude installation; baseline cannot replace it`)
+}
+
+const assertSkillUnedited = ({ name, entry, path }) => {
+  if (entry && (!/^[0-9a-f]{40}$/u.test(entry.skillFolderHash || '') || treeHash(path).toString('hex') !== entry.skillFolderHash)) {
     throw new Error(`${name} has local edits or an unverifiable lock; preserve those changes before syncing`)
   }
-  const hosts = skillHosts(name)
+}
+
+const inspectSkill = ({ name, entry }) => {
+  const path = join(home, '.agents', 'skills', name)
+  if (policy.excluded.skills.includes(name)) return { name, state: 'excluded' }
+  assertSkillOwnership({ name, entry, path })
+  const previousHosts = entry ? skillHosts(name) : []
+  const baselineHosts = policy.baseline.skills.includes(name) ? policy.agents : []
+  const hosts = [...new Set([...previousHosts, ...baselineHosts])].filter((host) => policy.agents.includes(host))
+  if (!hosts.length) return { name, hosts: previousHosts, state: 'excluded' }
+  if (entry?.ref && entry.ref !== 'main') {
+    if (!existsSync(path)) throw new Error(`${name} is pinned but missing; restore its pinned installation explicitly`)
+    if (baselineHosts.some((host) => !previousHosts.includes(host))) throw new Error(`${name} is pinned; extend its host assignment explicitly before syncing`)
+    return { name, hosts: previousHosts, state: 'pinned', ref: entry.ref }
+  }
+  assertSkillUnedited({ name, entry, path })
+  return { name, path, previousHosts, hosts }
+}
+
+const refreshSkill = ({ name, entry, lockPath }) => {
+  const plan = inspectSkill({ name, entry })
+  if (plan.state) return plan
+  const { path, hosts, previousHosts } = plan
   if (!dryRun) {
     run('npx', ['--yes', 'skills', 'add', 'filipgutica/filip-stack', '-g', '-a', ...hosts, '-s', name, '-y'])
     verifyPayload({ source: join(repository, 'skills', name), installed: path })
     const updated = readJson(lockPath).skills[name]
-    if (updated.source !== entry.source) throw new Error(`${name} lost its filip-stack source lock`)
+    if (updated.source !== 'filipgutica/filip-stack') throw new Error(`${name} lost its filip-stack source lock`)
+    const actualHosts = skillHosts(name)
+    if ([...previousHosts, ...hosts].some((host) => !actualHosts.includes(host))) throw new Error(`${name} lost a skill host assignment`)
   }
   return { name, hosts, state: dryRun ? 'planned' : 'current' }
 }
 
 const refreshSkills = () => {
+  if (!policy.agents.length) return { state: 'excluded', message: 'No skill agents selected for this machine' }
   const lockPath = join(home, '.agents', '.skill-lock.json')
-  const installed = Object.entries(readJson(lockPath, { skills: {} }).skills).filter(([, entry]) => entry.source === 'filipgutica/filip-stack')
-  const skills = installed.map(([name, entry]) => {
+  const locked = readJson(lockPath, { skills: {} }).skills
+  const installed = Object.keys(locked).filter((name) => locked[name].source === 'filipgutica/filip-stack')
+  const desired = [...new Set([...installed, ...policy.baseline.skills])]
+  const skills = desired.map((name) => {
+    const entry = locked[name]
     try { return refreshSkill({ name, entry, lockPath }) }
     catch (error) { return { name, state: 'blocked', message: error.message } }
   })
@@ -135,7 +193,9 @@ const refreshSkills = () => {
 
 const claudeInventory = () => JSON.parse(run('claude', ['plugin', 'list', '--json']))
   .filter((plugin) => plugin.id.endsWith('@filip-stack'))
-const codexInventory = () => JSON.parse(run('codex', ['plugin', 'list', '--marketplace', 'filip-stack', '--json'])).installed
+const codexInventory = () => JSON.parse(run('codex', ['plugin', 'list', '--json'])).installed.filter((plugin) => plugin.pluginId.endsWith('@filip-stack'))
+const desiredPlugins = (installed) => [...new Set([...installed, ...policy.baseline.plugins])].filter((name) => !policy.excluded.plugins.includes(name))
+const requiredPlugins = () => policy.baseline.plugins.filter((name) => !policy.excluded.plugins.includes(name))
 
 const verifyPlugin = ({ name, path }) => {
   const source = join(repository, 'plugins', name)
@@ -145,56 +205,91 @@ const verifyPlugin = ({ name, path }) => {
   return { name, version: manifest.version, files: verifyPayload({ source, installed: path, plugin: true }) }
 }
 
-const refreshClaude = () => {
-  if (!available('claude')) return { state: 'skipped', message: 'Claude is not installed' }
-  const before = claudeInventory()
-  if (!before.length) return { state: 'skipped', message: 'No filip-stack plugins installed in Claude' }
+const missingClient = (name) => {
+  if (requiredPlugins().length) throw new Error(`${name} is required by the baseline but is not installed; install it or select different agents for this machine`)
+  return { state: 'skipped', message: `${name} is not installed` }
+}
+
+const pinnedMarketplace = (missing) => {
+  if (missing.length) throw new Error(`custom or pinned marketplace preserved; baseline plugins missing: ${missing.join(', ')}`)
+  return { state: 'pinned', message: 'Marketplace has a custom source or ref; preserved' }
+}
+
+const claudePluginResult = ({ name, before, after }) => {
+  const previous = before.find((plugin) => plugin.id === `${name}@filip-stack`)
+  const plugin = after.find((item) => item.id === `${name}@filip-stack` && item.scope === 'user')
+  if (!plugin || plugin.enabled !== (previous?.enabled ?? true)) throw new Error(`${name}: scope or enabled state changed`)
+  if (dryRun) return { name, scope: 'user', action: previous ? 'update' : 'install' }
+  return { ...verifyPlugin({ name, path: plugin.installPath }), scope: plugin.scope, enabled: plugin.enabled }
+}
+
+const prepareClaudeMarketplace = ({ before, missing }) => {
   const known = readJson(join(claudeHome, 'plugins', 'known_marketplaces.json'), {})['filip-stack']
+  if (!known && before.length) throw new Error('Existing Claude marketplace source is unknown; preserve it before enrolling a baseline')
   const source = known?.source
-  if (source?.ref || source?.branch || source?.source !== 'github' || source?.repo !== 'filipgutica/filip-stack') {
-    return { state: 'pinned', message: 'Marketplace has a custom source or ref; preserved' }
-  }
-  if (before.some((plugin) => plugin.scope !== 'user')) throw new Error('Claude has project/local plugin installations; sync those scopes from their projects explicitly')
+  if (known && (source?.ref || source?.branch || source?.source !== 'github' || source?.repo !== 'filipgutica/filip-stack')) return pinnedMarketplace(missing)
   if (!dryRun) {
+    if (!known) run('claude', ['plugin', 'marketplace', 'add', 'filipgutica/filip-stack'])
     run('claude', ['plugin', 'marketplace', 'update', 'filip-stack'])
-    for (const plugin of before) {
-      run('claude', ['plugin', 'update', plugin.id, '--scope', plugin.scope, '-y'])
+  }
+}
+
+const refreshClaude = () => {
+  if (!policy.agents.includes('claude-code')) return { state: 'excluded', message: 'Claude is excluded for this machine' }
+  if (!available('claude')) return missingClient('Claude')
+  const before = claudeInventory()
+  const desired = desiredPlugins(before.map((plugin) => plugin.id.split('@')[0]))
+  if (!desired.length) return { state: 'skipped', message: 'No Claude plugins selected' }
+  const missing = desired.filter((name) => !before.some((plugin) => plugin.id === `${name}@filip-stack`))
+  if (before.some((plugin) => desired.includes(plugin.id.split('@')[0]) && plugin.scope !== 'user')) throw new Error('Claude has project/local plugin installations; sync those scopes from their projects explicitly')
+  const preserved = prepareClaudeMarketplace({ before, missing })
+  if (preserved) return preserved
+  if (!dryRun) {
+    for (const name of desired) {
+      run('claude', ['plugin', missing.includes(name) ? 'install' : 'update', `${name}@filip-stack`, '--scope', 'user', '-y'])
     }
   }
-  const after = dryRun ? before : claudeInventory()
-  for (const plugin of before) {
-    const updated = after.find((item) => item.id === plugin.id && item.scope === plugin.scope)
-    if (!updated || updated.enabled !== plugin.enabled) throw new Error(`${plugin.id}: scope or enabled state changed`)
-  }
-  return { plugins: after.map((plugin) => dryRun ? { name: plugin.id, scope: plugin.scope } : verifyPlugin({ name: plugin.id.split('@')[0], path: plugin.installPath })) }
+  const after = dryRun ? [...before, ...missing.map((name) => ({ id: `${name}@filip-stack`, scope: 'user', enabled: true }))] : claudeInventory()
+  return { plugins: desired.map((name) => claudePluginResult({ name, before, after })) }
 }
 
 const codexPluginResult = (plugin, after) => {
   const updated = after.find((item) => item.pluginId === plugin.pluginId)
   if (!updated || updated.enabled !== plugin.enabled) throw new Error(`${plugin.pluginId}: enabled state changed`)
   if (!plugin.enabled) return { name: plugin.name, state: 'disabled' }
-  if (dryRun) return { name: plugin.name }
+  if (dryRun) return { name: plugin.name, action: plugin.installed === false ? 'install' : 'update' }
   return verifyPlugin({ name: plugin.name, path: join(codexHome, 'plugins/cache/filip-stack', plugin.name, updated.version) })
 }
 
-const refreshCodex = () => {
-  if (!available('codex')) return { state: 'skipped', message: 'Codex is not installed' }
-  const before = codexInventory()
-  if (!before.length) return { state: 'skipped', message: 'No filip-stack plugins installed in Codex' }
+const prepareCodexMarketplace = ({ before, missing }) => {
   const marketplace = JSON.parse(run('codex', ['plugin', 'marketplace', 'list', '--json'])).marketplaces.find(({ name }) => name === 'filip-stack')
+  if (!marketplace && before.length) throw new Error('Existing Codex marketplace source is unknown; preserve it before enrolling a baseline')
   const source = marketplace?.marketplaceSource
-  if (source?.sourceType !== 'git' || !/^https:\/\/github\.com\/filipgutica\/filip-stack(?:\.git)?$/u.test(source.source) || source.ref) {
-    return { state: 'pinned', message: 'Marketplace has a custom source or ref; preserved' }
-  }
+  if (marketplace && (source?.sourceType !== 'git' || !/^https:\/\/github\.com\/filipgutica\/filip-stack(?:\.git)?$/u.test(source.source) || source.ref)) return pinnedMarketplace(missing)
   if (!dryRun) {
+    if (!marketplace) run('codex', ['plugin', 'marketplace', 'add', 'filipgutica/filip-stack', '--json'])
     run('codex', ['plugin', 'marketplace', 'upgrade', 'filip-stack'])
-    for (const plugin of before) {
+  }
+}
+
+const refreshCodex = () => {
+  if (!policy.agents.includes('codex')) return { state: 'excluded', message: 'Codex is excluded for this machine' }
+  if (!available('codex')) return missingClient('Codex')
+  const before = codexInventory()
+  const desired = desiredPlugins(before.map((plugin) => plugin.name))
+  if (!desired.length) return { state: 'skipped', message: 'No Codex plugins selected' }
+  const missing = desired.filter((name) => !before.some((plugin) => plugin.name === name))
+  const preserved = prepareCodexMarketplace({ before, missing })
+  if (preserved) return preserved
+  const targets = desired.map((name) => before.find((plugin) => plugin.name === name) || { name, pluginId: `${name}@filip-stack`, enabled: true, installed: false })
+  if (!dryRun) {
+    for (const plugin of targets) {
       if (!plugin.enabled) continue
       run('codex', ['plugin', 'add', plugin.pluginId, '--json'])
     }
   }
-  const after = dryRun ? before : codexInventory()
-  return { plugins: before.map((plugin) => codexPluginResult(plugin, after)) }
+  const after = dryRun ? targets : codexInventory()
+  return { plugins: targets.map((plugin) => codexPluginResult(plugin, after)) }
 }
 
 const finish = (persist = !dryRun) => {
@@ -220,21 +315,28 @@ const acquireLock = () => {
   writeFileSync(join(lock, 'owner.json'), JSON.stringify({ pid: process.pid, startedAt: report.startedAt }))
 }
 
+const configure = (options) => {
+  const path = resolve(options.config || join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'fleet.json'))
+  if (options.config && !existsSync(path)) throw new Error(`fleet config does not exist: ${path}`)
+  policy = loadFleetConfig({ path, environmentId: options['environment-id'], host: hostname(), repository })
+  return policy
+}
+
 const main = () => {
-  if (process.argv.slice(2).length === 1 && process.argv[2] === '--help') {
-    process.stdout.write('Usage: filip-stack sync [--dry-run] [--json]\n\nRefresh existing filip-stack guidance, skills, and plugins on this machine.\n--dry-run previews local state without fetching or writing.\n--json prints component results as JSON.\n')
+  const { values } = parseArgs({ options: { 'dry-run': { type: 'boolean' }, json: { type: 'boolean' }, help: { type: 'boolean' }, config: { type: 'string' }, 'environment-id': { type: 'string' } } })
+  if (values.help) {
+    process.stdout.write('Usage: filip-stack sync [--dry-run] [--json] [--config <file>] [--environment-id <id>]\n\nRefresh filip-stack guidance, skills, and plugins, including the configured fleet baseline.\n--dry-run previews local state without fetching or writing.\n--json prints component results as JSON.\n--config selects a fleet config (default: ~/.config/filip-stack/fleet.json).\n--environment-id selects this machine explicitly; otherwise match its hostname.\n')
     return
   }
-  if (process.argv.slice(2).some((arg) => !['--dry-run', '--json'].includes(arg))) throw new Error('Usage: filip-stack sync [--dry-run] [--json]')
   if (!dryRun) acquireLock()
   let handedOff = false
   try {
     step('source', refreshSource)
     const sourceFailed = report.components[0].state === 'blocked'
     if (sourceFailed) return
-    // A pulled updater or policy must execute in a fresh process. Release only
-    // our lock; the child acquires its own and owns the final report.
-    if (!dryRun && loadedModules.some(({ path, content }) => !content.equals(readFileSync(path)))) {
+    // Any pulled revision can change loaded modules. Release only our lock;
+    // the fresh process acquires its own and owns the final report.
+    if (!dryRun && report.components[0].commit !== report.components[0].previousCommit) {
       rmSync(lock, { recursive: true })
       handedOff = true
       const child = spawnSync(process.execPath, [script, ...process.argv.slice(2)], { stdio: 'inherit' })
@@ -242,6 +344,8 @@ const main = () => {
       process.exitCode = child.status ?? 1
       return
     }
+    step('configuration', () => configure(values))
+    if (report.components.at(-1).state === 'blocked') return
     step('guidance', refreshGuidance)
     step('skills', refreshSkills)
     step('claude', refreshClaude)

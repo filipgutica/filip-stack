@@ -40,7 +40,7 @@ const tables = {
     {
       command: "filip-stack sync",
       description:
-        "Refreshes this machine's managed guidance, existing standalone skills, and installed Claude/Codex plugins. Add <code>--dry-run --json</code> for a local preview.",
+        "Applies this machine's declared fleet baseline and refreshes existing filip-stack installations. Add <code>--dry-run --json</code> for a local preview.",
     },
     {
       command: "filip-stack field-guide-sync",
@@ -186,9 +186,10 @@ const tables = {
     <h2 id="update">Keep up to date</h2>
     <p>
       Run <code>filip-stack sync</code> to refresh this machine's guidance,
-      existing standalone skills, and installed filip-stack plugins. It requires
-      a clean checkout on <code>main</code> and preserves local guidance and
-      installation choices. Conflicts appear in its result.
+      standalone skills, and filip-stack plugins. Your fleet policy selects a
+      shared baseline and per-machine exceptions; existing extras remain.
+      It requires a clean checkout tracking <code>main</code> and preserves local
+      guidance. Conflicts appear in its result.
     </p>
     <p>
       For every enrolled machine, use the

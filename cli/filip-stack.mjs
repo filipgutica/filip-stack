@@ -10,7 +10,7 @@ Commands:
   status            Show the applied commit and each host-config target's state
   apply             Apply host config and import shared Field Guide preferences
   update            Pull the main checkout, apply host config, and sync preferences
-  sync              Refresh this machine's guidance, installed skills, and plugins
+  sync              Sync this machine's guidance, skills, and plugins to its fleet baseline
   field-guide-sync  Import and export shared Field Guide preferences
 
 Options:
@@ -19,6 +19,8 @@ Options:
   --force           Back up and overwrite local edits (apply and update only)
   --dry-run         Preview sync without changing installations
   --json            Print the sync result as JSON
+  --config <file>   Fleet baseline and environment roster (sync only)
+  --environment-id <id>  Select this machine's fleet exceptions (sync only)
   --help            Show this help
   --version         Show the CLI version
 `

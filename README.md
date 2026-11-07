@@ -175,7 +175,7 @@ Independent skills install one at a time with the
 | `babysit-pr` | Monitors a PR through CI and automated review, fixing verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
 | `council` | Gathers independent model opinions and synthesizes advice on a question or artifact. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `fleet-sync` | Refreshes filip-stack guidance, skills, and plugins across an enrolled fleet and reports every machine's result. |
+| `fleet-sync` | Syncs a shared filip-stack baseline across linked T3 environments with per-machine exceptions. |
 | `full-send` | Finishes a change or PR through review and CI, then merges or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Finishes a change or PR through review and CI and leaves merging to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `hill-climb` | Improves a working change or named goal in bounded rounds judged by blind comparisons, a score, or both. Needs `council`. |
@@ -228,7 +228,7 @@ Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
 filip-stack status            # applied commit, then each target's state
 filip-stack apply [--force]   # write targets and import shared guidance
 filip-stack update [--force]  # on main only: git pull --ff-only, apply, then sync
-filip-stack sync              # refresh guidance, existing skills, and plugins on this machine
+filip-stack sync              # apply the fleet baseline and refresh this machine
 filip-stack sync --dry-run --json # preview without fetching or changing installations
 filip-stack field-guide-sync  # import, then export local shared guidance
 ```
@@ -237,20 +237,50 @@ Host config has no version. It ships from `main`, so run `filip-stack update`
 to pick up changes. The CLI launcher has its own version and Homebrew release;
 `filip-stack update` updates the checkout, and `brew upgrade` updates the launcher.
 
-`filip-stack sync` also refreshes existing filip-stack standalone skills and
-Claude/Codex plugins. It requires a clean checkout on `main`. It preserves
-machine-local guidance, plugin enabled states and scopes, explicit pins, and
-skill host assignments. Local edits block the affected component; independent
+`filip-stack sync` installs missing baseline skills and plugins and refreshes
+existing filip-stack installations. It requires a clean checkout tracking
+published `main`. It preserves machine-local guidance, plugin enabled states
+and scopes, explicit pins, and existing skill host assignments. Local edits
+or unmerged applied guidance block the affected component; independent
 components continue. The command exits nonzero when a component fails and
 saves a JSON report under `~/.local/state/filip-stack/last-sync.json`
 (`$XDG_STATE_HOME/filip-stack/last-sync.json` when set).
 Guidance currently targets `~/.claude` and `~/.codex`; custom agent homes
 block that component before any guidance files are written.
 
-For the whole fleet, install `fleet-sync` and ask your agent to sync the fleet.
-Its user-owned roster at `~/.config/filip-stack/fleet.json` contains confirmed
-T3 environment IDs and labels. T3 retains credentials and access grants.
-Unlinked and offline machines remain visible in the result. See
+For the whole fleet, install `fleet-sync` and invoke `$fleet-sync`, or ask your
+agent to sync the fleet. Its policy lives at `~/.config/filip-stack/fleet.json`
+(under `XDG_CONFIG_HOME` when set):
+
+```json
+{
+  "version": 1,
+  "baseline": {
+    "skills": ["fleet-sync"],
+    "plugins": ["workflow", "field-guide", "guardrails"]
+  },
+  "environments": [{
+    "environmentId": "your-t3-environment-id",
+    "label": "your-hostname",
+    "agents": ["codex"],
+    "exclude": { "skills": [], "plugins": ["guardrails"] }
+  }]
+}
+```
+
+List the standalone skills and plugins you want in the shared baseline.
+Each machine receives that selection plus its existing extras. `agents`
+defaults to `codex` and `claude-code` for skill/plugin installation;
+per-machine overrides and exclusions preserve exceptions without uninstalling
+anything. Shared host guidance keeps its normal managed targets. Missing
+required clients or conflicting installation ownership remain blocked.
+Without a baseline, the command refreshes existing selections.
+
+Pass `--environment-id <id>` when the roster label differs from the hostname,
+or `--config <file>` to select another policy. The fleet workflow supplies both.
+It can use a separate clean source clone while a development checkout is busy.
+T3 retains credentials and access grants. Unlinked and offline machines remain
+visible in the result. See
 [Fleet Sync](https://filipgutica.github.io/filip-stack/skills/fleet-sync/).
 
 `apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,

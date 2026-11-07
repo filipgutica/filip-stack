@@ -35,9 +35,11 @@ Verify the published CLI tag contains the requested CLI change and that its `cli
 
 ## Choose the refresh route
 
-Refresh the launcher with the CLI section below. Install standalone skills newly added by the merged PR with the explicit-host command in the standalone section. Then run `filip-stack sync --json` from the clean canonical main checkout. It owns the normal refresh of existing standalone skills, host config, shared preferences, and installed Claude/Codex plugins. Require a successful result and inspect every component, including pinned and skipped entries. The per-machine JSON report records versions, payload checks, and any local conflict. The remaining manual sections are recovery guidance for a blocked or older installation; do not repeat a successful component's writes.
+Refresh the launcher with the CLI section below. When the request includes the fleet, use the installed `fleet-sync` standalone skill once; it includes the current machine. Its shared policy owns installation selection, per-machine exceptions, and source-checkout selection. Account for every enrolled machine, including offline and unlinked environments. Reuse valid T3 grants. Keep missing permissions, unfinished setup phases, and local conflicts visible. A local-only release request does not expand to the fleet.
 
-When the authorized request includes the fleet, use the installed `fleet-sync` standalone skill and its user-owned roster. Account for every enrolled machine, including offline and unlinked environments. Reuse valid T3 grants. Keep missing permissions and machine-local conflicts visible rather than claiming the fleet is current from one successful host. A local-only release request does not expand to the fleet.
+For a local-only refresh, run `filip-stack --repo <clean-main-checkout> sync --json`, selecting its environment ID when needed. With no declared baseline, first install standalone skills newly added by the merged PR as below. With a baseline, install only its selected names; report newly published skills outside that selection. Change the baseline when the user requests adoption. Preserve existing extras.
+
+Require a successful result and inspect every component, including pinned, excluded, and skipped entries. The per-machine JSON report records the effective policy, versions, payload checks, and local conflicts. The remaining manual sections are recovery guidance for a blocked or older installation; preserve the policy and do not repeat a successful component's writes.
 
 ## Refresh the filip-stack CLI
 
@@ -49,6 +51,8 @@ brew upgrade filipgutica/tap/filip-stack
 filip-stack --version
 ```
 
+Inspect proposed dependency changes first. Preserve compatible installed runtimes and unrelated packages. Use Homebrew's supported dependency-skipping installation path when appropriate; report a genuinely missing runtime requirement before expanding the upgrade scope.
+
 Compare the installed formula and CLI version with the published `cli-vX.Y.Z` release. The tap's **Update formulae** workflow selects CLI tags, creates the first formula when a CLI release exists, and opens a separate formula PR. A GitHub release alone does not make it available to Homebrew. When the formula is absent or behind, inspect the workflow and formula PR. With authorization covering the tap, trigger the workflow if needed, verify the formula's tag and checksum, and merge its exact head after all applicable checks and reviews pass. Otherwise, report the pending PR. Leave the CLI refresh incomplete until the formula ships.
 
 Verify `command -v filip-stack` resolves to the Homebrew command. A legacy `~/.local/bin/filip-stack` symlink can shadow it; report that path and the correction needed rather than claiming the new executable is active. Preserve installations managed by another method, and report a missing CLI without installing one unless the request authorizes installation. Record the actual version and executable path.
@@ -56,6 +60,8 @@ Verify `command -v filip-stack` resolves to the Homebrew command. A legacy `~/.l
 ## Refresh standalone skills
 
 Standalone skills in `skills/` ship from `main` when they merge; semantic-release does not version them. Find the installed ones in `~/.agents/.skill-lock.json` entries whose `source` is `filipgutica/filip-stack`, and note each skill's current hosts: Codex reads `~/.agents/skills/<name>`, and Claude reads a `~/.claude/skills/<name>` link.
+
+For a configured baseline, its agent targets and exclusions take precedence over the manual installation defaults below.
 
 Also find the standalone skills the merged PR added: `git diff --diff-filter=A --name-only <merge commit>^1 <merge commit> -- 'skills/*/SKILL.md'`. Install each new skill for Claude and Codex. A skill that existed before this PR and is not installed was left out on purpose; leave it out.
 

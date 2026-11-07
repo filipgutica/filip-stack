@@ -19,14 +19,16 @@ const fixture = (t) => {
   const repo = join(root, 'repo')
   const home = join(root, 'home')
   mkdirSync(home)
-  for (const path of ['scripts/sync.mjs', 'scripts/host-config.mjs', 'scripts/plugin-payload-policy.mjs', 'host-config']) {
+  for (const path of ['scripts/sync.mjs', 'scripts/host-config.mjs', 'scripts/plugin-payload-policy.mjs', 'scripts/fleet-config.mjs', 'host-config']) {
     mkdirSync(dirname(join(seed, path)), { recursive: true })
     cpSync(new URL(path, source), join(seed, path), { recursive: true })
   }
-  put(join(seed, 'skills/example/SKILL.md'), 'An installed skill.\n')
-  put(join(seed, 'plugins/example/.claude-plugin/plugin.json'), JSON.stringify({ name: 'example', version: '1.0.0' }))
-  put(join(seed, 'plugins/example/.codex-plugin/plugin.json'), JSON.stringify({ name: 'example', version: '1.0.0' }))
-  put(join(seed, 'plugins/example/skills/example/SKILL.md'), 'Published plugin payload.\n')
+  for (const name of ['example', 'extra']) put(join(seed, 'skills', name, 'SKILL.md'), `An installed ${name} skill.\n`)
+  for (const name of ['example', 'second']) {
+    put(join(seed, 'plugins', name, '.claude-plugin/plugin.json'), JSON.stringify({ name, version: '1.0.0' }))
+    put(join(seed, 'plugins', name, '.codex-plugin/plugin.json'), JSON.stringify({ name, version: '1.0.0' }))
+    put(join(seed, 'plugins', name, 'skills/example/SKILL.md'), `Published ${name} plugin payload.\n`)
+  }
   success(execute('git', ['init', '-q', '-b', 'main', seed]))
   success(execute('git', ['-C', seed, 'add', '.']))
   success(execute('git', ['-C', seed, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'fixture']))
@@ -49,7 +51,8 @@ test('sync applies real guidance repeatedly, preserves local text, and records s
   for (let attempt = 0; attempt < 2; attempt += 1) {
     const report = JSON.parse(success(sync()))
     assert.equal(report.ok, true)
-    assert.equal(report.components.find(({ name }) => name === 'guidance').targets, 35)
+    const managed = JSON.parse(readFileSync(join(home, '.agents/.filip-stack-host-config.json'))).files
+    assert.equal(report.components.find(({ name }) => name === 'guidance').targets, Object.keys(managed).length)
     assert.equal(report.components.find(({ name }) => name === 'skills').skills.length, 0)
     assert.equal(report.components.find(({ name }) => name === 'claude').state, 'skipped')
     assert.equal(readFileSync(path, 'utf8').endsWith(local), true)
@@ -60,7 +63,7 @@ test('sync applies real guidance repeatedly, preserves local text, and records s
   assert.equal(success(execute('git', ['-C', repo, 'status', '--porcelain'])), '')
 })
 
-test('dry-run writes nothing; a dirty checkout blocks mutations', (t) => {
+test('dry-run writes nothing; dirty or unpublished checkout work blocks mutations', (t) => {
   const { home, repo, sync } = fixture(t)
   const before = snapshot(home)
   const preview = JSON.parse(success(sync('--dry-run')))
@@ -72,6 +75,13 @@ test('dry-run writes nothing; a dirty checkout blocks mutations', (t) => {
   assert.match(JSON.parse(blocked.stdout).components[0].message, /local changes/)
   assert.equal(existsSync(join(home, '.codex/AGENTS.md')), false)
   assert.equal(readFileSync(join(repo, 'unrelated-work.txt'), 'utf8'), 'Keep this work.\n')
+  success(execute('git', ['-C', repo, 'add', '.']))
+  success(execute('git', ['-C', repo, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'local-only work']))
+  assert.equal(JSON.parse(success(sync('--dry-run'))).components[0].updateAllowed, false)
+  const unpublished = sync()
+  assert.equal(unpublished.status, 1)
+  assert.match(JSON.parse(unpublished.stdout).components[0].message, /unpublished commits/)
+  assert.equal(existsSync(join(home, '.codex/AGENTS.md')), false)
 })
 
 test('a locally edited managed block remains intact and the failure is visible', (t) => {
@@ -85,6 +95,7 @@ test('a locally edited managed block remains intact and the failure is visible',
   const report = JSON.parse(result.stdout)
   assert.equal(report.ok, false)
   assert.equal(report.components.find(({ name }) => name === 'guidance').state, 'blocked')
+  assert.match(report.components.find(({ name }) => name === 'guidance').message, /Local edit inside managed guidance/)
   assert.equal(report.components.find(({ name }) => name === 'skills').state, 'current')
   assert.equal(readFileSync(path, 'utf8'), edited)
   assert.equal(existsSync(`${path}.bak`), false)
@@ -104,42 +115,54 @@ test('a locally edited skill is detected from its Git tree lock before reinstall
   assert.equal(readFileSync(join(installed, 'SKILL.md'), 'utf8'), 'An important local edit.\n')
 })
 
-const installedTools = (context, { corruptCodex = false } = {}) => {
+const installedTools = (context, { corruptCodex = false, empty = false } = {}) => {
   const { root, home, repo, env } = context
   const bin = join(root, 'bin')
   env.PATH = `${bin}:/usr/bin:/bin`
   env.FIXTURE_REPO = repo
   env.CORRUPT_CODEX = String(corruptCodex)
   const body = `
-import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
+import { appendFileSync, cpSync, existsSync, mkdirSync, readFileSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { join, basename } from 'node:path';
 import { spawnSync } from 'node:child_process';
 const home = process.env.HOME, repo = process.env.FIXTURE_REPO, tool = basename(process.argv[1]), args = process.argv.slice(2);
 const output = value => process.stdout.write(JSON.stringify(value));
 if (args[0] === '--version') { output('1.0.0'); process.exit(0); }
 appendFileSync(join(home, 'tool-actions.jsonl'), JSON.stringify({tool, args}) + '\\n');
-const marker = join(home, tool + '-updated');
-const version = existsSync(marker) ? '1.0.0' : '0.9.0';
-const cache = host => join(home, host, 'plugins/cache/filip-stack/example/1.0.0');
+const read = path => existsSync(path) ? JSON.parse(readFileSync(path)) : [];
+const statePath = join(home, tool + '-plugins.json');
 const install = host => {
-  mkdirSync(cache(host), {recursive:true}); cpSync(join(repo, 'plugins/example'), cache(host), {recursive:true});
-  if (host === '.codex' && process.env.CORRUPT_CODEX === 'true') writeFileSync(join(cache(host), 'skills/example/SKILL.md'), 'stale payload');
-  writeFileSync(marker, 'updated'); output({});
+  const id = args[2], name = id.split('@')[0], path = join(home, host, 'plugins/cache/filip-stack', name, '1.0.0');
+  mkdirSync(path, {recursive:true}); cpSync(join(repo, 'plugins', name), path, {recursive:true});
+  if (host === '.codex' && process.env.CORRUPT_CODEX === 'true') writeFileSync(join(path, 'skills/example/SKILL.md'), 'stale payload');
+  const plugins = read(statePath), previous = plugins.find(p => (p.id || p.pluginId) === id);
+  const updated = host === '.claude' ? {id,scope:'user',installPath:path} : {pluginId:id,name};
+  Object.assign(updated,{version:'1.0.0',enabled:previous ? previous.enabled : true});
+  writeFileSync(statePath, JSON.stringify([...plugins.filter(p => (p.id || p.pluginId) !== id),updated])); output({});
 };
 if (tool === 'npx') {
   const name = args[args.indexOf('-s') + 1], path = join(home, '.agents/skills', name);
   rmSync(path, {recursive:true, force:true}); cpSync(join(repo, 'skills', name), path, {recursive:true});
   const lockPath = join(home, '.agents/.skill-lock.json'), lock = JSON.parse(readFileSync(lockPath));
-  lock.skills[name].skillFolderHash = spawnSync('git', ['-C', repo, 'rev-parse', 'HEAD:skills/' + name], {encoding:'utf8'}).stdout.trim();
+  lock.skills[name] = {source:'filipgutica/filip-stack',skillFolderHash:spawnSync('git', ['-C', repo, 'rev-parse', 'HEAD:skills/' + name], {encoding:'utf8'}).stdout.trim()};
+  if (args.includes('claude-code')) {
+    const target = join(home, '.claude/skills', name); mkdirSync(join(home, '.claude/skills'),{recursive:true});
+    if (!existsSync(target)) symlinkSync(path,target);
+  }
   writeFileSync(lockPath, JSON.stringify(lock)); output({});
 } else if (tool === 'claude') {
-  if (args[1] === 'list') output([{id:'example@filip-stack',version,scope:'user',enabled:false,installPath:cache('.claude')}]);
-  else if (args[1] === 'update') install('.claude');
+  if (args[1] === 'list') output(read(statePath));
+  else if (['update','install'].includes(args[1])) install('.claude');
+  else if (args[2] === 'add') {
+    const path = join(home,'.claude/plugins'); mkdirSync(path,{recursive:true});
+    writeFileSync(join(path,'known_marketplaces.json'),JSON.stringify({'filip-stack':{source:{source:'github',repo:'filipgutica/filip-stack'}}})); output({});
+  }
   else output({});
 } else if (args[1] === 'list') {
-  output({installed:[{pluginId:'example@filip-stack',name:'example',version,enabled:true},{pluginId:'disabled@filip-stack',name:'disabled',version:'0.9.0',enabled:false}]});
+  output({installed:read(statePath)});
 } else if (args[2] === 'list') {
-  output({marketplaces:[{name:'filip-stack',marketplaceSource:{sourceType:'git',source:'https://github.com/filipgutica/filip-stack.git'}}]});
+  output({marketplaces:existsSync(join(home,'codex-marketplace')) ? [{name:'filip-stack',marketplaceSource:{sourceType:'git',source:'https://github.com/filipgutica/filip-stack.git'}}] : []});
+} else if (args[2] === 'add') { writeFileSync(join(home,'codex-marketplace'),'configured'); output({});
 } else if (args[1] === 'add') install('.codex');
 else output({});
 `
@@ -148,12 +171,18 @@ else output({});
     put(path, `#!${process.execPath}\n${body}`)
     chmodSync(path, 0o755)
   }
-  put(join(home, '.claude/plugins/known_marketplaces.json'), JSON.stringify({ 'filip-stack': { source: { source: 'github', repo: 'filipgutica/filip-stack' } } }))
-  const hash = success(execute('git', ['-C', repo, 'rev-parse', 'HEAD:skills/example']))
-  cpSync(join(repo, 'skills/example'), join(home, '.agents/skills/example'), { recursive: true })
-  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: hash }, unrelated: { source: 'another/owner', skillFolderHash: 'untouched' } } }))
-  mkdirSync(join(home, '.claude/skills'), { recursive: true })
-  symlinkSync(join(home, '.agents/skills/example'), join(home, '.claude/skills/example'))
+  const skills = { unrelated: { source: 'another/owner', skillFolderHash: 'untouched' } }
+  if (!empty) {
+    put(join(home, 'codex-marketplace'), 'configured')
+    put(join(home, '.claude/plugins/known_marketplaces.json'), JSON.stringify({ 'filip-stack': { source: { source: 'github', repo: 'filipgutica/filip-stack' } } }))
+    put(join(home, 'codex-plugins.json'), JSON.stringify([{ pluginId: 'example@filip-stack', name: 'example', version: '0.9.0', enabled: true }, { pluginId: 'disabled@filip-stack', name: 'disabled', version: '0.9.0', enabled: false }]))
+    put(join(home, 'claude-plugins.json'), JSON.stringify([{ id: 'example@filip-stack', version: '0.9.0', scope: 'user', enabled: false }]))
+    skills.example = { source: 'filipgutica/filip-stack', skillFolderHash: success(execute('git', ['-C', repo, 'rev-parse', 'HEAD:skills/example'])) }
+    cpSync(join(repo, 'skills/example'), join(home, '.agents/skills/example'), { recursive: true })
+    mkdirSync(join(home, '.claude/skills'), { recursive: true })
+    symlinkSync(join(home, '.agents/skills/example'), join(home, '.claude/skills/example'))
+  }
+  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills }))
 }
 
 test('sync verifies installed skills and both plugin payloads while preserving selections and disabled state', (t) => {
@@ -197,27 +226,18 @@ test('sync fast-forwards source and applies the pulled guidance', (t) => {
   const { seed, origin, home, repo, sync } = fixture(t)
   put(join(seed, 'host-config/agents/CODING_STANDARDS.md'), 'New upstream guidance.\n')
   const updater = join(seed, 'scripts/sync.mjs')
-  writeFileSync(updater, readFileSync(updater, 'utf8').replace('const report = { host:', "const report = { updaterGeneration: 'new', host:"))
+  put(join(seed, 'scripts/updater-generation.mjs'), "import { writeFileSync } from 'node:fs'; import { homedir } from 'node:os'; import { join } from 'node:path'; writeFileSync(join(homedir(), 'updater-generation'), 'new');\n")
+  writeFileSync(updater, `import './updater-generation.mjs'\n${readFileSync(updater, 'utf8').replace(/^#![^\n]*\n/u, '')}`)
   success(execute('git', ['-C', seed, 'add', '.']))
   success(execute('git', ['-C', seed, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'new upstream guidance']))
   success(execute('git', ['-C', seed, 'push', '-q', origin, 'main']))
   const commit = success(execute('git', ['-C', seed, 'rev-parse', 'HEAD']))
   const report = JSON.parse(success(sync()))
-  assert.equal(report.updaterGeneration, 'new')
+  assert.equal(existsSync(join(home, 'updater-generation')), true)
+  assert.equal(readFileSync(join(home, 'updater-generation'), 'utf8'), 'new')
   assert.equal(report.components[0].commit, commit)
   assert.equal(success(execute('git', ['-C', repo, 'rev-parse', 'HEAD'])), commit)
   assert.equal(readFileSync(join(home, '.agents/CODING_STANDARDS.md'), 'utf8'), 'New upstream guidance.\n')
-})
-
-test('an installed but non-executable host is blocked rather than skipped as absent', (t) => {
-  const context = fixture(t)
-  installedTools(context)
-  chmodSync(join(context.root, 'bin/codex'), 0o644)
-  const result = context.sync()
-  assert.equal(result.status, 1)
-  const codex = JSON.parse(result.stdout).components.find(({ name }) => name === 'codex')
-  assert.equal(codex.state, 'blocked')
-  assert.match(codex.message, /EACCES/)
 })
 
 test('custom agent homes block guidance before any default-home writes', (t) => {
@@ -231,3 +251,153 @@ test('custom agent homes block guidance before any default-home writes', (t) => 
   assert.equal(existsSync(join(context.home, '.codex/AGENTS.md')), false)
   assert.equal(existsSync(join(context.home, '.claude/CLAUDE.md')), false)
 })
+
+const fleetBaseline = (context, { baseline = { skills: ['example', 'extra'], plugins: ['example', 'second'] }, ...profile } = {}) => {
+  const path = join(context.home, '.config/filip-stack/fleet.json')
+  put(path, JSON.stringify({ version: 1, baseline, environments: [{ environmentId: 'this-machine', label: 'fixture', ...profile }] }))
+  return path
+}
+
+test('a shared baseline installs missing skills and plugins in both agents and survives a repeat run', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  fleetBaseline(context)
+  for (let attempt = 0; attempt < 2; attempt += 1) {
+    const report = JSON.parse(success(context.sync('--environment-id', 'this-machine')))
+    assert.deepEqual(report.components.find(({ name }) => name === 'skills').skills.map(({ name }) => name), ['example', 'extra'])
+    for (const host of ['codex', 'claude']) {
+      const plugins = report.components.find(({ name }) => name === host).plugins
+      assert.deepEqual(plugins.map(({ name }) => name).sort(), ['example', 'second'])
+      assert.equal(plugins.every(({ version }) => version === '1.0.0'), true)
+    }
+    assert.equal(readFileSync(join(context.home, '.claude/skills/extra/SKILL.md'), 'utf8'), 'An installed extra skill.\n')
+    assert.equal(JSON.parse(readFileSync(join(context.home, '.agents/.skill-lock.json'))).skills.unrelated.source, 'another/owner')
+  }
+})
+
+test('machine exceptions exclude selected skills, plugins and agent installations', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  fleetBaseline(context, { agents: ['codex'], exclude: { skills: ['extra'], plugins: ['second'] } })
+  const report = JSON.parse(success(context.sync('--environment-id', 'this-machine')))
+  assert.equal(report.components.find(({ name }) => name === 'claude').state, 'excluded')
+  assert.equal(report.components.find(({ name }) => name === 'skills').skills.find(({ name }) => name === 'extra').state, 'excluded')
+  assert.deepEqual(report.components.find(({ name }) => name === 'codex').plugins.map(({ name }) => name), ['example'])
+  assert.equal(existsSync(join(context.home, '.agents/skills/extra')), false)
+  assert.equal(existsSync(join(context.home, '.claude/skills')), false)
+  assert.equal(existsSync(join(context.home, '.codex/plugins/cache/filip-stack/second')), false)
+  const actions = readFileSync(join(context.home, 'tool-actions.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+  assert.equal(actions.some(({ tool }) => tool === 'claude'), false)
+})
+
+for (const kind of ['foreign-owned', 'unmanaged']) {
+  test(`a baseline preserves ${kind === 'unmanaged' ? 'an' : 'a'} ${kind} skill with the same name`, (t) => {
+    const context = fixture(t)
+    installedTools(context, { empty: true })
+    fleetBaseline(context, { baseline: { skills: ['example'] } })
+    const path = join(context.home, '.agents/skills/example/SKILL.md')
+    put(path, 'Important separately owned skill.\n')
+    if (kind === 'foreign-owned') {
+      const lockPath = join(context.home, '.agents/.skill-lock.json')
+      const lock = JSON.parse(readFileSync(lockPath))
+      lock.skills.example = { source: 'another/owner' }
+      put(lockPath, JSON.stringify(lock))
+    }
+    const result = context.sync('--environment-id', 'this-machine')
+    assert.equal(result.status, 1)
+    assert.equal(JSON.parse(result.stdout).components.find(({ name }) => name === 'skills').state, 'blocked')
+    assert.equal(readFileSync(path, 'utf8'), 'Important separately owned skill.\n')
+    const actions = readFileSync(join(context.home, 'tool-actions.jsonl'), 'utf8').trim().split('\n').map((line) => JSON.parse(line))
+    assert.equal(actions.some(({ tool }) => tool === 'npx'), false)
+  })
+}
+
+test('a pinned marketplace blocks missing baseline plugins without changing the pin', (t) => {
+  const context = fixture(t)
+  installedTools(context)
+  fleetBaseline(context, { baseline: { plugins: ['second'] } })
+  const path = join(context.home, '.claude/plugins/known_marketplaces.json')
+  const pin = JSON.stringify({ 'filip-stack': { source: { source: 'github', repo: 'filipgutica/filip-stack', ref: 'v0.9.0' } } })
+  put(path, pin)
+  const result = context.sync('--environment-id', 'this-machine')
+  assert.equal(result.status, 1)
+  const report = JSON.parse(result.stdout)
+  assert.match(report.components.find(({ name }) => name === 'claude').message, /baseline plugins missing: second/)
+  assert.equal(report.components.find(({ name }) => name === 'codex').state, 'current')
+  assert.equal(readFileSync(path, 'utf8'), pin)
+  assert.equal(existsSync(join(context.home, '.claude/plugins/cache/filip-stack/second')), false)
+})
+
+test('invalid baseline names fail before touching guidance or installers', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  fleetBaseline(context, { baseline: { skills: ['../outside'] } })
+  const result = context.sync('--environment-id', 'this-machine')
+  assert.equal(result.status, 1)
+  assert.match(JSON.parse(result.stdout).components.find(({ name }) => name === 'configuration').message, /array of names/)
+  assert.equal(existsSync(join(context.home, '.codex/AGENTS.md')), false)
+  assert.equal(existsSync(join(context.home, 'tool-actions.jsonl')), false)
+})
+
+for (const scenario of [
+  { name: 'an installed but non-executable host is blocked rather than skipped as absent', baseline: false, change: (path) => chmodSync(path, 0o644), error: /EACCES/ },
+  { name: 'a required baseline client is incomplete when its executable is missing', baseline: true, change: rmSync, error: /required by the baseline/ },
+]) test(scenario.name, (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: scenario.baseline })
+  if (scenario.baseline) fleetBaseline(context, { baseline: { plugins: ['example'] }, agents: ['codex'] })
+  scenario.change(join(context.root, 'bin/codex'))
+  const result = context.sync(...(scenario.baseline ? ['--environment-id', 'this-machine'] : []))
+  assert.equal(result.status, 1)
+  const codex = JSON.parse(result.stdout).components.find(({ name }) => name === 'codex')
+  assert.equal(codex.state, 'blocked')
+  assert.match(codex.message, scenario.error)
+})
+
+test('a pinned but missing baseline skill remains incomplete', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  fleetBaseline(context, { baseline: { skills: ['example'] }, agents: ['codex'] })
+  const lockPath = join(context.home, '.agents/.skill-lock.json')
+  const lock = JSON.parse(readFileSync(lockPath))
+  lock.skills.example = { source: 'filipgutica/filip-stack', ref: 'v0.9.0' }
+  put(lockPath, JSON.stringify(lock))
+  const result = context.sync('--environment-id', 'this-machine')
+  assert.equal(result.status, 1)
+  assert.match(JSON.parse(result.stdout).components.find(({ name }) => name === 'skills').message, /pinned but missing/)
+  assert.equal(existsSync(join(context.home, '.agents/skills/example')), false)
+})
+
+for (const mergeMode of ['--no-ff', '--squash']) {
+  test(`guidance from an unmerged commit is preserved and recovers after ${mergeMode}`, (t) => {
+    const context = fixture(t)
+    success(execute('git', ['-C', context.repo, 'switch', '-qc', 'guidance-work']))
+    put(join(context.repo, 'host-config/agents/CODING_STANDARDS.md'), 'Guidance being developed elsewhere.\n')
+    success(execute('git', ['-C', context.repo, 'add', '.']))
+    const identity = ['-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false']
+    success(execute('git', ['-C', context.repo, ...identity, 'commit', '-qm', 'guidance work']))
+    context.apply()
+    const manifest = join(context.home, '.agents/.filip-stack-host-config.json')
+    const before = readFileSync(manifest, 'utf8')
+    success(execute('git', ['-C', context.repo, 'switch', '-q', 'main']))
+    const result = context.sync()
+    assert.equal(result.status, 1)
+    const report = JSON.parse(result.stdout)
+    assert.match(report.components.find(({ name }) => name === 'guidance').message, /not contained in selected source/)
+    assert.equal(report.components.find(({ name }) => name === 'skills').state, 'current')
+    assert.equal(readFileSync(manifest, 'utf8'), before)
+    assert.equal(readFileSync(join(context.home, '.agents/CODING_STANDARDS.md'), 'utf8'), 'Guidance being developed elsewhere.\n')
+    success(execute('git', ['-C', context.repo, ...identity, 'merge', mergeMode, '-qm', 'accept guidance', 'guidance-work']))
+    if (mergeMode === '--squash') success(execute('git', ['-C', context.repo, ...identity, 'commit', '-qm', 'accept equivalent guidance']))
+    const expected = mergeMode === '--no-ff' ? 'Accepted follow-up guidance.\n' : 'Guidance being developed elsewhere.\n'
+    if (mergeMode === '--no-ff') {
+      put(join(context.repo, 'host-config/agents/CODING_STANDARDS.md'), expected)
+      success(execute('git', ['-C', context.repo, 'add', '.']))
+      success(execute('git', ['-C', context.repo, ...identity, 'commit', '-qm', 'follow-up guidance']))
+    }
+    assert.equal(execute('git', ['-C', context.repo, 'merge-base', '--is-ancestor', JSON.parse(before).commit, 'HEAD']).status, mergeMode === '--no-ff' ? 0 : 1)
+    success(execute('git', ['-C', context.repo, 'push', '-q', 'origin', 'main']))
+    assert.equal(JSON.parse(success(context.sync())).ok, true)
+    assert.equal(readFileSync(join(context.home, '.agents/CODING_STANDARDS.md'), 'utf8'), expected)
+  })
+}
