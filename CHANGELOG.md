@@ -1,3 +1,13 @@
+## [4.4.2](https://github.com/filipgutica/filip-stack/compare/v4.4.1...v4.4.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** address catalogue review findings ([7f5a07b](https://github.com/filipgutica/filip-stack/commit/7f5a07b3e6cb8a89363cef0bc30a64ac2112bd07))
+* **design-language:** address second catalogue review ([5205ec8](https://github.com/filipgutica/filip-stack/commit/5205ec82839eb73c729ac4fb4d462a6d3f3bff0c))
+* **design-language:** sync field focus and tab rules with final ui [#47](https://github.com/filipgutica/filip-stack/issues/47) and [#48](https://github.com/filipgutica/filip-stack/issues/48) ([03a74f6](https://github.com/filipgutica/filip-stack/commit/03a74f6524043ce096eabd60bf63275e955b4fe8))
+* **design-language:** thin control focus ring, lifting fields, lifted selected tabs ([f0de2f3](https://github.com/filipgutica/filip-stack/commit/f0de2f3eed54173d455dcbdbc141c124be50b472))
+
 ## [4.4.1](https://github.com/filipgutica/filip-stack/compare/v4.4.0...v4.4.1) (2026-11-07)
 
 
