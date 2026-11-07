@@ -1626,7 +1626,9 @@ Results:
 - **End-to-end check:** capture, apply, and skip each passed one headless Claude Code run.
 - **Retrieval climb:** three rounds took the climb score from 32.00 to 48.57, mostly by making function words stopwords. **Not supported** on the held-out probe: score 45.16 against 30.30, but recall 51.85 fell below the 52.56 floor. Round 2's stopwords `need` and `already` cost one relevant record. Post hoc, the round 1 version would have passed; testing it needs a fresh probe.
 
-No Field Guide code shipped.
+- **Decision climb:** the hook text gained a short rule for each choice. The climb score went from 85.94 to 92.90; rounds 2 and 3 (policy rewrites) were rejected. Three blind scorecard judges preferred the final version, 9.43 against 8.95. **Supported** on 44 fresh held-out cases: head 95.31 against base 90.91 (+4.40), wrong captures on skip cases 0 against 3, no stored sensitive strings, and vanilla 82.95. With two attempts per case, the hook arm's noise was about ±3 points.
+
+The retrieval change did not ship. The hook-text change passed its ship rule and is committed on the branch.
 
 Evidence:
 
@@ -1636,6 +1638,8 @@ Evidence:
 - [Decision eval pre-registration](evidence/field-guide-decision-eval/prereg.md)
 - [Decision eval results](evidence/field-guide-decision-eval/results.md)
 - [End-to-end check](evidence/field-guide-e2e/results.md)
+- [Decision climb pre-registration](evidence/field-guide-decision-climb/prereg.md)
+- [Decision climb results](evidence/field-guide-decision-climb/results.md)
 - [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
 
 ## Fixed iteration protocol
@@ -1874,6 +1878,7 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | UX guidance probe preregistration, dry run, scorer, and fixture | [docs/evidence/ux-guidance-probe/](evidence/ux-guidance-probe/) |
 | Field Guide retrieval climb pre-registration, scorer, and climb set | [docs/evidence/field-guide-retrieval-climb/](evidence/field-guide-retrieval-climb/) |
 | Field Guide decision eval harness and cases | [docs/evidence/field-guide-decision-eval/](evidence/field-guide-decision-eval/) |
+| Field Guide decision climb pre-registration, results, and held-out cases | [docs/evidence/field-guide-decision-climb/](evidence/field-guide-decision-climb/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |
 
