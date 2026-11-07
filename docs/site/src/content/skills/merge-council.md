@@ -4,10 +4,10 @@ related: [review, full-send]
 
 ## What it does
 
-An independent chair runs the council apart from your agent. Three reviewers
-inspect the whole PR from different angles. An agreed finding requires all
-three to agree on the problem, remedy, and whether it blocks merging.
-The verdict applies only to the commits reviewed.
+An independent chair runs the council separately from your agent. Three
+reviewers inspect the whole PR from different angles. All three must agree on
+a finding's problem, remedy, and merge-blocking status. Verdicts apply only to
+reviewed commits.
 
 ## When to use it
 
@@ -34,10 +34,9 @@ Each reviewer covers the whole PR with an additional focus:
 | Risk | Blast radius, rollback, compatibility, migrations, security, and performance |
 | Simplicity and evidence | Complexity, reuse, dead code, tests, and coverage |
 
-On your own open PR, when you can push to it, fix mode applies agreed findings
-marked safe to fix. A fixer commits and pushes them, and the reviewers inspect
-the whole PR again. The run allows at most two fix pushes. On other PRs,
-the council reports without fixes.
+On your own open PR with push access, fix mode applies agreed findings marked
+safe to fix. A fixer commits and pushes; reviewers recheck the whole PR. At
+most two fix pushes are allowed. Other PRs get reports without fixes.
 
 Changes to instruction files such as `AGENTS.md` or `CLAUDE.md` always force
 `NEEDS_HUMAN`; the review still runs. The council stops as incomplete at its
@@ -49,12 +48,11 @@ links the roster setup, chair procedure, and verdict rules.
 ## What you get
 
 - `APPROVE`, `CHANGES_REQUESTED`, or `NEEDS_HUMAN` for the reviewed commits.
-- A short report stating whether the PR can merge, what must happen first,
-  and non-blocking findings.
+- A short report: merge readiness, prerequisites, and non-blocking findings.
 - A detailed `record.json`; another run continues from the record after you
   address its open items.
 
-Before acting on approval, your agent verifies that the PR's head and base
-commits still match and CI passes. It merges only where repository guidance
-allows merging on council approval; otherwise it reports readiness.
+Before acting on approval, your agent verifies that PR head and base still
+match the reviewed commits and CI passes. It merges only if repository
+guidance permits merging on council approval; otherwise it reports readiness.
 [Full-send](../full-send/) can finish open council items.

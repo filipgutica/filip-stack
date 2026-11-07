@@ -67,7 +67,7 @@ const steps = [
   {
     name: "Define the boundary",
     detail:
-      "Before editing, decide what must stay the same and which checks prove it. Stop if no change is needed.",
+      "Before editing, identify what must stay unchanged and the checks proving it. Stop if no change is needed.",
   },
   {
     name: "Reproduce or test",
@@ -92,7 +92,7 @@ const steps = [
   {
     name: "Review decisions",
     detail:
-      "Get an independent review for consequential or hard-to-reverse changes before calling the work done. If no separate reviewer is available, inspect the diff with care and report that independent review did not run.",
+      "Before finishing consequential or hard-to-reverse changes, get independent review. If unavailable, inspect the diff carefully and report that independent review did not run.",
   },
 ].map((step, index) => {
   const { x, y } = pointAt(index * 60);
@@ -167,8 +167,8 @@ onMounted(() => {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Skills and setup for Claude and Codex.</h1>
     <p class="lede">
-      Choose what to install for your coding agent. Start with Workflow for
-      planning, changes, review, and writing; these commands install it.
+      Start with Workflow for your coding agent's planning, changes, review,
+      and writing. Install it with these commands.
     </p>
     <div class="cmd-pair">
       <div id="install">
@@ -220,26 +220,26 @@ onMounted(() => {
     <ul class="parts">
       <li>
         <a href="#workflow">Workflow</a>
-        <p>Install it to get all nine Workflow skills.</p>
+        <p>Installs all nine Workflow skills.</p>
       </li>
       <li>
         <a href="#standalone">Standalone skills</a>
         <p>
-          Choose individual tools for PRs, Jira, Vue, and UX. They install
-          separately from Workflow.
+          Individual PR, Jira, Vue, and UX tools, installed separately from
+          Workflow.
         </p>
       </li>
       <li>
         <a href="#field-guide">Field Guide</a>
         <p>
-          Add this optional plugin to keep preferences and lessons across sessions.
+          Keeps preferences and lessons across sessions; optional.
         </p>
       </li>
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          Run it to apply shared guidance, agent profiles,
-          output styles, and the design language on each machine.
+          Applies shared guidance, agent profiles, output styles, and design
+          language on each machine.
         </p>
       </li>
       <li>
@@ -272,10 +272,10 @@ onMounted(() => {
     <h2 id="fg-title">Field Guide</h2>
     <div class="prose">
       <p>
-        Field Guide stores preferences, corrections, and recurring lessons under
-        <code>~/.field-guide</code>. Its hooks add repository guidance at session
-        start and matching records on your first prompt. Current instructions
-        and live code take priority.
+        Field Guide stores preferences, corrections, and recurring lessons
+        under <code>~/.field-guide</code>. Hooks add repository guidance at
+        session start and matching records on your first prompt. Current
+        instructions and live code take priority.
       </p>
       <p>
         Install <code>field-guide@filip-stack</code> through the same marketplace.
@@ -293,8 +293,8 @@ onMounted(() => {
           >Agent-ready environments</a
         >
         <p>
-          A lesson on setting up repositories so coding agents can check their
-          own work, with a worked audit of this repository.
+          Set up repositories so coding agents can check their work, with a
+          worked audit of this repository.
         </p>
       </li>
     </ul>
@@ -376,8 +376,8 @@ onMounted(() => {
           <code>$workflow:{{ selected.name }}</code> in Codex.
         </p>
         <p v-else-if="selected.group === 'Standalone'" class="map-muted">
-          Not part of the Workflow plugin. Install it on its own; the host picks
-          it when a request matches.
+          Install separately from Workflow; the host picks it for matching
+          requests.
         </p>
         <p v-else class="map-muted">
           The host picks it when a request matches.
@@ -487,15 +487,15 @@ onMounted(() => {
             </li>
           </ol>
           <p class="map-muted">
-            A failed check sends work back only to the step it affects. Stop
-            conditions end repeated retries.
+            Failed checks return work only to affected steps. Stop conditions
+            end retries.
           </p>
         </div>
         <div>
           <h3 class="map-label">What the host loads</h3>
           <div class="map-load">
             <strong>Skill names and descriptions</strong>
-            <span>Always loaded, except for manual skills. The host uses these to choose.</span>
+            <span>Always loaded except for manual skills; used to choose.</span>
             <div class="map-load">
               <strong><code>{{ selectedSkill }}</code> SKILL.md</strong>
               <span>The rules for the selected skill.</span>

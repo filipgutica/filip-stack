@@ -4,20 +4,20 @@ related: [full-send, babysit-pr]
 
 ## What it does
 
-Your agent checks each Sol finding against the code, fixes the real problems
-with a small change, and answers disagreements with evidence. Findings outside
-the intended behavior become follow-ups instead of expanding the diff.
+Your agent checks each Sol finding against code, fixes real problems with
+small changes, and answers disagreements with evidence. Findings outside the
+intended behavior become follow-ups.
 
 ## When to use it
 
-Install the skill with the command above, then say "sol loop" and identify
-the change and its purpose. The agent selects it for that phrase. For example:
+Install with the command above, then say "sol loop" to select it. Identify the
+change and purpose, for example:
 
 > sol loop on this branch; it only fixes the retry backoff.
 
-Use it before opening a PR or when an existing change needs another review.
-Your host must be able to run OpenAI's GPT Sol; the skill reports unavailable
-Sol access instead of substituting another model.
+Use it before opening a PR or for another review of existing changes. Your
+host must run OpenAI's GPT Sol; unavailable access is reported without model
+substitution.
 
 [Full-send](../full-send/) uses it to review the code and PR description together.
 
@@ -33,10 +33,10 @@ three severities:
 | should | A real bug callers will hit within the change's intent |
 | nit | Other issues, such as rare cases or small speedups |
 
-The agent verifies every finding itself. Agreed findings get the smallest
-fix; disputed findings get an evidence-based response. Nits and out-of-scope
-items are declined with a reason and listed as follow-ups. After fixes, the
-agent reruns checks and reduces any unnecessary diff growth.
+The agent verifies every finding, makes the smallest agreed fixes, and answers
+disputes with evidence. It declines nits and out-of-scope items with reasons
+and lists them as follow-ups. After fixes, it reruns checks and trims
+unnecessary diff growth.
 
 The default budget is three rounds. It can extend to five for security,
 permissions, authentication, data loss, or state and concurrency work while
@@ -53,7 +53,7 @@ has the exact scope, round, and approval rules.
 - Rounds, the model that ran, changes prompted by review, before-and-after
   diff size, and fixed or declined findings with reasons.
 
-Exhausting the budget is not approval: you get both sides of any open
-disagreement to decide. The agent never pushes during the
-loop. After agreement, it pushes only if you authorized a push or PR update.
+Exhausting the budget is not approval; you decide open disagreements with both
+sides presented. No pushes occur during the loop. After agreement, pushes
+require your authorization or PR-update request.
 Use [babysit-pr](../babysit-pr/) for CI and bot review after that.

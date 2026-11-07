@@ -25,12 +25,12 @@ const tables = {
     },
     {
       command: "filip-stack status",
-      description: "Shows the applied and repository commits, then each target's state.",
+      description: "Shows applied and repository commits, then each target's state.",
     },
     {
       command: "filip-stack apply",
       description:
-        "Writes the setup and imports your preferences dotfile if it exists.",
+        "Writes setup and imports your preferences dotfile if present.",
     },
     {
       command: "filip-stack update",
@@ -40,14 +40,14 @@ const tables = {
     {
       command: "filip-stack field-guide-sync",
       description:
-        "Imports the preferences dotfile if present, then exports this machine's shared preferences to it.",
+        "Imports the preferences dotfile if present, then exports local shared preferences to it.",
     },
   ],
   targets: [
     {
       command: "host-config/guidance/",
       description:
-        "A marked block in <code>~/.claude/CLAUDE.md</code> and <code>~/.codex/AGENTS.md</code>. Text outside the block stays as it is.",
+        "A marked block in <code>~/.claude/CLAUDE.md</code> and <code>~/.codex/AGENTS.md</code>. Preserves text outside the block.",
     },
     {
       command: "host-config/claude/",
@@ -76,8 +76,8 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
-      Use the CLI to set up or update a machine's global guidance, agent
-      profiles, output styles, and design language.
+      Set up or update a machine's global guidance, agent profiles, output
+      styles, and design language.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -120,14 +120,13 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      The default checkout is <code>~/code/filip-stack</code>. For another
-      location, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
+      The checkout defaults to <code>~/code/filip-stack</code>. Elsewhere, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
       Without Homebrew, run <code>node scripts/host-config.mjs &lt;command&gt;</code>
       from the checkout, such as <code>node scripts/host-config.mjs status</code>.
     </p>
     <p class="hint">
-      If an old <code>~/.local/bin/filip-stack</code> symlink shadows Homebrew,
-      remove that symlink. Check the active command with
+      If <code>~/.local/bin/filip-stack</code> is an old symlink shadowing
+      Homebrew, remove it. Check the active command with
       <code>command -v filip-stack</code>.
     </p>
   </section>
@@ -172,8 +171,8 @@ const tables = {
     </UiCommandList>
     <p class="hint">
       The manifest at <code>~/.agents/.filip-stack-host-config.json</code>
-      records the applied commit and file hashes. Apply removes previously
-      managed files when the repository removes them.
+      records the applied commit and file hashes. Apply removes managed files
+      removed from the repository.
     </p>
   </section>
 
@@ -196,22 +195,22 @@ const tables = {
       <code>filip-stack update</code> updates host config from the checkout.
     </p>
     <p class="hint">
-      On another branch or a detached HEAD, <code>update</code> stops before
-      pulling or applying. Switch the checkout to <code>main</code>, or use
-      <code>apply</code> to apply its current contents.
+      On another branch or detached HEAD, <code>update</code> stops before
+      pulling or applying. Switch to <code>main</code>, or use
+      <code>apply</code> for current checkout contents.
     </p>
   </section>
 
   <section aria-labelledby="sync">
     <h2 id="sync">Sync your Field Guide preferences</h2>
     <p class="section-intro">
-      The repository ships no preferences. To share yours between machines,
-      sync this dotfile with your dotfile manager.
+      The repository ships no preferences. Share yours between machines by
+      syncing this dotfile with your dotfile manager.
     </p>
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
       <dd>
-        With <code>$XDG_CONFIG_HOME</code> set and nonempty, the file is
+        When <code>$XDG_CONFIG_HOME</code> is nonempty, use
         <code>filip-stack/field-guide.json</code> in that folder instead.
       </dd>
     </dl>
@@ -230,7 +229,7 @@ const tables = {
       </li>
       <li>
         <div>
-          <p>Add the file to your dotfile manager, such as chezmoi. Use your configured path.</p>
+          <p>Add your configured file path to your dotfile manager, such as chezmoi.</p>
           <UiCodeBlock
             :code="commands.chezmoi"
             language="bash"
@@ -243,17 +242,17 @@ const tables = {
       <li>
         <div>
           <p>
-            On other machines, restore the dotfile, then run
-            <code>filip-stack apply</code> to import it. Without it, apply
-            prints its expected path and continues.
+            On other machines, restore the dotfile, then import with
+            <code>filip-stack apply</code>. Without the file, apply prints its
+            expected path and continues.
           </p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            For later updates, pull your dotfiles first. After
-            <code>update</code> syncs preferences, save the changed dotfile back.
+            For updates, pull dotfiles first. After <code>update</code> syncs
+            preferences, save the changed dotfile back.
           </p>
           <UiCodeBlock
             :code="commands.routine"
@@ -277,8 +276,8 @@ const tables = {
       <p>If managed text changed locally, apply prints the diff and stops. Choose one:</p>
       <ul>
         <li>
-          Move the change into <code>host-config/</code>, commit it, and rerun apply
-          to share it across machines.
+          Move the change into <code>host-config/</code>, commit, and rerun
+          apply to share it across machines.
         </li>
         <li>
           Rerun apply with <code>--force</code> to save the local file as
@@ -286,12 +285,14 @@ const tables = {
         </li>
       </ul>
       <p>
-        An existing, nonempty guidance file without a managed block also counts as edited.
-        After forcing, restore machine-local text from the backup below the block.
+        Nonempty guidance files without managed blocks also count as edited.
+        After forcing, restore machine-local text below the block from the
+        backup.
       </p>
       <p>
-        Keep machine-local notes below the marked block in <code>CLAUDE.md</code>
-        or <code>AGENTS.md</code>. They stay in place and override conflicting shared guidance.
+        Keep machine-local notes below the marked block in
+        <code>CLAUDE.md</code> or <code>AGENTS.md</code>. They survive apply
+        and override conflicting shared guidance.
       </p>
     </div>
   </section>
