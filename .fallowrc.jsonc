@@ -2,6 +2,7 @@
   "$schema": "./node_modules/fallow/schema.json",
   // Package scripts supply the root CLI and test entries. These run outside that graph.
   "entry": [
+    "scripts/sync.mjs",
     "plugins/field-guide/hooks/field-guide-lifecycle.mjs",
     "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs",
     "plugins/guardrails/hooks/guardrails.mjs",
