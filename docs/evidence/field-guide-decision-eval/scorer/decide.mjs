@@ -8,7 +8,7 @@
 //            before it chooses to load the skill
 //   full     the hook text plus SKILL.md and capture-policy.md
 // Every arm gets the same reply format and case text. Raw replies go to --out (default: a new folder
-// under the temporary directory), never into the repository. With one arm, the last line is the score.
+// under the temporary directory), never into the repository. The last line is the score over all attempts.
 import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
@@ -195,4 +195,5 @@ for (const model of options.model) {
   }
 }
 console.log(`\nRaw replies: ${outDir}`)
-if (arms.length === 1) console.log(score(results).toFixed(2))
+// The last line is the score over every attempt in the run, so a climb can score several arms at once.
+console.log(score(results).toFixed(2))
