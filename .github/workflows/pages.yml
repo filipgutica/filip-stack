@@ -11,6 +11,8 @@ on:
       - "plugins/*/skills/*/SKILL.md"
       - "plugins/*/skills/*/references/**"
       - "skills/*/references/**"
+      - "skills/*/THIRD_PARTY_NOTICES.md"
+      - "plugins/*/THIRD_PARTY_NOTICES.md"
       - ".github/workflows/pages.yml"
   pull_request:
     paths:
@@ -21,6 +23,8 @@ on:
       - "plugins/*/skills/*/SKILL.md"
       - "plugins/*/skills/*/references/**"
       - "skills/*/references/**"
+      - "skills/*/THIRD_PARTY_NOTICES.md"
+      - "plugins/*/THIRD_PARTY_NOTICES.md"
       - ".github/workflows/pages.yml"
   workflow_dispatch:
 

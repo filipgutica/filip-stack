@@ -21,6 +21,7 @@ and advances the baseline after review.
 Source: https://github.com/anthropics/skills
 Tracked path: `skills/frontend-design`
 Baseline: `41bbe19d1a1a` (latest commit touching the tracked path at adoption, 2026-11-05)
+Author: Anthropic
 
 
                                  Apache License
