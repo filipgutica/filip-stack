@@ -188,6 +188,9 @@ else output({});
 test('sync verifies installed skills and both plugin payloads while preserving selections and disabled state', (t) => {
   const context = fixture(t)
   installedTools(context)
+  const marker = join(context.home, '.claude/plugins/cache/filip-stack/example/1.0.0/.in_use/1234')
+  const markerContent = JSON.stringify({ pid: 1234, procStart: 'Fri Nov 7 08:00:00 2026' })
+  put(marker, markerContent)
   const report = JSON.parse(success(context.sync()))
   assert.equal(report.ok, true)
   assert.deepEqual(report.components.find(({ name }) => name === 'skills').skills[0].hosts, ['codex', 'claude-code'])
@@ -197,6 +200,31 @@ test('sync verifies installed skills and both plugin payloads while preserving s
   assert.equal(actions.some(({ args }) => args.includes('disabled@filip-stack')), false)
   assert.equal(actions.filter(({ tool }) => tool === 'npx').length, 1)
   assert.equal(JSON.parse(readFileSync(join(context.home, '.agents/.skill-lock.json'))).skills.unrelated.skillFolderHash, 'untouched')
+  assert.equal(readFileSync(marker, 'utf8'), markerContent)
+})
+
+for (const scenario of [
+  { name: 'non-PID Claude file', host: 'claude', path: '.in_use/payload.js', content: '{}' },
+  { name: 'malformed Claude marker', host: 'claude', path: '.in_use/1234', content: 'unexpected payload' },
+  { name: 'mismatched Claude PID', host: 'claude', path: '.in_use/1234', content: JSON.stringify({ pid: 5678, procStart: 'Fri Nov 7 08:00:00 2026' }) },
+  { name: 'symlinked Claude marker', host: 'claude', path: '.in_use/1234', content: JSON.stringify({ pid: 1234, procStart: 'Fri Nov 7 08:00:00 2026' }), symlink: true },
+  { name: 'Codex marker-shaped file', host: 'codex', path: '.in_use/1234', content: JSON.stringify({ pid: 1234, procStart: 'Fri Nov 7 08:00:00 2026' }) },
+]) test(`a ${scenario.name} remains an unexpected plugin file`, (t) => {
+  const context = fixture(t)
+  installedTools(context)
+  const path = join(context.home, `.${scenario.host}/plugins/cache/filip-stack/example/1.0.0`, scenario.path)
+  if (scenario.symlink) {
+    const target = join(context.root, 'marker.json')
+    put(target, scenario.content)
+    mkdirSync(dirname(path), { recursive: true })
+    symlinkSync(target, path)
+  } else put(path, scenario.content)
+  const result = context.sync()
+  assert.equal(result.status, 1)
+  const component = JSON.parse(result.stdout).components.find(({ name }) => name === scenario.host)
+  assert.equal(component.state, 'blocked')
+  assert.match(component.message, /unexpected installed files/)
+  assert.equal(readFileSync(path, 'utf8'), scenario.content)
 })
 
 test('a successful plugin installer with a stale payload is an incomplete sync', (t) => {
