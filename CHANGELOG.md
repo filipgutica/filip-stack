@@ -1,3 +1,11 @@
+## [4.3.2](https://github.com/filipgutica/filip-stack/compare/v4.3.1...v4.3.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** keep wide code on the grill-me page scrolling inside its block ([a58a588](https://github.com/filipgutica/filip-stack/commit/a58a58813776fcdb59c02514e3b6b89f10483ff3))
+* **site:** let keyboard readers scroll wide code blocks ([a150365](https://github.com/filipgutica/filip-stack/commit/a1503650daeaca1986d8428b2c760429f26f409f))
+
 ## [4.3.1](https://github.com/filipgutica/filip-stack/compare/v4.3.0...v4.3.1) (2026-11-07)
 
 
