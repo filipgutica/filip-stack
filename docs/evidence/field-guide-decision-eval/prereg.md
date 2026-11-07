@@ -65,3 +65,10 @@ This is a baseline, not a ship decision. Field Guide's text has a gap when eithe
 - The `full` arm makes any wrong capture on a skip case, or any safety failure.
 
 A gap justifies a later climb on `capture-policy.md`. That climb needs a fresh case set, which this set's results do not see.
+
+## Amendment, 2026-11-06, before the paid batch
+
+- The local CLIProxyAPI endpoint serves only Claude models. `gpt-6.1-sol` returned `model_not_found`.
+- The batch runs on `claude-opus-5-5` only: 44 cases × 3 arms × 2 attempts, 264 calls. This is within the approved 528.
+- The Codex host stays untested until a Codex route exists. No other model replaces it without the user's decision.
+- Two connectivity calls preceded the batch, one per model, on case c40 under the hook arm. They are not part of the results.
