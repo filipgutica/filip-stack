@@ -1,3 +1,11 @@
+## [4.3.4](https://github.com/filipgutica/filip-stack/compare/v4.3.3...v4.3.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** keep color swatches at inline corners ([904309b](https://github.com/filipgutica/filip-stack/commit/904309b38cef83e9e13735ab39e1c92ef6eae6dc))
+* **site:** keep multiline content on panel radii ([3c0e8ab](https://github.com/filipgutica/filip-stack/commit/3c0e8ab6216e1339f86d6f2f48a5448ab3be5d4d))
+
 ## [4.3.3](https://github.com/filipgutica/filip-stack/compare/v4.3.2...v4.3.3) (2026-11-07)
 
 
