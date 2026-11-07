@@ -1625,16 +1625,18 @@ Results:
 - **Decision eval** (Opus 5.5 only; the proxy serves no Codex models; 264 calls): full Field Guide text **90.34**, hook text only 81.53, vanilla 81.25. The full text removed wrong captures on skip cases and all sensitive leaks. The hook text alone, which drives the first decision, matched vanilla. Every arm still captured too often where it should have asked.
 - **End-to-end check:** capture, apply, and skip each passed one headless Claude Code run.
 - **Retrieval climb:** three rounds took the climb score from 32.00 to 48.57, mostly by making function words stopwords. **Not supported** on the held-out probe: score 45.16 against 30.30, but recall 51.85 fell below the 52.56 floor. Round 2's stopwords `need` and `already` cost one relevant record. Post hoc, the round 1 version would have passed; testing it needs a fresh probe.
+- **Retrieval retest:** the round 1 version, frozen, on 64 fresh held-out prompts under a new pre-registration. **Supported** on all five parts: score 38.62 against 27.78 (+10.84), precision 30.43 against 19.69, recall 52.83 against 47.17, and no-relevant false injections 27 against 44.
 
 - **Decision climb:** the hook text gained a short rule for each choice. The climb score went from 85.94 to 92.90; rounds 2 and 3 (policy rewrites) were rejected. Three blind scorecard judges preferred the final version, 9.43 against 8.95. **Supported** on 44 fresh held-out cases: head 95.31 against base 90.91 (+4.40), wrong captures on skip cases 0 against 3, no stored sensitive strings, and vanilla 82.95. With two attempts per case, the hook arm's noise was about ±3 points.
 
-The retrieval change did not ship. The hook-text change passed its ship rule and is committed on the branch.
+The round 1 retrieval change and the hook-text change each passed a pre-registered ship rule and are committed on the branch. The round 2 retrieval change did not ship.
 
 Evidence:
 
 - [Retrieval climb pre-registration and card](evidence/field-guide-retrieval-climb/prereg.md)
 - [Retrieval scorer, store, and climb set](evidence/field-guide-retrieval-climb/scorer/)
 - [Retrieval climb results](evidence/field-guide-retrieval-climb/results.md)
+- [Retrieval retest pre-registration](evidence/field-guide-retrieval-climb/retest-prereg.md)
 - [Decision eval pre-registration](evidence/field-guide-decision-eval/prereg.md)
 - [Decision eval results](evidence/field-guide-decision-eval/results.md)
 - [End-to-end check](evidence/field-guide-e2e/results.md)

@@ -1,6 +1,6 @@
 # Field Guide retrieval climb: results
 
-Date: 2026-11-06. The climb and probe followed [prereg.md](prereg.md). Result: **not supported**. `main` keeps its matching code.
+Date: 2026-11-06. The climb and probe followed [prereg.md](prereg.md). Result: **not supported** for the final version. The round 1 version later passed a [retest](#retest) on fresh prompts and ships.
 
 ## Climb
 
@@ -39,8 +39,23 @@ The following was not a decision input. The round 1 version scored 43.48 on the 
 - Some of round 2's words carry topic in real requests. "Need" and "already" are part of how people describe dependency choices. A stopword list should hold only words that never carry topic.
 - The climb set had too few prompts to show that cost. One held-out prompt decided the result.
 
+## Retest
+
+The round 1 version, frozen as [round-1.patch](round-1.patch), was retested on 64 fresh held-out prompts under [retest-prereg.md](retest-prereg.md). Result: **supported**. The round 1 change ships.
+
+| Part | Rule | Base | Head | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Score at least 3.0 above base | 27.78 | 38.62 | Pass (+10.84) |
+| 2 | No-relevant false injections not above base | 44 | 27 | Pass |
+| 3 | Precision at least base − 3.0 | 19.69 | 30.43 | Pass |
+| 4 | Recall at least base − 3.0 (44.17) | 47.17 | 52.83 | Pass |
+| 5 | `pnpm check` | — | Pass | Pass |
+
+- Each version gave the same score on two runs.
+- Head found two relevant records that base missed: r11 on q28 and r03 on q58. It lost one: r07 on q55.
+- False injections fell from 102 to 64, but precision is still low. Most misses need abbreviation or synonym matching.
+
 ## Follow-ups
 
-- Test the round 1 version on a fresh held-out set under a new pre-registration. It is frozen as [round-1.patch](round-1.patch) against `bf85b1f`. The patched `field-guide.mjs` has SHA-256 `995f4de79e6bfc2e4755ca1f53c7bf1b323025bc784860b578a385c180379eb7`.
 - Opus 5.5's relative cutoff (round 3) gave +1.43 on the climb set.
 - Remaining misses need abbreviation or synonym matching, such as "PR body" for "pull request description" and "evals" for "evaluating".
