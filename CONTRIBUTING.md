@@ -188,6 +188,31 @@ not trigger a major release on its own. Add the `BREAKING CHANGE:` footer.
 When a release is due, CI stamps `package.json`, every plugin manifest, and both
 marketplace registries before creating the GitHub release.
 
+### CLI releases
+
+The dependency-free Node launcher in `cli/` uses release-please independently
+of the plugins. `cli/package.json` and `.release-please-manifest.json` own its
+version. The **Release** workflow collects changes under `cli/` into a release
+PR; merging that PR publishes `cli-vX.Y.Z`. Plugin tags remain `vX.Y.Z` and
+semantic-release continues to own their versions.
+
+The launcher runs `scripts/host-config.mjs` from `~/code/filip-stack`, or the
+checkout selected with `--repo <dir>`. Host config still ships from `main`.
+Homebrew installs the launcher directly; it has no dependencies to install or
+build step, so the repository keeps its existing pnpm tooling.
+
+The CLI starts at `0.0.0` until its first release PR. The bootstrap SHA in
+`release-please-config.json` excludes older plugin history. Enable GitHub's
+**Allow GitHub Actions to create and approve pull requests** setting before
+running release-please. Bot release PRs do not trigger PR workflows; dispatch
+`ci.yml` and `cli.yml` on that PR's branch and verify its exact head before merging.
+
+The `filipgutica/homebrew-tap` updater selects stable `cli-v` releases and
+creates the first formula from its template when one exists. Later runs update
+that formula. It hashes the tagged source archive and opens a formula PR;
+Homebrew installation becomes available after that PR merges. The tap tests
+the formula on macOS and Linux.
+
 Standalone skills have no version of their own. The skills CLI installs them
 from `main`, so they ship when they merge. A releasing commit that changes only
 `skills/` still bumps the plugin manifests. Host config also ships from `main`

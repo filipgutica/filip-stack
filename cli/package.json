@@ -1,0 +1,13 @@
+{
+  "name": "@filipgutica/filip-stack-cli",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "filip-stack": "filip-stack.mjs"
+  },
+  "engines": {
+    "node": ">=22.12.0"
+  }
+}

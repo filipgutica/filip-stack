@@ -1,20 +1,20 @@
 ---
 name: release-and-refresh
-description: Ship accepted filip-stack changes through a pull request, wait for semantic-release, and refresh the released plugins and standalone skills in local Claude and Codex installations. Use for an authorized release or host refresh in this repository.
+description: Ship accepted filip-stack changes through a pull request, verify their releases, and refresh the filip-stack CLI, plugins, standalone skills, and host config. Use for an authorized release or host refresh in this repository.
 metadata:
   internal: true
 ---
 
 # Release and refresh
 
-Complete the requested release from the current filip-stack checkout. For a full run, confirm the user request authorizes committing the accepted changes, pushing the branch, creating or updating its PR, merging after checks, waiting for release, and refreshing the installed filip-stack plugins in Claude and Codex. A single request for this full workflow is sufficient; do not ask again at each step. Respect narrower requests such as review only or refresh only. Skill selection alone does not authorize publication. Reuse authorization already given in the conversation.
+Complete the requested release from the current filip-stack checkout. A full run includes committing and pushing the accepted changes, managing and merging the feature PR and any required CLI release and Homebrew formula PRs after checks, verifying publication, and refreshing the installed CLI, plugins, standalone skills, and host config. Confirm the request covers that scope, including `filipgutica/homebrew-tap` when needed. A single request for this full workflow is sufficient; do not ask again at each step. Respect narrower requests such as review only or refresh only. Skill selection alone does not authorize publication. Reuse authorization already given in the conversation.
 
-This is a repository development skill. Keep it outside `plugins/`; the Claude entrypoint links to this canonical directory. Do not upgrade host binaries as part of a refresh. Change global instructions only through host config, as below.
+This is a repository development skill. Keep it outside `plugins/`; the Claude entrypoint links to this canonical directory. Refresh the filip-stack CLI as below; leave the Claude and Codex binaries at their installed versions. Change global instructions only through host config, as below.
 
 ## Establish the release candidate
 
 - Verify the repository identity, current branch, dirty files, upstream, and existing PR. Fetch origin before comparing with main. Preserve unrelated changes and stage only the accepted work.
-- Read `.github/workflows/ci.yml`, `.releaserc.json`, and `package.json` for the current checks and release contract. Run `pnpm check`; pnpm switches to the version pinned by `packageManager` in `package.json`, which CI also uses. Report unavailable checks accurately; do not treat a blocked command as passing.
+- Read `.github/workflows/{ci,cli,release}.yml`, `.releaserc.json`, `release-please-config.json`, and the root and CLI package manifests for the current checks and release contracts. Plugins use semantic-release; `cli/` uses release-please with independent `cli-vX.Y.Z` tags. Run `pnpm check`; pnpm switches to the version pinned by `packageManager` in `package.json`, which CI also uses. Report unavailable checks accurately; do not treat a blocked command as passing.
 - Review the final diff and apply the appropriate independent review from the engineering workflow. Use a truthful conventional commit. Semantic-release owns version stamping and changelog generation; do not edit versions by hand or manufacture a release-triggering change.
 
 ## Publish and merge
@@ -28,6 +28,24 @@ This is a repository development skill. Keep it outside `plugins/`; the Claude e
 - Record the merge commit. Track the main-branch CI run associated with it, including the release job. Poll in bounded intervals and keep the user informed.
 - After success, fetch tags and verify the published GitHub release and tag contain the merged change. Check the tag's package, marketplace, and plugin manifest versions agree. A green PR or a pre-existing latest release is not release evidence.
 - If semantic-release produces no release, inspect its result and explain why. Do not silently refresh an older version as if this change shipped. If a run fails, inspect the failure before retrying; stop dependent refresh work until a valid release exists.
+
+When the change touches `cli/`, also track the **Release** workflow and its CLI release PR. Merging the feature PR opens or updates that PR; merging the release PR publishes `cli-vX.Y.Z`. A full release request covers this second PR in filip-stack. Verify its exact head and checks before merging. Release PRs opened with `GITHUB_TOKEN` do not trigger PR workflows; run `ci.yml` and `cli.yml` manually on the release PR branch when needed. A successful release-please run that only opened a PR is not publication evidence.
+
+Verify the published CLI tag contains the requested CLI change and that its `cli/package.json` version equals the tag version. Keep plugin `vX.Y.Z` and CLI `cli-vX.Y.Z` evidence separate. When `cli/` did not change, use the latest published stable CLI release as the refresh target.
+
+## Refresh the filip-stack CLI
+
+Inspect `command -v filip-stack`, `brew list --versions filip-stack`, and `brew info --json=v2 filipgutica/tap/filip-stack`. Update an installed Homebrew CLI with:
+
+```sh
+brew update
+brew upgrade filipgutica/tap/filip-stack
+filip-stack --version
+```
+
+Compare the installed formula and CLI version with the published `cli-vX.Y.Z` release. The tap's **Update formulae** workflow selects CLI tags, creates the first formula when a CLI release exists, and opens a separate formula PR. A GitHub release alone does not make it available to Homebrew. When the formula is absent or behind, inspect the workflow and formula PR. With authorization covering the tap, trigger the workflow if needed, verify the formula's tag and checksum, and merge its exact head after all applicable checks and reviews pass. Otherwise, report the pending PR. Leave the CLI refresh incomplete until the formula ships.
+
+Verify `command -v filip-stack` resolves to the Homebrew command. A legacy `~/.local/bin/filip-stack` symlink can shadow it; report that path and the correction needed rather than claiming the new executable is active. Preserve installations managed by another method, and report a missing CLI without installing one unless the request authorizes installation. Record the actual version and executable path.
 
 ## Refresh standalone skills
 
@@ -73,4 +91,4 @@ Codex marketplace upgrade refreshes its Git snapshot. Verify installed payloads 
 
 Verify each host's installed inventory, cache path, and manifest version against the release. Compare installed runtime files with the tagged `plugins/<name>/` source; distinguish host-generated metadata from source files. Check Workflow has no hooks, Field Guide has its expected hooks, and development assets have not entered either payload. Cache-directory existence alone is insufficient. If main has advanced, identify the actual installed commit/version instead of assuming it matches the target release.
 
-Report the PR, release tag, checks, verified plugin versions for each host, the standalone skills refreshed and newly installed, and the host config commit applied. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
+Report the PR, release tag, checks, CLI version and executable path, verified plugin versions for each host, the standalone skills refreshed and newly installed, and the host config commit applied. Tell the user to restart Claude and start a fresh Codex thread to load the updated plugins. Do not close active sessions for them. If the CLI or either host cannot update, report its actual state and the remaining action without claiming the whole release is complete.
