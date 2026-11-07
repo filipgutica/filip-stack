@@ -84,11 +84,13 @@ test("all skill prose and README traits render without JavaScript", async ({
         "Manual · /workflow:simplify",
       );
     if (route === "skills/grill-me/") {
-      await expect(page.locator("main .fg-site-facts")).toContainText(
-        "Adapted from grill-me by Matt Pocock",
-      );
+      const credit = page
+        .locator("main .fg-site-facts > div")
+        .filter({ hasText: "Adapted from" })
+        .locator("dd");
+      await expect(credit).toHaveText("grill-me by Matt Pocock");
       await expect(
-        page.locator("main .fg-site-facts").getByRole("link", { name: "grill-me" }),
+        credit.getByRole("link", { name: "grill-me" }),
       ).toHaveAttribute(
         "href",
         "https://github.com/mattpocock/skills/tree/HEAD/skills/productivity/grill-me",
