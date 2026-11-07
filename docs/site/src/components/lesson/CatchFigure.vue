@@ -152,7 +152,7 @@ onMounted(() => {
 .catch__controls { display: grid; gap: var(--space-2); }
 .catch__controls [role='group'] { display: grid; gap: var(--space-2); }
 .catch__problems { display: grid; max-width: none; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.catch__problems > li { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-left: 3px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface-raised); }
+.catch__problems > li { display: grid; gap: var(--space-1); padding: var(--space-3) var(--space-4); border: 1px solid var(--color-border-subtle); border-left: 3px solid var(--color-border); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
 .catch__problems > li.is-stopped { border-left-color: var(--color-success); }
 .catch__problem { font-weight: var(--weight-medium); }
 .catch__outcome { display: grid; grid-template-columns: 8.5rem minmax(0, 1fr); align-items: baseline; gap: var(--space-1) var(--space-3); color: var(--color-muted); }
