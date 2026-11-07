@@ -1,3 +1,10 @@
+## [4.4.3](https://github.com/filipgutica/filip-stack/compare/v4.4.2...v4.4.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** tint selected rows and square the toggle card ([eb87327](https://github.com/filipgutica/filip-stack/commit/eb873276e3ceb3f5fc3227721e27558fbe9c8349))
+
 ## [4.4.2](https://github.com/filipgutica/filip-stack/compare/v4.4.1...v4.4.2) (2026-11-07)
 
 
