@@ -1,0 +1,156 @@
+# Coding settings must match pilot-no-coverage.yaml. require_ready stops a run when any measurement
+# is unavailable on any task, so the tasks without a coverage tool run as a separate evaluation.
+name: Engineering guidance climb round 1 (coverage tasks)
+runner:
+  harness: codex
+  model: gpt-6.1-sol
+  reasoning: high
+
+treatments:
+  workflow-r1:
+    guidance: [arms/workflow-r1/AGENTS.md]
+    plugins: [arms/workflow-r1/workflow]
+capabilities:
+  subagents: true
+  max_threads: 4
+
+tasks:
+  # Built by prepare-tasks.sh: DeepSWE 0b9fabbb with one environment repair. Run under umask 022.
+  source: tasks
+  ids:
+    - true-myth-iterable-collection-combinators
+    - csstree-shorthand-expansion-compression
+    - adaptix-name-mapping-aliases
+
+measurements: [tokens, lines, cyclomatic, cognitive, dead_code, coverage, review]
+measurement_settings:
+  require_ready: true
+  fallow_config: fallow-config.json
+  coverage_profiles:
+    https://github.com/true-myth/true-myth:
+      command: [npx, vitest, run, --coverage.enabled=true, --coverage.provider=v8, --coverage.reporter=lcovonly, --coverage.reportsDirectory=coverage, "--coverage.include=src/**", "--coverage.exclude=pluginbench-excludes-nothing/**"]
+      report_path: coverage/lcov.info
+      tool_version: "@vitest/coverage-v8 3.2.4"
+      source_scope: ["src/**"]
+    https://github.com/csstree/csstree:
+      command: [node_modules/.bin/c8, --reporter=lcovonly, --report-dir=coverage, --all, --include, "lib/**", --exclude, "lib/__tests/**", node_modules/.bin/mocha, lib/__tests, --require, lib/__tests/helpers/setup.js, --reporter, dot]
+      report_path: coverage/lcov.info
+      tool_version: "c8 11.0.0"
+      source_scope: ["lib/**"]
+    https://github.com/reagento/adaptix:
+      command:
+        - bash
+        - -c
+        - |
+          printf '[run]\ndynamic_context = test_function\nsource = src/adaptix\n' > /tmp/egc.covrc
+          COVERAGE_RCFILE=/tmp/egc.covrc python -m coverage run -m pytest tests -q -p no:cacheprovider
+          python - /tmp/egc.covrc coverage.json <<'PY'
+          # Writes coverage.json for PluginBench from a coverage.py data file recorded with
+          # dynamic_context = test_function. It adds the statement coordinates and per-test numbits that
+          # PluginBench's running-evaluations guide describes, so redundant added tests are measurable.
+          import json
+          import os
+          import sys
+
+          import coverage
+          from coverage.numbits import nums_to_numbits
+          import base64
+
+          rcfile, outfile = sys.argv[1], sys.argv[2]
+          cov = coverage.Coverage(config_file=rcfile)
+          cov.load()
+          cov.json_report(outfile=outfile)
+          data = cov.get_data()
+          with open(outfile) as handle:
+              report = json.load(handle)
+
+          report["meta"]["statement_lines_source"] = "coverage.Coverage.analysis2"
+          per_test = {}
+          for path, entry in report["files"].items():
+              absolute = os.path.abspath(path)
+              entry["statement_lines"] = sorted(cov.analysis2(absolute)[1])
+              executed = set(entry["executed_lines"])
+              contexts = {}
+              for line, names in data.contexts_by_lineno(absolute).items():
+                  if line not in executed:
+                      continue
+                  for name in names:
+                      if name:
+                          contexts.setdefault(name, []).append(line)
+              if contexts:
+                  per_test[path] = {
+                      name: base64.b64encode(nums_to_numbits(sorted(lines))).decode()
+                      for name, lines in sorted(contexts.items())
+                  }
+          report["per_test_numbits"] = per_test
+
+          with open(outfile, "w") as handle:
+              json.dump(report, handle)
+          PY
+      format: coverage-py-json
+      report_path: coverage.json
+      tool_version: "7.6.9"
+      source_scope: ["src/adaptix/**"]
+    https://github.com/dateutil/dateutil:
+      command:
+        - bash
+        - -c
+        - |
+          printf '[run]\ndynamic_context = test_function\nsource = src/dateutil\n' > /tmp/egc.covrc
+          COVERAGE_RCFILE=/tmp/egc.covrc python -m coverage run -m pytest tests -q -p no:cacheprovider
+          python - /tmp/egc.covrc coverage.json <<'PY'
+          # Writes coverage.json for PluginBench from a coverage.py data file recorded with
+          # dynamic_context = test_function. It adds the statement coordinates and per-test numbits that
+          # PluginBench's running-evaluations guide describes, so redundant added tests are measurable.
+          import json
+          import os
+          import sys
+
+          import coverage
+          from coverage.numbits import nums_to_numbits
+          import base64
+
+          rcfile, outfile = sys.argv[1], sys.argv[2]
+          cov = coverage.Coverage(config_file=rcfile)
+          cov.load()
+          cov.json_report(outfile=outfile)
+          data = cov.get_data()
+          with open(outfile) as handle:
+              report = json.load(handle)
+
+          report["meta"]["statement_lines_source"] = "coverage.Coverage.analysis2"
+          per_test = {}
+          for path, entry in report["files"].items():
+              absolute = os.path.abspath(path)
+              entry["statement_lines"] = sorted(cov.analysis2(absolute)[1])
+              executed = set(entry["executed_lines"])
+              contexts = {}
+              for line, names in data.contexts_by_lineno(absolute).items():
+                  if line not in executed:
+                      continue
+                  for name in names:
+                      if name:
+                          contexts.setdefault(name, []).append(line)
+              if contexts:
+                  per_test[path] = {
+                      name: base64.b64encode(nums_to_numbits(sorted(lines))).decode()
+                      for name, lines in sorted(contexts.items())
+                  }
+          report["per_test_numbits"] = per_test
+
+          with open(outfile, "w") as handle:
+              json.dump(report, handle)
+          PY
+      format: coverage-py-json
+      report_path: coverage.json
+      tool_version: "7.14.1"
+      source_scope: ["src/dateutil/**"]
+reviewer:
+  harness: codex
+  model: gpt-6-astra
+  reasoning: high
+  guidance: [review-standard.md]
+  timeout_seconds: 900
+
+repeats: 3
+timeout_seconds: 1800

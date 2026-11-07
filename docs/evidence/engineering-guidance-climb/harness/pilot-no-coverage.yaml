@@ -26,7 +26,7 @@ tasks:
 measurements: [tokens, lines, cyclomatic, cognitive, dead_code, review]
 measurement_settings:
   require_ready: true
-  fallow_config: fallow-config.json
+  fallow_config: fallow-config-no-coverage.json
   # happy-dom and testem images ship no coverage tool.
 reviewer:
   harness: codex

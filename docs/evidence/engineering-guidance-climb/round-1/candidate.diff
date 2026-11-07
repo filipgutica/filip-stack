@@ -1,0 +1,70 @@
+diff --color -r src-main/plugins/workflow/skills/engineering/SKILL.md src-r1/plugins/workflow/skills/engineering/SKILL.md
+18c18
+< 5. Change an existing test only when repository evidence proves that its contract changed or the test is wrong.
+---
+> 5. Change an existing test or fixture only when repository evidence proves that its contract changed or the test is wrong.
+21,22c21,22
+< 8. Rerun the same test and only the affected existing checks. Repeat or broaden verification when the changed code, an observed failure, or an unresolved risk justifies it.
+< 9. Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value. Simplify changed code if useful, preserving behavior; rerun affected checks after edits. Stop when the contract passes and required checks and review gates pass.
+---
+> 8. Rerun the same test, affected checks, and every check the repository requires. Broaden it when the change or an unresolved risk justifies it; after an unrelated failure, rerun only the failed files.
+> 9. Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value. Keep types precise and raise new failures the way sibling checks do. For lifecycle changes, trace cancellation, teardown, and late events. Simplify changed code if useful, preserving behavior; rerun affected checks after edits. Stop when the contract passes and required checks and review gates pass.
+44c44
+< Prefer extending existing cases over duplicating proof. Another test layer can protect a distinct risk. Dependency injection for clocks, network, or storage can support deterministic tests at real boundaries.
+---
+> Prefer extending existing cases over duplicating proof. Dependency injection for clocks, network, or storage can support deterministic tests at real boundaries.
+54c54
+< Read [hygiene](references/commit-and-pr-hygiene.md) before subtasks, commits, PRs.
+---
+> Commit each verified outcome with its tests and documentation. Read [hygiene](references/commit-and-pr-hygiene.md) before splitting work or preparing a PR.
+58,60c58
+< Read [delegation and review](references/delegation-and-review.md) before delegating, when checking review feedback, and for consequential, hard-to-reverse, broad, ambiguous, security, public-contract, concurrency, or ownership risk. Follow its review requirements and any user or repository requirements. Routine bounded changes can use focused checks and final diff inspection.
+< 
+< Do not use review as a substitute for a blocked or failed test.
+---
+> Read [delegation and review](references/delegation-and-review.md) before delegating, when checking review feedback, and before a change that is hard to undo after merge: security or authentication, migrations, persisted data or formats, or removing or renaming a published API. Follow it and any user or repository review requirements. Other changes use step 9 checks.
+64c62
+< Map every completion claim to an exact command result or bounded direct evidence. Record the reviewed change range and any version, seed, or environment detail needed to reproduce a result. Do not report unavailable evidence as passed.
+---
+> Map every completion claim to an exact command result or bounded direct evidence. Do not report unavailable evidence as passed.
+diff --color -r src-main/plugins/workflow/skills/engineering/references/delegation-and-review.md src-r1/plugins/workflow/skills/engineering/references/delegation-and-review.md
+3c3
+< Keep focused or tightly coupled work in the main thread. Delegate substantial independent implementation, discovery, or verification when parallel work, context isolation, or independent judgment justifies the full coordination cost; a cheaper model alone is not a reason to delegate. Continue independent work while agents run.
+---
+> Keep focused or tightly coupled work in the main thread. Delegate substantial independent implementation, discovery, or verification when parallel work, context isolation, or independent judgment justifies the full coordination cost; a cheaper model alone is not a reason to delegate. Continue independent work while workers run. Start a reviewer only after the final checks finish, and wait for its report without sending it messages.
+39,41c39,40
+< - Routine bounded changes can use focused checks and main-thread diff inspection.
+< - Consequential changes, such as data-integrity, migration, or hard-to-reverse behavior, use a separate review context when available.
+< - Broad, ambiguous, security-sensitive, public-contract, concurrency, or ownership risk warrants an adversarial reviewer.
+---
+> - A change that is hard to undo after merge, such as security or authentication, a migration, persisted data or formats, or removing or renaming a published API, uses a separate adversarial reviewer when available.
+> - Other changes, including additive APIs and concurrency or lifecycle fixes, use Engineering's step 9 checks and main-thread diff inspection.
+56c55
+< Review is independent only when a reviewer that did not author the change inspected the actual change in its own context. Self-review, an unscoped approval, or a claim without an artifact does not qualify.
+---
+> Review is independent only when a reviewer that did not author the change inspected the actual change in its own context. Start the reviewer without your conversation history when the host allows it, and give it a self-contained brief with the final check results. Self-review, an unscoped approval, or a claim without an artifact does not qualify.
+58c57
+< Verify reviewer findings against live code and the task contract. Reject style preferences, stale assumptions, and scope expansion. Apply valid findings only with implementation authority, then rerun affected checks. Reuse the same reviewer for correction verification unless a fresh judgment is necessary.
+---
+> Verify reviewer findings against live code and the task contract. Reject style preferences, stale assumptions, and scope expansion. Apply valid findings only with implementation authority, then rerun affected checks. Verify corrections with focused checks or regression tests; ask for another review round only for a fix to a high-severity finding or a fix that changes the reviewed contract.
+diff --color -r src-main/plugins/workflow/skills/test-audit/SKILL.md src-r1/plugins/workflow/skills/test-audit/SKILL.md
+81,83c81,82
+< 6. After final audit edits, follow the existing independent review requirements
+<    in [delegation and review](../engineering/references/delegation-and-review.md).
+<    Include the focused test audit in that review assignment.
+---
+> 6. When [delegation and review](../engineering/references/delegation-and-review.md)
+>    requires an independent review, include the focused test audit in its brief.
+diff --color -r src-main/host-config/guidance/core.md src-r1/host-config/guidance/core.md
+11,18c11,12
+< 5. **Prove your change follows these principles.** Before final verification of a code change, draft a ledger that names concrete code:
+<    - **Simpler version:** the smaller alternative you considered and the requested outcome it fails to deliver. A suggested approach is an option to beat, not a requirement.
+<    - **Readability:** the part of the diff a reviewer is most likely to misread, and how names, structure, or a comment make it clear.
+<    - **Scope:** production versus test lines changed, and each change outside the request with its reason.
+<    - **Reuse:** for each new function, helper, or component, the existing code you checked and why it does not fit.
+<    - **Coverage:** for each added test, the regression it catches and the existing test that misses it; for each removed test, the remaining test that fails when that behavior breaks, or the change that made its contract obsolete.
+< 
+<    Resolve what the ledger exposes within scope and rerun affected checks, then include the ledger in your report. Challenge my proposed approach when evidence supports a simpler one.
+---
+> 5. **Prove your change follows these principles.** In the final diff inspection, resolve any departure from principles 1–4 within scope and rerun affected checks. Report once, in your final message: the simpler version you considered and the requested outcome it fails to deliver; production versus test lines changed, with the reason for each change outside the request; and, for each added test, the regression it catches and the existing test that misses it, or, for each removed test, the remaining test that fails when that behavior breaks.
+>    Challenge my proposed approach when evidence supports a simpler one.

@@ -30,7 +30,7 @@ Method: a guidance climb, as the `hill-climb` skill's `references/guidance.md` d
 | Budget | 3 rounds, one candidate each. Calls: 12 reviewer and 3 judge calibration calls; pilot 54 coding plus 54 reviews; 1 error-analysis call; per round 3 proposers, 12 coding, 12 reviews, 12 judges; probe 40 coding, 40 reviews, 18 judges. About 340 model calls, 130 of them coding attempts. Each paid phase needs the user's approval. |
 | Proposers | Astra, Sol 6.1, and Opus 5.5, read-only. Each gets the error analysis, the controls' and incumbent's diffs and measures, the judges' reasons, and the Prune line from `references/guidance.md`. Task-specific advice is rejected. |
 | Final check | The probe in [prereg.md](prereg.md). |
-| Not covered | Claude Code behavior, because PluginBench codes with Codex only; peak context per turn, for which the cached and uncached input split is the only proxy; tasks outside one dataset; human review effort; whether the guidance caused a behavior, since traces show only what loaded. |
+| Not covered | Claude Code behavior, because PluginBench codes with Codex only (on 2026-11-07 Filip chose to assume the result carries over to Claude Code); peak context per turn, for which the cached and uncached input split is the only proxy; tasks outside one dataset; human review effort; whether the guidance caused a behavior, since traces show only what loaded. |
 
 ## Preparation findings (2026-11-06, no model calls)
 
@@ -65,6 +65,7 @@ The first pilot (`pilot-failed-3`) stopped after 33 of 36 coverage attempts. The
     - PluginBench withheld confirmation only because trusted verifier tests overwrite paths the agent changed.
   - An overlap pass counts as a pass in correctness gate 1, in correctness-decided judge pairs, and in the probe's ship rule 1.
   - Results report confirmed passes and overlap passes in separate columns.
+  - An attempt with the same overlap whose verifier reports reward 0 counts as a fail, for the same reason.
   - "Unknown" now means only attempts with no usable verifier result. The gate on unknowns applies to those attempts.
 
 ## Run rules
