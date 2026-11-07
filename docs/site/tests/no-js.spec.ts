@@ -160,6 +160,9 @@ test("the Workflow map links each skill and lists every engineering step without
   ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
   await expect(map.locator(".map-steps > li")).toHaveCount(6);
   await expect(map.locator(".map-steps")).toBeVisible();
+  await map.getByRole("link", { name: "sol-loop", exact: true }).click();
+  await expect(page).toHaveURL("/filip-stack/skills/sol-loop/");
+  await expect(page.locator("main h1")).toHaveText("sol-loop");
 });
 
 test("the lesson reads in full and its anchor links work without JavaScript", async ({
