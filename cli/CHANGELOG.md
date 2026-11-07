@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.1.0](https://github.com/filipgutica/filip-stack/compare/cli-v1.0.0...cli-v1.1.0) (2026-11-07)
+
+
+### Features
+
+* add reusable local and fleet sync ([6bf5f39](https://github.com/filipgutica/filip-stack/commit/6bf5f395cc9db90cc55e7390cb84a005ff1c3288))
+* apply shared fleet baseline with machine exceptions ([7265bdd](https://github.com/filipgutica/filip-stack/commit/7265bddb7b0d2fc1c28547b0e7c44ed31c9a17f7))
+* sync filip-stack across the fleet ([4bd721b](https://github.com/filipgutica/filip-stack/commit/4bd721b0681e3cd54db94237919cc98a0ef9990b))
+
 ## 1.0.0 (2026-11-07)
 
 
