@@ -59,7 +59,7 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
       </div>
       <div v-if="skill.upstreamHtml">
         <dt>Adapted from</dt>
-        <dd v-html="skill.upstreamHtml" />
+        <dd class="skill-origins" v-html="skill.upstreamHtml" />
       </div>
     </dl>
     <UiCodeBlock

@@ -148,13 +148,23 @@ test("the Workflow map explains requests, skills, and engineering steps after hy
   await page.goto("/filip-stack/");
   const map = page.locator("#workflow");
   const detail = map.locator(".map-skill-detail");
-  await map.getByRole("button", { name: "Review this diff" }).click();
+  const request = map.getByRole("button", { name: "Review this diff" });
+  await request.click();
+  await expect(request).toHaveAttribute("aria-pressed", "true");
+  await request.press("Space");
+  await expect(request).toHaveAttribute("aria-pressed", "true");
+  await expect(map.locator(".map-requests [aria-pressed='true']")).toHaveCount(1);
   await expect(
     map.getByRole("button", { name: "review", exact: true }),
   ).toHaveAttribute("aria-pressed", "true");
   await expect(detail).toContainText("Reviews one exact change or document");
   await expect(map.locator(".map-load").last()).toContainText(
     "No reference loaded",
+  );
+  await map.getByRole("button", { name: "review", exact: true }).press("Enter");
+  await expect(map.locator(".map-requests [aria-pressed='true']")).toHaveCount(0);
+  await expect(map.locator(".map-load").last()).toContainText(
+    "Depends on the request",
   );
   await map.getByRole("button", { name: "merge-council", exact: true }).click();
   await expect(detail.getByRole("heading")).toContainText("Standalone");
@@ -291,4 +301,28 @@ test("the design language page opens the component catalogue", async ({ page }) 
   );
   await page.getByRole("link", { name: "Documentation example" }).first().click();
   await expect(page).toHaveURL(/\/design-language\/catalogue\/docs\.html$/);
+});
+
+// A local copy of the button drifts from the library's raise, hover, and press.
+test("actions with the button fill are library buttons", async ({ page }) => {
+  test.setTimeout(90_000);
+  await page.emulateMedia({ reducedMotion: "reduce", colorScheme: "light" });
+  for (const route of routes.map((route) => `/filip-stack/${route}`)) {
+    await page.goto(route);
+    await page.waitForLoadState("networkidle");
+    const strays = await page.evaluate(() => {
+      const probe = document.body.appendChild(document.createElement("span"));
+      probe.style.background = "var(--color-button-bg)";
+      const fill = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return [...document.querySelectorAll("a, button")]
+        .filter(
+          (element) =>
+            getComputedStyle(element).backgroundColor === fill &&
+            !element.closest(".fg-button"),
+        )
+        .map((element) => element.outerHTML.slice(0, 80));
+    });
+    expect(strays, route).toEqual([]);
+  }
 });

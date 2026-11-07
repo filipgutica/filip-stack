@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { UiCodeBlock, UiCard, UiBadge } from "@filipgutica/ui";
+import { UiCodeBlock, UiCard, UiBadge, UiToggleButton } from "@filipgutica/ui";
 import SkillList from "../SkillList.vue";
 import type { Catalog } from "../../catalog";
 const { catalog } = defineProps<{ catalog: Catalog }>();
@@ -312,15 +312,15 @@ onMounted(() => {
           Try a request, or click any skill or step
         </p>
         <div role="group" aria-labelledby="map-requests-label">
-          <button
+          <UiToggleButton
             v-for="(request, index) in requests"
             :key="request.text"
-            type="button"
-            :aria-pressed="selectedRequest === index"
-            @click="pickRequest(index)"
+            size="sm"
+            :pressed="selectedRequest === index"
+            @update:pressed="pickRequest(index)"
           >
             {{ request.text }}
-          </button>
+          </UiToggleButton>
         </div>
       </div>
       <ol class="map-stages" aria-label="Skills by stage">
@@ -339,23 +339,29 @@ onMounted(() => {
           </h3>
           <ul>
             <li v-for="skill in stage.skills" :key="skill.name">
-              <button
+              <UiToggleButton
                 v-if="enhanced"
-                type="button"
                 class="map-skill"
-                :aria-pressed="selectedSkill === skill.name"
-                @click="pickSkill(skill.name)"
+                size="sm"
+                :pressed="selectedSkill === skill.name"
+                @update:pressed="pickSkill(skill.name)"
               >
-                <code>{{ skill.name }}</code>
-                <UiBadge v-if="skill.manual">Manual</UiBadge>
-              </button>
+                <span class="map-skill-label">
+                  <code>{{ skill.name }}</code>
+                  <UiBadge v-if="skill.manual">Manual</UiBadge>
+                </span>
+              </UiToggleButton>
               <a
                 v-else
-                class="map-skill"
+                class="fg-button map-skill"
+                data-variant="secondary"
+                data-size="sm"
                 :href="`/filip-stack/skills/${skill.name}/`"
               >
-                <code>{{ skill.name }}</code>
-                <UiBadge v-if="skill.manual">Manual</UiBadge>
+                <span class="map-skill-label">
+                  <code>{{ skill.name }}</code>
+                  <UiBadge v-if="skill.manual">Manual</UiBadge>
+                </span>
               </a>
             </li>
           </ul>
