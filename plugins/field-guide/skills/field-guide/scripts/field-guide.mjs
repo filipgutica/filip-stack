@@ -1312,6 +1312,12 @@ const retrievalStopwords = new Set([
   'preferences', 'project', 'remember', 'repository', 'shared', 'that', 'the',
   'their', 'them', 'then', 'these', 'this', 'those', 'use', 'used', 'uses',
   'using', 'was', 'were', 'will', 'with', 'would', 'your',
+  // Function words carry no topic, so they must not satisfy the overlap threshold.
+  'about', 'after', 'again', 'all', 'also', 'another', 'any', 'before', 'being',
+  'both', 'can', 'could', 'does', 'each', 'either', 'every', 'has', 'have', 'how',
+  'its', 'just', 'may', 'more', 'most', 'not', 'only', 'other', 'our', 'out',
+  'over', 'own', 'same', 'should', 'some', 'such', 'than', 'too', 'under', 'what',
+  'when', 'where', 'whether', 'which', 'who', 'why', 'you',
 ])
 
 const relevanceTerms = (value) => (

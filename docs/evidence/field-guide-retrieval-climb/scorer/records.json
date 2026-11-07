@@ -1,0 +1,221 @@
+{
+ "schemaVersion": 1,
+ "records": [
+  {
+   "key": "r01",
+   "scope": "shared",
+   "subjectKey": "git-branching",
+   "learning": "Create a feature branch before the first commit when the checkout is on the default branch, and name it with a type prefix such as feat/ or fix/ followed by a short kebab-case summary. This keeps the default branch releasable and makes every change reviewable on its own."
+  },
+  {
+   "key": "r02",
+   "scope": "shared",
+   "subjectKey": "git-branching",
+   "learning": "Rebase a feature branch onto the latest default branch before requesting review, and never force-push a branch that another person has pushed commits to. Rebasing keeps the history linear, and checking for other authors first avoids overwriting their work."
+  },
+  {
+   "key": "r03",
+   "scope": "shared",
+   "subjectKey": "pr-descriptions",
+   "learning": "Keep pull request descriptions to a Summary section and a Changes list. Put testing evidence in the Changes list as the commands that ran and their results, not as a separate prose section. Reviewers scan for what changed and how it was verified, and longer templates bury both."
+  },
+  {
+   "key": "r04",
+   "scope": "shared",
+   "subjectKey": "pr-size",
+   "learning": "Split a pull request when it mixes a refactor with a behavior change. Land the mechanical refactor first so reviewers can verify the behavior change in a small diff. Mixed diffs hide behavior changes inside renames and moved code, which lets regressions through review."
+  },
+  {
+   "key": "r05",
+   "scope": "shared",
+   "subjectKey": "commit-messages",
+   "learning": "Write Conventional Commits with an imperative summary under 72 characters, and explain the reason in the body when the diff does not make it obvious."
+  },
+  {
+   "key": "r06",
+   "scope": "shared",
+   "subjectKey": "typescript-type-safety",
+   "learning": "Avoid any and non-null assertions in TypeScript. Narrow unknown values with type guards at the boundary where external data enters, such as API responses and parsed JSON. Casting away the type at the boundary only moves the runtime failure to a place that is harder to debug."
+  },
+  {
+   "key": "r07",
+   "scope": "shared",
+   "subjectKey": "typescript-type-safety",
+   "learning": "Model states that cannot coexist, such as loading, error, and loaded results, as a discriminated union instead of several optional flags on one object. The compiler can then check that every state is handled and that no impossible combination is constructed."
+  },
+  {
+   "key": "r08",
+   "scope": "shared",
+   "subjectKey": "react-state",
+   "learning": "Derive values during render instead of copying props into state with an effect. Keep useEffect for synchronizing a React component with systems outside React. Mirrored state drifts out of sync with its source and causes extra renders that are hard to trace."
+  },
+  {
+   "key": "r09",
+   "scope": "shared",
+   "subjectKey": "design-tokens",
+   "learning": "Use the design system's spacing and color tokens instead of literal pixel and hex values in styles. Add a new token only when no existing token fits the need. Literal values drift from the system over time and break dark mode and density settings."
+  },
+  {
+   "key": "r10",
+   "scope": "shared",
+   "subjectKey": "accessibility",
+   "learning": "Give every icon-only button an accessible name, keep visible focus styles, and check the keyboard order whenever a dialog, menu, or popover changes."
+  },
+  {
+   "key": "r11",
+   "scope": "shared",
+   "subjectKey": "testing-strategy",
+   "learning": "Test behavior through the public interface rather than through private helpers, so that a refactor which keeps behavior the same does not require any test edits. Tests that reach into internals fail on harmless refactors and stop people from cleaning up code."
+  },
+  {
+   "key": "r12",
+   "scope": "shared",
+   "subjectKey": "flaky-tests",
+   "learning": "When a test fails intermittently, reproduce it with a fixed seed or repeated runs before changing it. Never add retries or longer timeouts to hide a race condition. A retry hides the real defect and makes the next failure rarer and harder to reproduce."
+  },
+  {
+   "key": "r13",
+   "scope": "shared",
+   "subjectKey": "test-data",
+   "learning": "Build test data with small factory functions that set only the fields a test cares about, instead of copying large JSON fixtures between test files."
+  },
+  {
+   "key": "r14",
+   "scope": "shared",
+   "subjectKey": "error-handling",
+   "learning": "Do not swallow exceptions. When code intentionally ignores an error, add a comment that explains why ignoring it is safe and log it at debug level. A silent failure turns a clear error into missing data that someone discovers much later."
+  },
+  {
+   "key": "r15",
+   "scope": "shared",
+   "subjectKey": "logging",
+   "learning": "Write structured log fields such as request id and user id instead of interpolating them into message strings, and never log tokens, passwords, or full request bodies. Structured fields stay searchable in the log backend, and secrets in logs are a common source of leaks."
+  },
+  {
+   "key": "r16",
+   "scope": "shared",
+   "subjectKey": "database-migrations",
+   "learning": "Keep database migrations compatible with the previous release: add columns as nullable first, backfill in a separate step, and drop an old column only after no deployed code reads it. During a rolling deploy the old and new code run against the same schema at the same time."
+  },
+  {
+   "key": "r17",
+   "scope": "shared",
+   "subjectKey": "api-errors",
+   "learning": "Return HTTP API errors as a stable machine-readable code plus a human-readable message, so clients never parse message text to decide what to do."
+  },
+  {
+   "key": "r18",
+   "scope": "shared",
+   "subjectKey": "dependencies",
+   "learning": "Before adding a package, check whether the standard library or an existing dependency already covers the need, and pin each new dependency to an exact version. Every dependency adds supply-chain risk, upgrade work, and install time for everyone on the team."
+  },
+  {
+   "key": "r19",
+   "scope": "shared",
+   "subjectKey": "javascript-package-manager",
+   "learning": "Use the package manager the repository declares in its lockfile and packageManager field, and never mix npm and pnpm installs in the same workspace."
+  },
+  {
+   "key": "r20",
+   "scope": "shared",
+   "subjectKey": "review-replies",
+   "learning": "When answering code review comments, reply in each thread with what changed and the commit that changed it, or with the reason the suggestion was not applied. This lets the reviewer verify each point quickly without reading the whole diff again."
+  },
+  {
+   "key": "r21",
+   "scope": "shared",
+   "subjectKey": "technical-writing",
+   "learning": "Open a documentation page with the task the reader came to do, and move background and history below the steps or into a separate explanation page."
+  },
+  {
+   "key": "r22",
+   "scope": "shared",
+   "subjectKey": "naming",
+   "learning": "Name booleans as questions such as isEnabled or hasAccess, and name functions after what they return or do rather than how they are implemented."
+  },
+  {
+   "key": "r23",
+   "scope": "shared",
+   "subjectKey": "code-comments",
+   "learning": "Write comments that explain why the code makes a non-obvious choice, and delete comments that only restate what the next line does."
+  },
+  {
+   "key": "r24",
+   "scope": "shared",
+   "subjectKey": "shell-scripts",
+   "learning": "Start shell scripts with set -euo pipefail, quote every variable expansion, and prefer long option names so the script reads clearly in review."
+  },
+  {
+   "key": "r25",
+   "scope": "shared",
+   "subjectKey": "performance",
+   "learning": "Measure before optimizing: capture a profile or benchmark that shows the hot path, and include the before and after numbers in the pull request description. Optimizations without measurements often add complexity to code that was never the bottleneck."
+  },
+  {
+   "key": "r26",
+   "scope": "shared",
+   "subjectKey": "evaluation-design",
+   "learning": "When evaluating a prompt, skill, or instruction change, compare it with a no-guidance baseline on the same tasks, model, and number of attempts, and freeze the scoring rule before the first paid run. Without a baseline, a gain may come from the model or the task set rather than from the change itself."
+  },
+  {
+   "key": "r27",
+   "scope": "shared",
+   "subjectKey": "evaluation-design",
+   "learning": "Keep a held-out task set that the tuning loop never sees, and decide whether a change ships only from its results on that held-out set. A loop that tunes and judges on the same tasks rewards overfitting to those tasks."
+  },
+  {
+   "key": "r28",
+   "scope": "shared",
+   "subjectKey": "ui-mockups",
+   "learning": "Present UI mockups as static HTML pages with real copy instead of placeholder text, and show the empty, loading, and error states beside the main state."
+  },
+  {
+   "key": "r29",
+   "scope": "shared",
+   "subjectKey": "agent-delegation",
+   "learning": "Give a delegated agent a self-contained brief with the goal, the files to read, what was already ruled out, and the exact form of the report it should return. The child sees only the brief, so anything left out of it is work the child will repeat or get wrong."
+  },
+  {
+   "key": "r30",
+   "scope": "shared",
+   "subjectKey": "secrets-handling",
+   "learning": "Never paste credentials into commands, logs, or chat. Read them from the environment or a secret manager, and redact them from any output that will be shared."
+  },
+  {
+   "key": "r31",
+   "scope": "project",
+   "subjectKey": "money-amounts",
+   "learning": "In this repository, store and compute money as integer minor units with an ISO currency code. The Money helper in the pricing module owns all rounding. Floating-point amounts lose cents in sums, and rounding in several places produces totals that do not match invoices."
+  },
+  {
+   "key": "r32",
+   "scope": "project",
+   "subjectKey": "order-fixtures",
+   "learning": "In this repository's order fixture catalog, update an existing scenario when it covers the same case, and add a fixture only when a test needs an independent order state."
+  },
+  {
+   "key": "r33",
+   "scope": "project",
+   "subjectKey": "background-jobs",
+   "learning": "In this repository, background jobs must be idempotent because the queue delivers each message at least once. Key each job on the order id and the event type. A job that runs twice must not charge, email, or ship twice."
+  },
+  {
+   "key": "r34",
+   "scope": "project",
+   "subjectKey": "api-versioning",
+   "learning": "In this repository, add new response fields only to the v2 handlers. The v1 handlers are frozen for the mobile app and change only for security fixes."
+  },
+  {
+   "key": "r35",
+   "scope": "other-project",
+   "subjectKey": "data-tables",
+   "learning": "In this repository, build data tables with the shared DataGrid component and server-side pagination, and never load a full result set into the browser."
+  },
+  {
+   "key": "r36",
+   "scope": "other-project",
+   "subjectKey": "form-validation",
+   "learning": "In this repository, validate forms with the shared schema from the api-types package so that client and server validation rules stay identical."
+  }
+ ]
+}

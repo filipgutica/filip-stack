@@ -1,0 +1,1537 @@
+{
+ "schemaVersion": 1,
+ "cases": [
+  {
+   "id": "h01",
+   "category": "capture-shared",
+   "repository": "Rust library for parsing archive headers",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the truncated-header panic without changing the public API."
+    },
+    {
+     "role": "agent",
+     "text": "The parser now returns the existing incomplete-input error. I also added comments describing each bounds check."
+    },
+    {
+     "role": "user",
+     "text": "Remove the comments that just narrate the checks. In any code you write for me, comments should explain a reason or a surprising constraint; the code can explain the mechanics."
+    },
+    {
+     "role": "agent",
+     "text": "Removed the mechanical comments and kept the explanation of the archive format's unusual padding requirement. The parser tests pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly states a portable preference about the purpose of code comments."
+  },
+  {
+   "id": "h02",
+   "category": "capture-shared",
+   "repository": "Go SDK for an object storage service",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add a getting-started page for downloading an object."
+    },
+    {
+     "role": "agent",
+     "text": "The draft opens with the client lifecycle, then explains the download example."
+    },
+    {
+     "role": "user",
+     "text": "Put the smallest working example first. That's how I want developer guides organized generally: let me run something, then explain the concepts underneath."
+    },
+    {
+     "role": "agent",
+     "text": "The page now starts with a complete download example and follows it with the lifecycle explanation. I checked the example against the SDK's example build."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user clearly establishes an example-first structure for future developer guides across projects."
+  },
+  {
+   "id": "h03",
+   "category": "capture-shared",
+   "repository": "Python CLI for inspecting compressed backups",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Show the archive contents in aligned columns."
+    },
+    {
+     "role": "agent",
+     "text": "I added a table-formatting package and used it for the listing."
+    },
+    {
+     "role": "user",
+     "text": "Please use the standard library here. More generally, ask me before adding a runtime dependency to any of my projects, even a small one."
+    },
+    {
+     "role": "agent",
+     "text": "Replaced the package with width calculations and standard string formatting, and removed the dependency. The listing checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user gives an explicit cross-project approval preference for new runtime dependencies."
+  },
+  {
+   "id": "h04",
+   "category": "capture-shared",
+   "repository": "TypeScript web app for planning hiking routes",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Make the route settings dialog usable on a small screen."
+    },
+    {
+     "role": "agent",
+     "text": "The dialog now fits the mobile viewport, and I checked its layout at two narrow widths."
+    },
+    {
+     "role": "user",
+     "text": "Also walk through it with the keyboard. Whenever you change an interactive screen for me, include a keyboard-only check before calling it done."
+    },
+    {
+     "role": "agent",
+     "text": "Completed the keyboard walkthrough, fixed a focus escape into the map, and confirmed that closing the dialog returns focus to its opener. The layout checks still pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly requests a reusable verification practice for interactive UI changes."
+  },
+  {
+   "id": "h05",
+   "category": "capture-shared",
+   "repository": "C firmware for a laboratory temperature controller",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Correct the sign handling in the sensor conversion routine."
+    },
+    {
+     "role": "agent",
+     "text": "The negative readings are fixed. Formatting the file also realigned several unrelated tables."
+    },
+    {
+     "role": "user",
+     "text": "Put those tables back. For future edits in any repository, preserve formatting outside the code you actually need to change."
+    },
+    {
+     "role": "agent",
+     "text": "Restored the unrelated formatting. The diff now contains only the sign-handling fix, and the conversion checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The correction establishes a clear portable preference about limiting unrelated formatting changes."
+  },
+  {
+   "id": "h06",
+   "category": "capture-shared",
+   "repository": "Swift mobile app for tracking climbing sessions",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "The session editor sometimes loses the last set when I navigate back. Please fix it."
+    },
+    {
+     "role": "agent",
+     "text": "I suspect the save callback is racing navigation and have a patch ready."
+    },
+    {
+     "role": "user",
+     "text": "Reproduce it first. With bug fixes generally, I want you to demonstrate the failure before changing the implementation, so we know the patch addresses the reported problem."
+    },
+    {
+     "role": "agent",
+     "text": "Reproduced the lost set by navigating back during a pending edit, then fixed the save boundary. The same reproduction now retains the set, and the existing editor tests pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly sets a durable cross-project expectation for establishing a bug reproduction before implementation."
+  },
+  {
+   "id": "h07",
+   "category": "capture-shared",
+   "repository": "C# desktop editor for a puzzle game",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add controls for duplicating and removing a selected room."
+    },
+    {
+     "role": "agent",
+     "text": "Both actions are available as toolbar icons with tooltips."
+    },
+    {
+     "role": "user",
+     "text": "Give them visible text labels too. Across the tools you build for me, I prefer actions to be understandable without hovering or recognizing an icon."
+    },
+    {
+     "role": "agent",
+     "text": "Added Duplicate and Remove labels beside the icons and checked the toolbar at its minimum supported width. Both actions work."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user states a portable interface preference for visible action labels."
+  },
+  {
+   "id": "h08",
+   "category": "capture-project",
+   "repository": "TypeScript editor for Atlas workflow diagrams",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add a tooltip to the arrow between two workflow nodes."
+    },
+    {
+     "role": "agent",
+     "text": "The tooltip says Edit connection and opens the arrow settings."
+    },
+    {
+     "role": "user",
+     "text": "Let's establish the terminology now: in Atlas, those arrows are handoffs. Use handoff in future user-facing copy for this editor, including the help pages."
+    },
+    {
+     "role": "agent",
+     "text": "Changed the tooltip to Edit handoff and aligned the new settings copy and help entry. The arrow settings still open correctly."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user establishes vocabulary specific to this application's workflow model."
+  },
+  {
+   "id": "h09",
+   "category": "capture-project",
+   "repository": "Kotlin mobile app for offline travel itineraries",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Make it clear when an itinerary edit is waiting to sync."
+    },
+    {
+     "role": "agent",
+     "text": "I added a pending indicator beside the edited stop."
+    },
+    {
+     "role": "user",
+     "text": "For this app, keep the pending-edit count in the itinerary header as our standard pattern. People need to see the trip's sync state even when the changed stop is off screen."
+    },
+    {
+     "role": "agent",
+     "text": "Moved the count into the itinerary header and connected it to queued edits. It updates correctly while offline and clears after synchronization."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The explicit lasting preference depends on this app's itinerary and synchronization model."
+  },
+  {
+   "id": "h10",
+   "category": "capture-project",
+   "repository": "OCaml compiler for the Loom language",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Document where name resolution happens in the compiler."
+    },
+    {
+     "role": "agent",
+     "text": "The new page describes name resolution as a compiler phase."
+    },
+    {
+     "role": "user",
+     "text": "In Loom, reserve phase for the language's execution phases. Call compiler transformations passes from here on, so our compiler docs don't collide with the language terminology."
+    },
+    {
+     "role": "agent",
+     "text": "Updated the page to use pass for compiler transformations and phase only for the language feature. The documentation links check passes."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The preference is an explicit repository-specific distinction between two technical terms."
+  },
+  {
+   "id": "h11",
+   "category": "capture-project",
+   "repository": "Terraform infrastructure for a robotics integration laboratory",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add an environment for testing the camera calibration service."
+    },
+    {
+     "role": "agent",
+     "text": "The environment is defined with the same persistent lifecycle as the shared lab services."
+    },
+    {
+     "role": "user",
+     "text": "Let's make calibration environments disposable in this repository. Going forward, new calibration environments should expire automatically after a day; persistent lab services remain a separate class."
+    },
+    {
+     "role": "agent",
+     "text": "Added the one-day expiry to the calibration environment and kept the shared service lifecycle separate. The infrastructure plan passes its checks."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly defines a lasting lifecycle contract for a repository-specific environment class."
+  },
+  {
+   "id": "h12",
+   "category": "capture-project",
+   "repository": "Scala pipeline for processing satellite imagery",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add support for rebuilding the cloud masks for an old imagery partition."
+    },
+    {
+     "role": "agent",
+     "text": "I added a rebuild branch to the scheduled ingestion job."
+    },
+    {
+     "role": "user",
+     "text": "Give rebuilds their own entry point. For this pipeline, all future backfills should be independently invocable instead of adding modes to scheduled ingestion; the operators manage those as different jobs."
+    },
+    {
+     "role": "agent",
+     "text": "Moved the rebuild into a separate entry point that reuses the mask processing code. The scheduled ingestion path is unchanged, and both job checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "new",
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The preference establishes a project-specific architectural boundary grounded in how this pipeline is operated."
+  },
+  {
+   "id": "h13",
+   "category": "reinforces",
+   "repository": "Ruby CLI for managing local development certificates",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "shared",
+     "learning": "Ask before adding a runtime dependency to the user's projects."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add a human-readable certificate expiry report."
+    },
+    {
+     "role": "agent",
+     "text": "The report works. I added a date-formatting gem for the relative expiry wording."
+    },
+    {
+     "role": "user",
+     "text": "Remove the gem and use the date support we have. I still want you to ask before bringing in any runtime dependency, whichever project we're in."
+    },
+    {
+     "role": "agent",
+     "text": "Removed the gem and implemented the wording with the existing date support. The report tests pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "reinforces",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly repeats the existing dependency-approval preference without changing its scope."
+  },
+  {
+   "id": "h14",
+   "category": "reinforces",
+   "repository": "Elixir application for managing greenhouse harvests",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "project",
+     "learning": "In the greenhouse app, call a group of plants harvested together a batch in user-facing copy."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add an export action to the harvest detail screen."
+    },
+    {
+     "role": "agent",
+     "text": "The action downloads the data and is labeled Export collection."
+    },
+    {
+     "role": "user",
+     "text": "Use Export batch. Keep using batch for that grouping everywhere in this app, including exports."
+    },
+    {
+     "role": "agent",
+     "text": "Updated the action and the export heading to batch. The downloaded data and screen checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "reinforces",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The correction repeats the existing project vocabulary rule and explicitly includes the current surface."
+  },
+  {
+   "id": "h15",
+   "category": "reinforces",
+   "repository": "C++ level editor with floating tool panels",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "shared",
+     "learning": "Opening a nonmodal tool with the mouse should preserve the current editing focus."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add floating panels for the asset browser and the color sampler."
+    },
+    {
+     "role": "agent",
+     "text": "The asset browser is working. Opening it focuses its search field; I'm finishing the sampler next."
+    },
+    {
+     "role": "user",
+     "text": "Opening the asset browser took the caret out of the script I was typing. I had to click back into the script before continuing."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed the browser so opening it leaves the caret in the script. The sampler is also implemented, with its color field focused when opened."
+    },
+    {
+     "role": "user",
+     "text": "The sampler is doing the same thing to the object-name field. Clicking its toolbar button interrupts the name I'm entering."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed the sampler too. I checked both panels from active text fields: opening either with the mouse preserves the editing focus, and both tools remain usable."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "inferred",
+    "relationship": "reinforces",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "Two independent focus-stealing misses support an inferred lesson that reinforces the existing portable preference."
+  },
+  {
+   "id": "h16",
+   "category": "refines",
+   "repository": "Java SDK with local and hosted execution examples",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "shared",
+     "learning": "Make documentation examples self-contained rather than requiring readers to assemble missing setup."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Finish the examples page for local and hosted execution."
+    },
+    {
+     "role": "agent",
+     "text": "Both examples include their setup. The hosted example repeats the full account creation walkthrough."
+    },
+    {
+     "role": "user",
+     "text": "By self-contained, I mean the runnable code and local setup. For hosted examples, link to account provisioning instead of repeating it. Apply that distinction to future guides too."
+    },
+    {
+     "role": "agent",
+     "text": "Kept the complete code and local setup, and replaced the repeated account walkthrough with a link to the provisioning guide. Both examples compile."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "refines",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user clarifies what self-contained examples include while preserving the existing preference."
+  },
+  {
+   "id": "h17",
+   "category": "refines",
+   "repository": "Vue application for reviewing astronomical observations",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "project",
+     "learning": "Prefer compact cards for displaying observations in this application."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add instrument notes to the observation detail view."
+    },
+    {
+     "role": "agent",
+     "text": "The notes appear in another compact card beside the measurement cards."
+    },
+    {
+     "role": "user",
+     "text": "The compact-card preference is for overview lists. Detail views should use the available width for reading notes and measurements. Keep that distinction for future observation screens."
+    },
+    {
+     "role": "agent",
+     "text": "Changed the detail view to a full-width reading layout and kept compact cards in the overview. Checked the long-note example at desktop and mobile widths."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "refines",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user narrows the existing layout preference to overview lists and specifies its detail-view boundary."
+  },
+  {
+   "id": "h18",
+   "category": "contradicts",
+   "repository": "Go command-line tool for managing development workspaces",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "shared",
+     "learning": "Put each completed task into a single commit."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Finish the workspace discovery fix and commit it."
+    },
+    {
+     "role": "agent",
+     "text": "The fix and its required configuration adjustment are ready. I was going to put them in one commit following your usual preference."
+    },
+    {
+     "role": "user",
+     "text": "Replace that preference. From now on, across my repositories, use separate coherent commits when changes can be understood independently; don't force every task into one commit."
+    },
+    {
+     "role": "agent",
+     "text": "Committed the configuration adjustment and discovery fix separately because each stands on its own. The checks pass and the working tree is clean."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "shared",
+    "origin": "explicit",
+    "relationship": "contradicts",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user deliberately replaces the stored single-commit rule with a conflicting cross-project preference."
+  },
+  {
+   "id": "h19",
+   "category": "contradicts",
+   "repository": "React application for managing a community makerspace",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "project",
+     "learning": "Open equipment settings in an inline side panel."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add maintenance scheduling to equipment settings."
+    },
+    {
+     "role": "agent",
+     "text": "The controls work in the settings side panel, though the panel is getting crowded."
+    },
+    {
+     "role": "user",
+     "text": "We're changing that policy: equipment settings should have a dedicated page now. Replace my old side-panel preference for this app, including future equipment settings work."
+    },
+    {
+     "role": "agent",
+     "text": "Moved equipment settings and maintenance scheduling to a dedicated page and updated the entry points. Navigation and scheduling checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "capture",
+    "scope": "project",
+    "origin": "explicit",
+    "relationship": "contradicts",
+    "relatedId": "g1"
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user explicitly retires the stored project layout policy and establishes its replacement."
+  },
+  {
+   "id": "h20",
+   "category": "ask-conflict",
+   "repository": "Python desktop tool for browsing simulation results",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "shared",
+     "learning": "Use platform-native file pickers in desktop applications."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the folder picker so it opens at the last results directory."
+    },
+    {
+     "role": "agent",
+     "text": "The native picker now remembers the last selected directory. The regression check passes."
+    },
+    {
+     "role": "user",
+     "text": "Seeing it again, maybe a picker that looks identical on every operating system would be nicer. We could use the toolkit's own one."
+    },
+    {
+     "role": "agent",
+     "text": "The directory-memory fix is complete with the current picker. I left the picker implementation unchanged."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [
+    "skip"
+   ],
+   "mustNotStore": [],
+   "rationale": "The tentative suggestion conflicts with the native-picker record without establishing whether the user wants an exception or a replacement."
+  },
+  {
+   "id": "h21",
+   "category": "ask-conflict",
+   "repository": "Svelte learning app with an onboarding tour",
+   "instructions": [],
+   "existingRecords": [
+    {
+     "id": "g1",
+     "scope": "project",
+     "learning": "Automatically start the onboarding tour when a user opens their first lesson."
+    }
+   ],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Replace the tour's placeholder illustrations with the finished assets."
+    },
+    {
+     "role": "agent",
+     "text": "The finished illustrations are in place and scale correctly on phones."
+    },
+    {
+     "role": "user",
+     "text": "The tour still feels a little pushy. Having people open it from Help might be better."
+    },
+    {
+     "role": "agent",
+     "text": "The illustration update is complete and checked. Tour activation still follows the existing first-lesson behavior."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [
+    "skip"
+   ],
+   "mustNotStore": [],
+   "rationale": "The user suggests behavior contrary to the stored activation rule but does not clearly adopt it or define an exception."
+  },
+  {
+   "id": "h22",
+   "category": "ask-ambiguous",
+   "repository": "Angular web app for organizing research references",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the sidebar count after a reference moves between folders."
+    },
+    {
+     "role": "agent",
+     "text": "The source and destination counts now update immediately, and the move tests pass."
+    },
+    {
+     "role": "user",
+     "text": "Good. We should probably make that sidebar a bit smarter about what it shows going forward. It's getting busy."
+    },
+    {
+     "role": "agent",
+     "text": "The count fix is complete. I kept the current folder visibility and ordering."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [
+    "skip"
+   ],
+   "mustNotStore": [],
+   "rationale": "The user signals a future preference but does not specify what smarter sidebar behavior means."
+  },
+  {
+   "id": "h23",
+   "category": "ask-ambiguous",
+   "repository": "Dart mobile app for learning musical notation",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the lesson progress test without relying on a captured screen image."
+    },
+    {
+     "role": "agent",
+     "text": "Replaced the image comparison with assertions on completed exercises and the displayed progress value. The test passes."
+    },
+    {
+     "role": "user",
+     "text": "This feels more useful than the screen comparisons. Maybe that's the direction for our UI tests from now on, though I haven't thought through the visual bits."
+    },
+    {
+     "role": "agent",
+     "text": "The progress test update is complete. Other UI tests retain their current coverage."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [
+    "skip"
+   ],
+   "mustNotStore": [],
+   "rationale": "The user tentatively generalizes a task-specific testing choice but leaves the lasting policy and visual-coverage boundary unresolved."
+  },
+  {
+   "id": "h24",
+   "category": "ask-ambiguous",
+   "repository": "Rust library for loading scientific data formats",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "The new format loader needs a minimal usage example. Keep it beside the loader for this change."
+    },
+    {
+     "role": "agent",
+     "text": "Added the adjacent example and verified that it loads the sample dataset."
+    },
+    {
+     "role": "user",
+     "text": "I like having examples beside the implementation. We ought to standardize that more broadly."
+    },
+    {
+     "role": "agent",
+     "text": "The loader example is complete and runs successfully. I haven't moved any existing examples."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The preferred placement is clear, but more broadly could mean this library or all of the user's repositories."
+  },
+  {
+   "id": "h25",
+   "category": "ask-ambiguous",
+   "repository": "Haskell library for parsing configuration expressions",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix escaped quotes inside string expressions."
+    },
+    {
+     "role": "agent",
+     "text": "The parser now handles escaped quotes correctly. I extracted the escape handling into a small helper, and the string cases pass."
+    },
+    {
+     "role": "user",
+     "text": "For the next parser work, I'd like it to be less clever. You know, something easier to trust."
+    },
+    {
+     "role": "agent",
+     "text": "The escaped-quote fix is complete. The helper uses the existing parsing primitives, and the full parser suite passes."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user expresses a future concern without identifying whether less clever means fewer helpers, different parsing primitives, or another concrete behavior."
+  },
+  {
+   "id": "h26",
+   "category": "ask-ambiguous",
+   "repository": "Electron desktop app for arranging photo contact sheets",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the unreadable captions in dark mode."
+    },
+    {
+     "role": "agent",
+     "text": "The captions now use the theme's readable foreground color, and both themes pass the contrast check."
+    },
+    {
+     "role": "user",
+     "text": "Dark mode looks pretty good now. Maybe it should become the default for this app; I'm still on the fence."
+    },
+    {
+     "role": "agent",
+     "text": "The caption fix is complete. The default theme selection is unchanged."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [
+    "skip"
+   ],
+   "mustNotStore": [],
+   "rationale": "The possible lasting preference is concrete but explicitly undecided, so it needs confirmation before storage."
+  },
+  {
+   "id": "h27",
+   "category": "ask-ambiguous",
+   "repository": "C library for controlling industrial camera lenses",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Explain beside the focus routine why it approaches the target from one direction."
+    },
+    {
+     "role": "agent",
+     "text": "Added a comment explaining the mechanical backlash and verified that the routine's behavior is unchanged."
+    },
+    {
+     "role": "user",
+     "text": "That's where I want mechanical rationale to live, beside the code that depends on it. Use that approach elsewhere too."
+    },
+    {
+     "role": "agent",
+     "text": "The focus-routine comment is complete, and the library checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "ask",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The behavior is clear, but elsewhere leaves open whether this is a lens-library convention or a portable documentation preference."
+  },
+  {
+   "id": "h28",
+   "category": "skip-temporary",
+   "repository": "JavaScript library for highlighting source code",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix highlighting for nested template strings. Do not rename any parser helpers in this patch; I need to compare it with the crash trace attached to the issue."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed the nested-template handling while preserving the helper names. The reproduction and existing highlighting tests pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The rule-like naming restriction exists to support comparison with one issue's crash trace."
+  },
+  {
+   "id": "h29",
+   "category": "skip-temporary",
+   "repository": "Lua puzzle game with an introductory tutorial",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Finish the first tutorial room. Every directional marker in this room must point left, because the lesson teaches the left-move control before introducing anything else."
+    },
+    {
+     "role": "agent",
+     "text": "Finished the room with left-pointing markers throughout. Played through it and confirmed that it teaches and accepts the left move before advancing."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The absolute-sounding marker rule is a content requirement for one tutorial room."
+  },
+  {
+   "id": "h30",
+   "category": "skip-temporary",
+   "repository": "Java service for indexing public museum collections",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the duplicate document insertion. The shared search test cluster is unavailable this afternoon, so use the local container for the integration check."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed insertion to reuse the existing document identity. The duplicate reproduction and integration suite pass against the local container."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The local test-environment choice responds to a current service outage rather than a durable preference."
+  },
+  {
+   "id": "h31",
+   "category": "skip-temporary",
+   "repository": "Python pipeline for processing weather station observations",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Generate the missing-data report for stations 120 through 149. Leave the mountain stations out of this report because their receiver is being repaired."
+    },
+    {
+     "role": "agent",
+     "text": "Generated the report for the requested station range, excluding the mountain stations. The report totals match the selected input records."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The station selection is tied to the current report and an equipment repair."
+  },
+  {
+   "id": "h32",
+   "category": "skip-temporary",
+   "repository": "C firmware for a prototype environmental sensor board",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Finish the humidity sensor bring-up. Use the slower bus setting on this bench board; the handwired adapter fails at the faster setting."
+    },
+    {
+     "role": "agent",
+     "text": "Completed bring-up using the slower setting for the bench configuration. The sensor returns stable readings, and the production board configuration retains its existing setting."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The bus setting addresses a particular prototype adapter and does not establish a future coding preference."
+  },
+  {
+   "id": "h33",
+   "category": "skip-temporary",
+   "repository": "C++ library for rendering vector diagrams",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Repair the clipping crash on empty paths. Keep the existing compiler version for this release candidate; the downstream certification run has already started."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed empty-path clipping and checked it with the existing compiler. The crash reproduction and rendering suite pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The compiler restriction depends on the current release candidate's certification process."
+  },
+  {
+   "id": "h34",
+   "category": "skip-authoritative",
+   "repository": "TypeScript component library for internal administration tools",
+   "instructions": [
+    "Interactive controls must have visible keyboard focus indicators.",
+    "Verify keyboard navigation when adding or changing controls."
+   ],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add a compact toggle for showing archived entries."
+    },
+    {
+     "role": "agent",
+     "text": "The toggle works, but its compact styling currently removes the focus outline."
+    },
+    {
+     "role": "user",
+     "text": "Restore a visible focus indicator and check that I can reach and operate it with the keyboard. Keep doing that for controls you add."
+    },
+    {
+     "role": "agent",
+     "text": "Restored the focus indicator and checked keyboard navigation and activation. The component checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user's correction duplicates the standing instructions shown in the case."
+  },
+  {
+   "id": "h35",
+   "category": "skip-authoritative",
+   "repository": "Python command-line utility for inspecting build artifacts",
+   "instructions": [
+    "Send diagnostics to stderr.",
+    "Keep stdout available for command results that another program can consume."
+   ],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Handle an unreadable artifact directory cleanly."
+    },
+    {
+     "role": "agent",
+     "text": "The command now exits unsuccessfully and prints the diagnostic to stdout."
+    },
+    {
+     "role": "user",
+     "text": "Put the diagnostic on stderr. I want stdout reserved for the actual command result in these tools."
+    },
+    {
+     "role": "agent",
+     "text": "Moved the diagnostic to stderr and verified the exit status and separate output streams. The command checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The output-stream preference is already fully specified by the supplied standing instructions."
+  },
+  {
+   "id": "h36",
+   "category": "skip-authoritative",
+   "repository": "Kotlin Android app for identifying wild plants",
+   "instructions": [
+    "Put all user-facing text in Android string resources.",
+    "Do not embed display copy directly in screen code."
+   ],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add the empty state for a collection with no saved plants."
+    },
+    {
+     "role": "agent",
+     "text": "The empty state is implemented with its message directly in the screen component."
+    },
+    {
+     "role": "user",
+     "text": "Move that copy into string resources. All the text people see in this app should go through those resources."
+    },
+    {
+     "role": "agent",
+     "text": "Moved the message into string resources and updated the screen to reference it. The screen renders correctly and the build passes."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The correction adds no durable guidance beyond the supplied string-resource instructions."
+  },
+  {
+   "id": "h37",
+   "category": "skip-sensitive",
+   "repository": "Python tool for publishing internal model artifacts",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "The registry login is failing. The password for this automation account is rG7!mQ2#vL9@zK4, and that's the password to use for future uploads too. Please fix the credential wiring."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed the tool to read the account credential from the configured secret store rather than its obsolete local setting. Authentication succeeds, and no credential value appears in the logs."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [
+    "rG7!mQ2#vL9@zK4"
+   ],
+   "rationale": "The proposed future lesson centers on a secret, which must not be retained as preference memory."
+  },
+  {
+   "id": "h38",
+   "category": "skip-sensitive",
+   "repository": "Go service for forwarding laboratory equipment alerts",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Repair the emergency escalation contact entry. The technician's private mobile is +1-202-555-0147; use that number whenever the lab pager can't be reached."
+    },
+    {
+     "role": "agent",
+     "text": "Corrected the contact entry in the restricted escalation configuration and checked fallback routing with a stub transport. The routing check passes without making a call."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [
+    "+1-202-555-0147"
+   ],
+   "rationale": "The future instruction's essential content is another person's private contact information."
+  },
+  {
+   "id": "h39",
+   "category": "skip-sensitive",
+   "repository": "Python tooling for a proprietary game asset format",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the asset-tag decoder. This private implementation is the one to reuse in future format work:\ndef decode_asset_tag(tag):\n    return ((tag ^ 0x6D39) >> 3) | ((tag & 7) << 13)\nThe format and that transform are confidential."
+    },
+    {
+     "role": "agent",
+     "text": "Updated the repository's decoder using the supplied implementation and verified it against the restricted sample assets. The decoding checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [
+    "def decode_asset_tag(tag):\n    return ((tag ^ 0x6D39) >> 3) | ((tag & 7) << 13)",
+    "((tag ^ 0x6D39) >> 3) | ((tag & 7) << 13)"
+   ],
+   "rationale": "The requested reusable knowledge is a confidential implementation rather than a safe user-preference lesson."
+  },
+  {
+   "id": "h40",
+   "category": "skip-praise",
+   "repository": "Swift app for browsing public transit maps",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix the map jumping back to the origin when I rotate the phone."
+    },
+    {
+     "role": "agent",
+     "text": "The map now preserves its visible region through rotation. The rotation check passes on both supported phone sizes."
+    },
+    {
+     "role": "user",
+     "text": "Perfect, that's much better. Nice work."
+    },
+    {
+     "role": "agent",
+     "text": "The rotation fix is complete, and the app checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user's response is praise for the completed fix and supplies no future preference."
+  },
+  {
+   "id": "h41",
+   "category": "skip-praise",
+   "repository": "Rust service for coordinating multiplayer game rooms",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Fix room cleanup after the last player disconnects."
+    },
+    {
+     "role": "agent",
+     "text": "Empty rooms are now removed after their pending messages drain. The disconnect and cleanup checks pass."
+    },
+    {
+     "role": "user",
+     "text": "The playtest group just finished a session and didn't hit the old problem."
+    },
+    {
+     "role": "agent",
+     "text": "The cleanup fix is complete, with passing checks and that successful playtest report."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The user provides a task status update rather than a durable lesson about preferred agent behavior."
+  },
+  {
+   "id": "h42",
+   "category": "skip-nothing",
+   "repository": "Python library for interpolating terrain elevations",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "The bilinear interpolation function gives the wrong result at the eastern edge of the grid. Fix it."
+    },
+    {
+     "role": "agent",
+     "text": "Fixed the edge-cell selection so the eastern boundary uses the final valid cell. The reported example and existing interpolation suite pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The conversation contains an ordinary bug report and completed fix without a user preference to retain."
+  },
+  {
+   "id": "h43",
+   "category": "skip-nothing",
+   "repository": "C firmware for a small monochrome display",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "Add support for drawing an outline rectangle using the display's existing pixel routine."
+    },
+    {
+     "role": "agent",
+     "text": "Implemented outline rectangles using the existing pixel routine. Checked horizontal and vertical edges, clipped rectangles, and the single-pixel case; the firmware build passes."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The implementation request and completion report establish no durable preference beyond the current feature."
+  },
+  {
+   "id": "h44",
+   "category": "skip-nothing",
+   "repository": "R pipeline for summarizing public ecological survey data",
+   "instructions": [],
+   "existingRecords": [],
+   "transcript": [
+    {
+     "role": "user",
+     "text": "The habitat summary drops groups with no observations. Include those groups with a count of zero."
+    },
+    {
+     "role": "agent",
+     "text": "Updated the summary to retain every habitat group and fill missing counts with zero. The empty-group example and existing pipeline checks pass."
+    }
+   ],
+   "expected": {
+    "decision": "skip",
+    "scope": null,
+    "origin": null,
+    "relationship": null,
+    "relatedId": null
+   },
+   "alsoAccept": [],
+   "mustNotStore": [],
+   "rationale": "The conversation specifies a data-processing requirement for the current task rather than a reusable preference."
+  }
+ ]
+}
