@@ -62,9 +62,10 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Design language</h1>
     <p class="lede">
-      Use this shared language when asking Claude or Codex for visual work.
-      It defines the look of personal pages, mockups, prototypes, charts,
-      and explainers.
+      The framework-agnostic foundation for every interface Filip builds.
+      Its tokens, components, and rules are plain HTML and CSS: the UI library
+      implements them in Vue, new apps and libraries start from them, and
+      Claude and Codex follow them for visual work.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -82,6 +83,42 @@ const tables = {
         <dd>Graphite Indigo</dd>
       </div>
     </dl>
+  </section>
+
+  <section aria-labelledby="catalogue">
+    <h2 id="catalogue">Component catalogue</h2>
+    <div class="prose">
+      <p>
+        The catalogue shows every component in each state that applies. It
+        uses only <code>tokens.css</code>, and its markup carries the roles and
+        states each implementation copies.
+        <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>
+        builds these components in Vue; a React library or a new app builds
+        the same ones from here.
+      </p>
+      <ul>
+        <li>
+          <a href="/filip-stack/design-language/catalogue/components.html">Component catalogue</a>:
+          each component and its states.
+        </li>
+        <li>
+          <a href="/filip-stack/design-language/catalogue/reference.html#foundations">Foundations</a>:
+          type, color, spacing, shape, borders, elevation, focus, and motion.
+        </li>
+        <li>
+          Examples:
+          <a href="/filip-stack/design-language/catalogue/reference.html">application</a>,
+          <a href="/filip-stack/design-language/catalogue/docs.html">documentation</a>, and
+          <a href="/filip-stack/design-language/catalogue/product.html">product page</a>.
+        </li>
+        <li>
+          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/components.md">Component specs</a>
+          and
+          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/decisions.md">decisions</a>:
+          what each component does, and why it looks the way it does.
+        </li>
+      </ul>
+    </div>
   </section>
 
   <section aria-labelledby="how">
@@ -151,9 +188,8 @@ const tables = {
       </p>
       <p>
         To start, keep <code>tokens.css</code> unchanged and set your own hue
-        and fonts on <code>:root</code> in a stylesheet loaded after it. The
-        component specs are framework-agnostic, so a React or Vue library can
-        build from them.
+        and fonts on <code>:root</code> in a stylesheet loaded after it. Then
+        build components from the catalogue and the component specs.
       </p>
     </div>
   </section>

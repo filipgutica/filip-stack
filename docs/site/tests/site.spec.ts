@@ -278,3 +278,17 @@ for (const theme of themes)
         expect(errors).toEqual([]);
       });
     }
+
+test("the design language page opens the component catalogue", async ({ page }) => {
+  await page.goto("/filip-stack/design-language/");
+  await page.getByRole("link", { name: "Component catalogue", exact: true }).click();
+  await expect(page).toHaveURL(/\/design-language\/catalogue\/components\.html$/);
+  // The catalogue styles itself from tokens.css served beside it.
+  await expect(page.locator("body")).not.toHaveCSS("font-family", /Times/);
+  await expect(page.getByRole("link", { name: "Spec", exact: true }).first()).toHaveAttribute(
+    "href",
+    "https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/components.md#button",
+  );
+  await page.getByRole("link", { name: "Documentation example" }).first().click();
+  await expect(page).toHaveURL(/\/design-language\/catalogue\/docs\.html$/);
+});
