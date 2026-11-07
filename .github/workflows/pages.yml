@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - "docs/site/**"
+      - "host-config/design-language/**"
       - "docs/site/src/content/**"
       - "README.md"
       - "skills/*/SKILL.md"
@@ -17,6 +18,7 @@ on:
   pull_request:
     paths:
       - "docs/site/**"
+      - "host-config/design-language/**"
       - "docs/site/src/content/**"
       - "README.md"
       - "skills/*/SKILL.md"
