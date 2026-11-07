@@ -27,10 +27,10 @@ Does the climb's final engineering guidance leave holdout-task code in better sh
 
 Head ships only when all four hold:
 
-1. **Correctness:** head's confirmed passes are at least vanilla's and at least base's, over 10 attempts each.
+1. **Correctness:** head's passes are at least vanilla's and at least base's, over 10 attempts each. A pass is a confirmed pass or an overlap pass, as the card's Amendment 1 defines it. The results report the two kinds separately.
 2. **Tokens:** head's mean over tasks of per-task median total coding tokens is at most 1.3 × vanilla's.
 3. **Mechanical:** head passes the card's mechanical gate against base.
-4. **Pairs:** head gets at least 8 of 10 weighted pair wins against base and at least 8 of 10 against vanilla. Pairs are decided as on the card: a pair where exactly one side has confirmed correctness goes to that side, and judges decide the rest. Eight of ten is a one-sided sign test at p = 0.055; the probe is directional, not conclusive.
+4. **Pairs:** head gets at least 8 of 10 weighted pair wins against base and at least 8 of 10 against vanilla. Pairs are decided as on the card: a pair where exactly one side passed goes to that side, and judges decide the rest. Eight of ten is a one-sided sign test at p = 0.055; the probe is directional, not conclusive.
 
 Head against Superpowers is reported. It does not change the verdict.
 
@@ -51,5 +51,5 @@ These are reported and do not change the verdict:
 ## Stop rule
 
 - Any call that leaves no usable result gets one retry. A second failure stops the phase.
-- An attempt that times out keeps its PluginBench result, which counts as not confirmed.
+- An attempt that times out keeps its PluginBench result, which counts as not passing.
 - If the probe fails any rule, `main` keeps its guidance.

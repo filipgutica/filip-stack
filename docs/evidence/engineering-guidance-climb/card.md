@@ -45,6 +45,28 @@ Method: a guidance climb, as the `hill-climb` skill's `references/guidance.md` d
   - true-myth's vitest config excludes `src/index.ts` from coverage, so the report misses one source file and the population is incomplete. The coverage command overrides the exclude list.
 - **Calibration pairs.** [harness/build-calibration.py](harness/build-calibration.py) builds six planted-defect pairs from the true-myth and adaptix reference solutions. [harness/judge-prompt.md](harness/judge-prompt.md) is the only judge prompt.
 
+## Amendment 1 (2026-11-07, after a harness failure and before any valid result)
+
+The first pilot (`pilot-failed-3`) stopped after 33 of 36 coverage attempts. The study does not use its results.
+
+- **Git identity.** Every task prompt says "commit everything when you are done", and PluginBench grades `git diff <base> HEAD`, so only committed work counts. No agent image set a Git identity, so every `git commit` failed:
+  - Vanilla (12 of 12) and Superpowers (11 of 11) set an identity themselves and committed.
+  - Workflow `main` (11 of 11) staged the work and stopped to ask which author to use. Its patches were empty, and every one scored 0.
+  - That behavior matches the guidance's authority rules, and real checkouts have an identity, so the failure measured the environment rather than code shape. `prepare-tasks.sh` now sets the neutral identity `Task Developer <developer@example.invalid>` in every task's agent environment, for every arm. It uses `[environment.env]` in `task.toml` with Git's `GIT_CONFIG_*` variables, so `git config user.name` reports it as ordinary config. The verifier environment, the verifier trees, and their digests are unchanged.
+  - A first fix added the identity to each environment Dockerfile. A smoke test showed that it had no effect: PluginBench runs agents in each task's prebuilt `docker_image` and never builds the Dockerfile.
+- **Token accounting.** The host runs Codex CLI 0.167.0, and PluginBench parsed forked-subagent rollouts only from 0.162.1. Every attempt that forked a subagent recorded no usage: 12 of 12 Workflow and 2 of 11 Superpowers attempts in `pilot-failed-3`. Commit `e9f5c8a` in filipgutica/pluginbench#6 accepts 0.167.0, whose rollouts have the same layout. On the smoke test's Workflow trace, accounting is complete, and the two sessions sum to the reported total.
+- **Correction to the preparation findings.** For the same reason, the two dateutil Dockerfile repairs never affected a PluginBench run. The prebuilt dateutil image already has pytest 9.0.3 and runs the suite. `prepare-tasks.sh` no longer makes those edits. The "Agent environments" and "Gradability" findings describe images rebuilt from the Dockerfiles, not the prebuilt images that agents code in. For the prebuilt images, the evidence is that vanilla scored reward 1.0 in `pilot-failed-3` on all four tasks that run reached.
+  - The pilot reruns every arm fresh. No attempt from `pilot-failed-3` counts, and none is reused as the vanilla cache.
+- **Overlap passes.** In `pilot-failed-3`, 8 control attempts scored reward 1.0 with every fail-to-pass and pass-to-pass test passing. PluginBench still recorded their correctness as unknown, because the agent had edited test files that the verifier overwrites with its trusted copies.
+  - Those edits cannot change the grade. The verifier grades the agent's production code against its own tests.
+  - Under the original rule, an arm that adds tests to existing test files, which this climb's criteria reward, would lose passes for doing so.
+  - From now on, an **overlap pass** is an attempt where:
+    - the native verifier reports reward 1, with all fail-to-pass and pass-to-pass tests passing; and
+    - PluginBench withheld confirmation only because trusted verifier tests overwrite paths the agent changed.
+  - An overlap pass counts as a pass in correctness gate 1, in correctness-decided judge pairs, and in the probe's ship rule 1.
+  - Results report confirmed passes and overlap passes in separate columns.
+  - "Unknown" now means only attempts with no usable verifier result. The gate on unknowns applies to those attempts.
+
 ## Run rules
 
 - **Tasks.** Build `tasks/` with `harness/prepare-tasks.sh`.
