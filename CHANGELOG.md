@@ -1,3 +1,11 @@
+## [4.5.2](https://github.com/filipgutica/filip-stack/compare/v4.5.1...v4.5.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** disable quiet actions and check each copied control selector ([8291b1e](https://github.com/filipgutica/filip-stack/commit/8291b1e09ef2c79edd406be87f31c856082f31cb))
+* **design-language:** keep quiet-action hover and press at their base specificity ([a4fbb2e](https://github.com/filipgutica/filip-stack/commit/a4fbb2e828f0ec6015cb87076709387ae557a6e2))
+
 ## [4.5.1](https://github.com/filipgutica/filip-stack/compare/v4.5.0...v4.5.1) (2026-11-07)
 
 
