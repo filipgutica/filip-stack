@@ -49,14 +49,27 @@ const files = (root) => readdirSync(root, { recursive: true, withFileTypes: true
   .map((entry) => relative(root, join(entry.parentPath, entry.name)).replaceAll('\\', '/'))
   .sort()
 
-const verifyPayload = ({ source, installed, plugin = false }) => {
+const isClaudeUseMarker = ({ installed, path }) => {
+  if (!/^\.in_use\/[1-9][0-9]*$/u.test(path)) return false
+  try {
+    const markerPath = join(installed, path)
+    if (!lstatSync(markerPath).isFile()) return false
+    const marker = JSON.parse(readFileSync(markerPath, 'utf8'))
+    return marker?.pid === Number(path.split('/')[1]) && typeof marker.procStart === 'string' && Object.keys(marker).length === 2
+  } catch (error) {
+    // Session shutdown can remove a marker after it was enumerated.
+    return error.code === 'ENOENT'
+  }
+}
+
+const verifyPayload = ({ source, installed, plugin = false, claudeRuntime = false }) => {
   const expected = files(source).filter((path) => !plugin || !isDevelopmentOnlyPluginPath(path))
   for (const path of expected) {
     if (!existsSync(join(installed, path)) || !readFileSync(join(source, path)).equals(readFileSync(join(installed, path)))) {
       throw new Error(`installed payload differs: ${join(installed, path)}`)
     }
   }
-  const extra = files(installed).filter((path) => !expected.includes(path))
+  const extra = files(installed).filter((path) => !expected.includes(path) && !(claudeRuntime && isClaudeUseMarker({ installed, path })))
   if (extra.length) throw new Error(`unexpected installed files in ${installed}: ${extra.join(', ')}`)
   return expected.length
 }
@@ -197,12 +210,12 @@ const codexInventory = () => JSON.parse(run('codex', ['plugin', 'list', '--json'
 const desiredPlugins = (installed) => [...new Set([...installed, ...policy.baseline.plugins])].filter((name) => !policy.excluded.plugins.includes(name))
 const requiredPlugins = () => policy.baseline.plugins.filter((name) => !policy.excluded.plugins.includes(name))
 
-const verifyPlugin = ({ name, path }) => {
+const verifyPlugin = ({ name, path, claudeRuntime = false }) => {
   const source = join(repository, 'plugins', name)
   const expected = readJson(join(source, '.claude-plugin/plugin.json')).version
   const manifest = readJson(join(path, '.claude-plugin/plugin.json'))
   if (manifest.version !== expected) throw new Error(`${name}: installed ${manifest.version}, expected ${expected}`)
-  return { name, version: manifest.version, files: verifyPayload({ source, installed: path, plugin: true }) }
+  return { name, version: manifest.version, files: verifyPayload({ source, installed: path, plugin: true, claudeRuntime }) }
 }
 
 const missingClient = (name) => {
@@ -220,7 +233,7 @@ const claudePluginResult = ({ name, before, after }) => {
   const plugin = after.find((item) => item.id === `${name}@filip-stack` && item.scope === 'user')
   if (!plugin || plugin.enabled !== (previous?.enabled ?? true)) throw new Error(`${name}: scope or enabled state changed`)
   if (dryRun) return { name, scope: 'user', action: previous ? 'update' : 'install' }
-  return { ...verifyPlugin({ name, path: plugin.installPath }), scope: plugin.scope, enabled: plugin.enabled }
+  return { ...verifyPlugin({ name, path: plugin.installPath, claudeRuntime: true }), scope: plugin.scope, enabled: plugin.enabled }
 }
 
 const prepareClaudeMarketplace = ({ before, missing }) => {
