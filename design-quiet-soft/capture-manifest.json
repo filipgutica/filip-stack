@@ -1,0 +1,15 @@
+{
+  "before": "dde6b047aa6929f2a6660c22e6a1ccb8c6bf39dd",
+  "library": "de705d8",
+  "viewportWidth": 1280,
+  "viewportHeight": {
+    "controls": 2400,
+    "other": 1000
+  },
+  "browser": "Chromium via Playwright",
+  "themes": [
+    "light",
+    "dark"
+  ],
+  "reasonForPlaywright": "Two T3 Preview snapshot calls timed out after 15000ms."
+}
