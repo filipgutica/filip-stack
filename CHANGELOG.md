@@ -1,3 +1,11 @@
+## [4.3.3](https://github.com/filipgutica/filip-stack/compare/v4.3.2...v4.3.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **field-guide:** give the lifecycle reminder a rule for capture, ask, and skip ([823b803](https://github.com/filipgutica/filip-stack/commit/823b803c8807a85fa1b0afaef4f64e8338d14c5f))
+* **field-guide:** stop function words from matching first-prompt guidance ([acc158f](https://github.com/filipgutica/filip-stack/commit/acc158f947fae1b3d3925674a6b3eadb729cc40b))
+
 ## [4.3.2](https://github.com/filipgutica/filip-stack/compare/v4.3.1...v4.3.2) (2026-11-07)
 
 
