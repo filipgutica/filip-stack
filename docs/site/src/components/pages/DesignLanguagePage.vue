@@ -197,8 +197,8 @@ const tables = {
   <section aria-labelledby="theme">
     <h2 id="theme">Theme and token names</h2>
     <p class="section-intro">
-      Graphite surfaces separate regions. Indigo marks primary actions;
-      blue marks links and keyboard focus. Switch the appearance in the header
+      Graphite surfaces separate regions. Indigo marks primary actions and
+      control focus; blue marks links and their focus. Switch the appearance in the header
       to compare light and dark.
     </p>
     <UiCard title="Graphite Indigo tokens">
