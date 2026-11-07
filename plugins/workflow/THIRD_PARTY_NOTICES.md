@@ -5,13 +5,15 @@ and minimality guidance from Superpowers 6.2.0, Ponytail, and Matt Pocock's
 public engineering skills.
 
 Each source records the upstream commit the adaptation was last reviewed
-against. The repository's `upstream-sync` skill compares it with upstream and
-advances it after review.
+against and the Workflow skills that adapt it. The repository's
+`upstream-sync` skill compares it with upstream and advances it after review.
+The site credits each source on those skills' pages.
 
 ## Superpowers
 
 Source: https://github.com/obra/superpowers
 Baseline: `3dcbd5c4b48e` (tag v6.2.0, 2026-07-24)
+Adapted in: `engineering`, `planning`, `technical-writing`
 
 MIT License
 
@@ -39,6 +41,7 @@ SOFTWARE.
 
 Source: https://github.com/DietrichGebert/ponytail
 Baseline: `2ed6c52c9d7e` (default branch at adoption, 2026-08-10)
+Adapted in: `engineering`
 
 Workflow adapts Ponytail's decision order: avoid an unnecessary change, reuse
 local code, prefer standard-library or native features, prefer an installed
@@ -71,8 +74,9 @@ SOFTWARE.
 ## Matt Pocock skills
 
 Source: https://github.com/mattpocock/skills
-Tracked path: `skills/productivity/grill-me` (adapted as grill-me)
+Tracked path: `skills/productivity/grill-me`
 Baseline: `84fdeffd12f2` (default branch at adoption, 2026-08-10)
+Adapted in: `grill-me`
 
 MIT License
 
@@ -100,6 +104,7 @@ SOFTWARE.
 
 Source: https://github.com/danyuchn/asd-ste100-skill
 Baseline: `e355af3edcec` (default branch at adoption, 2026-08-10)
+Adapted in: `technical-writing`
 
 The technical-prose reference adapts its guidance on sentence structure,
 terminology, and preserving precision. It does not include ASD's official
@@ -131,6 +136,7 @@ SOFTWARE.
 
 Source: https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit
 Baseline: `80930af448eb` (last change to that path at adoption, 2026-09-26)
+Adapted in: `test-audit`
 
 Workflow retains the authoring gate, test value criteria, and campaign guide,
 with local adaptations for activation, scope, and authority boundaries.
