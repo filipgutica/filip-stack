@@ -150,7 +150,7 @@ h1 code { overflow-wrap: anywhere; }
 }
 .swatches { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: var(--space-5); }
 .swatches figure { min-width: 0; }
-.swatches figure > span { display: block; height: var(--space-12); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-control); }
+.swatches figure > span { display: block; height: var(--space-12); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-inline); }
 .swatches figcaption { display: grid; gap: var(--space-1); margin-top: var(--space-2); color: var(--color-muted); font-size: var(--text-xs); }
 .swatches code { color: var(--color-text); overflow-wrap: anywhere; }
 @media (max-width: 1100px) {
