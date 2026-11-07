@@ -48,4 +48,6 @@ Each row has a filter group in `region` and a row item in `endpoint`; the field 
 
 The initial view and picker updates use the same rendering function. Overall percentages divide by the selected group/window's total; row percentages divide by that item's total in the selection. Empty denominators display an em dash. Exact 100% is reserved for a complete share; tiny positive percentages remain visible.
 
-Keep counts with row-specific percentages beside them on desktop, align numeric columns, mute zeros, and wrap item labels at `/` and `.`. On narrow screens the renderer presents each row with all categories visible and percentages below counts; it does not require scrolling sideways to reach errors. Both layouts use the same cells and percentage function.
+The report shows the selected UTC window, `capturedAt`, the source and basis, and `sampling` with `scope` above the counts they qualify. Put every population caveat a reader needs in those fields. The `query` stays in a disclosure.
+
+Keep counts with row-specific percentages beside them on desktop, align numeric columns, mute zeros, and wrap item labels at `/` and `.`. When the report itself is 700px wide or less, the renderer presents each row with all categories visible and percentages below counts; it does not require scrolling sideways to reach errors. A container query measures the report, so this also applies in a narrow inline frame. Both layouts use the same cells and percentage function.
