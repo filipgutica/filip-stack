@@ -1,3 +1,10 @@
+## [4.4.1](https://github.com/filipgutica/filip-stack/compare/v4.4.0...v4.4.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* preserve Claude runtime markers during sync ([ba0fcb9](https://github.com/filipgutica/filip-stack/commit/ba0fcb97dbcb001160647009bbc67b82f8cb6541))
+
 # [4.4.0](https://github.com/filipgutica/filip-stack/compare/v4.3.4...v4.4.0) (2026-11-07)
 
 
