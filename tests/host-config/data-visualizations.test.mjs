@@ -44,6 +44,9 @@ test('the generated initial state has reconciled counts, provenance and safe emb
   const initial = html.split('<script>')[0]
   assert.match(initial, /data-summary="" data-count="100"/)
   assert.match(initial, /7 <span class="ov-percent">\(7.00%\)<\/span>/)
+  const beforeDisclosure = initial.split('<details>')[0]
+  assert.ok(beforeDisclosure.includes(value.source.sampling), 'sampling is visible beside the report')
+  assert.ok(beforeDisclosure.includes(value.source.scope), 'population scope is visible beside the report')
   assert.match(initial, /Independent aggregate cross-check matched/)
   assert.match(initial, /<label for="ov-region">Group<\/label>/)
   assert.match(initial, /id="ov-mobile"/)
