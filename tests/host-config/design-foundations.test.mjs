@@ -23,3 +23,74 @@ test('the component catalogue has one section per component spec, in the same la
   assert.ok(specs.length > 0)
   assert.deepEqual(sections, specs)
 })
+
+// Flattens a page's <style> into rules, each with its @media or @supports context.
+const cssRules = (html) => {
+  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\/\*[\s\S]*?\*\//g, '')
+  const squash = (text) => text.replace(/\s+/g, ' ').trim()
+  const rules = []
+  const context = []
+  let start = 0
+  for (let i = 0; i < css.length; i += 1) {
+    if (css[i] === '{') {
+      const prelude = squash(css.slice(start, i))
+      if (prelude.startsWith('@')) {
+        context.push(prelude)
+        start = i + 1
+        continue
+      }
+      const end = css.indexOf('}', i)
+      rules.push({ context: context.join(' '), selector: prelude, body: squash(css.slice(i + 1, end)) })
+      i = end
+      start = end + 1
+    } else if (css[i] === '}') {
+      context.pop()
+      start = i + 1
+    }
+  }
+  return rules
+}
+
+// Splits a selector list on its top-level commas.
+const selectors = (list) => {
+  const parts = []
+  let depth = 0
+  let part = ''
+  for (const char of list) {
+    if (char === '(') depth += 1
+    if (char === ')') depth -= 1
+    if (char === ',' && depth === 0) {
+      parts.push(part.trim())
+      part = ''
+    } else part += char
+  }
+  return [...parts, part.trim()]
+}
+
+// A page that copies a button or quiet action copies the catalogue's rule unchanged. Each selector
+// is checked on its own, with its @media context, so a list that mixes in page selectors cannot
+// hide a drifted button rule. Focus selectors are left out: each page lists its own controls in one
+// focus rule, by role.
+const sharedControl = /^(?:a)?\.btn\b|^\.quiet-action\b|^:where\(\.quiet-action\)/
+const isSharedControl = (selector) => sharedControl.test(selector) && !selector.includes(':focus-visible')
+const perSelector = (rules) =>
+  rules.flatMap(({ context, selector, body }) => selectors(selector).map((part) => ({ context, selector: part, list: selector, body })))
+const key = ({ context, selector, body }) => `${context} ${selector} { ${body} }`.trim()
+
+// Page sizing rules that touch a button on purpose: touch targets grow at tablet width.
+const sizingExemptions = [
+  { page: 'reference.html', context: '@media (max-width: 800px)', selector: '.btn[data-size]', body: 'min-height: var(--control-lg); min-width: var(--control-lg);' },
+]
+
+test('example pages copy the catalogue button and quiet action rules unchanged', () => {
+  const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(key))
+  const exempt = new Set(sizingExemptions.map(({ page, ...rule }) => `${page} ${key(rule)}`))
+  for (const page of ['reference.html', 'docs.html', 'product.html']) {
+    const copied = perSelector(cssRules(read(page))).filter(({ selector }) => isSharedControl(selector))
+    assert.ok(copied.length > 0, `${page} has no button or quiet action rules`)
+    const drifted = copied
+      .filter((rule) => !catalogue.has(key(rule)) && !exempt.has(`${page} ${key(rule)}`))
+      .map((rule) => `${key(rule)}${rule.list === rule.selector ? '' : `  (from the list "${rule.list}")`}`)
+    assert.deepEqual(drifted, [], `${page} button or quiet action selectors that differ from components.html`)
+  }
+})
