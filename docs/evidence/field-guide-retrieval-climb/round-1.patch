@@ -1,0 +1,39 @@
+diff --git a/plugins/field-guide/skills/field-guide/scripts/field-guide.mjs b/plugins/field-guide/skills/field-guide/scripts/field-guide.mjs
+index 0000000..571f4b2 100644
+--- a/plugins/field-guide/skills/field-guide/scripts/field-guide.mjs
++++ b/plugins/field-guide/skills/field-guide/scripts/field-guide.mjs
+@@ -1312,6 +1312,12 @@ const retrievalStopwords = new Set([
+   'preferences', 'project', 'remember', 'repository', 'shared', 'that', 'the',
+   'their', 'them', 'then', 'these', 'this', 'those', 'use', 'used', 'uses',
+   'using', 'was', 'were', 'will', 'with', 'would', 'your',
++  // Function words carry no topic, so they must not satisfy the overlap threshold.
++  'about', 'after', 'again', 'all', 'also', 'another', 'any', 'before', 'being',
++  'both', 'can', 'could', 'does', 'each', 'either', 'every', 'has', 'have', 'how',
++  'its', 'just', 'may', 'more', 'most', 'not', 'only', 'other', 'our', 'out',
++  'over', 'own', 'same', 'should', 'some', 'such', 'than', 'too', 'under', 'what',
++  'when', 'where', 'whether', 'which', 'who', 'why', 'you',
+ ])
+ 
+ const relevanceTerms = (value) => (
+diff --git a/tests/field-guide/field-guide.test.mjs b/tests/field-guide/field-guide.test.mjs
+index 64f9516..cc1b57f 100644
+--- a/tests/field-guide/field-guide.test.mjs
++++ b/tests/field-guide/field-guide.test.mjs
+@@ -739,6 +739,17 @@ test('retrieve uses a concrete query without requiring a subject hint', () => {
+     query: 'durable preference and correction guidance',
+   })
+   assert.deepEqual(genericResult.guidance, [])
++
++  const functionWordsInput = conversationSubmission({
++    learning: 'Explain what each function does before you change it.',
++    turnId: 'turn-4',
++    scope: 'shared',
++    explicitPreference: true,
++  })
++  functionWordsInput.subjectKey = 'explanations'
++  submit({ repoRoot, guideRoot, input: functionWordsInput })
++  // Shared function words alone are not a topic match.
++  assert.deepEqual(retrieve({ repoRoot, guideRoot, query: 'what does each test cover' }).guidance, [])
+ })
+ 
+ test('retrieve requires a subject hint or a concrete query', () => {

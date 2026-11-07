@@ -1,0 +1,298 @@
+{
+ "schemaVersion": 1,
+ "prompts": [
+  {
+   "id": "p03",
+   "category": "none",
+   "prompt": "Does the payments worker run in the same process as the API? Trace the startup wiring for me.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p04",
+   "category": "none",
+   "prompt": "Find the test that covers cancelling an order after dispatch. I only need the filename and test name.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p06",
+   "category": "none",
+   "prompt": "Which migration originally introduced delivery_instructions? Need the migration number for a support note.",
+   "relevant": [],
+   "acceptable": [
+    "r16"
+   ]
+  },
+  {
+   "id": "p08",
+   "category": "none",
+   "prompt": "Can you tell whether the order search endpoint already accepts a cursor? The admin table team asked. Don't implement anything.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p10",
+   "category": "none",
+   "prompt": "What's the relationship between PaymentAttempt and PaymentIntent in our schema? A small explanation is enough.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p11",
+   "category": "none",
+   "prompt": "Find all callers of reserveInventory. Trying to understand who owns releasing reservations.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p13",
+   "category": "none",
+   "prompt": "Read the last release notes and tell me whether the webhook URL changed. Don't rewrite them.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p14",
+   "category": "none",
+   "prompt": "Why are there two order routers, v1 and v2? Trace which clients hit each one; I'm onboarding.",
+   "relevant": [],
+   "acceptable": [
+    "r34"
+   ]
+  },
+  {
+   "id": "p15",
+   "category": "none",
+   "prompt": "Find the existing fixture for an order with a partial shipment. Just show me where it lives.",
+   "relevant": [],
+   "acceptable": [
+    "r32"
+   ]
+  },
+  {
+   "id": "p16",
+   "category": "none",
+   "prompt": "What does pnpm check actually expand to in this repo? Read package.json; don't install or run anything.",
+   "relevant": [],
+   "acceptable": [
+    "r19"
+   ]
+  },
+  {
+   "id": "p20",
+   "category": "none",
+   "prompt": "Does our e2e suite talk to a real Redis instance or a fake? Point to the setup so I can explain it to someone.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p23",
+   "category": "single",
+   "prompt": "We're on main. Fix the typo in the health endpoint's service name and commit it so I can open a PR later.",
+   "relevant": [
+    "r01"
+   ],
+   "acceptable": [
+    "r05"
+   ]
+  },
+  {
+   "id": "p24",
+   "category": "single",
+   "prompt": "Get fix/export-cursor ready for review against current main. Maya pushed a couple commits onto it yesterday, so check the branch history before updating it.",
+   "relevant": [
+    "r02"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p25",
+   "category": "single",
+   "prompt": "Draft the PR body for the webhook signature fix. Changes are header normalization and rejecting missing signatures; pnpm check passed and the webhook integration suite passed 18/18.",
+   "relevant": [
+    "r03"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p26",
+   "category": "single",
+   "prompt": "This PR both moves the shipment repository into its own module and changes when cancelled shipments are filtered out. Untangle it into reviewable PRs.",
+   "relevant": [
+    "r04"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p27",
+   "category": "single",
+   "prompt": "Commit the staged fix on this feature branch. It prevents duplicate cursor rows when two orders have the same timestamp; the reason for the extra sort key probably needs spelling out.",
+   "relevant": [
+    "r05"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p29",
+   "category": "single",
+   "prompt": "Clean up ExportStatus in the support client. Right now it can say pending=true and also contain both a download URL and an error. Make the type match the actual lifecycle.",
+   "relevant": [
+    "r07"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p30",
+   "category": "single",
+   "prompt": "Our little React receipt preview shows the old customer name for a render after props change. It copies customerName into local state in an effect. Fix the stale display.",
+   "relevant": [
+    "r08"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p31",
+   "category": "single",
+   "prompt": "The embedded checkout summary has random gaps and its border disappears in dark mode. Bring those styles back into line with the existing theme.",
+   "relevant": [
+    "r09"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p35",
+   "category": "single",
+   "prompt": "These OAuth token tests each paste the same huge client record with one field changed. Clean up the setup so the interesting difference in each test is obvious.",
+   "relevant": [
+    "r13"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p37",
+   "category": "single",
+   "prompt": "Make the checkout request logs filterable by account and request id. Right now both identifiers are buried inside sentences and searching is painful.",
+   "relevant": [
+    "r15"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p38",
+   "category": "single",
+   "prompt": "Add delivery_instructions to saved addresses. Old and new API pods will overlap for about 20 minutes during deploy, and existing addresses need to keep working.",
+   "relevant": [
+    "r16"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p44",
+   "category": "single",
+   "prompt": "Clean up the confusing names in the cancellation policy module: enabled, permission, and doCheck don't tell me what they mean. Keep behavior the same.",
+   "relevant": [
+    "r22"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p48",
+   "category": "single",
+   "prompt": "Mock up the merchant refund experience so we can discuss it before implementation. Include what someone sees before any refunds exist and when fetching them fails.",
+   "relevant": [
+    "r28"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p51",
+   "category": "multi",
+   "prompt": "Expose an order's remaining refundable amount in the API. Work it out from the captured amount and previous refunds, and make sure clients can tell which currency it's in.",
+   "relevant": [
+    "r31",
+    "r34"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p52",
+   "category": "multi",
+   "prompt": "Add coverage for cancelling a declined order. The order tests have a catalog of scenarios plus a bunch of enormous copied order objects; reuse what's there and make this test's setup small.",
+   "relevant": [
+    "r32",
+    "r13"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p54",
+   "category": "multi",
+   "prompt": "Our TS partner-import endpoint trusts whatever JSON arrives and sometimes crashes on payload.items.map. Validate the incoming shape and return an error integration clients can handle without matching English text.",
+   "relevant": [
+    "r06",
+    "r17"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p55",
+   "category": "multi",
+   "prompt": "Refactor the React shipment preview model. It mirrors selectedShipment props into state, and the fetch status is three booleans that sometimes leave a spinner over an error. Sort out both sources of weirdness.",
+   "relevant": [
+    "r08",
+    "r07"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p58",
+   "category": "multi",
+   "prompt": "Prepare the PR description for the search optimization. We have passing integration tests, but nobody recorded the old query's timings yet. Get the missing evidence and write the body reviewers need.",
+   "relevant": [
+    "r03",
+    "r25"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p59",
+   "category": "long",
+   "prompt": "Can you explain which phase of CI failed here? Please only interpret the log and point me to the owning config; don't change files, reinstall deps, or rerun the pipeline. Someone called this a flaky test but I can't see a test failure.\n\n```\n09:41:02 checkout complete\n09:41:03 node --version\nv22.14.0\n09:41:03 pnpm --version\n9.15.4\n09:41:04 pnpm install --frozen-lockfile\nLockfile is up to date, resolution step is skipped\nPackages: +412\n09:41:19 dependencies installed\n09:41:20 pnpm build\n> shop-api build\n> tsc -p tsconfig.build.json\n09:41:29 build completed\n09:41:30 collecting build artifact\n09:41:30 source: dist/**\n09:41:30 destination: workspace-artifacts/shop-api\n09:41:31 upload failed: artifact storage returned 503\n09:41:31 job exited with status 1\n09:41:31 integration job skipped: dependency failed\n```\n\nThe dashboard paints the whole workflow red and the integration job has a grey icon. I need a short factual answer for the incident timeline: did dependency installation finish, did compilation finish, and did any integration tests execute? Also tell me whether this excerpt gives enough information to blame shop-api code. If it doesn't, say what evidence is absent rather than guessing at a code fix. The npm instructions in the old onboarding ticket may be unrelated.",
+   "relevant": [],
+   "acceptable": [
+    "r12",
+    "r19"
+   ]
+  },
+  {
+   "id": "p62",
+   "category": "long",
+   "prompt": "Pick up this API ticket and correct the draft patch before implementing it. Product wants the order detail response to include shipment tracking availability so the new web checkout can decide whether to show its tracking link. The underlying service already returns the value; this is just exposing it.\n\nThe draft currently looks like this:\n\n```\n--- a/src/http/v1/orders/detail.ts\n+++ b/src/http/v1/orders/detail.ts\n@@\n return {\n   id: order.id,\n   status: order.status,\n+  trackingAvailable: shipmentSummary.hasTracking,\n };\n```\n\nTicket notes: 'The web team can consume either endpoint version. Existing mobile clients are pinned to their current response contract and are not part of this rollout. No mobile release is planned. This is a product enhancement, not a security issue. The field should be a boolean and should be false when the order has no shipment. Do not add a database column; shipmentSummary already knows the answer.'\n\nFind the right handler for the addition and wire through the existing value. The draft author chose the older handler because its serializer was shorter, which isn't a requirement. Keep the response work limited to the endpoint that should receive product additions, and report which endpoint the web team should call. There's no need to change the shipment calculations or create another service.",
+   "relevant": [
+    "r34"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p63",
+   "category": "long",
+   "prompt": "Design the experiment for this proposed agent instruction update before we spend money running it. The treatment asks the coding agent to state a likely failure mode before editing. We've tried it manually on a handful of shop-api bugs and the outputs look more thoughtful, but I don't know whether that translates into better fixes.\n\nCurrent draft from the ticket:\n\n```\nCandidate tasks: 12 bugs used while writing the instruction\nTreatment: latest model, high reasoning, 3 attempts\nComparison: last month's stored results, medium reasoning, 1 attempt\nMetric: reviewer impression plus tests passing\nShip if the examples look less rushed\n```\n\nI don't trust that setup. We have enough additional historical bugs to reserve some that nobody uses while revising the text. The initial examples are still useful for development, but I don't want us repeatedly adjusting the instruction until it passes those examples and then calling that a result.\n\nWrite an experiment plan that makes the comparison interpretable and gives us a definite release decision. State what stays constant between conditions, how scoring gets settled, which tasks the tuning process can inspect, and which results determine whether we adopt the instruction. This request is for the plan only; don't start a paid run. Treat the manual examples as motivation, not proof of improvement.",
+   "relevant": [
+    "r26",
+    "r27"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p65",
+   "category": "multi",
+   "prompt": "Let's design evals and a small hill climb for the release notes generator, making sure it does what it's intended to do",
+   "relevant": [
+    "r26",
+    "r27"
+   ],
+   "acceptable": []
+  }
+ ]
+}

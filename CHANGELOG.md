@@ -1,3 +1,26 @@
+## [4.3.3](https://github.com/filipgutica/filip-stack/compare/v4.3.2...v4.3.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **field-guide:** give the lifecycle reminder a rule for capture, ask, and skip ([823b803](https://github.com/filipgutica/filip-stack/commit/823b803c8807a85fa1b0afaef4f64e8338d14c5f))
+* **field-guide:** stop function words from matching first-prompt guidance ([acc158f](https://github.com/filipgutica/filip-stack/commit/acc158f947fae1b3d3925674a6b3eadb729cc40b))
+
+## [4.3.2](https://github.com/filipgutica/filip-stack/compare/v4.3.1...v4.3.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** keep wide code on the grill-me page scrolling inside its block ([a58a588](https://github.com/filipgutica/filip-stack/commit/a58a58813776fcdb59c02514e3b6b89f10483ff3))
+* **site:** let keyboard readers scroll wide code blocks ([a150365](https://github.com/filipgutica/filip-stack/commit/a1503650daeaca1986d8428b2c760429f26f409f))
+
+## [4.3.1](https://github.com/filipgutica/filip-stack/compare/v4.3.0...v4.3.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** keep catalogue notes to DESIGN.md and let typing / reach inputs ([8d93bc7](https://github.com/filipgutica/filip-stack/commit/8d93bc7d4e8516cf0d1870b81039a4fcc0cac58d))
+
 # [4.3.0](https://github.com/filipgutica/filip-stack/compare/v4.2.0...v4.3.0) (2026-11-07)
 
 

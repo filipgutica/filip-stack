@@ -9,6 +9,7 @@ export const pageTypes = [
   { path: "agent-ready-environments/", title: "Agent-ready environments" },
   { path: "skills/engineering/", title: "engineering" },
   { path: "skills/full-send/", title: "full-send" },
+  { path: "skills/grill-me/", title: "grill-me" },
 ];
 export const skillNames = [
   ...readdirSync("../../plugins/workflow/skills"),

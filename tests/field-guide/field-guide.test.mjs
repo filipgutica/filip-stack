@@ -739,6 +739,17 @@ test('retrieve uses a concrete query without requiring a subject hint', () => {
     query: 'durable preference and correction guidance',
   })
   assert.deepEqual(genericResult.guidance, [])
+
+  const functionWordsInput = conversationSubmission({
+    learning: 'Explain what each function does before you change it.',
+    turnId: 'turn-4',
+    scope: 'shared',
+    explicitPreference: true,
+  })
+  functionWordsInput.subjectKey = 'explanations'
+  submit({ repoRoot, guideRoot, input: functionWordsInput })
+  // Shared function words alone are not a topic match.
+  assert.deepEqual(retrieve({ repoRoot, guideRoot, query: 'what does each test cover' }).guidance, [])
 })
 
 test('retrieve requires a subject hint or a concrete query', () => {

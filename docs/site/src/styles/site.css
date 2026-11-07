@@ -41,6 +41,8 @@ h1 code { overflow-wrap: anywhere; }
  * Edge cells drop their outer padding so the table lines up with the prose. */
 .prose * + .table-scroll, .prose .table-scroll + * { margin-top: var(--space-4); }
 .table-scroll { overflow-x: auto; }
+/* Print shows the whole code block; a scroll box would cut it off. */
+@media screen { .code-scroll { overflow-x: auto; } }
 .table-scroll table { width: 100%; border-collapse: collapse; font-size: var(--text-md); font-variant-numeric: tabular-nums; }
 .table-scroll :is(th, td) { padding: var(--space-3); vertical-align: top; }
 .table-scroll th:not([align]) { text-align: start; }

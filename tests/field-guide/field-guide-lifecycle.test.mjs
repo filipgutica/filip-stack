@@ -18,7 +18,7 @@ const fieldGuideScript = fileURLToPath(new URL('scripts/field-guide.mjs', fieldG
 const promptOutput = {
   hookSpecificOutput: {
     hookEventName: 'UserPromptSubmit',
-    additionalContext: 'Before your final response, privately choose capture, ask, or skip for durable learning. Preserve the normal task response for every decision. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, append one focused learning question and write no memory while awaiting the answer. Learning must not delay or replace the task result. Add no other lifecycle or storage text. This evaluation is advisory.',
+    additionalContext: 'Before your final response, privately choose capture, ask, or skip for durable learning. Capture a clear, durable user preference, correction, or independently repeated miss, as a short paraphrase in your own words. Ask when the intended behavior, durability, scope, or relationship to stored guidance is unclear. Skip temporary or task-specific details, rules already in current instructions, and sensitive content such as credentials, personal data, or proprietary code, even when asked to remember it. Preserve the normal task response for every decision. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, append one focused learning question and write no memory while awaiting the answer. Learning must not delay or replace the task result. Add no other lifecycle or storage text.',
   },
 }
 

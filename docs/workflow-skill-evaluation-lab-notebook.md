@@ -1612,7 +1612,40 @@ Evidence:
 - [Judge-led results and implementation ledger](evidence/writing-rules-probe/results.md)
 - [Aggregate results](evidence/writing-rules-probe/results.json)
 
-### 28. Engineering guidance climb: preparation and dry run
+### 28. Field Guide evals: preparation and retrieval baseline
+
+Date: 2026-11-06. This study checks whether Field Guide does what it is meant to do. Four layers are planned: first-prompt retrieval, the capture/ask/skip decision, an end-to-end agent check, and an optional PluginBench overhead check. Retrieval goes first. A live first prompt about designing evals injected nothing, although the local store held two evaluation-design records. The prompt shared no terms with them.
+
+- **Retrieval scorer:** a synthetic 36-record store built through the real `init` and `submit` commands. 64 labeled prompts came from a fresh, read-only Codex `gpt-6.1-sol` call that saw the records but no Field Guide code. They split into 32 climb and 32 held-out prompts. The climb set also holds a reworded copy of the live miss, for 33. The scorer reports micro precision, recall, and F1 of `promptInjection`.
+- **Retrieval baseline on the climb set** (identical over two runs): precision **22.22**, recall **57.14**, F1 **32.00**. There were 56 false injections across 33 prompts, 19 of them on prompts that need no record. Precision, not recall, is the larger problem.
+- **Decision eval:** 44 labeled finished-task cases from a second fresh Codex call. That call saw a plain statement of the intended behavior, not `capture-policy.md`, and avoided the topics of the policy's examples. Three arms: vanilla, hook text only, and hook text plus skill and policy. The hook-only arm matters because the hook text is all an agent sees before it chooses to load the skill. Errors are weighted: a wrong capture costs 2, a missed capture 1, a safety failure 3. Not yet run: the local CLIProxyAPI endpoint was not running.
+
+Results:
+
+- **Decision eval** (Opus 5.5 only; the proxy serves no Codex models; 264 calls): full Field Guide text **90.34**, hook text only 81.53, vanilla 81.25. The full text removed wrong captures on skip cases and all sensitive leaks. The hook text alone, which drives the first decision, matched vanilla. Every arm still captured too often where it should have asked.
+- **End-to-end check:** capture, apply, and skip each passed one headless Claude Code run.
+- **Retrieval climb:** three rounds took the climb score from 32.00 to 48.57, mostly by making function words stopwords. **Not supported** on the held-out probe: score 45.16 against 30.30, but recall 51.85 fell below the 52.56 floor. Round 2's stopwords `need` and `already` cost one relevant record. Post hoc, the round 1 version would have passed; testing it needs a fresh probe.
+- **Retrieval retest:** the round 1 version, frozen, on 64 fresh held-out prompts under a new pre-registration. **Supported** on all five parts: score 38.62 against 27.78 (+10.84), precision 30.43 against 19.69, recall 52.83 against 47.17, and no-relevant false injections 27 against 44.
+
+- **Decision climb:** the hook text gained a short rule for each choice. The climb score went from 85.94 to 92.90; rounds 2 and 3 (policy rewrites) were rejected. Three blind scorecard judges preferred the final version, 9.43 against 8.95. **Supported** on 44 fresh held-out cases: head 95.31 against base 90.91 (+4.40), wrong captures on skip cases 0 against 3, no stored sensitive strings, and vanilla 82.95. With two attempts per case, the hook arm's noise was about ±3 points.
+- **Decision climb on Codex** (`gpt-6.1-sol`, the same held-out cases; not a decision input): head 90.34 against base 78.13 (+12.21), with vanilla at 64.20. Wrong captures on skip cases fell from 16 to 1, and stored sensitive strings from 2 to 0. The old hook text did much worse on Codex than on Opus, so the new rules matter more there.
+
+The round 1 retrieval change and the hook-text change each passed a pre-registered ship rule and are committed on the branch. The round 2 retrieval change did not ship.
+
+Evidence:
+
+- [Retrieval climb pre-registration and card](evidence/field-guide-retrieval-climb/prereg.md)
+- [Retrieval scorer, store, and climb set](evidence/field-guide-retrieval-climb/scorer/)
+- [Retrieval climb results](evidence/field-guide-retrieval-climb/results.md)
+- [Retrieval retest pre-registration](evidence/field-guide-retrieval-climb/retest-prereg.md)
+- [Decision eval pre-registration](evidence/field-guide-decision-eval/prereg.md)
+- [Decision eval results](evidence/field-guide-decision-eval/results.md)
+- [End-to-end check](evidence/field-guide-e2e/results.md)
+- [Decision climb pre-registration](evidence/field-guide-decision-climb/prereg.md)
+- [Decision climb results](evidence/field-guide-decision-climb/results.md)
+- [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
+
+### 29. Engineering guidance climb: preparation and dry run
 
 Date: 2026-11-06. Plan, task preparation, and free dry runs only; no paid call has run.
 
@@ -1865,6 +1898,9 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Guide-body probe preregistration, calibration, results, and scorer | [docs/evidence/guide-body-probe/](evidence/guide-body-probe/) |
 | Writing-guidance climb card, probe preregistration, results, and scorer | [docs/evidence/writing-guidance-climb/](evidence/writing-guidance-climb/) |
 | UX guidance probe preregistration, dry run, scorer, and fixture | [docs/evidence/ux-guidance-probe/](evidence/ux-guidance-probe/) |
+| Field Guide retrieval climb pre-registration, scorer, and climb set | [docs/evidence/field-guide-retrieval-climb/](evidence/field-guide-retrieval-climb/) |
+| Field Guide decision eval harness and cases | [docs/evidence/field-guide-decision-eval/](evidence/field-guide-decision-eval/) |
+| Field Guide decision climb pre-registration, results, and held-out cases | [docs/evidence/field-guide-decision-climb/](evidence/field-guide-decision-climb/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |
 

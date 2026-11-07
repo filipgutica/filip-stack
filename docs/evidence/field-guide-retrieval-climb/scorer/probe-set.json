@@ -1,0 +1,284 @@
+{
+ "schemaVersion": 1,
+ "prompts": [
+  {
+   "id": "p01",
+   "category": "none",
+   "prompt": "Where does an order first get assigned its public reference? Just point me at the entry point.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p02",
+   "category": "none",
+   "prompt": "Give me a quick map of the pricing folder. Which bits belong to checkout vs invoicing? No changes.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p05",
+   "category": "none",
+   "prompt": "What does the current CI matrix run on Node 22? Read the workflow, don't kick off any jobs.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p07",
+   "category": "none",
+   "prompt": "Is the request id generated here or inherited from the gateway? Show me the path through middleware.",
+   "relevant": [],
+   "acceptable": [
+    "r15"
+   ]
+  },
+  {
+   "id": "p09",
+   "category": "none",
+   "prompt": "The other repo's checkout form needs the postcode constraints. Find what this API currently accepts and send me the field names and limits.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p12",
+   "category": "none",
+   "prompt": "Which package exports the Money helper? I need its import path, no code changes.",
+   "relevant": [],
+   "acceptable": [
+    "r31"
+   ]
+  },
+  {
+   "id": "p17",
+   "category": "none",
+   "prompt": "Which env var picks the sandbox payment endpoint? I need the variable name and default, not any configured values.",
+   "relevant": [],
+   "acceptable": [
+    "r30"
+   ]
+  },
+  {
+   "id": "p18",
+   "category": "none",
+   "prompt": "Are these two error identifiers aliases or different cases: ORDER_CLOSED and ORDER_NOT_EDITABLE? Explain the current behavior.",
+   "relevant": [],
+   "acceptable": [
+    "r17"
+   ]
+  },
+  {
+   "id": "p19",
+   "category": "none",
+   "prompt": "Show me the commit that removed the legacy tax adapter. This is archaeology only.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p21",
+   "category": "none",
+   "prompt": "The admin folks want sortable columns on their orders table. List which sort keys this backend already supports; stay in shop-api.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p22",
+   "category": "none",
+   "prompt": "Which scheduled task clears expired checkout sessions, and what timezone is its schedule interpreted in? Just inspect the config.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p28",
+   "category": "single",
+   "prompt": "The TS webhook parser falls over when the provider sends customer as null or a string. Make that input handling safe without turning off the compiler complaints.",
+   "relevant": [
+    "r06"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p32",
+   "category": "single",
+   "prompt": "The receipt preview's new overflow menu is rough with a keyboard, and the three-dot trigger gets announced as just 'button'. Fix that interaction.",
+   "relevant": [
+    "r10"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p33",
+   "category": "single",
+   "prompt": "Renaming a private shipment helper broke 14 tests even though the endpoint behaves exactly the same. Rework those tests so internal cleanup doesn't keep breaking them.",
+   "relevant": [
+    "r11"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p34",
+   "category": "single",
+   "prompt": "The reservation race test fails maybe once in 40 CI runs. Track down what's happening and fix it; someone suggested increasing the timeout but we don't know the cause yet.",
+   "relevant": [
+    "r12"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p36",
+   "category": "single",
+   "prompt": "The synchronous carrier lookup catches every exception and returns undefined, so support can't tell a missing shipment from a broken carrier connection. Fix that error handling.",
+   "relevant": [
+    "r14"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p39",
+   "category": "single",
+   "prompt": "Clients currently inspect the text 'order already dispatched' to decide whether to show the cancellation action. Give them something reliable to branch on in the API response.",
+   "relevant": [
+    "r17"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p40",
+   "category": "single",
+   "prompt": "We need unique random IDs for temporary export filenames. A teammate proposed bringing in nanoid; implement a sensible solution after checking what this repo already has.",
+   "relevant": [
+    "r18"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p41",
+   "category": "single",
+   "prompt": "Fresh checkout, deps aren't installed. Get the workspace ready using its own setup. There are old npm instructions in a ticket so don't assume those are current.",
+   "relevant": [
+    "r19"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p42",
+   "category": "single",
+   "prompt": "The review fixes are already pushed in a81c204 and e731db9. Go through the PR's inline conversations and tell each reviewer where their point landed; explain the one suggestion we declined.",
+   "relevant": [
+    "r20"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p43",
+   "category": "single",
+   "prompt": "Rewrite the webhook setup doc for a merchant who's trying to get their first event delivered. It currently spends three screens on why we replaced polling before giving them a URL.",
+   "relevant": [
+    "r21"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p45",
+   "category": "single",
+   "prompt": "Tidy the comments in the cursor encoder. There's lots of '// increment offset' noise, but nothing explaining the odd tie-breaker we need for imported orders.",
+   "relevant": [
+    "r23"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p46",
+   "category": "single",
+   "prompt": "Write a bash helper that archives the local integration-test output into a destination directory passed as an argument. It needs to work when the directory name contains spaces.",
+   "relevant": [
+    "r24"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p47",
+   "category": "single",
+   "prompt": "Order history feels slow at 50k rows. Figure out where the time actually goes and speed up the expensive bit. I want evidence that the change helps.",
+   "relevant": [
+    "r25"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p49",
+   "category": "multi",
+   "prompt": "I changed our agent's debugging instructions. Design an eval that tells us whether it's actually better, then use the results to recommend shipping or dropping it. Don't let the examples we iterate on become the final exam.",
+   "relevant": [
+    "r26",
+    "r27"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p50",
+   "category": "multi",
+   "prompt": "Delegate the staging auth failure investigation. The child won't have this conversation: include the callback files, what we already ruled out, and the report I need. It may need staging access, but keep access material out of the handoff text.",
+   "relevant": [
+    "r29",
+    "r30"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p53",
+   "category": "multi",
+   "prompt": "Add a queued payment-failed email task. We need to be able to trace an execution back to its order in logs, including when the queue redelivers after a worker restart.",
+   "relevant": [
+    "r33",
+    "r15"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p56",
+   "category": "multi",
+   "prompt": "Polish the refund dialog in the embedded preview: its hardcoded grey and spacing don't follow the theme, the close icon has no spoken label, and tabbing can disappear behind the overlay.",
+   "relevant": [
+    "r09",
+    "r10"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p57",
+   "category": "multi",
+   "prompt": "Persist the calculated delivery charge on orders so invoices don't have to recalculate it. Include currency, handle existing rows, and make the schema rollout safe while last week's API version is still running.",
+   "relevant": [
+    "r16",
+    "r31"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p60",
+   "category": "long",
+   "prompt": "Please trace this request and explain where it stops. I'm collecting context for the team that owns the merchant screen; no fix or new test needed in this session.\n\n```\nGET /v2/orders/ord_demo_17/shipments\nShipmentRouter.list\n  -> OrderAccess.requireMerchant\n  -> ShipmentService.listForOrder\n  -> ShipmentRepository.findByOrderId\n  -> CarrierReferenceRepository.findForShipments\nResponse: 200\n{\"shipments\":[],\"nextCursor\":null}\n```\n\nThe ticket says: 'Opening the shipments tab shows the empty illustration even though the order page says shipped. Refreshing doesn't help. The order was imported from the previous platform last month. Support can see a carrier reference in the old dashboard, but the new endpoint returns an empty array. No error toast appears and the browser network panel shows a successful request.'\n\nI want to know whether the new endpoint reads the legacy carrier reference table at all, whether imported orders take a different repository path, and which persisted record controls inclusion in this response. Please distinguish facts you can establish from the current code from guesses about this particular order. We don't have a database snapshot attached, so don't claim you've verified its data. A few file references and a plain explanation will do.",
+   "relevant": [],
+   "acceptable": []
+  },
+  {
+   "id": "p61",
+   "category": "long",
+   "prompt": "Implement the payment reminder worker from this ticket. Keep this focused on the queue consumer; the scheduler already publishes the event and the email template already exists.\n\nTicket: 'When an order is awaiting payment for more than 24 hours, send the customer one reminder. The message contains orderId and eventType=payment-reminder. The consumer should load the order, skip orders that have since been paid or cancelled, and invoke the existing reminder mailer for eligible orders. Support should continue using the existing order timeline to see the outcome.'\n\nHere's the incident that prompted the extra requirement:\n\n```\n14:02:11 worker-3 received message msg_412 for ord_927\n14:02:12 worker-3 mailer accepted delivery mail_881\n14:02:12 worker-3 connection lost before queue acknowledgement\n14:03:05 worker-6 received message msg_412 for ord_927\n14:03:06 worker-6 mailer accepted delivery mail_892\n```\n\nThe queue team confirmed this redelivery is expected behavior, including after a process dies. A fresh message identifier also isn't proof that the business event is new, because the scheduler can republish an outstanding reminder. The acceptance criterion is one reminder for that order and reminder event even when execution is interrupted and delivery happens again. Work within the existing worker storage and mailer interfaces rather than redesigning the scheduler.",
+   "relevant": [
+    "r33"
+   ],
+   "acceptable": []
+  },
+  {
+   "id": "p64",
+   "category": "long",
+   "prompt": "Finish the two outstanding review fixes on fix/order-export-pagination, commit them, and answer the corresponding PR threads. Also bring the branch up to date for another review pass. Don't rewrite the PR description in this task.\n\nReview excerpts:\n\n```\nThread A, export query:\nThe archived-order predicate is only applied on the first page.\nPlease apply the same restriction after a cursor is supplied.\n\nThread B, next cursor:\nThe cursor comes from the extra lookahead row. That skips an order\non the next request. It should represent the last returned row.\n```\n\nBranch history from the ticket, which you should verify against the actual remote before touching history:\n\n```\n4c91b0a  me    add initial export pagination\n82f7d12  Nora  handle archived orders on initial page\nb63a298  me    wire export cursor into handler\n```\n\nNora added her change directly to this branch while I was away. Main has moved since then, and she may still be using her checkout. Keep her work intact while choosing how to update the branch. Use the existing export integration suite to verify the fixes. Each reviewer should be able to tell which commit addressed their comment without piecing together the whole diff. If either suggestion turns out to be wrong after inspecting the query, explain that in its own thread instead of silently skipping it.",
+   "relevant": [
+    "r02",
+    "r05",
+    "r20"
+   ],
+   "acceptable": []
+  }
+ ]
+}

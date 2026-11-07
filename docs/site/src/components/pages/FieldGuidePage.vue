@@ -106,8 +106,9 @@ const tables = {
         <div>
           <p>
             <strong>Before each final reply.</strong> The agent chooses
-            capture, ask, or skip. The hook adds this reminder to each prompt,
-            but nothing enforces the decision.
+            capture, ask, or skip. The hook adds this reminder, with a short
+            rule for each choice, to each prompt, but nothing enforces the
+            decision.
           </p>
         </div>
       </li>
