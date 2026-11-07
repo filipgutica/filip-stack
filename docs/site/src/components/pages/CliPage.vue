@@ -38,6 +38,11 @@ const tables = {
         "On <code>main</code>: runs <code>git pull --ff-only</code>, then apply, then <code>field-guide-sync</code> if your preferences dotfile exists.",
     },
     {
+      command: "filip-stack sync",
+      description:
+        "Refreshes this machine's managed guidance, existing standalone skills, and installed Claude/Codex plugins. Add <code>--dry-run --json</code> for a local preview.",
+    },
+    {
       command: "filip-stack field-guide-sync",
       description:
         "Imports the preferences dotfile if present, then exports this machine's shared preferences to it.",
@@ -180,8 +185,15 @@ const tables = {
   <section aria-labelledby="update">
     <h2 id="update">Keep up to date</h2>
     <p>
-      Host config ships from <code>main</code> without a version. Run
-      <code>filip-stack update</code> to pull and apply changes.
+      Run <code>filip-stack sync</code> to refresh this machine's guidance,
+      existing standalone skills, and installed filip-stack plugins. It requires
+      a clean checkout on <code>main</code> and preserves local guidance and
+      installation choices. Conflicts appear in its result.
+    </p>
+    <p>
+      For every enrolled machine, use the
+      <a href="/filip-stack/skills/fleet-sync/">Fleet Sync skill</a>.
+      Offline and unlinked machines remain visible in the fleet report.
     </p>
     <p>Upgrade the CLI launcher separately with Homebrew:</p>
     <UiCodeBlock

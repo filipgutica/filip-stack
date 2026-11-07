@@ -24,4 +24,5 @@ jobs:
       - name: Check the packaged CLI
         run: |
           node --test tests/host-config/cli.test.mjs
+          node --test tests/host-config/sync.test.mjs
           node cli/filip-stack.mjs --version

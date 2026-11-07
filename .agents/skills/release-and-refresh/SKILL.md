@@ -33,6 +33,12 @@ When the change touches `cli/`, also track the **Release** workflow and its CLI 
 
 Verify the published CLI tag contains the requested CLI change and that its `cli/package.json` version equals the tag version. Keep plugin `vX.Y.Z` and CLI `cli-vX.Y.Z` evidence separate. When `cli/` did not change, use the latest published stable CLI release as the refresh target.
 
+## Choose the refresh route
+
+Refresh the launcher with the CLI section below. Install standalone skills newly added by the merged PR with the explicit-host command in the standalone section. Then run `filip-stack sync --json` from the clean canonical main checkout. It owns the normal refresh of existing standalone skills, host config, shared preferences, and installed Claude/Codex plugins. Require a successful result and inspect every component, including pinned and skipped entries. The per-machine JSON report records versions, payload checks, and any local conflict. The remaining manual sections are recovery guidance for a blocked or older installation; do not repeat a successful component's writes.
+
+When the authorized request includes the fleet, use the installed `fleet-sync` standalone skill and its user-owned roster. Account for every enrolled machine, including offline and unlinked environments. Reuse valid T3 grants. Keep missing permissions and machine-local conflicts visible rather than claiming the fleet is current from one successful host. A local-only release request does not expand to the fleet.
+
 ## Refresh the filip-stack CLI
 
 Inspect `command -v filip-stack`, `brew list --versions filip-stack`, and `brew info --json=v2 filipgutica/tap/filip-stack`. Update an installed Homebrew CLI with:
