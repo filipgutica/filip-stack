@@ -5,8 +5,8 @@ import { UiCommandList } from "@filipgutica/ui/site";
 const commands = {
   clone:
     "git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack",
-  link: "mkdir -p ~/.local/bin\nln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack",
-  path: "echo 'export PATH=\"$HOME/.local/bin:$PATH\"' >> ~/.zshrc\nsource ~/.zshrc",
+  install: "brew install filipgutica/tap/filip-stack",
+  upgrade: "brew update\nbrew upgrade filipgutica/tap/filip-stack",
   status: "filip-stack status",
   apply: "filip-stack apply",
   sync: "filip-stack field-guide-sync",
@@ -19,6 +19,10 @@ onMounted(() => {
 });
 const tables = {
   reference: [
+    {
+      command: "filip-stack --version",
+      description: "Shows the installed CLI launcher's version.",
+    },
     {
       command: "filip-stack status",
       description: "Shows the applied and repository commits, then each target's state.",
@@ -78,11 +82,11 @@ const tables = {
     <dl class="fg-site-facts">
       <div>
         <dt>Needs</dt>
-        <dd>Git and Node.js 20.16+</dd>
+        <dd>Git and Node.js 22.12+ (installed by Homebrew)</dd>
       </div>
       <div>
-        <dt>Runs from</dt>
-        <dd>A checkout of filip-stack; <code>update</code> needs <code>main</code></dd>
+        <dt>Source checkout</dt>
+        <dd>A separate checkout of filip-stack; <code>update</code> needs <code>main</code></dd>
       </div>
     </dl>
   </section>
@@ -104,24 +108,9 @@ const tables = {
       </li>
       <li>
         <div>
-          <p>Link the command onto your <code>PATH</code>.</p>
+          <p>Install the CLI with Homebrew.</p>
           <UiCodeBlock
-            :code="commands.link"
-            language="bash"
-            variant="compact"
-            :copyable="enhanced"
-            :wrap="true"
-          />
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            If <code>~/.local/bin</code> is not on your <code>PATH</code>,
-            add it to <code>~/.zshrc</code> and reload your shell.
-          </p>
-          <UiCodeBlock
-            :code="commands.path"
+            :code="commands.install"
             language="bash"
             variant="compact"
             :copyable="enhanced"
@@ -131,8 +120,15 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      Without the link, run <code>node scripts/host-config.mjs &lt;command&gt;</code>
+      The default checkout is <code>~/code/filip-stack</code>. For another
+      location, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
+      Without Homebrew, run <code>node scripts/host-config.mjs &lt;command&gt;</code>
       from the checkout, such as <code>node scripts/host-config.mjs status</code>.
+    </p>
+    <p class="hint">
+      If an old <code>~/.local/bin/filip-stack</code> symlink shadows Homebrew,
+      remove that symlink. Check the active command with
+      <code>command -v filip-stack</code>.
     </p>
   </section>
 
@@ -186,6 +182,18 @@ const tables = {
     <p>
       Host config ships from <code>main</code> without a version. Run
       <code>filip-stack update</code> to pull and apply changes.
+    </p>
+    <p>Upgrade the CLI launcher separately with Homebrew:</p>
+    <UiCodeBlock
+      :code="commands.upgrade"
+      language="bash"
+      variant="compact"
+      :copyable="enhanced"
+      :wrap="true"
+    />
+    <p class="hint">
+      <code>filip-stack --version</code> shows the launcher version.
+      <code>filip-stack update</code> updates host config from the checkout.
     </p>
     <p class="hint">
       On another branch or a detached HEAD, <code>update</code> stops before

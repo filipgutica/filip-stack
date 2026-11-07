@@ -16,7 +16,7 @@ overview and lists every skill.
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
 | [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
-| [Host config](#host-config) | Global guidance, agents, styles, and design language | `scripts/host-config.mjs` from a checkout |
+| [Host config](#host-config) | Global guidance, agents, styles, and design language | Homebrew CLI with a source checkout |
 
 ## Set up a machine
 
@@ -30,17 +30,21 @@ overview and lists every skill.
 2. Install the plugins in [Claude](#install-with-claude) or
    [Codex](#install-with-codex).
 3. Install the [standalone skills](#standalone-skills) you use.
-4. Put the host config command on your `PATH` and apply it:
+4. Install the CLI with Homebrew and apply host config:
 
    ```sh
-   mkdir -p ~/.local/bin
-   ln -s ~/code/filip-stack/scripts/host-config.mjs ~/.local/bin/filip-stack
-   export PATH="$HOME/.local/bin:$PATH"
+   brew install filipgutica/tap/filip-stack
    filip-stack apply
    ```
 
-   If `~/.local/bin` is not already on your `PATH`, add the `export` line to
-   your shell profile, such as `~/.zshrc`.
+   The CLI uses `~/code/filip-stack` by default. For another location, pass
+   `filip-stack --repo <dir> <command>`. If an old
+   `~/.local/bin/filip-stack` symlink shadows Homebrew, remove that symlink.
+   Check the active command with `command -v filip-stack`.
+
+   Upgrade the CLI with `brew update` and
+   `brew upgrade filipgutica/tap/filip-stack`. Check its version with
+   `filip-stack --version`.
 
 ## Install with Claude
 
@@ -216,7 +220,7 @@ plugins.
 It contains no employer-specific guidance; keep that local to the machine that
 needs it.
 
-Without the `filip-stack` link from [Set up a machine](#set-up-a-machine), run
+Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
 `node scripts/host-config.mjs <command>` from the checkout.
 
 ```sh
@@ -227,7 +231,8 @@ filip-stack field-guide-sync  # import, then export local shared guidance
 ```
 
 Host config has no version. It ships from `main`, so run `filip-stack update`
-to pick up changes.
+to pick up changes. The CLI launcher has its own version and Homebrew release;
+`filip-stack update` updates the checkout, and `brew upgrade` updates the launcher.
 
 `apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,
 and `~/design-language`. It writes the shared guidance into a marked block in
