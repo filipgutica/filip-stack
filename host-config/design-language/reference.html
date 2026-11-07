@@ -47,13 +47,13 @@
   /* Buttons: components.html#button */
   .btn { --depth: var(--shadow-raise); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); height: var(--control-sm); padding: 0 var(--space-3); border-radius: var(--radius-md); border: 1px solid transparent; background: var(--control-thumb); color: var(--text); box-shadow: var(--depth); font: var(--weight-medium) var(--text-sm) / 1 var(--font-sans); cursor: pointer; transition: background var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
   .btn:hover:not(:disabled) { background: color-mix(in srgb, var(--text) 8%, var(--control-thumb)); }
-  .btn:active:not(:disabled) { --depth: var(--shadow-sink); background: var(--field); }
+  .btn:active:not(:disabled) { --depth: var(--shadow-sink); background: var(--field); transform: translateY(1px); }
   .btn.primary { background: var(--accent); color: var(--accent-text); }
   .btn.primary:hover:not(:disabled) { background: var(--button-hover); }
-  .btn.primary:active:not(:disabled) { background: color-mix(in srgb, var(--accent) 80%, var(--bg)); }
+  .btn.primary:active:not(:disabled) { background: var(--button-hover); }
   .btn.ghost { --depth: 0 0 0 0 transparent; background: transparent; color: var(--text-muted); }
   .btn.ghost:hover:not(:disabled) { background: var(--row-hover); color: var(--text); }
-  .btn.ghost:active:not(:disabled) { --depth: var(--shadow-sink); }
+  .btn.ghost:active:not(:disabled) { --depth: var(--shadow-sink); background: var(--field); }
   .btn:disabled { opacity: 0.58; cursor: not-allowed; box-shadow: none; }
   /* .is-focus pins the focus state in the Focus and motion specimens. */
   .is-focus { outline: 2px solid var(--focus); outline-offset: 2px; }
@@ -94,7 +94,6 @@
   .segmented button[aria-pressed="true"]::before { background: var(--thumb); box-shadow: var(--shadow-raise); }
   /* Forced colors drop shadows, so the pressed option takes the system highlight. */
   @media (forced-colors: active) {
-    :is(.btn, .segmented button):is(:focus-visible, .is-focus) { outline-width: 2px; }
     .tab[aria-selected="true"] { border: 2px solid Highlight; padding-inline: calc(var(--space-3) - 2px); }
     .segmented button[aria-pressed="true"] { forced-color-adjust: none; color: HighlightText; }
     .segmented button[aria-pressed="true"]::before { forced-color-adjust: none; background: Highlight; }
@@ -106,7 +105,7 @@
   .check input[type="radio"] { border-radius: 50%; }
 
   /* Control focus: a thin accent ring with a 2px gap and no glow, over the control's own shadow. */
-  :is(.btn, .segmented button):is(:focus-visible, .is-focus) { outline: 1.5px solid var(--accent); outline-offset: 2px; }
+  :is(.btn, .segmented button):is(:focus-visible, .is-focus) { outline: 2px solid var(--accent); outline-offset: 2px; }
   /* Inside the button, the outline hugs the thumb instead of crossing into the next option. */
   .segmented button:is(:focus-visible, .is-focus) { outline-offset: -2px; }
 
@@ -615,7 +614,7 @@
         <section class="foundation" id="focus-motion" aria-labelledby="focus-motion-title">
           <h3 id="focus-motion-title">Focus and motion</h3>
           <ul class="specs">
-            <li class="spec"><div class="spec-meta"><code>1.5px solid --accent, offset 2px</code><span class="use">Controls: a thin ring with no glow, over their own raise or sink shadow. Chromium draws it 1px at 1x; forced colors draw it 2px. Pointer hover never draws focus.</span></div><div inert><button class="btn is-focus" type="button">Focused</button></div></li>
+            <li class="spec"><div class="spec-meta"><code>2px solid --accent, offset 2px</code><span class="use">Controls: one ring with no glow, over their own raise or sink shadow, the same width as the link and navigation outline. Pointer hover never draws focus.</span></div><div inert><button class="btn is-focus" type="button">Focused</button></div></li>
             <li class="spec"><div class="spec-meta"><code>--field-focus, --shadow-raise, accent edge at 35%</code><span class="use">Fields lift out of their well instead of drawing a ring. A transparent 2px outline keeps a ring in forced colors. The cue is below 3:1 by choice.</span></div><div inert><label class="search is-focus"><svg class="icon" aria-hidden="true"><use href="#i-search"/></svg><input type="search" value="latency" aria-label="Focused field sample"></label></div></li>
             <li class="spec"><div class="spec-meta"><code>2px solid --focus, offset 2px</code><span class="use">Links, navigation, tabs, and code and capture actions keep the base outline.</span></div><a class="is-focus" href="docs.html">Documentation example</a></li>
             <li class="spec"><div class="spec-meta"><code>offset -2px</code><span class="use">Only inside a scrolling or clipping parent, or a segmented control, with a comment that names the reason</span></div><div inert><div class="tabs" role="tablist" aria-label="Inset focus sample"><button class="tab is-focus" type="button" role="tab" aria-selected="true">Overview</button><button class="tab" type="button" role="tab" aria-selected="false">Settings</button></div></div></li>
