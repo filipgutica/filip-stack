@@ -98,8 +98,8 @@ const headings = [
   "What you get",
 ];
 
-// Wide tables scroll inside this wrapper instead of widening the page. The wrapper takes
-// keyboard focus and a name so keyboard readers can scroll it.
+// Wide tables and code blocks scroll inside these wrappers instead of widening the page.
+// Each wrapper takes keyboard focus and a name so keyboard readers can scroll it.
 class ContentRenderer extends Renderer {
   constructor(private readonly section: string) {
     super();
@@ -108,6 +108,10 @@ class ContentRenderer extends Renderer {
   override table(token: Tokens.Table): string {
     // Headings are the fixed section names checked above, so they need no escaping.
     return `<div class="table-scroll" tabindex="0" role="region" aria-label="${this.section} table">${super.table(token)}</div>`;
+  }
+
+  override code(token: Tokens.Code): string {
+    return `<div class="code-scroll" tabindex="0" role="region" aria-label="${this.section} code">${super.code(token)}</div>`;
   }
 }
 

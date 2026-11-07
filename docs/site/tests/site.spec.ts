@@ -171,6 +171,22 @@ test("the Workflow map explains requests, skills, and engineering steps after hy
   );
 });
 
+test("wide code scrolls inside a region keyboard readers can scroll", async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 375, height: 800 });
+  await page.goto("/filip-stack/skills/grill-me/");
+  const region = page.getByRole("region", { name: "How it works code" });
+  expect(
+    await region.evaluate((element) => element.scrollWidth > element.clientWidth),
+  ).toBe(true);
+  await region.focus();
+  await page.keyboard.press("ArrowRight");
+  await expect
+    .poll(() => region.evaluate((element) => element.scrollLeft))
+    .toBeGreaterThan(0);
+});
+
 test("the shared appearance picker persists dark across routes and resets to system", async ({
   page,
 }) => {
