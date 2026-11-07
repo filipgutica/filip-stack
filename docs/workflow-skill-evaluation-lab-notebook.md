@@ -1645,6 +1645,25 @@ Evidence:
 - [Decision climb results](evidence/field-guide-decision-climb/results.md)
 - [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
 
+### 29. Engineering guidance climb: preparation and dry run
+
+Date: 2026-11-06. Plan, task preparation, and free dry runs only; no paid call has run.
+
+This climb covers all engineering guidance: the engineering sections of `core.md`, `CODING_STANDARDS.md`, and the Workflow `engineering`, `test-audit`, `review`, and `simplify` skills. Vanilla and Superpowers are controls. Calibrated blind judges decide rounds on code shape. Correctness no worse than vanilla, total tokens at most 1.3 × vanilla, and mechanical code measures are gates. Six DeepSWE tasks with source-bound correctness replace the saturated Pytest canary; two of them are a frozen holdout.
+
+Preparation found three instrument problems before any paid call:
+
+- **File modes.** Under this machine's `umask 002`, PluginBench rejected all six reviewed tasks as unreviewed, because the verifier digest includes file modes. Runs now use `umask 022`.
+- **Task drift.** The dateutil image no longer built: PyPI renamed the latest `python-dateutil` sdist. After a pin fixed the build, unpinned pytest 9.2.0 stopped collection under the repository's `filterwarnings = error`, so the agent could not run the suite where it codes. Pins that match the grader image repair both problems, and the verifier is unchanged.
+- **Fallow version check.** The Fallow npm wrapper adds a `verified:` line to `fallow --version`, which PluginBench's exact match rejects. The run links the verified platform binary.
+
+Harbor's `oracle` agent scored all six tasks 1.0 and `nop` scored them all 0.0, so every task grades and discriminates after the repair. Both pilot dry runs admit every arm and measurement: 54 coding attempts and 54 reviews in total.
+
+Evidence:
+
+- [Climb card](evidence/engineering-guidance-climb/card.md)
+- [Probe pre-registration](evidence/engineering-guidance-climb/prereg.md)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
