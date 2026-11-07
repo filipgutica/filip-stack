@@ -1,3 +1,10 @@
+## [4.3.1](https://github.com/filipgutica/filip-stack/compare/v4.3.0...v4.3.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** keep catalogue notes to DESIGN.md and let typing / reach inputs ([8d93bc7](https://github.com/filipgutica/filip-stack/commit/8d93bc7d4e8516cf0d1870b81039a4fcc0cac58d))
+
 # [4.3.0](https://github.com/filipgutica/filip-stack/compare/v4.2.0...v4.3.0) (2026-11-07)
 
 
