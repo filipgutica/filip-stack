@@ -1,3 +1,10 @@
+# [4.3.0](https://github.com/filipgutica/filip-stack/compare/v4.2.0...v4.3.0) (2026-11-07)
+
+
+### Features
+
+* **cli:** add Homebrew launcher and independent release pipeline ([9ebb163](https://github.com/filipgutica/filip-stack/commit/9ebb163f24861f8d1b5ef34a528ed588e3bb33dc))
+
 # [4.2.0](https://github.com/filipgutica/filip-stack/compare/v4.1.1...v4.2.0) (2026-11-06)
 
 
