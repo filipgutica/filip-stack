@@ -1,3 +1,10 @@
+## [4.5.1](https://github.com/filipgutica/filip-stack/compare/v4.5.0...v4.5.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** use shared Workflow controls ([2032fc6](https://github.com/filipgutica/filip-stack/commit/2032fc666bf3b30078f081a439f799d1e0cb2b7c))
+
 # [4.5.0](https://github.com/filipgutica/filip-stack/compare/v4.4.3...v4.5.0) (2026-11-07)
 
 
