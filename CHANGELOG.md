@@ -1,3 +1,11 @@
+# [4.4.0](https://github.com/filipgutica/filip-stack/compare/v4.3.4...v4.4.0) (2026-11-07)
+
+
+### Features
+
+* add reusable local and fleet sync ([6bf5f39](https://github.com/filipgutica/filip-stack/commit/6bf5f395cc9db90cc55e7390cb84a005ff1c3288))
+* apply shared fleet baseline with machine exceptions ([7265bdd](https://github.com/filipgutica/filip-stack/commit/7265bddb7b0d2fc1c28547b0e7c44ed31c9a17f7))
+
 ## [4.3.4](https://github.com/filipgutica/filip-stack/compare/v4.3.3...v4.3.4) (2026-11-07)
 
 
