@@ -10,7 +10,19 @@ const tables = {
     },
     {
       command: "tokens.css",
-      description: "Theme values to import or inline in standalone HTML.",
+      description: "Theme values to import or inline in standalone HTML. The project hue and fonts sit in one block at the top.",
+    },
+    {
+      command: "components.md",
+      description: "One spec for each component, marked core or identity.",
+    },
+    {
+      command: "components.html",
+      description: "Every component in each of its states, in plain HTML and CSS.",
+    },
+    {
+      command: "decisions.md",
+      description: "Why each component looks the way it does, and the options it replaced.",
     },
     {
       command: "docs.html",
@@ -22,7 +34,7 @@ const tables = {
     },
     {
       command: "reference.html",
-      description: "Application components, and a catalogue of type, color, spacing, shape, borders, elevation, and control states.",
+      description: "Example application, and a catalogue of type, color, spacing, shape, borders, elevation, focus, and motion.",
     },
   ],
   formats: [
@@ -125,6 +137,25 @@ const tables = {
         ><span v-html="item.description"
       /></template>
     </UiCommandList>
+  </section>
+
+  <section aria-labelledby="reuse">
+    <h2 id="reuse">Reuse it in a new project</h2>
+    <div class="prose">
+      <p>
+        The language has two layers. The core covers tokens, soft depth,
+        controls and their states, focus, motion, and accessibility, and a new
+        project adopts it as is. The identity layer is the personal sites'
+        terminal look: the <code>~/name</code> header, mono headings, and
+        command plates. A new project replaces it with its own.
+      </p>
+      <p>
+        To start, keep <code>tokens.css</code> unchanged and set your own hue
+        and fonts on <code>:root</code> in a stylesheet loaded after it. The
+        component specs are framework-agnostic, so a React or Vue library can
+        build from them.
+      </p>
+    </div>
   </section>
 
   <section aria-labelledby="theme">
