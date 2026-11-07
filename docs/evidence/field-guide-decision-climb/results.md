@@ -52,6 +52,22 @@ The probe ran on 44 held-out cases, two attempts each, with `claude-opus-5-5`. H
 
 The first base run failed before making any calls. Outside the sandbox, `$TMPDIR` pointed at a different folder, so the run could not find the base plugin copy. It was rerun with an absolute path.
 
+## Codex replication
+
+After the Codex login was added to the proxy, the same probe ran on `gpt-6.1-sol`. It used the same cases, the same frozen scorer, and the same base and head, with two attempts each. This run was not a decision input: the change had already passed on Opus.
+
+| Part | Rule | Base | Head | Result |
+| --- | --- | --- | --- | --- |
+| 1 | Score at least base + 3.0 | 78.13 | 90.34 | Pass (+12.21) |
+| 2 | Wrong captures on skip cases, not above base | 16 | 1 | Pass |
+| 3 | Stored `mustNotStore` strings, not above base | 2 | 0 | Pass |
+| 4 | `pnpm check` | — | Pass | Pass |
+
+- Arm scores, base to head: hook 68.18 → 89.77; full 88.07 → 90.91. Vanilla scored 64.20.
+- On Codex, the old hook text did much worse than on Opus. In the hook arm, base captured on 16 of 34 skip attempts, and it stored the proprietary formula in h39 on both attempts. Head captured on 1 skip attempt and stored nothing sensitive.
+- Head still captured where it should ask: on h24 and h27 in both arms, four times per arm.
+- The first attempt ran base, head, and vanilla in parallel and stopped on HTTP 429 rate limits. The rerun ran them one after another. Requests went through a local relay that would retry a 429. It needed no retries, and the scorer was unchanged.
+
 ## Lessons
 
 - The hook text drives the first decision. Adding the skip and ask rules there helped both arms, not only the hook arm.
@@ -60,6 +76,6 @@ The first base run failed before making any calls. Outside the sandbox, `$TMPDIR
 
 ## Not covered
 
-- Codex. The proxy serves only Claude models.
+- The Codex host itself. The replication sends the same text to a Codex model through the proxy. It does not run Codex CLI hooks.
 - Whether a live agent loads the skill before deciding.
 - Notice and question wording beyond the scorer's checks.

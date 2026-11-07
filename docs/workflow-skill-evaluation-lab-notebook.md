@@ -1628,6 +1628,7 @@ Results:
 - **Retrieval retest:** the round 1 version, frozen, on 64 fresh held-out prompts under a new pre-registration. **Supported** on all five parts: score 38.62 against 27.78 (+10.84), precision 30.43 against 19.69, recall 52.83 against 47.17, and no-relevant false injections 27 against 44.
 
 - **Decision climb:** the hook text gained a short rule for each choice. The climb score went from 85.94 to 92.90; rounds 2 and 3 (policy rewrites) were rejected. Three blind scorecard judges preferred the final version, 9.43 against 8.95. **Supported** on 44 fresh held-out cases: head 95.31 against base 90.91 (+4.40), wrong captures on skip cases 0 against 3, no stored sensitive strings, and vanilla 82.95. With two attempts per case, the hook arm's noise was about ±3 points.
+- **Decision climb on Codex** (`gpt-6.1-sol`, the same held-out cases; not a decision input): head 90.34 against base 78.13 (+12.21), with vanilla at 64.20. Wrong captures on skip cases fell from 16 to 1, and stored sensitive strings from 2 to 0. The old hook text did much worse on Codex than on Opus, so the new rules matter more there.
 
 The round 1 retrieval change and the hook-text change each passed a pre-registered ship rule and are committed on the branch. The round 2 retrieval change did not ship.
 
