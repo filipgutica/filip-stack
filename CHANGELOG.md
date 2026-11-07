@@ -1,3 +1,15 @@
+# [4.5.0](https://github.com/filipgutica/filip-stack/compare/v4.4.3...v4.5.0) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** check credit text in its fact ([9c513c3](https://github.com/filipgutica/filip-stack/commit/9c513c3a66a675c465b3d47aa8a5a2e90384ed11))
+
+
+### Features
+
+* **site:** credit upstream skills on adapted skill pages ([469addf](https://github.com/filipgutica/filip-stack/commit/469addfd41123defcbd64f2bc948c04bdbf7c077))
+
 ## [4.4.3](https://github.com/filipgutica/filip-stack/compare/v4.4.2...v4.4.3) (2026-11-07)
 
 
