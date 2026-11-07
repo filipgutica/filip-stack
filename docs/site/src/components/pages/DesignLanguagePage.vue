@@ -22,7 +22,7 @@ const tables = {
     },
     {
       command: "reference.html",
-      description: "Application components to copy and tokens to inspect.",
+      description: "Application components, and a catalogue of type, color, spacing, shape, borders, elevation, and control states.",
     },
   ],
   formats: [
