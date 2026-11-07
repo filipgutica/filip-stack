@@ -41,6 +41,7 @@ for major.
 Each tool supports `--help` and `--version`; CI checks the version against the
 release manifest. The GitHub Pages site starts from a sibling tool's Astro
 and Vue site, uses `@filipgutica/ui`, and has phone and desktop Playwright checks.
+Its controls come from the library; the site's own CSS adds only layout.
 
 After release, the tap workflow runs every 6 hours or by hand and opens a
 formula PR. Tap changes always go through a PR.
