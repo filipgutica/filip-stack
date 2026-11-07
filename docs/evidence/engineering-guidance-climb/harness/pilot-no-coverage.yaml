@@ -1,0 +1,38 @@
+# Coding settings must match pilot-coverage.yaml. require_ready stops a run when any measurement
+# is unavailable on any task, so the tasks without a coverage tool run as a separate evaluation.
+name: Engineering guidance climb pilot (no-coverage tasks)
+runner:
+  harness: codex
+  model: gpt-6.1-sol
+  reasoning: high
+
+treatments:
+  superpowers:
+    plugins: [arms/superpowers]
+  workflow-main:
+    guidance: [arms/workflow-main/AGENTS.md]
+    plugins: [arms/workflow-main/workflow]
+capabilities:
+  subagents: true
+  max_threads: 4
+
+tasks:
+  # Built by prepare-tasks.sh: DeepSWE 0b9fabbb with one environment repair. Run under umask 022.
+  source: tasks
+  ids:
+    - happy-dom-abort-pending-body-reads
+    - testem-per-launcher-reports
+
+measurements: [tokens, lines, cyclomatic, cognitive, dead_code, review]
+measurement_settings:
+  require_ready: true
+  # happy-dom and testem images ship no coverage tool.
+reviewer:
+  harness: codex
+  model: gpt-6-astra
+  reasoning: high
+  guidance: [review-standard.md]
+  timeout_seconds: 900
+
+repeats: 3
+timeout_seconds: 1800
