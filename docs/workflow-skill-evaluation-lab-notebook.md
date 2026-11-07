@@ -1612,6 +1612,23 @@ Evidence:
 - [Judge-led results and implementation ledger](evidence/writing-rules-probe/results.md)
 - [Aggregate results](evidence/writing-rules-probe/results.json)
 
+### 28. Field Guide evals: preparation and retrieval baseline
+
+Date: 2026-11-06. This study checks whether Field Guide does what it is meant to do. Four layers are planned: first-prompt retrieval, the capture/ask/skip decision, an end-to-end agent check, and an optional PluginBench overhead check. Retrieval goes first. A live first prompt about designing evals injected nothing, although the local store held two evaluation-design records. The prompt shared no terms with them.
+
+- **Retrieval scorer:** a synthetic 36-record store built through the real `init` and `submit` commands. 64 labeled prompts came from a fresh, read-only Codex `gpt-6.1-sol` call that saw the records but no Field Guide code. They split into 32 climb and 32 held-out prompts. The climb set also holds a reworded copy of the live miss, for 33. The scorer reports micro precision, recall, and F1 of `promptInjection`.
+- **Retrieval baseline on the climb set** (identical over two runs): precision **22.22**, recall **57.14**, F1 **32.00**. There were 56 false injections across 33 prompts, 19 of them on prompts that need no record. Precision, not recall, is the larger problem.
+- **Decision eval:** 44 labeled finished-task cases from a second fresh Codex call. That call saw a plain statement of the intended behavior, not `capture-policy.md`, and avoided the topics of the policy's examples. Three arms: vanilla, hook text only, and hook text plus skill and policy. The hook-only arm matters because the hook text is all an agent sees before it chooses to load the skill. Errors are weighted: a wrong capture costs 2, a missed capture 1, a safety failure 3. Not yet run: the local CLIProxyAPI endpoint was not running.
+
+Status: the retrieval climb waits for label approval and a `/hill-climb` run under the frozen card. No Field Guide code changed.
+
+Evidence:
+
+- [Retrieval climb pre-registration and card](evidence/field-guide-retrieval-climb/prereg.md)
+- [Retrieval scorer, store, and climb set](evidence/field-guide-retrieval-climb/scorer/)
+- [Decision eval pre-registration](evidence/field-guide-decision-eval/prereg.md)
+- [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1846,6 +1863,8 @@ The larger study can use repair, preservation, extension, and calibrated review 
 | Guide-body probe preregistration, calibration, results, and scorer | [docs/evidence/guide-body-probe/](evidence/guide-body-probe/) |
 | Writing-guidance climb card, probe preregistration, results, and scorer | [docs/evidence/writing-guidance-climb/](evidence/writing-guidance-climb/) |
 | UX guidance probe preregistration, dry run, scorer, and fixture | [docs/evidence/ux-guidance-probe/](evidence/ux-guidance-probe/) |
+| Field Guide retrieval climb pre-registration, scorer, and climb set | [docs/evidence/field-guide-retrieval-climb/](evidence/field-guide-retrieval-climb/) |
+| Field Guide decision eval harness and cases | [docs/evidence/field-guide-decision-eval/](evidence/field-guide-decision-eval/) |
 | Initial v2 skill snapshot | `pluginbench/benchmarks/workflow-pytest-canary/runs/20260902-workflow-v2-pytest-repair-initial/20260902T195826Z-workflow-pytest-repair-canary/inputs/skill-bundle` |
 | Promoted Workflow source | `plugins/workflow/skills/` |
 
