@@ -1664,6 +1664,28 @@ Evidence:
 - [Climb card](evidence/engineering-guidance-climb/card.md)
 - [Probe pre-registration](evidence/engineering-guidance-climb/prereg.md)
 
+#### PluginBench overhaul before round 2 (2026-11-07)
+
+The pilot and round 1 exposed instrument gaps, so evaluation paused. PluginBench PRs #8–#15 (main `fd0de97`) add resume without repeated coding, `stop`, detached runs, `status --watch` and `status --json`, `compare` against a gates file, overlap passes, a completeness matrix, and per-test coverage profiles for csstree and true-myth. The study now needs no hand-written run, progress, analysis, or re-review script.
+
+These findings change how to read earlier rounds:
+
+- **True-myth coverage from the pilot and round 1 is withdrawn.** Vitest's default remapping read every population as 100%, including a never-called function. The new profile uses AST-aware remapping. Its 100% results are now genuine, because true-myth enforces 100% statement, branch, and function thresholds: the smoke run's populations were 523 and 520 statement lines, against 1,114 under the old remapping. Changed-line coverage cannot separate arms on this task.
+- **Redundancy definition.** PluginBench counts an added test as redundant when the added lines it executes are covered by the union of all other tests, existing tests included.
+- **`status` now classifies withheld results as the report does.** Before PR #14, `status` showed 12 overlap passes and fails in the pilot as `unknown`.
+- **Gates.** `card-gates.yaml` has no gate on redundant added tests, though the pilot read suggests it may be the clearest effect. Adding one is a card decision.
+
+Smoke run, `runs/egc-20261106/results/smoke-overhaul`: true-myth, vanilla and `workflow-main`, 1 repeat.
+
+| Step | Result |
+| --- | --- |
+| First detached start | Stopped before any coding call: a saved profile's inline script crashed profile loading. Fixed in PR #15. `check` passed, because it does not load saved profiles; that gap remains. |
+| Resume, then `stop` while both attempts coded | Both attempts finished and were kept, both pass; the run recorded `stopped` |
+| Resume after `stop` | 0 new coding calls; measurement and 2 reviews completed |
+| `compare --gates card-gates.yaml` | Passes 1/1 and 1/1; tokens 1.36M vanilla, 3.22M `workflow-main`; missing values listed with reasons |
+| `check` from a second folder | Vanilla cache: 1 of 1 attempts hit |
+| Redundant added tests | Vanilla 21, `workflow-main` 16 (n = 1, no conclusion) |
+
 ## Fixed iteration protocol
 
 ### Fixed variables
