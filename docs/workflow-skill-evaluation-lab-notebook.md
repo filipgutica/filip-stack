@@ -1620,13 +1620,22 @@ Date: 2026-11-06. This study checks whether Field Guide does what it is meant to
 - **Retrieval baseline on the climb set** (identical over two runs): precision **22.22**, recall **57.14**, F1 **32.00**. There were 56 false injections across 33 prompts, 19 of them on prompts that need no record. Precision, not recall, is the larger problem.
 - **Decision eval:** 44 labeled finished-task cases from a second fresh Codex call. That call saw a plain statement of the intended behavior, not `capture-policy.md`, and avoided the topics of the policy's examples. Three arms: vanilla, hook text only, and hook text plus skill and policy. The hook-only arm matters because the hook text is all an agent sees before it chooses to load the skill. Errors are weighted: a wrong capture costs 2, a missed capture 1, a safety failure 3. Not yet run: the local CLIProxyAPI endpoint was not running.
 
-Status: the retrieval climb waits for label approval and a `/hill-climb` run under the frozen card. No Field Guide code changed.
+Results:
+
+- **Decision eval** (Opus 5.5 only; the proxy serves no Codex models; 264 calls): full Field Guide text **90.34**, hook text only 81.53, vanilla 81.25. The full text removed wrong captures on skip cases and all sensitive leaks. The hook text alone, which drives the first decision, matched vanilla. Every arm still captured too often where it should have asked.
+- **End-to-end check:** capture, apply, and skip each passed one headless Claude Code run.
+- **Retrieval climb:** three rounds took the climb score from 32.00 to 48.57, mostly by making function words stopwords. **Not supported** on the held-out probe: score 45.16 against 30.30, but recall 51.85 fell below the 52.56 floor. Round 2's stopwords `need` and `already` cost one relevant record. Post hoc, the round 1 version would have passed; testing it needs a fresh probe.
+
+No Field Guide code shipped.
 
 Evidence:
 
 - [Retrieval climb pre-registration and card](evidence/field-guide-retrieval-climb/prereg.md)
 - [Retrieval scorer, store, and climb set](evidence/field-guide-retrieval-climb/scorer/)
+- [Retrieval climb results](evidence/field-guide-retrieval-climb/results.md)
 - [Decision eval pre-registration](evidence/field-guide-decision-eval/prereg.md)
+- [Decision eval results](evidence/field-guide-decision-eval/results.md)
+- [End-to-end check](evidence/field-guide-e2e/results.md)
 - [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
 
 ## Fixed iteration protocol
