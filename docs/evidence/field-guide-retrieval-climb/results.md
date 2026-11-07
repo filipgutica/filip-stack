@@ -41,6 +41,6 @@ The following was not a decision input. The round 1 version scored 43.48 on the 
 
 ## Follow-ups
 
-- Test the round 1 version on a fresh held-out set under a new pre-registration.
+- Test the round 1 version on a fresh held-out set under a new pre-registration. It is frozen as [round-1.patch](round-1.patch) against `bf85b1f`. The patched `field-guide.mjs` has SHA-256 `995f4de79e6bfc2e4755ca1f53c7bf1b323025bc784860b578a385c180379eb7`.
 - Opus 5.5's relative cutoff (round 3) gave +1.43 on the climb set.
 - Remaining misses need abbreviation or synonym matching, such as "PR body" for "pull request description" and "evals" for "evaluating".
