@@ -26,7 +26,7 @@ test('the component catalogue has one section per component spec, in the same la
 
 // Flattens a page's <style> into rules, each with its @media or @supports context.
 const cssRules = (html) => {
-  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\/\*[\s\S]*?\*\//g, '')
+  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, block]) => block).join('\n').replace(/\/\*[\s\S]*?\*\//g, '')
   const squash = (text) => text.replace(/\s+/g, ' ').trim()
   const rules = []
   const context = []
@@ -121,18 +121,24 @@ const isShadowLayerAllowed = (layer) => {
 }
 const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
 
+const shadowLiterals = (page, html) => {
+  const inline = [...html.matchAll(/\bstyle=(["'])([\s\S]*?)\1/g)].map(([, , body]) => ({ context: '', selector: '[style]', body }))
+  return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
+    body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
+      .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
+      .filter((match) => match && /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(match[1]))
+      .filter(([, , value]) => !isShadowAllowed(value.replace(/\s*!important$/, '')))
+      .map(([declaration]) => `${page}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
+}
+
+test('the depth guard reads every style block and both inline quote forms', () => {
+  const planted = `<style>.a { box-shadow: var(--shadow-raise) }</style><style media="all">.b { box-shadow: 0 4px 12px black }</style>
+    <p style='box-shadow: 0 4px 12px black'></p><p style="box-shadow: none"></p>`
+  assert.equal(shadowLiterals('planted.html', planted).length, 2)
+})
+
 test('pages take depth from tokens.css: no literal shadow outside a focus ring, divider, or selection bar', () => {
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
-  const literals = pages.flatMap((page) => {
-    const html = read(page)
-    const inline = [...html.matchAll(/style="([^"]*)"/g)].map(([, body]) => ({ context: '', selector: '[style]', body }))
-    return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
-      body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
-        .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
-        .filter((match) => match && /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(match[1]))
-        .filter(([, , value]) => !isShadowAllowed(value.replace(/\s*!important$/, '')))
-        .map(([declaration]) => `${page}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
-  })
-  assert.deepEqual(literals, [])
+  assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
 })
