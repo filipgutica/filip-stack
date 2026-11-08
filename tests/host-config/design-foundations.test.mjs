@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 
 const dir = new URL('../../host-config/design-language/', import.meta.url)
 const read = (file) => readFileSync(new URL(file, dir), 'utf8')
@@ -103,4 +103,32 @@ test('example pages copy the catalogue button, quiet action, segmented, tab, and
       assert.deepEqual(drifted, [], `${page} ${name} selectors that differ from components.html`)
     }
   }
+})
+
+// Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
+// token colour: a focus ring, a divider, or a selection bar. --depth passes because the guard checks
+// each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
+// hide a literal behind its own variable.
+const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
+const isToken = (reference) => reference === '--depth' || tokenNames.has(reference)
+const isShadowLayerAllowed = (layer) => {
+  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?var\((--[\w-]+)\)$/)
+  return Boolean(match) && isToken(match[1])
+}
+const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
+
+test('pages take depth from tokens.css: no literal shadow outside a focus ring, divider, or selection bar', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
+  const literals = pages.flatMap((page) => {
+    const html = read(page)
+    const inline = [...html.matchAll(/style="([^"]*)"/g)].map(([, body]) => ({ context: '', selector: '[style]', body }))
+    return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
+      body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
+        .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
+        .filter((match) => match && /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(match[1]))
+        .filter(([, , value]) => !isShadowAllowed(value.replace(/\s*!important$/, '')))
+        .map(([declaration]) => `${page}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
+  })
+  assert.deepEqual(literals, [])
 })
