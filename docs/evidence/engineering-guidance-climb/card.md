@@ -68,6 +68,14 @@ The first pilot (`pilot-failed-3`) stopped after 33 of 36 coverage attempts. The
   - An attempt with the same overlap whose verifier reports reward 0 counts as a fail, for the same reason.
   - "Unknown" now means only attempts with no usable verifier result. The gate on unknowns applies to those attempts.
 
+## Amendment 2 (2026-11-07, after the PluginBench overhaul and before round 2)
+
+Filip approved these changes before any round-2 result existed.
+
+- **Redundant added tests gate.** Gate 3 adds one check against the incumbent: the mean over tasks of the per-task median of redundant added tests must not rise. PluginBench counts an added test as redundant when every added line it executes is also executed by some other test, existing tests included. The measure exists on true-myth, csstree, and adaptix; happy-dom has no coverage tool, so its value stays missing and the gate covers the other three tasks.
+- **Withdrawn true-myth coverage.** True-myth coverage from the pilot and round 1 is withdrawn. Vitest's default remapping counted every line of a loaded file as executed. The profile now uses AST-aware remapping, which counts statements, and writes per-test data. Gate 3's changed-line coverage check uses only figures from the new profile.
+- **Gates as data.** Gates 1–3 are [harness/card-gates.yaml](harness/card-gates.yaml), run with `pluginbench compare --gates`, so anyone can rerun a decision from the saved reports.
+
 ## Run rules
 
 - **Tasks.** Build `tasks/` with `harness/prepare-tasks.sh`.
