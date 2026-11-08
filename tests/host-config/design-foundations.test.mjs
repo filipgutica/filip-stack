@@ -76,7 +76,11 @@ const families = [
   { name: 'button and quiet action', pattern: /^(?:a)?\.btn\b|^\.quiet-action\b|^:where\(\.quiet-action\)/, pages: ['reference.html', 'docs.html', 'product.html'] },
   { name: 'segmented control', pattern: /^\.segmented\b/, pages: ['reference.html'] },
   { name: 'tabs', pattern: /^\.tab(?:list)?\b/, pages: ['reference.html'] },
-  { name: 'navigation row', pattern: /^\.navlist\b/, pages: ['docs.html'] },
+  { name: 'navigation row', pattern: /^\.navlist\b/, pages: ['docs.html', 'reference.html'] },
+  { name: 'checkbox and radio', pattern: /^\.check\b/, pages: ['reference.html'] },
+  { name: 'badge', pattern: /^\.badge\b/, pages: ['reference.html'] },
+  { name: 'alert', pattern: /^\.alert\b/, pages: ['reference.html'] },
+  { name: 'code block and command plate', pattern: /^\.code\b/, pages: ['reference.html'] },
 ]
 const perSelector = (rules) =>
   rules.flatMap(({ context, selector, body }) => selectors(selector).map((part) => ({ context, selector: part, list: selector, body })))
@@ -89,7 +93,7 @@ const sizingExemptions = [
   { page: 'reference.html', context: '@media (max-width: 800px)', selector: '.segmented button', body: 'min-height: var(--control-lg); min-width: var(--control-lg);' },
 ]
 
-test('example pages copy the catalogue button, quiet action, segmented, tab, and navigation row rules unchanged', () => {
+test('example pages copy the catalogue rules for the shared controls and components they use unchanged', () => {
   const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(key))
   const exempt = new Set(sizingExemptions.map(({ page, ...rule }) => `${page} ${key(rule)}`))
   for (const page of ['reference.html', 'docs.html', 'product.html']) {
