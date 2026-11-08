@@ -67,30 +67,40 @@ const selectors = (list) => {
   return [...parts, part.trim()]
 }
 
-// A page that copies a button or quiet action copies the catalogue's rule unchanged. Each selector
-// is checked on its own, with its @media context, so a list that mixes in page selectors cannot
-// hide a drifted button rule. Focus selectors are left out: each page lists its own controls in one
-// focus rule, by role.
-const sharedControl = /^(?:a)?\.btn\b|^\.quiet-action\b|^:where\(\.quiet-action\)/
-const isSharedControl = (selector) => sharedControl.test(selector) && !selector.includes(':focus-visible')
+// A page that copies a shared control copies the catalogue's rule unchanged. Each selector is
+// checked on its own, with its @media context, so a list that mixes in page selectors cannot hide a
+// drifted control rule. Focus selectors are left out: each page lists its own controls in one focus
+// rule, by role. Each family names the pages that must copy it; any other page that copies it is
+// checked too.
+const families = [
+  { name: 'button and quiet action', pattern: /^(?:a)?\.btn\b|^\.quiet-action\b|^:where\(\.quiet-action\)/, pages: ['reference.html', 'docs.html', 'product.html'] },
+  { name: 'segmented control', pattern: /^\.segmented\b/, pages: ['reference.html'] },
+  { name: 'tabs', pattern: /^\.tab(?:list)?\b/, pages: ['reference.html'] },
+  { name: 'navigation row', pattern: /^\.navlist\b/, pages: ['docs.html'] },
+]
 const perSelector = (rules) =>
   rules.flatMap(({ context, selector, body }) => selectors(selector).map((part) => ({ context, selector: part, list: selector, body })))
 const key = ({ context, selector, body }) => `${context} ${selector} { ${body} }`.trim()
 
-// Page sizing rules that touch a button on purpose: touch targets grow at tablet width.
+// Page sizing rules that touch a shared control on purpose: touch targets grow at tablet width,
+// including the sized buttons and segmented controls that the catalogue keeps at their size.
 const sizingExemptions = [
   { page: 'reference.html', context: '@media (max-width: 800px)', selector: '.btn[data-size]', body: 'min-height: var(--control-lg); min-width: var(--control-lg);' },
+  { page: 'reference.html', context: '@media (max-width: 800px)', selector: '.segmented button', body: 'min-height: var(--control-lg); min-width: var(--control-lg);' },
 ]
 
-test('example pages copy the catalogue button and quiet action rules unchanged', () => {
+test('example pages copy the catalogue button, quiet action, segmented, tab, and navigation row rules unchanged', () => {
   const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(key))
   const exempt = new Set(sizingExemptions.map(({ page, ...rule }) => `${page} ${key(rule)}`))
   for (const page of ['reference.html', 'docs.html', 'product.html']) {
-    const copied = perSelector(cssRules(read(page))).filter(({ selector }) => isSharedControl(selector))
-    assert.ok(copied.length > 0, `${page} has no button or quiet action rules`)
-    const drifted = copied
-      .filter((rule) => !catalogue.has(key(rule)) && !exempt.has(`${page} ${key(rule)}`))
-      .map((rule) => `${key(rule)}${rule.list === rule.selector ? '' : `  (from the list "${rule.list}")`}`)
-    assert.deepEqual(drifted, [], `${page} button or quiet action selectors that differ from components.html`)
+    const rules = perSelector(cssRules(read(page))).filter(({ selector }) => !selector.includes(':focus-visible'))
+    for (const { name, pattern, pages } of families) {
+      const copied = rules.filter(({ selector }) => pattern.test(selector))
+      if (pages.includes(page)) assert.ok(copied.length > 0, `${page} has no ${name} rules`)
+      const drifted = copied
+        .filter((rule) => !catalogue.has(key(rule)) && !exempt.has(`${page} ${key(rule)}`))
+        .map((rule) => `${key(rule)}${rule.list === rule.selector ? '' : `  (from the list "${rule.list}")`}`)
+      assert.deepEqual(drifted, [], `${page} ${name} selectors that differ from components.html`)
+    }
   }
 })
