@@ -1,6 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
-import { readFileSync } from 'node:fs'
+import { readFileSync, readdirSync } from 'node:fs'
 
 const dir = new URL('../../host-config/design-language/', import.meta.url)
 const read = (file) => readFileSync(new URL(file, dir), 'utf8')
@@ -26,7 +26,7 @@ test('the component catalogue has one section per component spec, in the same la
 
 // Flattens a page's <style> into rules, each with its @media or @supports context.
 const cssRules = (html) => {
-  const css = html.match(/<style>([\s\S]*?)<\/style>/)[1].replace(/\/\*[\s\S]*?\*\//g, '')
+  const css = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(([, block]) => block).join('\n').replace(/\/\*[\s\S]*?\*\//g, '')
   const squash = (text) => text.replace(/\s+/g, ' ').trim()
   const rules = []
   const context = []
@@ -76,7 +76,11 @@ const families = [
   { name: 'button and quiet action', pattern: /^(?:a)?\.btn\b|^\.quiet-action\b|^:where\(\.quiet-action\)/, pages: ['reference.html', 'docs.html', 'product.html'] },
   { name: 'segmented control', pattern: /^\.segmented\b/, pages: ['reference.html'] },
   { name: 'tabs', pattern: /^\.tab(?:list)?\b/, pages: ['reference.html'] },
-  { name: 'navigation row', pattern: /^\.navlist\b/, pages: ['docs.html'] },
+  { name: 'navigation row', pattern: /^\.navlist\b/, pages: ['docs.html', 'reference.html'] },
+  { name: 'checkbox and radio', pattern: /^\.check\b/, pages: ['reference.html'] },
+  { name: 'badge', pattern: /^\.badge\b/, pages: ['reference.html'] },
+  { name: 'alert', pattern: /^\.alert\b/, pages: ['reference.html'] },
+  { name: 'code block and command plate', pattern: /^\.code\b/, pages: ['reference.html'] },
 ]
 const perSelector = (rules) =>
   rules.flatMap(({ context, selector, body }) => selectors(selector).map((part) => ({ context, selector: part, list: selector, body })))
@@ -89,7 +93,7 @@ const sizingExemptions = [
   { page: 'reference.html', context: '@media (max-width: 800px)', selector: '.segmented button', body: 'min-height: var(--control-lg); min-width: var(--control-lg);' },
 ]
 
-test('example pages copy the catalogue button, quiet action, segmented, tab, and navigation row rules unchanged', () => {
+test('example pages copy the catalogue rules for the shared controls and components they use unchanged', () => {
   const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(key))
   const exempt = new Set(sizingExemptions.map(({ page, ...rule }) => `${page} ${key(rule)}`))
   for (const page of ['reference.html', 'docs.html', 'product.html']) {
@@ -103,4 +107,38 @@ test('example pages copy the catalogue button, quiet action, segmented, tab, and
       assert.deepEqual(drifted, [], `${page} ${name} selectors that differ from components.html`)
     }
   }
+})
+
+// Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
+// token colour: a focus ring, a divider, or a selection bar. --depth passes because the guard checks
+// each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
+// hide a literal behind its own variable.
+const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
+const isToken = (reference) => reference === '--depth' || tokenNames.has(reference)
+const isShadowLayerAllowed = (layer) => {
+  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?var\((--[\w-]+)\)$/)
+  return Boolean(match) && isToken(match[1])
+}
+const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
+
+const shadowLiterals = (page, html) => {
+  const inline = [...html.matchAll(/\bstyle=(["'])([\s\S]*?)\1/g)].map(([, , body]) => ({ context: '', selector: '[style]', body }))
+  return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
+    body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
+      .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
+      .filter((match) => match && /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(match[1]))
+      .filter(([, , value]) => !isShadowAllowed(value.replace(/\s*!important$/, '')))
+      .map(([declaration]) => `${page}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
+}
+
+test('the depth guard reads every style block and both inline quote forms', () => {
+  const planted = `<style>.a { box-shadow: var(--shadow-raise) }</style><style media="all">.b { box-shadow: 0 4px 12px black }</style>
+    <p style='box-shadow: 0 4px 12px black'></p><p style="box-shadow: none"></p>`
+  assert.equal(shadowLiterals('planted.html', planted).length, 2)
+})
+
+test('pages take depth from tokens.css: no literal shadow outside a focus ring, divider, or selection bar', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
+  assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
 })

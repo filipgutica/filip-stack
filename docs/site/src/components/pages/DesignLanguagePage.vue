@@ -180,7 +180,7 @@ const tables = {
     <h2 id="reuse">Reuse it in a new project</h2>
     <div class="prose">
       <p>
-        The language has two layers. The core covers tokens, soft depth,
+        The language has two layers. The core covers tokens, quiet depth,
         controls and their states, focus, motion, and accessibility, and a new
         project adopts it as is. The identity layer is the personal sites'
         terminal look: the <code>~/name</code> header, mono headings, and
