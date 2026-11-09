@@ -81,13 +81,22 @@ test('the inline script keeps a __proto__ category as data', async () => {
 // On phones an item name sits in a flex heading; an unbroken segment must wrap there, not widen the page.
 const wrapsItemNames = (css) => /\.ov-entry-heading code\{[^}]*overflow-wrap:anywhere/.test(css)
 
-test('a long unbroken item name wraps in the phone layout', () => {
+test('a long unbroken item name wraps in the phone layout', async () => {
   assert.equal(wrapsItemNames('.ov-entry-heading code{min-width:0;flex:1}'), false)
   assert.ok(wrapsItemNames(readFileSync(new URL('../../host-config/design-language/visualizations/report.css', import.meta.url), 'utf8')))
+  // The rule only helps if the phone layout puts the name in that element.
+  const value = sample()
+  const name = `POST /query/${'a'.repeat(80)}`
+  value.windows[0].rows[0].endpoint = name
+  const html = await renderReport(value)
+  assert.match(html.match(/<section id="ov-mobile"[\s\S]*?<\/section>/)[0], /class="ov-entry-heading"><code>(?:(?!<\/code>)[\s\S])*a{80}/)
 })
 
 test('standalone pickers take the field recipe; inline pickers keep the host look', async () => {
   const field = /\.ov-controls select\{background:var\(--field\);border-color:var\(--field-edge\);border-radius:var\(--radius-field\);box-shadow:var\(--shadow-sink\)\}\.ov-controls select:focus-visible\{background:var\(--field-focus\);box-shadow:var\(--shadow-raise\)\}/
-  assert.match(await renderReport(sample(), { mode: 'standalone', tokens: ':root{--text:currentColor}' }), field)
+  const standalone = await renderReport(sample(), { mode: 'standalone', tokens: ':root{--text:currentColor}' })
+  assert.match(standalone, field)
+  // Equal specificity, so the field recipe must come after report.css's own picker rule to win.
+  assert.ok(standalone.search(field) > standalone.indexOf('.ov-controls select{font:inherit'))
   assert.doesNotMatch(await renderReport(sample()), /--field|--shadow-sink/)
 })
