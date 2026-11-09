@@ -1,3 +1,10 @@
+## [4.5.4](https://github.com/filipgutica/filip-stack/compare/v4.5.3...v4.5.4) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** ring the full-size capture screen in the plate colour ([9da73f8](https://github.com/filipgutica/filip-stack/commit/9da73f8b7e3ef162ec5c75e3638a4843d0ee697e))
+
 ## [4.5.3](https://github.com/filipgutica/filip-stack/compare/v4.5.2...v4.5.3) (2026-11-09)
 
 
