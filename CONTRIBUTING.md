@@ -127,11 +127,23 @@ is missing.
 
 ## Host config
 
-`apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` to
-the targets that [README.md](README.md#host-config) lists, and replaces
-`{{HOME}}` with the home directory. It assembles the guidance block from
-`host-config/guidance/`. The manifest in `~/.agents/.filip-stack-host-config.json`
-records the applied commit and a hash of each target.
+`apply` copies `host-config/claude`, `codex`, and `agents` to the targets that
+[README.md](README.md#host-config) lists, and replaces `{{HOME}}` with the home
+directory. It assembles the guidance block from `host-config/guidance/`. The
+manifest in `~/.agents/.filip-stack-host-config.json` records the applied
+commit, the installed design-system version and integrity, and a hash of each
+target.
+
+The design language lives in
+[filipgutica/design-system](https://github.com/filipgutica/design-system).
+`apply` installs the `language/` folder of the published
+`@filipgutica/design-system` version that `host-config/design-system.json` pins.
+To ship a design-system release, run
+`node scripts/pin-design-system.mjs <version>`, which writes the version,
+integrity, and tarball URL from the npm registry, and commit the pin.
+`node scripts/pin-design-system.mjs --check` downloads the pinned tarball and
+verifies it; CI runs it. Tests never use the network: they pin a fixture
+package from `tests/host-config/design-system-fixture.mjs`.
 
 Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
 pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between

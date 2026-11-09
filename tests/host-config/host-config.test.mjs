@@ -1,19 +1,28 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
+import { buildPackage, copyHostConfig, fixturePayload, seedCache, snapshot } from './design-system-fixture.mjs'
 
-const script = fileURLToPath(new URL('../../scripts/host-config.mjs', import.meta.url))
 const sourceRoot = fileURLToPath(new URL('../../host-config/', import.meta.url))
+// Tests run a copy of the script pinned to a fixture package that sits in a seeded cache.
+const fixtureRoot = mkdtempSync(join(tmpdir(), 'host-config-fixture-'))
+const designSystem = buildPackage({ root: fixtureRoot })
+const cacheHome = join(fixtureRoot, 'cache')
+seedCache({ cacheHome, ...designSystem })
+copyHostConfig({ repo: join(fixtureRoot, 'repo'), pin: designSystem.pin })
+// Field Guide needs its repository root to be a git checkout.
+assert.equal(spawnSync('git', ['init', '-q', join(fixtureRoot, 'repo')]).status, 0)
+const script = join(fixtureRoot, 'repo/scripts/host-config.mjs')
 const blockStart = '<!-- filip-stack:host-config:begin'
 const blockEnd = '<!-- filip-stack:host-config:end -->\n'
 
 const run = ({ home, command, args = [], expectFailure = false, scriptPath = script, xdgConfigHome }) => {
-  const env = { ...process.env }
+  const env = { ...process.env, XDG_CACHE_HOME: cacheHome }
   delete env.XDG_CONFIG_HOME
   if (xdgConfigHome !== undefined) env.XDG_CONFIG_HOME = xdgConfigHome
   const result = spawnSync(process.execPath, [scriptPath, command, '--home', home, ...args], { encoding: 'utf8', env })
@@ -40,12 +49,14 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
-  for (const file of ['DESIGN.md', 'components.md', 'components.html', 'decisions.md', 'visualizations.md', 'visualizations/build-count-report.mjs', 'visualizations/count-snapshots.md', 'visualizations/delivery.md', 'visualizations/report.css'])
-    assert.ok(existsSync(join(home, 'design-language', file)), file)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-language', file)), content)
+  const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
+  assert.deepEqual(manifest.designSystem, { version: '1.0.0', integrity: designSystem.pin.integrity })
 
   const before = read(join(home, '.agents/.filip-stack-host-config.json'))
   assert.ok(states(home).every((line) => line.startsWith('current')))
-  run({ home, command: 'apply' })
+  const again = run({ home, command: 'apply' })
+  assert.doesNotMatch(again.stdout, /^(wrote|removed|downloaded) /m)
   assert.equal(read(join(home, '.agents/.filip-stack-host-config.json')), before)
 })
 
@@ -54,13 +65,6 @@ const portableGuidance = (learning) => ({
   active: [{ subjectKey: 'testing', linkedSubjects: [], learning, confidence: 'high', examples: [] }],
   retired: [],
 })
-
-const snapshot = (directory) => (
-  readdirSync(directory, { recursive: true, withFileTypes: true })
-    .filter((entry) => entry.isFile())
-    .map((entry) => [join(entry.parentPath, entry.name), createHash('sha256').update(readFileSync(join(entry.parentPath, entry.name))).digest('hex')])
-    .sort(([left], [right]) => left.localeCompare(right))
-)
 
 for (const mode of ['unset', 'empty', 'custom']) {
   test(`apply imports shared preferences with XDG_CONFIG_HOME ${mode}`, () => {
@@ -82,10 +86,7 @@ for (const mode of ['unset', 'empty', 'custom']) {
     const repo = mkdtempSync(join(tmpdir(), 'host-config-sync-repo-'))
     const initialized = spawnSync('git', ['init', '-q', repo], { encoding: 'utf8' })
     assert.equal(initialized.status, 0, initialized.stderr)
-    mkdirSync(join(repo, 'scripts'))
-    copyFileSync(script, join(repo, 'scripts/host-config.mjs'))
-    cpSync(sourceRoot, join(repo, 'host-config'), { recursive: true })
-    cpSync(new URL('../../plugins/field-guide/', import.meta.url), join(repo, 'plugins/field-guide'), { recursive: true })
+    copyHostConfig({ repo, pin: designSystem.pin })
     // A leftover export must never be imported or overwritten.
     mkdirSync(join(repo, 'host-config/field-guide'), { recursive: true })
     writeFileSync(join(repo, 'host-config/field-guide/shared.json'), JSON.stringify(portableGuidance('Legacy guidance.')))
@@ -158,6 +159,7 @@ test('an interrupted apply keeps the files it wrote in the manifest', () => {
   const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
   assert.ok(manifest.files['.claude/agents/critic.md'])
   assert.equal(manifest.commit, null)
+  assert.equal(manifest.designSystem, undefined)
 })
 
 test('apply refuses to replace a guidance file without a block unless forced', () => {
@@ -208,10 +210,7 @@ test('update syncs the Field Guide dotfile only when it already exists', () => {
     assert.equal(result.status, 0, result.stderr)
   }
   git(['init', '-q', '-b', 'main'])
-  mkdirSync(join(source, 'scripts'))
-  copyFileSync(script, join(source, 'scripts/host-config.mjs'))
-  cpSync(sourceRoot, join(source, 'host-config'), { recursive: true })
-  cpSync(new URL('../../plugins/field-guide/', import.meta.url), join(source, 'plugins/field-guide'), { recursive: true })
+  copyHostConfig({ repo: source, pin: designSystem.pin })
   git(['add', '.'])
   git(['commit', '-q', '-m', 'init'])
   const checkout = join(mkdtempSync(join(tmpdir(), 'host-config-update-')), 'checkout')

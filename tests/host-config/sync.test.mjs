@@ -4,6 +4,7 @@ import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, re
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
+import { buildPackage, seedCache, writePin } from './design-system-fixture.mjs'
 
 const source = new URL('../../', import.meta.url)
 const execute = (command, args, options = {}) => spawnSync(command, args, { encoding: 'utf8', ...options })
@@ -23,6 +24,10 @@ const fixture = (t) => {
     mkdirSync(dirname(join(seed, path)), { recursive: true })
     cpSync(new URL(path, source), join(seed, path), { recursive: true })
   }
+  // Pin a fixture package that sits in a seeded cache, so apply never downloads.
+  const designSystem = buildPackage({ root })
+  writePin({ repo: seed, pin: designSystem.pin })
+  seedCache({ cacheHome: join(root, 'cache'), ...designSystem })
   for (const name of ['example', 'extra']) put(join(seed, 'skills', name, 'SKILL.md'), `An installed ${name} skill.\n`)
   for (const name of ['example', 'second']) {
     put(join(seed, 'plugins', name, '.claude-plugin/plugin.json'), JSON.stringify({ name, version: '1.0.0' }))
@@ -35,7 +40,7 @@ const fixture = (t) => {
   const origin = join(root, 'origin.git')
   success(execute('git', ['clone', '--bare', '-q', seed, origin]))
   success(execute('git', ['clone', '-q', origin, repo]))
-  const env = { ...process.env, HOME: home, PATH: '/usr/bin:/bin', CODEX_HOME: join(home, '.codex'), CLAUDE_CONFIG_DIR: join(home, '.claude'), XDG_CONFIG_HOME: join(home, '.config'), XDG_STATE_HOME: join(home, '.local/state'), GIT_CONFIG_GLOBAL: '/dev/null' }
+  const env = { ...process.env, HOME: home, PATH: '/usr/bin:/bin', CODEX_HOME: join(home, '.codex'), CLAUDE_CONFIG_DIR: join(home, '.claude'), XDG_CONFIG_HOME: join(home, '.config'), XDG_CACHE_HOME: join(root, 'cache'), XDG_STATE_HOME: join(home, '.local/state'), GIT_CONFIG_GLOBAL: '/dev/null' }
   const sync = (...args) => execute(process.execPath, [join(repo, 'scripts/sync.mjs'), '--json', ...args], { env })
   const apply = () => success(execute(process.execPath, [join(repo, 'scripts/host-config.mjs'), 'apply', '--home', home], { env }))
   return { root, repo, home, env, sync, apply, seed, origin }
