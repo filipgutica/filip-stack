@@ -110,7 +110,7 @@ test('example pages copy the catalogue rules for the shared controls and compone
 })
 
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
-// token colour: a focus ring, a divider, or a selection bar. --depth passes because the guard checks
+// token colour: a focus ring or a divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
 // hide a literal behind its own variable.
 const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
@@ -144,7 +144,7 @@ test('the depth guard reads every style block and both inline quote forms', () =
   assert.equal(shadowLiterals('planted.html', planted).length, 2)
 })
 
-test('pages take depth from tokens.css: no literal shadow outside a focus ring, divider, or selection bar', () => {
+test('pages take depth from tokens.css: no literal shadow outside a focus ring or divider', () => {
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
   assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
@@ -206,4 +206,73 @@ test('type, spacing, and control sizes are rem on every page, in tokens.css, and
     ...['tokens.css', 'visualizations/report.css'].map((file) => [file, `<style>${read(file)}</style>`]),
   ]
   assert.deepEqual(sources.flatMap(([file, html]) => pxSizes(file, html)), [])
+})
+
+// A selected list row takes the navigation row's current recipe. An inset accent bar curves away on a
+// rounded row, so no page draws one.
+const selectionBars = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (property, value) => property === 'box-shadow' && /\binset [1-9][\d.]*px 0 0\b/.test(value),
+})
+
+test('the selection-bar guard catches an inset leading-edge bar', () => {
+  const planted = `<style>.row[aria-selected="true"] { box-shadow: inset 2px 0 0 var(--accent) }
+    .ok { box-shadow: var(--shadow-nav-current) } .ring { box-shadow: 0 0 0 1px var(--border-subtle) }</style>`
+  assert.equal(selectionBars('planted.html', planted).length, 1)
+})
+
+test('no page marks a selected row with an inset accent bar', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.deepEqual(pages.flatMap((page) => selectionBars(page, read(page))), [])
+})
+
+// The selected fill must keep accent text readable. This reads the default hue pair, the surfaces, and
+// the --nav-current mix from each tokens.css theme block, composites the fill over every surface it can
+// sit on, and checks accent text at 4.5:1.
+const themeBlock = (css, start) => css.slice(css.indexOf(start)).match(/\{([\s\S]*?)\n\s*\}/)[1]
+const tokenValue = (block, name) => block.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'))?.[1].trim()
+const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+const luminance = (colour) => {
+  const [r, g, b] = colour.map((c) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+// color-mix in srgb over an opaque colour or over transparent (premultiplied), then composited on the surface.
+const fillOn = ({ accent, share, base, surface }) => accent.map((c, i) => c * share + (base ?? surface)[i] * (1 - share))
+const navCurrentText = (css) => {
+  const light = themeBlock(css, ':root {')
+  assert.equal(tokenValue(light, '--nav-current-text'), 'var(--accent)')
+  assert.equal(tokenValue(light, '--accent'), 'var(--project)')
+  const surfaces = ['--bg', '--surface', '--surface-raised']
+  const themes = [
+    { name: 'light', block: light, accent: tokenValue(light, '--project') },
+    { name: 'dark (prefers-color-scheme)', block: themeBlock(css, ':root:not([data-theme="light"])'), accent: tokenValue(light, '--project-dark') },
+    { name: 'dark (data-theme)', block: themeBlock(css, ':root[data-theme="dark"] {'), accent: tokenValue(light, '--project-dark') },
+  ]
+  return themes.flatMap(({ name, block, accent }) => {
+    const mix = tokenValue(block, '--nav-current').match(/^color-mix\(in srgb, var\(--accent\) ([\d.]+)%, (transparent|var\(--surface-raised\))\)$/)
+    assert.ok(mix, `${name} --nav-current is an accent mix`)
+    const value = (token) => rgb(tokenValue(block, token) ?? tokenValue(light, token))
+    const base = mix[2] === 'transparent' ? undefined : value('--surface-raised')
+    return surfaces.map((surface) => ({
+      theme: name,
+      surface,
+      ratio: contrast(rgb(accent), fillOn({ accent: rgb(accent), share: Number(mix[1]) / 100, base, surface: value(surface) })),
+    }))
+  })
+}
+
+test('the nav-current contrast guard fails a fill strong enough to hide accent text', () => {
+  const planted = read('tokens.css').replace('var(--accent) 14%, var(--surface-raised)', 'var(--accent) 60%, var(--surface-raised)')
+  assert.ok(navCurrentText(planted).some(({ theme, ratio }) => theme === 'light' && ratio < 4.5))
+})
+
+test('accent text on the selected fill reaches 4.5:1 on every surface in both themes', () => {
+  const results = navCurrentText(read('tokens.css'))
+  assert.equal(results.length, 9)
+  assert.deepEqual(results.filter(({ ratio }) => ratio < 4.5), [])
 })
