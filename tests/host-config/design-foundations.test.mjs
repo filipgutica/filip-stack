@@ -109,8 +109,65 @@ test('example pages copy the catalogue rules for the shared controls and compone
   }
 })
 
+// The copy guard above checks the rules a page has, so it passes when a page drops a whole state rule.
+// Each entry here names a component variant by the classes its markup uses (none of the classes in
+// "without"), and the catalogue state rules that variant needs, so a page that uses it must copy them.
+const pressed = ':is(:active, [aria-pressed="true"], .is-active):not(:disabled)'
+const stateNeeds = [
+  { classes: ['btn'], states: ['.btn:is(:hover, .is-hover):not(:disabled)', `.btn:not(.text)${pressed}`] },
+  { classes: ['btn'], without: ['secondary', 'ghost', 'danger', 'text'], states: [`.btn:not(.secondary, .ghost, .danger, .text)${pressed}`] },
+  { classes: ['btn', 'secondary'], states: ['.btn.secondary:is(:hover, .is-hover):not(:disabled)', `.btn:is(.secondary, .ghost)${pressed}`] },
+  { classes: ['btn', 'ghost'], states: ['.btn.ghost:is(:hover, .is-hover):not(:disabled)', `.btn:is(.secondary, .ghost)${pressed}`] },
+  { classes: ['btn', 'danger'], states: ['.btn.danger:is(:hover, .is-hover):not(:disabled)', `.btn.danger${pressed}`] },
+  { classes: ['quiet-action'], states: ['.quiet-action:is(:hover, .is-hover):where(:not(:disabled))', '.quiet-action:is(:active, .is-active):where(:not(:disabled))'] },
+  {
+    classes: ['segmented'],
+    states: [
+      '.segmented button:is(:hover, .is-hover):not(:disabled, [aria-pressed="true"])',
+      '.segmented button[aria-pressed="true"]',
+      '.segmented button[aria-pressed="true"]::before',
+      '@media (forced-colors: active) .segmented button[aria-pressed="true"]',
+      '@media (forced-colors: active) .segmented button[aria-pressed="true"]::before',
+    ],
+  },
+  { classes: ['tab'], states: ['.tab:is(:hover, .is-hover)', '.tab[aria-selected="true"]', '@media (forced-colors: active) .tab[aria-selected="true"]'] },
+  { classes: ['navlist'], states: ['.navlist a:is(:hover, .is-hover)', '.navlist a[aria-current="page"]', '@media (forced-colors: active) .navlist a[aria-current="page"]'] },
+]
+const missingStates = (page, html) => {
+  const used = [...html.matchAll(/\bclass="([^"]*)"/g)].map(([, list]) => new Set(list.split(/\s+/)))
+  const have = new Set(perSelector(cssRules(html)).map(({ context, selector }) => `${context} ${selector}`.trim()))
+  return stateNeeds
+    .filter(({ classes, without = [] }) => used.some((set) => classes.every((c) => set.has(c)) && !without.some((c) => set.has(c))))
+    .flatMap(({ states }) => states.filter((state) => !have.has(state)).map((state) => `${page}: ${state}`))
+}
+
+test('every state rule the guard requires exists in the catalogue', () => {
+  const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(({ context, selector }) => `${context} ${selector}`.trim()))
+  assert.deepEqual(stateNeeds.flatMap(({ states }) => states).filter((state) => !catalogue.has(state)), [])
+})
+
+test('the state guard catches a page that drops a whole state rule', () => {
+  const page = read('reference.html')
+  // Each line is one rule in reference.html, removed on its own.
+  const drops = [
+    { line: /^\s*\.btn:not\(\.text\):is\(:active[^\n]*\n/m, missing: `.btn:not(.text)${pressed}` },
+    { line: /^\s*\.segmented button\[aria-pressed="true"\]::before \{ z-index[^\n]*\n/m, missing: '.segmented button[aria-pressed="true"]::before' },
+    {
+      line: /^\s*\.segmented button\[aria-pressed="true"\]::before \{ forced-color-adjust[^\n]*\n/m,
+      missing: '@media (forced-colors: active) .segmented button[aria-pressed="true"]::before',
+    },
+  ]
+  for (const { line, missing } of drops) {
+    assert.deepEqual(missingStates('reference.html', page.replace(page.match(line)[0], '')), [`reference.html: ${missing}`])
+  }
+})
+
+test('example pages copy the state rules of every component variant their markup uses', () => {
+  assert.deepEqual(['reference.html', 'docs.html', 'product.html'].flatMap((page) => missingStates(page, read(page))), [])
+})
+
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
-// token colour: a focus ring, a divider, or a selection bar. --depth passes because the guard checks
+// token colour: a focus ring or a divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
 // hide a literal behind its own variable.
 const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
@@ -144,7 +201,7 @@ test('the depth guard reads every style block and both inline quote forms', () =
   assert.equal(shadowLiterals('planted.html', planted).length, 2)
 })
 
-test('pages take depth from tokens.css: no literal shadow outside a focus ring, divider, or selection bar', () => {
+test('pages take depth from tokens.css: no literal shadow outside a focus ring or divider', () => {
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
   assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
@@ -184,19 +241,24 @@ test('keeps the page background and text colour outside the base layer, so a hos
 })
 
 // Type, spacing, and control sizes are rem, so text and controls follow the reader's font-size
-// setting. Hairlines, focus rings, shadows, and breakpoints stay px and are not checked here.
-const remProperty = /^(?:font-size|font|--text-[\w-]+|--space-[\w-]+|--control-[\w-]+|--row)$/
+// setting: font sizes, padding, gaps, and line heights. Hairlines, focus rings, shadows, and
+// breakpoints stay px and are not checked here.
+// A border width taken off a token, as in calc(var(--space-2) - 2px), stays px: it matches a 1px or 2px edge.
+const remProperty = /^(?:font-size|font|line-height|padding(?:-[\w-]+)?|gap|row-gap|column-gap|--text-[\w-]+|--space-[\w-]+|--control-[\w-]+|--row)$/
+const borderOffset = /calc\(var\(--[\w-]+\) - \d+px\)/g
 const pxSizes = (file, html) => flaggedDeclarations({
   file,
   html,
-  isViolation: (property, value) => remProperty.test(property) && /\d(?:\.\d+)?px\b/.test(value),
+  isViolation: (property, value) => remProperty.test(property) && /\d(?:\.\d+)?px\b/.test(value.replace(borderOffset, '')),
 })
 
-test('the rem guard catches a px font size, font shorthand, or size token, in style blocks and inline', () => {
+test('the rem guard catches a px font size, font shorthand, size token, padding, gap, or line height', () => {
   const planted = `<style>.a { font-size: 18px } .b { font: 600 12px / 1.2 var(--font-sans) } :root { --space-9: 6px; --row: 36px }
-    .ok { font-size: 1.125rem; font: inherit; border: 1px solid; box-shadow: 0 1px 2px black; --shadow-x: 0 1px 2px black; width: 16px }</style>
+    .c { padding: 2px } .d { gap: 2px var(--space-3) } .e { line-height: 18px } .f { padding-inline: 9px; row-gap: 3px }
+    .ok { font-size: 1.125rem; font: inherit; border: 1px solid; box-shadow: 0 1px 2px black; --shadow-x: 0 1px 2px black; width: 16px }
+    .border-offset { padding: calc(var(--space-2) - 2px) calc(var(--space-3) - 2px); gap: 0.125rem }</style>
     <p style="font-size: 14px"></p><p style="font-size: var(--text-sm)"></p>`
-  assert.equal(pxSizes('planted.html', planted).length, 5)
+  assert.equal(pxSizes('planted.html', planted).length, 10)
 })
 
 test('type, spacing, and control sizes are rem on every page, in tokens.css, and in the report stylesheet', () => {
@@ -206,4 +268,109 @@ test('type, spacing, and control sizes are rem on every page, in tokens.css, and
     ...['tokens.css', 'visualizations/report.css'].map((file) => [file, `<style>${read(file)}</style>`]),
   ]
   assert.deepEqual(sources.flatMap(([file, html]) => pxSizes(file, html)), [])
+})
+
+// A selected list row takes the navigation row's current recipe. An inset accent bar curves away on a
+// rounded row, so no page draws one.
+const selectionBars = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (property, value) => property === 'box-shadow' && /\binset [1-9][\d.]*px 0 0\b/.test(value),
+})
+
+test('the selection-bar guard catches an inset leading-edge bar', () => {
+  const planted = `<style>.row[aria-selected="true"] { box-shadow: inset 2px 0 0 var(--accent) }
+    .ok { box-shadow: var(--shadow-nav-current) } .ring { box-shadow: 0 0 0 1px var(--border-subtle) }</style>`
+  assert.equal(selectionBars('planted.html', planted).length, 1)
+})
+
+test('no page marks a selected row with an inset accent bar', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.deepEqual(pages.flatMap((page) => selectionBars(page, read(page))), [])
+})
+
+// The selected fill must keep accent text readable. This reads the default hue pair, the surfaces, and
+// the --nav-current mix from each tokens.css theme block, composites the fill over every surface it can
+// sit on, and checks accent text at 4.5:1.
+const themeBlock = (css, start) => css.slice(css.indexOf(start)).match(/\{([\s\S]*?)\n\s*\}/)[1]
+const tokenValue = (block, name) => block.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'))?.[1].trim()
+// Reads #rgb or #rrggbb. Any other syntax throws, so the guard cannot pass on an unparsed colour.
+const rgb = (value) => {
+  const hex = value.match(/^#([\da-f]{3}|[\da-f]{6})$/i)?.[1]
+  if (!hex) throw new Error(`unsupported colour: ${value}`)
+  const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16))
+}
+const luminance = (colour) => {
+  const [r, g, b] = colour.map((c) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4))
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b
+}
+const contrast = (a, b) => {
+  const [hi, lo] = [luminance(a), luminance(b)].sort((x, y) => y - x)
+  return (hi + 0.05) / (lo + 0.05)
+}
+// color-mix in srgb over an opaque colour or over transparent (premultiplied), then composited on the surface.
+const fillOn = ({ accent, share, base, surface }) => accent.map((c, i) => c * share + (base ?? surface)[i] * (1 - share))
+const navCurrentText = (css) => {
+  const light = themeBlock(css, ':root {')
+  assert.equal(tokenValue(light, '--nav-current-text'), 'var(--accent)')
+  assert.equal(tokenValue(light, '--accent'), 'var(--project)')
+  const surfaces = ['--bg', '--surface', '--surface-raised']
+  const themes = [
+    { name: 'light', block: light, accent: tokenValue(light, '--project') },
+    { name: 'dark (prefers-color-scheme)', block: themeBlock(css, ':root:not([data-theme="light"])'), accent: tokenValue(light, '--project-dark') },
+    { name: 'dark (data-theme)', block: themeBlock(css, ':root[data-theme="dark"] {'), accent: tokenValue(light, '--project-dark') },
+  ]
+  return themes.flatMap(({ name, block, accent }) => {
+    const mix = tokenValue(block, '--nav-current').match(/^color-mix\(in srgb, var\(--accent\) ([\d.]+)%, (transparent|var\(--surface-raised\))\)$/)
+    assert.ok(mix, `${name} --nav-current is an accent mix`)
+    const value = (token) => rgb(tokenValue(block, token) ?? tokenValue(light, token))
+    const base = mix[2] === 'transparent' ? undefined : value('--surface-raised')
+    return surfaces.map((surface) => ({
+      theme: name,
+      surface,
+      ratio: contrast(rgb(accent), fillOn({ accent: rgb(accent), share: Number(mix[1]) / 100, base, surface: value(surface) })),
+    }))
+  })
+}
+
+// A ratio that is not a finite number at or above 4.5:1 fails.
+const belowContrast = (results) => results.filter(({ ratio }) => !(Number.isFinite(ratio) && ratio >= 4.5))
+
+test('the nav-current contrast guard fails a fill strong enough to hide accent text', () => {
+  const planted = read('tokens.css').replace('var(--accent) 14%, var(--surface-raised)', 'var(--accent) 60%, var(--surface-raised)')
+  assert.ok(belowContrast(navCurrentText(planted)).some(({ theme }) => theme === 'light'))
+})
+
+test('the nav-current contrast guard reads shorthand hex and fails a dark accent that hides on the fill', () => {
+  // Black accent text on a black-tinted fill over the dark surfaces measures about 1:1.
+  const css = read('tokens.css')
+  const failing = belowContrast(navCurrentText(css.replace('--project-dark: #a5a1ff;', '--project-dark: #000;')))
+  assert.deepEqual([...new Set(failing.map(({ theme }) => theme))], ['dark (prefers-color-scheme)', 'dark (data-theme)'])
+  assert.throws(() => navCurrentText(css.replace('--project-dark: #a5a1ff;', '--project-dark: rgb(0 0 0);')), /unsupported colour/)
+})
+
+test('accent text on the selected fill reaches 4.5:1 on every surface in both themes', () => {
+  const results = navCurrentText(read('tokens.css'))
+  assert.equal(results.length, 9)
+  assert.deepEqual(belowContrast(results), [])
+})
+
+// The native clear cross sits at the input's trailing edge. A fixed-width search input inside a wider
+// field wrapper leaves the cross floating mid-field, so the wrapper carries the width instead.
+const fixedSearchInputs = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (property, value) => property === 'width' && /\d(?:\.\d+)?(?:px|rem|em)\b/.test(value),
+}).filter((line) => /(?:\.search input|input\[type="search"\])(?![\w-]|::)/.test(line.split(' { ')[0]))
+
+test('the search-width guard catches a fixed-width search input', () => {
+  const planted = `<style>.search input { width: 180px } .toolbar .search input { width: 100% }
+    .search { width: 248px } .search input::-webkit-search-cancel-button { width: 0.75rem }</style>`
+  assert.equal(fixedSearchInputs('planted.html', planted).length, 1)
+})
+
+test('no search input has a fixed width', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.deepEqual(pages.flatMap((page) => fixedSearchInputs(page, read(page))), [])
 })
