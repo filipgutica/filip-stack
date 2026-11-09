@@ -1686,6 +1686,24 @@ Smoke run, `runs/egc-20261106/results/smoke-overhaul`: true-myth, vanilla and `w
 | `check` from a second folder | Vanilla cache: 1 of 1 attempts hit |
 | Redundant added tests | Vanilla 21, `workflow-main` 16 (n = 1, no conclusion) |
 
+#### Climb result (2026-11-09)
+
+All three budgeted rounds ran; no candidate passed the decision rule, so `main` keeps its engineering guidance and the probe does not run.
+
+| Round | Passes (vanilla) | Tokens (× vanilla) | Mechanical gate | Pair wins against `main` |
+| --- | --- | --- | --- | --- |
+| 1 | pass | 2.91M (1.75×), fail | 2 count gates failed | not run |
+| 2 | 11 (12), pass | 2.36M (1.10×), pass | 3 failed; passes after Amendment 3 | not run |
+| 3 | 10 (12), fail | 2.65M (1.24×), pass | pass, before and after Amendment 3 | 4 of 12 (report-only) |
+
+- `main` itself failed correctness and tokens in round 2: 10 of 12 passes and 6.68M (3.1× vanilla).
+- Amendment 3, after round 2: the cognitive ratio leaves out a task whose reference adds under 10, and the noisy count gates became diagnostics. `main` failed those counts against its own pilot run.
+- Round 3's diagnostics beat `main`: high plus medium findings 7 against 8, redundant added tests 7.67 against 13, duplicated test lines 50 against 101. Blind judges still preferred `main` on 7 of 10 judged pairs.
+- One round-3 attempt stopped to ask which branch to use before editing. That behavior comes from `core.md`'s ambiguity rules, which every Workflow arm shares.
+- PluginBench #18 came out of the round-2 outage: a backend failure no longer scores or caches an attempt, and background runs survive the launching session.
+
+Evidence: [round 3 notes](evidence/engineering-guidance-climb/round-3/notes.md), [card Amendment 3](evidence/engineering-guidance-climb/card.md).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
