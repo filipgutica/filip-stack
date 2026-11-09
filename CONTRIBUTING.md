@@ -118,6 +118,13 @@ An adapted skill carries `THIRD_PARTY_NOTICES.md` in its own directory with the
 upstream source and the baseline commit. The repository's `upstream-sync` skill
 compares it with upstream.
 
+The site credits each `## <upstream>` section on the skill's page. It links the
+`Tracked path` when there is one, and otherwise the `Source`. It names the
+holder from the `Copyright (c)` line, or an `Author:` line when the license has
+none. In `plugins/workflow/THIRD_PARTY_NOTICES.md`, each section lists the
+skills it credits in an `Adapted in:` line. The site build fails when a field
+is missing.
+
 ## Host config
 
 `apply` copies `host-config/claude`, `codex`, `agents`, and `design-language` to

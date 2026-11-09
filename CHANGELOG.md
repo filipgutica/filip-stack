@@ -1,3 +1,136 @@
+# [4.6.0](https://github.com/filipgutica/filip-stack/compare/v4.5.8...v4.6.0) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** carry invalid and disabled field states to the search field ([08311df](https://github.com/filipgutica/filip-stack/commit/08311dfac7f1788f7dad80d7a537c82c0981c977))
+
+
+### Features
+
+* **design-language:** give controls an accent focus ring and fields an accent edge ([e1f6bf3](https://github.com/filipgutica/filip-stack/commit/e1f6bf3d299815ac05b2ffe5cae289e20cee600e))
+
+## [4.5.8](https://github.com/filipgutica/filip-stack/compare/v4.5.7...v4.5.8) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** emit the standalone picker field recipe after the report styles ([6ba4f87](https://github.com/filipgutica/filip-stack/commit/6ba4f87ef542289fc45e3cc1089c4b493555a8fa))
+* **design-language:** fix application example keyboard, anchors, and phone layout ([80d4e71](https://github.com/filipgutica/filip-stack/commit/80d4e7150341b68f9a8cb21d8171094ae57eb8eb))
+* **design-language:** give docs section spacing one owner ([6cbcfc0](https://github.com/filipgutica/filip-stack/commit/6cbcfc0c0a9816a4ac7a63cef5a3ac2a9755df08))
+
+## [4.5.7](https://github.com/filipgutica/filip-stack/compare/v4.5.6...v4.5.7) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** close the drawer when its exit slide is cancelled ([930aee6](https://github.com/filipgutica/filip-stack/commit/930aee65e3917bcb22336241a095b277780da1c9))
+* **design-language:** fix catalogue control sizes, tab fades, drawer exit, and phone overflow ([5138e30](https://github.com/filipgutica/filip-stack/commit/5138e30da146b51fa873cb594e0d2aa78a226229))
+* **design-language:** guard copied state rules and rem padding, gaps, and line heights ([890560f](https://github.com/filipgutica/filip-stack/commit/890560f3a0ddda15a76f27815713b52cc0a27585))
+* **design-language:** let search inputs fill their field and keep the clear cross in forced colors ([e9d0667](https://github.com/filipgutica/filip-stack/commit/e9d0667e3a7d06b5a62f5bdd13591379e916a5f6))
+* **design-language:** remove stray .build cache files ([74354f8](https://github.com/filipgutica/filip-stack/commit/74354f8f4b707aed49504de68f8aca9c36d76d20))
+* **design-language:** select list rows with the navigation current recipe and a stronger tint ([4543053](https://github.com/filipgutica/filip-stack/commit/45430534359f10dcd665f850b66925f66c12bb16))
+* **design-language:** show the application title role in sans, as the app renders it ([55a2f9f](https://github.com/filipgutica/filip-stack/commit/55a2f9f462e2c854e6ab495f13ff0edfe51aa47f))
+* **design-language:** show the catalogue search field with its leading magnifier ([4534633](https://github.com/filipgutica/filip-stack/commit/453463382b62399d7b4247877f56012a8355aac4))
+* **design-language:** state that application titles are sans and other page titles mono ([460222e](https://github.com/filipgutica/filip-stack/commit/460222ed251b7d96c9de93b429ecdfd1fd9218d1))
+* **design-language:** tint the capture's selected tab at 20%, as every dark selected fill is ([ee672d2](https://github.com/filipgutica/filip-stack/commit/ee672d26a42c5ad31eb9a09b718b0b92359860bd))
+
+## [4.5.6](https://github.com/filipgutica/filip-stack/compare/v4.5.5...v4.5.6) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** cap application section headings at --text-xl and align type roles ([7ab43a7](https://github.com/filipgutica/filip-stack/commit/7ab43a7856301c52a3f94ab5f3b33b8675e838e3))
+* **design-language:** keep the ## section mark for docs, article, and product sections ([78dd7ee](https://github.com/filipgutica/filip-stack/commit/78dd7ee29404a83bc7ee5825ce191a79e889e3da))
+
+## [4.5.5](https://github.com/filipgutica/filip-stack/compare/v4.5.4...v4.5.5) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** let page colours override earlier host body resets ([eb2e9bd](https://github.com/filipgutica/filip-stack/commit/eb2e9bdfafbc8a5139a7cd36b3e2e6818525aebf))
+
+## [4.5.4](https://github.com/filipgutica/filip-stack/compare/v4.5.3...v4.5.4) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** ring the full-size capture screen in the plate colour ([9da73f8](https://github.com/filipgutica/filip-stack/commit/9da73f8b7e3ef162ec5c75e3638a4843d0ee697e))
+
+## [4.5.3](https://github.com/filipgutica/filip-stack/compare/v4.5.2...v4.5.3) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** centre icon-only quiet actions ([805a1be](https://github.com/filipgutica/filip-stack/commit/805a1be9e8c8ad76aeb13299ef8c133a227583eb))
+
+## [4.5.2](https://github.com/filipgutica/filip-stack/compare/v4.5.1...v4.5.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** disable quiet actions and check each copied control selector ([8291b1e](https://github.com/filipgutica/filip-stack/commit/8291b1e09ef2c79edd406be87f31c856082f31cb))
+* **design-language:** keep quiet-action hover and press at their base specificity ([a4fbb2e](https://github.com/filipgutica/filip-stack/commit/a4fbb2e828f0ec6015cb87076709387ae557a6e2))
+
+## [4.5.1](https://github.com/filipgutica/filip-stack/compare/v4.5.0...v4.5.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** use shared Workflow controls ([2032fc6](https://github.com/filipgutica/filip-stack/commit/2032fc666bf3b30078f081a439f799d1e0cb2b7c))
+
+# [4.5.0](https://github.com/filipgutica/filip-stack/compare/v4.4.3...v4.5.0) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** check credit text in its fact ([9c513c3](https://github.com/filipgutica/filip-stack/commit/9c513c3a66a675c465b3d47aa8a5a2e90384ed11))
+
+
+### Features
+
+* **site:** credit upstream skills on adapted skill pages ([469addf](https://github.com/filipgutica/filip-stack/commit/469addfd41123defcbd64f2bc948c04bdbf7c077))
+
+## [4.4.3](https://github.com/filipgutica/filip-stack/compare/v4.4.2...v4.4.3) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** tint selected rows and square the toggle card ([eb87327](https://github.com/filipgutica/filip-stack/commit/eb873276e3ceb3f5fc3227721e27558fbe9c8349))
+
+## [4.4.2](https://github.com/filipgutica/filip-stack/compare/v4.4.1...v4.4.2) (2026-11-07)
+
+
+### Bug Fixes
+
+* **design-language:** address catalogue review findings ([7f5a07b](https://github.com/filipgutica/filip-stack/commit/7f5a07b3e6cb8a89363cef0bc30a64ac2112bd07))
+* **design-language:** address second catalogue review ([5205ec8](https://github.com/filipgutica/filip-stack/commit/5205ec82839eb73c729ac4fb4d462a6d3f3bff0c))
+* **design-language:** sync field focus and tab rules with final ui [#47](https://github.com/filipgutica/filip-stack/issues/47) and [#48](https://github.com/filipgutica/filip-stack/issues/48) ([03a74f6](https://github.com/filipgutica/filip-stack/commit/03a74f6524043ce096eabd60bf63275e955b4fe8))
+* **design-language:** thin control focus ring, lifting fields, lifted selected tabs ([f0de2f3](https://github.com/filipgutica/filip-stack/commit/f0de2f3eed54173d455dcbdbc141c124be50b472))
+
+## [4.4.1](https://github.com/filipgutica/filip-stack/compare/v4.4.0...v4.4.1) (2026-11-07)
+
+
+### Bug Fixes
+
+* preserve Claude runtime markers during sync ([ba0fcb9](https://github.com/filipgutica/filip-stack/commit/ba0fcb97dbcb001160647009bbc67b82f8cb6541))
+
+# [4.4.0](https://github.com/filipgutica/filip-stack/compare/v4.3.4...v4.4.0) (2026-11-07)
+
+
+### Features
+
+* add reusable local and fleet sync ([6bf5f39](https://github.com/filipgutica/filip-stack/commit/6bf5f395cc9db90cc55e7390cb84a005ff1c3288))
+* apply shared fleet baseline with machine exceptions ([7265bdd](https://github.com/filipgutica/filip-stack/commit/7265bddb7b0d2fc1c28547b0e7c44ed31c9a17f7))
+
+## [4.3.4](https://github.com/filipgutica/filip-stack/compare/v4.3.3...v4.3.4) (2026-11-07)
+
+
+### Bug Fixes
+
+* **site:** keep color swatches at inline corners ([904309b](https://github.com/filipgutica/filip-stack/commit/904309b38cef83e9e13735ab39e1c92ef6eae6dc))
+* **site:** keep multiline content on panel radii ([3c0e8ab](https://github.com/filipgutica/filip-stack/commit/3c0e8ab6216e1339f86d6f2f48a5448ab3be5d4d))
+
 ## [4.3.3](https://github.com/filipgutica/filip-stack/compare/v4.3.2...v4.3.3) (2026-11-07)
 
 

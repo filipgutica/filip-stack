@@ -1,6 +1,6 @@
 {
   "name": "filip-stack",
-  "version": "4.3.3",
+  "version": "4.6.0",
   "private": true,
   "type": "module",
   "bin": {
@@ -23,7 +23,7 @@
     "test:field-guide-hooks": "node --test tests/field-guide/field-guide-lifecycle.test.mjs",
     "test:field-guide": "node --test tests/field-guide/field-guide.test.mjs tests/field-guide/field-guide-analytics.test.mjs",
     "test:guardrails": "node --test tests/guardrails/guardrails.test.mjs",
-    "test:host-config": "node --test tests/host-config/host-config.test.mjs tests/host-config/cli.test.mjs tests/host-config/data-visualizations.test.mjs tests/host-config/design-foundations.test.mjs",
+    "test:host-config": "node --test tests/host-config/host-config.test.mjs tests/host-config/cli.test.mjs tests/host-config/sync.test.mjs tests/host-config/data-visualizations.test.mjs tests/host-config/design-foundations.test.mjs",
     "test:plugin-payload": "node --test tests/workflow/plugin-payload-policy.test.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
     "check": "pnpm test:workflow-contracts && pnpm test:skills && pnpm test:field-guide-boundary && pnpm test:field-guide-contract && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:guardrails && pnpm test:plugin-payload && pnpm test:host-config && pnpm validate-plugins && pnpm test:static",

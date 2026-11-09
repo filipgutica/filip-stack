@@ -17,8 +17,13 @@ h1, .workflow > h2 { font-family: var(--font-mono); }
 h1 { max-width: 18ch; font-size: var(--text-display); letter-spacing: var(--tracking-tight); }
 .lead { max-width: 56ch; font-size: var(--text-reading); color: var(--text-muted); }
 .actions { display: flex; align-items: center; flex-wrap: wrap; gap: var(--space-6); }
-.action { display: inline-flex; align-items: center; justify-content: center; min-height: var(--control-lg); padding-inline: var(--space-4); border-radius: var(--radius-md); background: var(--text); color: var(--bg); font-size: var(--text-sm); font-weight: var(--weight-medium); }
-.action:hover { background: var(--text-muted); color: var(--bg); text-decoration: none; }
+/* The one primary action: components.html#button, unchanged. The page adds layout only. */
+.btn { --depth: var(--shadow-raise); display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); min-height: var(--control-md); padding: 0 var(--space-3); border: 1px solid transparent; border-radius: var(--radius-md); background: var(--accent); color: var(--accent-text); box-shadow: var(--depth); font: var(--weight-medium) var(--text-md) / 1.25 var(--font-sans); letter-spacing: -0.01em; cursor: pointer; transition: background-color var(--duration-fast) var(--ease-out), box-shadow var(--duration-fast) var(--ease-out); }
+.btn[data-size="lg"] { min-height: var(--control-lg); padding: 0 var(--space-4); font-size: var(--text-lg); }
+.btn:is(:hover, .is-hover):not(:disabled) { background: var(--button-hover); }
+.btn:not(.secondary, .ghost, .danger, .text):is(:active, [aria-pressed="true"], .is-active):not(:disabled) { background: var(--button-hover); }
+.btn:not(.text):is(:active, [aria-pressed="true"], .is-active):not(:disabled) { --depth: var(--shadow-sink); transform: translateY(1px); }
+a.btn { text-decoration: none; }
 .actions > a { min-height: var(--control-lg); display: inline-flex; align-items: center; }
 figure { margin: 0; min-width: 0; }
 /* Product evidence sits in a well: one quiet frame, no frame around it. */
@@ -34,6 +39,8 @@ figure { margin: 0; min-width: 0; }
 figcaption { margin-top: var(--space-3); font-size: var(--text-sm); color: var(--text-muted); }
 .workflow { display: grid; gap: var(--space-6); padding-block: var(--space-12); border-top: 1px solid var(--border-subtle); }
 .workflow > h2 { max-width: 24ch; font-size: var(--text-3xl); }
+/* Page-level product sections take the decorative ## mark; headings inside the product view do not. */
+.workflow > h2::before { content: "## " / ""; color: var(--accent); }
 .workflow > p { max-width: var(--measure); color: var(--text-muted); font-size: var(--text-reading); }
 .evidence { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-8); align-items: start; }
 .checks { margin: 0; padding: var(--space-2) var(--space-6); list-style: none; font-size: var(--text-sm); }
@@ -56,7 +63,7 @@ footer { display: flex; flex-wrap: wrap; align-items: center; justify-content: s
 <div class="frame">
 <header class="header"><a class="brand" href="product.html">Product page example</a><nav aria-label="Reference formats"><a href="docs.html">Documentation</a><a href="reference.html">Application</a></nav></header>
 <main>
-<section class="hero"><div class="copy"><h1>Keep the whole project in view.</h1><p class="lead">A clear introduction, one useful next step, and product evidence. Give the reader enough context to decide where to go.</p><div class="actions"><a class="action" href="#workflow">Explore the workflow</a><a href="docs.html">Read the documentation</a></div></div>
+<section class="hero"><div class="copy"><h1>Keep the whole project in view.</h1><p class="lead">A clear introduction, one useful next step, and product evidence. Give the reader enough context to decide where to go.</p><div class="actions"><a class="btn" data-size="lg" href="#workflow">Explore the workflow</a><a href="docs.html">Read the documentation</a></div></div>
 <figure><div class="product-view"><div class="view-header"><strong>Example workspace</strong><span>Demo board</span></div><div class="board"><section><h2>Planned</h2><div class="task"><code>DEMO-12</code><p>Make setup easier to follow</p></div><div class="task"><code>DEMO-14</code><p>Align the reference pages</p></div></section><section><h2>In progress</h2><div class="task"><code>DEMO-09</code><p>Check the mobile workflow</p></div></section><section><h2>Ready for review</h2><div class="task"><code>DEMO-07</code><p>Improve reading contrast</p></div></section></div></div><figcaption>Illustrative product evidence. Production pages should show their actual interface.</figcaption></figure>
 </section>
 <section class="workflow" id="workflow"><h2>Show the work before listing features.</h2><p>One worked example explains a product more clearly than a grid of claims. Show what the product did, then say what it proves.</p><div class="evidence"><figure><div class="product-view"><div class="view-header"><strong>Check the mobile workflow</strong><span>DEMO-09</span></div><ul class="checks"><li class="fail"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M6 6l4 4M10 6l-4 4"/></svg><code>390 px</code><span>Fails: the table scrolls the page</span></li><li class="pass"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M5.8 8.2l1.5 1.5 2.9-3"/></svg><code>720 px</code><span>Passes: no horizontal overflow</span></li><li class="pass"><svg viewBox="0 0 16 16" aria-hidden="true"><circle cx="8" cy="8" r="5.5"/><path d="M5.8 8.2l1.5 1.5 2.9-3"/></svg><code>1280 px</code><span>Passes: no horizontal overflow</span></li></ul></div><figcaption>Illustrative check results for one task.</figcaption></figure><div class="evidence-copy"><h3>What the capture proves</h3><p>The check ran at three widths and named the one that failed. A reader can see the result and the cause before reading any claim about the product.</p></div></div></section>

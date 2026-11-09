@@ -83,6 +83,30 @@ test("all skill prose and README traits render without JavaScript", async ({
       await expect(page.locator("main .fg-site-facts")).toContainText(
         "Manual · /workflow:simplify",
       );
+    if (route === "skills/grill-me/") {
+      const credit = page
+        .locator("main .fg-site-facts > div")
+        .filter({ hasText: "Adapted from" })
+        .locator("dd");
+      await expect(credit).toHaveText("grill-me by Matt Pocock");
+      await expect(
+        credit.getByRole("link", { name: "grill-me" }),
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/mattpocock/skills/tree/HEAD/skills/productivity/grill-me",
+      );
+    }
+    if (route === "skills/full-send/")
+      await expect(
+        page.locator("main .fg-site-facts").getByRole("link", { name: "full-send" }),
+      ).toHaveAttribute(
+        "href",
+        "https://github.com/t3dotgg/tstack/tree/HEAD/skills/full-send",
+      );
+    if (route === "skills/walkthrough/")
+      await expect(page.locator("main .fg-site-facts")).not.toContainText(
+        "Adapted from",
+      );
   }
   await page.goto("/filip-stack/");
   await expect(
@@ -136,6 +160,9 @@ test("the Workflow map links each skill and lists every engineering step without
   ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
   await expect(map.locator(".map-steps > li")).toHaveCount(6);
   await expect(map.locator(".map-steps")).toBeVisible();
+  await map.getByRole("link", { name: "sol-loop", exact: true }).click();
+  await expect(page).toHaveURL("/filip-stack/skills/sol-loop/");
+  await expect(page.locator("main h1")).toHaveText("sol-loop");
 });
 
 test("the lesson reads in full and its anchor links work without JavaScript", async ({

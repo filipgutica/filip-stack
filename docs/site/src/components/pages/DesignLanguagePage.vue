@@ -10,7 +10,19 @@ const tables = {
     },
     {
       command: "tokens.css",
-      description: "Theme values to import or inline in standalone HTML.",
+      description: "Theme values to import or inline in standalone HTML. The project hue and fonts sit in one block at the top.",
+    },
+    {
+      command: "components.md",
+      description: "One spec for each component, marked core or identity.",
+    },
+    {
+      command: "components.html",
+      description: "Every component in each of its states, in plain HTML and CSS.",
+    },
+    {
+      command: "decisions.md",
+      description: "Why each component looks the way it does, and the options it replaced.",
     },
     {
       command: "docs.html",
@@ -22,7 +34,7 @@ const tables = {
     },
     {
       command: "reference.html",
-      description: "Application components, and a catalogue of type, color, spacing, shape, borders, elevation, and control states.",
+      description: "Example application, and a catalogue of type, color, spacing, shape, borders, elevation, focus, and motion.",
     },
   ],
   formats: [
@@ -50,9 +62,10 @@ const tables = {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Design language</h1>
     <p class="lede">
-      Use this shared language when asking Claude or Codex for visual work.
-      It defines the look of personal pages, mockups, prototypes, charts,
-      and explainers.
+      The framework-agnostic foundation for every interface Filip builds.
+      Its tokens, components, and rules are plain HTML and CSS: the UI library
+      implements them in Vue, new apps and libraries start from them, and
+      Claude and Codex follow them for visual work.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -70,6 +83,42 @@ const tables = {
         <dd>Graphite Indigo</dd>
       </div>
     </dl>
+  </section>
+
+  <section aria-labelledby="catalogue">
+    <h2 id="catalogue">Component catalogue</h2>
+    <div class="prose">
+      <p>
+        The catalogue shows every component in each state that applies. It
+        uses only <code>tokens.css</code>, and its markup carries the roles and
+        states each implementation copies.
+        <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>
+        builds these components in Vue; a React library or a new app builds
+        the same ones from here.
+      </p>
+      <ul>
+        <li>
+          <a href="/filip-stack/design-language/catalogue/components.html">Component catalogue</a>:
+          each component and its states.
+        </li>
+        <li>
+          <a href="/filip-stack/design-language/catalogue/reference.html#foundations">Foundations</a>:
+          type, color, spacing, shape, borders, elevation, focus, and motion.
+        </li>
+        <li>
+          Examples:
+          <a href="/filip-stack/design-language/catalogue/reference.html">application</a>,
+          <a href="/filip-stack/design-language/catalogue/docs.html">documentation</a>, and
+          <a href="/filip-stack/design-language/catalogue/product.html">product page</a>.
+        </li>
+        <li>
+          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/components.md">Component specs</a>
+          and
+          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/decisions.md">decisions</a>:
+          what each component does, and why it looks the way it does.
+        </li>
+      </ul>
+    </div>
   </section>
 
   <section aria-labelledby="how">
@@ -127,11 +176,29 @@ const tables = {
     </UiCommandList>
   </section>
 
+  <section aria-labelledby="reuse">
+    <h2 id="reuse">Reuse it in a new project</h2>
+    <div class="prose">
+      <p>
+        The language has two layers. The core covers tokens, quiet depth,
+        controls and their states, focus, motion, and accessibility, and a new
+        project adopts it as is. The identity layer is the personal sites'
+        terminal look: the <code>~/name</code> header, mono headings, and
+        command plates. A new project replaces it with its own.
+      </p>
+      <p>
+        To start, keep <code>tokens.css</code> unchanged and set your own hue
+        and fonts on <code>:root</code> in a stylesheet loaded after it. Then
+        build components from the catalogue and the component specs.
+      </p>
+    </div>
+  </section>
+
   <section aria-labelledby="theme">
     <h2 id="theme">Theme and token names</h2>
     <p class="section-intro">
-      Graphite surfaces separate regions. Indigo marks primary actions;
-      blue marks links and keyboard focus. Switch the appearance in the header
+      Graphite surfaces separate regions. Indigo marks primary actions; blue marks links.
+      Focus is one indigo ring with a 3px gap. Switch the appearance in the header
       to compare light and dark.
     </p>
     <UiCard title="Graphite Indigo tokens">
@@ -163,7 +230,7 @@ const tables = {
         </figure>
         <figure>
           <span style="background: var(--color-link)"></span>
-          <figcaption><code>--link</code>Links, focus</figcaption>
+          <figcaption><code>--link</code>Links</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-success)"></span>

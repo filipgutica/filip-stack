@@ -1,7 +1,8 @@
 // Build-time skill catalog. The README tables own the copy readers see, and each
-// SKILL.md owns whether the host may select the skill on its own.
+// SKILL.md owns whether the host may select the skill on its own, and each
+// THIRD_PARTY_NOTICES.md owns the upstream credit.
 import { existsSync, readFileSync, readdirSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { basename, join, resolve } from "node:path";
 import { marked, Renderer, type Tokens } from "marked";
 
 export interface CatalogSkill {
@@ -14,6 +15,8 @@ export interface CatalogSkill {
   references: string[];
   group: "Workflow" | "Standalone";
   source: string;
+  /** Inline HTML crediting the open-source work this skill adapts; empty when none. */
+  upstreamHtml: string;
 }
 
 export interface SkillContent {
@@ -60,16 +63,53 @@ const referenceFiles = (skillDirectory: string) => {
 const isManual = (skillFile: string) =>
   /^disable-model-invocation:\s*true$/m.test(readFileSync(skillFile, "utf8"));
 
+/**
+ * Reads one credit from each "## <upstream>" section of a notices file. The
+ * credit links the tracked upstream skill when the section records one, and
+ * otherwise the source. `adaptedIn` lists the skills a shared notice credits.
+ */
+const readNotices = (file: string) =>
+  readFileSync(file, "utf8")
+    .split(/^## /m)
+    .slice(1)
+    .map((section) => {
+      const heading = section.slice(0, section.indexOf("\n")).trim();
+      const field = (label: string) =>
+        section.match(new RegExp(`^${label}: (.+)$`, "m"))?.[1]?.trim();
+      const source = field("Source");
+      // MIT sections carry "Copyright (c) <year> <holder>"; others state an Author line.
+      const author =
+        field("Author") ??
+        section.match(/^Copyright \(c\) \d{4} (.+)$/m)?.[1]?.trim();
+      if (!source || !author)
+        throw new Error(`${file}: "## ${heading}" needs a Source and an author`);
+      const trackedPath = field("Tracked path")?.match(/^`([^`]+)`$/)?.[1];
+      return {
+        credit: {
+          name: trackedPath ? basename(trackedPath) : heading,
+          url: trackedPath ? `${source}/tree/HEAD/${trackedPath}` : source,
+          author,
+        },
+        heading,
+        adaptedIn: [...(field("Adapted in") ?? "").matchAll(/`([^`]+)`/g)].map(
+          (match) => match[1]!,
+        ),
+      };
+    });
+
 const loadSkills = ({
   readme,
   heading,
   directory,
   group,
+  sharedNotices,
 }: {
   readme: string;
   heading: string;
   directory: string;
   group: CatalogSkill["group"];
+  /** A plugin-wide notices file whose sections name the skills they credit. */
+  sharedNotices?: string;
 }) => {
   const rows = skillTable({ readme, heading });
   const names = readdirSync(join(repoRoot, directory), { withFileTypes: true })
@@ -82,12 +122,31 @@ const loadSkills = ({
       `README "## ${heading}" lists ${listed.join(", ")}, but ${directory} has ${names.join(", ")}`,
     );
   }
+  const shared = sharedNotices
+    ? readNotices(join(repoRoot, sharedNotices))
+    : [];
+  for (const { heading: upstream, adaptedIn } of shared) {
+    if (!adaptedIn.length || adaptedIn.some((name) => !names.includes(name)))
+      throw new Error(
+        `${sharedNotices}: "## ${upstream}" must name its skills from ${directory} in "Adapted in"`,
+      );
+  }
+  const upstreamOf = (name: string) => {
+    const notices = join(repoRoot, directory, name, "THIRD_PARTY_NOTICES.md");
+    return [
+      ...shared.filter(({ adaptedIn }) => adaptedIn.includes(name)),
+      ...(existsSync(notices) ? readNotices(notices) : []),
+    ]
+      .map(({ credit }) => `[${credit.name}](${credit.url}) by ${credit.author}`)
+      .join(", ");
+  };
   return rows.map((row) => ({
     ...row,
     group,
     source: `https://github.com/filipgutica/filip-stack/blob/main/${directory}/${row.name}/SKILL.md`,
     manual: isManual(join(repoRoot, directory, row.name, "SKILL.md")),
     references: referenceFiles(join(repoRoot, directory, row.name)),
+    upstreamHtml: marked.parseInline(upstreamOf(row.name), { async: false }),
   }));
 };
 
@@ -189,6 +248,7 @@ export const loadCatalog = (): {
       heading: "Workflow",
       directory: "plugins/workflow/skills",
       group: "Workflow",
+      sharedNotices: "plugins/workflow/THIRD_PARTY_NOTICES.md",
     }),
     standalone: loadSkills({
       readme,
