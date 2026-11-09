@@ -430,6 +430,12 @@ test('the focus-ring contrast guard fails a pale accent and a ring that is not t
   assert.throws(() => focusRingContrast(css.replace('--focus: var(--accent);', '--focus: var(--text);')))
 })
 
+test('the focus ring tokens draw a 2px ring with a 3px gap', () => {
+  const root = read('tokens.css').match(/^:root \{([\s\S]*?)^\}/m)[1]
+  assert.match(root, /--focus-width:\s*2px;/)
+  assert.match(root, /--focus-offset:\s*3px;/)
+})
+
 test('the accent focus ring reaches 3:1 on --bg, --surface, and --surface-raised in both themes', () => {
   const results = focusRingContrast(read('tokens.css'))
   assert.equal(results.length, 9)
