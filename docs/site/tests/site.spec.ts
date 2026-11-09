@@ -300,6 +300,8 @@ test("the design language page links the catalogue, and old catalogue links redi
   );
   await page.goto("/filip-stack/design-language/catalogue/reference.html#foundations");
   await expect(page).toHaveURL(`${site}reference.html#foundations`);
+  const tokens = await page.request.get("/filip-stack/design-language/catalogue/tokens.css");
+  expect(await tokens.text()).toContain(`@import url("${site}tokens.css")`);
 });
 
 // A local copy of the button drifts from the library's raise, hover, and press.

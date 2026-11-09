@@ -1,15 +1,15 @@
 import type { APIRoute } from "astro";
 
 // The catalogue and its example pages moved to the design system's site. These
-// pages keep old links working; the script carries any #fragment across.
+// pages keep old links working: HTML pages redirect, and the script carries any
+// #fragment across. A stylesheet cannot redirect, so tokens.css imports the new one.
 const designSystemSite = "https://filipgutica.github.io/design-system/";
-const files = ["components.html", "reference.html", "docs.html", "product.html"];
+const pages = ["components.html", "reference.html", "docs.html", "product.html"];
 
-export const getStaticPaths = () => files.map((file) => ({ params: { file } }));
+export const getStaticPaths = () =>
+  [...pages, "tokens.css"].map((file) => ({ params: { file } }));
 
-export const GET: APIRoute = ({ params }) => {
-  const target = `${designSystemSite}${params.file}`;
-  const body = `<!doctype html>
+const redirectPage = (target: string) => `<!doctype html>
 <html lang="en">
 <head>
 <meta charset="utf-8">
@@ -21,7 +21,15 @@ export const GET: APIRoute = ({ params }) => {
 <body><p>This page moved to <a href="${target}">${target}</a>.</p></body>
 </html>
 `;
-  return new Response(body, {
+
+export const GET: APIRoute = ({ params }) => {
+  const target = `${designSystemSite}${params.file}`;
+  if (params.file === "tokens.css") {
+    return new Response(`@import url("${target}");\n`, {
+      headers: { "Content-Type": "text/css; charset=utf-8" },
+    });
+  }
+  return new Response(redirectPage(target), {
     headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 };
