@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UiCard } from "@filipgutica/ui";
+import { UiAlert, UiCard } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
 const tables = {
   files: [
@@ -67,6 +67,16 @@ const tables = {
       implements them in Vue, new apps and libraries start from them, and
       Claude and Codex follow them for visual work.
     </p>
+    <UiAlert tone="info">
+      <p>
+        filip-stack uses <code>filipgutica/design-system</code> as the default
+        design system for UX and visual work, unless you ask for another or the
+        repository has its own. Browse it on the
+        <a href="https://filipgutica.github.io/design-system/">design system site</a>,
+        or change it in the
+        <a href="https://github.com/filipgutica/design-system">design-system repository</a>.
+      </p>
+    </UiAlert>
     <dl class="fg-site-facts">
       <div>
         <dt>Installed to</dt>
@@ -156,8 +166,9 @@ const tables = {
       <li>
         <div>
           <p>
-            <strong>The design language</strong> covers all other personal work.
-            Use its palette, type, and components consistently across projects.
+            <strong><code>filipgutica/design-system</code></strong> is the
+            default for all other UX and visual work. Use its palette, type, and
+            components consistently across projects.
           </p>
         </div>
       </li>
