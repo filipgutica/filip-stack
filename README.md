@@ -217,8 +217,9 @@ plugins.
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the `~/design-language` files the guidance refers to, installed from the
   pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
-  package in `host-config/design-system.json`. It is the default design system
-  for UX and visual work, unless you ask for another or the repository has its own.
+  package in `host-config/design-system.json`; filip-stack uses it as the default
+  design system for UX and visual work, unless you ask for another or the
+  repository has its own
   - [Component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md) and the [component catalogue](https://filipgutica.github.io/design-system/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
   - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
 

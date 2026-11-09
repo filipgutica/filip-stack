@@ -74,7 +74,7 @@ const tables = {
         repository has its own. Browse it on the
         <a href="https://filipgutica.github.io/design-system/">design system site</a>,
         or change it in the
-        <a href="https://github.com/filipgutica/design-system">design-system repository</a>.
+        <a href="https://github.com/filipgutica/design-system">design system repository</a>.
       </p>
     </UiAlert>
     <dl class="fg-site-facts">
