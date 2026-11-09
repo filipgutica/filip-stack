@@ -140,11 +140,12 @@ const verifiedCache = ({ home, pin }) => {
   return existsSync(path) && integrityOf(readFileSync(path)) === pin.integrity ? path : null
 }
 
-// Returns a verified tarball path, downloading into the cache on a miss.
-// The cache is written only after the download passes its integrity check.
-const resolveDesignSystem = async ({ home, pin }) => {
+// Returns the pinned package's language/ folder, extracted to a temporary directory.
+// On a cache miss the download is verified and extracted from a staging file first,
+// so it enters the cache only when the whole install can use it.
+const resolveDesignLanguage = async ({ home, pin }) => {
   const cached = verifiedCache({ home, pin })
-  if (cached) return cached
+  if (cached) return extractDesignLanguage(cached)
   const path = designSystemCachePath({ home, version: pin.version })
   let bytes
   try {
@@ -159,12 +160,17 @@ const resolveDesignSystem = async ({ home, pin }) => {
   if (integrity !== pin.integrity) {
     fail(`${pin.tarball} failed the integrity check for ${pin.package}@${pin.version}: expected ${pin.integrity}, got ${integrity}. Nothing was written.`)
   }
+  const staging = mkdtempSync(join(tmpdir(), 'host-config-download-'))
+  process.on('exit', () => rmSync(staging, { recursive: true, force: true }))
+  const staged = join(staging, `${pin.version}.tgz`)
+  writeFileSync(staged, bytes)
+  const designLanguage = extractDesignLanguage(staged)
   mkdirSync(dirname(path), { recursive: true })
   const partial = `${path}.${process.pid}.partial`
   writeFileSync(partial, bytes)
   renameSync(partial, path)
   process.stdout.write(`downloaded ${pin.package}@${pin.version} to ${path}\n`)
-  return path
+  return designLanguage
 }
 
 const tarList = (args) => {
@@ -289,7 +295,7 @@ const importSharedGuidance = ({ home }) => {
 
 const apply = async ({ home, force }) => {
   const pin = readPin()
-  const designLanguage = extractDesignLanguage(await resolveDesignSystem({ home, pin }))
+  const designLanguage = await resolveDesignLanguage({ home, pin })
   const { manifest, entries } = plan({ home, designLanguage })
   const edited = entries.filter(({ state }) => state === 'edited' || state === 'edited-remove')
   if (edited.length > 0 && !force) {

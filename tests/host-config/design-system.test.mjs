@@ -47,6 +47,14 @@ const setupApplied = async (t) => {
   return { ...context, cacheHome }
 }
 
+// Serves body as the pinned tarball and runs apply against an empty cache in the home directory.
+const applyDownload = async (t, { repo, home, pin, body }) => {
+  const server = await serve(body)
+  t.after(server.close)
+  writePin({ repo, pin: { ...pin, tarball: server.url } })
+  return run({ repo, home, command: 'apply' })
+}
+
 test('apply downloads, verifies, and caches the pinned package when the cache is empty', async (t) => {
   const { repo, home, first } = setup(t)
   const server = await serve(readFileSync(first.tarball))
@@ -67,10 +75,7 @@ test('apply rejects a tampered tarball and leaves the cache and the installed fi
   const before = snapshot(home)
 
   const next = buildPackage({ root, version: '1.1.0', files: { 'DESIGN.md': '# Next\n' } })
-  const server = await serve(Buffer.concat([readFileSync(next.tarball), Buffer.from('tampered')]))
-  t.after(server.close)
-  writePin({ repo, pin: { ...next.pin, tarball: server.url } })
-  const result = await run({ repo, home, command: 'apply' })
+  const result = await applyDownload(t, { repo, home, pin: next.pin, body: Buffer.concat([readFileSync(next.tarball), Buffer.from('tampered')]) })
   assert.equal(result.status, 1)
   assert.match(result.stderr, /failed the integrity check for @filipgutica\/design-system@1\.1\.0/)
   assert.deepEqual(snapshot(home), before)
@@ -86,12 +91,10 @@ test('apply without a cached package or a reachable registry names the version a
   assert.deepEqual(readdirSync(home), [])
 })
 
-test('apply rejects a package with a symlink before writing anything', async (t) => {
+test('apply rejects a downloaded package with a symlink before writing anything, cache included', async (t) => {
   const { root, repo, home } = setup(t)
   const linked = buildPackage({ root, version: '1.0.1', links: { 'outside.md': '/etc/hosts' } })
-  seedCache({ cacheHome: join(root, 'cache'), ...linked })
-  writePin({ repo, pin: linked.pin })
-  const result = await run({ repo, home, command: 'apply', cacheHome: join(root, 'cache') })
+  const result = await applyDownload(t, { repo, home, pin: linked.pin, body: readFileSync(linked.tarball) })
   assert.equal(result.status, 1)
   assert.match(result.stderr, /not a plain file or folder inside the package: package\/language\/outside\.md/)
   assert.deepEqual(readdirSync(home), [])
