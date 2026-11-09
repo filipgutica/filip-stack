@@ -182,3 +182,28 @@ test('keeps the page background and text colour outside the base layer, so a hos
   const unlayered = read('tokens.css').replace(/@layer base \{[\s\S]*$/, '')
   assert.match(unlayered, /^body \{ background: var\(--bg\); color: var\(--text\); \}$/m)
 })
+
+// Type, spacing, and control sizes are rem, so text and controls follow the reader's font-size
+// setting. Hairlines, focus rings, shadows, and breakpoints stay px and are not checked here.
+const remProperty = /^(?:font-size|font|--text-[\w-]+|--space-[\w-]+|--control-[\w-]+|--row)$/
+const pxSizes = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (property, value) => remProperty.test(property) && /\d(?:\.\d+)?px\b/.test(value),
+})
+
+test('the rem guard catches a px font size, font shorthand, or size token, in style blocks and inline', () => {
+  const planted = `<style>.a { font-size: 18px } .b { font: 600 12px / 1.2 var(--font-sans) } :root { --space-9: 6px; --row: 36px }
+    .ok { font-size: 1.125rem; font: inherit; border: 1px solid; box-shadow: 0 1px 2px black; --shadow-x: 0 1px 2px black; width: 16px }</style>
+    <p style="font-size: 14px"></p><p style="font-size: var(--text-sm)"></p>`
+  assert.equal(pxSizes('planted.html', planted).length, 5)
+})
+
+test('type, spacing, and control sizes are rem on every page, in tokens.css, and in the report stylesheet', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  const sources = [
+    ...pages.map((page) => [page, read(page)]),
+    ...['tokens.css', 'visualizations/report.css'].map((file) => [file, `<style>${read(file)}</style>`]),
+  ]
+  assert.deepEqual(sources.flatMap(([file, html]) => pxSizes(file, html)), [])
+})
