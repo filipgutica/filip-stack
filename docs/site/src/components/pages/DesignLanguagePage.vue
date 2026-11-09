@@ -69,12 +69,10 @@ const tables = {
     </p>
     <UiAlert tone="info">
       <p>
-        filip-stack uses <code>filipgutica/design-system</code> as the default
-        design system for UX and visual work, unless you ask for another or the
-        repository has its own. Browse it on the
-        <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>,
-        or change it in the
-        <a href="https://github.com/filipgutica/design-system">design system repository</a>.
+        This design language is published as <code>filipgutica/design-system</code>.
+        It is the default for UX and visual work, unless you ask for another or
+        the repository has its own. Browse it on the
+        <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
     <dl class="fg-site-facts">
