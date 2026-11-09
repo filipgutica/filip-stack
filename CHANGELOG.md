@@ -1,3 +1,19 @@
+## [4.5.7](https://github.com/filipgutica/filip-stack/compare/v4.5.6...v4.5.7) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** close the drawer when its exit slide is cancelled ([930aee6](https://github.com/filipgutica/filip-stack/commit/930aee65e3917bcb22336241a095b277780da1c9))
+* **design-language:** fix catalogue control sizes, tab fades, drawer exit, and phone overflow ([5138e30](https://github.com/filipgutica/filip-stack/commit/5138e30da146b51fa873cb594e0d2aa78a226229))
+* **design-language:** guard copied state rules and rem padding, gaps, and line heights ([890560f](https://github.com/filipgutica/filip-stack/commit/890560f3a0ddda15a76f27815713b52cc0a27585))
+* **design-language:** let search inputs fill their field and keep the clear cross in forced colors ([e9d0667](https://github.com/filipgutica/filip-stack/commit/e9d0667e3a7d06b5a62f5bdd13591379e916a5f6))
+* **design-language:** remove stray .build cache files ([74354f8](https://github.com/filipgutica/filip-stack/commit/74354f8f4b707aed49504de68f8aca9c36d76d20))
+* **design-language:** select list rows with the navigation current recipe and a stronger tint ([4543053](https://github.com/filipgutica/filip-stack/commit/45430534359f10dcd665f850b66925f66c12bb16))
+* **design-language:** show the application title role in sans, as the app renders it ([55a2f9f](https://github.com/filipgutica/filip-stack/commit/55a2f9f462e2c854e6ab495f13ff0edfe51aa47f))
+* **design-language:** show the catalogue search field with its leading magnifier ([4534633](https://github.com/filipgutica/filip-stack/commit/453463382b62399d7b4247877f56012a8355aac4))
+* **design-language:** state that application titles are sans and other page titles mono ([460222e](https://github.com/filipgutica/filip-stack/commit/460222ed251b7d96c9de93b429ecdfd1fd9218d1))
+* **design-language:** tint the capture's selected tab at 20%, as every dark selected fill is ([ee672d2](https://github.com/filipgutica/filip-stack/commit/ee672d26a42c5ad31eb9a09b718b0b92359860bd))
+
 ## [4.5.6](https://github.com/filipgutica/filip-stack/compare/v4.5.5...v4.5.6) (2026-11-09)
 
 
