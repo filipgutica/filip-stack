@@ -44,3 +44,33 @@ The proposers projected 1.28× (Astra), 1.29× (Sol 6.1), and 1.32× (Opus 5.5) 
 
 - Arms: vanilla, `workflow-main`, and `workflow-r2`, coded fresh on the 4 climb tasks with 3 repeats: 36 coding attempts and 36 reviews. The dry run matched that plan.
 - `pluginbench check` passed on the second try. The first failed adaptix dead code because the shell lacked the PluginBench virtualenv on `PATH`, so vulture 2.16 was missing. All 12 vanilla attempts missed the cache, so the baselines are fresh.
+
+## Incidents
+
+- **Outage (2026-11-07, from about 20:57 local).** A power and network outage cut the coding containers off from the Codex backend. 28 attempts made no model call ("workspace routing discovery failed") and 2 were cut off partway; PluginBench scored all 30 as empty patches and cached 9 of them as vanilla results. The run is archived as `round-2-failed-outage`. The 9 broken vanilla cache entries were moved aside, not deleted; the 3 vanilla attempts that finished before the outage were reused. Its 6 valid attempts cost about 14M tokens; the 3 valid workflow attempts were coded again.
+- **Session restart (2026-11-09).** The rerun's process was a child of the agent session and died with it at 33 of 36 attempts. Resume discarded the 2 interrupted attempts and coded 3; the run then ran as a systemd user service.
+- Both are PluginBench follow-ups: a backend failure should mark an attempt interrupted and never enter the vanilla cache, and `run` should detach from the launching session.
+
+## Result
+
+Fresh vanilla (9 coded, 3 reused from the same round), `workflow-main`, and `workflow-r2`, 12 climb attempts each.
+
+| Gate | Candidate | Against | Limit | Result |
+| --- | ---: | ---: | ---: | --- |
+| Passes (vanilla 12) | 11 | vanilla | ≥ 11 | pass |
+| Tokens, mean of task medians | 2.36M | 2.14M | ≤ 2.78M | pass (1.10×) |
+| Cognitive ratio to reference | 1.43 | 0.37 | ≤ 0.40 | fail |
+| Complexity hotspots | 10 | 11 | ≤ 11 | pass |
+| Introduced dead findings | 5 | 5 | ≤ 5 | pass |
+| Duplicated test lines | 48 | 101 | ≤ 101 | pass |
+| Changed-line coverage | 98.41 | 98.26 | ≥ 88.26 | pass |
+| High and medium review findings | 11 | 8 | ≤ 8 | fail |
+| Redundant added tests | 15 | 13 | ≤ 13 | fail |
+
+The candidate fails gate 3, so no judge calls ran and `main` stays the incumbent. The incumbent itself failed gates 1 and 2 against vanilla this round: 10 of 12 passes and 6.68M tokens (3.1×).
+
+What drives the three failures, by per-task median:
+
+- **Cognitive ratio:** happy-dom alone. Its reference adds almost no cognitive complexity, so the ratio magnifies small differences; `main`'s happy-dom median is 0 and the candidate's is 13. On adaptix, csstree, and true-myth the candidate's medians are 37, 88, and 36 against `main`'s 44, 99, and 34.
+- **Review findings:** 3 more P1 and P2 findings over 12 attempts (P1 on happy-dom 1 against 0; P2 on csstree 2 against 1). Vanilla had 15.
+- **Redundant added tests:** adaptix 14 against 8 and csstree 28 against 25; true-myth 3 against 6. Vanilla's mean of medians is 60.
