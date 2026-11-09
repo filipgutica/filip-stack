@@ -109,6 +109,44 @@ test('example pages copy the catalogue rules for the shared controls and compone
   }
 })
 
+// The copy guard above checks the rules a page has, so it passes when a page drops a whole state rule.
+// Each entry here names a component variant by the classes its markup uses (none of the classes in
+// "without"), and the catalogue state rules that variant needs, so a page that uses it must copy them.
+const pressed = ':is(:active, [aria-pressed="true"], .is-active):not(:disabled)'
+const stateNeeds = [
+  { classes: ['btn'], states: ['.btn:is(:hover, .is-hover):not(:disabled)', `.btn:not(.text)${pressed}`] },
+  { classes: ['btn'], without: ['secondary', 'ghost', 'danger', 'text'], states: [`.btn:not(.secondary, .ghost, .danger, .text)${pressed}`] },
+  { classes: ['btn', 'secondary'], states: ['.btn.secondary:is(:hover, .is-hover):not(:disabled)', `.btn:is(.secondary, .ghost)${pressed}`] },
+  { classes: ['btn', 'ghost'], states: ['.btn.ghost:is(:hover, .is-hover):not(:disabled)', `.btn:is(.secondary, .ghost)${pressed}`] },
+  { classes: ['btn', 'danger'], states: ['.btn.danger:is(:hover, .is-hover):not(:disabled)', `.btn.danger${pressed}`] },
+  { classes: ['quiet-action'], states: ['.quiet-action:is(:hover, .is-hover):where(:not(:disabled))', '.quiet-action:is(:active, .is-active):where(:not(:disabled))'] },
+  { classes: ['segmented'], states: ['.segmented button:is(:hover, .is-hover):not(:disabled, [aria-pressed="true"])', '.segmented button[aria-pressed="true"]'] },
+  { classes: ['tab'], states: ['.tab:is(:hover, .is-hover)', '.tab[aria-selected="true"]', '@media (forced-colors: active) .tab[aria-selected="true"]'] },
+  { classes: ['navlist'], states: ['.navlist a:is(:hover, .is-hover)', '.navlist a[aria-current="page"]', '@media (forced-colors: active) .navlist a[aria-current="page"]'] },
+]
+const missingStates = (page, html) => {
+  const used = [...html.matchAll(/\bclass="([^"]*)"/g)].map(([, list]) => new Set(list.split(/\s+/)))
+  const have = new Set(perSelector(cssRules(html)).map(({ context, selector }) => `${context} ${selector}`.trim()))
+  return stateNeeds
+    .filter(({ classes, without = [] }) => used.some((set) => classes.every((c) => set.has(c)) && !without.some((c) => set.has(c))))
+    .flatMap(({ states }) => states.filter((state) => !have.has(state)).map((state) => `${page}: ${state}`))
+}
+
+test('every state rule the guard requires exists in the catalogue', () => {
+  const catalogue = new Set(perSelector(cssRules(read('components.html'))).map(({ context, selector }) => `${context} ${selector}`.trim()))
+  assert.deepEqual(stateNeeds.flatMap(({ states }) => states).filter((state) => !catalogue.has(state)), [])
+})
+
+test('the state guard catches a page that drops a whole state rule', () => {
+  const page = read('reference.html')
+  const rule = page.match(/^\s*\.btn:not\(\.text\):is\(:active[^\n]*\n/m)[0]
+  assert.deepEqual(missingStates('reference.html', page.replace(rule, '')), [`reference.html: .btn:not(.text)${pressed}`])
+})
+
+test('example pages copy the state rules of every component variant their markup uses', () => {
+  assert.deepEqual(['reference.html', 'docs.html', 'product.html'].flatMap((page) => missingStates(page, read(page))), [])
+})
+
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
 // token colour: a focus ring or a divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
@@ -184,19 +222,24 @@ test('keeps the page background and text colour outside the base layer, so a hos
 })
 
 // Type, spacing, and control sizes are rem, so text and controls follow the reader's font-size
-// setting. Hairlines, focus rings, shadows, and breakpoints stay px and are not checked here.
-const remProperty = /^(?:font-size|font|--text-[\w-]+|--space-[\w-]+|--control-[\w-]+|--row)$/
+// setting: font sizes, padding, gaps, and line heights. Hairlines, focus rings, shadows, and
+// breakpoints stay px and are not checked here.
+// A border width taken off a token, as in calc(var(--space-2) - 2px), stays px: it matches a 1px or 2px edge.
+const remProperty = /^(?:font-size|font|line-height|padding(?:-[\w-]+)?|gap|row-gap|column-gap|--text-[\w-]+|--space-[\w-]+|--control-[\w-]+|--row)$/
+const borderOffset = /calc\(var\(--[\w-]+\) - \d+px\)/g
 const pxSizes = (file, html) => flaggedDeclarations({
   file,
   html,
-  isViolation: (property, value) => remProperty.test(property) && /\d(?:\.\d+)?px\b/.test(value),
+  isViolation: (property, value) => remProperty.test(property) && /\d(?:\.\d+)?px\b/.test(value.replace(borderOffset, '')),
 })
 
-test('the rem guard catches a px font size, font shorthand, or size token, in style blocks and inline', () => {
+test('the rem guard catches a px font size, font shorthand, size token, padding, gap, or line height', () => {
   const planted = `<style>.a { font-size: 18px } .b { font: 600 12px / 1.2 var(--font-sans) } :root { --space-9: 6px; --row: 36px }
-    .ok { font-size: 1.125rem; font: inherit; border: 1px solid; box-shadow: 0 1px 2px black; --shadow-x: 0 1px 2px black; width: 16px }</style>
+    .c { padding: 2px } .d { gap: 2px var(--space-3) } .e { line-height: 18px } .f { padding-inline: 9px; row-gap: 3px }
+    .ok { font-size: 1.125rem; font: inherit; border: 1px solid; box-shadow: 0 1px 2px black; --shadow-x: 0 1px 2px black; width: 16px }
+    .border-offset { padding: calc(var(--space-2) - 2px) calc(var(--space-3) - 2px); gap: 0.125rem }</style>
     <p style="font-size: 14px"></p><p style="font-size: var(--text-sm)"></p>`
-  assert.equal(pxSizes('planted.html', planted).length, 5)
+  assert.equal(pxSizes('planted.html', planted).length, 10)
 })
 
 test('type, spacing, and control sizes are rem on every page, in tokens.css, and in the report stylesheet', () => {
