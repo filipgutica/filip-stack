@@ -69,9 +69,9 @@ const tables = {
         "<code>~/.agents/roles.md</code> and <code>~/.agents/CODING_STANDARDS.md</code>.",
     },
     {
-      command: "host-config/design-language/",
+      command: "host-config/design-system.json",
       description:
-        '<code>~/design-language</code>. See <a href="/filip-stack/design-language/">Design language</a>.',
+        '<code>~/design-language</code>, from the pinned <code>@filipgutica/design-system</code> package. Apply downloads it once and caches it in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-language/">Design language</a>.',
     },
   ],
 };

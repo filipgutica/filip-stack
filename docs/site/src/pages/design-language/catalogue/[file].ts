@@ -1,31 +1,27 @@
-import { readFileSync } from "node:fs";
-import { resolve } from "node:path";
 import type { APIRoute } from "astro";
 
-// The catalogue and its example pages ship as plain HTML beside tokens.css in
-// host-config, so the site serves those files unchanged at /design-language/catalogue/.
-const folder = resolve(process.cwd(), "../../host-config/design-language");
-const types: Record<string, string> = {
-  "components.html": "text/html",
-  "reference.html": "text/html",
-  "docs.html": "text/html",
-  "product.html": "text/html",
-  "tokens.css": "text/css",
-};
-// The Markdown specs and decisions render on GitHub, where heading anchors match the catalogue's links.
-const markdownBase =
-  "https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/";
+// The catalogue and its example pages moved to the design system's site. These
+// pages keep old links working; the script carries any #fragment across.
+const designSystemSite = "https://filipgutica.github.io/design-system/";
+const files = ["components.html", "reference.html", "docs.html", "product.html"];
 
-export const getStaticPaths = () =>
-  Object.keys(types).map((file) => ({ params: { file } }));
+export const getStaticPaths = () => files.map((file) => ({ params: { file } }));
 
 export const GET: APIRoute = ({ params }) => {
-  const file = params.file as string;
-  const body = readFileSync(resolve(folder, file), "utf8").replace(
-    /href="((?:components|decisions)\.md)/g,
-    `href="${markdownBase}$1`,
-  );
+  const target = `${designSystemSite}${params.file}`;
+  const body = `<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Moved to the design system</title>
+<link rel="canonical" href="${target}">
+<meta http-equiv="refresh" content="0; url=${target}">
+<script>location.replace(${JSON.stringify(target)} + location.hash)</script>
+</head>
+<body><p>This page moved to <a href="${target}">${target}</a>.</p></body>
+</html>
+`;
   return new Response(body, {
-    headers: { "Content-Type": `${types[file]}; charset=utf-8` },
+    headers: { "Content-Type": "text/html; charset=utf-8" },
   });
 };

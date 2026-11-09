@@ -289,18 +289,17 @@ for (const theme of themes)
       });
     }
 
-test("the design language page opens the component catalogue", async ({ page }) => {
+test("the design language page links the catalogue, and old catalogue links redirect to it", async ({ page }) => {
+  const site = "https://filipgutica.github.io/design-system/";
+  // Keep the test offline: answer design system requests with a stub page.
+  await page.route(`${site}**`, (route) => route.fulfill({ contentType: "text/html", body: "<title>Design system</title>" }));
   await page.goto("/filip-stack/design-language/");
-  await page.getByRole("link", { name: "Component catalogue", exact: true }).click();
-  await expect(page).toHaveURL(/\/design-language\/catalogue\/components\.html$/);
-  // The catalogue styles itself from tokens.css served beside it.
-  await expect(page.locator("body")).not.toHaveCSS("font-family", /Times/);
-  await expect(page.getByRole("link", { name: "Spec", exact: true }).first()).toHaveAttribute(
+  await expect(page.getByRole("link", { name: "Component catalogue", exact: true })).toHaveAttribute(
     "href",
-    "https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/components.md#button",
+    `${site}components.html`,
   );
-  await page.getByRole("link", { name: "Documentation example" }).first().click();
-  await expect(page).toHaveURL(/\/design-language\/catalogue\/docs\.html$/);
+  await page.goto("/filip-stack/design-language/catalogue/reference.html#foundations");
+  await expect(page).toHaveURL(`${site}reference.html#foundations`);
 });
 
 // A local copy of the button drifts from the library's raise, hover, and press.
