@@ -121,15 +121,22 @@ const isShadowLayerAllowed = (layer) => {
 }
 const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
 
-const shadowLiterals = (page, html) => {
+// Lists each declaration in a page's style blocks and inline styles that isViolation flags, as
+// "file: selector { declaration }".
+const flaggedDeclarations = ({ file, html, isViolation }) => {
   const inline = [...html.matchAll(/\bstyle=(["'])([\s\S]*?)\1/g)].map(([, , body]) => ({ context: '', selector: '[style]', body }))
   return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
     body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
       .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
-      .filter((match) => match && /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(match[1]))
-      .filter(([, , value]) => !isShadowAllowed(value.replace(/\s*!important$/, '')))
-      .map(([declaration]) => `${page}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
+      .filter((match) => match && isViolation(match[1], match[2]))
+      .map(([declaration]) => `${file}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
 }
+
+const shadowLiterals = (page, html) => flaggedDeclarations({
+  file: page,
+  html,
+  isViolation: (property, value) => /^(?:box-shadow|--depth|--[\w-]*shadow[\w-]*)$/.test(property) && !isShadowAllowed(value.replace(/\s*!important$/, '')),
+})
 
 test('the depth guard reads every style block and both inline quote forms', () => {
   const planted = `<style>.a { box-shadow: var(--shadow-raise) }</style><style media="all">.b { box-shadow: 0 4px 12px black }</style>
@@ -141,4 +148,31 @@ test('pages take depth from tokens.css: no literal shadow outside a focus ring, 
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
   assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
+})
+
+// Focus is one ink ring for every role. An outline that draws uses var(--focus), an outline-color is
+// var(--focus) or CanvasText (for forced colors), and --focus is the text colour, or the terminal text
+// on a dark plate. A per-role ring colour, set directly or by redefining --focus, fails.
+const focusRules = [
+  { property: /^outline$/, allowed: (value) => /^(?:none|0)$/.test(value) || /^2px solid var\(--focus\)$/.test(value) },
+  { property: /^outline-color$/, allowed: (value) => value === 'var(--focus)' || value === 'CanvasText' },
+  { property: /^--focus$/, allowed: (value) => value === 'var(--text)' || value === 'var(--terminal-text)' },
+]
+const focusColourDrift = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (name, value) => focusRules.some(({ property, allowed }) => property.test(name) && !allowed(value)),
+})
+
+test('the focus guard catches a per-role ring colour, set directly or through --focus', () => {
+  const planted = `<style>.btn:focus-visible { outline: 2px solid var(--accent) } .tab { outline-color: var(--link) }
+    .btn.danger { --focus: var(--danger) } .ok { outline: 2px solid var(--focus); outline-color: CanvasText } .off { outline: none }</style>
+    <p style="--focus: var(--project-dark)"></p>`
+  assert.equal(focusColourDrift('planted.html', planted).length, 4)
+})
+
+test('every focus ring is the one ink ring: no per-role ring colour on any page or in tokens.css', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  const sources = [...pages.map((page) => [page, read(page)]), ['tokens.css', `<style>${read('tokens.css')}</style>`]]
+  assert.deepEqual(sources.flatMap(([file, html]) => focusColourDrift(file, html)), [])
 })
