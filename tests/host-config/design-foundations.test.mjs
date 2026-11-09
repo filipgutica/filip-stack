@@ -276,3 +276,22 @@ test('accent text on the selected fill reaches 4.5:1 on every surface in both th
   assert.equal(results.length, 9)
   assert.deepEqual(results.filter(({ ratio }) => ratio < 4.5), [])
 })
+
+// The native clear cross sits at the input's trailing edge. A fixed-width search input inside a wider
+// field wrapper leaves the cross floating mid-field, so the wrapper carries the width instead.
+const fixedSearchInputs = (file, html) => flaggedDeclarations({
+  file,
+  html,
+  isViolation: (property, value) => property === 'width' && /\d(?:\.\d+)?(?:px|rem|em)\b/.test(value),
+}).filter((line) => /(?:\.search input|input\[type="search"\])(?![\w-]|::)/.test(line.split(' { ')[0]))
+
+test('the search-width guard catches a fixed-width search input', () => {
+  const planted = `<style>.search input { width: 180px } .toolbar .search input { width: 100% }
+    .search { width: 248px } .search input::-webkit-search-cancel-button { width: 0.75rem }</style>`
+  assert.equal(fixedSearchInputs('planted.html', planted).length, 1)
+})
+
+test('no search input has a fixed width', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.deepEqual(pages.flatMap((page) => fixedSearchInputs(page, read(page))), [])
+})
