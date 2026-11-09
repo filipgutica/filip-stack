@@ -1,3 +1,15 @@
+# [4.6.0](https://github.com/filipgutica/filip-stack/compare/v4.5.8...v4.6.0) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** carry invalid and disabled field states to the search field ([08311df](https://github.com/filipgutica/filip-stack/commit/08311dfac7f1788f7dad80d7a537c82c0981c977))
+
+
+### Features
+
+* **design-language:** give controls an accent focus ring and fields an accent edge ([e1f6bf3](https://github.com/filipgutica/filip-stack/commit/e1f6bf3d299815ac05b2ffe5cae289e20cee600e))
+
 ## [4.5.8](https://github.com/filipgutica/filip-stack/compare/v4.5.7...v4.5.8) (2026-11-09)
 
 
