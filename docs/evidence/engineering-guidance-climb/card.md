@@ -76,6 +76,18 @@ Filip approved these changes before any round-2 result existed.
 - **Withdrawn true-myth coverage.** True-myth coverage from the pilot and round 1 is withdrawn. Vitest's default remapping counted every line of a loaded file as executed. The profile now uses AST-aware remapping, which counts statements, and writes per-test data. Gate 3's changed-line coverage check uses only figures from the new profile.
 - **Gates as data.** Gates 1–3 are [harness/card-gates.yaml](harness/card-gates.yaml), run with `pluginbench compare --gates`, so anyone can rerun a decision from the saved reports.
 
+## Amendment 3 (2026-11-09, after round 2 and before any round-3 result)
+
+Filip approved these changes on 2026-11-09, after seeing round 2's result and before round 3's proposers started. They are a post-round-2 redesign of how the climb picks a candidate, so the notes report round 3 under both the original and the amended gates.
+
+- **Why.** The incumbent fails gate 3 against itself. Pilot `main` and round-2 `main` ran the same guidance and model, yet they differ on every count gate: duplicated test lines 46 and 101, high plus medium review findings 9 and 8, redundant added tests on adaptix 11 and 8, and the cognitive ratio about 2.95 and 0.37, a swing that comes from happy-dom alone. Whichever run is the reference, the other fails gate 3. With zero tolerance on counts that noisy, a candidate as good as `main` probably fails gate 3, and the calibrated judges never run. A council (Astra, Sol 6.1, Opus 5.5) recommended the changes; all three agreed on the first two, and Opus 5.5 alone on the third.
+- **Cognitive ratio floor.** The gate leaves out a task whose reference solution adds less than 10 cognitive complexity (`reference_floor: 10`). Only happy-dom falls below it: its reference adds 3, against 69 to 154 on the other tasks, so any floor from 4 to 69 gives the same result. Without happy-dom, `main`'s ratio was 0.49 in both the pilot and round 2.
+- **Diagnostics.** Duplicated test lines, high plus medium review findings, and redundant added tests move from gate 3 to [harness/card-diagnostics.yaml](harness/card-diagnostics.yaml). They are reported beside every result and do not decide it; the judges weigh code shape, test value, and the defects the reviewer finds. Complexity hotspots, introduced unused-code findings, and changed-line coverage stay gates in [harness/card-gates.yaml](harness/card-gates.yaml).
+- **Judges always run.** Round 3's 12 judge calls run even when gates 1–3 fail; then their result is reported only and does not decide the round.
+- **Effect on earlier rounds.** Under the amended gates, round 2's candidate passes gates 1–3 (cognitive ratio 0.46 against 0.49 × 1.1). Rounds 1 and 2 do not reopen: their verdicts stand, and round 2's candidate can return only as a round-3 proposal.
+- **The probe is unchanged.** [prereg.md](prereg.md) rule 3 uses "the card's mechanical gate". That means the gates as they stood after Amendment 2, frozen in [harness/probe-gates.yaml](harness/probe-gates.yaml). Amendment 3 does not change what ships.
+- **Tasks and repeats are unchanged:** the four climb tasks, three repeats. Broader task selection belongs to a later study.
+
 ## Run rules
 
 - **Tasks.** Build `tasks/` with `harness/prepare-tasks.sh`.
