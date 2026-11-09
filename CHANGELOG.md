@@ -1,3 +1,11 @@
+## [4.5.6](https://github.com/filipgutica/filip-stack/compare/v4.5.5...v4.5.6) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** cap application section headings at --text-xl and align type roles ([7ab43a7](https://github.com/filipgutica/filip-stack/commit/7ab43a7856301c52a3f94ab5f3b33b8675e838e3))
+* **design-language:** keep the ## section mark for docs, article, and product sections ([78dd7ee](https://github.com/filipgutica/filip-stack/commit/78dd7ee29404a83bc7ee5825ce191a79e889e3da))
+
 ## [4.5.5](https://github.com/filipgutica/filip-stack/compare/v4.5.4...v4.5.5) (2026-11-09)
 
 
