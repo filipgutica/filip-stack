@@ -120,7 +120,16 @@ const stateNeeds = [
   { classes: ['btn', 'ghost'], states: ['.btn.ghost:is(:hover, .is-hover):not(:disabled)', `.btn:is(.secondary, .ghost)${pressed}`] },
   { classes: ['btn', 'danger'], states: ['.btn.danger:is(:hover, .is-hover):not(:disabled)', `.btn.danger${pressed}`] },
   { classes: ['quiet-action'], states: ['.quiet-action:is(:hover, .is-hover):where(:not(:disabled))', '.quiet-action:is(:active, .is-active):where(:not(:disabled))'] },
-  { classes: ['segmented'], states: ['.segmented button:is(:hover, .is-hover):not(:disabled, [aria-pressed="true"])', '.segmented button[aria-pressed="true"]'] },
+  {
+    classes: ['segmented'],
+    states: [
+      '.segmented button:is(:hover, .is-hover):not(:disabled, [aria-pressed="true"])',
+      '.segmented button[aria-pressed="true"]',
+      '.segmented button[aria-pressed="true"]::before',
+      '@media (forced-colors: active) .segmented button[aria-pressed="true"]',
+      '@media (forced-colors: active) .segmented button[aria-pressed="true"]::before',
+    ],
+  },
   { classes: ['tab'], states: ['.tab:is(:hover, .is-hover)', '.tab[aria-selected="true"]', '@media (forced-colors: active) .tab[aria-selected="true"]'] },
   { classes: ['navlist'], states: ['.navlist a:is(:hover, .is-hover)', '.navlist a[aria-current="page"]', '@media (forced-colors: active) .navlist a[aria-current="page"]'] },
 ]
@@ -139,8 +148,18 @@ test('every state rule the guard requires exists in the catalogue', () => {
 
 test('the state guard catches a page that drops a whole state rule', () => {
   const page = read('reference.html')
-  const rule = page.match(/^\s*\.btn:not\(\.text\):is\(:active[^\n]*\n/m)[0]
-  assert.deepEqual(missingStates('reference.html', page.replace(rule, '')), [`reference.html: .btn:not(.text)${pressed}`])
+  // Each line is one rule in reference.html, removed on its own.
+  const drops = [
+    { line: /^\s*\.btn:not\(\.text\):is\(:active[^\n]*\n/m, missing: `.btn:not(.text)${pressed}` },
+    { line: /^\s*\.segmented button\[aria-pressed="true"\]::before \{ z-index[^\n]*\n/m, missing: '.segmented button[aria-pressed="true"]::before' },
+    {
+      line: /^\s*\.segmented button\[aria-pressed="true"\]::before \{ forced-color-adjust[^\n]*\n/m,
+      missing: '@media (forced-colors: active) .segmented button[aria-pressed="true"]::before',
+    },
+  ]
+  for (const { line, missing } of drops) {
+    assert.deepEqual(missingStates('reference.html', page.replace(page.match(line)[0], '')), [`reference.html: ${missing}`])
+  }
 })
 
 test('example pages copy the state rules of every component variant their markup uses', () => {
@@ -275,7 +294,13 @@ test('no page marks a selected row with an inset accent bar', () => {
 // sit on, and checks accent text at 4.5:1.
 const themeBlock = (css, start) => css.slice(css.indexOf(start)).match(/\{([\s\S]*?)\n\s*\}/)[1]
 const tokenValue = (block, name) => block.match(new RegExp(`^\\s*${name}:\\s*([^;]+);`, 'm'))?.[1].trim()
-const rgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16))
+// Reads #rgb or #rrggbb. Any other syntax throws, so the guard cannot pass on an unparsed colour.
+const rgb = (value) => {
+  const hex = value.match(/^#([\da-f]{3}|[\da-f]{6})$/i)?.[1]
+  if (!hex) throw new Error(`unsupported colour: ${value}`)
+  const full = hex.length === 3 ? [...hex].map((digit) => digit + digit).join('') : hex
+  return [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16))
+}
 const luminance = (colour) => {
   const [r, g, b] = colour.map((c) => (c / 255 <= 0.04045 ? c / 255 / 12.92 : ((c / 255 + 0.055) / 1.055) ** 2.4))
   return 0.2126 * r + 0.7152 * g + 0.0722 * b
@@ -309,15 +334,26 @@ const navCurrentText = (css) => {
   })
 }
 
+// A ratio that is not a finite number at or above 4.5:1 fails.
+const belowContrast = (results) => results.filter(({ ratio }) => !(Number.isFinite(ratio) && ratio >= 4.5))
+
 test('the nav-current contrast guard fails a fill strong enough to hide accent text', () => {
   const planted = read('tokens.css').replace('var(--accent) 14%, var(--surface-raised)', 'var(--accent) 60%, var(--surface-raised)')
-  assert.ok(navCurrentText(planted).some(({ theme, ratio }) => theme === 'light' && ratio < 4.5))
+  assert.ok(belowContrast(navCurrentText(planted)).some(({ theme }) => theme === 'light'))
+})
+
+test('the nav-current contrast guard reads shorthand hex and fails a dark accent that hides on the fill', () => {
+  // Black accent text on a black-tinted fill over the dark surfaces measures about 1:1.
+  const css = read('tokens.css')
+  const failing = belowContrast(navCurrentText(css.replace('--project-dark: #a5a1ff;', '--project-dark: #000;')))
+  assert.deepEqual([...new Set(failing.map(({ theme }) => theme))], ['dark (prefers-color-scheme)', 'dark (data-theme)'])
+  assert.throws(() => navCurrentText(css.replace('--project-dark: #a5a1ff;', '--project-dark: rgb(0 0 0);')), /unsupported colour/)
 })
 
 test('accent text on the selected fill reaches 4.5:1 on every surface in both themes', () => {
   const results = navCurrentText(read('tokens.css'))
   assert.equal(results.length, 9)
-  assert.deepEqual(results.filter(({ ratio }) => ratio < 4.5), [])
+  assert.deepEqual(belowContrast(results), [])
 })
 
 // The native clear cross sits at the input's trailing edge. A fixed-width search input inside a wider
