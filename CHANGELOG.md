@@ -1,3 +1,10 @@
+## [4.5.5](https://github.com/filipgutica/filip-stack/compare/v4.5.4...v4.5.5) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** let page colours override earlier host body resets ([eb2e9bd](https://github.com/filipgutica/filip-stack/commit/eb2e9bdfafbc8a5139a7cd36b3e2e6818525aebf))
+
 ## [4.5.4](https://github.com/filipgutica/filip-stack/compare/v4.5.3...v4.5.4) (2026-11-09)
 
 
