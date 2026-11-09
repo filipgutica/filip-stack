@@ -1,0 +1,28 @@
+# The engineering guidance climb card's gate-3 diagnostics (Amendment 3, 2026-11-09): reported beside
+# card-gates.yaml, not binding. Run: pluginbench compare <runs> --gates harness/card-diagnostics.yaml
+count_overlap_passes: true  # card Amendment 1
+splits:
+  climb:
+    - true-myth-iterable-collection-combinators
+    - csstree-shorthand-expansion-compression
+    - happy-dom-abort-pending-body-reads
+    - adaptix-name-mapping-aliases
+  holdout:
+    - testem-per-launcher-reports
+    - dateutil-rfc5545-timezone-interop
+gates:
+  - name: duplicated test lines
+    metrics: [Duplicated added test lines]
+    statistic: total
+    against: workflow-main
+    direction: lower
+  - name: high and medium review findings
+    metrics: [P0 review findings, P1 review findings, P2 review findings]
+    statistic: total
+    against: workflow-main
+    direction: lower
+  - name: redundant added tests
+    metrics: [Redundant added tests]
+    statistic: mean_of_task_medians
+    against: workflow-main
+    direction: lower

@@ -1645,6 +1645,65 @@ Evidence:
 - [Decision climb results](evidence/field-guide-decision-climb/results.md)
 - [Decision eval harness and cases](evidence/field-guide-decision-eval/scorer/)
 
+### 29. Engineering guidance climb: preparation and dry run
+
+Date: 2026-11-06. Plan, task preparation, and free dry runs only; no paid call has run.
+
+This climb covers all engineering guidance: the engineering sections of `core.md`, `CODING_STANDARDS.md`, and the Workflow `engineering`, `test-audit`, `review`, and `simplify` skills. Vanilla and Superpowers are controls. Calibrated blind judges decide rounds on code shape. Correctness no worse than vanilla, total tokens at most 1.3 × vanilla, and mechanical code measures are gates. Six DeepSWE tasks with source-bound correctness replace the saturated Pytest canary; two of them are a frozen holdout.
+
+Preparation found three instrument problems before any paid call:
+
+- **File modes.** Under this machine's `umask 002`, PluginBench rejected all six reviewed tasks as unreviewed, because the verifier digest includes file modes. Runs now use `umask 022`.
+- **Task drift.** The dateutil image no longer built: PyPI renamed the latest `python-dateutil` sdist. After a pin fixed the build, unpinned pytest 9.2.0 stopped collection under the repository's `filterwarnings = error`, so the agent could not run the suite where it codes. Pins that match the grader image repair both problems, and the verifier is unchanged.
+- **Fallow version check.** The Fallow npm wrapper adds a `verified:` line to `fallow --version`, which PluginBench's exact match rejects. The run links the verified platform binary.
+
+Harbor's `oracle` agent scored all six tasks 1.0 and `nop` scored them all 0.0, so every task grades and discriminates after the repair. Both pilot dry runs admit every arm and measurement: 54 coding attempts and 54 reviews in total.
+
+Evidence:
+
+- [Climb card](evidence/engineering-guidance-climb/card.md)
+- [Probe pre-registration](evidence/engineering-guidance-climb/prereg.md)
+
+#### PluginBench overhaul before round 2 (2026-11-07)
+
+The pilot and round 1 exposed instrument gaps, so evaluation paused. PluginBench PRs #8–#15 (main `fd0de97`) add resume without repeated coding, `stop`, detached runs, `status --watch` and `status --json`, `compare` against a gates file, overlap passes, a completeness matrix, and per-test coverage profiles for csstree and true-myth. The study now needs no hand-written run, progress, analysis, or re-review script.
+
+These findings change how to read earlier rounds:
+
+- **True-myth coverage from the pilot and round 1 is withdrawn.** Vitest's default remapping read every population as 100%, including a never-called function. The new profile uses AST-aware remapping. Its 100% results are now genuine, because true-myth enforces 100% statement, branch, and function thresholds: the smoke run's populations were 523 and 520 statement lines, against 1,114 under the old remapping. Changed-line coverage cannot separate arms on this task.
+- **Redundancy definition.** PluginBench counts an added test as redundant when the added lines it executes are covered by the union of all other tests, existing tests included.
+- **`status` now classifies withheld results as the report does.** Before PR #14, `status` showed 12 overlap passes and fails in the pilot as `unknown`.
+- **Gates.** `card-gates.yaml` has no gate on redundant added tests, though the pilot read suggests it may be the clearest effect. Adding one is a card decision.
+
+Smoke run, `runs/egc-20261106/results/smoke-overhaul`: true-myth, vanilla and `workflow-main`, 1 repeat.
+
+| Step | Result |
+| --- | --- |
+| First detached start | Stopped before any coding call: a saved profile's inline script crashed profile loading. Fixed in PR #15. `check` passed, because it does not load saved profiles; that gap remains. |
+| Resume, then `stop` while both attempts coded | Both attempts finished and were kept, both pass; the run recorded `stopped` |
+| Resume after `stop` | 0 new coding calls; measurement and 2 reviews completed |
+| `compare --gates card-gates.yaml` | Passes 1/1 and 1/1; tokens 1.36M vanilla, 3.22M `workflow-main`; missing values listed with reasons |
+| `check` from a second folder | Vanilla cache: 1 of 1 attempts hit |
+| Redundant added tests | Vanilla 21, `workflow-main` 16 (n = 1, no conclusion) |
+
+#### Climb result (2026-11-09)
+
+All three budgeted rounds ran; no candidate passed the decision rule, so `main` keeps its engineering guidance and the probe does not run.
+
+| Round | Passes, confirmed + overlap (vanilla) | Tokens (× vanilla) | Mechanical gate | Pair wins against `main` |
+| --- | --- | --- | --- | --- |
+| 1 | 12 + 0 (11 + 0), pass | 2.91M (1.75×), fail | 2 count gates failed | not run |
+| 2 | 11 + 0 (11 + 1), pass | 2.36M (1.10×), pass | 3 failed; passes after Amendment 3 | not run |
+| 3 | 8 + 2 (11 + 1), fail | 2.65M (1.24×), pass | pass, before and after Amendment 3 | 4 of 12 (report-only) |
+
+- `main` itself failed correctness and tokens in round 2: 10 of 12 passes and 6.68M (3.1× vanilla).
+- Amendment 3, after round 2: the cognitive ratio leaves out a task whose reference adds under 10, and the noisy count gates became diagnostics. `main` failed those counts against its own pilot run.
+- Round 3's diagnostics beat `main`: high plus medium findings 7 against 8, redundant added tests 7.67 against 13, duplicated test lines 50 against 101. Blind judges still preferred `main` on 7 of 10 judged pairs.
+- One round-3 attempt stopped to ask which branch to use before editing. That behavior comes from `core.md`'s ambiguity rules, which every Workflow arm shares.
+- PluginBench #18 came out of the round-2 outage: a backend failure no longer scores or caches an attempt, and background runs survive the launching session.
+
+Evidence: [round 3 notes](evidence/engineering-guidance-climb/round-3/notes.md), [card Amendment 3](evidence/engineering-guidance-climb/card.md).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
