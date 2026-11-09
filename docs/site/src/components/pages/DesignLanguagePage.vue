@@ -198,7 +198,7 @@ const tables = {
     <h2 id="theme">Theme and token names</h2>
     <p class="section-intro">
       Graphite surfaces separate regions. Indigo marks primary actions; blue marks links.
-      Focus is one ring in the text colour. Switch the appearance in the header
+      Focus is one indigo ring with a 3px gap. Switch the appearance in the header
       to compare light and dark.
     </p>
     <UiCard title="Graphite Indigo tokens">

@@ -6,7 +6,7 @@
 @import '@filipgutica/ui/site.css';
 
 :root { --color-project: #6d3fd6; --color-project-dark: #b49cff; }
-:root.dark { --color-project: #b49cff; }
+:root.dark { --color-project: #b49cff; --color-project-dark: #b49cff; }
 
 /* The library owns chrome and controls; this site owns the article composition. */
 * { box-sizing: border-box; }
@@ -17,7 +17,7 @@ html { scroll-padding-top: var(--space-6); }
   p, h1, h2, h3, ul, ol, figure { margin: 0; }
   a { color: var(--color-link); text-underline-offset: 0.18em; }
   a:hover { text-decoration: underline; }
-  :focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
+  :focus-visible { outline: var(--focus-width) solid var(--color-focus); outline-offset: var(--focus-offset); }
 }
 :not(pre) > code { font-family: var(--font-mono); }
 .page { max-width: calc(var(--page-max) + var(--sidebar) + var(--space-8) + var(--space-12)); margin-inline: auto; padding-inline: var(--space-6); }
