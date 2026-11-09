@@ -12,8 +12,8 @@ importers:
         specifier: 7.0.3
         version: 7.0.3(@types/node@22.20.5)(astro@7.3.6(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))(esbuild@0.28.2)(jiti@2.7.0)(vue@3.5.43(typescript@6.0.3))(yaml@2.9.1)
       '@filipgutica/ui':
-        specifier: 1.26.0
-        version: 1.26.0(vue@3.5.43(typescript@6.0.3))
+        specifier: 1.27.0
+        version: 1.27.0(vue@3.5.43(typescript@6.0.3))
       astro:
         specifier: 7.3.6
         version: 7.3.6(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1)
@@ -561,8 +561,8 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@filipgutica/ui@1.26.0':
-    resolution: {integrity: sha512-DKScaUJbVRkHV8UF+PT/TQhPNLVEkKUIj0gpbA1P6JlF1D4P7aVriI9za+uuPwBI/pfRii8hC9Wns0SzgbG8yg==}
+  '@filipgutica/ui@1.27.0':
+    resolution: {integrity: sha512-Yjc74XSRS1hXsOP9Oh1fndgQAodCXX3JmqF9sq3x2hbiYkM3m3hA9ZVT4r77DBgSML4sSf8coHpTngJMd/8CAQ==}
     engines: {node: '>=22.12'}
     peerDependencies:
       vue: ^3.5.0
@@ -3092,7 +3092,7 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@filipgutica/ui@1.26.0(vue@3.5.43(typescript@6.0.3))':
+  '@filipgutica/ui@1.27.0(vue@3.5.43(typescript@6.0.3))':
     dependencies:
       '@vueuse/core': 14.4.0(vue@3.5.43(typescript@6.0.3))
       jsonc-parser: 3.3.1
