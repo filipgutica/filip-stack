@@ -1,3 +1,10 @@
+## [4.5.3](https://github.com/filipgutica/filip-stack/compare/v4.5.2...v4.5.3) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** centre icon-only quiet actions ([805a1be](https://github.com/filipgutica/filip-stack/commit/805a1be9e8c8ad76aeb13299ef8c133a227583eb))
+
 ## [4.5.2](https://github.com/filipgutica/filip-stack/compare/v4.5.1...v4.5.2) (2026-11-07)
 
 
