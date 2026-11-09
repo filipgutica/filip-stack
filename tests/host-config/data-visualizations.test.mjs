@@ -1,6 +1,7 @@
 import test from 'node:test'
 import vm from 'node:vm'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 import { validateSnapshot, formatPercent, renderReport } from '../../host-config/design-language/visualizations/build-count-report.mjs'
 
 const sample = () => ({
@@ -75,4 +76,18 @@ test('the inline script keeps a __proto__ category as data', async () => {
   const embedded = vm.runInNewContext(expression)
   assert.ok(Object.hasOwn(embedded.windows[0].rows[0].counts, '__proto__'))
   assert.equal(embedded.windows[0].rows[0].counts.__proto__, 2)
+})
+
+// On phones an item name sits in a flex heading; an unbroken segment must wrap there, not widen the page.
+const wrapsItemNames = (css) => /\.ov-entry-heading code\{[^}]*overflow-wrap:anywhere/.test(css)
+
+test('a long unbroken item name wraps in the phone layout', () => {
+  assert.equal(wrapsItemNames('.ov-entry-heading code{min-width:0;flex:1}'), false)
+  assert.ok(wrapsItemNames(readFileSync(new URL('../../host-config/design-language/visualizations/report.css', import.meta.url), 'utf8')))
+})
+
+test('standalone pickers take the field recipe; inline pickers keep the host look', async () => {
+  const field = /\.ov-controls select\{background:var\(--field\);border-color:var\(--field-edge\);border-radius:var\(--radius-field\);box-shadow:var\(--shadow-sink\)\}\.ov-controls select:focus-visible\{background:var\(--field-focus\);box-shadow:var\(--shadow-raise\)\}/
+  assert.match(await renderReport(sample(), { mode: 'standalone', tokens: ':root{--text:currentColor}' }), field)
+  assert.doesNotMatch(await renderReport(sample()), /--field|--shadow-sink/)
 })

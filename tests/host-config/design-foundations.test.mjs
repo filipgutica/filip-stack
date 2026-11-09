@@ -166,6 +166,48 @@ test('example pages copy the state rules of every component variant their markup
   assert.deepEqual(['reference.html', 'docs.html', 'product.html'].flatMap((page) => missingStates(page, read(page))), [])
 })
 
+// At tablet width touch targets use --control-lg (components.md, rules for every control). A page that
+// shows a search field or an unsized button grows it there, as the catalogue does.
+const touchNeeds = [
+  { uses: /\bclass="(?:[^"]* )?search(?: [^"]*)?"/, rule: '@media (max-width: 800px) .search { height: var(--control-lg); }' },
+  { uses: /<(?![^>]*\bdata-size=)[^>]*\bclass="(?:[^"]* )?btn(?: [^"]*)?"/, rule: '@media (max-width: 800px) .btn:not([data-size]) { min-height: var(--control-lg); }' },
+]
+const missingTouch = (page, html) => {
+  const have = new Set(perSelector(cssRules(html)).map(key))
+  return touchNeeds.filter(({ uses, rule }) => uses.test(html) && !have.has(rule)).map(({ rule }) => `${page}: ${rule}`)
+}
+
+test('the touch guard catches a page that keeps a search field or an unsized button small at tablet width', () => {
+  const catalogue = read('components.html').replace(/^\s*\.search \{ height: var\(--control-lg\); \}\n/m, '')
+  assert.deepEqual(missingTouch('components.html', catalogue), [`components.html: ${touchNeeds[0].rule}`])
+  const page = read('reference.html').replace(/^\s*\.btn:not\(\[data-size\]\), \.navlist a[^\n]*\n/m, '')
+  assert.deepEqual(missingTouch('reference.html', page), [`reference.html: ${touchNeeds[1].rule}`])
+})
+
+test('search fields and unsized buttons use --control-lg at tablet width on every page', () => {
+  const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
+  assert.deepEqual(pages.flatMap((page) => missingTouch(page, read(page))), [])
+})
+
+// Viewport media queries use only the two named breakpoints, the desktop-only query, and the
+// documented hero split (DESIGN.md, layout and spacing). Container queries are not viewport breakpoints.
+const allowedWidths = new Set(['max-width: 640px', 'max-width: 800px', 'min-width: 801px', 'min-width: 1024px'])
+const offBreakpoints = (file, css) => [...css.matchAll(/@media\b([^{]*)\{/g)]
+  .flatMap(([, query]) => [...query.matchAll(/\((min|max)-width\s*:\s*([^)]+?)\s*\)/g)])
+  .map(([, edge, width]) => `${edge}-width: ${width}`)
+  .filter((width) => !allowedWidths.has(width))
+  .map((width) => `${file}: ${width}`)
+
+test('the breakpoint guard catches an unnamed viewport breakpoint in spaced or minified CSS', () => {
+  const planted = '@media(max-width:700px){} @media (max-width: 560px) {} @media (min-width: 801px) {} @media(max-width:800px){} @container (max-width: 876px) {}'
+  assert.deepEqual(offBreakpoints('planted.css', planted), ['planted.css: max-width: 700px', 'planted.css: max-width: 560px'])
+})
+
+test('pages and the report stylesheet use only the named breakpoints', () => {
+  const files = [...readdirSync(dir).filter((file) => file.endsWith('.html')), 'visualizations/report.css']
+  assert.deepEqual(files.flatMap((file) => offBreakpoints(file, read(file))), [])
+})
+
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
 // token colour: a focus ring or a divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
