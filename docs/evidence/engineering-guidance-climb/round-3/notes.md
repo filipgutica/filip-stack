@@ -47,7 +47,7 @@ Vanilla (12 cached attempts, the same cohort round 2 coded) and `workflow-main` 
 
 | Gate | Candidate | Against | Limit | Result |
 | --- | ---: | ---: | ---: | --- |
-| Passes (vanilla 12) | 10 | vanilla | ≥ 11 | fail |
+| Passes: confirmed + overlap (vanilla 11 + 1; `main` 10 + 0) | 10: 8 + 2 | vanilla | ≥ 11 | fail |
 | Tokens, mean of task medians | 2.65M | 2.14M | ≤ 2.78M | pass (1.24×) |
 | Cognitive ratio to reference (Amendment 3 floor) | 0.44 | 0.49 | ≤ 0.54 | pass |
 | Complexity hotspots | 9 | 11 | ≤ 11 | pass |
@@ -69,7 +69,7 @@ The two misses:
 | Judged (10) | 3 | 7 |
 | Weighted total (12) | 4 | 8 |
 
-The candidate needed 8. The judges' majority went to `main` on csstree (3 of 3), true-myth r1 and r2, adaptix r2, and happy-dom r2. Their most common reasons for `main` were code that handles more of the abstraction's real cases, such as grammar wrappers or heterogeneous types, and fewer unrequested additions. Judges chose side A in 6 (Astra), 6 (Sol 6.1), and 7 (Opus 5.5) of 12 pairs.
+The candidate needed 8. Because it has fewer scoped words than `main`, the card's Prune rule would have lowered that to 6, but Prune also requires every gate to pass; with 4 wins and a failed correctness gate, the candidate loses under either rule. The brief stated only the 8-win rule. The judges' majority went to `main` on csstree (3 of 3), true-myth r1 and r2, adaptix r2, and happy-dom r2. Their most common reasons for `main` were code that handles more of the abstraction's real cases, such as grammar wrappers or heterogeneous types, and fewer unrequested additions. Judges chose side A in 6 (Astra), 6 (Sol 6.1), and 7 (Opus 5.5) of 12 pairs.
 
 ## Outcome
 

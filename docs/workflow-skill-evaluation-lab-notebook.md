@@ -1690,11 +1690,11 @@ Smoke run, `runs/egc-20261106/results/smoke-overhaul`: true-myth, vanilla and `w
 
 All three budgeted rounds ran; no candidate passed the decision rule, so `main` keeps its engineering guidance and the probe does not run.
 
-| Round | Passes (vanilla) | Tokens (× vanilla) | Mechanical gate | Pair wins against `main` |
+| Round | Passes, confirmed + overlap (vanilla) | Tokens (× vanilla) | Mechanical gate | Pair wins against `main` |
 | --- | --- | --- | --- | --- |
-| 1 | pass | 2.91M (1.75×), fail | 2 count gates failed | not run |
-| 2 | 11 (12), pass | 2.36M (1.10×), pass | 3 failed; passes after Amendment 3 | not run |
-| 3 | 10 (12), fail | 2.65M (1.24×), pass | pass, before and after Amendment 3 | 4 of 12 (report-only) |
+| 1 | 12 + 0 (11 + 0), pass | 2.91M (1.75×), fail | 2 count gates failed | not run |
+| 2 | 11 + 0 (11 + 1), pass | 2.36M (1.10×), pass | 3 failed; passes after Amendment 3 | not run |
+| 3 | 8 + 2 (11 + 1), fail | 2.65M (1.24×), pass | pass, before and after Amendment 3 | 4 of 12 (report-only) |
 
 - `main` itself failed correctness and tokens in round 2: 10 of 12 passes and 6.68M (3.1× vanilla).
 - Amendment 3, after round 2: the cognitive ratio leaves out a task whose reference adds under 10, and the noisy count gates became diagnostics. `main` failed those counts against its own pilot run.

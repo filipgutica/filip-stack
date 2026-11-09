@@ -8,7 +8,7 @@ Propose one set of edits to Filip's engineering guidance. Agents that follow the
 
 ## Where round 2 left off
 
-- The incumbent is still `main`. Round 2's candidate ([round-2-candidate.diff](round-2-candidate.diff), 11 lines added and 26 removed against `main`) passed correctness (11 of 12 against vanilla's 12) and tokens (2.36M, 1.10 times vanilla's 2.14M). `main` failed both this round: 10 of 12 and 6.68M.
+- The incumbent is still `main`. Round 2's candidate ([round-2-candidate.diff](../round-2/candidate.diff), 11 lines added and 26 removed against `main`) passed correctness (11 of 12 against vanilla's 12) and tokens (2.36M, 1.10 times vanilla's 2.14M). `main` failed both this round: 10 of 12 and 6.68M.
 - Under the gates as they stood, round 2's candidate failed three mechanical gates against `main`: the cognitive complexity ratio (driven by one task whose reference adds almost no complexity), high plus medium review findings (11 against 8), and redundant added tests (15 against 13). No judges ran.
 - **Amendment 3** (approved after round 2): the cognitive ratio now leaves out a task whose reference adds under 10 cognitive complexity, and duplicated test lines, review findings, and redundant added tests became reported diagnostics instead of gates. The reason: `main` fails those counts against itself between the pilot and round 2. Under the amended gates, round 2's candidate passes gates 1 to 3. See `measures-round-2-card-gates.txt` and `measures-round-2-card-diagnostics.txt`.
 - So the round is now likely to be decided by the blind judges: matched diff pairs against `main`, 8 of 12 weighted pair wins needed. Quality for the next maintainer is what wins pairs.

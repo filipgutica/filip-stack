@@ -57,7 +57,7 @@ Fresh vanilla (9 coded, 3 reused from the same round), `workflow-main`, and `wor
 
 | Gate | Candidate | Against | Limit | Result |
 | --- | ---: | ---: | ---: | --- |
-| Passes (vanilla 12) | 11 | vanilla | ≥ 11 | pass |
+| Passes: confirmed + overlap (vanilla 11 + 1; `main` 10 + 0) | 11: 11 + 0 | vanilla | ≥ 11 | pass |
 | Tokens, mean of task medians | 2.36M | 2.14M | ≤ 2.78M | pass (1.10×) |
 | Cognitive ratio to reference | 1.43 | 0.37 | ≤ 0.40 | fail |
 | Complexity hotspots | 10 | 11 | ≤ 11 | pass |

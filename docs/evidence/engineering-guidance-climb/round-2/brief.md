@@ -8,7 +8,7 @@ Propose one set of edits to Filip's engineering guidance. Agents that follow the
 
 ## Where round 1 left off
 
-- The incumbent is still `main`. Round 1's candidate ([round-1-candidate.diff](round-1-candidate.diff)) passed the correctness gates and failed the token gate: 2.91M against a limit of 2.17M (vanilla 1.67M). `main` uses 4.59M. Against `main` it also failed two mechanical gates, duplicated test lines (106 against 46) and high plus medium review findings (10 against 9), and passed the rest; see `measures-round-1.txt`. (Corrected after launch: the first version of this brief said it passed every mechanical gate.)
+- The incumbent is still `main`. Round 1's candidate ([round-1-candidate.diff](../round-1/candidate.diff)) passed the correctness gates and failed the token gate: 2.91M against a limit of 2.17M (vanilla 1.67M). `main` uses 4.59M. Against `main` it also failed two mechanical gates, duplicated test lines (106 against 46) and high plus medium review findings (10 against 9), and passed the rest; see `measures-round-1.txt`. (Corrected after launch: the first version of this brief said it passed every mechanical gate.)
 - Round 1's candidate started no subagents, and every attempt read `engineering/SKILL.md`. Its tokens still ran 1.75 times vanilla's, with the largest gap on happy-dom (3.7M to 7.1M per attempt against vanilla's 2.1M to 3.3M).
 - Almost all tokens are cached input: every extra turn re-reads the whole context. Turns and context size drive cost, not new text.
 - Your edits are against `main`. You may keep, change, or drop any of round 1's edits; say which.
