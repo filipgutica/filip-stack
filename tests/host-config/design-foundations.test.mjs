@@ -209,15 +209,14 @@ test('pages and the report stylesheet use only the named breakpoints', () => {
 })
 
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
-// token colour or a token mixed with transparent: a focus ring, a focused field's inset line, or a
-// divider. --depth passes because the guard checks
+// token colour: a focus ring or a divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
 // hide a literal behind its own variable.
 const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
 const isToken = (reference) => reference === '--depth' || tokenNames.has(reference)
 const isShadowLayerAllowed = (layer) => {
-  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?(?:var\((--[\w-]+)\)|color-mix\(in srgb, ?var\((--[\w-]+)\) [\d.]+%, ?transparent\))$/)
-  return Boolean(match) && isToken(match[1] ?? match[2])
+  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?var\((--[\w-]+)\)$/)
+  return Boolean(match) && isToken(match[1])
 }
 const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
 
@@ -242,14 +241,6 @@ test('the depth guard reads every style block and both inline quote forms', () =
   const planted = `<style>.a { box-shadow: var(--shadow-raise) }</style><style media="all">.b { box-shadow: 0 4px 12px black }</style>
     <p style='box-shadow: 0 4px 12px black'></p><p style="box-shadow: none"></p>`
   assert.equal(shadowLiterals('planted.html', planted).length, 2)
-})
-
-test('the depth guard allows a zero-blur token line mixed with transparent, and nothing looser', () => {
-  const planted = `<style>.ok { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) }
-    .blur { box-shadow: inset 0 0 4px 2px color-mix(in srgb, var(--accent) 18%, transparent) }
-    .opaque { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 18%, black) }
-    .literal { box-shadow: inset 0 0 0 2px color-mix(in srgb, #4b45d1 18%, transparent) }</style>`
-  assert.equal(shadowLiterals('planted.html', planted).length, 3)
 })
 
 test('pages take depth from tokens.css: no literal shadow outside a focus ring or divider', () => {
