@@ -1711,10 +1711,10 @@ Date: 2026-11-09. Judge-only checks on saved climb diffs. No new coding run.
 The judges are not yet a valid gate for this climb:
 
 - **Noise floor.** Two runs of the same arm, judged against each other, give 7 or 8 card wins of 12, where 6 is expected. Step 1 scored the candidates against vanilla at 6 (`main`), 7 (round 3), and 5 (Superpowers), all within that noise.
-- **Position bias.** Judges given three pairs per call chose side A 69% of the time. With one pair per call they chose it 50% of the time.
-- **Instability.** With the sides swapped, `main`'s judged wins moved from 6 of 10 to 10 of 10. Round 3 held at 7 of 10.
+- **Position bias.** Judges given three pairs per call chose side A 69% of the time in same-arm packets. In the swap packets, with one pair per call, they chose it 50% of the time.
+- **Instability.** The swap rerun changed two things at once: the sides, and the format, from three pairs per call to one. `main`'s judged wins moved from 6 of 10 to 10 of 10. Round 3 held at 7 of 10. These checks cannot isolate which change caused the shift, so one pair per call is a precaution, not a proven fix.
 
-The owner cannot rank unfamiliar library code reliably, so a judge was built from his review taste instead. It uses his review comments at work, his corrections to Codex agents, and his stated rules. Items that rest only on the Workflow guidance were left out, so the judge does not reward the guided arm for following its own guidance.
+The owner cannot rank unfamiliar library code reliably, so a judge was built from his review taste instead. It uses his review comments at work, his corrections to Codex agents, and his stated rules. Items that rest only on the Workflow guidance were left out to reduce circularity. His taste still overlaps that guidance.
 
 Claude Fable 5.2 used that profile on the 20 pairs where both sides got the same test outcome, one pair per call:
 

@@ -41,7 +41,7 @@ Because both sides are the same arm, the expected result is 6. Differences of 1 
 | Three pairs per call (same-arm packets) | 50 of 72 (69%) |
 | One pair per call (swap packets) | 36 of 72 (50%) |
 
-Conclusion: three-pair calls lean toward side A, and `main`'s result changes when the sides swap. Judge with one pair per call. Treat one or two card wins as noise.
+Conclusion: the swap rerun changed two things at once: the side order, and the format, from three pairs per call to one. The position-bias rows also come from different packet types. These checks therefore cannot say whether the side order or the format moved `main`'s result. One pair per call is the chosen precaution. Treat one or two card wins as noise.
 
 ## Owner-profile judge
 
@@ -55,7 +55,7 @@ The owner decided not to rank the pairs by hand: he cannot judge unfamiliar libr
 | Corrections he gave Codex agents | 138 corrections in 71 sessions |
 | Stated rules and merged commits on the climb machine | 33 items |
 
-Items supported only by the Workflow `engineering` skill or the global guidance were excluded. A judge built from them would reward the guided arm for following its own guidance.
+Items supported only by the Workflow `engineering` skill or the global guidance were excluded to reduce circularity. His independently sourced taste still overlaps that guidance, so the judge may still favor guidance-shaped code.
 
 The result is a profile of 21 ranked preferences and a standalone standard of 14 checks. Both stay on the climb machine.
 
@@ -88,4 +88,4 @@ The checks it cited most:
 ## Decision
 
 - The owner-profile judge, Fable 5.2 at high effort with one pair per call, joins the climb's judge panel. It stands in for the owner's own rankings.
-- Every judge gets one pair per call.
+- Every judge gets one pair per call, as a precaution.
