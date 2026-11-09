@@ -30,6 +30,9 @@ jobs:
       - name: Check plugins
         run: pnpm check
 
+      - name: Verify the design-system pin
+        run: node scripts/pin-design-system.mjs --check
+
   release:
     runs-on: ubuntu-latest
     needs: validate

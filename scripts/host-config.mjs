@@ -2,22 +2,28 @@
 // Applies host-config/ to the Claude, Codex, and shared agent directories in a home directory.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, isAbsolute, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = join(dirname(scriptPath), '..')
 const sourceRoot = join(repoRoot, 'host-config')
 const sharedGuidancePath = (home) => join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'field-guide.json')
+// The design language comes from the published @filipgutica/design-system package that this file pins.
+const designSystemPinPath = join(sourceRoot, 'design-system.json')
+const designSystemCachePath = ({ home, version }) => (
+  join(process.env.XDG_CACHE_HOME || join(home, '.cache'), 'filip-stack', 'design-system', `${version}.tgz`)
+)
+const designLanguageTarget = 'design-language'
 const fieldGuideScript = join(repoRoot, 'plugins', 'field-guide', 'skills', 'field-guide', 'scripts', 'field-guide.mjs')
 const manifestTarget = '.agents/.filip-stack-host-config.json'
 const blockStart = '<!-- filip-stack:host-config:begin (managed by filip-stack; edit host-config/ there) -->'
 const blockEnd = '<!-- filip-stack:host-config:end -->'
 
-// Source directories copied file for file into the home directory.
-const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents'], ['design-language', 'design-language']]
+// Source directories copied file for file into the home directory. The design language joins them once resolved.
+const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
 // Guidance files that receive a managed block. Text outside the block stays local.
 const guidanceTargets = [['claude', '.claude/CLAUDE.md'], ['codex', '.codex/AGENTS.md']]
 
@@ -43,6 +49,8 @@ const parseArgs = (argv) => {
 
 const read = (path) => readFileSync(path, 'utf8')
 const hash = (text) => createHash('sha256').update(text).digest('hex')
+// npm's `dist.integrity` format.
+const integrityOf = (bytes) => `sha512-${createHash('sha512').update(bytes).digest('base64')}`
 
 const listFiles = (directory) => (
   readdirSync(directory, { recursive: true, withFileTypes: true })
@@ -60,11 +68,14 @@ const renderGuidance = ({ host, home }) => {
   return renderText({ text: assembled, home })
 }
 
-const desiredTargets = (home) => {
+// `designLanguage` is the extracted package's language/ folder, or null when status cannot read it.
+const desiredTargets = ({ home, designLanguage }) => {
   const targets = new Map()
-  for (const [source, target] of fileRoots) {
-    for (const file of listFiles(join(sourceRoot, source))) {
-      const relativePath = join(target, relative(join(sourceRoot, source), file))
+  const roots = fileRoots.map(([source, target]) => [join(sourceRoot, source), target])
+  if (designLanguage) roots.push([designLanguage, designLanguageTarget])
+  for (const [directory, target] of roots) {
+    for (const file of listFiles(directory)) {
+      const relativePath = join(target, relative(directory, file))
       targets.set(relativePath, { kind: 'file', content: renderText({ text: read(file), home }) })
     }
   }
@@ -121,6 +132,69 @@ const readManifest = (home) => {
   return existsSync(path) ? JSON.parse(read(path)) : { commit: null, files: {} }
 }
 
+const readPin = () => JSON.parse(read(designSystemPinPath))
+
+// Returns the cached tarball path when its bytes match the pin, otherwise null. Never writes.
+const verifiedCache = ({ home, pin }) => {
+  const path = designSystemCachePath({ home, version: pin.version })
+  return existsSync(path) && integrityOf(readFileSync(path)) === pin.integrity ? path : null
+}
+
+// Returns the pinned package's language/ folder, extracted to a temporary directory.
+// On a cache miss the download is verified and extracted from a staging file first,
+// so it enters the cache only when the whole install can use it.
+const resolveDesignLanguage = async ({ home, pin }) => {
+  const cached = verifiedCache({ home, pin })
+  if (cached) return extractDesignLanguage(cached)
+  const path = designSystemCachePath({ home, version: pin.version })
+  let bytes
+  try {
+    const response = await fetch(pin.tarball, { signal: AbortSignal.timeout(60_000) })
+    if (!response.ok) throw new Error(`HTTP ${response.status}`)
+    bytes = Buffer.from(await response.arrayBuffer())
+  } catch (error) {
+    fail(`${pin.package}@${pin.version} is not cached at ${path}, and downloading ${pin.tarball} failed `
+      + `(${error.cause?.message || error.message}). Nothing was written; rerun with network access.`)
+  }
+  const integrity = integrityOf(bytes)
+  if (integrity !== pin.integrity) {
+    fail(`${pin.tarball} failed the integrity check for ${pin.package}@${pin.version}: expected ${pin.integrity}, got ${integrity}. Nothing was written.`)
+  }
+  const staging = mkdtempSync(join(tmpdir(), 'host-config-download-'))
+  process.on('exit', () => rmSync(staging, { recursive: true, force: true }))
+  const staged = join(staging, `${pin.version}.tgz`)
+  writeFileSync(staged, bytes)
+  const designLanguage = extractDesignLanguage(staged)
+  mkdirSync(dirname(path), { recursive: true })
+  const partial = `${path}.${process.pid}.partial`
+  writeFileSync(partial, bytes)
+  renameSync(partial, path)
+  process.stdout.write(`downloaded ${pin.package}@${pin.version} to ${path}\n`)
+  return designLanguage
+}
+
+const tarList = (args) => {
+  const result = spawnSync('tar', args, { encoding: 'utf8' })
+  if (result.status !== 0) fail(`tar ${args.join(' ')} failed: ${result.stderr.trim()}`)
+  return result.stdout.split('\n').filter(Boolean)
+}
+
+// Extracts the tarball's package/language/ into a temporary directory removed on exit.
+// Accepts only regular files and directories whose paths stay inside that directory.
+const extractDesignLanguage = (tarball) => {
+  const names = tarList(['-tzf', tarball])
+  // The first column of a verbose listing is the entry type in both GNU and BSD tar.
+  const types = tarList(['-tvzf', tarball]).map((line) => line[0])
+  const unsafe = names.find((name, index) => !['-', 'd'].includes(types[index]) || isAbsolute(name) || name.split('/').includes('..'))
+  if (unsafe !== undefined || names.length !== types.length) fail(`${tarball} has an entry that is not a plain file or folder inside the package: ${unsafe}`)
+  const directory = mkdtempSync(join(tmpdir(), 'host-config-design-system-'))
+  process.on('exit', () => rmSync(directory, { recursive: true, force: true }))
+  tarList(['-xzf', tarball, '-C', directory])
+  const designLanguage = join(directory, 'package', 'language')
+  if (!existsSync(designLanguage)) fail(`${tarball} has no package/language/ folder`)
+  return designLanguage
+}
+
 const sourceCommit = () => {
   const git = (args) => spawnSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' })
   const head = git(['rev-parse', '--short', 'HEAD']).stdout.trim() || 'unknown'
@@ -128,12 +202,13 @@ const sourceCommit = () => {
   return dirty ? `${head}+dirty` : head
 }
 
-// Classifies each target as current, update, edited, remove, or edited-remove.
+// Classifies each target as current, update, edited, remove, edited-remove, or unknown.
 // A target is edited when its managed text differs from both the repository
-// version and the version this script last applied.
-const plan = (home) => {
+// version and the version this script last applied. Design-language targets are
+// unknown when the pinned package is not cached, which only status allows.
+const plan = ({ home, designLanguage }) => {
   const manifest = readManifest(home)
-  const desired = desiredTargets(home)
+  const desired = desiredTargets({ home, designLanguage })
   const entries = []
   for (const [target, { kind, content }] of desired) {
     const current = readManaged({ home, target, kind })
@@ -145,12 +220,16 @@ const plan = (home) => {
     entries.push({ target, kind, content, current, state })
   }
   for (const [target, appliedHash] of Object.entries(manifest.files)) {
-    if (desired.has(target)) continue
-    const current = readManaged({ home, target, kind: 'file' })
-    const state = current.content === null || hash(current.content) === appliedHash ? 'remove' : 'edited-remove'
-    entries.push({ target, kind: 'file', content: null, current, state })
+    if (!desired.has(target)) entries.push({ target, kind: 'file', content: null, ...retiredState({ home, target, appliedHash, designLanguage }) })
   }
   return { manifest, entries }
+}
+
+// Classifies a target that was applied earlier but that the sources no longer produce.
+const retiredState = ({ home, target, appliedHash, designLanguage }) => {
+  if (!designLanguage && target.startsWith(`${designLanguageTarget}/`)) return { current: { content: null }, state: 'unknown' }
+  const current = readManaged({ home, target, kind: 'file' })
+  return { current, state: current.content === null || hash(current.content) === appliedHash ? 'remove' : 'edited-remove' }
 }
 
 const printDiff = ({ target, current, content }) => {
@@ -164,16 +243,22 @@ const printDiff = ({ target, current, content }) => {
   rmSync(directory, { recursive: true, force: true })
 }
 
+// Status never downloads. Its header stays two lines because sync.mjs reads the target states after them.
 const status = ({ home }) => {
-  const { manifest, entries } = plan(home)
-  process.stdout.write(`applied: ${manifest.commit ?? 'never'}\nrepository: ${sourceCommit()}\n`)
+  const pin = readPin()
+  const tarball = verifiedCache({ home, pin })
+  const { manifest, entries } = plan({ home, designLanguage: tarball && extractDesignLanguage(tarball) })
+  const applied = manifest.designSystem?.version
+  const version = applied && applied !== pin.version ? `${applied} → ${pin.version}` : pin.version
+  const cache = tarball ? '' : ' (not cached; apply downloads it)'
+  process.stdout.write(`applied: ${manifest.commit ?? 'never'}\nrepository: ${sourceCommit()}, design-system ${version}${cache}\n`)
   for (const { target, state } of entries) process.stdout.write(`${state.padEnd(13)} ${target}\n`)
 }
 
-const writeManifest = ({ home, commit, files }) => {
+const writeManifest = ({ home, commit, designSystem, files }) => {
   const path = join(home, manifestTarget)
   mkdirSync(dirname(path), { recursive: true })
-  writeFileSync(path, `${JSON.stringify({ commit, files }, null, 2)}\n`)
+  writeFileSync(path, `${JSON.stringify({ commit, designSystem, files }, null, 2)}\n`)
 }
 
 const backUp = (path) => {
@@ -208,8 +293,10 @@ const importSharedGuidance = ({ home }) => {
   for (const { id, reason } of result.skipped) process.stdout.write(`  skipped ${id}: ${reason}\n`)
 }
 
-const apply = ({ home, force }) => {
-  const { manifest, entries } = plan(home)
+const apply = async ({ home, force }) => {
+  const pin = readPin()
+  const designLanguage = await resolveDesignLanguage({ home, pin })
+  const { manifest, entries } = plan({ home, designLanguage })
   const edited = entries.filter(({ state }) => state === 'edited' || state === 'edited-remove')
   if (edited.length > 0 && !force) {
     for (const entry of edited) printDiff(entry)
@@ -227,7 +314,7 @@ const apply = ({ home, force }) => {
     if (entry.state.endsWith('remove')) {
       rmSync(path, { force: true })
       delete files[entry.target]
-      writeManifest({ home, commit: manifest.commit, files })
+      writeManifest({ home, commit: manifest.commit, designSystem: manifest.designSystem, files })
       process.stdout.write(`removed ${entry.target}\n`)
       continue
     }
@@ -237,10 +324,10 @@ const apply = ({ home, force }) => {
     writeTarget({ home, ...entry })
     files[entry.target] = hash(entry.content)
     // Record each write at once, so an interrupted apply still tracks the files it wrote.
-    writeManifest({ home, commit: manifest.commit, files })
+    writeManifest({ home, commit: manifest.commit, designSystem: manifest.designSystem, files })
     process.stdout.write(`wrote ${entry.target}\n`)
   }
-  writeManifest({ home, commit: sourceCommit(), files })
+  writeManifest({ home, commit: sourceCommit(), designSystem: { version: pin.version, integrity: pin.integrity }, files })
   const path = sharedGuidancePath(home)
   if (existsSync(path)) {
     runFieldGuide({ home, args: ['init'] })
@@ -277,6 +364,6 @@ const fieldGuideSync = ({ home }) => {
 
 const { command, options } = parseArgs(process.argv.slice(2))
 if (command === 'status') status(options)
-if (command === 'apply') apply(options)
+if (command === 'apply') await apply(options)
 if (command === 'update') update(options)
 if (command === 'field-guide-sync') fieldGuideSync(options)

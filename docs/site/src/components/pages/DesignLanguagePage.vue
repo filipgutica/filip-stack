@@ -79,6 +79,12 @@ const tables = {
         </dd>
       </div>
       <div>
+        <dt>Source</dt>
+        <dd>
+          <a href="https://github.com/filipgutica/design-system"><code>@filipgutica/design-system</code></a>
+        </dd>
+      </div>
+      <div>
         <dt>Theme</dt>
         <dd>Graphite Indigo</dd>
       </div>
@@ -98,23 +104,23 @@ const tables = {
       </p>
       <ul>
         <li>
-          <a href="/filip-stack/design-language/catalogue/components.html">Component catalogue</a>:
+          <a href="https://filipgutica.github.io/design-system/components.html">Component catalogue</a>:
           each component and its states.
         </li>
         <li>
-          <a href="/filip-stack/design-language/catalogue/reference.html#foundations">Foundations</a>:
+          <a href="https://filipgutica.github.io/design-system/reference.html#foundations">Foundations</a>:
           type, color, spacing, shape, borders, elevation, focus, and motion.
         </li>
         <li>
           Examples:
-          <a href="/filip-stack/design-language/catalogue/reference.html">application</a>,
-          <a href="/filip-stack/design-language/catalogue/docs.html">documentation</a>, and
-          <a href="/filip-stack/design-language/catalogue/product.html">product page</a>.
+          <a href="https://filipgutica.github.io/design-system/reference.html">application</a>,
+          <a href="https://filipgutica.github.io/design-system/docs.html">documentation</a>, and
+          <a href="https://filipgutica.github.io/design-system/product.html">product page</a>.
         </li>
         <li>
-          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/components.md">Component specs</a>
+          <a href="https://github.com/filipgutica/design-system/blob/main/language/components.md">Component specs</a>
           and
-          <a href="https://github.com/filipgutica/filip-stack/blob/main/host-config/design-language/decisions.md">decisions</a>:
+          <a href="https://github.com/filipgutica/design-system/blob/main/language/decisions.md">decisions</a>:
           what each component does, and why it looks the way it does.
         </li>
       </ul>
@@ -274,11 +280,13 @@ const tables = {
     <h2 id="change">Where to make changes</h2>
     <div class="prose">
       <p>
-        Edit the rules and examples in
-        <code>host-config/design-language/</code> in filip-stack.
-        For theme values, edit <code>@filipgutica/ui</code> and regenerate
-        <code>tokens.css</code> using the library's generation procedure.
-        Then run <code>filip-stack apply</code> on each machine to install the updated folder.
+        Edit the rules, examples, and tokens in
+        <a href="https://github.com/filipgutica/design-system">filipgutica/design-system</a>,
+        which publishes them as <code>@filipgutica/design-system</code>.
+        filip-stack pins one published version in
+        <code>host-config/design-system.json</code>. After a release, bump the pin
+        with <code>node scripts/pin-design-system.mjs &lt;version&gt;</code>, merge it,
+        then run <code>filip-stack update</code> on each machine.
       </p>
     </div>
   </section>

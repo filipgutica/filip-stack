@@ -215,9 +215,11 @@ plugins.
 - Codex agent profiles and the `~/.codex/rules/filip-stack.rules` prompts that
   Guardrails relies on
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
-- the `~/design-language` files the guidance refers to
-  - [Component specs](host-config/design-language/components.md) and the [component catalogue](host-config/design-language/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
-  - [Data visualizations](host-config/design-language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
+- the `~/design-language` files the guidance refers to, installed from the
+  pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
+  package in `host-config/design-system.json`
+  - [Component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md) and the [component catalogue](https://filipgutica.github.io/design-system/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
+  - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
 
 It contains no employer-specific guidance; keep that local to the machine that
 needs it.
@@ -290,6 +292,14 @@ and `~/design-language`. It writes the shared guidance into a marked block in
 the ctx7 block or machine-local notes, stays as it is, and the shared guidance
 tells agents that it overrides the block where they conflict. Apply removes a
 file it applied earlier once the repository no longer has it.
+
+`apply` downloads the pinned design-system tarball from the npm registry, checks
+it against the pin's integrity, and caches it at
+`~/.cache/filip-stack/design-system/<version>.tgz`
+(`$XDG_CACHE_HOME/filip-stack/…` when set). After that, it works offline. When
+the pinned version is neither cached nor downloadable, apply stops before
+writing anything. `status` never downloads; it reports an uncached version and
+the pin change, such as `design-system 1.0.0 → 1.1.0`.
 
 When managed text was changed locally, apply prints the diff and stops. Move the
 change into `host-config/` and commit it, or rerun with `--force` to save the
