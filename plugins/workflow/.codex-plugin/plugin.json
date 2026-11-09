@@ -1,6 +1,6 @@
 {
   "name": "workflow",
-  "version": "4.5.7",
+  "version": "4.5.8",
   "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
   "author": {
     "name": "Filip Gutica"

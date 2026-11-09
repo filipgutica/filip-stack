@@ -1,3 +1,12 @@
+## [4.5.8](https://github.com/filipgutica/filip-stack/compare/v4.5.7...v4.5.8) (2026-11-09)
+
+
+### Bug Fixes
+
+* **design-language:** emit the standalone picker field recipe after the report styles ([6ba4f87](https://github.com/filipgutica/filip-stack/commit/6ba4f87ef542289fc45e3cc1089c4b493555a8fa))
+* **design-language:** fix application example keyboard, anchors, and phone layout ([80d4e71](https://github.com/filipgutica/filip-stack/commit/80d4e7150341b68f9a8cb21d8171094ae57eb8eb))
+* **design-language:** give docs section spacing one owner ([6cbcfc0](https://github.com/filipgutica/filip-stack/commit/6cbcfc0c0a9816a4ac7a63cef5a3ac2a9755df08))
+
 ## [4.5.7](https://github.com/filipgutica/filip-stack/compare/v4.5.6...v4.5.7) (2026-11-09)
 
 
