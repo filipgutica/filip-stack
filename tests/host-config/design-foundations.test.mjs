@@ -176,3 +176,9 @@ test('every focus ring is the one ink ring: no per-role ring colour on any page 
   const sources = [...pages.map((page) => [page, read(page)]), ['tokens.css', `<style>${read('tokens.css')}</style>`]]
   assert.deepEqual(sources.flatMap(([file, html]) => focusColourDrift(file, html)), [])
 })
+
+test('keeps the page background and text colour outside the base layer, so a host reset cannot win', () => {
+  // A host's unlayered body reset outranks any layered rule, so these two must stay unlayered.
+  const unlayered = read('tokens.css').replace(/@layer base \{[\s\S]*$/, '')
+  assert.match(unlayered, /^body \{ background: var\(--bg\); color: var\(--text\); \}$/m)
+})
