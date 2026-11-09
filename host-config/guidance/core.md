@@ -107,5 +107,5 @@ Before investigating, planning, changing, or reviewing code, read `~/.agents/COD
 
 - For UX and visual design work, read `~/design-language/DESIGN.md` first and follow it. This covers mockups, wireframes, prototypes, explainers, artifacts, standalone HTML pages, dashboards, charts, and design reviews.
 - For interaction, flows, navigation, forms, UI states, interface copy, and accessibility, also use the `interface-design` skill. `DESIGN.md` owns the look; `interface-design` owns the behavior and its checks.
-- A repository's own design system takes precedence inside that repository.
+- `~/design-language` is the installed copy of `filipgutica/design-system`, the default design system. A repository's own design system takes precedence inside that repository.
 - This design language replaces per-page visual identity. Do not invent a new palette, typeface, or layout concept per page, even when an artifact or design skill asks for one.

@@ -29,6 +29,8 @@ main > section > * { min-width: 0; }
 h1 { max-width: 24ch; }
 h1 code { overflow-wrap: anywhere; }
 .intro { gap: var(--space-5); }
+/* A note under the lede keeps the lede's measure, so it does not outweigh it. */
+.intro .fg-alert { max-width: 34rem; }
 .lede { max-width: 56ch; color: var(--color-muted); font-size: var(--text-lg); }
 .prose { max-width: var(--measure); }
 .prose > p + p { margin-top: var(--space-3); }
