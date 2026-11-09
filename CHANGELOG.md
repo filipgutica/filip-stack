@@ -1,3 +1,17 @@
+# [4.7.0](https://github.com/filipgutica/filip-stack/compare/v4.6.0...v4.7.0) (2026-11-09)
+
+
+### Bug Fixes
+
+* **host-config:** cache a downloaded design system only after it extracts ([c5a27bf](https://github.com/filipgutica/filip-stack/commit/c5a27bfffafba4501fb7f5076ce070443f6e1eae))
+* **site:** keep the old catalogue tokens.css URL working ([24dfba1](https://github.com/filipgutica/filip-stack/commit/24dfba1ec677c25bd811b98af3e097706fd26034))
+
+
+### Features
+
+* **host-config:** install the design language from the pinned design-system package ([987148b](https://github.com/filipgutica/filip-stack/commit/987148bd6f9375a5770f9d157a1dbb403c4da750))
+* **site:** send design-language catalogue links to the design system site ([2fbeb82](https://github.com/filipgutica/filip-stack/commit/2fbeb8255cb9d7dbcc46d4fb40ee38be11cd8d2f))
+
 # [4.6.0](https://github.com/filipgutica/filip-stack/compare/v4.5.8...v4.6.0) (2026-11-09)
 
 
