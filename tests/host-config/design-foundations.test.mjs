@@ -209,14 +209,15 @@ test('pages and the report stylesheet use only the named breakpoints', () => {
 })
 
 // Depth lives in tokens.css. A page's shadow is none, a tokens.css variable, or a zero-blur line in a
-// token colour: a focus ring or a divider. --depth passes because the guard checks
+// token colour or a token mixed with transparent: a focus ring, a focused field's inset line, or a
+// divider. --depth passes because the guard checks
 // each place a page sets it. Custom properties named like a shadow are checked too, so a page cannot
 // hide a literal behind its own variable.
 const tokenNames = new Set([...read('tokens.css').matchAll(/^\s*(--[\w-]+):/gm)].map((match) => match[1]))
 const isToken = (reference) => reference === '--depth' || tokenNames.has(reference)
 const isShadowLayerAllowed = (layer) => {
-  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?var\((--[\w-]+)\)$/)
-  return Boolean(match) && isToken(match[1])
+  const match = layer.match(/^(?:inset )?(?:-?[\d.]+(?:px)? -?[\d.]+(?:px)?(?: 0(?:px)?(?: -?[\d.]+(?:px)?)?)? )?(?:var\((--[\w-]+)\)|color-mix\(in srgb, ?var\((--[\w-]+)\) [\d.]+%, ?transparent\))$/)
+  return Boolean(match) && isToken(match[1] ?? match[2])
 }
 const isShadowAllowed = (value) => value === 'none' || selectors(value).every(isShadowLayerAllowed)
 
@@ -227,7 +228,7 @@ const flaggedDeclarations = ({ file, html, isViolation }) => {
   return [...cssRules(html), ...inline].flatMap(({ context, selector, body }) =>
     body.split(';').map((declaration) => declaration.trim()).filter(Boolean)
       .map((declaration) => declaration.match(/^([\w-]+)\s*:\s*(.+)$/))
-      .filter((match) => match && isViolation(match[1], match[2]))
+      .filter((match) => match && isViolation(match[1], match[2], context))
       .map(([declaration]) => `${file}: ${`${context} ${selector}`.trim()} { ${declaration} }`))
 }
 
@@ -243,34 +244,50 @@ test('the depth guard reads every style block and both inline quote forms', () =
   assert.equal(shadowLiterals('planted.html', planted).length, 2)
 })
 
+test('the depth guard allows a zero-blur token line mixed with transparent, and nothing looser', () => {
+  const planted = `<style>.ok { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 18%, transparent) }
+    .blur { box-shadow: inset 0 0 4px 2px color-mix(in srgb, var(--accent) 18%, transparent) }
+    .opaque { box-shadow: inset 0 0 0 2px color-mix(in srgb, var(--accent) 18%, black) }
+    .literal { box-shadow: inset 0 0 0 2px color-mix(in srgb, #4b45d1 18%, transparent) }</style>`
+  assert.equal(shadowLiterals('planted.html', planted).length, 3)
+})
+
 test('pages take depth from tokens.css: no literal shadow outside a focus ring or divider', () => {
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   assert.ok(pages.includes('components.html') && pages.includes('reference.html'))
   assert.deepEqual(pages.flatMap((page) => shadowLiterals(page, read(page))), [])
 })
 
-// Focus is one ink ring for every role. An outline that draws uses var(--focus), an outline-color is
-// var(--focus) or CanvasText (for forced colors), and --focus is the text colour, or the terminal text
-// on a dark plate. A per-role ring colour, set directly or by redefining --focus, fails.
+// Focus is one accent ring for every role, written from tokens. An outline that draws is
+// var(--focus-width) solid var(--focus), offset var(--focus-offset) or inset by the width. An
+// outline-color is var(--focus) or CanvasText (for forced colors). --focus is the accent, or the
+// dark-theme accent on a dark plate. In forced colors a focused field, which has no ring elsewhere,
+// draws a Highlight outline 1px inside its edge. A per-role ring colour, set directly or by redefining
+// --focus, and a hand-written width or offset fail.
 const focusRules = [
-  { property: /^outline$/, allowed: (value) => /^(?:none|0)$/.test(value) || /^2px solid var\(--focus\)$/.test(value) },
+  { property: /^outline$/, allowed: (value, forced) => /^(?:none|0)$/.test(value) || value === 'var(--focus-width) solid var(--focus)' || (forced && value === 'var(--focus-width) solid Highlight') },
   { property: /^outline-color$/, allowed: (value) => value === 'var(--focus)' || value === 'CanvasText' },
-  { property: /^--focus$/, allowed: (value) => value === 'var(--text)' || value === 'var(--terminal-text)' },
+  { property: /^outline-offset$/, allowed: (value, forced) => ['var(--focus-offset)', 'calc(var(--focus-width) * -1)'].includes(value) || (forced && value === '-1px') },
+  { property: /^--focus$/, allowed: (value) => value === 'var(--accent)' || value === 'var(--project-dark)' },
 ]
 const focusColourDrift = (file, html) => flaggedDeclarations({
   file,
   html,
-  isViolation: (name, value) => focusRules.some(({ property, allowed }) => property.test(name) && !allowed(value)),
+  isViolation: (name, value, context) => focusRules.some(({ property, allowed }) => property.test(name) && !allowed(value, context.includes('forced-colors: active'))),
 })
 
-test('the focus guard catches a per-role ring colour, set directly or through --focus', () => {
-  const planted = `<style>.btn:focus-visible { outline: 2px solid var(--accent) } .tab { outline-color: var(--link) }
-    .btn.danger { --focus: var(--danger) } .ok { outline: 2px solid var(--focus); outline-color: CanvasText } .off { outline: none }</style>
-    <p style="--focus: var(--project-dark)"></p>`
-  assert.equal(focusColourDrift('planted.html', planted).length, 4)
+test('the focus guard catches a per-role ring colour or a hand-written ring, set directly or through --focus', () => {
+  const planted = `<style>.btn:focus-visible { outline: var(--focus-width) solid var(--accent) } .tab { outline-color: var(--link) }
+    .btn.danger { --focus: var(--danger) } .old { outline: 2px solid var(--focus); outline-offset: 2px }
+    .ok { outline: var(--focus-width) solid var(--focus); outline-offset: var(--focus-offset); outline-color: CanvasText } .off { outline: none }
+    .inset { outline-offset: calc(var(--focus-width) * -1) } .plate { --focus: var(--project-dark) }
+    .field:focus-visible { outline: var(--focus-width) solid Highlight; outline-offset: -1px }
+    @media (forced-colors: active) { .field:focus-visible { outline: var(--focus-width) solid Highlight; outline-offset: -1px } }</style>
+    <p style="--focus: var(--text)"></p>`
+  assert.equal(focusColourDrift('planted.html', planted).length, 8)
 })
 
-test('every focus ring is the one ink ring: no per-role ring colour on any page or in tokens.css', () => {
+test('every focus ring is the one accent ring: no per-role ring colour or hand-written ring on any page or in tokens.css', () => {
   const pages = readdirSync(dir).filter((file) => file.endsWith('.html'))
   const sources = [...pages.map((page) => [page, read(page)]), ['tokens.css', `<style>${read('tokens.css')}</style>`]]
   assert.deepEqual(sources.flatMap(([file, html]) => focusColourDrift(file, html)), [])
@@ -353,16 +370,21 @@ const contrast = (a, b) => {
 }
 // color-mix in srgb over an opaque colour or over transparent (premultiplied), then composited on the surface.
 const fillOn = ({ accent, share, base, surface }) => accent.map((c, i) => c * share + (base ?? surface)[i] * (1 - share))
-const navCurrentText = (css) => {
+const surfaces = ['--bg', '--surface', '--surface-raised']
+// Each tokens.css theme block with its accent: --project in light, --project-dark in both dark blocks.
+const accentThemes = (css) => {
   const light = themeBlock(css, ':root {')
-  assert.equal(tokenValue(light, '--nav-current-text'), 'var(--accent)')
   assert.equal(tokenValue(light, '--accent'), 'var(--project)')
-  const surfaces = ['--bg', '--surface', '--surface-raised']
-  const themes = [
-    { name: 'light', block: light, accent: tokenValue(light, '--project') },
-    { name: 'dark (prefers-color-scheme)', block: themeBlock(css, ':root:not([data-theme="light"])'), accent: tokenValue(light, '--project-dark') },
-    { name: 'dark (data-theme)', block: themeBlock(css, ':root[data-theme="dark"] {'), accent: tokenValue(light, '--project-dark') },
+  return [
+    { name: 'light', block: light, light, accent: tokenValue(light, '--project') },
+    { name: 'dark (prefers-color-scheme)', block: themeBlock(css, ':root:not([data-theme="light"])'), light, accent: tokenValue(light, '--project-dark') },
+    { name: 'dark (data-theme)', block: themeBlock(css, ':root[data-theme="dark"] {'), light, accent: tokenValue(light, '--project-dark') },
   ]
+}
+const navCurrentText = (css) => {
+  const themes = accentThemes(css)
+  const light = themes[0].block
+  assert.equal(tokenValue(light, '--nav-current-text'), 'var(--accent)')
   return themes.flatMap(({ name, block, accent }) => {
     const mix = tokenValue(block, '--nav-current').match(/^color-mix\(in srgb, var\(--accent\) ([\d.]+)%, (transparent|var\(--surface-raised\))\)$/)
     assert.ok(mix, `${name} --nav-current is an accent mix`)
@@ -376,8 +398,8 @@ const navCurrentText = (css) => {
   })
 }
 
-// A ratio that is not a finite number at or above 4.5:1 fails.
-const belowContrast = (results) => results.filter(({ ratio }) => !(Number.isFinite(ratio) && ratio >= 4.5))
+// A ratio that is not a finite number at or above the minimum (4.5:1 for text by default) fails.
+const belowContrast = (results, min = 4.5) => results.filter(({ ratio }) => !(Number.isFinite(ratio) && ratio >= min))
 
 test('the nav-current contrast guard fails a fill strong enough to hide accent text', () => {
   const planted = read('tokens.css').replace('var(--accent) 14%, var(--surface-raised)', 'var(--accent) 60%, var(--surface-raised)')
@@ -396,6 +418,31 @@ test('accent text on the selected fill reaches 4.5:1 on every surface in both th
   const results = navCurrentText(read('tokens.css'))
   assert.equal(results.length, 9)
   assert.deepEqual(belowContrast(results), [])
+})
+
+// The focus ring is the accent, so the accent must reach 3:1 (WCAG 1.4.11) on every surface a ring
+// sits on, in both themes.
+const focusRingContrast = (css) => {
+  const themes = accentThemes(css)
+  assert.equal(tokenValue(themes[0].block, '--focus'), 'var(--accent)')
+  return themes.flatMap(({ name, block, light, accent }) => surfaces.map((surface) => ({
+    theme: name,
+    surface,
+    ratio: contrast(rgb(accent), rgb(tokenValue(block, surface) ?? tokenValue(light, surface))),
+  })))
+}
+
+test('the focus-ring contrast guard fails a pale accent and a ring that is not the accent', () => {
+  const css = read('tokens.css')
+  const failing = belowContrast(focusRingContrast(css.replace('--project: #4b45d1;', '--project: #c9c7f5;')), 3)
+  assert.deepEqual([...new Set(failing.map(({ theme }) => theme))], ['light'])
+  assert.throws(() => focusRingContrast(css.replace('--focus: var(--accent);', '--focus: var(--text);')))
+})
+
+test('the accent focus ring reaches 3:1 on --bg, --surface, and --surface-raised in both themes', () => {
+  const results = focusRingContrast(read('tokens.css'))
+  assert.equal(results.length, 9)
+  assert.deepEqual(belowContrast(results, 3), [])
 })
 
 // The native clear cross sits at the input's trailing edge. A fixed-width search input inside a wider

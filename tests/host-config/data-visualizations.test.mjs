@@ -93,10 +93,11 @@ test('a long unbroken item name wraps in the phone layout', async () => {
 })
 
 test('standalone pickers take the field recipe; inline pickers keep the host look', async () => {
-  const field = /\.ov-controls select\{background:var\(--field\);border-color:var\(--field-edge\);border-radius:var\(--radius-field\);box-shadow:var\(--shadow-sink\)\}\.ov-controls select:focus-visible\{background:var\(--field-focus\);box-shadow:var\(--shadow-raise\)\}/
+  const field = /\.ov-controls select\{background:var\(--field-bg\);border-color:var\(--field-edge\);border-radius:var\(--radius-field\);box-shadow:var\(--field-shadow\)\}\.ov-controls select:focus-visible\{outline:none;border-color:var\(--accent\);box-shadow:inset 0 0 0 2px color-mix\(in srgb,var\(--accent\) 18%,transparent\)\}@media \(forced-colors:active\)\{\.ov-controls select:focus-visible\{outline:var\(--focus-width\) solid Highlight;outline-offset:-1px\}\}/
   const standalone = await renderReport(sample(), { mode: 'standalone', tokens: ':root{--text:currentColor}' })
   assert.match(standalone, field)
-  // Equal specificity, so the field recipe must come after report.css's own picker rule to win.
+  // Equal specificity, so the field recipe must come after report.css's own picker and focus rules to win.
   assert.ok(standalone.search(field) > standalone.indexOf('.ov-controls select{font:inherit'))
+  assert.ok(standalone.search(field) > standalone.indexOf('.ov-controls select:focus-visible{outline:var(--focus-width,2px)'))
   assert.doesNotMatch(await renderReport(sample()), /--field|--shadow-sink/)
 })
