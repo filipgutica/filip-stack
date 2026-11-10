@@ -1,3 +1,16 @@
+# [5.1.0](https://github.com/filipgutica/filip-stack/compare/v5.0.0...v5.1.0) (2026-11-10)
+
+
+### Bug Fixes
+
+* **host-config:** harden usage reader and routing rules after review ([8f3c059](https://github.com/filipgutica/filip-stack/commit/8f3c0594bdfd1756e1c65184af3fa90c8624dd93))
+* **host-config:** read per-model windows such as Fable from codexbar ([0070c78](https://github.com/filipgutica/filip-stack/commit/0070c78d73f107f5da8441d25bef98f3c243b687))
+
+
+### Features
+
+* **host-config:** route delegation by model tier and live usage ([2d8f367](https://github.com/filipgutica/filip-stack/commit/2d8f36745d38528823fa431335060d627990b124))
+
 # [5.0.0](https://github.com/filipgutica/filip-stack/compare/v4.7.0...v5.0.0) (2026-11-10)
 
 
