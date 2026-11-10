@@ -262,9 +262,9 @@ const tables = {
       </div>
     </UiCard>
     <p class="hint">
-      The labels above use standalone token names. The values live in <code>@filipgutica/ui</code>.
-      <code>tokens.css</code> is a generated copy for standalone HTML.
-      On library sites, use the first variable in each token's <code>ui:</code> comment.
+      The labels above are token names. Standalone HTML and library sites use the same names.
+      The values come from <code>@filipgutica/design-system</code>, which generates <code>tokens.css</code> and the
+      <code>@filipgutica/ui</code> theme.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.
