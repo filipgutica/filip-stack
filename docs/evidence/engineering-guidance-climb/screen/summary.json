@@ -1,0 +1,330 @@
+{
+  "study": "Engineering guidance climb: paired screen, vanilla x1 vs workflow-lean x1, 25 DeepSWE panel tasks, Codex gpt-6.1-sol high",
+  "decision": {
+    "rule": "correctness non-inferiority, margin -10 pp on the 90% CI lower bound",
+    "label": "stop, inconclusive"
+  },
+  "all": {
+    "admitted_tasks": 20,
+    "pass_rate": {
+      "workflow-lean": 0.8,
+      "baseline": 0.9
+    },
+    "difference": -0.1,
+    "interval_90": [
+      -0.3,
+      0.1
+    ],
+    "sign_test_p": 0.6875,
+    "discordant": {
+      "csstree-shorthand-expansion-compression": 1.0,
+      "go-critic-doc-link-checker": 1.0,
+      "oxvg-structural-selector-preservation": -1.0,
+      "tomlkit-toml-table-converters": -1.0,
+      "etree-xml-diff-patch": -1.0,
+      "anko-typed-variable-bindings": -1.0
+    },
+    "token_ratio_geomean": 1.6477,
+    "token_ratio_interval_90": [
+      1.4169,
+      1.935
+    ],
+    "token_missing": {
+      "oxvg-structural-selector-preservation": "missing token total"
+    }
+  },
+  "without_tuned": {
+    "admitted_tasks": 18,
+    "pass_rate": {
+      "workflow-lean": 0.7778,
+      "baseline": 0.9444
+    },
+    "difference": -0.1667,
+    "interval_90": [
+      -0.3889,
+      0.0
+    ],
+    "sign_test_p": 0.375,
+    "discordant": {
+      "go-critic-doc-link-checker": 1.0,
+      "oxvg-structural-selector-preservation": -1.0,
+      "tomlkit-toml-table-converters": -1.0,
+      "etree-xml-diff-patch": -1.0,
+      "anko-typed-variable-bindings": -1.0
+    },
+    "token_ratio_geomean": 1.675,
+    "token_ratio_interval_90": [
+      1.421,
+      1.9958
+    ],
+    "token_missing": {
+      "oxvg-structural-selector-preservation": "missing token total"
+    }
+  },
+  "arm_names": {
+    "baseline": "vanilla"
+  },
+  "admission": [
+    {
+      "task": "adaptix-name-mapping-aliases",
+      "part": "screen-topup",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "csstree-shorthand-expansion-compression",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "go-critic-doc-link-checker",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "oxvg-structural-selector-preservation",
+      "part": "screen-topup",
+      "vanilla": "pass",
+      "workflow-lean": "fail",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "termenv-preserve-ansi-resets",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "fail",
+      "admitted": false,
+      "drop_reason": "both fail",
+      "judged": false
+    },
+    {
+      "task": "ts-pattern-match-each",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "fail",
+      "admitted": false,
+      "drop_reason": "both fail",
+      "judged": false
+    },
+    {
+      "task": "cattrs-partial-structuring-recovery",
+      "part": "screen",
+      "vanilla": "unknown",
+      "workflow-lean": "pass",
+      "admitted": false,
+      "drop_reason": "infrastructure",
+      "judged": false
+    },
+    {
+      "task": "skrub-duration-encoding",
+      "part": "screen-topup",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "wasmi-trap-coredumps",
+      "part": "screen-topup",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "fd-deterministic-multi-key-sorting",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "boa-hierarchical-evaluation-cancellation",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "tengo-destructuring-bindings",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "fail",
+      "admitted": false,
+      "drop_reason": "both fail",
+      "judged": false
+    },
+    {
+      "task": "tomlkit-toml-table-converters",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "fail",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "abs-stepped-slices",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "expr-try-catch-errors",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "kysely-window-grouping-helpers",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "actionlint-action-pinning-lint",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "etree-xml-diff-patch",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "fail",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "returns-validated-error-accumulation",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "anko-default-function-arguments",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "textual-richlog-follow-state",
+      "part": "screen-topup",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "bandit-structured-nosec-directives",
+      "part": "screen",
+      "vanilla": "fail",
+      "workflow-lean": "fail",
+      "admitted": false,
+      "drop_reason": "both fail",
+      "judged": false
+    },
+    {
+      "task": "anko-typed-variable-bindings",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "fail",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": false
+    },
+    {
+      "task": "yjs-map-conflict-detection",
+      "part": "screen",
+      "vanilla": "overlap_pass",
+      "workflow-lean": "overlap_pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    },
+    {
+      "task": "sql-formatter-bigquery-pipe-formatting",
+      "part": "screen",
+      "vanilla": "pass",
+      "workflow-lean": "pass",
+      "admitted": true,
+      "drop_reason": null,
+      "judged": true
+    }
+  ],
+  "ask_stops": {
+    "vanilla": 0,
+    "workflow-lean": 0,
+    "note": "one empty patch: workflow-lean on oxvg, a timeout after 1,958 s, not an ask-stop"
+  },
+  "coding_tokens_input_plus_output": {
+    "admitted_vanilla_total_M": 36.96,
+    "admitted_workflow_lean_total_M": 57.6,
+    "coded_attempts": 55,
+    "attempts_with_token_totals": 54,
+    "recorded_total_M": 125.09,
+    "unused_one_arm_attempts": 5,
+    "missing": "workflow-lean on oxvg (timeout)"
+  },
+  "judges_diagnostic": {
+    "judged_pairs": 14,
+    "astra_gpt_6_astra_high": {
+      "valid": 14,
+      "prefers_workflow_lean": 9,
+      "side_a": 5
+    },
+    "sol_gpt_6_1_sol_high": {
+      "valid": 14,
+      "prefers_workflow_lean": 8,
+      "side_a": 6
+    },
+    "astra_sol_agree": 13,
+    "opus_5_5_high": {
+      "valid": 0,
+      "reason": "PluginBench's Claude harness rejected the CLI's built-in startup plugins as custom configuration"
+    },
+    "fable_5_2_high_owner_profile": {
+      "valid": 0,
+      "reason": "same harness failure"
+    }
+  }
+}
