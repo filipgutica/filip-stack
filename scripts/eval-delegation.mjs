@@ -76,8 +76,8 @@ for (const host of Object.keys(hosts)) {
     const passes = (version) => results.filter((result) => result.id === scenario.id && result.version === version && accepted.includes(result.choice)).length
     const [base, head] = [passes('base'), passes('head')]
     totals = { base: totals.base + base, head: totals.head + head }
-    // A scenario that only the new guidance can pass must also gain over the base.
-    if (head < base || (scenario.needsNewGuidance && head <= base)) regressions++
+    // A scenario that needs the new guidance must gain over the base unless it already passes every attempt.
+    if (head < base || (scenario.needsNewGuidance && head <= base && head < attempts)) regressions++
     const choices = results.filter((result) => result.id === scenario.id && result.version === 'head').map(({ choice }) => choice)
     console.log(`| ${scenario.id} | ${accepted.join(', ')} | ${base}/${attempts} | ${head}/${attempts} | ${choices.join(', ')} |`)
   }

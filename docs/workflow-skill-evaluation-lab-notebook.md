@@ -1725,6 +1725,22 @@ Decision: the owner-profile judge joins the panel and stands in for the owner's 
 
 Evidence: [judge validation notes](evidence/engineering-guidance-climb/judge-validation/notes.md).
 
+### 31. Host-config delegation: tier roster and usage rule
+
+Date: 2026-11-10. A decision eval, not a PluginBench coding run.
+
+The change gives each model a tier (frontier, workhorse, balanced, fast) in `host-config/models.json`, adds a mechanical-work role, names the work a main thread hands off, and moves a short provider's role to the other provider's model in the same tier.
+
+`pnpm eval:delegation` asked each host's main-thread model where 11 tasks should run, with the guidance from `main` and from the branch, three attempts each:
+
+- Opus 5.5 on the Claude guidance: 24 of 33 on `main`, 33 of 33 on the branch.
+- Sol on the Codex guidance: 15 of 33 on `main`, 33 of 33 on the branch.
+- No scenario scored lower on the branch. Code-writing tasks stayed in the main thread, and the small read was never delegated.
+
+Limits: the eval measures the stated choice, not a delegation in a live T3 thread, and scenarios and accepted answers come from the same author as the change.
+
+Evidence: [run notes](evidence/delegation-routing-eval/run-2026-11-10.md).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1859,6 +1875,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-06 | UX guidance probe pre-registration and dry run | `interface-design` vs `ux-laws` plus `frontend-design` vs vanilla; review task with planted defects and build task with gates and blind judges; Opus 5.5 attempts | Free dry run passed: identical first requests across arms, self-test 24 of 24, gates pass two reference builds and fail the stub; no paid call | `--safe-mode --restricted` and scratch Codex homes remove host guidance that earlier probes shared across arms. Paid run of 72 calls awaits approval. | [docs/evidence/ux-guidance-probe/dry-run-report.md](evidence/ux-guidance-probe/dry-run-report.md) |
 | 2026-11-06 | Two writing rules, judge-led probe | Four briefs × three arms × five attempts; 24 five-pair judge batches; 167 total calls | Neither rule supported: R1 12.5/20 and R2 10/20 weighted wins against both base and vanilla; reader no harm passed | C remained at 10/20; all reader arms passed 20/20. No writing rule shipped. | [Study record](evidence/writing-rules-probe/results.md) |
 | 2026-11-10 | Design system 2.0 token rename (DS-3, FS-2) | `@filipgutica/design-system` 2.0.0 renames 56 short token names to ui's names; the installed `DESIGN.md` and examples change names only | Not run: PluginBench still has no design-language protocol, so the planned `design-language-probe` dry run could not run | All 8 page screenshots (4 pages, light and dark) differ by 0 px once visible name text is normalised, so the rename changes no rendered output. Whether agents write the new names correctly is unmeasured. | [design-system PR #5](https://github.com/filipgutica/design-system/pull/5) |
+| 2026-11-10 | Host-config delegation routing | Model tiers, mechanical-work role, hand-off list, and usage rule in the global guidance | Opus 24/33 → 33/33; Sol 15/33 → 33/33 on 11 scenarios × 3 attempts | Naming the hand-off work and the cheaper tiers changed both models' stated choices; neither moved code-writing off the main thread. | [run notes](evidence/delegation-routing-eval/run-2026-11-10.md) |
 
 ## Validity threats
 
