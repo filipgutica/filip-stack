@@ -221,50 +221,50 @@ const tables = {
       <div class="swatches">
         <figure>
           <span style="background: var(--color-bg)"></span>
-          <figcaption><code>--bg</code>Page</figcaption>
+          <figcaption><code>--color-bg</code>Page</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-surface)"></span>
-          <figcaption><code>--surface</code>Regions</figcaption>
+          <figcaption><code>--color-surface</code>Regions</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-surface-raised)"></span>
-          <figcaption><code>--surface-raised</code>Controls</figcaption>
+          <figcaption><code>--color-surface-raised</code>Controls</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-text)"></span>
-          <figcaption><code>--text</code>Body text</figcaption>
+          <figcaption><code>--color-text</code>Body text</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-muted)"></span>
-          <figcaption><code>--text-muted</code>Secondary</figcaption>
+          <figcaption><code>--color-muted</code>Secondary</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-accent)"></span>
-          <figcaption><code>--accent</code>Primary action</figcaption>
+          <figcaption><code>--color-accent</code>Primary action</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-link)"></span>
-          <figcaption><code>--link</code>Links</figcaption>
+          <figcaption><code>--color-link</code>Links</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-success)"></span>
-          <figcaption><code>--success</code>State</figcaption>
+          <figcaption><code>--color-success</code>State</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-warning)"></span>
-          <figcaption><code>--warning</code>State</figcaption>
+          <figcaption><code>--color-warning</code>State</figcaption>
         </figure>
         <figure>
           <span style="background: var(--color-error)"></span>
-          <figcaption><code>--danger</code>State</figcaption>
+          <figcaption><code>--color-error</code>State</figcaption>
         </figure>
       </div>
     </UiCard>
     <p class="hint">
-      The labels above use standalone token names. The values live in <code>@filipgutica/ui</code>.
-      <code>tokens.css</code> is a generated copy for standalone HTML.
-      On library sites, use the first variable in each token's <code>ui:</code> comment.
+      The labels above are token names. Standalone HTML and library sites use the same names.
+      The values come from <code>@filipgutica/design-system</code>, which generates <code>tokens.css</code> and the
+      <code>@filipgutica/ui</code> theme.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.
