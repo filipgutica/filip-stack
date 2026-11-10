@@ -1,0 +1,98 @@
+import { spawnSync } from 'node:child_process'
+import { chmodSync, mkdtempSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+import test from 'node:test'
+import assert from 'node:assert/strict'
+import { fileURLToPath } from 'node:url'
+
+const script = fileURLToPath(new URL('../../host-config/agents/scripts/model-usage.mjs', import.meta.url))
+const inDays = (days) => new Date(Date.now() + days * 86_400_000).toISOString()
+const fresh = () => new Date().toISOString()
+
+// Runs the script with stub `codexbar` and `claude-swap` commands that print the given output.
+// A stub set to null is not installed.
+const run = ({ codexbar = {}, claudeSwap = null }) => {
+  const bin = mkdtempSync(join(tmpdir(), 'model-usage-bin-'))
+  const stub = (name, outputs) => {
+    const data = join(bin, `${name}.json`)
+    writeFileSync(data, JSON.stringify(outputs))
+    const path = join(bin, name)
+    // The stub picks its output by the --provider value, or `list` for claude-swap.
+    writeFileSync(path, `#!${process.execPath}
+const outputs = JSON.parse(require('node:fs').readFileSync(${JSON.stringify(data)}, 'utf8'))
+const args = process.argv.slice(2)
+const key = args.includes('--provider') ? args[args.indexOf('--provider') + 1] : args[0]
+if (outputs[key] === undefined) { console.error('stub: no output for ' + key); process.exit(1) }
+process.stdout.write(JSON.stringify(outputs[key]))
+`)
+    chmodSync(path, 0o755)
+  }
+  if (codexbar) stub('codexbar', codexbar)
+  if (claudeSwap) stub('claude-swap', claudeSwap)
+  const result = spawnSync(process.execPath, [script], { encoding: 'utf8', env: { PATH: `${bin}:/usr/bin:/bin` } })
+  assert.equal(result.status, 0, result.stderr)
+  return JSON.parse(result.stdout).providers
+}
+
+const codexbarEntry = ({ provider, usedPercent, willLastToReset, updatedAt = fresh() }) => [{
+  provider,
+  rateWindowLabels: { secondary: 'Weekly' },
+  usage: { updatedAt, primary: null, secondary: { usedPercent, resetsAt: inDays(5), windowMinutes: 10080 } },
+  pace: { secondary: { willLastToReset } },
+}]
+
+const swapAccount = (usage) => ({
+  schemaVersion: 1,
+  accounts: [
+    { number: 1, active: false, usage: { spend: { used: 10, limit: 400, currency: 'USD' } }, usageFetchedAt: fresh() },
+    { number: 2, active: true, usage, usageFetchedAt: fresh() },
+  ],
+})
+
+test('reads Codex from codexbar and marks a window that will not last as short', () => {
+  const { codex } = run({ codexbar: { codex: codexbarEntry({ provider: 'codex', usedPercent: 45, willLastToReset: false }), claude: [] } })
+  assert.equal(codex.status, 'short')
+  assert.equal(codex.source, 'codexbar')
+  assert.deepEqual(codex.windows.map(({ name, usedPercent }) => [name, usedPercent]), [['Weekly', 45]])
+})
+
+test('marks a window at 90% used as short even when pace says it lasts', () => {
+  const { codex } = run({ codexbar: { codex: codexbarEntry({ provider: 'codex', usedPercent: 90, willLastToReset: true }), claude: [] } })
+  assert.equal(codex.status, 'short')
+})
+
+test('reads the active claude-swap account, with per-model windows, before codexbar', () => {
+  const { claude } = run({
+    codexbar: { codex: [], claude: codexbarEntry({ provider: 'claude', usedPercent: 99, willLastToReset: false }) },
+    claudeSwap: { list: swapAccount({
+      sevenDay: { pct: 33, resetsAt: inDays(5), willLastToReset: true },
+      scoped: [{ name: 'Fable', pct: 95, resetsAt: inDays(5), willLastToReset: true }],
+    }) },
+  })
+  assert.equal(claude.source, 'claude-swap')
+  assert.equal(claude.status, 'ok')
+  assert.equal(claude.models.Fable.status, 'short')
+})
+
+test('falls back to codexbar for Claude when claude-swap is missing or has no active account', () => {
+  const codexbar = { codex: [], claude: codexbarEntry({ provider: 'claude', usedPercent: 20, willLastToReset: true }) }
+  assert.equal(run({ codexbar }).claude.source, 'codexbar')
+  assert.equal(run({ codexbar, claudeSwap: { list: { schemaVersion: 1, accounts: [] } } }).claude.source, 'codexbar')
+})
+
+test('reports no signal for a spend-only account, a provider error, a stale reading, or a missing codexbar', () => {
+  const spendOnly = run({ codexbar: { codex: [] }, claudeSwap: { list: { accounts: [{ active: true, usage: { spend: { used: 1, limit: 2, currency: 'USD' } } }] } } })
+  assert.equal(spendOnly.claude.status, 'no signal')
+  assert.match(spendOnly.claude.reason, /spend/)
+
+  const failed = run({ codexbar: { codex: [{ provider: 'codex', error: { message: 'Network error' } }], claude: [] } })
+  assert.deepEqual([failed.codex.status, failed.codex.reason], ['no signal', 'Network error'])
+
+  const stale = run({ codexbar: { codex: codexbarEntry({ provider: 'codex', usedPercent: 10, willLastToReset: true, updatedAt: inDays(-1) }), claude: [] } })
+  assert.equal(stale.codex.status, 'no signal')
+
+  const missing = run({ codexbar: null })
+  assert.deepEqual([missing.codex.status, missing.claude.status], ['no signal', 'no signal'])
+  assert.match(missing.codex.reason, /codexbar is not installed/)
+})

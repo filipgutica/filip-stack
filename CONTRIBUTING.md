@@ -129,7 +129,8 @@ is missing.
 
 `apply` copies `host-config/claude`, `codex`, and `agents` to the targets that
 [README.md](README.md#host-config) lists, and replaces `{{HOME}}` with the home
-directory. It assembles the guidance block from `host-config/guidance/`. The
+directory and each `{{model:<provider>.<tier>.<id|label>}}` with its entry in
+`host-config/models.json`. It assembles the guidance block from `host-config/guidance/`. The
 manifest in `~/.agents/.filip-stack-host-config.json` records the applied
 commit, the installed design-system version and integrity, and a hash of each
 target.
@@ -148,6 +149,11 @@ package from `tests/host-config/design-system-fixture.mjs`.
 Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
 pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
 Claude and Codex.
+
+When a model ships, update its tier in `host-config/models.json`. Host config
+names models only there, and a test enforces it. Standalone skills install
+without host config, so they keep their own model names: run
+`git grep -n <old model id>` and update `skills/` and `docs/site/` by hand.
 
 ### Share Field Guide preferences
 

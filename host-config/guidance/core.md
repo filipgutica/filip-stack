@@ -66,13 +66,24 @@ Then a **Waiting on you** list: each decision, approval, or manual step I owe, n
 
 Skill descriptions select the workflow, and the selected skill owns its procedure and commands. Invoking a skill does not expand authorization.
 
-Do routine and tightly coupled work in this thread. Delegate only when the delegation and review reference in `$workflow:engineering` justifies it, and follow it when you do; keep the current route and authority. A role below is not a reason to delegate.
+Do routine and tightly coupled work in this thread. Delegate only when the delegation and review reference in `$workflow:engineering` justifies it, and follow it when you do; keep the current route and authority. A role below is not a reason to delegate. Context isolation does justify handing these off to the Explorer or the mechanical-work role: a survey that reads more than a handful of files, a summary of a large log, thread, or document, and a bulk mechanical edit to configuration or documentation. Production code and tests stay on the workhorse tier or above.
 
 The main thread owns architecture, scope, integration, and final acceptance. Workers do their brief's work themselves and delegate further only when the brief allows it.
 
 Each brief names its role and tells the child to read that section of `{{HOME}}/.agents/roles.md` before starting. In the table, a provider/model target means `delegate_task` with that provider and model, and the cell's `key: value` pairs as `target.options`; the child receives only the brief, so state any read-only limit in it. A profile name means the native subagent tool.
 
 {{include:roles}}
+
+Each model belongs to a tier, and each tier has one model per provider:
+
+| Tier | Work | Claude (`claudeAgent`, option `effort`) | Codex (`codex`, options `reasoningEffort` and `serviceTier: default`) |
+| --- | --- | --- | --- |
+| Frontier | Critique, advice, and hard reasoning | `{{model:claude.frontier.id}}` ({{model:claude.frontier.label}}) | `{{model:codex.frontier.id}}` ({{model:codex.frontier.label}}) |
+| Workhorse | Production code, tests, and review | `{{model:claude.workhorse.id}}` ({{model:claude.workhorse.label}}) | `{{model:codex.workhorse.id}}` ({{model:codex.workhorse.label}}) |
+| Balanced | Mechanical edits and summaries | `{{model:claude.balanced.id}}` ({{model:claude.balanced.label}}) | `{{model:codex.balanced.id}}` ({{model:codex.balanced.label}}) |
+| Fast | Exploration, search, and classification | `{{model:claude.fast.id}}` ({{model:claude.fast.label}}) | `{{model:codex.fast.id}}` ({{model:codex.fast.label}}) |
+
+Before the first delegation in a task, and again after an hour, run `node {{HOME}}/.agents/scripts/model-usage.mjs`. It marks a provider or a model `short` when its usage is at least 90% or is projected to run out before the reset. When a role's target is short, use the model in the same tier from the other provider, with the same effort, if that one is not short. This applies to native profiles too. Never move work to a lower tier to save usage. When both are short or the script reports no signal, use the table as written. Say once when this thread's own provider is short, and say when a switch puts a review on the author's model family.
 
 When a role's target is not available in this setup, such as a disabled provider, a missing model, or an uninstalled profile, use that role's "Outside T3 Code" target. If that is also unavailable, use this host's default subagent, or do the work in this thread. An unavailable Opus visual review falls back to the Reviewer role. Say which fallback you used.
 

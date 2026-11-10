@@ -6,24 +6,14 @@
 
 import { execFileSync } from 'node:child_process'
 import { readdir, readFile } from 'node:fs/promises'
-import { parseArgs } from 'node:util'
+import { abTasks, createClient, parseEvalArgs, runPool } from './eval-shared.mjs'
 
 const repoRoot = new URL('../', import.meta.url)
 const skillsPath = 'plugins/workflow/skills'
 const usage = 'Usage: pnpm eval:routing --model <id> [--model <id>] [--base <ref>] [--attempts <n>] [--api-key-file <path>] [--dry-run]'
 const concurrency = 4
 
-const { values: options } = parseArgs({
-  options: {
-    model: { type: 'string', multiple: true, default: [] },
-    base: { type: 'string', default: 'origin/main' },
-    attempts: { type: 'string', default: '3' },
-    'api-key-file': { type: 'string' },
-    'dry-run': { type: 'boolean', default: false },
-  },
-})
-const attempts = Number(options.attempts)
-if (!Number.isInteger(attempts) || attempts < 1) throw new Error(`--attempts must be a positive integer\n${usage}`)
+const { options, attempts } = parseEvalArgs({ usage, extra: { model: { type: 'string', multiple: true, default: [] } } })
 
 const git = (args) => execFileSync('git', args, { cwd: repoRoot, encoding: 'utf8' })
 
@@ -73,26 +63,7 @@ console.log(`Model calls: at most ${callsPerRound * attempts * 2} per model`)
 if (options['dry-run']) process.exit(0)
 
 if (options.model.length === 0) throw new Error(`Pass at least one --model\n${usage}`)
-const baseUrl = process.env.CLIPROXY_BASE_URL ?? 'http://127.0.0.1:8317/v1'
-const apiKey = options['api-key-file'] ? (await readFile(options['api-key-file'], 'utf8')).trim() : process.env.CLIPROXY_API_KEY
-if (!apiKey) throw new Error('Set CLIPROXY_API_KEY or pass --api-key-file with one of the client api-keys in the CLIProxyAPI config')
-
-const askJson = async ({ model, system, user }) => {
-  const response = await fetch(`${baseUrl}/chat/completions`, {
-    method: 'POST',
-    headers: { 'content-type': 'application/json', authorization: `Bearer ${apiKey}` },
-    body: JSON.stringify({ model, messages: [{ role: 'system', content: system }, { role: 'user', content: user }] }),
-  })
-  // An error body can echo the request, so redact the key before printing server text.
-  if (!response.ok) throw new Error(`${model}: HTTP ${response.status} ${(await response.text()).replaceAll(apiKey, '<redacted>').slice(0, 300)}`)
-  const content = (await response.json()).choices?.[0]?.message?.content ?? ''
-  try {
-    return JSON.parse(content.match(/\{[\s\S]*\}/u)?.[0] ?? '')
-  } catch {
-    // A reply without valid JSON counts as a failed attempt, not a run failure.
-    return { invalid: content.slice(0, 80) }
-  }
-}
+const { askJson } = await createClient({ apiKeyFile: options['api-key-file'] })
 
 const pickSkill = async ({ model, skills, scenario }) => {
   const catalog = skills.filter((skill) => !skill.manual).map((skill) => `- ${skill.name}: ${skill.description}`).join('\n')
@@ -126,27 +97,10 @@ const runAttempt = async ({ model, skills, scenario }) => {
   return references.includes(scenario.expectedReference) ? null : `references ${references.join(', ') || 'none'}`
 }
 
-const runPool = async (tasks) => {
-  const results = []
-  let next = 0
-  await Promise.all(Array.from({ length: concurrency }, async () => {
-    while (next < tasks.length) {
-      const index = next++
-      results[index] = await tasks[index]()
-    }
-  }))
-  return results
-}
-
 let regressions = 0
 for (const model of options.model) {
-  const tasks = scenarios.flatMap((scenario) => ['base', 'head'].flatMap((version) =>
-    Array.from({ length: attempts }, () => async () => ({
-      id: scenario.id,
-      version,
-      failure: await runAttempt({ model, skills: versions[version], scenario }),
-    }))))
-  const results = await runPool(tasks)
+  const tasks = abTasks({ scenarios, attempts, run: async ({ scenario, version }) => ({ failure: await runAttempt({ model, skills: versions[version], scenario }) }) })
+  const results = await runPool({ tasks, concurrency })
 
   const rows = scenarios.map(({ id }) => {
     const attemptsFor = (version) => results.filter((result) => result.id === id && result.version === version)

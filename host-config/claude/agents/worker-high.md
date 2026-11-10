@@ -1,7 +1,7 @@
 ---
 name: worker-high
-description: Bounded implementation with focused verification. Runs on Opus 5.5 at high effort.
-model: claude-opus-5-5
+description: Bounded implementation with focused verification. Runs on {{model:claude.workhorse.label}} at high effort.
+model: {{model:claude.workhorse.id}}
 effort: high
 ---
 

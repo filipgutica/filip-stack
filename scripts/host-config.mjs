@@ -58,7 +58,15 @@ const listFiles = (directory) => (
     .map((entry) => join(entry.parentPath, entry.name))
 )
 
-const renderText = ({ text, home }) => text.replaceAll('{{HOME}}', home)
+// Model names live only in models.json. Templates name a model as {{model:<provider>.<tier>.<id|label>}}.
+let roster
+const renderModel = (placeholder, provider, tier, field) => {
+  roster ??= JSON.parse(read(join(sourceRoot, 'models.json')))
+  return roster[provider]?.[tier]?.[field] ?? fail(`${placeholder} is not defined in host-config/models.json`)
+}
+const renderText = ({ text, home }) => text
+  .replaceAll('{{HOME}}', home)
+  .replace(/\{\{model:([a-z]+)\.([a-z]+)\.(id|label)\}\}/g, renderModel)
 
 const renderGuidance = ({ host, home }) => {
   const core = read(join(sourceRoot, 'guidance', 'core.md'))

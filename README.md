@@ -215,6 +215,14 @@ plugins.
 - Codex agent profiles and the `~/.codex/rules/filip-stack.rules` prompts that
   Guardrails relies on
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
+- the model tiers in `host-config/models.json`, which fill in every model name
+  in the guidance and agent profiles
+- `~/.agents/scripts/model-usage.mjs`, which threads run before delegating so
+  work moves to the other provider when one is short of usage. It needs the
+  [CodexBar](https://codexbar.app) CLI (`brew install --cask codexbar` on macOS,
+  `brew install steipete/tap/codexbar` on Linux) and uses
+  [claude-swap](https://github.com/realiti4/claude-swap) for Claude when it manages the
+  active account. Without CodexBar, threads use the role tables as written.
 - the `~/design-language` files the guidance refers to, installed from the
   pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
   package in `host-config/design-system.json`; filip-stack uses it as the default
