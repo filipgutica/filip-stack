@@ -58,7 +58,12 @@ const fromCodexbar = async (provider) => {
     resetsAt: usage[key].resetsAt,
     willLastToReset: entry.pace?.[key]?.willLastToReset,
   }))
-  return reading({ source: 'codexbar', fetchedAt: usage.updatedAt, windows })
+  // Model-scoped windows, such as Claude's "Fable only". CodexBar gives them no pace data.
+  const models = Object.fromEntries((usage.extraRateWindows ?? []).map(({ title, window }) => [
+    title.replace(/ only$/, ''),
+    { usedPercent: window.usedPercent, resetsAt: window.resetsAt },
+  ]))
+  return reading({ source: 'codexbar', fetchedAt: usage.updatedAt, windows, models })
 }
 
 const swapWindow = ({ pct, expectedPct, resetsAt, willLastToReset }) => ({ usedPercent: pct, expectedPercent: expectedPct, resetsAt, willLastToReset })

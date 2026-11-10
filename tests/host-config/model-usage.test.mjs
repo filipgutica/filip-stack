@@ -106,6 +106,21 @@ test('falls back to codexbar for Claude when claude-swap is missing, fails, or h
   assert.equal(run({ codexbar, claudeSwap: { list: { schemaVersion: 1, accounts: [] } } }).claude.source, 'codexbar')
 })
 
+test('reads per-model windows from codexbar, such as the Fable-only window', () => {
+  const entry = codexbarEntry({ provider: 'claude', usedPercent: 43, willLastToReset: true })
+  // Shape captured from CodexBar 0.84.0; the scoped window has no pace entry.
+  entry[0].usage.extraRateWindows = [{
+    id: 'claude-weekly-scoped-fable',
+    title: 'Fable only',
+    window: { windowMinutes: 10080, usedPercent: 92, resetsAt: inDays(5), resetDescription: 'Nov 15 at 8:00AM' },
+  }]
+  const { claude } = run({ codexbar: { codex: [], claude: entry } })
+  assert.equal(claude.source, 'codexbar')
+  assert.equal(claude.status, 'ok')
+  assert.equal(claude.models.Fable.usedPercent, 92)
+  assert.equal(claude.models.Fable.status, 'short')
+})
+
 test('reports no signal for a spend-only account, a provider error, a stale reading, or a missing codexbar', () => {
   const spendOnly = run({ codexbar: { codex: [] }, claudeSwap: { list: { accounts: [{ active: true, usage: { spend: { used: 1, limit: 2, currency: 'USD' } } }] } } })
   assert.equal(spendOnly.claude.status, 'no signal')
