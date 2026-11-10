@@ -54,7 +54,7 @@ For every finding, classify its remedy:
   "settings": { "model": "<model you run as, if known>", "effort": "<effort, if known>" },
   "findings": [
     {
-      "id": "<member initial>-1",
+      "id": "1",
       "claim": "what is wrong",
       "evidence": "path:line, or command and output",
       "consequence": "what breaks, and for whom",
@@ -63,7 +63,7 @@ For every finding, classify its remedy:
       "eligibility": "eligible | excluded:<category> | uncertain"
     }
   ],
-  "prior": [ { "id": "P-A-1", "status": "resolved | open", "evidence": "path:line, or command and output" } ],
+  "prior": [ { "id": "P-F-1", "status": "resolved | open", "evidence": "path:line, or command and output" } ],
   "vote": "APPROVE | CHANGES_REQUESTED | ABSTAIN",
   "voteReason": "one or two sentences",
   "coverage": { "met": true, "residualLimitations": [] }
