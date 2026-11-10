@@ -1,7 +1,7 @@
 ---
 name: reviewer
-description: Read-only routine review and caller-facing checks. Native fallback outside T3 Code; runs on Opus 5.5 at high effort. Use critic for required adversarial review.
-model: claude-opus-5-5
+description: Read-only routine review and caller-facing checks. Native fallback outside T3 Code; runs on {{model:claude.workhorse.label}} at high effort. Use critic for required adversarial review.
+model: {{model:claude.workhorse.id}}
 effort: high
 tools: Read, Glob, Grep, Bash
 ---

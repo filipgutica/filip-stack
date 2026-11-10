@@ -1725,6 +1725,22 @@ Decision: the owner-profile judge joins the panel and stands in for the owner's 
 
 Evidence: [judge validation notes](evidence/engineering-guidance-climb/judge-validation/notes.md).
 
+### 31. Host-config delegation: tier roster and usage rule
+
+Date: 2026-11-10. A decision eval, not a PluginBench coding run.
+
+The change gives each model a tier (frontier, workhorse, balanced, fast) in `host-config/models.json`, adds a mechanical-work role, names the work a main thread hands off, and moves a short provider's role to the other provider's model in the same tier.
+
+`pnpm eval:delegation` asked each host's main-thread model where 11 tasks should run, with the guidance from `main` and from the branch, three attempts each:
+
+- Opus 5.5 on the Claude guidance: 24 of 33 on `main`, 33 of 33 on the branch.
+- Sol on the Codex guidance: 15 of 33 on `main`, 33 of 33 on the branch.
+- No scenario scored lower on the branch. Code-writing tasks stayed in the main thread, and the small read was never delegated.
+
+Limits: the eval measures the stated choice, not a delegation in a live T3 thread, and scenarios and accepted answers come from the same author as the change.
+
+Evidence: [run notes](evidence/delegation-routing-eval/run-2026-11-10.md).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
@@ -1862,6 +1878,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-10 | Design system 2.1 navigation (DS-4 PR 1) | `@filipgutica/design-system` 2.1.0 adds a Navigation section to `DESIGN.md`, six component specs, purpose groups in `components.md`, the catalogue shell, and the Gate M owner decisions (6px rows and tabs, rail current fill, tab glide, phone header) | Not run: PluginBench still has no design-language protocol | The catalogue behaviour is covered by 27 Playwright tests in the design-system repo, with axe in light and dark. Whether agents follow the new navigation guidance is unmeasured. | [design-system PR #6](https://github.com/filipgutica/design-system/pull/6) |
 | 2026-11-10 | Design system 2.2 site and label centring (DS-4 PR 2) | `@filipgutica/design-system` 2.2.0 adds the published site (Overview, Foundations, generated `index.json` and `llms.txt`), `implementations.json`, token roles in the token source, a `findScope` hook in the catalogue shell, and cap-height centring for navigation rows and breadcrumbs | Not run: PluginBench still has no design-language protocol | The site has 56 Playwright tests and the catalogue 27, with axe in light and dark; the live site returns 200 for all five entry URLs. Whether agents use `index.json` or `llms.txt` is unmeasured. | [design-system PR #7](https://github.com/filipgutica/design-system/pull/7) |
 | 2026-11-10 | Design system 2.3 component guidance (DS-4 PR 3) | `@filipgutica/design-system` 2.3.0 adds Do and Don't lines to all 32 component specs in `components.md`, a test that every spec has every part, Do and Don't in `index.json`, and a live value on the slider specimens | Not run: PluginBench still has no design-language protocol | `pnpm verify` passes: 77 unit, 3 React, 28 catalogue, and 56 site tests. Whether agents follow the Do and Don't lines is unmeasured. | [design-system PR #8](https://github.com/filipgutica/design-system/pull/8) |
+| 2026-11-10 | Host-config delegation routing | Model tiers, mechanical-work role, hand-off list, and usage rule in the global guidance | Opus 24/33 → 33/33; Sol 15/33 → 33/33 on 11 scenarios × 3 attempts | Naming the hand-off work and the cheaper tiers changed both models' stated choices; neither moved code-writing off the main thread. | [run notes](evidence/delegation-routing-eval/run-2026-11-10.md) |
 
 ## Validity threats
 

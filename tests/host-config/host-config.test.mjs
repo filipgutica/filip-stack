@@ -235,6 +235,53 @@ test('update syncs the Field Guide dotfile only when it already exists', () => {
   ])
 })
 
+// A fixture repository whose models.json the test edits.
+const rosterFixture = (edit) => {
+  const root = mkdtempSync(join(tmpdir(), 'host-config-roster-'))
+  copyHostConfig({ repo: join(root, 'repo'), pin: designSystem.pin })
+  assert.equal(spawnSync('git', ['init', '-q', join(root, 'repo')]).status, 0)
+  const rosterPath = join(root, 'repo/host-config/models.json')
+  const roster = JSON.parse(read(rosterPath))
+  edit(roster)
+  writeFileSync(rosterPath, JSON.stringify(roster))
+  return join(root, 'repo/scripts/host-config.mjs')
+}
+
+test('one models.json edit renames a model in the guidance and every agent profile', () => {
+  const scriptPath = rosterFixture((roster) => { roster.claude.fast = { id: 'claude-haiku-9-9', label: 'Haiku 9.9' } })
+  const home = mkdtempSync(join(tmpdir(), 'host-config-roster-home-'))
+  run({ home, command: 'apply', scriptPath })
+  assert.match(read(join(home, '.claude/agents/explorer.md')), /^model: claude-haiku-9-9$/m)
+  assert.match(read(join(home, '.claude/agents/explorer.md')), /Runs on Haiku 9\.9 /)
+  assert.match(read(join(home, '.claude/CLAUDE.md')), /`claude-haiku-9-9`/)
+  assert.match(read(join(home, '.codex/AGENTS.md')), /`claude-haiku-9-9`/)
+  for (const entry of readdirSync(home, { recursive: true, withFileTypes: true }).filter((item) => item.isFile())) {
+    const text = read(join(entry.parentPath, entry.name))
+    assert.doesNotMatch(text, /\{\{model:/, entry.name)
+    assert.doesNotMatch(text, /claude-haiku-5-5|Haiku 5\.5/, entry.name)
+  }
+})
+
+test('apply fails on a model placeholder that models.json does not define', () => {
+  const scriptPath = rosterFixture((roster) => { delete roster.codex.balanced })
+  const result = run({ home: mkdtempSync(join(tmpdir(), 'host-config-roster-home-')), command: 'apply', scriptPath, expectFailure: true })
+  assert.match(result.stderr, /\{\{model:codex\.balanced\.id\}\}/)
+})
+
+test('host-config sources name models only in models.json', () => {
+  const roster = JSON.parse(read(join(sourceRoot, 'models.json')))
+  const names = Object.values(roster).flatMap((tiers) => Object.values(tiers).flatMap(({ id, label }) => [id, label]))
+  const files = readdirSync(sourceRoot, { recursive: true, withFileTypes: true })
+    .filter((entry) => entry.isFile() && entry.name !== 'models.json')
+  for (const entry of files) {
+    const text = read(join(entry.parentPath, entry.name))
+    for (const name of names) {
+      const pattern = new RegExp(`(?<![\\w.-])${name.replaceAll('.', '\\.')}(?![\\w.-])`)
+      assert.doesNotMatch(text, pattern, `${entry.name} names ${name}; use a {{model:…}} placeholder`)
+    }
+  }
+})
+
 test('host-config sources contain no machine-specific home paths', () => {
   const files = readdirSync(sourceRoot, { recursive: true, withFileTypes: true }).filter((entry) => entry.isFile())
   for (const entry of files) {

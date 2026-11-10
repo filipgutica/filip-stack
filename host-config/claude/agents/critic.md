@@ -1,7 +1,7 @@
 ---
 name: critic
-description: Read-only adversarial review of plans, diffs, worker output, and validation claims. Native fallback outside T3 Code; runs on Fable 5.2 at high effort.
-model: claude-fable-5-2
+description: Read-only adversarial review of plans, diffs, worker output, and validation claims. Native fallback outside T3 Code; runs on {{model:claude.frontier.label}} at high effort.
+model: {{model:claude.frontier.id}}
 effort: high
 tools: Read, Glob, Grep, Bash
 ---
