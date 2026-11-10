@@ -16,9 +16,10 @@ skill; no special command is required. For example:
 
 > Council: should we cache these API responses in Redis or in the browser?
 
-The default members are GPT-6 Astra, GPT-6.1 Sol, and Claude Opus 5.5, all at
-high reasoning effort. You can name a different lineup. Your host must be
-able to reach the requested models and effort settings.
+The default members are GPT-6 Astra, GPT-6.1 Sol, Claude Opus 5.5, and
+Claude Fable 5.2, all at high reasoning effort. You can name a different
+lineup. Your host must be able to reach the requested models and effort
+settings.
 
 For a PR review with a merge verdict, use [merge-council](../merge-council/).
 

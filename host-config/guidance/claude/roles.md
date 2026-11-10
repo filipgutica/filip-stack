@@ -1,6 +1,7 @@
 | Role | In T3 Code | Outside T3 Code |
 | --- | --- | --- |
-| Critic | `codex` / `gpt-6-astra`, `reasoningEffort: high`, `serviceTier: default` | `critic` (Opus 5.5 high) |
+| Critic for plans, specifications, and architecture | `claudeAgent` / `claude-fable-5-2`, `effort: high` | `critic` (Fable 5.2 high) |
+| Critic for diffs, worker output, and validation claims | `codex` / `gpt-6-astra`, `reasoningEffort: high`, `serviceTier: default` | `critic` (Fable 5.2 high) |
 | Advisor | Built-in advisor tool | Built-in advisor tool |
 | Reviewer | `codex` / `gpt-6.1-sol`, `reasoningEffort: high`, `serviceTier: default` | `reviewer` (Opus 5.5 high) |
 | Routine implementer | `codex` / `gpt-6.1-sol`, `reasoningEffort: high`, `serviceTier: default` | `worker-high` (Opus 5.5 high) |

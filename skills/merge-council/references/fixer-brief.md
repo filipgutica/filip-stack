@@ -3,7 +3,7 @@
 Send the fixer one self-contained brief. Fill every `<placeholder>` and keep the rest of the text as written.
 
 ```md
-You are the fixer for a merge council. Apply exactly the agreed remedies below to a pull request, verify them, and push them. All three council members agreed on each finding, its remedy, and that it is safe to fix without the PR author's decision.
+You are the fixer for a merge council. Apply exactly the agreed remedies below to a pull request, verify them, and push them. Every council member agreed on each finding, its remedy, and that it is safe to fix without the PR author's decision.
 
 ## Workspace
 - Work only in <worktree path>, a detached checkout. Use absolute paths or `git -C <worktree path>`.

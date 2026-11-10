@@ -1,4 +1,4 @@
 interface:
   display_name: "Council"
-  short_description: "Independent advice from Astra, Sol, and Opus"
+  short_description: "Independent advice from Astra, Sol, Opus, and Fable"
   default_prompt: "Use $council to consider this question and recommend a next step."
