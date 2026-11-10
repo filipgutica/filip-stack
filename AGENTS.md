@@ -54,6 +54,6 @@ PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/
 - Run one test file with `node --test tests/host-config/host-config.test.mjs` or one contract validator with `node tests/workflow/validate-contracts.mjs`.
 - Run `pnpm check` before you commit. CI runs the same check.
 - Use Conventional Commits. semantic-release on `main` versions the plugins and both marketplaces. Do not edit versions by hand.
-- Standalone skills ship from `main` when they merge and have no version.
+- Standalone skills ship from `main` when they merge and have no version. semantic-release bumps the plugins for every release, so a `BREAKING CHANGE:` footer belongs only on a change that breaks a plugin or marketplace. Describe a breaking standalone-skill change in the PR description.
 - Use the `release-and-refresh` skill to ship a change and refresh local Claude and Codex installs.
 - Repository development skills live in `.agents/skills/<name>/`, with a relative `.claude/skills/<name>` link and a `.gitignore` exception for that link.
