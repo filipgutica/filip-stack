@@ -1,4 +1,4 @@
 interface:
   display_name: "Merge Council"
-  short_description: "Council review and merge verdict for a pull request"
+  short_description: "Council review, agreed fixes, and merge verdict for a PR"
   default_prompt: "Use $merge-council to review this pull request and return a merge verdict."

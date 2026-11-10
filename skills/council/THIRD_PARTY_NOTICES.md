@@ -1,9 +1,9 @@
 # Third-party notices
 
 `council` adapts the `council` skill from Theo Browne's tstack. The local
-adaptation uses Astra, Sol 6.1, and Opus 5.5 at high effort, with the current
-agent coordinating one round by default. It retains independent advice and
-synthesis, and omits mandatory review scores, PR updates, and fix/review loops.
+adaptation uses Astra, Sol 6.1, Opus 5.5, and Fable 5.2 at high effort, with
+the current agent coordinating one round by default. It retains independent
+advice and synthesis, and omits mandatory review scores, PR updates, and fix/review loops.
 It adds Codex metadata and keeps implementation authority separate from advice.
 
 ## tstack

@@ -50,9 +50,9 @@ the agent stops without restoring over it. It never uses Git stash or `git clean
 
 The default is three rounds, with ten at most. The default size limit is the
 larger of 30% of the original change's lines and 20 lines. Behavior stays the
-same except for interactions you explicitly allow on the card. A ten-round,
-three-member climb can use up to 36 council calls, plus retries. A guidance
-climb adds calls for its readers and baseline.
+same except for interactions you explicitly allow on the card. A ten-round
+climb with the four default members can use up to 48 council calls, plus
+retries. A guidance climb adds calls for its readers and baseline.
 
 After accepted edits, the final comparison checks the starting and final
 versions with judges, scores, or both. If judges prefer the start, the report

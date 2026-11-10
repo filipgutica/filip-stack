@@ -1,7 +1,8 @@
 | Role | In T3 Code | Outside T3 Code |
 | --- | --- | --- |
-| Critic | `critic` (Astra high) | `critic` |
-| Advisor | `advisor` (Astra high) | `advisor` |
+| Critic for plans, specifications, and architecture | `claudeAgent` / `claude-fable-5-2`, `effort: high` | `critic` (Astra high) |
+| Critic for diffs, worker output, and validation claims | `critic` (Astra high) | `critic` |
+| Advisor | `claudeAgent` / `claude-fable-5-2`, `effort: high` | `advisor` (Astra high) |
 | Reviewer | `reviewer` (Sol high) | `reviewer` |
 | Routine implementer | `default` (Sol high) | `default` |
 | Consequential implementer | `claudeAgent` / `claude-opus-5-5`, `effort: high` | `default` (Sol high) |

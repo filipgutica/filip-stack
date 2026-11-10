@@ -13,7 +13,7 @@ human review.
 
 This is the light review path: one Sol reviewer, routine fixes in the loop,
 and the user only for what needs them. Use merge council for a full
-three-model review.
+council review.
 
 Requires the `sol-loop` and `babysit-pr` skills. If either is missing, stop
 and say so.

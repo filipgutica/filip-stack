@@ -181,7 +181,7 @@ Independent skills install one at a time with the
 | `hill-climb` | Improves a working change or named goal in bounded rounds judged by blind comparisons, a score, or both. Needs `council`. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
-| `merge-council` | Runs an independent three-reviewer PR council with a verdict tied to the reviewed commits. |
+| `merge-council` | Runs a council on a PR, fixes agreed findings, and returns a verdict tied to the reviewed commits. Needs `council`. |
 | `pr-review-churn` | Analyzes recurring human review objections on GitHub PRs and proposes guidance changes. |
 | `sol-loop` | Checks a change through GPT Sol review rounds and resolves findings within scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |

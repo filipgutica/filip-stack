@@ -6,8 +6,8 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 One Sol reviewer checks the code and PR description through
 [sol-loop](../sol-loop/). The agent then opens or updates the PR, handles CI
-and bot findings, and makes routine decisions while you are away. For three
-reviewers, use [merge-council](../merge-council/); full send can also finish
+and bot findings, and makes routine decisions while you are away. For a full
+council, use [merge-council](../merge-council/); full send can also finish
 its open items.
 
 ## When to use it

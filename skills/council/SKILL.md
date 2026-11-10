@@ -1,11 +1,11 @@
 ---
 name: council
-description: Gather independent opinions from Astra, Sol 6.1, and Opus 5.5 when the user asks for a council on a question, decision, plan, design, document, or code. An explicit merge council request belongs to merge-council.
+description: Gather independent opinions from Astra, Sol 6.1, Opus 5.5, and Fable 5.2 when the user asks for a council on a question, decision, plan, design, document, or code. An explicit merge council request belongs to merge-council.
 ---
 
 # Council
 
-Use three independent opinions to help answer the user's request. You coordinate and synthesize in the current thread.
+Use four independent opinions to help answer the user's request. You coordinate and synthesize in the current thread.
 
 ## Frame the question
 
@@ -22,8 +22,9 @@ Use these defaults unless the user names different members:
 | Astra | `gpt-6-astra` | high |
 | Sol 6.1 | `gpt-6.1-sol` | high |
 | Opus 5.5 | `claude-opus-5-5` | high |
+| Fable 5.2 | `claude-fable-5-2` | high |
 
-In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`. These defaults use two providers; three distinct providers are not required.
+In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`. These defaults use two models from each of two providers; more providers are not required.
 
 Elsewhere, use the host's subagent tools only when they can reach the requested models and effort. Before launching, report unavailable targets and ask whether to change the lineup or proceed with fewer members. Never silently substitute a model. If a member fails after launch, retain the completed opinions and label the council incomplete.
 
