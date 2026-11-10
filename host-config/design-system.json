@@ -1,6 +1,6 @@
 {
   "package": "@filipgutica/design-system",
-  "version": "1.0.1",
-  "integrity": "sha512-lZZwLTcHao6sYWl7RdGyn1J9yY64QB7g2aDA6EO+lp5t8xzd8zY45Vd4+uaI5LsFW2pzRxcSDYzRa0DDlQ67Eg==",
-  "tarball": "https://registry.npmjs.org/@filipgutica/design-system/-/design-system-1.0.1.tgz"
+  "version": "1.0.2",
+  "integrity": "sha512-L5aq9L0n2L3qHX+GOrE/4rKELJ6eMKC/rmwIaqlREiqGJ2pmAJBB9GNNMKKgq9T+sgPfypH4x448AX5mrki50Q==",
+  "tarball": "https://registry.npmjs.org/@filipgutica/design-system/-/design-system-1.0.2.tgz"
 }
