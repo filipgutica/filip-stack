@@ -7,6 +7,6 @@
 | Routine implementer | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high`, `serviceTier: default` | `worker-high` ({{model:claude.workhorse.label}} high) |
 | Consequential implementer | `worker-high` ({{model:claude.workhorse.label}} high) | `worker-high` |
 | Visual design, UX direction, mockups, new design-system components, or other taste-driven work (overrides the implementer rows) | This thread when it runs on {{model:claude.workhorse.label}}, otherwise `worker-high` | Same |
-| Implementing an approved design that has mockups or a spec | Routine implementer, then an Opus visual review against the design | Same |
+| Implementing an approved design that has mockups or a spec | Routine implementer, then an {{model:claude.workhorse.label}} visual review against the design | Same |
 | Mechanical edits and summaries (Implementer section) | `claudeAgent` / `{{model:claude.balanced.id}}`, `effort: high` | This thread |
 | Explorer | `explorer` ({{model:claude.fast.label}} high) | `explorer` |

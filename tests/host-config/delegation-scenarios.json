@@ -3,56 +3,309 @@
     {
       "id": "survey-many-files",
       "task": "Before we change anything, find every place in this 40-package monorepo that reads the FEATURE_FLAGS environment variable and summarize how each package uses it.",
-      "accept": { "claude": ["claude.fast", "codex.fast"], "codex": ["codex.fast", "claude.fast"] }
+      "accept": {
+        "claude": [
+          "claude.fast",
+          "codex.fast"
+        ],
+        "codex": [
+          "codex.fast",
+          "claude.fast"
+        ]
+      }
     },
     {
       "id": "summarize-large-log",
       "task": "The nightly CI job failed. Its log is 18,000 lines. Summarize which steps failed and the first error in each.",
-      "accept": { "claude": ["claude.fast", "claude.balanced", "codex.fast", "codex.balanced"], "codex": ["codex.fast", "codex.balanced", "claude.fast", "claude.balanced"] }
+      "accept": {
+        "claude": [
+          "claude.fast",
+          "claude.balanced",
+          "codex.fast",
+          "codex.balanced"
+        ],
+        "codex": [
+          "codex.fast",
+          "codex.balanced",
+          "claude.fast",
+          "claude.balanced"
+        ]
+      }
     },
     {
       "id": "bulk-config-rename",
       "task": "Rename the config key `retryLimit` to `maxRetries` in the 34 YAML files under deploy/, keeping comments and ordering. No code changes.",
-      "accept": { "claude": ["claude.balanced", "codex.balanced"], "codex": ["codex.balanced", "claude.balanced"] }
+      "accept": {
+        "claude": [
+          "claude.balanced",
+          "codex.balanced"
+        ],
+        "codex": [
+          "codex.balanced",
+          "claude.balanced"
+        ]
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "feature-with-tests",
       "task": "Add pagination to the /v2/reports endpoint, with cursor encoding and tests. About 300 lines across the handler, the query builder, and the test file.",
-      "accept": { "claude": ["self", "claude.workhorse", "codex.workhorse", "claude.frontier", "codex.frontier"], "codex": ["self", "claude.workhorse", "codex.workhorse", "claude.frontier", "codex.frontier"] }
+      "accept": {
+        "claude": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse",
+          "claude.frontier",
+          "codex.frontier"
+        ],
+        "codex": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse",
+          "claude.frontier",
+          "codex.frontier"
+        ]
+      }
     },
     {
       "id": "small-read",
       "task": "What does the `retryLimit` default in src/config/defaults.ts get used for? It is referenced in one other file.",
-      "accept": { "claude": ["self"], "codex": ["self"] }
+      "accept": {
+        "claude": [
+          "self"
+        ],
+        "codex": [
+          "self"
+        ]
+      }
     },
     {
       "id": "plan-critique",
       "task": "I wrote an architecture plan for splitting the billing service. Get it critiqued before I share it.",
-      "accept": { "claude": ["claude.frontier"], "codex": ["claude.frontier"] }
+      "accept": {
+        "claude": [
+          "claude.frontier"
+        ],
+        "codex": [
+          "claude.frontier"
+        ]
+      }
     },
     {
       "id": "implementer-codex-short",
       "task": "Implement the routine change we agreed on: add a `--json` flag to the `report` CLI command, with a test. Hand it to the routine implementer.",
-      "usage": { "codex": { "status": "short", "source": "codexbar", "windows": [{ "name": "Weekly", "usedPercent": 71, "status": "short", "willLastToReset": false }] }, "claude": { "status": "ok", "source": "claude-swap", "windows": [{ "name": "sevenDay", "usedPercent": 30, "status": "ok", "willLastToReset": true }], "models": { "Fable": { "usedPercent": 12, "status": "ok" } } } },
-      "accept": { "claude": ["claude.workhorse"], "codex": ["claude.workhorse"] }
+      "usage": {
+        "codex": {
+          "status": "short",
+          "source": "codexbar",
+          "windows": [
+            {
+              "name": "Weekly",
+              "usedPercent": 71,
+              "status": "short",
+              "willLastToReset": false
+            }
+          ]
+        },
+        "claude": {
+          "status": "ok",
+          "source": "claude-swap",
+          "windows": [
+            {
+              "name": "sevenDay",
+              "usedPercent": 30,
+              "status": "ok",
+              "willLastToReset": true
+            }
+          ],
+          "models": {
+            "Fable": {
+              "usedPercent": 12,
+              "status": "ok"
+            }
+          }
+        }
+      },
+      "accept": {
+        "claude": [
+          "claude.workhorse"
+        ],
+        "codex": [
+          "claude.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "explore-claude-short",
       "task": "Before we change anything, find every place in this 40-package monorepo that reads the FEATURE_FLAGS environment variable and summarize how each package uses it.",
-      "usage": { "codex": { "status": "ok", "source": "codexbar", "windows": [{ "name": "Weekly", "usedPercent": 20, "status": "ok", "willLastToReset": true }] }, "claude": { "status": "short", "source": "claude-swap", "windows": [{ "name": "sevenDay", "usedPercent": 93, "status": "short", "willLastToReset": false }] } },
-      "accept": { "claude": ["codex.fast"], "codex": ["codex.fast"] }
+      "usage": {
+        "codex": {
+          "status": "ok",
+          "source": "codexbar",
+          "windows": [
+            {
+              "name": "Weekly",
+              "usedPercent": 20,
+              "status": "ok",
+              "willLastToReset": true
+            }
+          ]
+        },
+        "claude": {
+          "status": "short",
+          "source": "claude-swap",
+          "windows": [
+            {
+              "name": "sevenDay",
+              "usedPercent": 93,
+              "status": "short",
+              "willLastToReset": false
+            }
+          ]
+        }
+      },
+      "accept": {
+        "claude": [
+          "codex.fast"
+        ],
+        "codex": [
+          "codex.fast"
+        ]
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "critique-fable-short",
       "task": "I wrote an architecture plan for splitting the billing service. Get it critiqued before I share it.",
-      "usage": { "codex": { "status": "ok", "source": "codexbar", "windows": [{ "name": "Weekly", "usedPercent": 20, "status": "ok", "willLastToReset": true }] }, "claude": { "status": "ok", "source": "claude-swap", "windows": [{ "name": "sevenDay", "usedPercent": 40, "status": "ok", "willLastToReset": true }], "models": { "Fable": { "usedPercent": 94, "status": "short", "willLastToReset": false } } } },
-      "accept": { "claude": ["codex.frontier"], "codex": ["codex.frontier"] }
+      "usage": {
+        "codex": {
+          "status": "ok",
+          "source": "codexbar",
+          "windows": [
+            {
+              "name": "Weekly",
+              "usedPercent": 20,
+              "status": "ok",
+              "willLastToReset": true
+            }
+          ]
+        },
+        "claude": {
+          "status": "ok",
+          "source": "claude-swap",
+          "windows": [
+            {
+              "name": "sevenDay",
+              "usedPercent": 40,
+              "status": "ok",
+              "willLastToReset": true
+            }
+          ],
+          "models": {
+            "Fable": {
+              "usedPercent": 94,
+              "status": "short",
+              "willLastToReset": false
+            }
+          }
+        }
+      },
+      "accept": {
+        "claude": [
+          "codex.frontier"
+        ],
+        "codex": [
+          "codex.frontier"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "critique-codex-short",
+      "task": "I wrote an architecture plan for splitting the billing service. Get it critiqued before I share it.",
+      "usage": {
+        "codex": {
+          "status": "short",
+          "source": "codexbar",
+          "windows": [
+            {
+              "name": "Weekly",
+              "usedPercent": 92,
+              "status": "short",
+              "willLastToReset": false
+            }
+          ]
+        },
+        "claude": {
+          "status": "ok",
+          "source": "claude-swap",
+          "windows": [
+            {
+              "name": "sevenDay",
+              "usedPercent": 30,
+              "status": "ok",
+              "willLastToReset": true
+            }
+          ],
+          "models": {
+            "Fable": {
+              "usedPercent": 12,
+              "status": "ok"
+            }
+          }
+        }
+      },
+      "accept": {
+        "claude": [
+          "claude.frontier"
+        ],
+        "codex": [
+          "claude.frontier"
+        ]
+      }
     },
     {
       "id": "both-short-no-downgrade",
       "task": "Implement the routine change we agreed on: add a `--json` flag to the `report` CLI command, with a test. Hand it to the routine implementer.",
-      "usage": { "codex": { "status": "short", "source": "codexbar", "windows": [{ "name": "Weekly", "usedPercent": 92, "status": "short", "willLastToReset": false }] }, "claude": { "status": "short", "source": "claude-swap", "windows": [{ "name": "sevenDay", "usedPercent": 91, "status": "short", "willLastToReset": false }] } },
-      "accept": { "claude": ["self", "claude.workhorse", "codex.workhorse"], "codex": ["self", "claude.workhorse", "codex.workhorse"] }
+      "usage": {
+        "codex": {
+          "status": "short",
+          "source": "codexbar",
+          "windows": [
+            {
+              "name": "Weekly",
+              "usedPercent": 92,
+              "status": "short",
+              "willLastToReset": false
+            }
+          ]
+        },
+        "claude": {
+          "status": "short",
+          "source": "claude-swap",
+          "windows": [
+            {
+              "name": "sevenDay",
+              "usedPercent": 91,
+              "status": "short",
+              "willLastToReset": false
+            }
+          ]
+        }
+      },
+      "accept": {
+        "claude": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ]
+      }
     }
   ]
 }

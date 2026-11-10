@@ -212,8 +212,8 @@ plugins.
 - the global guidance for `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`
 - Claude agent templates (`critic`, `explorer`, `reviewer`, `worker-high`) and
   output styles
-- Codex agent profiles and the `~/.codex/rules/filip-stack.rules` prompts that
-  Guardrails relies on
+- Codex agent profiles and `~/.codex/rules/filip-stack.rules`: the 1Password
+  prompt that Guardrails relies on, and the usage reader's sandbox exception
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the model tiers in `host-config/models.json`, which fill in every model name
   in the guidance and agent profiles
@@ -223,6 +223,16 @@ plugins.
   `brew install steipete/tap/codexbar` on Linux) and uses
   [claude-swap](https://github.com/realiti4/claude-swap) for Claude when it manages the
   active account. Without CodexBar, threads use the role tables as written.
+  Both tools need network and Keychain access, so the reader runs outside the
+  sandbox. On Codex, the host config rules file allows it. On Claude Code, add
+  this to `~/.claude/settings.json` yourself, with your home directory:
+
+  ```json
+  {
+    "permissions": { "allow": ["Bash(node /Users/you/.agents/scripts/model-usage.mjs)"] },
+    "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
+  }
+  ```
 - the `~/design-language` files the guidance refers to, installed from the
   pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
   package in `host-config/design-system.json`; filip-stack uses it as the default

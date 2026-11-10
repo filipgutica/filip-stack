@@ -58,7 +58,7 @@ const ask = ({ host, version, scenario }) => askJson({
   user: [
     scenario.task,
     `Current provider usage, from the usage reader:\n${JSON.stringify({ providers: scenario.usage ?? okUsage })}`,
-    'Decide where this work runs. Do not do the work. Reply with only JSON: {"where": "this thread"} or {"where": "delegate", "model": "<model ID or name the delegated work runs on>"}.',
+    'Decide where this work runs. Do not do the work. Reply with only JSON: {"where": "this thread"} or {"where": "delegate", "model": "<the model ID the delegated work runs on; for a native profile, the model ID that profile runs on>"}.',
   ].join('\n\n'),
 })
 
@@ -76,7 +76,8 @@ for (const host of Object.keys(hosts)) {
     const passes = (version) => results.filter((result) => result.id === scenario.id && result.version === version && accepted.includes(result.choice)).length
     const [base, head] = [passes('base'), passes('head')]
     totals = { base: totals.base + base, head: totals.head + head }
-    if (head < base) regressions++
+    // A scenario that only the new guidance can pass must also gain over the base.
+    if (head < base || (scenario.needsNewGuidance && head <= base)) regressions++
     const choices = results.filter((result) => result.id === scenario.id && result.version === 'head').map(({ choice }) => choice)
     console.log(`| ${scenario.id} | ${accepted.join(', ')} | ${base}/${attempts} | ${head}/${attempts} | ${choices.join(', ')} |`)
   }
@@ -84,6 +85,6 @@ for (const host of Object.keys(hosts)) {
 }
 
 if (regressions > 0) {
-  console.log(`\n${regressions} scenario result(s) regressed against ${options.base}.`)
+  console.log(`\n${regressions} scenario result(s) regressed against ${options.base}, or did not gain where the new guidance should.`)
   process.exitCode = 1
 }

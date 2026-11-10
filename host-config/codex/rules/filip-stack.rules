@@ -1,4 +1,4 @@
-# Filip Stack guardrails for Codex. Codex hooks cannot ask yet, so this rule
+# Filip Stack rules for Codex. Codex hooks cannot ask yet, so the first rule
 # prompts before any 1Password CLI call.
 
 prefix_rule(
@@ -7,4 +7,14 @@ prefix_rule(
     justification = "1Password CLI access needs user approval. State the exact vault, item, and field, why you need it, and the scope of data you will retrieve.",
     match = ["op read op://vault/item/field"],
     not_match = ["grep op notes.txt"],
+)
+
+# The usage reader calls CodexBar and claude-swap, which need network and Keychain
+# access that the sandbox blocks. Run that one script outside the sandbox.
+prefix_rule(
+    pattern = ["node", "{{HOME}}/.agents/scripts/model-usage.mjs"],
+    decision = "allow",
+    justification = "Reads Codex and Claude usage for choosing delegation targets.",
+    match = ["node {{HOME}}/.agents/scripts/model-usage.mjs"],
+    not_match = ["node {{HOME}}/.agents/scripts/other.mjs"],
 )

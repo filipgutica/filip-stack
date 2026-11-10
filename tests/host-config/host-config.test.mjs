@@ -275,7 +275,10 @@ test('host-config sources name models only in models.json', () => {
     .filter((entry) => entry.isFile() && entry.name !== 'models.json')
   for (const entry of files) {
     const text = read(join(entry.parentPath, entry.name))
-    for (const name of names) assert.ok(!text.includes(name), `${entry.name} names ${name}; use a {{model:…}} placeholder`)
+    for (const name of names) {
+      const pattern = new RegExp(`(?<![\\w.-])${name.replaceAll('.', '\\.')}(?![\\w.-])`)
+      assert.doesNotMatch(text, pattern, `${entry.name} names ${name}; use a {{model:…}} placeholder`)
+    }
   }
 })
 
