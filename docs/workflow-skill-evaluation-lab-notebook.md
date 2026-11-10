@@ -1762,9 +1762,9 @@ Result: **stop, inconclusive.**
 | Tokens, `workflow-lean` to vanilla (geometric mean), 90% CI | 1.65× [1.42, 1.93] | 1.67× [1.42, 2.00] |
 
 - **Sensitivity.** Adaptix and csstree are the climb tasks round 3 was tuned on. Without them, the upper bound is exactly 0, which is not below 0. The label and the decision do not change.
-- **Tokens.** The ratio fails the card's 1.3× ceiling. On the 4 climb tasks, the same guidance was 1.24× vanilla, so the harder panel widened the gap.
+- **Tokens.** The ratio fails the card's 1.3× ceiling. On the 4 climb tasks, round 3's guidance, without the ask-fix line and with 3 repeats, was 1.24× vanilla.
 - **Admission.** Admission was arm-blind, before any judge call. It dropped 4 tasks where both arms failed (termenv, ts-pattern, tengo, bandit). It dropped cattrs as infrastructure: PluginBench never graded the vanilla attempt, because its source export refuses the agent's `.venv` symlinks. Neither arm stopped to ask. `workflow-lean`'s one empty patch, on oxvg, was a timeout.
-- **Interruption.** A host shutdown stopped the run with 45 of 50 attempts complete. PluginBench refused the resume after a kernel update changed Docker's reported memory by 28 KiB. An owner-approved top-up coded both arms of the 5 unpaired tasks again. All coding used 125.1M input plus output tokens.
+- **Interruption.** A host shutdown stopped the run with 45 of 50 attempts complete. PluginBench refused the resume after a kernel update changed Docker's reported memory by 28 KiB. An owner-approved top-up coded both arms of the 5 unpaired tasks again. The 54 coding attempts with recorded usage used 125.1M input plus output tokens; the oxvg timeout has none.
 - **Deviations.**
   - Neither part ran the reviewer.
   - `pluginbench judge prepare` needs review packets, so a local script built the judge folders from attempt diffs, one pair per call.

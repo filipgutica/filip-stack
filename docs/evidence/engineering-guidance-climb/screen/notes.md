@@ -53,12 +53,12 @@ Admission was arm-blind and done before any judge call.
 - **Sensitivity.** Without the two tuned tasks, the upper bound is exactly 0. That is still not below 0, so the label and the decision do not change.
 - **Tokens.** Input plus output over 19 tasks; oxvg has no token total.
   - Totals over admitted tasks: vanilla 37.0M (median 1.47M per task) and `workflow-lean` 57.6M (median 2.01M).
-  - The 1.3× ceiling fails. On the 4 climb tasks, the same round-3 guidance was 1.24× vanilla.
+  - The 1.3× ceiling fails. On the 4 climb tasks, round 3's guidance, without the ask-fix line and with 3 repeats, was 1.24× vanilla.
 - **Judges, diagnostic only.** On the 14 pairs where both arms passed:
   - Astra preferred `workflow-lean` in 9 and Sol 6.1 in 8.
   - They agreed on 13 of 14.
   - They chose side A in 5 and 6 pairs.
-- **Usage.** All 55 coding attempts used 125.1M input plus output tokens, including the 5 unused one-arm attempts. Judge usage was not recorded.
+- **Usage.** 54 of the 55 coding attempts recorded usage: 125.1M input plus output tokens, including the 5 unused one-arm attempts. The oxvg timeout recorded none, and judge usage was not recorded.
 
 ## PluginBench issues
 

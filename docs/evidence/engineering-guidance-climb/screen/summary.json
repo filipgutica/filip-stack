@@ -299,9 +299,11 @@
   "coding_tokens_input_plus_output": {
     "admitted_vanilla_total_M": 36.96,
     "admitted_workflow_lean_total_M": 57.6,
-    "all_coded_attempts": 55,
-    "all_coded_total_M": 125.09,
-    "unused_one_arm_attempts": 5
+    "coded_attempts": 55,
+    "attempts_with_token_totals": 54,
+    "recorded_total_M": 125.09,
+    "unused_one_arm_attempts": 5,
+    "missing": "workflow-lean on oxvg (timeout)"
   },
   "judges_diagnostic": {
     "judged_pairs": 14,
