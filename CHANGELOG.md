@@ -1,3 +1,20 @@
+# [5.0.0](https://github.com/filipgutica/filip-stack/compare/v4.7.0...v5.0.0) (2026-11-10)
+
+
+* feat(skills)!: add Fable 5.2 to council and roles, rebuild merge-council on council ([372ecbd](https://github.com/filipgutica/filip-stack/commit/372ecbdc6628b8fcecf9743a10572440f08d8b6d))
+
+
+### Bug Fixes
+
+* **skills:** close merge-council gaps found in critic review ([1f54809](https://github.com/filipgutica/filip-stack/commit/1f54809cb7c56ba408e810771597d4907f1f48a7))
+* **skills:** keep merge-council run state across fix pushes ([cf45cab](https://github.com/filipgutica/filip-stack/commit/cf45cabbb8c8dbaffeb7d2ac69b49464dc61936b))
+
+
+### BREAKING CHANGES
+
+* merge-council drops its chair agent, roster file, and setup
+argument; it requires the council skill.
+
 # [4.7.0](https://github.com/filipgutica/filip-stack/compare/v4.6.0...v4.7.0) (2026-11-09)
 
 
