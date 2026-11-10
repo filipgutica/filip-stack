@@ -1,0 +1,12 @@
+diff -ru src-r3/host-config/guidance/core.md src-lean/host-config/guidance/core.md
+--- src-r3/host-config/guidance/core.md	2026-11-09 08:44:03.793217022 -0700
++++ src-lean/host-config/guidance/core.md	2026-11-09 19:26:08.627436441 -0700
+@@ -19,7 +19,7 @@
+ - Code, types, tests, schemas, configuration, and current authoritative documentation own technical truth. Verify drift-prone facts before relying on them.
+ - Start state-changing work only when the user requests it. Planning, investigation, and read-only requests do not authorize edits, external writes, commits, pushes, or publication.
+ - Before every 1Password lookup, tell me the exact vault, item and field (or search query), why you need it, and the scope of data you will retrieve: one field, metadata, the whole item, or a list of items. Prefer field-level reads; disclose when a tool retrieves more than the field you intend to use.
+-- If ambiguity would materially change the contract, ask. Otherwise, state a bounded assumption and continue.
++- If ambiguity would materially change the contract, ask. Otherwise, state a bounded assumption and continue. A gap in the environment or workflow that you can close yourself with a reversible step is not a question: close it, state the assumption, and continue. Never close a gap by bypassing a check, hook, or verification, or by inventing a remote or other external target. For example, set a repository-local Git identity when none is configured, and base your work on the current HEAD when no base branch is named or the named default branch does not exist. Still ask when the answer would change the requested contract or needs authority you lack, such as credentials, access, or a destructive action.
+ - Continue authorized work that is independent of an unresolved question and cannot be invalidated by its answer. Pause work whose correctness, scope, or authorization depends on that answer.
+ 
+ ## Autonomy

@@ -1741,6 +1741,43 @@ Limits: the eval measures the stated choice, not a delegation in a live T3 threa
 
 Evidence: [run notes](evidence/delegation-routing-eval/run-2026-11-10.md).
 
+### 32. Engineering climb: paired screen on the DeepSWE panel
+
+Date: 2026-11-10. Owner-approved paid run. The pre-registration was written before any coding run.
+
+The screen compared vanilla Codex with `workflow-lean` on the 25-task DeepSWE panel, one attempt each, with `gpt-6.1-sol` at high reasoning. `workflow-lean` is round 3's candidate (§29) plus one `core.md` line: close a reversible environment gap, such as a missing `main` branch, instead of stopping to ask.
+
+The pre-registered rule:
+
+- Stop when correctness is not non-inferior: the lower bound of the 90% CI on the paired pass-rate difference is below −10 pp.
+- Label the stop **inferior** when the upper bound is below 0, otherwise **inconclusive**.
+- Judges decide only when correctness passes.
+
+Result: **stop, inconclusive.**
+
+| Measure | All admitted (20) | Without adaptix and csstree (18) |
+| --- | ---: | ---: |
+| Pass rate, `workflow-lean` against vanilla | 80% against 90% | 78% against 94% |
+| Difference, 90% CI | −10 pp [−30, +10] | −17 pp [−39, 0] |
+| Tokens, `workflow-lean` to vanilla (geometric mean), 90% CI | 1.65× [1.42, 1.93] | 1.67× [1.42, 2.00] |
+
+- **Sensitivity.** Adaptix and csstree are the climb tasks round 3 was tuned on. Without them, the upper bound is exactly 0, which is not below 0. The label and the decision do not change.
+- **Tokens.** The ratio fails the card's 1.3× ceiling. On the 4 climb tasks, the same guidance was 1.24× vanilla, so the harder panel widened the gap.
+- **Admission.** Admission was arm-blind, before any judge call. It dropped 4 tasks where both arms failed (termenv, ts-pattern, tengo, bandit). It dropped cattrs as infrastructure: PluginBench never graded the vanilla attempt, because its source export refuses the agent's `.venv` symlinks. Neither arm stopped to ask. `workflow-lean`'s one empty patch, on oxvg, was a timeout.
+- **Interruption.** A host shutdown stopped the run with 45 of 50 attempts complete. PluginBench refused the resume after a kernel update changed Docker's reported memory by 28 KiB. An owner-approved top-up coded both arms of the 5 unpaired tasks again. All coding used 125.1M input plus output tokens.
+- **Deviations.**
+  - Neither part ran the reviewer.
+  - `pluginbench judge prepare` needs review packets, so a local script built the judge folders from attempt diffs, one pair per call.
+  - These were logged as an amendment before any judging.
+- **Judges, diagnostic only.**
+  - On the 14 pairs where both arms passed, Astra preferred `workflow-lean` in 9 and Sol 6.1 in 8. They agreed on 13 of 14.
+  - Opus 5.5 and Fable 5.2 (owner profile) produced no valid verdicts. PluginBench's Claude harness treats the Claude CLI's built-in startup plugins as custom configuration, so every Claude judge call failed verification.
+- The PluginBench bugs found in this screen went to the PluginBench audit thread.
+
+The screen does not show that `workflow-lean` is worse than vanilla. It does show that, on harder tasks, the guided arm costs 1.65× vanilla's tokens with no measured gain in correctness.
+
+Evidence: [screen notes](evidence/engineering-guidance-climb/screen/notes.md), [pre-registration](evidence/engineering-guidance-climb/screen/prereg.md), [summary](evidence/engineering-guidance-climb/screen/summary.json).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
