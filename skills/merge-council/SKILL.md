@@ -38,7 +38,7 @@ Give each finding exactly one status from the round 2 answers:
 
 A finding is **fixable** when it is agreed, its eligibility is `eligible`, and every member answered `agree` on that eligibility. Send the fixable findings to the Routine implementer from the user's delegation policy, or the host's general-purpose agent, with the [fixer brief](references/fixer-brief.md).
 
-- **Pushed:** the new head is a new subject. Repeat Prepare steps 4 to 6 for it, carry this run's findings as prior findings, and run the review again on the whole PR.
+- **Pushed:** the new head is a new subject. Keep the run ID, run directory, worktree, and push count. Repeat Prepare steps 4 and 6 for the new head, confirm the worktree's `HEAD` is that head, carry this run's findings as prior findings, and run the review again on the whole PR.
 - **Not pushed:** stop fixing and record why.
 
 Allow at most two pushes per run.
@@ -76,7 +76,7 @@ Write `<run dir>/record.json`, then remove the review worktree and leave the run
 }
 ```
 
-`resolution` is `resolved` for a prior finding every member found resolved, `decided` for a finding the user decided that no member reopened, `needs-decision` for an agreed finding that is not fixable and has no such decision, `closed` for a rejected finding, and `open` otherwise. `status` is `incomplete` when a member failed or abstained, or the run stopped early; an incomplete record always means `NEEDS_HUMAN`.
+`resolution` is `resolved` for a prior finding every member found resolved, `decided` for a finding the user decided that no member reopened, `needs-decision` for an agreed finding that is not fixable and has no such decision, `closed` for a rejected finding, and `open` otherwise. `status` is `incomplete` when a member abstained after its retry, or the run stopped early; an incomplete record always means `NEEDS_HUMAN`.
 
 Then report:
 
