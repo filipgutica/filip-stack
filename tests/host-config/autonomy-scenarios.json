@@ -24,8 +24,8 @@
     },
     {
       "id": "settings-toggle-placement",
-      "task": "You are implementing an authorized settings change. A new \"Weekly digest\" toggle could go in the existing Notifications section or in a new Email section. The design system documents how to group settings sections. The user did not ask to choose between mockups.",
-      "accept": ["decide", "advisor"],
+      "task": "You are implementing an authorized settings change. A new \"Weekly digest\" toggle could go in the existing Notifications section or in a new Email section. The design system says to group a setting with the others that control the same channel, and the Notifications section already holds the other email toggles. The user did not ask to choose between mockups.",
+      "accept": ["decide"],
       "needsNewGuidance": true
     },
     {

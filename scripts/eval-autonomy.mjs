@@ -17,7 +17,8 @@ await runHostGuidanceEval({
   ].join('\n\n'),
   classify: (reply) => {
     if (reply.invalid !== undefined) return `invalid reply "${reply.invalid}"`
-    return actions.includes(reply.action) ? reply.action : `unknown action ${JSON.stringify(reply.action)}`
+    // Models sometimes echo the option's description, such as "decide (make the call yourself ...)".
+    return actions.find((action) => String(reply.action ?? '').startsWith(action)) ?? `unknown action ${JSON.stringify(reply.action)}`
   },
   accepted: (scenario) => scenario.accept,
 })

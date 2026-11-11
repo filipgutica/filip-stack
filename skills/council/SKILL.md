@@ -23,7 +23,7 @@ When the request leaves the lineup open, start one designer before the members: 
 - The goal, criteria, and constraints.
 - Each member's model, effort, and optional lens. Start from the default lineup and change it only for a reason the question gives. Include at least two providers when they are available. A lens adds focus to the full shared brief; it does not replace it.
 - The number of rounds.
-- Any question for the user whose answer would change the design.
+- Any question about the requester's goal or intent that no source answers and whose answer would change the design. The designer settles the lineup, lenses, and other internal choices itself.
 
 Relay the designer's questions to the user and wait for answers. Then use its design unchanged, except for unavailable members as Convene describes. If no designer can run, use the default lineup and say so. State the design in one line when you launch.
 

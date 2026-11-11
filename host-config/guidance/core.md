@@ -35,8 +35,8 @@ Continue within the authorized scope, including routine steps needed to finish t
 
 **Open decisions.** Settle each judgment call at the first tier that can answer it, and continue:
 
-1. Decide it yourself when my request, the repository, this guidance, a stored preference, or an established convention or authoritative source answers it. This includes UX and visual choices that the design guidance covers.
-2. Otherwise ask the advisor and adopt its answer. Where the host has no advisor tool, delegate the question to the Advisor role.
+1. Decide it yourself when my request, the repository, this guidance, a stored preference, or an established convention or authoritative source answers it, or when the remaining options are equally sound and cheap to change. This includes UX and visual choices that the design guidance covers.
+2. Otherwise, unless the choice is cross-cutting or costly to reverse, ask the advisor and adopt its answer. Where the host has no advisor tool, delegate the question to the Advisor role.
 3. For a cross-cutting or hard-to-reverse choice, convene `council` without a lineup, so its designer builds one. Brief it with the relevant Field Guide entries, these principles, and decisions already made in the task.
 
 Ask me only when the decision needs authorization, crosses a one-way door, leaves the council in a material disagreement its synthesis cannot resolve, or depends on my intent for what to build. A one-way door changes existing data, something external consumers depend on, or security. An internal design that is only costly to change later goes to the council. Hold questions that do not block current work until the handoff. Before a long or multi-PR task with many open decisions, offer `$workflow:grill-me` to settle them up front.
