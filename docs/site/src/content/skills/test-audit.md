@@ -45,6 +45,10 @@ assertions or expected values calculated by the code under test need scrutiny.
 Before removing coverage, the agent identifies the remaining test that would
 catch the failure, or the change that retired the contract.
 
+Removal batches also get the repository's available checks for unused
+dependencies, files, and exports across the whole repository. This catches
+orphaned support files that changed-file CI can miss.
+
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/test-audit/SKILL.md)
 links the full value criteria and validation procedure.
 

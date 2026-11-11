@@ -1,0 +1,23 @@
+schema_version = "1.4"
+artifacts = []
+
+[metadata]
+repository_url = "https://github.com/filipgutica/filip-stack"
+language = "javascript"
+
+[agent]
+timeout_sec = 600
+
+[environment]
+cpus = 1
+memory_mb = 2048
+build_timeout_sec = 600
+
+[verifier]
+environment_mode = "separate"
+network_mode = "no-network"
+
+[verifier.environment]
+docker_image = "node:22-bookworm"
+cpus = 1
+memory_mb = 2048

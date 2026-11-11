@@ -6,6 +6,26 @@ Status: Active experiment
 
 Paths prefixed with `pluginbench/` are relative to the PluginBench repository unless stated otherwise.
 
+## 2026-11-11: upstream guidance adoption, dry run only
+
+Prepared a [two-task process canary](evidence/workflow-upstream-adopts/README.md)
+for worker/reviewer delegation limits, truncated evidence recovery,
+credential diagnostics, and repository-wide unused checks after removals.
+The matched arms are vanilla, released Workflow `v5.2.0` at
+`27e0a5fbbf600bb2c59454dc6c19a73bb4d5476b`, and this branch's Workflow plugin.
+The configuration fixes Codex `gpt-6.1-sol`, reasoning `high`, one attempt
+per task, seed 11, one job, and a 600-second attempt budget across arms.
+
+The [saved dry run](evidence/workflow-upstream-adopts/dry-run.json) plans
+six maximum root attempts and zero separate review calls. Child turns can
+add model requests. It reports no dollar estimate. No model calls ran.
+The custom tasks lack canonical patch-grading support in current PluginBench;
+their handoff-delivery reward does not establish correctness or rule adherence.
+The preregistered gate requires direct trace and snapshot evidence and a
+targeted improvement over a control without a contract regression.
+Docker preparation and native discovery have not run. The PR remains a draft
+and must not merge until a separately approved evaluation supports it.
+
 ## BLUF
 
 This study tests whether engineering workflow skills improve a coding agent's work.

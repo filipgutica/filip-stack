@@ -1,0 +1,1164 @@
+{
+  "name": "Workflow upstream adoption canary",
+  "coding_calls": 6,
+  "review_calls": 0,
+  "runner": {
+    "harness": "codex",
+    "model": "gpt-6.1-sol",
+    "reasoning": "high"
+  },
+  "treatments": {
+    "current-main-v5.2.0": {
+      "guidance": [],
+      "skills": [],
+      "plugins": [
+        {
+          "directory": "workflow",
+          "sha256": "51fad3d396df6ebf97cda93268750aac64730aa6f9cd93da7f02331d7c86151c",
+          "entries": [
+            {
+              "path": ".",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".claude-plugin",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".claude-plugin/plugin.json",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "a40be5b37edae03925439d354f0140f0f4df7d3df86222d275240a73546b7a91",
+              "size": 248
+            },
+            {
+              "path": ".codex-plugin",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".codex-plugin/plugin.json",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "668ea2ded9f9d98efea8a57a2edf95321125386877a743f5c5df6d9d30d3a657",
+              "size": 1309
+            },
+            {
+              "path": "THIRD_PARTY_NOTICES.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "333b197d13d58022baa36ddab52d368baf96d3f02f7bb9592b0b619719b6aef8",
+              "size": 7513
+            },
+            {
+              "path": "skills",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1a9e3d338dbdf69c92ac71e28f86535911212ea855724965ddf0b3dcd97a0b76",
+              "size": 2702
+            },
+            {
+              "path": "skills/checkpoint/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "530ea392639cc4ccee060648f5a1af721af85185f0d22094151d1efee2ee250c",
+              "size": 249
+            },
+            {
+              "path": "skills/engineering",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "6af096b001d55f65cbe983caa5bc29162723e8cbb12e2b38f122342f2a688170",
+              "size": 5011
+            },
+            {
+              "path": "skills/engineering/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "09c5cf46717b5d2deb99c4ff33722e3317b59c73cc840a20ce7061648100ff57",
+              "size": 242
+            },
+            {
+              "path": "skills/engineering/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/references/commit-and-pr-hygiene.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1ecefa06772c6bdf891c68a10c4194a8f433a7bbfc04bb9733dcff59cfccf5c5",
+              "size": 1056
+            },
+            {
+              "path": "skills/engineering/references/delegation-and-review.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "d4fe26c0bb53fbb9d5ab0330496610e2b2e7cd751f73815f2ca7c6d3c6080dc3",
+              "size": 4951
+            },
+            {
+              "path": "skills/engineering/references/testing-and-debugging.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "a66dbe84663cdb5b3045d4c8fcb4196f1fd05843d94549b5da60139f36923ed6",
+              "size": 2377
+            },
+            {
+              "path": "skills/engineering/references/verification-tools.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "29a79465072fc57c7442d46dfac37ae2405f6ce9c7c0683072b0abc2854b7f71",
+              "size": 2630
+            },
+            {
+              "path": "skills/grill-me",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "f5c2219e75eeca2f476a17b0fc13fa2dc0c8551d96c2a0be11ee116f92c2293b",
+              "size": 2522
+            },
+            {
+              "path": "skills/grill-me/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "153b073e54f71309170dadd7e3a4482a8061387ff110b0344e8f56ec8b88e075",
+              "size": 245
+            },
+            {
+              "path": "skills/grill-me/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/references/grill-log.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "7ecfa6a3794c29cb2eca2edab9f8ab0a15ac9b77bc989f9f37a72383dd059307",
+              "size": 1271
+            },
+            {
+              "path": "skills/planning",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "16df19f3bfda3e0bf5770d12e9b2bd87fbb91858cc3514621402ddc483a9e71f",
+              "size": 2780
+            },
+            {
+              "path": "skills/planning/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "ba18b7b461897e45036ca27e4c3c507aa528c5f11fc239aa2c365d34c01e8c62",
+              "size": 269
+            },
+            {
+              "path": "skills/planning/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/references/plan.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "9cb63424b11e3680cbf71d6dd0a0a615c711a7db4a8f711ce3ccfb54bfabb862",
+              "size": 2904
+            },
+            {
+              "path": "skills/planning/references/spec.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "e5d17e2f5be4078488c0d48ad3e6aaf96809d31f54e5f791039c81674d4ddc95",
+              "size": 2998
+            },
+            {
+              "path": "skills/planning/references/tickets.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "e30d211d05cdc8b021f273e3db71fb86fe003e8f4cb0ba43baced498ca24ad81",
+              "size": 4699
+            },
+            {
+              "path": "skills/review",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/review/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "45d356b850cf41798e60fc4942dcfd5073ca3c3afe6140e2f9c48f30316f347b",
+              "size": 3085
+            },
+            {
+              "path": "skills/review/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/review/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "dbd8b495b2d72475042c455846192407964a06d114de926e4b74176e7be4868e",
+              "size": 254
+            },
+            {
+              "path": "skills/simplify",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/simplify/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "cdbd29cf5c7bda0129026b089a288ea30f21712c333e236ae125656e31ca2d0e",
+              "size": 3329
+            },
+            {
+              "path": "skills/simplify/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/simplify/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "d7d620182519fe4f3ccf2eb682c200d783b402b8e1f2aad09ae426b1b94fd675",
+              "size": 254
+            },
+            {
+              "path": "skills/technical-writing",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1fde91e4ec5981a103f4e4d2482eff13582e6f0d127f6f4354ae9abf45b6db67",
+              "size": 1795
+            },
+            {
+              "path": "skills/technical-writing/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "99f30ba0651e95598b0fce4c67efab6f5f771753f0bc9302e45c9f8f4ae844be",
+              "size": 268
+            },
+            {
+              "path": "skills/technical-writing/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/references/pull-requests.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "ed50ef6e205a3cd9e9b72bda4606b0a7d9f715e0957fb7e598c55b7b8b37d67a",
+              "size": 3382
+            },
+            {
+              "path": "skills/technical-writing/references/technical-prose.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "57dbbc5883dac1468b08340379080c7a364230651b8ef3cf5256f48fbaff40e3",
+              "size": 3230
+            },
+            {
+              "path": "skills/test-audit",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "6a36196eb035e311984fd3f1d4caf55deee1ad6a7f184f8fc7270d62a04637a4",
+              "size": 5002
+            },
+            {
+              "path": "skills/test-audit/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "d62013da8eb0fe199b5fc5ad1428504ed407e63cb39ab8a09fe8870fb187a44d",
+              "size": 268
+            },
+            {
+              "path": "skills/test-audit/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/references/campaign.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "faca15ecfb6b96a25220d6e2920cfc966d98ecb4268ca3c15b4a6a7aefe623d8",
+              "size": 5584
+            },
+            {
+              "path": "skills/test-audit/references/value-criteria.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "a4d23eb7e440b35bcc60c09be684e4ff7c739fc60e5a893edd3dc4994581f7dc",
+              "size": 5254
+            },
+            {
+              "path": "skills/walkthrough",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "7baa3c03d1d5024a7c54dd94fc22841b95ab1d0a0a8b1f4308708a398235b1db",
+              "size": 2495
+            },
+            {
+              "path": "skills/walkthrough/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1416e19884cd6855a251c1eed88cc6c437d0c253bc12e1c275caa806bbddc0d4",
+              "size": 261
+            },
+            {
+              "path": "skills/walkthrough/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/references/presentation-patterns.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "8550b8d610fb602a1f99c1359159993b86c00751e0516d68102d11edb3c80cd2",
+              "size": 3666
+            },
+            {
+              "path": "skills/walkthrough/references/presenter.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "59d11dd194fc71ede07d52fe91cc07c2e49f2f4f3e2b409bdc7d9c2f81cd9674",
+              "size": 1382
+            },
+            {
+              "path": "skills/walkthrough/references/walkthrough-log.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "cb197c64586005ca1ba35a564742f9e505076db25b7c87d3077c6a6c0d95de82",
+              "size": 1813
+            }
+          ],
+          "name": "workflow",
+          "manifest_path": ".codex-plugin/plugin.json",
+          "manifest": {
+            "name": "workflow",
+            "version": "5.2.0",
+            "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
+            "author": {
+              "name": "Filip Gutica"
+            },
+            "skills": "./skills",
+            "interface": {
+              "displayName": "Engineering Workflow",
+              "shortDescription": "Plan, build, verify, explain, and review engineering work.",
+              "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+              "developerName": "Filip Gutica",
+              "category": "Productivity",
+              "capabilities": [
+                "Interactive",
+                "Write",
+                "Review"
+              ],
+              "defaultPrompt": [
+                "Use $workflow:engineering for authorized code changes, debugging, refactoring, and review corrections.",
+                "Use $workflow:review for read-only review or final verification of an exact range or artifact.",
+                "Use $workflow:planning for specs, plans, tickets, or exploration; use $workflow:technical-writing for prose."
+              ]
+            }
+          },
+          "settings": {
+            "name": "workflow",
+            "version": "5.2.0",
+            "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
+            "author": {
+              "name": "Filip Gutica"
+            },
+            "skills": "./skills",
+            "interface": {
+              "displayName": "Engineering Workflow",
+              "shortDescription": "Plan, build, verify, explain, and review engineering work.",
+              "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+              "developerName": "Filip Gutica",
+              "category": "Productivity",
+              "capabilities": [
+                "Interactive",
+                "Write",
+                "Review"
+              ],
+              "defaultPrompt": [
+                "Use $workflow:engineering for authorized code changes, debugging, refactoring, and review corrections.",
+                "Use $workflow:review for read-only review or final verification of an exact range or artifact.",
+                "Use $workflow:planning for specs, plans, tickets, or exploration; use $workflow:technical-writing for prose."
+              ]
+            }
+          },
+          "skills": [
+            {
+              "name": "checkpoint",
+              "path": "skills/checkpoint"
+            },
+            {
+              "name": "engineering",
+              "path": "skills/engineering"
+            },
+            {
+              "name": "grill-me",
+              "path": "skills/grill-me"
+            },
+            {
+              "name": "planning",
+              "path": "skills/planning"
+            },
+            {
+              "name": "review",
+              "path": "skills/review"
+            },
+            {
+              "name": "simplify",
+              "path": "skills/simplify"
+            },
+            {
+              "name": "technical-writing",
+              "path": "skills/technical-writing"
+            },
+            {
+              "name": "test-audit",
+              "path": "skills/test-audit"
+            },
+            {
+              "name": "walkthrough",
+              "path": "skills/walkthrough"
+            }
+          ],
+          "hooks": []
+        }
+      ]
+    },
+    "upstream-adopts": {
+      "guidance": [],
+      "skills": [],
+      "plugins": [
+        {
+          "directory": "workflow",
+          "sha256": "7467822a13d2001a6af81debc3c5b95673122e003e364c190a87cc6cd696e576",
+          "entries": [
+            {
+              "path": ".",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".claude-plugin",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".claude-plugin/plugin.json",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "a40be5b37edae03925439d354f0140f0f4df7d3df86222d275240a73546b7a91",
+              "size": 248
+            },
+            {
+              "path": ".codex-plugin",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": ".codex-plugin/plugin.json",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "668ea2ded9f9d98efea8a57a2edf95321125386877a743f5c5df6d9d30d3a657",
+              "size": 1309
+            },
+            {
+              "path": "THIRD_PARTY_NOTICES.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "333b197d13d58022baa36ddab52d368baf96d3f02f7bb9592b0b619719b6aef8",
+              "size": 7513
+            },
+            {
+              "path": "skills",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1a9e3d338dbdf69c92ac71e28f86535911212ea855724965ddf0b3dcd97a0b76",
+              "size": 2702
+            },
+            {
+              "path": "skills/checkpoint/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/checkpoint/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "530ea392639cc4ccee060648f5a1af721af85185f0d22094151d1efee2ee250c",
+              "size": 249
+            },
+            {
+              "path": "skills/engineering",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "6af096b001d55f65cbe983caa5bc29162723e8cbb12e2b38f122342f2a688170",
+              "size": 5011
+            },
+            {
+              "path": "skills/engineering/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "09c5cf46717b5d2deb99c4ff33722e3317b59c73cc840a20ce7061648100ff57",
+              "size": 242
+            },
+            {
+              "path": "skills/engineering/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/engineering/references/commit-and-pr-hygiene.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1ecefa06772c6bdf891c68a10c4194a8f433a7bbfc04bb9733dcff59cfccf5c5",
+              "size": 1056
+            },
+            {
+              "path": "skills/engineering/references/delegation-and-review.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "dbb434a5ecac985129057149c1c07059f1c7abd4b4da05446538bf8f07e8afdc",
+              "size": 5174
+            },
+            {
+              "path": "skills/engineering/references/testing-and-debugging.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "2ee3a6fd811f641b51cf6cef7fb3376df85e57da54e3c60128d82685d0ef6818",
+              "size": 2458
+            },
+            {
+              "path": "skills/engineering/references/verification-tools.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "29a79465072fc57c7442d46dfac37ae2405f6ce9c7c0683072b0abc2854b7f71",
+              "size": 2630
+            },
+            {
+              "path": "skills/grill-me",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "f5c2219e75eeca2f476a17b0fc13fa2dc0c8551d96c2a0be11ee116f92c2293b",
+              "size": 2522
+            },
+            {
+              "path": "skills/grill-me/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "153b073e54f71309170dadd7e3a4482a8061387ff110b0344e8f56ec8b88e075",
+              "size": 245
+            },
+            {
+              "path": "skills/grill-me/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/grill-me/references/grill-log.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "7ecfa6a3794c29cb2eca2edab9f8ab0a15ac9b77bc989f9f37a72383dd059307",
+              "size": 1271
+            },
+            {
+              "path": "skills/planning",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "16df19f3bfda3e0bf5770d12e9b2bd87fbb91858cc3514621402ddc483a9e71f",
+              "size": 2780
+            },
+            {
+              "path": "skills/planning/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "ba18b7b461897e45036ca27e4c3c507aa528c5f11fc239aa2c365d34c01e8c62",
+              "size": 269
+            },
+            {
+              "path": "skills/planning/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/planning/references/plan.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "9cb63424b11e3680cbf71d6dd0a0a615c711a7db4a8f711ce3ccfb54bfabb862",
+              "size": 2904
+            },
+            {
+              "path": "skills/planning/references/spec.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "e5d17e2f5be4078488c0d48ad3e6aaf96809d31f54e5f791039c81674d4ddc95",
+              "size": 2998
+            },
+            {
+              "path": "skills/planning/references/tickets.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "e30d211d05cdc8b021f273e3db71fb86fe003e8f4cb0ba43baced498ca24ad81",
+              "size": 4699
+            },
+            {
+              "path": "skills/review",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/review/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "45d356b850cf41798e60fc4942dcfd5073ca3c3afe6140e2f9c48f30316f347b",
+              "size": 3085
+            },
+            {
+              "path": "skills/review/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/review/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "dbd8b495b2d72475042c455846192407964a06d114de926e4b74176e7be4868e",
+              "size": 254
+            },
+            {
+              "path": "skills/simplify",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/simplify/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "cdbd29cf5c7bda0129026b089a288ea30f21712c333e236ae125656e31ca2d0e",
+              "size": 3329
+            },
+            {
+              "path": "skills/simplify/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/simplify/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "d7d620182519fe4f3ccf2eb682c200d783b402b8e1f2aad09ae426b1b94fd675",
+              "size": 254
+            },
+            {
+              "path": "skills/technical-writing",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1fde91e4ec5981a103f4e4d2482eff13582e6f0d127f6f4354ae9abf45b6db67",
+              "size": 1795
+            },
+            {
+              "path": "skills/technical-writing/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "99f30ba0651e95598b0fce4c67efab6f5f771753f0bc9302e45c9f8f4ae844be",
+              "size": 268
+            },
+            {
+              "path": "skills/technical-writing/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/technical-writing/references/pull-requests.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "ed50ef6e205a3cd9e9b72bda4606b0a7d9f715e0957fb7e598c55b7b8b37d67a",
+              "size": 3382
+            },
+            {
+              "path": "skills/technical-writing/references/technical-prose.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "57dbbc5883dac1468b08340379080c7a364230651b8ef3cf5256f48fbaff40e3",
+              "size": 3230
+            },
+            {
+              "path": "skills/test-audit",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "5bcb541404b354fc364634c2501c6298a0946fa013eb4df905f17d38a28ac6a4",
+              "size": 5048
+            },
+            {
+              "path": "skills/test-audit/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "d62013da8eb0fe199b5fc5ad1428504ed407e63cb39ab8a09fe8870fb187a44d",
+              "size": 268
+            },
+            {
+              "path": "skills/test-audit/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/test-audit/references/campaign.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "faca15ecfb6b96a25220d6e2920cfc966d98ecb4268ca3c15b4a6a7aefe623d8",
+              "size": 5584
+            },
+            {
+              "path": "skills/test-audit/references/value-criteria.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "a4d23eb7e440b35bcc60c09be684e4ff7c739fc60e5a893edd3dc4994581f7dc",
+              "size": 5254
+            },
+            {
+              "path": "skills/walkthrough",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/SKILL.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "7baa3c03d1d5024a7c54dd94fc22841b95ab1d0a0a8b1f4308708a398235b1db",
+              "size": 2495
+            },
+            {
+              "path": "skills/walkthrough/agents",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/agents/openai.yaml",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "1416e19884cd6855a251c1eed88cc6c437d0c253bc12e1c275caa806bbddc0d4",
+              "size": 261
+            },
+            {
+              "path": "skills/walkthrough/references",
+              "kind": "directory",
+              "mode": 493
+            },
+            {
+              "path": "skills/walkthrough/references/presentation-patterns.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "8550b8d610fb602a1f99c1359159993b86c00751e0516d68102d11edb3c80cd2",
+              "size": 3666
+            },
+            {
+              "path": "skills/walkthrough/references/presenter.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "59d11dd194fc71ede07d52fe91cc07c2e49f2f4f3e2b409bdc7d9c2f81cd9674",
+              "size": 1382
+            },
+            {
+              "path": "skills/walkthrough/references/walkthrough-log.md",
+              "kind": "file",
+              "mode": 420,
+              "sha256": "cb197c64586005ca1ba35a564742f9e505076db25b7c87d3077c6a6c0d95de82",
+              "size": 1813
+            }
+          ],
+          "name": "workflow",
+          "manifest_path": ".codex-plugin/plugin.json",
+          "manifest": {
+            "name": "workflow",
+            "version": "5.2.0",
+            "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
+            "author": {
+              "name": "Filip Gutica"
+            },
+            "skills": "./skills",
+            "interface": {
+              "displayName": "Engineering Workflow",
+              "shortDescription": "Plan, build, verify, explain, and review engineering work.",
+              "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+              "developerName": "Filip Gutica",
+              "category": "Productivity",
+              "capabilities": [
+                "Interactive",
+                "Write",
+                "Review"
+              ],
+              "defaultPrompt": [
+                "Use $workflow:engineering for authorized code changes, debugging, refactoring, and review corrections.",
+                "Use $workflow:review for read-only review or final verification of an exact range or artifact.",
+                "Use $workflow:planning for specs, plans, tickets, or exploration; use $workflow:technical-writing for prose."
+              ]
+            }
+          },
+          "settings": {
+            "name": "workflow",
+            "version": "5.2.0",
+            "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
+            "author": {
+              "name": "Filip Gutica"
+            },
+            "skills": "./skills",
+            "interface": {
+              "displayName": "Engineering Workflow",
+              "shortDescription": "Plan, build, verify, explain, and review engineering work.",
+              "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+              "developerName": "Filip Gutica",
+              "category": "Productivity",
+              "capabilities": [
+                "Interactive",
+                "Write",
+                "Review"
+              ],
+              "defaultPrompt": [
+                "Use $workflow:engineering for authorized code changes, debugging, refactoring, and review corrections.",
+                "Use $workflow:review for read-only review or final verification of an exact range or artifact.",
+                "Use $workflow:planning for specs, plans, tickets, or exploration; use $workflow:technical-writing for prose."
+              ]
+            }
+          },
+          "skills": [
+            {
+              "name": "checkpoint",
+              "path": "skills/checkpoint"
+            },
+            {
+              "name": "engineering",
+              "path": "skills/engineering"
+            },
+            {
+              "name": "grill-me",
+              "path": "skills/grill-me"
+            },
+            {
+              "name": "planning",
+              "path": "skills/planning"
+            },
+            {
+              "name": "review",
+              "path": "skills/review"
+            },
+            {
+              "name": "simplify",
+              "path": "skills/simplify"
+            },
+            {
+              "name": "technical-writing",
+              "path": "skills/technical-writing"
+            },
+            {
+              "name": "test-audit",
+              "path": "skills/test-audit"
+            },
+            {
+              "name": "walkthrough",
+              "path": "skills/walkthrough"
+            }
+          ],
+          "hooks": []
+        }
+      ]
+    }
+  },
+  "delivery": "native-instructions-skills-plugins-v1",
+  "capabilities": {
+    "subagents": true,
+    "max_threads": 4,
+    "max_depth": 1
+  },
+  "tasks": [
+    "worker-cleanup",
+    "reviewer-evidence"
+  ],
+  "measurements": [
+    "tokens"
+  ],
+  "measurement_capabilities": {
+    "worker-cleanup": {
+      "tokens": {
+        "status": "available",
+        "reason": null
+      }
+    },
+    "reviewer-evidence": {
+      "tokens": {
+        "status": "available",
+        "reason": null
+      }
+    }
+  },
+  "submission_sources": {
+    "worker-cleanup": {
+      "status": "unsupported",
+      "reason": "unsupported native patch grading contract: verifier tree unreviewed"
+    },
+    "reviewer-evidence": {
+      "status": "unsupported",
+      "reason": "unsupported native patch grading contract: verifier tree unreviewed"
+    }
+  },
+  "repeats": 1,
+  "jobs": 1,
+  "container_limits": {
+    "cpus": 1,
+    "memory_mb": 2048
+  },
+  "baseline": "reuse a verified isolated vanilla cohort when available; otherwise fresh vanilla attempts; native built-in instructions remain",
+  "call_estimate": "maximum new root attempts; native subagent turns are additional and metered from session traces; baseline hits resolve before coding",
+  "comparison_identity": {
+    "tasks": {
+      "worker-cleanup": "1dd59f3180f8c9d1e045401056488a22e55eafd15d49ab3acc8a2332f0121979",
+      "reviewer-evidence": "cf294f57741c3c265f6b4c953a73880b7ce89a26e5c27ea78ad26910a2574227"
+    },
+    "runner": {
+      "harness": "codex",
+      "model": "gpt-6.1-sol",
+      "reasoning": "high"
+    },
+    "delivery": "native-instructions-skills-plugins-v1",
+    "capabilities": {
+      "subagents": true,
+      "max_threads": 4,
+      "max_depth": 1
+    },
+    "measurement_settings": {
+      "source_scope": null,
+      "test_scope": null,
+      "fallow_config": null,
+      "coverage": null,
+      "coverage_profiles": {},
+      "test_contribution": null,
+      "require_ready": false
+    },
+    "fallow_config_sha256": null,
+    "measurements": [
+      "tokens"
+    ],
+    "reviewer": null,
+    "review_criteria_sha256": null,
+    "jobs": 1,
+    "backend": "harbor-native",
+    "source_policy": "reviewed-native-patch-source-v2",
+    "task_limits": {
+      "worker-cleanup": {
+        "declared": {
+          "cpus": 1,
+          "memory_mb": 2048,
+          "build_timeout_seconds": 600,
+          "agent_timeout_seconds": 600
+        },
+        "effective": {
+          "cpus": 1,
+          "memory_mb": 2048,
+          "build_timeout_seconds": 600,
+          "agent_timeout_seconds": 600
+        },
+        "adapted_agent_budget": false
+      },
+      "reviewer-evidence": {
+        "declared": {
+          "cpus": 1,
+          "memory_mb": 2048,
+          "build_timeout_seconds": 600,
+          "agent_timeout_seconds": 600
+        },
+        "effective": {
+          "cpus": 1,
+          "memory_mb": 2048,
+          "build_timeout_seconds": 600,
+          "agent_timeout_seconds": 600
+        },
+        "adapted_agent_budget": false
+      }
+    },
+    "isolation": {
+      "protocol": "harbor-docker-v1",
+      "harbor_version": "0.24.0",
+      "submission_receipt_version": 2,
+      "codex_transport": {
+        "version": "codex-stdout-stderr-v1",
+        "harbor_run_sha256": "5b14fbcc889a398f80c7b5f7e2a621efc1337ba72e748fafefbab2ad09ad86bd"
+      },
+      "implementation_sha256": "2a3a7f738607b80daf2a5fd7dfb7400331c331a7687457e8cac1fa07eb095357",
+      "docker_cli": {
+        "path": "/Users/filip.gutica/.rd/bin/docker",
+        "resolved_path": "/Applications/Rancher Desktop.app/Contents/Resources/resources/darwin/bin/docker",
+        "sha256": "af94e59bb6f67d2e74ee8df048d0b6f388c9e25ff79795f5ecaaf4d28ff4d859",
+        "version": "29.6.2-rd"
+      },
+      "docker_plugins": {
+        "compose": {
+          "path": "/opt/homebrew/lib/docker/cli-plugins/docker-compose",
+          "resolved_path": "/opt/homebrew/Cellar/docker-compose/5.4.0/bin/docker-compose",
+          "sha256": "1c06bd7bf4c3d7ca6f5afa7647463fdec15a5271099db28e3990b06994b46eb5",
+          "version": "5.4.0"
+        },
+        "buildx": {
+          "path": "/opt/homebrew/lib/docker/cli-plugins/docker-buildx",
+          "resolved_path": "/opt/homebrew/Cellar/docker-buildx/0.34.1/bin/docker-buildx",
+          "sha256": "84940ba8d8f1c1345bef388ad6a12619aa156376898ae31c0e48b3b4bcb3cd2c",
+          "version": "v0.34.1"
+        }
+      },
+      "docker_engine": {
+        "id": "25bb70d8-41a1-4f83-b5cb-4c865ca7437e",
+        "version": "29.5.3",
+        "platform": "linux/aarch64",
+        "endpoint": "unix:///Users/filip.gutica/.rd/docker.sock",
+        "capacity": {
+          "cpus": 2,
+          "memory_bytes": 12526026752
+        }
+      },
+      "resources": {
+        "cpus": 1,
+        "memory_mb": 2048,
+        "cpu_enforcement": "limit",
+        "memory_enforcement": "limit"
+      }
+    }
+  }
+}

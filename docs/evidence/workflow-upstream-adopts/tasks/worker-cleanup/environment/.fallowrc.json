@@ -1,0 +1,4 @@
+{
+  "entry": ["credentials.mjs", "test/*.test.mjs"],
+  "includeEntryExports": true
+}

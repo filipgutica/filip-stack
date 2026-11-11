@@ -1,0 +1,21 @@
+name: Workflow upstream adoption canary
+runner:
+  harness: codex
+  model: gpt-6.1-sol
+  reasoning: high
+treatments:
+  current-main-v5.2.0:
+    plugins: [/private/tmp/workflow-upstream-adopts-base/plugins/workflow]
+  upstream-adopts:
+    plugins: [../../../plugins/workflow]
+capabilities:
+  subagents: true
+  max_threads: 4
+tasks:
+  source: .
+  ids: [worker-cleanup, reviewer-evidence]
+measurements: [tokens]
+repeats: 1
+seed: 11
+jobs: 1
+timeout_seconds: 600

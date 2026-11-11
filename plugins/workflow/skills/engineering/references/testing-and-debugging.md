@@ -23,6 +23,8 @@ If credible coverage does not exist and the refactor risks observable behavior, 
 
 Do not patch the first visible symptom.
 
+Credential and token diagnostics report only presence or absence, never values.
+
 1. Reproduce the failure with the smallest reliable command.
 2. Read the complete error and identify the first relevant failure boundary.
 3. Trace the value, state, or control flow backward to its owner.
