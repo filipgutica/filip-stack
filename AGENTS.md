@@ -43,7 +43,7 @@ A standalone skill may require other standalone skills by name, as `full-send` r
 promptfoo guidance tests verify that guidance behaves as intended. Ship a behavior change to Workflow or host guidance only after a guidance test covers it and passes. For a change to activation text only, meaning skill descriptions and the pointers that choose a reference, a `pnpm eval:routing` run with no regressions is that test. Put the result table in the PR.
 
 - `pnpm eval:<name>` runs a promptfoo guidance test: it checks a stated choice on fixed scenarios, base ref against working tree. Read [CONTRIBUTING.md](CONTRIBUTING.md#guidance-tests) before you add a scenario or a guidance test.
-- Run a dry run first. A real run needs the user's approval.
+- Run a dry run first. A paid run needs the user's approval.
 - Before you push a Workflow `SKILL.md` edit, run `pnpm eval:routing --dry-run`, then a real run when the user approves. It compares skill and reference routing against the base branch through the local CLIProxyAPI.
 - Before you push a change to the delegation guidance, role tables, or `host-config/models.json`, run `pnpm eval:delegation --dry-run`, then a real run when the user approves. It asks each host's main-thread model where the scenarios in `tests/host-config/delegation-scenarios.json` should run, with the guidance at the base branch and in the working tree.
 - Before you push a change to the autonomy guidance, which says when to decide, ask the advisor, convene a council, or ask the user, run `pnpm eval:autonomy --dry-run`, then a real run when the user approves. It scores the scenarios in `tests/host-config/autonomy-scenarios.json` the same way.
