@@ -247,18 +247,6 @@ from `main`, so they ship when they merge. A releasing commit that changes only
 without a version. The site deploys from `main` when the site, the README, or
 a skill's `SKILL.md` or references change.
 
-## Evaluation
-
-Skills and plugins in this repository are evaluated with
-[PluginBench](https://github.com/filipgutica/pluginbench), which compares each
-treatment with a vanilla arm on the same tasks, model, and harness.
-[The lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) records the
-studies, decisions, and limits, and
-[the evidence directory](docs/evidence/workflow-skill-evaluation/) keeps their
-saved reports. Give PluginBench Workflow as a `plugins:` treatment and a
-standalone skill as a `skills:` treatment pointing at `skills/<name>`. Paid runs
-are separate from changes to the runtime guidance.
-
 ## Guidance tests
 
 [promptfoo](https://www.promptfoo.dev/) is the test framework for guidance.
@@ -271,13 +259,16 @@ guidance at a base ref and the guidance in the working tree.
 | `pnpm eval:routing` | Workflow `SKILL.md` descriptions and reference pointers | `tests/workflow/contract-scenarios.json` |
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
+| `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
 
 ### Add a scenario
 
 Add an object to the scenario file. For the delegation and autonomy tests,
 give it an `id`, a `task`, and `accept`: the passing choices, as one list or
 a list per host (`claude`, `codex`). Set `needsNewGuidance: true` when the
-change under test is meant to fix the scenario.
+change under test is meant to fix the scenario. A Workflow rules scenario also
+lists its `options` as `{ key: description }`; `accept` names keys. Pair each
+new rule with a control scenario where the rule should not apply.
 
 ### Assert a choice
 
@@ -320,9 +311,13 @@ CI cannot reach the CLIProxyAPI, so it never makes model calls. `pnpm check`
 runs each test's dry run, the gate tests, and an autonomy run against a local
 stub that checks the request body and the results tables.
 
-### When to use PluginBench instead
+### PluginBench
 
-A guidance test checks a stated choice. Use PluginBench when the question is
-what an agent does over a whole task, such as the quality, scope, or
-correctness of its work, or when you compare guidance with vanilla or with
-another guidance package.
+A guidance test checks a stated choice. [PluginBench](https://github.com/filipgutica/pluginbench)
+is a separate research project. It measures what an agent does over a whole
+task and compares guidance with vanilla or with other guidance packages. It is
+optional: no change here needs a PluginBench run.
+[The lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) and
+[the evidence directory](docs/evidence/workflow-skill-evaluation/) keep its
+past studies.
+

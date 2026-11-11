@@ -27,7 +27,7 @@ A standalone skill may require other standalone skills by name, as `full-send` r
 - Manual-only skills set `disable-model-invocation: true` and `allow_implicit_invocation: false`.
 - Runtime payloads contain no tests or evaluation fixtures. Workflow ships no hooks and does not depend on Field Guide.
 - Removed or renamed skills get no compatibility aliases. A change to an invocation name is a major release.
-- Static contracts do not prove model behavior. Measure that with PluginBench.
+- Static contracts do not prove model behavior. Test that with a promptfoo guidance test.
 
 ## Site pages
 
@@ -40,16 +40,15 @@ A standalone skill may require other standalone skills by name, as `full-send` r
 
 ## Evaluation
 
-PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/filipgutica/pluginbench)) evaluates the skills and plugins here, and this repository is its main customer. Ship a behavior change to Workflow guidance only after an evaluation supports it. For a change to activation text only, meaning skill descriptions and the pointers that choose a reference, a `pnpm eval:routing` run with no regressions is that evaluation; put its table in the PR. Changes to what a skill does need PluginBench.
+promptfoo guidance tests verify that guidance behaves as intended. Ship a behavior change to Workflow or host guidance only after a guidance test covers it and passes. For a change to activation text only, meaning skill descriptions and the pointers that choose a reference, a `pnpm eval:routing` run with no regressions is that test. Put the result table in the PR.
 
-- Compare every treatment with vanilla on matched tasks, model, reasoning, harness, and attempts.
-- Run a dry run first. A paid run needs the user's approval.
-- Reviewer findings are uncalibrated diagnostics, not a quality score.
-- Record each study in `docs/workflow-skill-evaluation-lab-notebook.md` and its saved reports in `docs/evidence/`.
-- `pnpm eval:<name>` runs a promptfoo guidance test: it checks a stated choice on fixed scenarios, base ref against working tree. PluginBench owns whole-task behavior and comparisons with vanilla or other guidance. Read [CONTRIBUTING.md](CONTRIBUTING.md#guidance-tests) before you add a scenario or a guidance test.
+- `pnpm eval:<name>` runs a promptfoo guidance test: it checks a stated choice on fixed scenarios, base ref against working tree. Read [CONTRIBUTING.md](CONTRIBUTING.md#guidance-tests) before you add a scenario or a guidance test.
+- Run a dry run first. A real run needs the user's approval.
 - Before you push a Workflow `SKILL.md` edit, run `pnpm eval:routing --dry-run`, then a real run when the user approves. It compares skill and reference routing against the base branch through the local CLIProxyAPI.
 - Before you push a change to the delegation guidance, role tables, or `host-config/models.json`, run `pnpm eval:delegation --dry-run`, then a real run when the user approves. It asks each host's main-thread model where the scenarios in `tests/host-config/delegation-scenarios.json` should run, with the guidance at the base branch and in the working tree.
 - Before you push a change to the autonomy guidance, which says when to decide, ask the advisor, convene a council, or ask the user, run `pnpm eval:autonomy --dry-run`, then a real run when the user approves. It scores the scenarios in `tests/host-config/autonomy-scenarios.json` the same way.
+- Before you push a change to what a Workflow skill does, add scenarios for the new rule and a control to a guidance test, then run it. `pnpm eval:workflow-rules` holds Workflow rules that no other test covers, in `tests/workflow/workflow-rules-scenarios.json`.
+- PluginBench (`~/code/pluginbench`) is a separate research project that compares guidance with vanilla and other guidance packages over whole tasks. No change here requires a PluginBench run.
 
 ## Checks and release
 
