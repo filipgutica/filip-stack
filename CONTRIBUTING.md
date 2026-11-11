@@ -45,6 +45,8 @@ tests/skills/              Standalone skill contracts
 tests/field-guide/         Field Guide contracts and utility tests
 tests/guardrails/          Guardrails hook tests
 tests/host-config/         Host config apply tests
+tests/evals/               Guidance test gate and runner tests
+evals/                     promptfoo guidance tests run by pnpm eval:<name>
 scripts/                   Version, plugin validation, and host-config scripts
 docs/                      Evaluation lab notebook and evidence
 docs/site/                 GitHub Pages site
@@ -255,3 +257,71 @@ studies, decisions, and limits, and
 saved reports. Give PluginBench Workflow as a `plugins:` treatment and a
 standalone skill as a `skills:` treatment pointing at `skills/<name>`. Paid runs
 are separate from changes to the runtime guidance.
+
+## Guidance tests
+
+[promptfoo](https://www.promptfoo.dev/) is the test framework for guidance.
+A guidance test gives a model a fixed scenario with the guidance in its
+prompt, and checks the choice it states. Each test compares two prompts: the
+guidance at a base ref and the guidance in the working tree.
+
+| Command | Guidance under test | Scenarios |
+| --- | --- | --- |
+| `pnpm eval:routing` | Workflow `SKILL.md` descriptions and reference pointers | `tests/workflow/contract-scenarios.json` |
+| `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
+| `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
+
+### Add a scenario
+
+Add an object to the scenario file. For the delegation and autonomy tests,
+give it an `id`, a `task`, and `accept`: the passing choices, as one list or
+a list per host (`claude`, `codex`). Set `needsNewGuidance: true` when the
+change under test is meant to fix the scenario.
+
+### Assert a choice
+
+Each `evals/<name>.yaml` names two prompt functions, a test generator, and one
+`javascript` assertion. The assertion parses the JSON reply, classifies it
+into a choice, and passes when `accept` includes that choice. Its reason is
+the choice, which the result tables print. For a new decision, add these to
+`evals/host-guidance.mjs` or a new module, a config beside the others, an
+entry in `evals/run.mjs`, and an `eval:<name>` package script.
+
+### Compare against `main`
+
+```sh
+pnpm eval:delegation --dry-run   # free: validates the config, renders both versions, counts calls
+pnpm eval:delegation             # paid: compares with origin/main through the local CLIProxyAPI
+pnpm eval:view                   # opens saved results in the promptfoo viewer
+```
+
+`--base <ref>` changes the base, `--attempts <n>` sets promptfoo's `--repeat`
+(default 3), and `--model <id>` narrows the models in `evals/providers.yaml`.
+The runner needs `CLIPROXY_API_KEY` or `--api-key-file`; ask before a paid run.
+
+promptfoo scores each answer alone, so the runner applies the gate after the
+run. It fails when a scenario passes fewer attempts in the working tree than
+at the base, or when a `needsNewGuidance` scenario does not gain and the
+working tree misses an attempt. A provider error stops the run; it never
+counts as a failed attempt.
+
+### Results
+
+Every run is saved in promptfoo's local results store, which `pnpm eval:view`
+opens. Runs are not written to `docs/evidence/`: each saved result holds the
+full rendered guidance and reply for every call, which is raw per-call data.
+For a study, put the printed tables in `docs/evidence/<study>/` and record the
+study in the lab notebook.
+
+### CI
+
+CI cannot reach the CLIProxyAPI, so it never makes model calls. `pnpm check`
+runs each test's dry run, the gate tests, and an autonomy run against a local
+stub that checks the request body and the results tables.
+
+### When to use PluginBench instead
+
+A guidance test checks a stated choice. Use PluginBench when the question is
+what an agent does over a whole task, such as the quality, scope, or
+correctness of its work, or when you compare guidance with vanilla or with
+another guidance package.

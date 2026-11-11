@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Workflow routing - which skill and reference a request loads
+prompts:
+  - id: file://routing.mjs:baseSkills
+    label: base
+  - id: file://routing.mjs:headSkills
+    label: working tree
+providers: file://providers.yaml
+tests: file://routing.mjs:routingTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://routing.mjs:scoreRouting
