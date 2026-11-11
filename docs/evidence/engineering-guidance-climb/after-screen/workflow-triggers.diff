@@ -1,0 +1,48 @@
+diff --color -ru workflow-lean/AGENTS.md workflow-triggers/AGENTS.md
+--- workflow-lean/AGENTS.md	2026-11-09 19:26:08.686998708 -0700
++++ workflow-triggers/AGENTS.md	2026-11-10 16:34:41.386120742 -0700
+@@ -89,7 +89,7 @@
+ 
+ ## Testing hygiene
+ 
+-Treat existing tests as intended behavior unless evidence shows otherwise. Do not weaken assertions or hide errors. Apply Engineering's test-value check to test edits, and use `$workflow:test-audit` for substantial or uncertain coverage changes.
++Treat existing tests as intended behavior unless evidence shows otherwise. Do not weaken assertions or hide errors. Apply Engineering's test-value check to test edits.
+ 
+ ## Coding standards
+ 
+@@ -111,6 +111,7 @@
+ - Use the `humanizer` skill when the user requests natural-language editing or a draft needs substantial stylistic revision. Ordinary technical deliverables need only the applicable writing guidance and a concise final read.
+ - Preserve facts, technical meaning, uncertainty, consistent terminology, code, links, required structure, and applicable Simplified Technical English constraints. Keep the draft and editorial audit internal. Return only the requested deliverable unless the user asks to see the editing process.
+ - For a ticket, specification, or implementation plan, use `$workflow:planning`; for a PR description, use `$workflow:technical-writing`. Their references own the default formats.
++- Code comments, README edits, and commit messages written as part of a code change need no writing skill.
+ - Make PR descriptions, PR comments, review replies, and Slack messages easy to scan within their format. Put one idea on each line or bullet. Use a table to compare items or show status. Give a sequence of events as one bullet per event, in time order. Avoid dense paragraphs.
+ 
+ ## Interface design
+diff --color -ru workflow-lean/workflow/skills/engineering/SKILL.md workflow-triggers/workflow/skills/engineering/SKILL.md
+--- workflow-lean/workflow/skills/engineering/SKILL.md	2026-11-09 19:26:08.698693150 -0700
++++ workflow-triggers/workflow/skills/engineering/SKILL.md	2026-11-10 16:34:41.385904388 -0700
+@@ -53,9 +53,9 @@
+ 
+ Read [hygiene](references/commit-and-pr-hygiene.md) only when splitting work or preparing a PR.
+ 
+-Invoke $workflow:test-audit for an explicit test audit or cleanup, substantial coverage changes, or uncertainty about test value or preservation. Bound it to the affected tests and owners; routine test edits use the questions above.
++Invoke $workflow:test-audit only when the user or repository asks for a test audit or cleanup. Other test edits use the questions above.
+ 
+-Read [delegation and review](references/delegation-and-review.md) before delegating, when checking review feedback, and before a change that is hard to undo after merge: security or authentication, migrations, persisted data or formats, or removing or renaming a published API. Follow it and any user or repository review requirements. Other changes use step 9's diff inspection and focused checks.
++Read [delegation and review](references/delegation-and-review.md) before delegating, when checking review feedback, and before a change to security or authentication, a migration of stored data, or the removal or renaming of a published API. Follow it and any user or repository review requirements. Other changes, including a new API, format, or option, use step 9's diff inspection and focused checks.
+ 
+ ## Finish
+ 
+diff --color -ru workflow-lean/workflow/skills/engineering/references/delegation-and-review.md workflow-triggers/workflow/skills/engineering/references/delegation-and-review.md
+--- workflow-lean/workflow/skills/engineering/references/delegation-and-review.md	2026-11-09 19:26:08.698693150 -0700
++++ workflow-triggers/workflow/skills/engineering/references/delegation-and-review.md	2026-11-10 16:34:41.385782119 -0700
+@@ -36,7 +36,8 @@
+ 
+ Scale independent review to risk and honor user or repository requirements:
+ 
+-- A change that is hard to undo after merge, such as security or authentication, a migration, persisted data or formats, or removing or renaming a published API, uses a separate adversarial reviewer when available; other changes use Engineering's step 9 diff inspection and focused checks.
++- A change to security or authentication, a migration of stored data, or the removal or renaming of a published API uses a separate adversarial reviewer when available. Other changes, including a new API, format, or option, use Engineering's step 9 diff inspection and focused checks.
++- Start the reviewer in a fresh context, not a fork of this conversation. Its brief is the only context it gets.
+ 
+ Advice and planning do not replace required review.
+ 

@@ -1778,6 +1778,58 @@ The screen does not show that `workflow-lean` is worse than vanilla. It does sho
 
 Evidence: [screen notes](evidence/engineering-guidance-climb/screen/notes.md), [pre-registration](evidence/engineering-guidance-climb/screen/prereg.md), [summary](evidence/engineering-guidance-climb/screen/summary.json).
 
+### 33. Engineering climb: two cost candidates, a verifier artifact, and the close
+
+Date: 2026-11-10. Owner-approved paid pilots, each pre-registered before its run.
+
+**Setup.** After the screen, a council attributed 29% of `workflow-lean`'s extra tokens to reviewer subagents. Two cheaper candidates followed. Each ran on six screen tasks, with one attempt each, against cached vanilla.
+
+**Rules.**
+
+- **Rule 1:** reject when the candidate fails a task vanilla passed.
+- **Rule 2:** reject when the token geometric mean is above 1.3× vanilla.
+
+**Results.**
+
+| Candidate | What changed from `workflow-lean` | Tokens to vanilla, 90% CI | Decision |
+| --- | --- | ---: | --- |
+| `workflow-loop` | Keeps only the authority bullets and the Engineering steps. No plugin. | 1.29× [1.05, 1.55] | Reject, rule 1 (etree) |
+| `workflow-triggers` | Narrower reviewer, test-audit, and writing-skill triggers | 1.48× [1.27, 1.71] | Reject, rules 1 (etree) and 2 |
+
+A second council (Astra, Sol 6.1, Opus 5.5, Fable 5.2) then read the traces. It looked at two questions: why every guided arm failed etree, and where the remaining overhead comes from.
+
+**etree.**
+
+- **Lean and loop failures:** a verifier artifact.
+  - The verifier swaps in a trusted `diff_test.go` that builds only with a tag.
+  - The agent's other test files called a helper from the `diff_test.go` it replaced.
+  - So the existing-test build failed, and 0 of 15 existing tests counted as passing.
+- **Regrade:** in the task image, removing only the test files absent from the base commit gave 15 of 15 existing tests and 52 of 52 new tests for both attempts. No model was called.
+- **Scope:** 78 of the 79 non-holdout attempts have verifier output, and none of them shows another case, in any arm. The missing one is the screen's ungraded cattrs vanilla attempt.
+- **Triggers failure:** it fails one new test that rejects `/@color` anywhere in the patch output. Three members read this as an overbroad assertion and one as a spec slip.
+
+**Overhead.**
+
+- **Source:** almost all of it is cached input on more requests. Output, including the ledger, is about 1%.
+- **Screen pairs with no reviewer:** on 16 pairs, `workflow-lean` is 1.44× vanilla. It makes 469 requests against 402, runs 158 test commands against 107, and makes 74 guidance reads against 0.
+- **Plugin `AGENTS.md`:** it adds about 4.3k tokens to every request.
+- **Engineering steps 3, 6, 8, and 9:** they add baseline test runs, extra suites, and diff re-reads.
+- **`workflow-loop`:** on the four tasks with no reviewer, its input tokens are 1.03× vanilla in aggregate and 1.13× as a geometric mean. Most of the 1.45× belongs to the plugin layer.
+
+**Post hoc, no decision weight.**
+
+- With the regrade, the loop pilot's rule 1 would not have fired.
+- The screen's pass rates become 85% against 90%.
+- Rule 1 has a false-rejection rate of about 41% (1 − 0.9⁵). This assumes vanilla passes five of the six tasks, the candidate passes each with probability 0.9, and the task outcomes are independent.
+
+**Decision.**
+
+- The owner stopped the cost climb. No guidance change ships, because no evaluation supports one.
+- The open PluginBench fix is a regrade rule applied to every arm, for an existing-test build failure caused by a trusted test file overlap.
+- Task-file edits are ruled out, because task assets are part of the vanilla cache identity.
+
+Evidence: [notes](evidence/engineering-guidance-climb/after-screen/notes.md), [summary](evidence/engineering-guidance-climb/after-screen/summary.json), [loop pre-registration](evidence/engineering-guidance-climb/after-screen/loop-prereg.md), [trigger pre-registration](evidence/engineering-guidance-climb/after-screen/triggers-prereg.md), [`workflow-loop` AGENTS.md](evidence/engineering-guidance-climb/after-screen/workflow-loop-AGENTS.md), [trigger diff](evidence/engineering-guidance-climb/after-screen/workflow-triggers.diff).
+
 ## Fixed iteration protocol
 
 ### Fixed variables
