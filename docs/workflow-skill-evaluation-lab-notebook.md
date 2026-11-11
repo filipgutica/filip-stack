@@ -1994,6 +1994,7 @@ No candidate passed the canary promotion gate.
 | 2026-11-10 | Design system 1.0.4 hover only where a pointer can hover | `@filipgutica/design-system` 1.0.4 puts every hover rule that paints (fill, shadow, colour, border, outline, or a custom property) inside `@media (hover: hover)`, so a tap on a phone no longer leaves a hover fill behind. Press feedback (`:active`) is unchanged. The Foundations token copy button now fits its line, with a 44px hit area. | Not run: PluginBench still has no design-language protocol | A node guard flags any painting hover rule that a hover-capable media query does not guard. Browser tests in light and dark found no sticky fill after a tap and working hover with a mouse. | [design-system PR #13](https://github.com/filipgutica/design-system/pull/13) |
 | 2026-11-11 | Design system 1.0.5 code block frame, softer quiet-action hover, and a tick after copy | `@filipgutica/design-system` 1.0.5 frames the code block: a 16px frame holds the header, and the source sits in a 12px panel inset by 4px. Every quiet action hovers at 6% and presses at 12%, down from 12% and 18%. After a successful copy, the copy icon shows a plain tick for 1.5s, with no visible "Copied" text, and the live region still announces the result. The code-block Copy is muted at rest. | Not run: PluginBench still has no design-language protocol | Rendered tests check the frame and panel geometry, the hover and press alpha with a mouse and no fill after a tap, the tick timing with repeated and overlapping copies, and the contrast of muted Copy in light and dark. | [design-system PR #14](https://github.com/filipgutica/design-system/pull/14) |
 | 2026-11-11 | Design system 1.0.6 themes: Pine, Mauve, and a Themes page | `@filipgutica/design-system` 1.0.6 splits the token source into `tokens/core.json` and one file per theme in `tokens/themes/`. A theme sets only its hue pair and optional fonts. It adds Pine (`#00543f` / `#3fe0c0`) and Mauve, the quiet theme (`#6c5267` / `#d1b3c8`), as `themes/pine.css` and `themes/mauve.css` beside the default Graphite Indigo, and `tokens.json` resolves every theme. `tokens.css` keeps Graphite Indigo unchanged. The site gains a Themes page with one labelled preview per theme and mode. Actions stay pills in every theme. | Not run: PluginBench still has no design-language protocol | The contrast guards and the catalogue's rendered recipes (contrast and radius by role) run once per theme in both modes. Site tests check that each preview renders in its labelled theme and mode, that each is reachable in the accessibility tree, and that every build-time contrast check passes without a script. | [design-system PR #16](https://github.com/filipgutica/design-system/pull/16) |
+| 2026-11-11 | Design system 1.0.7 site header that stays still, and breadcrumbs above the title | `@filipgutica/design-system` 1.0.7 gives the site header the same identity, `~/ Design system`, on every page, and the Pages links keep their x and width when the current page changes, in forced colors too. The breadcrumb moves from the header to above the page title. The design language now requires a breadcrumb above the title on every page below a site's home page, never in the header, for every site in the family. On phones, a two-crumb trail shows in full. | Not run: PluginBench still has no design-language protocol | Rendered tests check that the links keep the same x and width on every page (forced colors none and active), that Tab keeps a strip link clear of the fades, that the breadcrumb lines up with Find, sits above the h1 and contains no separator text, and that nothing overflows at 320px. | [design-system PR #17](https://github.com/filipgutica/design-system/pull/17) |
 | 2026-11-10 | Host-config delegation routing | Model tiers, mechanical-work role, hand-off list, and usage rule in the global guidance | Opus 24/33 → 33/33; Sol 15/33 → 33/33 on 11 scenarios × 3 attempts | Naming the hand-off work and the cheaper tiers changed both models' stated choices; neither moved code-writing off the main thread. | [run notes](evidence/delegation-routing-eval/run-2026-11-10.md) |
 
 ## Validity threats
@@ -2084,6 +2085,24 @@ The change settles an open judgment call at the first tier that can answer it: t
 Limits: the eval measures the stated choice, not behavior in a live long-running thread, and scenarios and accepted answers come from the same author as the change.
 
 Evidence: [run notes](evidence/autonomy-eval/run-2026-11-11.md).
+
+### 35. promptfoo as the guidance test framework
+
+Date: 2026-11-11. A port of the decision evals, not a PluginBench coding run. The owner approved the paid runs.
+
+`pnpm eval:routing`, `pnpm eval:delegation`, and `pnpm eval:autonomy` now run on promptfoo 0.125.1. Each config compares two prompts, the guidance at a base ref and in the working tree, and a small runner applies the same gate to promptfoo's results. The hand-rolled harness is gone. promptfoo checks that guidance makes the choices it states; PluginBench stays the tool for whole-task behavior and comparisons with vanilla.
+
+- A local stub that answers from a hash of each prompt gave identical tables, totals, and gate counts in the old and new harnesses for all three evals. The request body is unchanged.
+- Autonomy against the recorded base: Claude 21 to 27 of 27 (recorded 21 to 26), Codex 23 to 27 (recorded 22 to 27). Both differences are one attempt on `reversible-approach`.
+- Delegation against the recorded base: 33 of 33 on the working tree for both hosts, as recorded; the base scored one attempt lower for each host.
+- A one-attempt Opus routing run against a base before three `SKILL.md` changes: 25 to 29 of 30, no regressions.
+- Routing now checks the skill and the reference as two promptfoo tests and passes an attempt only when both pass, so its call count is exact rather than an upper bound.
+- Runs are saved in promptfoo's local store and are not written to `docs/evidence/`: one autonomy run exported 2.8 MB, mostly rendered guidance, with local paths in it.
+- CI makes no model calls. `pnpm check` runs each eval's dry run, the gate tests, and an autonomy run against a local stub.
+
+Limits: three attempts per scenario cannot separate one-attempt differences from noise, and the routing run used one model and one attempt.
+
+Evidence: [run notes](evidence/promptfoo-guidance-tests/run-2026-11-11.md).
 
 ## Artifact map
 

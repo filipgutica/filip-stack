@@ -1,3 +1,23 @@
+## [5.3.1](https://github.com/filipgutica/filip-stack/compare/v5.3.0...v5.3.1) (2026-11-11)
+
+
+### Bug Fixes
+
+* **council:** name report folders by UTC timestamp so same-day runs do not collide ([b01483f](https://github.com/filipgutica/filip-stack/commit/b01483f8b9995061006870b441e5321375c72d72))
+* **council:** write reports to a temporary folder by default ([8f9baef](https://github.com/filipgutica/filip-stack/commit/8f9baef85e35f5f95512fa8d4a6b5035bcbcd216))
+
+# [5.3.0](https://github.com/filipgutica/filip-stack/compare/v5.2.0...v5.3.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **evals:** order result tables by model and drop the temporary export ([4116706](https://github.com/filipgutica/filip-stack/commit/411670658ca4c2731bc2f9866a12420e1fb276b2))
+
+
+### Features
+
+* **evals:** run guidance tests on promptfoo ([705a0ac](https://github.com/filipgutica/filip-stack/commit/705a0ac44c34f33539cdc928a334ca477e3b6f4e))
+
 # [5.2.0](https://github.com/filipgutica/filip-stack/compare/v5.1.0...v5.2.0) (2026-11-11)
 
 

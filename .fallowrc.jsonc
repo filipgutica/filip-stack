@@ -14,6 +14,9 @@
     { "file": "commitlint.config.js", "exports": ["default"] },
     { "file": "docs/site/astro.config.mjs", "exports": ["default"] },
     { "file": "docs/site/playwright.config.ts", "exports": ["default"] },
+    // promptfoo loads these prompt functions and assertions from evals/*.yaml.
+    { "file": "evals/host-guidance.mjs", "exports": ["baseGuidance", "headGuidance", "scoreDelegation", "scoreAutonomy"] },
+    { "file": "evals/routing.mjs", "exports": ["baseSkills", "headSkills", "scoreRouting"] },
   ],
   "ignorePatterns": [
     // Skill and host templates are copied into other projects, not executed here.

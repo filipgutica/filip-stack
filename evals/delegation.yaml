@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Delegation guidance - where work runs
+prompts:
+  - id: file://host-guidance.mjs:baseGuidance
+    label: base
+  - id: file://host-guidance.mjs:headGuidance
+    label: working tree
+providers: file://providers.yaml
+tests: file://host-guidance.mjs:delegationTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://host-guidance.mjs:scoreDelegation

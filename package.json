@@ -1,6 +1,6 @@
 {
   "name": "filip-stack",
-  "version": "5.2.0",
+  "version": "5.3.1",
   "private": true,
   "type": "module",
   "bin": {
@@ -16,9 +16,10 @@
     "stamp-version": "node scripts/stamp-version.mjs",
     "host-config": "node scripts/host-config.mjs",
     "pin-design-system": "node scripts/pin-design-system.mjs",
-    "eval:routing": "node scripts/eval-routing.mjs",
-    "eval:delegation": "node scripts/eval-delegation.mjs",
-    "eval:autonomy": "node scripts/eval-autonomy.mjs",
+    "eval:routing": "node evals/run.mjs routing",
+    "eval:delegation": "node evals/run.mjs delegation",
+    "eval:autonomy": "node evals/run.mjs autonomy",
+    "eval:view": "promptfoo view",
     "test:workflow-contracts": "node tests/workflow/validate-contracts.mjs",
     "test:skills": "node tests/skills/validate-skills.mjs && node --test tests/skills/hill-climb-build-runs.test.mjs tests/skills/interface-design-scripts.test.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'",
     "test:field-guide-boundary": "node tests/field-guide/validate-plugin-boundary.mjs",
@@ -27,9 +28,10 @@
     "test:field-guide": "node --test tests/field-guide/field-guide.test.mjs tests/field-guide/field-guide-analytics.test.mjs",
     "test:guardrails": "node --test tests/guardrails/guardrails.test.mjs",
     "test:host-config": "node --test tests/host-config/host-config.test.mjs tests/host-config/model-usage.test.mjs tests/host-config/design-system.test.mjs tests/host-config/cli.test.mjs tests/host-config/sync.test.mjs",
+    "test:evals": "node --test tests/evals/gate.test.mjs tests/evals/run.test.mjs",
     "test:plugin-payload": "node --test tests/workflow/plugin-payload-policy.test.mjs",
     "validate-plugins": "node scripts/validate-plugins.mjs",
-    "check": "pnpm test:workflow-contracts && pnpm test:skills && pnpm test:field-guide-boundary && pnpm test:field-guide-contract && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:guardrails && pnpm test:plugin-payload && pnpm test:host-config && pnpm validate-plugins && pnpm test:static",
+    "check": "pnpm test:workflow-contracts && pnpm test:skills && pnpm test:field-guide-boundary && pnpm test:field-guide-contract && pnpm test:field-guide-hooks && pnpm test:field-guide && pnpm test:guardrails && pnpm test:plugin-payload && pnpm test:host-config && pnpm test:evals && pnpm validate-plugins && pnpm test:static",
     "test:static": "pnpm test:static:dead-code && pnpm test:static:health && pnpm test:static:dupes",
     "test:static:dead-code": "fallow dead-code --baseline fallow-baselines/dead-code.json --fail-on-issues",
     "test:static:health": "fallow health --complexity --baseline-mode identity --baseline fallow-baselines/health.json",
@@ -44,6 +46,7 @@
     "ajv": "^8.18.0",
     "fallow": "3.18.0",
     "lefthook": "^1.11.13",
+    "promptfoo": "0.125.1",
     "semantic-release": "^24.2.5"
   }
 }
