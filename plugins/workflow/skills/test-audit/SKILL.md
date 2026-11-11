@@ -67,7 +67,8 @@ or types directly.
 ## Validation
 
 Wait for checkout test runners to finish before editing.
-Use the repository's runner, package manager, scoped instructions, and CI routing.
+Use the repository's runner, package manager, scoped instructions, and CI routing;
+do not assume commands from another project exist.
 
 1. Run the smallest owner and sibling coverage for the affected contract.
 2. For removed source greps or plan assertions, run the executable script or
@@ -75,7 +76,7 @@ Use the repository's runner, package manager, scoped instructions, and CI routin
 3. Run targeted formatting and the repository's diff check.
 4. Run the changed-file gate and mandatory repository checks.
    Report blocked or unavailable proof as unverified.
-   Before landing test or file removal batches, run available repository-wide
+   Before landing removal batches, run available repository-wide
    unused dependency, file, and export checks. Changed-file CI can miss orphaned support files.
 5. For audit edits, report diff statistics for production/tooling separately
    from tests and test support.
