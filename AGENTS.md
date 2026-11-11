@@ -48,6 +48,7 @@ PluginBench (`~/code/pluginbench`, [filipgutica/pluginbench](https://github.com/
 - Record each study in `docs/workflow-skill-evaluation-lab-notebook.md` and its saved reports in `docs/evidence/`.
 - Before you push a Workflow `SKILL.md` edit, run `pnpm eval:routing --dry-run`, then a real run when the user approves. It compares skill and reference routing against the base branch through the local CLIProxyAPI.
 - Before you push a change to the delegation guidance, role tables, or `host-config/models.json`, run `pnpm eval:delegation --dry-run`, then a real run when the user approves. It asks each host's main-thread model where the scenarios in `tests/host-config/delegation-scenarios.json` should run, with the guidance at the base branch and in the working tree.
+- Before you push a change to the autonomy guidance, which says when to decide, ask the advisor, convene a council, or ask the user, run `pnpm eval:autonomy --dry-run`, then a real run when the user approves. It scores the scenarios in `tests/host-config/autonomy-scenarios.json` the same way.
 
 ## Checks and release
 
