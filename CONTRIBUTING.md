@@ -6,8 +6,9 @@ agents follow here, including how to choose where a new skill lives.
 
 ## Set up and check
 
-Install dependencies and run the complete deterministic check. Python 3.9+ is
-also required for the collector tests; no Python packages are needed.
+Install dependencies and run the complete deterministic check. The check needs
+Node 22.22 or later for promptfoo, and Python 3.9+ for the collector tests; no
+Python packages are needed.
 
 ```sh
 pnpm install --frozen-lockfile

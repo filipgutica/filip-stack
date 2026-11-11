@@ -21,7 +21,8 @@ jobs:
       - name: Setup Node
         uses: actions/setup-node@v4
         with:
-          node-version: 22.12.0
+          # promptfoo, which pnpm check runs, needs Node 22.22.0 or later.
+          node-version: 22.22.0
           cache: pnpm
 
       - name: Install dependencies
