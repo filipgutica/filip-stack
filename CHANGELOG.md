@@ -1,3 +1,16 @@
+# [5.2.0](https://github.com/filipgutica/filip-stack/compare/v5.1.0...v5.2.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **host-config:** keep council choices out of the advisor tier and record the autonomy eval ([5e3ab62](https://github.com/filipgutica/filip-stack/commit/5e3ab62d56f1792825c6457b689de85bb6ed6c75))
+
+
+### Features
+
+* **council:** let an independent designer build custom councils and write a report per run ([ee3e883](https://github.com/filipgutica/filip-stack/commit/ee3e8836049f7002733ede8642546d81999622be))
+* **host-config:** settle open decisions in tiers before asking the user ([caab1f4](https://github.com/filipgutica/filip-stack/commit/caab1f4afb95ca29602810ab1208c5a2834ef709))
+
 # [5.1.0](https://github.com/filipgutica/filip-stack/compare/v5.0.0...v5.1.0) (2026-11-10)
 
 
