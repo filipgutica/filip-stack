@@ -1,6 +1,6 @@
 {
   "name": "guardrails",
-  "version": "5.3.1",
+  "version": "5.4.0",
   "description": "Hooks that deny AI attribution in commits and pull requests, and ask before 1Password CLI calls.",
   "author": {
     "name": "Filip Gutica"

@@ -1,3 +1,16 @@
+# [5.4.0](https://github.com/filipgutica/filip-stack/compare/v5.3.1...v5.4.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **workflow:** fit the adopted rules within the Workflow word budget ([441c528](https://github.com/filipgutica/filip-stack/commit/441c5284a95cbbf79ec74613aac20c13958445b8))
+* **workflow:** keep the rule against assuming another project's commands ([0f34f03](https://github.com/filipgutica/filip-stack/commit/0f34f0368fec39b7677680d9c315649596418598))
+
+
+### Features
+
+* **workflow:** adopt upstream delegation and validation guidance ([29630cd](https://github.com/filipgutica/filip-stack/commit/29630cd3d985c85c1dce5677d68ffe057b7bb57d))
+
 ## [5.3.1](https://github.com/filipgutica/filip-stack/compare/v5.3.0...v5.3.1) (2026-11-11)
 
 
