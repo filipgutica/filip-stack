@@ -37,7 +37,7 @@ export const gate = ({ results, attempts: expected }) => {
     row.attempts.push(attempt)
   }
   let regressions = 0
-  const tables = [...groups.values()].map(({ provider, rows }) => ({
+  const tables = [...groups.values()].sort((left, right) => left.provider.id.localeCompare(right.provider.id)).map(({ provider, rows }) => ({
     provider,
     rows: [...rows.values()].map(({ scenario, attempts }) => {
       const of = (version) => attempts.filter((attempt) => attempt.version === version)

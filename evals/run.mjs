@@ -4,7 +4,7 @@
 // (the `working tree` prompt) through the local CLIProxyAPI, then applies the
 // base-versus-working-tree gate to promptfoo's results.
 import { spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync } from 'node:fs'
+import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -87,7 +87,8 @@ if (options['dry-run']) process.exit(0)
 if (options['api-key-file']) env.CLIPROXY_API_KEY = (await readFile(options['api-key-file'], 'utf8')).trim()
 if (!env.CLIPROXY_API_KEY) throw new Error('Set CLIPROXY_API_KEY or pass --api-key-file with one of the client api-keys in the CLIProxyAPI config')
 
-const output = join(mkdtempSync(join(tmpdir(), `eval-${name}-`)), 'results.json')
+const outputDir = mkdtempSync(join(tmpdir(), `eval-${name}-`))
+const output = join(outputDir, 'results.json')
 const status = run([
   'eval', '-c', config, '--repeat', String(attempts), '--max-concurrency', '4',
   '--filter-providers', `^openai:chat:(${models.map((model) => model.replaceAll('.', '\\.')).join('|')})$`,
@@ -97,7 +98,9 @@ const status = run([
 if (status !== 0) process.exit(status ?? 1)
 
 // promptfoo fails a run when any output fails; base failures are expected, so the gate decides.
+// The export repeats what promptfoo saved in its results store, so remove it once read.
 const { evalId, results } = JSON.parse(await readFile(output, 'utf8'))
+rmSync(outputDir, { recursive: true })
 const { tables, regressions } = gate({ results: results.results, attempts })
 console.log(`\n${formatTables({ tables, attempts, title: definition.title })}`)
 console.log(`\nSaved as promptfoo eval ${evalId}. Open it with: pnpm eval:view`)
