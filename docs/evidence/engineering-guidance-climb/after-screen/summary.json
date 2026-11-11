@@ -1,0 +1,50 @@
+{
+  "study": "Engineering guidance climb after the screen: loop pilot, trigger bundle, council, close. Codex gpt-6.1-sol high, 6 screen tasks x1, cached vanilla.",
+  "tasks": ["skrub-duration-encoding", "etree-xml-diff-patch", "tomlkit-toml-table-converters", "fd-deterministic-multi-key-sorting", "sql-formatter-bigquery-pipe-formatting", "go-critic-doc-link-checker"],
+  "rules": {
+    "rule_1": "reject when the candidate fails a task vanilla passed",
+    "rule_2": "reject when the token geometric mean exceeds 1.3x vanilla"
+  },
+  "workflow-loop": {
+    "decision": "reject, rule 1 (etree)",
+    "token_ratio_geomean": 1.287,
+    "token_ratio_interval_90": [1.05, 1.55],
+    "tokens": {"candidate": 9.84e6, "vanilla": 7.90e6},
+    "token_ratio_to_lean_same_tasks": 0.56
+  },
+  "workflow-triggers": {
+    "decision": "reject, rules 1 (etree) and 2",
+    "token_ratio_geomean": 1.48,
+    "token_ratio_interval_90": [1.27, 1.71],
+    "tokens": {"candidate": 11.09e6, "vanilla": 7.90e6}
+  },
+  "etree_regrade": {
+    "cause": "trusted diff_test.go (build tag diff) replaces the authored file that held a helper other authored tests call; the untagged existing-test build fails",
+    "rule": "remove only test files absent from the base commit, then run the existing-test suite",
+    "workflow-lean": {"p2p_recorded": "0/15", "p2p_regraded": "15/15", "f2p": "52/52"},
+    "workflow-loop": {"p2p_recorded": "0/15", "p2p_regraded": "15/15", "f2p": "52/52"},
+    "workflow-triggers": {"p2p": "15/15", "f2p": "51/52", "regrade_changes": false},
+    "attempts_scanned": 79,
+    "attempts_with_verifier_output": 78,
+    "missing_verifier_output": "screen cattrs vanilla attempt (never graded)",
+    "other_cases_in_available_output": 0
+  },
+  "overhead_no_reviewer_screen_pairs": {
+    "pairs": 16,
+    "token_ratio_geomean": 1.442,
+    "tokens": {"workflow-lean": 36.76e6, "vanilla": 25.39e6},
+    "cached_input_share_of_excess": 0.97,
+    "model_requests": {"workflow-lean": 469, "vanilla": 402},
+    "test_commands": {"workflow-lean": 158, "vanilla": 107},
+    "guidance_reads": {"workflow-lean": 74, "vanilla": 0},
+    "agents_md_tokens_per_request": 4300
+  },
+  "loop_no_reviewer_four_tasks": {"aggregate_input_token_ratio": 1.03, "input_token_ratio_geomean": 1.13},
+  "post_hoc": {
+    "loop_rule_1_with_regrade": "would not fire",
+    "screen_pass_rate_with_regrade": {"workflow-lean": 0.85, "baseline": 0.90},
+    "rule_1_false_reject_rate_6x1": 0.41,
+    "rule_1_false_reject_assumptions": "1 - 0.9^5: vanilla passes 5 of 6 tasks, candidate passes each with probability 0.9, outcomes independent"
+  },
+  "close": "cost climb stopped by the owner; no guidance change ships"
+}
