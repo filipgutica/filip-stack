@@ -1,3 +1,15 @@
+# [5.3.0](https://github.com/filipgutica/filip-stack/compare/v5.2.0...v5.3.0) (2026-11-11)
+
+
+### Bug Fixes
+
+* **evals:** order result tables by model and drop the temporary export ([4116706](https://github.com/filipgutica/filip-stack/commit/411670658ca4c2731bc2f9866a12420e1fb276b2))
+
+
+### Features
+
+* **evals:** run guidance tests on promptfoo ([705a0ac](https://github.com/filipgutica/filip-stack/commit/705a0ac44c34f33539cdc928a334ca477e3b6f4e))
+
 # [5.2.0](https://github.com/filipgutica/filip-stack/compare/v5.1.0...v5.2.0) (2026-11-11)
 
 
