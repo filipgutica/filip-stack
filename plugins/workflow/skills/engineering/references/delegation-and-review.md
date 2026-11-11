@@ -18,6 +18,8 @@ Use dependency order. Run tasks in parallel only when neither task needs the oth
 
 The main thread owns integration, scope, and acceptance. Validate delegated results against source and checks; a worker does not accept its own work.
 
+Workers and reviewers do the brief's work themselves. Delegate further only when the brief explicitly allows it.
+
 ## Delegated verification
 
 Routine checks belong to the main thread or implementer. For a substantial delegated verification batch, use the implementation profile with a check-only assignment: do not change source, tests, configuration, or documentation; allow required build outputs and caches; return exact commands, outcomes, and relevant failure evidence; do not fix failures.
@@ -27,6 +29,8 @@ Routine checks belong to the main thread or implementer. For a substantial deleg
 Escalate early when uncertainty could change correctness, architecture, public contracts, dependencies, security, ownership, or authority. Pause dependent work while continuing independent investigation that cannot be invalidated by the decision.
 
 Return the evidence, unresolved decision, viable options, a recommendation, and what is blocked. Do not broaden the assignment or assume new authority to resolve the blocker.
+
+When output is truncated, read the named artifact before rerunning checks or reporting evidence as missing.
 
 When a delegated task fails or cannot meet its completion signal, report the failure and checks that remain unverified. The main thread chooses whether to retry, narrow the task, reassign it, or take over within existing authority. Do not repeat failed attempts without new evidence or a changed approach.
 

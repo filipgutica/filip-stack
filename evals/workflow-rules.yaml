@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Workflow rules - worker delegation, truncated output, credential checks, removal batches
+prompts:
+  - id: file://workflow-rules.mjs:baseRules
+    label: base
+  - id: file://workflow-rules.mjs:headRules
+    label: working tree
+providers: file://providers.yaml
+tests: file://workflow-rules.mjs:workflowRulesTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://workflow-rules.mjs:scoreWorkflowRule

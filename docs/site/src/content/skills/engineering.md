@@ -38,6 +38,10 @@ get a [test-audit](../test-audit/). Risky work, such as migrations or security
 changes, needs review by an agent that did not write it, when the host supports
 that review.
 
+Workers and reviewers keep further delegation within the brief's authority.
+Truncated output sends the agent to the named artifact first. Credential and
+token diagnostics reveal only whether a value is present.
+
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/engineering/SKILL.md)
 has the exact implementation and verification contract.
 

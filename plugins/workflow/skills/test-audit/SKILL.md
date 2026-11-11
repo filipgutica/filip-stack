@@ -66,18 +66,20 @@ or types directly.
 
 ## Validation
 
-Wait for test runners in the checkout to finish before editing source or tests.
-Use the repository's declared runner, package manager, scoped instructions,
-and CI routing; do not assume commands from another project exist.
+Wait for checkout test runners to finish before editing.
+Use the repository's runner, package manager, scoped instructions, and CI routing;
+never assume another project's commands.
 
 1. Run the smallest owner and sibling coverage for the affected contract.
 2. For removed source greps or plan assertions, run the executable script or
    dry-run that owns the real contract.
 3. Run targeted formatting and the repository's diff check.
-4. Run the changed-file gate and other mandatory checks required by repository
-   policy. Report blocked or unavailable proof as unverified.
-5. Inspect the diff statistics; report production/tooling separately from tests
-   and test support when an audit changes files.
+4. Run the changed-file gate and mandatory repository checks.
+   Report blocked or unavailable proof as unverified.
+   Before landing removal batches, run available repository-wide
+   unused dependency, file, and export checks. Changed-file CI misses orphaned support files.
+5. For audit edits, report diff statistics for production/tooling separately
+   from tests and test support.
 6. After final audit edits, follow the existing independent review requirements
    in [delegation and review](../engineering/references/delegation-and-review.md).
    Include the focused test audit in that review assignment.

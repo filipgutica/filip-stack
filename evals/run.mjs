@@ -12,6 +12,7 @@ import { parseArgs } from 'node:util'
 import { formatTables, gate } from './gate.mjs'
 import { autonomyTests, delegationTests, renderGuidance } from './host-guidance.mjs'
 import { changedSkills, routingTests } from './routing.mjs'
+import { prepareRules, workflowRulesTests } from './workflow-rules.mjs'
 
 const evalsDir = new URL('./', import.meta.url).pathname
 const promptfoo = new URL('../node_modules/.bin/promptfoo', import.meta.url).pathname
@@ -41,6 +42,7 @@ const evals = {
   },
   delegation: { tests: delegationTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   autonomy: { tests: autonomyTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
+  'workflow-rules': { tests: workflowRulesTests, prepare: prepareRules, title: ({ id }) => id.replace('openai:chat:', '') },
 }
 
 const name = process.argv[2]

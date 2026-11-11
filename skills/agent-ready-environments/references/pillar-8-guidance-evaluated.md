@@ -15,7 +15,7 @@ compensated for older models becomes overhead and should be removed [A1].
 - Routing evaluations check that skill descriptions trigger when they should.
 - A periodic pruning pass removes no-ops: lines the current model already follows by default.
 
-Example in this repository: the PluginBench rule in `AGENTS.md`.
+Example in this repository: the guidance-test rule in `AGENTS.md`, which compares each guidance change with the base branch on fixed scenarios.
 
 **Audit check.** For each piece of guidance, ask what evidence shows it changes
 behavior. Guidance without evidence scores at most 1. Check when the guidance

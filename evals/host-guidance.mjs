@@ -46,7 +46,7 @@ export const headGuidance = ({ vars, provider }) => messages({ version: 'head', 
 
 // Accepted choices sit in metadata, because promptfoo expands array vars into
 // separate tests. `accept` is one list, or a list per host.
-const scenarioTests = ({ file, role, question }) => JSON.parse(readFileSync(join(repoRoot, file), 'utf8')).scenarios
+export const scenarioTests = ({ file, role, question }) => JSON.parse(readFileSync(join(repoRoot, file), 'utf8')).scenarios
   .map(({ id, accept, needsNewGuidance = false, ...scenario }) => ({
     description: id,
     vars: { role, question: question(scenario) },
@@ -60,7 +60,7 @@ const scenarioTests = ({ file, role, question }) => JSON.parse(readFileSync(join
 
 // Passes when the classified choice is one the scenario accepts for this host. The
 // reason is the choice, which the gate prints.
-const scoreChoice = ({ choice, context }) => {
+export const scoreChoice = ({ choice, context }) => {
   const { accept } = context.test.metadata
   const accepts = Array.isArray(accept) ? accept : accept[context.provider.label]
   const pass = accepts.includes(choice)
