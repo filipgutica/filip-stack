@@ -74,7 +74,7 @@ Report missing members or unverified model settings beside the conclusion. Counc
 
 ## Report
 
-Write a report for every council run, including runs a calling skill convenes, and link it in your answer. Use the path the requester gives, otherwise `${TMPDIR:-/tmp}/council/<YYYY-MM-DD>-<subject-slug>/report.md`, a temporary location like the run directories of `merge-council` and `hill-climb`. A requester who needs a lasting record names a path. Invoking the skill authorizes this one file.
+Write a report for every council run, including runs a calling skill convenes, and link it in your answer. Use the path the requester gives, otherwise `${TMPDIR:-/tmp}/council/<UTC timestamp>-<subject-slug>/report.md`, a temporary location like the run directories of `merge-council` and `hill-climb`. A requester who needs a lasting record names a path. Invoking the skill authorizes this one file.
 
 The report contains:
 
