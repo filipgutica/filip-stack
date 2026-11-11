@@ -55,7 +55,8 @@ has the exact model-selection and synthesis contract.
 - Each position attributed to the model that actually ran.
 - Agreement, disagreement, and uncertainty that affect the decision.
 - The next action, including any decision you need to make.
-- A report in `~/.council/reports/` with each member's position, confidence
-  score, and strongest objection for every round.
+- A report with each member's position, confidence score, and strongest
+  objection for every round. It goes to a temporary folder unless you give a
+  path to keep it.
 
 Council advice does not authorize edits, publication, or merging.
