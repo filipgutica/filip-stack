@@ -18,6 +18,7 @@
     "pin-design-system": "node scripts/pin-design-system.mjs",
     "eval:routing": "node scripts/eval-routing.mjs",
     "eval:delegation": "node scripts/eval-delegation.mjs",
+    "eval:autonomy": "node scripts/eval-autonomy.mjs",
     "test:workflow-contracts": "node tests/workflow/validate-contracts.mjs",
     "test:skills": "node tests/skills/validate-skills.mjs && node --test tests/skills/hill-climb-build-runs.test.mjs tests/skills/interface-design-scripts.test.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'",
     "test:field-guide-boundary": "node tests/field-guide/validate-plugin-boundary.mjs",

@@ -26,12 +26,20 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 - Code, types, tests, schemas, configuration, and current authoritative documentation own technical truth. Verify drift-prone facts before relying on them.
 - Start state-changing work only when the user requests it. Planning, investigation, and read-only requests do not authorize edits, external writes, commits, pushes, or publication.
 - Before every 1Password lookup, tell me the exact vault, item and field (or search query), why you need it, and the scope of data you will retrieve: one field, metadata, the whole item, or a list of items. Prefer field-level reads; disclose when a tool retrieves more than the field you intend to use.
-- If ambiguity would materially change the contract, ask. Otherwise, state a bounded assumption and continue.
+- If ambiguity would materially change the contract, settle it as **Open decisions** under Autonomy describes. Otherwise, state a bounded assumption and continue.
 - Continue authorized work that is independent of an unresolved question and cannot be invalidated by its answer. Pause work whose correctness, scope, or authorization depends on that answer.
 
 ## Autonomy
 
 Continue within the authorized scope, including routine steps needed to finish the requested work. Put status notes in the same message as your next action. Ask before expanding scope or taking a destructive action that has not already been explicitly authorized, or when no remaining work can advance without my input.
+
+**Open decisions.** Settle each judgment call at the first tier that can answer it, and continue:
+
+1. Decide it yourself when my request, the repository, this guidance, a stored preference, or an established convention or authoritative source answers it, or when the remaining options are equally sound and cheap to change. This includes UX and visual choices that the design guidance covers.
+2. Otherwise, unless the choice is cross-cutting or costly to reverse, ask the advisor and adopt its answer. Where the host has no advisor tool, delegate the question to the Advisor role.
+3. For a cross-cutting or hard-to-reverse choice, convene `council` without a lineup, so its designer builds one. Brief it with the relevant Field Guide entries, these principles, and decisions already made in the task.
+
+Ask me only when the decision needs authorization, crosses a one-way door, leaves the council in a material disagreement its synthesis cannot resolve, or depends on my intent for what to build. A one-way door changes existing data, something external consumers depend on, or security. An internal design that is only costly to change later goes to the council. Hold questions that do not block current work until the handoff. Before a long or multi-PR task with many open decisions, offer `$workflow:grill-me` to settle them up front.
 
 When I change or add to the request during a task, restate the current ask in one line before you continue: what changed and what is still pending. Keep a correction to the work in progress in this thread. Hand a new ask to a fresh background agent when it is substantial and independent of the current work: it needs no result from that work and changes none of its files. Otherwise, queue it after the current work.
 
@@ -47,7 +55,7 @@ When a turn ends during such a wait, even because the harness requires a final r
 
 Do not include the footer in progress updates or delegate reports. Omit it from pure Q&A replies when no work is in flight.
 
-The footer contains a brief recap, a table, and a **Waiting on you** list. Build the table from live checks, not memory.
+The footer contains a brief recap, a table, a **Decided for you** list when it has entries, and a **Waiting on you** list. Build the table from live checks, not memory.
 
 Start with a recap of two to four bullets: what the work achieved so far and any decisions, caveats, or results from earlier messages that still matter. Do not repeat the table.
 
@@ -59,6 +67,8 @@ Make the Item cell a clickable Markdown link whenever the item has a URL or a fi
 - Branch or worktree with uncommitted, unpushed, or unmerged work, or merged and still waiting for removal.
 - Background agent or delegate you started.
 - Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
+
+Then a **Decided for you** list: one line per open decision settled without me since the last handoff, with its tier and reason, so I can reverse it. Leave out routine defaults, and omit the list when it is empty. When the work ends in a pull request, put the same list in its description.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 

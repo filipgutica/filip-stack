@@ -2047,6 +2047,24 @@ Human correction effort remains difficult to scale.
 A small adjudicated subset can measure active time and correction turns.
 The larger study can use repair, preservation, extension, and calibrated review outcomes.
 
+### 34. Host-config autonomy: tiered open decisions
+
+Date: 2026-11-11. A decision eval, not a PluginBench coding run. The owner approved the paid runs.
+
+The change settles an open judgment call at the first tier that can answer it: the agent's own call from sources or conventions, then the advisor, then a designer-built council for cross-cutting or costly-to-reverse internal choices. The user hears only about authorization, one-way doors, unresolved council disagreement, or build intent.
+
+`pnpm eval:autonomy` asked each host's main-thread model who should settle nine mid-task decisions, with the guidance from `main` and from the branch, three attempts each:
+
+- Opus 5.5 on the Claude guidance: 21 of 27 on `main`, 26 of 27 on the branch. One `reversible-approach` attempt decided instead of asking the advisor.
+- Sol on the Codex guidance: 22 of 27 on `main`, 27 of 27 on the branch.
+- The four decisions that must reach the user did so on every attempt in both versions. The gains are on the advisor and council cases.
+- A first run failed on Codex and led to a classifier fix and a tier-1 clause; the run notes record both.
+- `pnpm eval:delegation` stayed at 33 of 33 for both hosts.
+
+Limits: the eval measures the stated choice, not behavior in a live long-running thread, and scenarios and accepted answers come from the same author as the change.
+
+Evidence: [run notes](evidence/autonomy-eval/run-2026-11-11.md).
+
 ## Artifact map
 
 | Evidence | Location |
