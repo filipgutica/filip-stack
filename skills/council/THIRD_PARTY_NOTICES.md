@@ -2,15 +2,18 @@
 
 `council` adapts the `council` skill from Theo Browne's tstack. The local
 adaptation uses Astra, Sol 6.1, Opus 5.5, and Fable 5.2 at high effort, with
-the current agent coordinating one round by default. It retains independent
-advice and synthesis, and omits mandatory review scores, PR updates, and fix/review loops.
-It adds Codex metadata and keeps implementation authority separate from advice.
+the current agent coordinating one round by default. The request sets members,
+lenses, goal, and criteria, or a separate designer agent does, never the
+coordinating agent. It retains independent advice and synthesis. It replaces
+mandatory review scores with a per-member confidence score in a written
+report, and omits PR updates and fix/review loops. It adds Codex metadata and
+keeps implementation authority separate from advice.
 
 ## tstack
 
 Source: https://github.com/t3dotgg/tstack
 Tracked path: `skills/council`
-Baseline: `1085050f3baed1ac724caa4a8166145fb2ac88af` (default branch at adoption, 2026-11-03)
+Baseline: `11e37a74d0a6868c121cd0910ab2b3bd9873b92a` (default branch, reviewed 2026-11-11)
 
 MIT License
 
