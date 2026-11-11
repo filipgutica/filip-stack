@@ -68,7 +68,7 @@ or types directly.
 
 Wait for checkout test runners to finish before editing.
 Use the repository's runner, package manager, scoped instructions, and CI routing;
-do not assume commands from another project exist.
+never assume another project's commands.
 
 1. Run the smallest owner and sibling coverage for the affected contract.
 2. For removed source greps or plan assertions, run the executable script or
@@ -77,7 +77,7 @@ do not assume commands from another project exist.
 4. Run the changed-file gate and mandatory repository checks.
    Report blocked or unavailable proof as unverified.
    Before landing removal batches, run available repository-wide
-   unused dependency, file, and export checks. Changed-file CI can miss orphaned support files.
+   unused dependency, file, and export checks. Changed-file CI misses orphaned support files.
 5. For audit edits, report diff statistics for production/tooling separately
    from tests and test support.
 6. After final audit edits, follow the existing independent review requirements
