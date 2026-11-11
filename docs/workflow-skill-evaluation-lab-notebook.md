@@ -2065,6 +2065,24 @@ Limits: the eval measures the stated choice, not behavior in a live long-running
 
 Evidence: [run notes](evidence/autonomy-eval/run-2026-11-11.md).
 
+### 35. promptfoo as the guidance test framework
+
+Date: 2026-11-11. A port of the decision evals, not a PluginBench coding run. The owner approved the paid runs.
+
+`pnpm eval:routing`, `pnpm eval:delegation`, and `pnpm eval:autonomy` now run on promptfoo 0.125.1. Each config compares two prompts, the guidance at a base ref and in the working tree, and a small runner applies the same gate to promptfoo's results. The hand-rolled harness is gone. promptfoo checks that guidance makes the choices it states; PluginBench stays the tool for whole-task behavior and comparisons with vanilla.
+
+- A local stub that answers from a hash of each prompt gave identical tables, totals, and gate counts in the old and new harnesses for all three evals. The request body is unchanged.
+- Autonomy against the recorded base: Claude 21 to 27 of 27 (recorded 21 to 26), Codex 23 to 27 (recorded 22 to 27). Both differences are one attempt on `reversible-approach`.
+- Delegation against the recorded base: 33 of 33 on the working tree for both hosts, as recorded; the base scored one attempt lower for each host.
+- A one-attempt Opus routing run against a base before three `SKILL.md` changes: 25 to 29 of 30, no regressions.
+- Routing now checks the skill and the reference as two promptfoo tests and passes an attempt only when both pass, so its call count is exact rather than an upper bound.
+- Runs are saved in promptfoo's local store and are not written to `docs/evidence/`: one autonomy run exported 2.8 MB, mostly rendered guidance, with local paths in it.
+- CI makes no model calls. `pnpm check` runs each eval's dry run, the gate tests, and an autonomy run against a local stub.
+
+Limits: three attempts per scenario cannot separate one-attempt differences from noise, and the routing run used one model and one attempt.
+
+Evidence: [run notes](evidence/promptfoo-guidance-tests/run-2026-11-11.md).
+
 ## Artifact map
 
 | Evidence | Location |
