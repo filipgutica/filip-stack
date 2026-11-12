@@ -1,3 +1,10 @@
+# [5.5.0](https://github.com/filipgutica/filip-stack/compare/v5.4.0...v5.5.0) (2026-11-12)
+
+
+### Features
+
+* **hill-climb:** check scores, lock grading files, and hold out guidance tasks ([643b656](https://github.com/filipgutica/filip-stack/commit/643b6560cfb56bd809cb510f3244310ac1f7af52))
+
 # [5.4.0](https://github.com/filipgutica/filip-stack/compare/v5.3.1...v5.4.0) (2026-11-11)
 
 
