@@ -193,6 +193,122 @@
       "accept": [
         "open-pr"
       ]
+    },
+    {
+      "id": "ticket-unverified-owner",
+      "task": "The user asks you to draft a Jira story for adding rate limiting to the export endpoint. You confirmed the endpoint's current behavior. You could not verify whether the API gateway or the export service owns rate limiting.",
+      "options": {
+        "draft-marked": "draft the story and mark the owner as TBD, with what to check",
+        "evidence-brief": "return only a brief of the missing evidence instead of a story",
+        "guess-owner": "draft the story and assign the work to the export service"
+      },
+      "accept": [
+        "draft-marked"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ticket-unverified-link",
+      "task": "The user asks you to draft a Jira story for adding rate limiting to the export endpoint. You verified that the export service owns rate limiting. You could not verify the repository path of the export handler; it is probably apps/export/src/handler.ts.",
+      "options": {
+        "omit-link": "draft the story without a code link and mark the handler location as TBD",
+        "guess-link": "draft the story with a link to apps/export/src/handler.ts"
+      },
+      "accept": [
+        "omit-link"
+      ]
+    },
+    {
+      "id": "ticket-verified",
+      "task": "The user asks you to draft a Jira story for adding rate limiting to the export endpoint. You verified the endpoint's current behavior, that the export service owns rate limiting, and the handler's repository path.",
+      "options": {
+        "draft": "draft the story with the verified owner and handler link",
+        "draft-marked": "draft the story and mark the owner as TBD to be safe",
+        "evidence-brief": "return only a brief of the missing evidence instead of a story"
+      },
+      "accept": [
+        "draft"
+      ]
+    },
+    {
+      "id": "spec-review-internal",
+      "task": "You drafted a specification for retrying failed export uploads inside the export service. It touches one repository and changes no public contract. Two open decisions remain, and both are listed. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "return"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "spec-review-public-contract",
+      "task": "You drafted a specification that changes the status values of the public export API, which two client teams depend on. The change touches one service in one repository. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "critic"
+      ]
+    },
+    {
+      "id": "spec-review-multi-repo",
+      "task": "You drafted a specification that changes the status values of the public export API, which two client teams depend on. The change touches the API gateway, the export service, and the web UI, each in its own repository. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "critic"
+      ]
+    },
+    {
+      "id": "spec-open-decision",
+      "task": "You are writing a specification for cancelling a queued export. Whether the status model supports a cancelled state is still undecided, and that decision blocks the export service change. How do you record it?",
+      "options": {
+        "open-decisions": "list it under Open decisions with the work it blocks",
+        "draft-status": "set the specification status to Draft until the decision is made"
+      },
+      "accept": [
+        "open-decisions"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "spec-multi-component",
+      "task": "You are writing a specification in which the API gateway, the export service, and the web UI each need a distinct change. How do you lay out the component changes?",
+      "options": {
+        "table": "one table with columns for the change, owner, contract, dependency, and verification",
+        "field-lists": "a subsection per component that lists its outcome, owner, contract, dependency, and verification"
+      },
+      "accept": [
+        "table"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "spec-single-component",
+      "task": "You are writing a specification in which only the export service changes. How do you lay out the change?",
+      "options": {
+        "design-only": "describe the change in the Design section without a component table",
+        "table": "add a component table with one row"
+      },
+      "accept": [
+        "design-only"
+      ]
+    },
+    {
+      "id": "adr-change-accepted",
+      "task": "The team reverses a decision recorded in an accepted ADR: job leases will move from Postgres advisory locks to Redis. The user asks you to record the change.",
+      "options": {
+        "supersede": "write a new ADR that supersedes the accepted one",
+        "edit": "edit the Decision section of the accepted ADR"
+      },
+      "accept": [
+        "supersede"
+      ]
     }
   ]
 }

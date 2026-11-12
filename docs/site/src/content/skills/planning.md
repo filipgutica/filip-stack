@@ -16,9 +16,9 @@ need. The agent selects planning when your request matches.
 | Output | Ask for it when you need to |
 | --- | --- |
 | Direction | Compare approaches and settle decisions in conversation |
-| Specification | Define behavior, boundaries, and observable outcomes |
+| Specification, PRD, or ADR | Define behavior, product requirements, or one architecture decision |
 | Implementation plan | Turn an approved direction into file-specific, checkable changes |
-| Tickets | Divide approved work into owned outcomes with dependencies |
+| Tickets | Draft Jira or GitHub issues for owned outcomes with dependencies |
 
 For example:
 
@@ -41,10 +41,11 @@ you before they become implementation instructions. Each deliverable has an
 observable completion signal.
 
 Before returning the artifact, the agent checks whether an engineer could
-follow it literally without guessing. A separate reviewer critiques a
-consequential or ambiguous result, and the agent revises it until a round
-finds nothing that needs action, for up to three rounds. A council or
-other final review you asked for runs on the finished artifact.
+follow it literally without guessing. When the work spans several repositories
+or changes a public contract, a separate reviewer critiques the result, and the
+agent revises it until a round finds nothing that needs action, for up to three
+rounds. A council or other final review you asked for runs on the finished
+artifact.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
 defines the four modes and links their output formats. Your format and the
@@ -57,4 +58,5 @@ repository's format take precedence over those defaults.
 
 The result stays in conversation unless you request a file. Planning does not
 commit or publish. It creates or changes Jira or GitHub issues only when you
-ask.
+ask, and it does not write local ticket files. A ticket marks each fact it
+could not verify as `TBD` instead of holding back the draft.

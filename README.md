@@ -93,7 +93,7 @@ Each skill loads only the guidance its task needs.
 | Skill | Use |
 | --- | --- |
 | `engineering` | Makes an authorized code change and verifies the requested behavior with tests and checks. |
-| `planning` | Develops a direction, specification, implementation plan, or tickets from repository evidence. |
+| `planning` | Develops a direction, specification, PRD, ADR, implementation plan, or tickets from repository evidence. |
 | `test-audit` | Audits test value and identifies duplicate coverage, implementation-coupled tests, and test-only production code. |
 | `review` | Reviews one exact change or document and reports only the findings it can back with evidence. |
 | `technical-writing` | Writes or revises technical documents so readers can act on them without guessing. |

@@ -1,6 +1,6 @@
 ---
 name: planning
-description: Explore an engineering direction or create or revise a specification, implementation plan, or engineering ticket from repository evidence. Do not use for authorized implementation, ordinary prose editing, or quick opinions about a plan.
+description: Explore an engineering direction or create or revise a specification, PRD, ADR, implementation plan, or engineering ticket from repository evidence. Do not use for authorized implementation, ordinary prose editing, or quick opinions about a plan.
 metadata:
   internal: true
 ---
@@ -12,11 +12,11 @@ Turn a request into one decision-ready artifact or a bounded direction. Do not r
 ## Select one mode
 
 - **Explore:** Compare material options and resolve decisions in conversation. Load no artifact template.
-- **Specification:** Define behavior, boundaries, contracts, gates, and observable outcomes. Read [specification guidance](references/spec.md).
+- **Specification:** Define behavior, boundaries, contracts, and observable outcomes in a specification, PRD, or ADR. Read [specification guidance](references/spec.md).
 - **Implementation plan:** Define file-specific, independently verifiable changes from an approved direction. Read [plan guidance](references/plan.md).
-- **Tickets:** Break approved work into owned, dependency-aware, verifiable outcomes. Read [ticket guidance](references/tickets.md).
+- **Tickets:** Draft tracker tickets for owned, dependency-aware, verifiable outcomes. Read [ticket guidance](references/tickets.md).
 
-Load only the reference for the selected mode. If the requested output is unclear and that changes the work, ask one focused question.
+Load only the reference for the selected mode. If an unclear output request would change the work, ask one focused question.
 
 For a specification, plan, or ticket, also apply [technical prose guidance](../technical-writing/references/technical-prose.md) without changing the artifact's structure or decisions.
 
@@ -30,14 +30,14 @@ For a specification, plan, or ticket, also apply [technical prose guidance](../t
 6. Give every deliverable an observable completion signal.
 7. Remove unsupported components, speculative flexibility, and unrelated cleanup.
 
-Planning does not authorize code changes, commits, publishing, or tracker edits. Draft external work in conversation; create or edit Jira or GitHub items only on request.
+Planning does not authorize code changes, commits, publishing, or tracker edits. Create or edit Jira or GitHub items only on request.
 
 ## Deliver the requested artifact
 
 Return the artifact in conversation by default. Persist it only when the user requests a file or destination.
 
-User and repository formats outrank the reference's default.
+User and repository formats outrank reference defaults.
 
-Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** Review a consequential or ambiguous artifact in a loop: a separate reviewer critiques it without coaching, you verify the findings and revise, and the reviewer checks the revision. Stop when a round returns no action-required finding, or after three rounds, and report what stays open. Run a council or other final review that the user asked for on the finished artifact, not on drafts.
+Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** When the work spans several repositories or changes a public contract, review the artifact in a loop: a separate reviewer critiques it without coaching, you verify the findings and revise, and the reviewer checks the revision. Stop when a round returns no action-required finding, or after three rounds, and report what stays open. Run a council or other final review that the user asked for on the finished artifact, not on drafts.
 
-Keep specifications focused on requirements and decisions, plans on implementation and verification, and external tickets on their tracker state. Do not mirror ticket status locally or create companion artifacts automatically. Stop after the requested output.
+Keep specifications focused on requirements and decisions, and plans on implementation and verification. Do not create companion artifacts automatically. Stop after the requested output.
