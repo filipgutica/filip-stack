@@ -111,7 +111,12 @@ for (const skill of ownSkills.filter((entry) => !entry.manual)) {
 const workflowScenarios = JSON.parse(await readFile(join(repoRoot, 'tests/workflow/contract-scenarios.json'), 'utf8')).scenarios
 const ids = new Set(workflowScenarios.map(({ id }) => id))
 // The same prompt in two scenarios could accept different answers, so each prompt appears once.
-const prompts = new Set(workflowScenarios.map(({ prompt }) => prompt))
+const prompts = new Set()
+const addPrompt = (prompt, where) => {
+  assert.ok(!prompts.has(prompt), `${where} repeats the prompt of another routing scenario`)
+  prompts.add(prompt)
+}
+for (const { id, prompt } of workflowScenarios) addPrompt(prompt, `tests/workflow/contract-scenarios.json ${id}`)
 for (const file of scenarioFiles) {
   const owner = file.replace(/\.json$/u, '')
   const skill = ownSkills.find(({ name }) => name === owner)
@@ -119,8 +124,7 @@ for (const file of scenarioFiles) {
   const { routing = [], rules = [] } = JSON.parse(await readFile(join(scenariosRoot, file), 'utf8'))
   for (const { id, prompt, expectedSkill, alsoAccept = [] } of routing) {
     assert.ok(id && prompt, `${file} has a routing scenario without an id or prompt`)
-    assert.ok(!prompts.has(prompt), `${file} ${id} repeats the prompt of another routing scenario`)
-    prompts.add(prompt)
+    addPrompt(prompt, `${file} ${id}`)
     for (const name of [expectedSkill, ...alsoAccept].filter((name) => name !== null)) {
       assert.ok(routable.has(name), `${file} ${id} names ${name}, which no model can route to`)
     }
