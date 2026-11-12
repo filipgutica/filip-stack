@@ -8,26 +8,20 @@
 :root { --color-project: #6d3fd6; --color-project-dark: #b49cff; }
 :root.dark { --color-project: #b49cff; --color-project-dark: #b49cff; }
 
-/* The library owns chrome and controls; this site owns the article composition. */
-* { box-sizing: border-box; }
-body { margin: 0; background: var(--color-bg); color: var(--color-text); font: var(--text-md) / var(--leading) var(--font-ui); -webkit-font-smoothing: antialiased; }
-html { scroll-padding-top: var(--space-6); }
-[hidden] { display: none !important; }
+/* The library owns chrome, controls, and the docs shell (.fg-site-docs in App.vue, with its
+ * element defaults); this site owns the article composition. */
 @layer base {
-  p, h1, h2, h3, ul, ol, figure { margin: 0; }
-  a { color: var(--color-link); text-underline-offset: 0.18em; }
-  a:hover { text-decoration: underline; }
+  :where(.fg-site-docs) :where(ul, ol) { margin: 0; }
+  :where(.fg-site-docs) a:hover { text-decoration: underline; }
+  /* The library draws this ring only inside .fg-site-docs; the phone drawer renders outside it. */
   :focus-visible { outline: var(--focus-width) solid var(--color-focus); outline-offset: var(--focus-offset); }
 }
-:not(pre) > code { font-family: var(--font-mono); }
-.page { max-width: calc(var(--page-max) + var(--sidebar) + var(--space-8) + var(--space-12)); margin-inline: auto; padding-inline: var(--space-6); }
-.page-header { --site-frame: 100%; --site-gutter: 0px; }
-.layout { display: grid; grid-template-columns: var(--sidebar) minmax(0, 1fr); gap: var(--space-8); }
-main { display: grid; grid-template-columns: minmax(0, 1fr); min-width: 0; gap: var(--space-12); padding-block: var(--space-8) var(--space-16); }
 main > section { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-4); align-content: start; }
 main > section > * { min-width: 0; }
 h1 { max-width: 24ch; }
 h1 code { overflow-wrap: anywhere; }
+/* The shell steps inline code down a size; code that names a page or skill in a heading keeps the heading size. */
+:is(h1, h2, h3) code { font-size: inherit; }
 .intro { gap: var(--space-5); }
 /* A note under the lede keeps the lede's measure, so it does not outweigh it. */
 .intro .fg-alert { max-width: 34rem; }
@@ -187,14 +181,10 @@ button.map-ring-step { cursor: pointer; }
   .skill-rows p { grid-column: 1 / -1; grid-row: 2; }
 }
 @media (max-width: 800px) {
-  .layout { grid-template-columns: minmax(0, 1fr); gap: 0; }
-  main { padding-top: var(--space-6); }
   .parts { grid-template-columns: minmax(0, 1fr); }
   .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
-  .page { padding-inline: var(--space-4); }
-  main { gap: var(--space-8); }
   .pager { grid-template-columns: minmax(0, 1fr); }
   .pager a[rel='next'] { grid-column: auto; }
 }
