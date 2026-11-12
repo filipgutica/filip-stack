@@ -20,5 +20,32 @@
       "prompt": "Create a new CLI tool and publish it through my homebrew tap.",
       "expectedSkill": "cli-tool-template"
     }
+  ],
+  "rules": [
+    {
+      "id": "fleet-stale-saved-policy",
+      "task": "The user asked you to refresh the whole fleet. On the work laptop, the saved ~/.config/filip-stack/fleet.json differs from the shared policy: it lacks a Codex-only setting the shared policy added for another machine. It is a regular file, not a symlink or a chezmoi-managed file.",
+      "options": {
+        "refresh": "run the refresh with the shared policy as --config, which saves it as the machine's policy and backs up the old copy",
+        "preserve": "run the refresh but keep the machine's saved policy and report it as a configuration conflict",
+        "dry-run": "run with --dry-run and report the difference without changing anything"
+      },
+      "accept": [
+        "refresh"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fleet-inspect-stale-policy",
+      "task": "The user asked which machines are out of sync and said not to change anything yet. On the work laptop, the saved ~/.config/filip-stack/fleet.json differs from the shared policy. It is a regular file.",
+      "options": {
+        "refresh": "run the refresh with the shared policy as --config, which saves it as the machine's policy and backs up the old copy",
+        "preserve": "run the refresh but keep the machine's saved policy and report it as a configuration conflict",
+        "dry-run": "run with --dry-run and report the difference without changing anything"
+      },
+      "accept": [
+        "dry-run"
+      ]
+    }
   ]
 }
