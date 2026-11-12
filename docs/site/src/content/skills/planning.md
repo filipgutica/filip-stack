@@ -41,9 +41,11 @@ you before they become implementation instructions. Each deliverable has an
 observable completion signal.
 
 Before returning the artifact, the agent checks whether an engineer could
-follow it literally without guessing. A separate reviewer critiques the
-result first when you ask for a review, the work spans several repositories,
-or it changes a public contract.
+follow it literally without guessing. When the work spans several repositories
+or changes a public contract, a separate reviewer critiques the result, and the
+agent revises it until a round finds nothing that needs action, for up to three
+rounds. A council or other final review you asked for runs on the finished
+artifact.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
 defines the four modes and links their output formats. Your format and the

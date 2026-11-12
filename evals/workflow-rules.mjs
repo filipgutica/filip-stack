@@ -10,10 +10,11 @@ export const {
   score: scoreWorkflowRule,
 } = rulesEval({
   ruleFiles: [
+    'plugins/workflow/skills/engineering/SKILL.md',
     'plugins/workflow/skills/engineering/references/delegation-and-review.md',
     'plugins/workflow/skills/engineering/references/testing-and-debugging.md',
-    'plugins/workflow/skills/test-audit/SKILL.md',
     'plugins/workflow/skills/planning/SKILL.md',
+    'plugins/workflow/skills/test-audit/SKILL.md',
     'plugins/workflow/skills/planning/references/spec.md',
     'plugins/workflow/skills/planning/references/tickets.md',
   ],

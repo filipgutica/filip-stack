@@ -1,0 +1,22 @@
+{
+  "routing": [
+    {
+      "id": "explicit-grill",
+      "prompt": "Use $grill-me to stress-test this plan.",
+      "expectedSkill": "grill-me",
+      "activation": "explicit"
+    },
+    {
+      "id": "explicit-grill-log",
+      "prompt": "Use $grill-me and save the material decisions in a grill log.",
+      "expectedSkill": "grill-me",
+      "activation": "explicit",
+      "expectedReference": "grill-log.md"
+    },
+    {
+      "id": "grill-near-miss",
+      "prompt": "Do you see any obvious risk in this small plan?",
+      "expectedSkill": null
+    }
+  ]
+}

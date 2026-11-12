@@ -2,8 +2,6 @@
 name: grill-me
 description: Use only when the user explicitly invokes this skill to stress-test an idea, specification, plan, architecture, or implementation approach through focused questions. Do not activate it for ordinary planning, review, or requests for quick feedback.
 disable-model-invocation: true
-metadata:
-  internal: true
 ---
 
 # Grill Me

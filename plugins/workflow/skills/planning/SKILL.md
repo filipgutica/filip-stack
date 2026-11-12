@@ -38,6 +38,6 @@ Return the artifact in conversation by default. Persist it only when the user re
 
 User and repository formats outrank reference defaults.
 
-Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** When the user asks for review, the work spans several repositories, or it changes a public contract, have another reviewer critique it first, without coaching; verify its findings.
+Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** When the work spans several repositories or changes a public contract, review the artifact in a loop: a separate reviewer critiques it without coaching, you verify the findings and revise, and the reviewer checks the revision. Stop when a round returns no action-required finding, or after three rounds, and report what stays open. Run a council or other final review that the user asked for on the finished artifact, not on drafts.
 
 Keep specifications focused on requirements and decisions, and plans on implementation and verification. Do not create companion artifacts automatically. Stop after the requested output.

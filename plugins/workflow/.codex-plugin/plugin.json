@@ -1,15 +1,15 @@
 {
   "name": "workflow",
-  "version": "5.8.0",
-  "description": "A small engineering workflow for planning, implementation, review, technical writing, and guided walkthroughs.",
+  "version": "5.10.0",
+  "description": "A small engineering workflow for planning, implementation, review, test audits, and technical writing.",
   "author": {
     "name": "Filip Gutica"
   },
   "skills": "./skills",
   "interface": {
     "displayName": "Engineering Workflow",
-    "shortDescription": "Plan, build, verify, explain, and review engineering work.",
-    "longDescription": "Nine focused skills cover planning, authorized engineering changes, read-only review, explicit code simplification, test quality audits, concise technical writing, adversarial design interviews, guided walkthroughs, and checkpoints for pausing or handing off work. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
+    "shortDescription": "Plan, build, verify, and review engineering work.",
+    "longDescription": "Five focused skills cover planning, authorized engineering changes, read-only review, test quality audits, and concise technical writing. Guidance is loaded progressively and keeps changes bounded, simple, reusable, and independently verifiable.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [
