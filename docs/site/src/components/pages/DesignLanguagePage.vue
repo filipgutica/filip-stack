@@ -301,7 +301,7 @@ const tables = {
   </section>
 
   <nav class="pager" aria-label="Pages">
-    <a href="/filip-stack/cli/"><span>Previous</span>filip-stack CLI</a>
-    <a href="/filip-stack/field-guide/"><span>Next</span>Field Guide</a>
+    <a rel="prev" href="/filip-stack/cli/"><span>Previous</span>filip-stack CLI</a>
+    <a rel="next" href="/filip-stack/field-guide/"><span>Next</span>Field Guide</a>
   </nav>
 </template>

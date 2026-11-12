@@ -1023,7 +1023,7 @@ onMounted(() => {
 .lesson-contents a:hover { text-decoration: underline; }
 
 .jobs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
-.jobs > div { display: grid; gap: var(--space-1); align-content: start; padding-top: var(--space-3); border-top: 2px solid var(--color-accent); }
+.jobs > div { display: grid; gap: var(--space-1); align-content: start; padding-top: var(--space-3); border-top: 1px solid var(--color-border-subtle); }
 .jobs dt { font-weight: var(--weight-semibold); }
 .jobs dd { margin: 0; color: var(--color-muted); font-size: var(--text-md); }
 
@@ -1037,12 +1037,12 @@ onMounted(() => {
 .flow > li { position: relative; display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
 .flow > li + li::before { content: '→'; position: absolute; top: 50%; left: calc(-1 * var(--space-6)); width: var(--space-6); color: var(--color-muted); text-align: center; translate: 0 -50%; }
 .flow__advisory { border-style: dashed !important; }
-.flow__enforced { border-color: var(--color-accent) !important; box-shadow: inset 0 0 0 1px var(--color-accent); }
+.flow__enforced { border-color: var(--color-border) !important; }
 
 /* Figure 3: each level is one step higher than the one before. */
 .ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
-.ladder > li { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3); border-top: 3px solid var(--color-accent); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
-.ladder > li:nth-child(1) { min-height: 7rem; border-top-color: var(--color-border); }
+.ladder > li { display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
+.ladder > li:nth-child(1) { min-height: 7rem; }
 .ladder > li:nth-child(2) { min-height: 9rem; }
 .ladder > li:nth-child(3) { min-height: 11rem; }
 .ladder > li:nth-child(4) { min-height: 13rem; }
@@ -1055,17 +1055,17 @@ onMounted(() => {
 .lesson-disclosure summary { width: fit-content; padding-block: var(--space-2); color: var(--color-text); font-size: var(--text-md); font-weight: var(--weight-medium); cursor: pointer; }
 .lesson-disclosure summary::marker { color: var(--color-muted); }
 .lesson-disclosure[open] summary { margin-bottom: var(--space-2); }
-.fg-site-steps { gap: var(--space-3); max-width: var(--measure); font-size: var(--text-md); }
+.fg-site-steps { max-width: var(--measure); font-size: var(--text-md); }
 
 /* Figure 3: the pillars grouped by job. */
 .pillar-map { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .pillar-map > li { display: grid; gap: var(--space-2); align-content: start; }
 .pillar-map ul { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.pillar-map a { display: grid; align-content: center; min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
-.pillar-map a:hover { border-color: var(--color-border); text-decoration: none; }
+.pillar-map a { display: grid; align-content: center; min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-inline); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
+@media (hover: hover) { .pillar-map a:hover { border-color: var(--color-border); text-decoration: none; } }
 /* Figures 3 and 5: the pillar number is a tag, not a position. */
 .pillar-tag { display: block; width: fit-content; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); }
-a.pillar-tag:hover { color: var(--color-text); }
+@media (hover: hover) { a.pillar-tag:hover { color: var(--color-text); } }
 
 /* Figure 4: the fix order. */
 .order { display: grid; gap: var(--space-2); font-size: var(--text-sm); }
@@ -1073,7 +1073,6 @@ a.pillar-tag:hover { color: var(--color-text); }
 .order > div + div { margin-top: var(--space-3); }
 .order__chips { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
 .order__chip { display: block; padding: var(--space-2); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); line-height: var(--leading-tight); }
-.order > div:first-child .order__chip { border-color: var(--color-accent); }
 .order__step { display: block; font-size: var(--text-lg); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
 .order__scale { display: flex; justify-content: space-between; margin-top: var(--space-4); padding-top: var(--space-1); border-top: 1px solid var(--color-border-subtle); color: var(--color-muted); font-size: var(--text-xs); }
 

@@ -180,9 +180,9 @@ const tables = {
   </section>
 
   <nav class="pager" aria-label="Pages">
-    <a href="/filip-stack/design-language/"
+    <a rel="prev" href="/filip-stack/design-language/"
       ><span>Previous</span>Design language</a
     >
-    <a href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
+    <a rel="next" href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
   </nav>
 </template>
