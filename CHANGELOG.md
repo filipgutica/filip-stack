@@ -1,3 +1,11 @@
+## [5.7.1](https://github.com/filipgutica/filip-stack/compare/v5.7.0...v5.7.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **sync:** block a missing skill lock hash and normalize folder-hash paths ([e18f41b](https://github.com/filipgutica/filip-stack/commit/e18f41b972a4339bed77609a40593d08bff27950))
+* **sync:** verify skills whose lock records a SHA-256 folder hash ([1b9634d](https://github.com/filipgutica/filip-stack/commit/1b9634d351effaf9531de55b1d6f3f4045710606))
+
 # [5.7.0](https://github.com/filipgutica/filip-stack/compare/v5.6.0...v5.7.0) (2026-11-12)
 
 
