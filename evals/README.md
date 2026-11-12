@@ -11,8 +11,10 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | `pnpm eval:routing` | `routing.yaml` | `routing.mjs` | Catalog of every skill a model can route to, then one skill's body | `tests/workflow/contract-scenarios.json` and the `routing` lists in `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:delegation` | `delegation.yaml` | `host-guidance.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | `autonomy.yaml` | `host-guidance.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/autonomy-scenarios.json` |
-| `pnpm eval:workflow-rules` | `workflow-rules.yaml` | `rules.mjs` | The Workflow files that hold the rules under test | `tests/workflow/workflow-rules-scenarios.json` |
+| `pnpm eval:workflow-rules` | `workflow-rules.yaml` | `workflow-rules.mjs` | The Workflow files that hold the rules under test | `tests/workflow/workflow-rules-scenarios.json` |
 | `pnpm eval:skill-rules` | `skill-rules.yaml` | `rules.mjs` | The `SKILL.md` of the standalone skill, or Field Guide, that owns the scenario | The `rules` lists in `tests/skills/scenarios/<skill>.json` |
+| `pnpm eval:hill-climb` | `hill-climb.yaml` | `hill-climb.mjs` | The `hill-climb` skill and its references | `tests/skills/hill-climb-scenarios.json` |
+| `pnpm eval:retrieval` | `retrieval.yaml` | `retrieval.mjs` | Global guidance rendered by `scripts/host-config.mjs`, then the Field Guide skill | `tests/host-config/retrieval-scenarios.json` |
 
 ## Files
 
@@ -20,7 +22,8 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | --- | --- |
 | `<name>.yaml` | promptfoo config: two prompts labeled `base` and `working tree`, the providers, a test generator, and one `javascript` assertion |
 | `providers.yaml` | The models, through the local CLIProxyAPI. The label (`claude` or `codex`) names the host whose guidance a prompt renders. |
-| `host-guidance.mjs`, `routing.mjs`, `rules.mjs` | Prompt functions, test generators, and scoring for each test |
+| `host-guidance.mjs`, `routing.mjs`, `rules.mjs` | Prompt functions, test generators, and scoring. `rules.mjs` builds every rules test: `rulesEval` for a fixed set of files, and the skill-rules tests |
+| `workflow-rules.mjs`, `hill-climb.mjs`, `retrieval.mjs` | Rules tests that `rulesEval` builds |
 | `skill-scenarios.mjs` | Reads `tests/skills/scenarios/<skill>.json` and the `--no-base` and `--skill` options |
 | `reply.mjs` | Parses the span from the first `{` to the last `}` in a reply as JSON. Invalid JSON is a failed answer, not an error. |
 | `run.mjs` | The `pnpm eval:<name>` entry point: options, validation, the promptfoo run, reading its JSON export, printing the tables, and the exit code |
@@ -61,12 +64,13 @@ The base ref supplies only the guidance. Both versions use the working tree's sc
 | --- | --- | --- |
 | delegation, autonomy | `git archive` of `host-config/`, `scripts/host-config.mjs`, and `plugins/field-guide` into a temporary directory, then `host-config.mjs apply` into a temporary home | `host-config.mjs apply` from the repository into a temporary home |
 | routing | `git show` of each `SKILL.md` under `plugins/workflow/skills`, `skills`, and `plugins/field-guide/skills` | The files on disk |
-| workflow-rules, skill-rules | `git show` of each rule file; a file missing at the ref renders empty | The files on disk |
+| workflow-rules, skill-rules, hill-climb | `git show` of each rule file; a file the ref does not have is left out | The files on disk |
+| retrieval | Host guidance as for delegation, then the Field Guide skill as for the rules tests | The same, from the working tree |
 
 ## Scenarios and scoring
 
 - `metadata.scenario` holds the scenario `id` and groups a scenario's rows in the gate.
-- Delegation, autonomy, workflow-rules, and skill-rules turn each scenario into one test, described by its `id`.
+- Delegation, autonomy, and the rules tests turn each scenario into one test, described by its `id`.
   - Accepted answers sit in `metadata`, not `vars`, because promptfoo expands an array var into one test per element.
   - `accept` is one list, or a list per host. The assertion picks the list for the provider label.
 - Routing turns each scenario into zero, one, or two tests:

@@ -14,6 +14,9 @@ each version's evidence is a set of attempts, not its own text.
 - **Attempts:** one attempt is one task done under one version. Every task
   gets the same number of attempts under every version, at least two. Fix
   one model and effort for all attempts.
+- **Holdout:** one or two more tasks, built like the task set, that no
+  propose brief, round bundle, or Prune copy ever includes. They show
+  whether a gain carries beyond the tasks the climb learned from.
 - **Baseline:** a version with no guidance, compared with the final version
   as the last section below describes.
 
@@ -49,7 +52,7 @@ the final comparison.
 - Score: tally each output against its task's answer key with the frozen
   rule, in `ledger.md`. Recount any tally that decides a round. The tally
   stands in for the score command wherever `SKILL.md` runs one, and the
-  two-run stability check does not apply.
+  baseline checks in `references/score.md` do not apply.
 - Bundle: `tasks/` holds each task's inputs, the same for both versions.
   `A/` and `B/` hold each version's outputs under the same `<task>-<n>`
   names. Never include the guidance, its diff, or the ledger, so a judge
@@ -83,7 +86,23 @@ work. Measure length as `wc -w` over the scoped files.
 Attempts count as member calls. Before round 1, the starting version's
 attempts and the baseline's attempts are a one-time cost. Each round then
 adds one call per attempt for the candidate. Reserve the baseline comparison
-with the final check.
+and the final version's holdout attempts with the final check. The starting
+version's holdout attempts are part of the one-time cost.
+
+## Check the holdout
+
+Run the holdout attempts under the starting version before round 1, and
+under the final version in the final check. Add their outputs to the final
+check's scorecard bundle, and name their scorecard rows `Holdout: <task>`.
+Under `score` and `both`, also tally them, and record both tallies in the
+run record's `final.notes`.
+
+Report the holdout apart from the task set. When the task set improved and
+the holdout did not, say so first in the report, as a sign that the climb
+fit its tasks rather than the work, and add it to the run record's
+`attention`. The holdout improved when its mean scorecard score rose, or,
+under `score` and `both`, when its tally beat the start by the smallest gain
+that counts.
 
 ## Compare with the baseline
 

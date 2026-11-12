@@ -1,0 +1,91 @@
+{
+  "scenarios": [
+    {
+      "id": "intent-query-empty",
+      "task": "The user asks: \"Make the delete button on the projects page confirm first.\" You ran Field Guide retrieve with --query \"confirm first\" and it returned no records. The injected subject index lists: technical-writing, ui-mockups, vue-reactivity.",
+      "options": {
+        "rephrase": "retrieve again with --query \"confirm dialog\"",
+        "broaden": "retrieve again with --query \"button\"",
+        "proceed": "continue from live sources without Field Guide guidance"
+      },
+      "accept": [
+        "rephrase"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "concrete-query-relevant",
+      "task": "The user asks: \"Make the delete button on the projects page confirm first.\" You ran Field Guide retrieve with --query \"confirm dialog\". It returned one record: \"[ui-mockups] Destructive actions open a confirm dialog that names the item being deleted.\"",
+      "options": {
+        "apply": "apply the returned record while you implement the change",
+        "rephrase": "retrieve again with --query \"delete confirmation modal\"",
+        "proceed": "continue from live sources without Field Guide guidance"
+      },
+      "accept": [
+        "apply"
+      ]
+    },
+    {
+      "id": "fallback-exhausted",
+      "task": "The user asks: \"Make the delete button on the projects page confirm first.\" Field Guide retrieve with --query \"confirm first\" returned no records. Retrieve with --query \"confirm dialog\" returned one record: \"[vue-template-refs] Prefer useTemplateRef over string refs.\" Retrieve with --subject ui-mockups, taken from the injected subject index, returned one record: \"[ui-mockups] Name mockup files after the screen they show.\"",
+      "options": {
+        "apply": "apply the returned records while you implement the change",
+        "broaden": "retrieve again with --query \"button\"",
+        "proceed": "continue from live sources without Field Guide guidance"
+      },
+      "accept": [
+        "proceed"
+      ]
+    },
+    {
+      "id": "compacted-retrieved-record",
+      "task": "Earlier in this session you ran Field Guide retrieve and applied a shared typescript-type-safety record. Then the context was compacted. The summary says: \"Applied Field Guide guidance on type casts.\" After compaction the hooks injected this repository's project records and the subject index; the typescript-type-safety record is not among them. You are now writing the final report, which quotes each Field Guide rule you applied.",
+      "options": {
+        "retrieve": "retrieve the typescript-type-safety guidance again and quote the returned rule",
+        "cite": "quote the rule as the compaction summary and your memory give it",
+        "omit": "leave the Field Guide rule out of the report"
+      },
+      "accept": [
+        "retrieve"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "compacted-injected-record",
+      "task": "The context was compacted. After compaction the hooks injected this record, which is now in your context word for word: \"[typescript-type-safety] Avoid `as` casts; narrow with type guards instead.\" You applied it before the compaction. You are now writing the final report, which quotes each Field Guide rule you applied.",
+      "options": {
+        "retrieve": "retrieve the typescript-type-safety guidance again and quote the returned rule",
+        "cite": "quote the injected record that is in your context",
+        "omit": "leave the Field Guide rule out of the report"
+      },
+      "accept": [
+        "cite"
+      ]
+    },
+    {
+      "id": "compacted-skill-rule",
+      "task": "Earlier in this session you read plugins/workflow/skills/engineering/SKILL.md. Then the context was compacted. The summary says: \"Engineering skill step 8: rerun the same test and only the affected checks.\" You are now writing the final report, which quotes the skill step you followed.",
+      "options": {
+        "reread": "read the step from plugins/workflow/skills/engineering/SKILL.md again and quote it",
+        "cite": "quote the step as the compaction summary gives it",
+        "omit": "leave the skill step out of the report"
+      },
+      "accept": [
+        "reread"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fresh-skill-rule",
+      "task": "No compaction has happened in this session. A minute ago you read plugins/workflow/skills/engineering/SKILL.md, and its step 8 is in your context word for word: \"Rerun the same test and only the affected existing checks.\" You are now writing the final report, which quotes the skill step you followed.",
+      "options": {
+        "reread": "read the step from plugins/workflow/skills/engineering/SKILL.md again and quote it",
+        "cite": "quote the step from the file text in your context",
+        "omit": "leave the skill step out of the report"
+      },
+      "accept": [
+        "cite"
+      ]
+    }
+  ]
+}

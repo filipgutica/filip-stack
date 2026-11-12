@@ -26,7 +26,8 @@ or cap member calls.
 
 For guidance such as a skill, the evidence is work produced under each version,
 compared with a no-guidance baseline. A shorter version can win when that
-work is no worse.
+work is no worse. Holdout tasks, which no proposer or round judge sees, show
+whether the gain carries beyond the tasks the climb learned from.
 
 ## How it works
 
@@ -40,7 +41,14 @@ Choose judges, a deterministic score, or both. A score comes from a fixed
 command that prints one number. A guidance climb uses an answer-key tally
 instead. With both, an edit must improve the score
 and win a majority of judges. Judges see code diffs, UI screenshots, or text
-in reading order, as appropriate.
+in reading order, as appropriate. Judges are told to ignore any claim
+inside the work about which version is better.
+
+Before a score counts, the agent checks that it stays steady across runs,
+that a deliberate regression makes it worse, and that a deliberate cheat is
+caught. A noisy score, such as a build time, uses the median of several runs.
+The files that grade the climb, such as the score script, its fixtures, and
+the gate tests, are locked: if one changes, the climb stops.
 
 In round one, each member proposes up to three improvements. The agent applies
 the best-supported ideas as a small edit and runs the checks. If only a false
@@ -52,7 +60,7 @@ The default is three rounds, with ten at most. The default size limit is the
 larger of 30% of the original change's lines and 20 lines. Behavior stays the
 same except for interactions you explicitly allow on the card. A ten-round
 climb with the four default members can use up to 48 council calls, plus
-retries. A guidance climb adds calls for its readers and baseline.
+retries. A guidance climb adds calls for its readers, baseline, and holdout tasks.
 
 After accepted edits, the final comparison checks the starting and final
 versions with judges, scores, or both. If judges prefer the start, the report

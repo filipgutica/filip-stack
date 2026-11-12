@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: hill-climb rules - score checks, locked files, judge bundles, holdout
+prompts:
+  - id: file://hill-climb.mjs:baseHillClimb
+    label: base
+  - id: file://hill-climb.mjs:headHillClimb
+    label: working tree
+providers: file://providers.yaml
+tests: file://hill-climb.mjs:hillClimbTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://hill-climb.mjs:scoreHillClimb

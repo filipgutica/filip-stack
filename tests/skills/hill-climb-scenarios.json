@@ -1,0 +1,169 @@
+{
+  "scenarios": [
+    {
+      "id": "timed-score-steady-enough",
+      "task": "The decision rule is `score`. The score command times a cold build in seconds; lower is better, and the card's smallest gain that counts is 2.0 seconds. At baseline you ran it three times on the incumbent with no code change. It printed 41.2, 42.0, and 41.5. The gates pass. You have not created the work directory yet.",
+      "options": {
+        "block": "stop before round 1 and report that the score is unstable",
+        "median": "set the card to three runs per measurement, use their median as the score, and continue the baseline",
+        "single": "keep one run per measurement and continue the baseline"
+      },
+      "accept": [
+        "median"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "timed-score-too-noisy",
+      "task": "The decision rule is `score`. The score command times a cold build in seconds; lower is better, and the card's smallest gain that counts is 2.0 seconds. At baseline you ran it three times on the incumbent with no code change. It printed 40.1, 46.3, and 43.0. The gates pass. You have not created the work directory yet.",
+      "options": {
+        "block": "stop before round 1 and report that the score is unstable",
+        "median": "set the card to three runs per measurement, use their median as the score, and continue the baseline",
+        "single": "keep one run per measurement and continue the baseline"
+      },
+      "accept": [
+        "block"
+      ]
+    },
+    {
+      "id": "score-sensitivity-unchecked",
+      "task": "The decision rule is `score`. The score command, `pnpm a11y:count`, counts accessibility violations on the settings page; lower is better, and the smallest gain that counts is 1. At baseline it printed 4 on each of three runs, the gates pass, and you have created the work directory with its snapshot and manifest. You have not yet edited anything.",
+      "options": {
+        "round-1": "send the propose briefs and start round 1",
+        "sensitivity": "make a deliberate edit in the scope that should add a violation, measure, then restore"
+      },
+      "accept": [
+        "sensitivity"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "judges-rule-no-score-checks",
+      "task": "The decision rule is `judges`; the card has no score command. At baseline the gates pass, and you have created the work directory with its snapshot and manifest. You have not yet edited anything.",
+      "options": {
+        "round-1": "send the propose briefs and start round 1",
+        "sensitivity": "make a deliberate edit in the scope that should hurt the change, run the gates, then restore"
+      },
+      "accept": [
+        "round-1"
+      ]
+    },
+    {
+      "id": "locked-fixture-changed",
+      "task": "The decision rule is `score`. In round 2 the candidate scored 2 against the incumbent's 4, and the gates pass. Before you accept it, you compare the files: the scoped files match candidate.tsv. The card lists fixtures/a11y/expected.json under Locked because the score command reads it; it sits outside the scope, and its hash now differs from the one recorded at baseline.",
+      "options": {
+        "accept": "accept the candidate as the new incumbent",
+        "restore": "restore the incumbent and record the round as rejected",
+        "stop": "stop the climb, report the changed path, and change nothing further"
+      },
+      "accept": [
+        "stop"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "unrelated-file-changed",
+      "task": "The decision rule is `score`. In round 2 the candidate scored 2 against the incumbent's 4, and the gates pass. Before you accept it, you compare the files: the scoped files match candidate.tsv, and every locked file matches its hash from baseline. The user edited docs/CHANGELOG.md during the round; that file is outside the scope, is not locked, and neither the score command nor the gates read it.",
+      "options": {
+        "accept": "accept the candidate as the new incumbent",
+        "restore": "restore the incumbent and record the round as rejected",
+        "stop": "stop the climb, report the changed path, and change nothing further"
+      },
+      "accept": [
+        "accept"
+      ]
+    },
+    {
+      "id": "candidate-games-score",
+      "task": "The decision rule is `score`. The score command, `pnpm a11y:count`, audits only the /settings route and counts violations; lower is better, and the smallest gain that counts is 1. Round 2's candidate adds `if (route === '/settings') return precomputedReport` to the scoped audit helper, so the /settings report skips the real checks. The gates pass, and the score fell from 4 to 0.",
+      "options": {
+        "accept": "accept the candidate as the new incumbent",
+        "fail-gate": "treat the candidate as failing the gate, restore, and record the round as rejected"
+      },
+      "accept": [
+        "fail-gate"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "candidate-honest-gain",
+      "task": "The decision rule is `score`. The score command, `pnpm a11y:count`, audits only the /settings route and counts violations; lower is better, and the smallest gain that counts is 1. Round 2's candidate adds the missing `aria-label` to the shared icon button component in the scope, which every route uses. The gates pass, and the score fell from 4 to 2.",
+      "options": {
+        "accept": "accept the candidate as the new incumbent",
+        "fail-gate": "treat the candidate as failing the gate, restore, and record the round as rejected"
+      },
+      "accept": [
+        "accept"
+      ]
+    },
+    {
+      "id": "guidance-holdout-flat",
+      "task": "A guidance climb under `score` has finished its final check; the smallest gain that counts is 0.5. The task set's tally rose from 4.0 at the start to 6.5 for the final version. The two holdout tasks, which no proposer or round judge saw, tallied 5.0 at the start and 5.0 for the final version. The final version beat the no-guidance baseline. You are writing the report.",
+      "options": {
+        "report-gain": "lead the report with the task set's gain",
+        "report-holdout-first": "lead the report with a warning that the holdout did not improve, so the climb may fit its tasks rather than the work"
+      },
+      "accept": [
+        "report-holdout-first"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "guidance-holdout-moved",
+      "task": "A guidance climb under `score` has finished its final check; the smallest gain that counts is 0.5. The task set's tally rose from 4.0 at the start to 6.5 for the final version. The two holdout tasks, which no proposer or round judge saw, tallied 5.0 at the start and 6.0 for the final version. The final version beat the no-guidance baseline. You are writing the report.",
+      "options": {
+        "report-gain": "lead the report with the task set's gain",
+        "report-holdout-first": "lead the report with a warning that the holdout did not improve, so the climb may fit its tasks rather than the work"
+      },
+      "accept": [
+        "report-gain"
+      ]
+    },
+    {
+      "id": "timed-score-round-remeasure",
+      "task": "The decision rule is `score`. The card marks the score as timed: it times a cold build in seconds, lower is better, with three runs per measurement. The incumbent's recorded score is 38.4 from round 1, an hour ago. Round 3 is at its Save evidence step, before you edit, and the machine is now running other jobs.",
+      "options": {
+        "recorded": "compare the candidate with the incumbent's recorded score",
+        "remeasure": "measure the incumbent again now and compare the candidate with that number"
+      },
+      "accept": [
+        "remeasure"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "count-score-round-recorded",
+      "task": "The decision rule is `score`. The score counts accessibility violations; it is not timed, and it printed the same number on every baseline run. The incumbent's recorded score is 3 from round 1. Round 3 is at its Save evidence step, before you edit.",
+      "options": {
+        "recorded": "compare the candidate with the incumbent's recorded score",
+        "remeasure": "measure the incumbent again now and compare the candidate with that number"
+      },
+      "accept": [
+        "recorded"
+      ]
+    },
+    {
+      "id": "guidance-propose-excludes-holdout",
+      "task": "A guidance climb under `judges` is about to send round 1's propose briefs, with the Prune line. The card names three task-set tasks and two holdout tasks. Attempts have run for the no-guidance baseline and for the starting version on all five tasks.",
+      "options": {
+        "with-holdout": "give members the baseline's, the incumbent's, and the holdout tasks' outputs",
+        "without-holdout": "give members the baseline's and the incumbent's outputs only"
+      },
+      "accept": [
+        "without-holdout"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "guidance-propose-no-holdout",
+      "task": "A guidance climb under `judges` is about to send round 1's propose briefs, with the Prune line. The card names three task-set tasks and no holdout tasks. Attempts have run for the no-guidance baseline and for the starting version on all three tasks.",
+      "options": {
+        "with-holdout": "give members the baseline's, the incumbent's, and the holdout tasks' outputs",
+        "without-holdout": "give members the baseline's and the incumbent's outputs only"
+      },
+      "accept": [
+        "without-holdout"
+      ]
+    }
+  ]
+}

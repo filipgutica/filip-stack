@@ -241,9 +241,6 @@ plugins.
   - [Component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md) and the [component catalogue](https://filipgutica.github.io/design-system/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
   - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
 
-It contains no employer-specific guidance; keep that local to the machine that
-needs it.
-
 Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
 `node scripts/host-config.mjs <command>` from the checkout.
 

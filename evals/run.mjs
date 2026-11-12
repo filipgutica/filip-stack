@@ -13,8 +13,11 @@ import { parseArgs } from 'node:util'
 import { formatTables, gate } from './gate.mjs'
 import { autonomyTests, delegationTests, renderGuidance } from './host-guidance.mjs'
 import { routingChanges, routingSkills, routingTests } from './routing.mjs'
-import { prepareRules, skillRulesTests, workflowRulesTests } from './rules.mjs'
+import { hillClimbTests, prepareHillClimb } from './hill-climb.mjs'
+import { prepareRetrieval, retrievalTests } from './retrieval.mjs'
+import { skillRulesTests } from './rules.mjs'
 import { readSkillScenarios } from './skill-scenarios.mjs'
+import { prepareRules, workflowRulesTests } from './workflow-rules.mjs'
 
 const evalsDir = new URL('./', import.meta.url).pathname
 const promptfoo = new URL('../node_modules/.bin/promptfoo', import.meta.url).pathname
@@ -44,6 +47,8 @@ const evals = {
     title: modelTitle,
     skills: () => new Set(readSkillScenarios().filter(({ rules }) => rules.length > 0).map(({ skill }) => skill)),
   },
+  'hill-climb': { tests: hillClimbTests, prepare: prepareHillClimb, title: modelTitle },
+  retrieval: { tests: retrievalTests, prepare: prepareRetrieval, title: modelTitle },
 }
 
 const name = process.argv[2]
