@@ -23,7 +23,7 @@ Deliver the smallest authorized change and prove the requested contract.
 
 ## Work in loops
 
-Split work that spans several tasks or PRs into tasks, each with a completion signal. Run each task as a loop: plan it, implement it, verify it, review it at the level its risk needs, and fix agreed findings. Repeat until its signal holds. Do not start a task that depends on an unverified one.
+Split work that spans several tasks or PRs into tasks, each with a completion signal. Run each task as a loop: plan it, make and verify the change with the steps above, review it at the level its risk needs, and fix agreed findings. Repeat until its signal holds. Do not start a task that depends on an unverified one.
 
 Each PR is a review boundary. Before a PR goes to the user or to a final review, run the independent review that [delegation and review](references/delegation-and-review.md) describes on the whole PR diff and resolve its findings, even when every task passed its checks. A PR that is one routine, bounded change needs only focused checks and diff inspection.
 
