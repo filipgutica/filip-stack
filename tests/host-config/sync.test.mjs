@@ -126,17 +126,27 @@ for (const format of [
   })
 }
 
-test('a SHA-256 folder lock follows the skills CLI rules for line endings, binaries, and skipped files', (t) => {
+test('a SHA-256 folder lock follows the skills CLI rules for line endings, binaries, paths, and skipped files', (t) => {
   const { home, sync } = fixture(t)
   const installed = join(home, '.agents/skills/example')
   put(join(installed, 'SKILL.md'), 'line\r\n')
   put(join(installed, 'metadata.json'), '{}')
   put(join(installed, 'sub/__pycache__/a.pyc'), 'x')
+  put(join(installed, 'sub/a\\d.txt'), 'slash\n')
   put(join(installed, 'sub/b.md'), 'nested\n')
   put(join(installed, 'sub/c.bin'), 'bin\0\r\n')
-  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: 'c9931827c71dca6992e6761d39a205ff3e9ec7ad0ab546f0ad8b092d09c71e73' } } }))
+  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: 'dc05dc5eafe8bb56053a946b78671ca0caed8714b64d791faaaee73beeb1e616' } } }))
   const skills = JSON.parse(success(sync('--dry-run'))).components.find(({ name }) => name === 'skills')
   assert.equal(skills.state, 'planned', skills.message)
+})
+
+test('a skill lock without a hash blocks the skill', (t) => {
+  const { home, repo, sync } = fixture(t)
+  cpSync(join(repo, 'skills/example'), join(home, '.agents/skills/example'), { recursive: true })
+  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: null } } }))
+  const result = sync('--dry-run')
+  assert.equal(result.status, 1)
+  assert.match(JSON.parse(result.stdout).components.find(({ name }) => name === 'skills').message, /unverifiable lock/)
 })
 
 const installedTools = (context, { corruptCodex = false, empty = false } = {}) => {

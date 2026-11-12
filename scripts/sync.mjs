@@ -113,7 +113,7 @@ const folderFiles = ({ directory, prefix, root, ancestors }) => {
     const path = join(directory, entry.name)
     const kind = folderEntryKind({ entry, path, root })
     if (kind === 'directory') return folderFiles({ directory: path, prefix: `${prefix}${entry.name}/`, root, ancestors: branch })
-    return kind === 'file' ? [{ path: Buffer.from(prefix + entry.name), content: crlfToLf(readFileSync(path)) }] : []
+    return kind === 'file' ? [{ path: Buffer.from((prefix + entry.name).replaceAll('\\', '/')), content: crlfToLf(readFileSync(path)) }] : []
   })
 }
 const folderHash = (directory) => {
@@ -124,6 +124,7 @@ const folderHash = (directory) => {
   }
   return hash.digest('hex')
 }
+// Returns null for a lock value in neither format, so it never matches.
 const installedHash = ({ lockHash, path }) => {
   if (/^[0-9a-f]{40}$/u.test(lockHash)) return treeHash(path).toString('hex')
   if (/^[0-9a-f]{64}$/u.test(lockHash)) return folderHash(path)
@@ -194,7 +195,8 @@ const assertSkillOwnership = ({ name, entry, path }) => {
 }
 
 const assertSkillUnedited = ({ name, entry, path }) => {
-  if (entry && installedHash({ lockHash: entry.skillFolderHash || '', path }) !== entry.skillFolderHash) {
+  const lockHash = entry?.skillFolderHash
+  if (entry && (typeof lockHash !== 'string' || installedHash({ lockHash, path }) !== lockHash)) {
     throw new Error(`${name} has local edits or an unverifiable lock; preserve those changes before syncing`)
   }
 }
