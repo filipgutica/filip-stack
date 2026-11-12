@@ -2,9 +2,9 @@
 // Refresh filip-stack installations and an optional shared fleet baseline.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
-import { dirname, join, relative, resolve } from 'node:path'
+import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { isDevelopmentOnlyPluginPath } from './plugin-payload-policy.mjs'
@@ -88,6 +88,48 @@ const treeHash = (directory) => {
   return objectHash('tree', Buffer.concat(entries.map(({ name, mode, hash }) => Buffer.concat([Buffer.from(`${mode} ${name}\0`), hash]))))
 }
 
+// Some skills CLI installs record a SHA-256 folder hash instead. This mirrors
+// computeSkillFolderHash in skills 1.8: it skips metadata.json files and
+// .git, __pycache__, and __pypackages__ directories, follows only symlinks
+// that stay inside the skill, and hashes text with CRLF line endings as LF.
+const skippedFolderEntry = (name, isDirectory) => name === 'metadata.json' || (isDirectory && ['.git', '__pycache__', '__pypackages__'].includes(name))
+// Returns 'directory', 'file', or null for an entry the skills CLI skips.
+const folderEntryKind = ({ entry, path, root }) => {
+  if (skippedFolderEntry(entry.name, entry.isDirectory())) return null
+  if (!entry.isSymbolicLink()) return entry.isDirectory() ? 'directory' : entry.isFile() ? 'file' : null
+  const target = existsSync(path) ? realpathSync(path) : null
+  if (!target || (target !== root && !target.startsWith(root + sep))) return null
+  if (!statSync(target).isDirectory()) return 'file'
+  return skippedFolderEntry(entry.name, true) ? null : 'directory'
+}
+const crlfToLf = (content) => (!content.includes(0) && content.includes('\r\n')
+  ? Buffer.from(content.toString('latin1').replaceAll('\r\n', '\n'), 'latin1')
+  : content)
+const folderFiles = ({ directory, prefix, root, ancestors }) => {
+  const real = realpathSync(directory)
+  if (ancestors.has(real)) return []
+  const branch = new Set(ancestors).add(real)
+  return readdirSync(directory, { withFileTypes: true }).flatMap((entry) => {
+    const path = join(directory, entry.name)
+    const kind = folderEntryKind({ entry, path, root })
+    if (kind === 'directory') return folderFiles({ directory: path, prefix: `${prefix}${entry.name}/`, root, ancestors: branch })
+    return kind === 'file' ? [{ path: Buffer.from(prefix + entry.name), content: crlfToLf(readFileSync(path)) }] : []
+  })
+}
+const folderHash = (directory) => {
+  const hash = createHash('sha256')
+  const files = folderFiles({ directory, prefix: '', root: realpathSync(directory), ancestors: new Set() })
+  for (const { path, content } of files.sort((a, b) => Buffer.compare(a.path, b.path))) {
+    hash.update(path).update('\0').update(String(content.length)).update('\0').update(content)
+  }
+  return hash.digest('hex')
+}
+const installedHash = ({ lockHash, path }) => {
+  if (/^[0-9a-f]{40}$/u.test(lockHash)) return treeHash(path).toString('hex')
+  if (/^[0-9a-f]{64}$/u.test(lockHash)) return folderHash(path)
+  return null
+}
+
 const refreshSource = () => {
   const branch = git('branch', '--show-current')
   const dirty = Boolean(git('status', '--porcelain'))
@@ -152,7 +194,7 @@ const assertSkillOwnership = ({ name, entry, path }) => {
 }
 
 const assertSkillUnedited = ({ name, entry, path }) => {
-  if (entry && (!/^[0-9a-f]{40}$/u.test(entry.skillFolderHash || '') || treeHash(path).toString('hex') !== entry.skillFolderHash)) {
+  if (entry && installedHash({ lockHash: entry.skillFolderHash || '', path }) !== entry.skillFolderHash) {
     throw new Error(`${name} has local edits or an unverifiable lock; preserve those changes before syncing`)
   }
 }

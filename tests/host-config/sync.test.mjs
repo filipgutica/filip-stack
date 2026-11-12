@@ -106,18 +106,37 @@ test('a locally edited managed block remains intact and the failure is visible',
   assert.equal(existsSync(`${path}.bak`), false)
 })
 
-test('a locally edited skill is detected from its Git tree lock before reinstallation', (t) => {
-  const { home, repo, sync } = fixture(t)
-  const hash = success(execute('git', ['-C', repo, 'rev-parse', 'HEAD:skills/example']))
+// The skills CLI records a Git tree ID or a SHA-256 folder hash. The SHA-256
+// values below come from `computeSkillFolderHash` in skills 1.8.1.
+for (const format of [
+  { name: 'Git tree', hash: ({ repo }) => success(execute('git', ['-C', repo, 'rev-parse', 'HEAD:skills/example'])) },
+  { name: 'SHA-256 folder', hash: () => 'd9e57e4a3688867de0b9f51a0ec40d080a57daf3f5d811b10b20e368967bb552' },
+]) {
+  test(`a locally edited skill is detected from its ${format.name} lock before reinstallation`, (t) => {
+    const { home, repo, sync } = fixture(t)
+    const installed = join(home, '.agents/skills/example')
+    cpSync(join(repo, 'skills/example'), installed, { recursive: true })
+    put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: format.hash({ repo }) } } }))
+    assert.equal(JSON.parse(success(sync('--dry-run'))).components.find(({ name }) => name === 'skills').skills[0].name, 'example')
+    put(join(installed, 'SKILL.md'), 'An important local edit.\n')
+    const result = sync()
+    assert.equal(result.status, 1)
+    assert.match(JSON.parse(result.stdout).components.find(({ name }) => name === 'skills').message, /local edits/)
+    assert.equal(readFileSync(join(installed, 'SKILL.md'), 'utf8'), 'An important local edit.\n')
+  })
+}
+
+test('a SHA-256 folder lock follows the skills CLI rules for line endings, binaries, and skipped files', (t) => {
+  const { home, sync } = fixture(t)
   const installed = join(home, '.agents/skills/example')
-  cpSync(join(repo, 'skills/example'), installed, { recursive: true })
-  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: hash } } }))
-  assert.equal(JSON.parse(success(sync('--dry-run'))).components.find(({ name }) => name === 'skills').skills[0].name, 'example')
-  put(join(installed, 'SKILL.md'), 'An important local edit.\n')
-  const result = sync()
-  assert.equal(result.status, 1)
-  assert.match(JSON.parse(result.stdout).components.find(({ name }) => name === 'skills').message, /local edits/)
-  assert.equal(readFileSync(join(installed, 'SKILL.md'), 'utf8'), 'An important local edit.\n')
+  put(join(installed, 'SKILL.md'), 'line\r\n')
+  put(join(installed, 'metadata.json'), '{}')
+  put(join(installed, 'sub/__pycache__/a.pyc'), 'x')
+  put(join(installed, 'sub/b.md'), 'nested\n')
+  put(join(installed, 'sub/c.bin'), 'bin\0\r\n')
+  put(join(home, '.agents/.skill-lock.json'), JSON.stringify({ version: 3, skills: { example: { source: 'filipgutica/filip-stack', skillFolderHash: 'c9931827c71dca6992e6761d39a205ff3e9ec7ad0ab546f0ad8b092d09c71e73' } } }))
+  const skills = JSON.parse(success(sync('--dry-run'))).components.find(({ name }) => name === 'skills')
+  assert.equal(skills.state, 'planned', skills.message)
 })
 
 const installedTools = (context, { corruptCodex = false, empty = false } = {}) => {
