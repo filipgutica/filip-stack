@@ -14,7 +14,7 @@ export const pageTypes = [
 export const skillNames = [
   ...readdirSync("../../plugins/workflow/skills"),
   ...readdirSync("../../skills"),
-];
+].filter((name) => !name.startsWith("."));
 export const routes = [
   "",
   "cli/",

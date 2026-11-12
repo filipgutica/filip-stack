@@ -112,8 +112,9 @@ const loadSkills = ({
   sharedNotices?: string;
 }) => {
   const rows = skillTable({ readme, heading });
+  // Hidden folders, such as an editor's or sandbox's .claude, are not skills.
   const names = readdirSync(join(repoRoot, directory), { withFileTypes: true })
-    .filter((entry) => entry.isDirectory())
+    .filter((entry) => entry.isDirectory() && !entry.name.startsWith("."))
     .map((entry) => entry.name)
     .sort();
   const listed = rows.map(({ name }) => name).sort();
