@@ -146,6 +146,30 @@
       "expectedReference": "pull-requests.md"
     },
     {
+      "id": "write-prd",
+      "prompt": "Write a PRD for letting teams schedule recurring exports.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "specification",
+      "expectedReference": "spec.md"
+    },
+    {
+      "id": "write-adr",
+      "prompt": "Write an ADR recording why we chose Postgres advisory locks over Redis for job leases.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "specification",
+      "expectedReference": "spec.md"
+    },
+    {
+      "id": "adr-wording-near-miss",
+      "prompt": "Tighten the wording of this accepted ADR without changing its decision.",
+      "expectedSkill": "technical-writing",
+      "activation": "implicit",
+      "mode": "technical-prose",
+      "expectedReference": null
+    },
+    {
       "id": "writing-near-miss",
       "prompt": "Implement the parser and tell me when the tests pass.",
       "expectedSkill": "engineering",

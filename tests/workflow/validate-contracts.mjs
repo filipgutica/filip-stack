@@ -165,7 +165,7 @@ const requiredReferenceContracts = {
   },
   planning: {
     'tickets.md': [
-      /Evidence needed before this is execution-ready/u,
+      /Mark each unverified owner, location, or behavior inline/u,
       /Never put a machine-local path in a ticket/u,
     ],
   },

@@ -97,6 +97,53 @@
       "accept": [
         "land"
       ]
+    },
+    {
+      "id": "ticket-unverified-owner",
+      "task": "The user asks you to draft a Jira story for adding rate limiting to the export endpoint. You confirmed the endpoint's current behavior. You could not verify whether the API gateway or the export service owns rate limiting.",
+      "options": {
+        "draft-marked": "draft the story and mark the owner as TBD, with what to check",
+        "evidence-brief": "return only a brief of the missing evidence instead of a story",
+        "guess-owner": "draft the story and assign the work to the export service"
+      },
+      "accept": [
+        "draft-marked"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ticket-unverified-link",
+      "task": "The user asks you to draft a Jira story for adding rate limiting to the export endpoint. You verified that the export service owns rate limiting. You could not verify the repository path of the export handler; it is probably apps/export/src/handler.ts.",
+      "options": {
+        "omit-link": "draft the story without a code link and mark the handler location as TBD",
+        "guess-link": "draft the story with a link to apps/export/src/handler.ts"
+      },
+      "accept": [
+        "omit-link"
+      ]
+    },
+    {
+      "id": "spec-review-single-repo",
+      "task": "You drafted a specification for cancelling a queued export. The change touches one service in one repository. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "return"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "spec-review-multi-repo",
+      "task": "You drafted a specification for cancelling a queued export. The change touches the API gateway, the export service, and the web UI, each in its own repository. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "critic"
+      ]
     }
   ]
 }

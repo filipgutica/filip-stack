@@ -121,7 +121,7 @@ Before investigating, planning, changing, or reviewing code, read `~/.agents/COD
 
 - Use the `humanizer` skill when the user requests natural-language editing or a draft needs substantial stylistic revision. Ordinary technical deliverables need only the applicable writing guidance and a concise final read.
 - Preserve facts, technical meaning, uncertainty, consistent terminology, code, links, required structure, and applicable Simplified Technical English constraints. Keep the draft and editorial audit internal. Return only the requested deliverable unless the user asks to see the editing process.
-- For a ticket, specification, or implementation plan, use `$workflow:planning`; for a PR description, use `$workflow:technical-writing`. Their references own the default formats.
+- For a ticket, specification, PRD, ADR, or implementation plan, use `$workflow:planning`; for a PR description, use `$workflow:technical-writing`. Their references own the default formats.
 - Make PR descriptions, PR comments, review replies, and Slack messages easy to scan within their format. Put one idea on each line or bullet. Use a table to compare items or show status. Give a sequence of events as one bullet per event, in time order. Avoid dense paragraphs.
 
 ## Interface design
