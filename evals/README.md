@@ -77,7 +77,7 @@ The base ref supplies only the guidance. Both versions use the working tree's sc
   - `<id> skill`, unless the scenario is `explicit`: it passes when the chosen skill equals `expectedSkill`, where `null` means no skill, or is listed in `alsoAccept`.
   - `<id> reference`, when the scenario has an `expectedReference`: it passes when the listed file names include it.
   - An explicit scenario with no expected reference makes no test. The gate passes an attempt only when every test of the scenario passes.
-- The routing catalog lists every skill without `disable-model-invocation: true`. Manual-only skills have no routing scenarios; their rules go in `skill-rules`.
+- The routing catalog lists every skill without `disable-model-invocation: true`. A manual-only skill appears only in `explicit` scenarios, which test its reference pointers; its rules go in `skill-rules`.
 - In a comparison, routing runs a skill step only when the catalog (a routable skill's name or description) changed, and a reference step only when its skill's body changed. A scenario whose expected skill the base cannot offer is treated as `needsNewGuidance`.
 - `--skill <name>` selects the scenarios in that skill's file, plus any other scenario that expects or also accepts it. It implies `--no-base`.
 

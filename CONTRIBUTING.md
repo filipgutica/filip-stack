@@ -282,13 +282,18 @@ Each routable standalone skill, and Field Guide, has a test file at
 `tests/skills/scenarios/<skill>.json`. `node tests/skills/validate-skills.mjs`
 fails when one is missing.
 
-- `routing`: `{ id, prompt, expectedSkill, alsoAccept? }`. Give at least one
-  prompt that should load the skill and one near miss that should load
-  another skill or none (`expectedSkill: null`). Use `alsoAccept` only when a
-  second skill is also a correct choice.
-- `rules`: optional, and the only section for a manual-only skill. Each
-  scenario has an `id`, a `task`, `options` as `{ key: description }`, and an
-  `accept` list of keys. The prompt holds only that skill's `SKILL.md`.
+- `routing`: `{ id, prompt, expectedSkill, alsoAccept?, expectedReference? }`.
+  Give at least one prompt that should load the skill and one near miss that
+  should load another skill or none (`expectedSkill: null`). Use `alsoAccept`
+  only when a second skill is also a correct choice. `expectedReference` names
+  the reference file the skill's body should send the request to.
+- A manual-only skill needs no file. Its routing scenarios, if any, set
+  `activation: "explicit"` and name the skill in the prompt as `$<skill>`, so
+  they test only `expectedReference`. Add a near miss for a similar request
+  that should load no skill or another one.
+- `rules`: optional. Each scenario has an `id`, a `task`, `options` as
+  `{ key: description }`, and an `accept` list of keys. The prompt holds only
+  that skill's `SKILL.md`.
 
 Run one skill's tests with `pnpm eval:routing --skill <name>` or
 `pnpm eval:skill-rules --skill <name>`. They run without a base, and every
