@@ -47,7 +47,7 @@ Injected guidance is already in context; do not retrieve it again. Retrieve when
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --query <concrete-task-context> [--subject <subject-hint>]
 ```
 
-An exact subject can be used without a query when the desired subject key is already known. When a result is empty or unrelated, rephrase once with a more concrete noun or synonym, then try an exact subject from the injected index. Do not guess a subject or broaden a query merely to force a result. An unrelated result counts as no result. No relevant result means continue from live authoritative sources without Field Guide guidance.
+An exact subject can be used without a query when the desired subject key is already known. When a result is empty or unrelated, rephrase once, narrower, with a more concrete noun or synonym, then try an exact subject from the injected index. Do not guess a subject or broaden a query merely to force a result. An unrelated result counts as no result. No relevant result means continue from live authoritative sources without Field Guide guidance.
 
 Use only the bounded result. Normal retrieval contains at most five active records and no evidence. Expand evidence only to resolve a provenance or conflict question:
 
