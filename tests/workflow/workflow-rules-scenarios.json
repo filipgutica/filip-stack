@@ -135,8 +135,8 @@
       ]
     },
     {
-      "id": "spec-review-single-repo",
-      "task": "You drafted a specification that changes the status values of the public export API, which two client teams depend on. The change touches one service in one repository. The user did not ask for a review.",
+      "id": "spec-review-internal",
+      "task": "You drafted a specification for retrying failed export uploads inside the export service. It touches one repository and changes no public contract. Two open decisions remain, and both are listed. The user did not ask for a review.",
       "options": {
         "return": "return the specification now",
         "critic": "have a separate reviewer critique the specification first"
@@ -145,6 +145,17 @@
         "return"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "spec-review-public-contract",
+      "task": "You drafted a specification that changes the status values of the public export API, which two client teams depend on. The change touches one service in one repository. The user did not ask for a review.",
+      "options": {
+        "return": "return the specification now",
+        "critic": "have a separate reviewer critique the specification first"
+      },
+      "accept": [
+        "critic"
+      ]
     },
     {
       "id": "spec-review-multi-repo",

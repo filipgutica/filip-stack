@@ -16,7 +16,7 @@ Turn a request into one decision-ready artifact or a bounded direction. Do not r
 - **Implementation plan:** Define file-specific, independently verifiable changes from an approved direction. Read [plan guidance](references/plan.md).
 - **Tickets:** Draft tracker tickets for owned, dependency-aware, verifiable outcomes. Read [ticket guidance](references/tickets.md).
 
-Load only the reference for the selected mode. If the requested output is unclear and that changes the work, ask one focused question.
+Load only the reference for the selected mode. If an unclear output request would change the work, ask one focused question.
 
 For a specification, plan, or ticket, also apply [technical prose guidance](../technical-writing/references/technical-prose.md) without changing the artifact's structure or decisions.
 
@@ -36,8 +36,8 @@ Planning does not authorize code changes, commits, publishing, or tracker edits.
 
 Return the artifact in conversation by default. Persist it only when the user requests a file or destination.
 
-User and repository formats outrank the reference's default.
+User and repository formats outrank reference defaults.
 
-Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** When the user asks for a review or the work spans several repositories, have another reviewer critique it first, without coaching; verify its findings.
+Before returning an artifact, ask: **Could an engineer follow every instruction literally without confusion or unnecessary work?** When the user asks for review, the work spans several repositories, or it changes a public contract, have another reviewer critique it first, without coaching; verify its findings.
 
 Keep specifications focused on requirements and decisions, and plans on implementation and verification. Do not create companion artifacts automatically. Stop after the requested output.

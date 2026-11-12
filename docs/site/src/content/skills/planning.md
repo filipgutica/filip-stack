@@ -42,7 +42,8 @@ observable completion signal.
 
 Before returning the artifact, the agent checks whether an engineer could
 follow it literally without guessing. A separate reviewer critiques the
-result first when you ask for a review or the work spans several repositories.
+result first when you ask for a review, the work spans several repositories,
+or it changes a public contract.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
 defines the four modes and links their output formats. Your format and the
