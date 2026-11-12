@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UiAlert, UiCard } from "@filipgutica/ui";
+import { UiAlert, UiBreadcrumbs, UiCard } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
 const tables = {
   files: [
@@ -60,6 +60,9 @@ const tables = {
 
 <template>
   <section class="intro" aria-labelledby="title">
+    <UiBreadcrumbs
+      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'Design language' }]"
+    />
     <h1 id="title">Design language</h1>
     <p class="lede">
       The framework-agnostic foundation for every interface Filip builds.

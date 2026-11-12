@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { UiCodeBlock } from "@filipgutica/ui";
+import { UiBreadcrumbs, UiCodeBlock } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
 const commands = {
   clone:
@@ -79,6 +79,9 @@ const tables = {
 
 <template>
   <section class="intro" aria-labelledby="title">
+    <UiBreadcrumbs
+      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'filip-stack CLI' }]"
+    />
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
       Use the CLI to set up or update a machine's global guidance, agent
