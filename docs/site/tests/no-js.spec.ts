@@ -155,20 +155,22 @@ test("native project menu and OS theme work without JavaScript", async ({
   await expect.poll(background).not.toBe(lightBackground);
 });
 
-test("the Workflow map links each skill and lists every engineering step without JavaScript", async ({
+test("the Workflow example pairs each request with its skill and the guides it reads", async ({
   page,
 }) => {
   await page.goto("/filip-stack/");
-  const map = page.locator("#workflow");
-  await expect(map.getByRole("button")).toHaveCount(0);
+  const workflow = page.locator("#workflow");
+  const turns = workflow.locator(".flow > li");
+  await expect(turns).toHaveCount(4);
+  // A guide from another skill names its owner, so readers can find it.
+  await expect(turns.nth(0)).toContainText("Write a spec");
+  await expect(turns.nth(0)).toContainText("technical-prose.md from technical-writing");
   await expect(
-    map.getByRole("link", { name: "sol-loop", exact: true }),
-  ).toHaveAttribute("href", "/filip-stack/skills/sol-loop/");
-  await expect(map.locator(".map-steps > li")).toHaveCount(6);
-  await expect(map.locator(".map-steps")).toBeVisible();
-  await map.getByRole("link", { name: "sol-loop", exact: true }).click();
-  await expect(page).toHaveURL("/filip-stack/skills/sol-loop/");
-  await expect(page.locator("main h1")).toHaveText("sol-loop");
+    workflow.locator(".skill-rows").getByRole("link"),
+  ).toHaveCount(5);
+  await turns.nth(1).getByRole("link", { name: "engineering", exact: true }).click();
+  await expect(page).toHaveURL("/filip-stack/skills/engineering/");
+  await expect(page.locator("main h1")).toHaveText("engineering");
 });
 
 test("the lesson reads in full and its anchor links work without JavaScript", async ({

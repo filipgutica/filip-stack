@@ -1,12 +1,6 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from "vue";
-import {
-  UiBadge,
-  UiButton,
-  UiCard,
-  UiCodeBlock,
-  UiSegmentedControl,
-} from "@filipgutica/ui";
+import { onMounted, ref } from "vue";
+import { UiCodeBlock } from "@filipgutica/ui";
 import SkillList from "../SkillList.vue";
 import type { Catalog } from "../../catalog";
 const { catalog } = defineProps<{ catalog: Catalog }>();
@@ -18,162 +12,78 @@ const skillsByName = new Map(
 );
 const skillNamed = (name: string) => {
   const skill = skillsByName.get(name);
-  if (!skill) throw new Error(`The Workflow map names an unknown skill: ${name}`);
+  if (!skill) throw new Error(`The Workflow example names an unknown skill: ${name}`);
   return skill;
 };
-const stages = [
-  { label: "Before code", names: ["planning", "grill-me"] },
-  { label: "Change", names: ["engineering", "simplify-pass"] },
-  { label: "Check", names: ["review", "test-audit", "walkthrough"] },
-  { label: "Write it up", names: ["technical-writing", "checkpoint"] },
-  { label: "Before merge", names: ["sol-loop", "merge-council"] },
-].map(({ label, names }) => {
-  const skills = names.map(skillNamed);
-  return {
-    label,
-    skills,
-    standalone: skills.every(({ group }) => group === "Standalone"),
-  };
-});
-// Each example is one request per turn: the host picks a skill again for every
-// request. A named reference must exist in its skill, so a renamed file fails the build.
-type Turn = {
-  request: string;
-  skill: string;
-  note: string;
-  /** The engineering step to show; turns for other skills keep the current one. */
-  step?: number;
-  /** Undefined when the reference depends on what the request asks for. */
-  references?: string[];
+// One feature, one request per turn. Each `reads` entry mirrors a link in the
+// picked skill's SKILL.md, with the condition that SKILL.md gives for reading it.
+type Read = {
+  file: string;
+  /** The skill that owns the file, when it is not the picked skill. */
+  from?: string;
+  when: string;
 };
-const examples: { value: string; label: string; turns: Turn[] }[] = [
+type Turn = { request: string; skill: string; does: string; reads: Read[] };
+const turns: Turn[] = [
   {
-    value: "feature",
-    label: "Feature",
-    turns: [
+    request: "Write a spec for rate limiting on the public API.",
+    skill: "planning",
+    does: "It writes the spec from what the repository shows and changes no code. A public API is a public contract, so a separate reviewer critiques the spec before you get it.",
+    reads: [
+      { file: "spec.md", when: "the format for a specification" },
       {
-        request: "Spec rate limiting for the public API.",
-        skill: "planning",
-        note: "You start without code. planning writes the spec from repository evidence.",
-      },
-      {
-        request: "Implement the rate-limiting spec.",
-        skill: "engineering",
-        step: 1,
-        references: ["testing-and-debugging.md", "delegation-and-review.md"],
-        note: "A new request, so the host picks again. engineering runs its loop until the checks pass.",
-      },
-      {
-        request: "Review the branch.",
-        skill: "review",
-        references: [],
-        note: "review checks the exact change and reports only the findings it can back with evidence.",
-      },
-      {
-        request: "Write the PR description.",
-        skill: "technical-writing",
-        references: ["pull-requests.md"],
-        note: "technical-writing loads its pull request reference and nothing else.",
-      },
-      {
-        request: "Run a sol loop on the PR.",
-        skill: "sol-loop",
-        references: [],
-        note: "sol-loop is a standalone skill. Install it on its own.",
+        file: "technical-prose.md",
+        from: "technical-writing",
+        when: "the writing rules for the spec's text",
       },
     ],
   },
   {
-    value: "bug",
-    label: "Bug fix",
-    turns: [
+    request: "Implement the spec and open a PR.",
+    skill: "engineering",
+    does: "It makes the smallest change that meets the spec and reruns the affected tests and checks. A public API change is risky, so a separate reviewer checks it before you get the PR. If none is available, it says so.",
+    reads: [
       {
-        request: "Fix the failing test.",
-        skill: "engineering",
-        step: 1,
-        references: ["testing-and-debugging.md"],
-        note: "One request, one skill. engineering reproduces the failure before it changes code.",
+        file: "testing-and-debugging.md",
+        when: "only if it is unclear how to reproduce or test the change",
+      },
+      {
+        file: "delegation-and-review.md",
+        when: "because a public API change needs a separate reviewer",
+      },
+      {
+        file: "commit-and-pr-hygiene.md",
+        when: "before it commits or opens the PR",
       },
     ],
   },
   {
-    value: "review",
-    label: "Review",
-    turns: [
+    request: "Review the PR before I merge it.",
+    skill: "review",
+    does: "It reports only the findings it can back with evidence and changes nothing. If the tests changed a lot, it also calls test-audit.",
+    reads: [
       {
-        request: "Review this diff.",
-        skill: "review",
-        references: [],
-        note: "One request, one skill. review loads no reference.",
+        file: "delegation-and-review.md",
+        from: "engineering",
+        when: "to tell you whether this review counts as independent, which needs a reviewer that did not write the change",
       },
+    ],
+  },
+  {
+    request: "Rewrite the PR description so API users can follow it.",
+    skill: "technical-writing",
+    does: "It rewrites the description from the branch and its checks.",
+    reads: [
+      { file: "pull-requests.md", when: "the format for a PR description" },
+      { file: "technical-prose.md", when: "the writing rules for any technical text" },
     ],
   },
 ];
-for (const { turns } of examples)
-  for (const { skill, references = [] } of turns)
-    for (const reference of references)
-      if (!skillNamed(skill).references.includes(reference))
-        throw new Error(`${skill} has no reference named ${reference}`);
-const exampleItems = examples.map(({ value, label }) => ({ value, label }));
-// The ring places the engineering steps clockwise from the top, 60 degrees apart.
-// The SVG draws only the arcs; each step is HTML placed over it by percentage.
-const ring = { x: 160, y: 110, radius: 70 };
-const viewBox = { x: -24, width: 368, height: 222 };
-const pointAt = (degrees: number) => {
-  const radians = ((degrees - 90) * Math.PI) / 180;
-  return {
-    x: ring.x + ring.radius * Math.cos(radians),
-    y: ring.y + ring.radius * Math.sin(radians),
-  };
-};
-const steps = [
-  {
-    name: "Define the boundary",
-    detail:
-      "Before editing, decide what must stay the same and which checks prove it. Stop if no change is needed.",
-  },
-  {
-    name: "Reproduce or test",
-    detail:
-      "Run the nearest fitting test, if any, and record its result. A new regression test must fail before the fix.",
-  },
-  {
-    name: "Smallest change",
-    detail:
-      "Fix the code that owns the behavior. Avoid speculative options, abstractions, dependencies, and nearby cleanup.",
-  },
-  {
-    name: "Focused checks",
-    detail:
-      "Rerun the same test and only affected checks. Broaden only when the change or a failure calls for it.",
-  },
-  {
-    name: "Read the diff",
-    detail:
-      "Check for accidental changes, duplication, dead code, and needless indirection. Rerun checks after any edit.",
-  },
-  {
-    name: "Review decisions",
-    detail:
-      "Get an independent review for consequential or hard-to-reverse changes before calling the work done. If no separate reviewer is available, inspect the diff with care and report that independent review did not run.",
-  },
-].map((step, index) => {
-  const { x, y } = pointAt(index * 60);
-  return {
-    ...step,
-    // The side the label sits on, away from the ring's centre.
-    side: ["top", "right", "right", "bottom", "left", "left"][index],
-    position: {
-      left: `${((x - viewBox.x) / viewBox.width) * 100}%`,
-      top: `${(y / viewBox.height) * 100}%`,
-    },
-  };
-});
-const arcs = steps.map((_, index) => {
-  const from = pointAt(index * 60 + 13);
-  const to = pointAt(index * 60 + 47);
-  return `M${from.x} ${from.y}A${ring.radius} ${ring.radius} 0 0 1 ${to.x} ${to.y}`;
-});
+// A renamed or moved reference fails the build instead of the example going stale.
+for (const { skill, reads } of turns)
+  for (const { file, from = skill } of reads)
+    if (!skillNamed(from).references.includes(file))
+      throw new Error(`${from} has no reference named ${file}`);
 const commands = {
   claude:
     "claude plugin marketplace add filipgutica/filip-stack\nclaude plugin install workflow@filip-stack",
@@ -183,39 +93,6 @@ const commands = {
     "npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y",
 };
 const enhanced = ref(false);
-const exampleValue = ref<string | undefined>("feature");
-const turnIndex = ref(0);
-const selectedSkill = ref("planning");
-const selectedStep = ref(0);
-const selected = computed(() => skillNamed(selectedSkill.value));
-const example = computed(() =>
-  examples.find(({ value }) => value === exampleValue.value),
-);
-const turn = computed(() => example.value?.turns[turnIndex.value]);
-const turnLabel = computed(() => {
-  if (!example.value) return "No example selected";
-  const { length } = example.value.turns;
-  return length > 1 ? `Turn ${turnIndex.value + 1} of ${length}` : "One request";
-});
-const references = computed(() => turn.value?.references);
-const showTurn = (index: number) => {
-  const next = example.value?.turns[index];
-  if (!next) return;
-  turnIndex.value = index;
-  selectedSkill.value = next.skill;
-  if (next.step !== undefined) selectedStep.value = next.step;
-};
-const pickExample = (value: string) => {
-  exampleValue.value = value;
-  showTurn(0);
-};
-// Picking a skill directly leaves the example, so no turn claims it. Radios fire
-// no change when the reader picks the skill that is already checked, and Space on
-// a checked radio fires no click either.
-const pickSkill = (name: string) => {
-  exampleValue.value = undefined;
-  selectedSkill.value = name;
-};
 onMounted(() => {
   enhanced.value = true;
 });
@@ -310,6 +187,62 @@ onMounted(() => {
     </ul>
   </section>
 
+  <section id="workflow" aria-labelledby="workflow-title">
+    <h2 id="workflow-title">How Workflow works</h2>
+    <div class="prose">
+      <p>
+        Workflow is {{ catalog.workflow.length }} skills that install together.
+        You describe a task in Claude or Codex in your own words, without
+        naming a skill, though you can. For each request, the host compares it with each
+        skill's name and description and picks the skill that fits.
+      </p>
+      <p>
+        The picked skill reads its own <code>SKILL.md</code>. It reads a
+        longer guide from a <code>references</code> folder only when the task
+        needs it.
+      </p>
+    </div>
+    <h3 id="workflow-example" class="workflow-heading">
+      Example: one feature, four requests
+    </h3>
+    <ol class="flow" aria-labelledby="workflow-example">
+      <li v-for="turn in turns" :key="turn.request">
+        <div class="flow__ask">
+          <p class="flow__label">You type</p>
+          <p>“{{ turn.request }}”</p>
+        </div>
+        <div class="flow__skill">
+          <p class="flow__label">The host picks</p>
+          <p>
+            <a :href="`/filip-stack/skills/${turn.skill}/`"
+              ><code>{{ turn.skill }}</code></a
+            >. {{ turn.does }}
+          </p>
+          <p class="flow__label">Extra guides it reads</p>
+          <ul class="flow__reads">
+            <li v-for="read in turn.reads" :key="read.file">
+              <code>{{ read.file }}</code
+              ><span v-if="read.from"> from {{ read.from }}</span>:
+              {{ read.when }}
+            </li>
+          </ul>
+        </div>
+      </li>
+    </ol>
+    <h3 class="workflow-heading">The {{ catalog.workflow.length }} Workflow skills</h3>
+    <SkillList :skills="catalog.workflow" :trait="false" />
+    <p class="hint">
+      Some standalone skills fit before or after this flow:
+      <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a>
+      stress-tests a plan before the spec, and
+      <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
+      <a href="/filip-stack/skills/merge-council/"><code>merge-council</code></a>
+      run final reviews before merge. They install separately and run only
+      when asked: by you, or for <code>merge-council</code>, also by your
+      repository's guidance. See <a href="#standalone">Standalone skills</a>.
+    </p>
+  </section>
+
   <section id="standalone" aria-labelledby="standalone-title">
     <h2 id="standalone-title">Standalone skills</h2>
     <p class="section-intro">
@@ -356,268 +289,5 @@ onMounted(() => {
         </p>
       </li>
     </ul>
-  </section>
-
-  <section id="workflow" aria-labelledby="workflow-title">
-    <h2 id="workflow-title">How Workflow works</h2>
-    <p class="section-intro">
-      Describe your task in Claude or Codex. The host selects a matching skill,
-      which loads only the guidance that task needs.
-    </p>
-    <UiCard class="workflow-map" :class="{ 'is-enhanced': enhanced }">
-      <div v-if="enhanced" class="map-region map-examples">
-        <UiSegmentedControl
-          label="Example request"
-          :items="exampleItems"
-          :model-value="exampleValue"
-          @update:model-value="pickExample"
-        />
-        <div class="map-turn" aria-live="polite">
-          <span class="map-label">{{ turnLabel }}</span>
-          <p v-if="turn" class="map-turn__request">“{{ turn.request }}”</p>
-          <p class="map-turn__note">
-            {{
-              turn?.note ??
-              "Pick an example above to follow a request through the stages."
-            }}
-          </p>
-        </div>
-        <div v-if="example && example.turns.length > 1" class="map-turn-nav">
-          <UiButton
-            variant="secondary"
-            size="sm"
-            :disabled="turnIndex === 0"
-            @click="showTurn(turnIndex - 1)"
-            >Back</UiButton
-          >
-          <UiButton
-            variant="secondary"
-            size="sm"
-            :disabled="turnIndex === example.turns.length - 1"
-            @click="showTurn(turnIndex + 1)"
-            >Next turn</UiButton
-          >
-        </div>
-      </div>
-      <div class="map-region">
-        <p id="map-stages-label" class="map-label">
-          Skills by stage{{ enhanced ? ". Pick one to see what it does." : "" }}
-        </p>
-        <ol
-          class="map-stages"
-          :role="enhanced ? 'radiogroup' : undefined"
-          aria-labelledby="map-stages-label"
-        >
-          <li
-            v-for="(stage, index) in stages"
-            :key="stage.label"
-            :class="{
-              'is-current':
-                enhanced &&
-                stage.skills.some(({ name }) => name === selectedSkill),
-            }"
-          >
-            <span class="map-stage-mark" aria-hidden="true">{{
-              index + 1
-            }}</span>
-            <h3>
-              {{ stage.label }}<small v-if="stage.standalone">Standalone</small>
-            </h3>
-            <ul>
-              <li v-for="skill in stage.skills" :key="skill.name">
-                <label v-if="enhanced" class="map-skill">
-                  <input
-                    type="radio"
-                    name="map-skill"
-                    :value="skill.name"
-                    :checked="selectedSkill === skill.name"
-                    @click="pickSkill(skill.name)"
-                    @keydown.space="pickSkill(skill.name)"
-                  />
-                  <code>{{ skill.name }}</code>
-                  <UiBadge v-if="skill.manual">Manual</UiBadge>
-                </label>
-                <a
-                  v-else
-                  class="map-skill"
-                  :href="`/filip-stack/skills/${skill.name}/`"
-                >
-                  <code>{{ skill.name }}</code>
-                  <UiBadge v-if="skill.manual">Manual</UiBadge>
-                </a>
-              </li>
-            </ul>
-          </li>
-        </ol>
-      </div>
-      <div
-        v-if="enhanced"
-        class="map-region map-skill-detail"
-        aria-live="polite"
-      >
-        <h3>
-          <code>{{ selected.name }}</code>
-          <UiBadge>{{ selected.group }}</UiBadge>
-          <UiBadge>{{
-            selected.manual ? "Manual" : "Picked by request"
-          }}</UiBadge>
-        </h3>
-        <a :href="`/filip-stack/skills/${selected.name}/`">Open skill page</a>
-        <p v-html="selected.summaryHtml" />
-        <p v-if="selected.manual" class="map-muted">
-          Call it with <code>/{{ selected.group === "Workflow" ? "workflow:" : "" }}{{ selected.name }}</code>
-          in Claude or
-          <code>${{ selected.group === "Workflow" ? "workflow:" : "" }}{{ selected.name }}</code>
-          in Codex.
-        </p>
-        <p v-else-if="selected.group === 'Standalone'" class="map-muted">
-          Not part of the Workflow plugin. Install it on its own; the host picks
-          it when a request matches.
-        </p>
-        <p v-else class="map-muted">
-          The host picks it when a request matches.
-        </p>
-      </div>
-      <div class="map-panels">
-        <div>
-          <h3 class="map-label">The loop inside <code>engineering</code></h3>
-          <div
-            class="map-ring"
-            :role="enhanced ? 'group' : undefined"
-            :aria-label="
-              enhanced
-                ? 'engineering repeats six steps. A failed check returns work to the step it affects.'
-                : undefined
-            "
-            :aria-hidden="enhanced ? undefined : 'true'"
-          >
-            <svg viewBox="-24 0 368 222" aria-hidden="true">
-              <defs>
-                <marker
-                  id="map-ring-arrow"
-                  viewBox="0 0 10 10"
-                  refX="7"
-                  refY="5"
-                  markerWidth="5"
-                  markerHeight="5"
-                  orient="auto"
-                >
-                  <path class="map-ring__arrow" d="M0 0L10 5L0 10z" />
-                </marker>
-                <marker
-                  id="map-ring-retry"
-                  viewBox="0 0 10 10"
-                  refX="7"
-                  refY="5"
-                  markerWidth="6"
-                  markerHeight="6"
-                  orient="auto"
-                >
-                  <path class="map-ring__retry-arrow" d="M0 0L10 5L0 10z" />
-                </marker>
-              </defs>
-              <path
-                v-for="arc in arcs"
-                :key="arc"
-                class="map-ring__arc"
-                :d="arc"
-                marker-end="url(#map-ring-arrow)"
-              />
-              <!-- From step 4 back to step 3: a failed check retries the change. -->
-              <path
-                class="map-ring__retry"
-                d="M152 166Q170 134 206 142"
-                marker-end="url(#map-ring-retry)"
-              />
-            </svg>
-            <p class="map-ring__center">
-              <strong>engineering</strong><span>until checks pass</span>
-            </p>
-            <span class="map-ring__fails" aria-hidden="true">fails</span>
-            <component
-              :is="enhanced ? 'button' : 'span'"
-              v-for="(step, index) in steps"
-              :key="step.name"
-              class="map-ring-step"
-              :type="enhanced ? 'button' : undefined"
-              :data-side="step.side"
-              :style="step.position"
-              :aria-pressed="enhanced ? selectedStep === index : undefined"
-              :aria-label="
-                enhanced ? `Step ${index + 1}: ${step.name}` : undefined
-              "
-              @click="selectedStep = index"
-            >
-              <span class="map-step-number">{{ index + 1 }}</span>
-              <span class="map-ring-step__label">{{ step.name }}</span>
-            </component>
-          </div>
-          <!-- Without JavaScript, and on phones where the ring has no room, the steps are a list. -->
-          <ol class="map-steps">
-            <li v-for="(step, index) in steps" :key="step.name">
-              <button
-                v-if="enhanced"
-                type="button"
-                :aria-pressed="selectedStep === index"
-                :aria-label="`Step ${index + 1}: ${step.name}`"
-                @click="selectedStep = index"
-              >
-                <span class="map-step-number">{{ index + 1 }}</span
-                >{{ step.name }}
-              </button>
-              <template v-else>
-                <strong>{{ step.name }}</strong>
-                <span>{{ step.detail }}</span>
-              </template>
-            </li>
-          </ol>
-          <p v-if="enhanced" class="map-step-detail" aria-live="polite">
-            <strong
-              >{{ selectedStep + 1 }}. {{ steps[selectedStep]!.name }}</strong
-            >
-            <span>{{ steps[selectedStep]!.detail }}</span>
-          </p>
-          <p class="map-muted">
-            A failed check sends work back only to the step it affects. Stop
-            conditions end repeated retries.
-          </p>
-        </div>
-        <div>
-          <h3 class="map-label">What the host loads</h3>
-          <ol class="map-load">
-            <li>
-              <strong>Skill names and descriptions</strong>
-              <span
-                >Always loaded, except for manual skills. The host uses these
-                to choose.</span
-              >
-              <ol>
-                <li>
-                  <code>{{ selectedSkill }}/SKILL.md</code>
-                  <span>The rules for the selected skill.</span>
-                  <ol>
-                    <li v-for="reference in references" :key="reference">
-                      <code>references/{{ reference }}</code>
-                      <span>Loads only when the task needs it.</span>
-                    </li>
-                    <li v-if="!references?.length" class="map-load__none">
-                      {{
-                        references ? "No reference loaded" : "Depends on the request"
-                      }}
-                    </li>
-                  </ol>
-                </li>
-              </ol>
-            </li>
-          </ol>
-        </div>
-      </div>
-    </UiCard>
-    <p class="hint">
-      Skills marked manual run only when you call them:
-      <code>/simplify-pass</code> in Claude,
-      <code>$simplify-pass</code> in Codex. The others are picked when a
-      request matches.
-    </p>
   </section>
 </template>
