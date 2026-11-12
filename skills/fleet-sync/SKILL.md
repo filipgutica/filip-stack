@@ -57,7 +57,7 @@ The updater installs missing baseline items and refreshes existing filip-stack i
 Require exit status and the complete JSON result from every machine. Read a delegated result before accepting its claims. Check:
 
 - Source commit and every component's state; a failed component cannot become an overall success.
-- One shared policy digest, with each machine's declared exceptions applied. The `configuration` component's `savedPolicy` state is `saved` (report its backup), `current`, or `symlink` (the saved copy stays stale until its owner updates it).
+- One shared policy digest, with each machine's declared exceptions applied. For a refresh, the `configuration` component's `savedPolicy` state is `saved` (report its backup), `current`, or `symlink` (the saved copy stays stale until its owner updates it).
 - Guidance applied commit and target count, skills and their host assignments, plugin versions and verified payloads.
 - Explicitly pinned, disabled, missing, blocked, and unreachable components.
 - Preservation of machine-local rules and unrelated installations.

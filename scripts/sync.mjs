@@ -386,7 +386,7 @@ const savePolicy = ({ source, digest }) => {
   const previous = existsSync(path) ? readFileSync(path) : null
   if (previous?.equals(content)) return { path, state: 'current' }
   const backup = previous && `${path}.bak-${new Date().toISOString().replace(/[-:]|\.\d+/gu, '')}`
-  if (backup) writeFileSync(backup, previous)
+  if (backup) writeFileSync(backup, previous, { flag: 'wx' })
   mkdirSync(dirname(path), { recursive: true })
   writeFileSync(path, content)
   return { path, state: 'saved', backup }
