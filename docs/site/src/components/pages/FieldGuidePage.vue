@@ -117,6 +117,12 @@ const tables = {
       Later prompts get only that last reminder until the next session start,
       <code>/clear</code>, or compaction.
     </p>
+    <p class="hint">
+      When the agent looks up a subject itself, it searches for the concrete
+      thing your request implies. If that finds nothing useful, it rephrases
+      once, then continues without stored guidance. After compaction, it looks
+      guidance up again before quoting it.
+    </p>
   </section>
 
   <section aria-labelledby="install">
