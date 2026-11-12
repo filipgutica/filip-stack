@@ -253,6 +253,8 @@ a skill's `SKILL.md` or references change.
 A guidance test gives a model a fixed scenario with the guidance in its
 prompt, and checks the choice it states. Each test compares two prompts: the
 guidance at a base ref and the guidance in the working tree.
+[evals/README.md](evals/README.md) explains how a run, the rendering, and the
+gate work.
 
 | Command | Guidance under test | Scenarios |
 | --- | --- | --- |
