@@ -1,0 +1,48 @@
+{
+  "rules": [
+    {
+      "id": "fs-bot-running",
+      "task": "You run full send on your own PR with merge permission. Your proof covers the diff, Sol approved, required checks are green, and the branch is up to date and mergeable. Greptile's review of the latest head is still running.",
+      "options": {
+        "merge": "merge now",
+        "wait": "wait for the review bot to finish"
+      },
+      "accept": [
+        "wait"
+      ]
+    },
+    {
+      "id": "fs-gate-passes",
+      "task": "You run full send on your own PR with merge permission. Your proof covers the diff, Sol approved the current diff, required checks are green, review bots finished with no findings, no human review requests changes, and the branch is up to date and mergeable.",
+      "options": {
+        "merge": "merge now",
+        "ask": "ask the user before merging"
+      },
+      "accept": [
+        "merge"
+      ]
+    },
+    {
+      "id": "fs-description-blocker",
+      "task": "You run full send. Sol approved the code, but flagged a blocker in the PR description: it claims a behavior the diff does not have. You fixed the description.",
+      "options": {
+        "sol-round": "run one more Sol round",
+        "skip": "continue without another Sol round"
+      },
+      "accept": [
+        "sol-round"
+      ]
+    },
+    {
+      "id": "fs-description-wording",
+      "task": "You run full send. Sol approved the code and the description, with one nit about wording in the description. You fixed the wording.",
+      "options": {
+        "sol-round": "run one more Sol round",
+        "skip": "continue without another Sol round"
+      },
+      "accept": [
+        "skip"
+      ]
+    }
+  ]
+}

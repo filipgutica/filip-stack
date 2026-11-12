@@ -1,0 +1,24 @@
+{
+  "routing": [
+    {
+      "id": "mc-run",
+      "prompt": "Run a merge council on PR #77.",
+      "expectedSkill": "merge-council"
+    },
+    {
+      "id": "mc-repo-asks",
+      "prompt": "This repo's guidance says big PRs need a merge council before merging. Handle PR #301.",
+      "expectedSkill": "merge-council"
+    },
+    {
+      "id": "mc-near-council",
+      "prompt": "Get a council's opinion on our caching strategy.",
+      "expectedSkill": "council"
+    },
+    {
+      "id": "mc-near-review",
+      "prompt": "Review PR #77 for bugs.",
+      "expectedSkill": "review"
+    }
+  ]
+}

@@ -21,7 +21,7 @@ const runEval = async ({ args, env = {} }) => {
   return { status, output }
 }
 
-for (const name of ['routing', 'delegation', 'autonomy', 'workflow-rules', 'hill-climb', 'retrieval']) {
+for (const name of ['routing', 'delegation', 'autonomy', 'workflow-rules', 'skill-rules', 'hill-climb', 'retrieval']) {
   test(`the ${name} eval config validates in a dry run`, async () => {
     const { status, output } = await runEval({ args: [name, '--dry-run', '--base', 'HEAD'] })
     assert.equal(status, 0, output)
@@ -29,7 +29,8 @@ for (const name of ['routing', 'delegation', 'autonomy', 'workflow-rules', 'hill
   })
 }
 
-test('the autonomy eval compares both guidance versions and applies the gate', async (t) => {
+// Starts a local OpenAI-compatible stub that gives every request the same reply.
+const startStub = async (t, content) => {
   const requests = []
   const server = createServer((request, response) => {
     let body = ''
@@ -37,17 +38,22 @@ test('the autonomy eval compares both guidance versions and applies the gate', a
     request.on('end', () => {
       requests.push(JSON.parse(body))
       response.setHeader('content-type', 'application/json')
-      response.end(JSON.stringify({ choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content: '{"action": "ask user"}' } }] }))
+      response.end(JSON.stringify({ choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content } }] }))
     })
   })
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   t.after(() => server.close())
+  return { requests, env: { CLIPROXY_BASE_URL: `http://127.0.0.1:${server.address().port}/v1`, CLIPROXY_API_KEY: 'test-key' } }
+}
+
+test('the autonomy eval compares both guidance versions and applies the gate', async (t) => {
+  const { requests, env } = await startStub(t, '{"action": "ask user"}')
 
   // --base HEAD makes both versions identical, so only needsNewGuidance scenarios that
   // do not accept "ask user" can fail the gate.
   const { status, output } = await runEval({
     args: ['autonomy', '--base', 'HEAD', '--attempts', '1', '--model', 'gpt-6.1-sol'],
-    env: { CLIPROXY_BASE_URL: `http://127.0.0.1:${server.address().port}/v1`, CLIPROXY_API_KEY: 'test-key' },
+    env,
   })
 
   assert.equal(requests.length, 18, output)
@@ -57,5 +63,19 @@ test('the autonomy eval compares both guidance versions and applies the gate', a
   assert.match(output, /^\| archive-intent \| ask user \| 1\/1 \| 1\/1 \| ask user \|$/mu)
   assert.match(output, /^\| helper-name \| decide \| 0\/1 \| 0\/1 \| ask user \|$/mu)
   assert.match(output, /^3 scenario result\(s\) regressed against HEAD/mu)
+  assert.equal(status, 1)
+})
+
+test('routing for one skill runs without a base and must pass every attempt', async (t) => {
+  const { requests, env } = await startStub(t, '{"skill": "council"}')
+  const { status, output } = await runEval({ args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.1-sol'], env })
+
+  // Six scenarios name council: its own file's five and merge-council's near-miss.
+  assert.equal(requests.length, 6, output)
+  assert.match(requests[0].messages[0].content, /^- council: /mu)
+  assert.match(requests[0].messages[0].content, /^- jira-work-links: Use when creating, correcting/mu)
+  assert.match(output, /^\| council-question \| council \| - \| 1\/1 \| skill "council" \|$/mu)
+  assert.match(output, /^\| council-near-merge \| merge-council \| - \| 0\/1 \| skill "council" \|$/mu)
+  assert.match(output, /^2 scenario result\(s\) missed an attempt in the working tree\./mu)
   assert.equal(status, 1)
 })

@@ -16,7 +16,11 @@ const withHostGuidance = (version, prompt) => ({ vars, provider }) => {
   return [{ ...system, content: `${renderGuidance(version)[provider.label]}\n\n${system.content}` }, user]
 }
 
-export const prepareRetrieval = () => Boolean(fieldGuide.prepare() && renderGuidance('base') && renderGuidance('head'))
+export const prepareRetrieval = ({ tests, noBase }) => {
+  fieldGuide.prepare({ tests, noBase })
+  if (!noBase) renderGuidance('base')
+  renderGuidance('head')
+}
 export const baseRetrieval = withHostGuidance('base', fieldGuide.base)
 export const headRetrieval = withHostGuidance('head', fieldGuide.head)
 export const { tests: retrievalTests, score: scoreRetrieval } = fieldGuide

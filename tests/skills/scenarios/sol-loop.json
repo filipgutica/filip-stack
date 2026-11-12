@@ -1,0 +1,19 @@
+{
+  "routing": [
+    {
+      "id": "sol-phrase",
+      "prompt": "sol loop",
+      "expectedSkill": "sol-loop"
+    },
+    {
+      "id": "sol-phrase-change",
+      "prompt": "Run a sol loop on this change before I open the PR.",
+      "expectedSkill": "sol-loop"
+    },
+    {
+      "id": "sol-near-review",
+      "prompt": "Do a read-only review of the changes on this branch before I open the PR.",
+      "expectedSkill": "review"
+    }
+  ]
+}

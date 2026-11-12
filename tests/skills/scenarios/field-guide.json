@@ -1,0 +1,24 @@
+{
+  "routing": [
+    {
+      "id": "fg-remember",
+      "prompt": "Remember that I prefer named constants over magic numbers, in every project.",
+      "expectedSkill": "field-guide"
+    },
+    {
+      "id": "fg-audit",
+      "prompt": "Audit my field-guide memory for stale or conflicting entries.",
+      "expectedSkill": "field-guide"
+    },
+    {
+      "id": "fg-consult",
+      "prompt": "Check the field guide for what I said about PR descriptions before you write this one.",
+      "expectedSkill": "field-guide"
+    },
+    {
+      "id": "fg-near-docs",
+      "prompt": "Write a README section about how to install this plugin.",
+      "expectedSkill": "technical-writing"
+    }
+  ]
+}

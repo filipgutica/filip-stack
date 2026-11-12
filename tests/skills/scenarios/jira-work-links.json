@@ -1,0 +1,29 @@
+{
+  "routing": [
+    {
+      "id": "jira-blockers",
+      "prompt": "Link KAN-120 as blocked by KAN-118 and fix the dependency order of the epic.",
+      "expectedSkill": "jira-work-links"
+    },
+    {
+      "id": "jira-dev-refs",
+      "prompt": "Find the pull requests and commits for KAN-342.",
+      "expectedSkill": "jira-work-links"
+    },
+    {
+      "id": "jira-epic",
+      "prompt": "Move these five stories under the right Epic and correct their parent links.",
+      "expectedSkill": "jira-work-links"
+    },
+    {
+      "id": "jira-near-summary",
+      "prompt": "Summarize what KAN-120 is about.",
+      "expectedSkill": null
+    },
+    {
+      "id": "jira-near-tickets",
+      "prompt": "Write an engineering ticket for adding retry logic to the uploader.",
+      "expectedSkill": "planning"
+    }
+  ]
+}

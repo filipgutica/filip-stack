@@ -1,0 +1,53 @@
+{
+  "routing": [
+    {
+      "id": "bp-watch",
+      "prompt": "Watch PR #412 until CI is green and handle whatever the review bots say.",
+      "expectedSkill": "babysit-pr"
+    },
+    {
+      "id": "bp-babysit",
+      "prompt": "Babysit my open pull request while I'm in meetings.",
+      "expectedSkill": "babysit-pr"
+    },
+    {
+      "id": "bp-monitor",
+      "prompt": "Monitor https://github.com/acme/api/pull/88 and fix CI failures as they come in.",
+      "expectedSkill": "babysit-pr"
+    },
+    {
+      "id": "bp-near-review",
+      "prompt": "Read PR #412 and tell me whether the retry logic is correct.",
+      "expectedSkill": "review"
+    },
+    {
+      "id": "bp-near-churn",
+      "prompt": "Which review comments do I keep getting across my pull requests this quarter?",
+      "expectedSkill": "pr-review-churn"
+    }
+  ],
+  "rules": [
+    {
+      "id": "bp-coderabbit-pending",
+      "task": "You are babysitting a pull request the user authorized you to merge. All required checks are green, Greptile reviewed the latest head with no findings, and every thread is resolved. CodeRabbit's review of the latest head is still running.",
+      "options": {
+        "wait": "wait for CodeRabbit to finish before merging",
+        "proceed": "treat the PR as ready without CodeRabbit"
+      },
+      "accept": [
+        "proceed"
+      ]
+    },
+    {
+      "id": "bp-greptile-pending",
+      "task": "You are babysitting a pull request with pr-wait. All required checks are green and every thread is resolved. Greptile has not yet reviewed the latest head, which you pushed two minutes ago.",
+      "options": {
+        "wait": "keep waiting for Greptile's review of the latest head",
+        "proceed": "treat the PR as ready now"
+      },
+      "accept": [
+        "wait"
+      ]
+    }
+  ]
+}

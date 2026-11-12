@@ -1,0 +1,29 @@
+{
+  "routing": [
+    {
+      "id": "ui-critique",
+      "prompt": "Critique the checkout screen: hierarchy, states, and copy.",
+      "expectedSkill": "interface-design"
+    },
+    {
+      "id": "ui-direction",
+      "prompt": "Reshape the settings page UX; it's confusing to navigate.",
+      "expectedSkill": "interface-design"
+    },
+    {
+      "id": "ui-check",
+      "prompt": "Check the new onboarding flow in the running app before it ships, including accessibility.",
+      "expectedSkill": "interface-design"
+    },
+    {
+      "id": "ui-near-vue",
+      "prompt": "Refactor this Vue component to the Composition API with script setup.",
+      "expectedSkill": "vue-best-practices"
+    },
+    {
+      "id": "ui-near-docs",
+      "prompt": "Write the release notes for version 3.2.",
+      "expectedSkill": "technical-writing"
+    }
+  ]
+}

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Standalone skill rules - the choices each skill states at its decision points
+prompts:
+  - id: file://rules.mjs:baseRules
+    label: base
+  - id: file://rules.mjs:headRules
+    label: working tree
+providers: file://providers.yaml
+tests: file://rules.mjs:skillRulesTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://rules.mjs:scoreRule

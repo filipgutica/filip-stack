@@ -1,0 +1,24 @@
+{
+  "routing": [
+    {
+      "id": "churn-report",
+      "prompt": "Make a review-churn report across my pull requests from the last six months.",
+      "expectedSkill": "pr-review-churn"
+    },
+    {
+      "id": "churn-objections",
+      "prompt": "Which objections do reviewers keep raising on my PRs in acme/api?",
+      "expectedSkill": "pr-review-churn"
+    },
+    {
+      "id": "churn-guidance",
+      "prompt": "Propose engineering guidance based on recurring review feedback in my PR history.",
+      "expectedSkill": "pr-review-churn"
+    },
+    {
+      "id": "churn-near-babysit",
+      "prompt": "Watch my open PR until CI passes.",
+      "expectedSkill": "babysit-pr"
+    }
+  ]
+}
