@@ -171,6 +171,13 @@ test("the Workflow map follows example requests, skills, and engineering steps a
   ).toHaveAttribute("aria-pressed", "true");
   await map.getByRole("button", { name: "Back" }).click();
   await expect(skill("planning")).toBeChecked();
+  // Picking the skill a turn already selected still leaves the example.
+  await map.locator(".map-stages").getByText("planning", { exact: true }).click();
+  await expect(turn).toContainText("No example selected");
+  await examples.getByRole("button", { name: "Feature" }).click();
+  await skill("planning").press("Space");
+  await expect(turn).toContainText("No example selected");
+  await examples.getByRole("button", { name: "Feature" }).click();
 
   // A one-request example selects its skill and the reference it loads.
   await examples.getByRole("button", { name: "Review" }).click();
@@ -182,7 +189,7 @@ test("the Workflow map follows example requests, skills, and engineering steps a
 
   // Picking a skill directly leaves the example.
   // Readers click the row; the radio inside it is visually hidden.
-  await map.getByText("merge-council", { exact: true }).click();
+  await map.locator(".map-stages").getByText("merge-council", { exact: true }).click();
   await expect(skill("merge-council")).toBeChecked();
   await expect(examples.locator("[aria-pressed='true']")).toHaveCount(0);
   await expect(turn).toContainText("No example selected");

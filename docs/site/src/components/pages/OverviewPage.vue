@@ -209,7 +209,9 @@ const pickExample = (value: string) => {
   exampleValue.value = value;
   showTurn(0);
 };
-// Picking a skill directly leaves the example, so no turn claims it.
+// Picking a skill directly leaves the example, so no turn claims it. Radios fire
+// no change when the reader picks the skill that is already checked, and Space on
+// a checked radio fires no click either.
 const pickSkill = (name: string) => {
   exampleValue.value = undefined;
   selectedSkill.value = name;
@@ -429,7 +431,8 @@ onMounted(() => {
                     name="map-skill"
                     :value="skill.name"
                     :checked="selectedSkill === skill.name"
-                    @change="pickSkill(skill.name)"
+                    @click="pickSkill(skill.name)"
+                    @keydown.space="pickSkill(skill.name)"
                   />
                   <code>{{ skill.name }}</code>
                   <UiBadge v-if="skill.manual">Manual</UiBadge>

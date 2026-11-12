@@ -152,6 +152,8 @@ button.map-ring-step { cursor: pointer; }
 .workflow-map .map-load ol { margin-top: var(--space-3); margin-inline-start: var(--space-2); padding-inline-start: var(--space-4); border-inline-start: 1px solid var(--color-border-subtle); }
 .map-load :is(strong, code, span) { display: block; }
 .map-load code { font-weight: var(--weight-semibold); overflow-wrap: anywhere; }
+/* Touch targets grow at tablet width, as every control does. */
+@media (max-width: 800px) { .map-skill, .map-ring-step { min-height: var(--control-lg); } }
 @media (prefers-reduced-motion: reduce) {
   .map-skill, .map-ring-step, .is-enhanced .map-steps button { transition: none; }
 }
