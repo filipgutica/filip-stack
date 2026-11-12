@@ -14,6 +14,7 @@ export const {
     'plugins/workflow/skills/engineering/references/testing-and-debugging.md',
     'plugins/workflow/skills/test-audit/SKILL.md',
     'plugins/workflow/skills/planning/SKILL.md',
+    'plugins/workflow/skills/planning/references/spec.md',
     'plugins/workflow/skills/planning/references/tickets.md',
   ],
   scenarioFile: 'tests/workflow/workflow-rules-scenarios.json',
