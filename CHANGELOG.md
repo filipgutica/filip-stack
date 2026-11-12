@@ -1,3 +1,15 @@
+# [5.8.0](https://github.com/filipgutica/filip-stack/compare/v5.7.1...v5.8.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **sync:** never overwrite a saved policy backup and qualify the refresh check ([b1a30ca](https://github.com/filipgutica/filip-stack/commit/b1a30ca153c797fa1243919e3342d0d5d5e91c2f))
+
+
+### Features
+
+* **sync:** save the shared fleet policy on each machine during a refresh ([7ef9e29](https://github.com/filipgutica/filip-stack/commit/7ef9e29534c7b7dba1a65cf79ce4a1415725b09d))
+
 ## [5.7.1](https://github.com/filipgutica/filip-stack/compare/v5.7.0...v5.7.1) (2026-11-12)
 
 
