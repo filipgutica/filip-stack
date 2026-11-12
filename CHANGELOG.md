@@ -1,3 +1,10 @@
+## [5.11.1](https://github.com/filipgutica/filip-stack/compare/v5.11.0...v5.11.1) (2026-11-12)
+
+
+### Bug Fixes
+
+* **site:** ignore hidden folders when listing skill directories ([9d3d0e0](https://github.com/filipgutica/filip-stack/commit/9d3d0e0d1f228c08f5d606bd45fb3c1dc0cf1237))
+
 # [5.11.0](https://github.com/filipgutica/filip-stack/compare/v5.10.0...v5.11.0) (2026-11-12)
 
 
