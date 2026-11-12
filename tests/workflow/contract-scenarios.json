@@ -154,6 +154,14 @@
       "expectedReference": "spec.md"
     },
     {
+      "id": "write-erd",
+      "prompt": "Write an ERD for scheduled exports.",
+      "expectedSkill": "planning",
+      "activation": "implicit",
+      "mode": "specification",
+      "expectedReference": "spec.md"
+    },
+    {
       "id": "write-adr",
       "prompt": "Write an ADR recording why we chose Postgres advisory locks over Redis for job leases.",
       "expectedSkill": "planning",

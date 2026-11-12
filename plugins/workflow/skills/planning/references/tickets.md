@@ -10,6 +10,8 @@ Draft the ticket even when some facts are unverified. Mark each unverified owner
 
 Include a ticket key, parent, relationship, or code link only when you verified it. Link code with a repository URL, ref, and path, and add a line anchor only when you verified it. Never put a machine-local path in a ticket.
 
+When asked to review a ticket, check its evidence, ownership, scope, and duplication, and check that each acceptance criterion is observable.
+
 ## Default formats
 
 Use the tracker's or the repository's template when one exists. Otherwise use these. Acceptance criteria describe behavior that someone can observe. Do not repeat a criterion in Notes.
