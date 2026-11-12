@@ -117,6 +117,13 @@ const tables = {
       Later prompts get only that last reminder until the next session start,
       <code>/clear</code>, or compaction.
     </p>
+    <p class="hint">
+      When the agent looks up guidance itself, it searches for the concrete
+      thing your request implies, and it looks guidance up again before quoting
+      it after compaction. The
+      <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
+      has the exact rules.
+    </p>
   </section>
 
   <section aria-labelledby="install">

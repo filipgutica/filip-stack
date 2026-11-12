@@ -49,6 +49,7 @@ promptfoo guidance tests verify that guidance behaves as intended. Ship a behavi
 - Before you push a change to the autonomy guidance, which says when to decide, ask the advisor, convene a council, or ask the user, run `pnpm eval:autonomy --dry-run`, then a real run when the user approves. It scores the scenarios in `tests/host-config/autonomy-scenarios.json` the same way.
 - Before you push a change to what a Workflow skill does, add scenarios for the new rule and a control to a guidance test, then run it. `pnpm eval:workflow-rules` holds Workflow rules that no other test covers, in `tests/workflow/workflow-rules-scenarios.json`.
 - Before you push a change to what `hill-climb` does, add scenarios for the new rule and a control to `tests/skills/hill-climb-scenarios.json`, then run `pnpm eval:hill-climb`.
+- Before you push a change to how agents query guidance or documentation, or cite it after compaction, add scenarios for the new rule and a control to `tests/host-config/retrieval-scenarios.json`, then run `pnpm eval:retrieval`.
 - PluginBench (`~/code/pluginbench`) is a separate research project that compares guidance with vanilla and other guidance packages over whole tasks. No change here requires a PluginBench run.
 
 ## Checks and release

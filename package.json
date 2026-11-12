@@ -21,6 +21,7 @@
     "eval:autonomy": "node evals/run.mjs autonomy",
     "eval:workflow-rules": "node evals/run.mjs workflow-rules",
     "eval:hill-climb": "node evals/run.mjs hill-climb",
+    "eval:retrieval": "node evals/run.mjs retrieval",
     "eval:view": "promptfoo view",
     "test:workflow-contracts": "node tests/workflow/validate-contracts.mjs",
     "test:skills": "node tests/skills/validate-skills.mjs && node --test tests/skills/hill-climb-build-runs.test.mjs tests/skills/interface-design-scripts.test.mjs && python3 -B -m unittest discover -s tests/skills -p '*_test.py'",

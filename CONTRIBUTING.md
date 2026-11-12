@@ -263,6 +263,7 @@ gate work.
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
 | `pnpm eval:hill-climb` | `hill-climb` rules: score checks, locked files, holdout | `tests/skills/hill-climb-scenarios.json` |
+| `pnpm eval:retrieval` | Retrieval queries and rereading sources after compaction, in host guidance and Field Guide | `tests/host-config/retrieval-scenarios.json` |
 
 ### Add a scenario
 
