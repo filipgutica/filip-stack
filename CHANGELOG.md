@@ -1,3 +1,15 @@
+# [5.9.0](https://github.com/filipgutica/filip-stack/compare/v5.8.0...v5.9.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **site:** drop the workflow prefix for standalone manual skills on the overview ([d5d0af6](https://github.com/filipgutica/filip-stack/commit/d5d0af649fa50c5191ffab21fb2a7c394e777463))
+
+
+### Features
+
+* **skills:** move manual Workflow skills to standalone skills ([1562d66](https://github.com/filipgutica/filip-stack/commit/1562d66714cb47c4a115d84f7ec789e838372e4a))
+
 # [5.8.0](https://github.com/filipgutica/filip-stack/compare/v5.7.1...v5.8.0) (2026-11-12)
 
 
