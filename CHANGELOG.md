@@ -1,3 +1,12 @@
+# [5.11.0](https://github.com/filipgutica/filip-stack/compare/v5.10.0...v5.11.0) (2026-11-12)
+
+
+### Features
+
+* **planning:** keep the ticket review checklist and route ERD requests ([a687d84](https://github.com/filipgutica/filip-stack/commit/a687d84625bdd821d17062bc7a11350deabf2894))
+* **planning:** lighten ticket and spec formats and add PRD and ADR ([65e0870](https://github.com/filipgutica/filip-stack/commit/65e0870cc627ea0e6a33af13121f93a7e6087e57))
+* **planning:** request a separate review when a specification changes a public contract ([b880be5](https://github.com/filipgutica/filip-stack/commit/b880be59cdb80fb1e183bb1dd7478db331675b0a))
+
 # [5.10.0](https://github.com/filipgutica/filip-stack/compare/v5.9.0...v5.10.0) (2026-11-12)
 
 
