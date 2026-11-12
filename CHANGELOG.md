@@ -1,3 +1,16 @@
+# [5.7.0](https://github.com/filipgutica/filip-stack/compare/v5.6.0...v5.7.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **evals:** address review of the standalone skill tests ([8ca476e](https://github.com/filipgutica/filip-stack/commit/8ca476e27894e661f62b95e9632c7b54756709f5))
+* **evals:** score rule replies by the longest option key ([34b639e](https://github.com/filipgutica/filip-stack/commit/34b639ee3c4ecec20e0255de267c66234336ab13))
+
+
+### Features
+
+* **evals:** test standalone skills and check guidance on a new model ([de73df2](https://github.com/filipgutica/filip-stack/commit/de73df2cb256416b9c6d900fae24f59600b2979e))
+
 # [5.6.0](https://github.com/filipgutica/filip-stack/compare/v5.5.0...v5.6.0) (2026-11-12)
 
 
