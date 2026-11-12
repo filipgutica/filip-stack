@@ -1,3 +1,16 @@
+# [5.6.0](https://github.com/filipgutica/filip-stack/compare/v5.5.0...v5.6.0) (2026-11-12)
+
+
+### Bug Fixes
+
+* **evals:** render host guidance for the retrieval eval ([19f14e2](https://github.com/filipgutica/filip-stack/commit/19f14e218cdca4ab24c8a40175e35f5f88e9c8de))
+* **field-guide:** scope the compaction reread and state that a rephrase narrows ([2104067](https://github.com/filipgutica/filip-stack/commit/2104067a40a297b109392ff4cdcdc5304fc23d5e))
+
+
+### Features
+
+* **field-guide:** rephrase empty retrievals and reread sources after compaction ([fcb9190](https://github.com/filipgutica/filip-stack/commit/fcb91903ead377f7288670bba70808dd6103fa28))
+
 # [5.5.0](https://github.com/filipgutica/filip-stack/compare/v5.4.0...v5.5.0) (2026-11-12)
 
 
