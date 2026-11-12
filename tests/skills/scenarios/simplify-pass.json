@@ -1,0 +1,16 @@
+{
+  "routing": [
+    {
+      "id": "explicit-simplify",
+      "prompt": "Use $simplify-pass to simplify the code changed in this task without changing its behavior.",
+      "expectedSkill": "simplify-pass",
+      "activation": "explicit"
+    },
+    {
+      "id": "simplify-near-miss",
+      "prompt": "Refactor this parser to remove redundant branches while preserving its behavior.",
+      "expectedSkill": "engineering",
+      "expectedReference": "testing-and-debugging.md"
+    }
+  ]
+}

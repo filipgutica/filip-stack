@@ -10,9 +10,9 @@ recommended answer and explains why the decision matters.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install). Invoke grill me explicitly with
-`/workflow:grill-me` in Claude or `$workflow:grill-me` in Codex. Point it at
-the proposal, for example `/workflow:grill-me docs/sync-redesign.md`.
+Install the skill with the command above. Invoke it explicitly with
+`/grill-me` in Claude or `$grill-me` in Codex. Point it at the proposal, for
+example `/grill-me docs/sync-redesign.md`.
 
 Use it to challenge an architecture or implementation approach, uncover vague
 scope or hidden assumptions, and settle decisions before building. If you
@@ -36,7 +36,7 @@ decision before asking one that depends on it. Questions follow the proposal's
 open decisions; they are not a fixed checklist. The interview stops when the
 proposal is coherent, a required fact is unavailable, or you ask it to stop.
 
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/grill-me/SKILL.md)
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/grill-me/SKILL.md)
 has the interview and log contract.
 
 ## What you get

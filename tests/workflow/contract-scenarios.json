@@ -106,30 +106,6 @@
       "expectedReference": null
     },
     {
-      "id": "explicit-grill",
-      "prompt": "Use $workflow:grill-me to stress-test this plan.",
-      "expectedSkill": "grill-me",
-      "activation": "explicit",
-      "mode": "interview",
-      "expectedReference": null
-    },
-    {
-      "id": "explicit-grill-log",
-      "prompt": "Use $workflow:grill-me and save the material decisions in a grill log.",
-      "expectedSkill": "grill-me",
-      "activation": "explicit",
-      "mode": "interview-with-log",
-      "expectedReference": "grill-log.md"
-    },
-    {
-      "id": "grill-near-miss",
-      "prompt": "Do you see any obvious risk in this small plan?",
-      "expectedSkill": null,
-      "activation": "none",
-      "mode": "manual-skill-near-miss",
-      "expectedReference": null
-    },
-    {
       "id": "rewrite-documentation",
       "prompt": "Rewrite this technical procedure in concise plain language.",
       "expectedSkill": "technical-writing",
@@ -159,22 +135,6 @@
       "expectedSkill": null,
       "activation": "none",
       "mode": "explanation-only",
-      "expectedReference": null
-    },
-    {
-      "id": "explicit-walkthrough",
-      "prompt": "Use $workflow:walkthrough to explain this branch one slice at a time.",
-      "expectedSkill": "walkthrough",
-      "activation": "explicit",
-      "mode": "human-presenter",
-      "expectedReference": "presentation-patterns.md"
-    },
-    {
-      "id": "walkthrough-near-miss",
-      "prompt": "Summarize what changed in this file.",
-      "expectedSkill": null,
-      "activation": "none",
-      "mode": "manual-skill-near-miss",
       "expectedReference": null
     },
     {
@@ -232,46 +192,6 @@
       "activation": "implicit",
       "mode": "campaign",
       "expectedReference": "campaign.md"
-    },
-    {
-      "id": "explicit-checkpoint",
-      "prompt": "Use $workflow:checkpoint to capture the current work state before I hand it off.",
-      "expectedSkill": "checkpoint",
-      "activation": "explicit",
-      "mode": "conversation-snapshot",
-      "expectedReference": null
-    },
-    {
-      "id": "explicit-checkpoint-save",
-      "prompt": "Use $workflow:checkpoint and save a new checkpoint in the default notes location.",
-      "expectedSkill": "checkpoint",
-      "activation": "explicit",
-      "mode": "saved-snapshot",
-      "expectedReference": null
-    },
-    {
-      "id": "checkpoint-near-miss",
-      "prompt": "What remains to finish this change?",
-      "expectedSkill": null,
-      "activation": "none",
-      "mode": "manual-skill-near-miss",
-      "expectedReference": null
-    },
-    {
-      "id": "explicit-simplify",
-      "prompt": "Use $workflow:simplify to simplify the code changed in this task without changing its behavior.",
-      "expectedSkill": "simplify",
-      "activation": "explicit",
-      "mode": "behavior-preserving-simplification",
-      "expectedReference": null
-    },
-    {
-      "id": "simplify-near-miss",
-      "prompt": "Refactor this parser to remove redundant branches while preserving its behavior.",
-      "expectedSkill": "engineering",
-      "activation": "implicit",
-      "mode": "refactoring",
-      "expectedReference": "testing-and-debugging.md"
     }
   ]
 }

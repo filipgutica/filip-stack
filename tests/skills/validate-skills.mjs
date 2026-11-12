@@ -97,6 +97,46 @@ for (const dir of standaloneDirs) {
   }
 }
 
+// Lock the authority boundaries of standalone skills whose rules hosts or users depend on.
+const requiredContracts = {
+  'grill-me': {
+    'SKILL.md': [
+      /Ask exactly one consequential question/u,
+      /read-only except for an authorized grill log/u,
+    ],
+  },
+  'simplify-pass': {
+    'SKILL.md': [
+      /Run only when the user invokes this skill/u,
+      /three independent, read-only assessments/u,
+      /report the incomplete review and stop before editing/u,
+      /Keep one writer in the main thread/u,
+    ],
+  },
+  walkthrough: {
+    'SKILL.md': [
+      /Present one coherent slice at a time/u,
+      /read-only except for an authorized walkthrough log/u,
+      /every changed file is covered/u,
+      /Do not treat silence/u,
+    ],
+    'references/presentation-patterns.md': [
+      /Lesson:.*\nExample:.*\nTry it:.*\nObserve:/u,
+      /Agent execution requires existing authorization/u,
+      /Keep expected results separate from observed results/u,
+    ],
+    'references/walkthrough-log.md': [
+      /Keep exercise outcomes separate from acceptance/u,
+    ],
+  },
+}
+for (const [name, files] of Object.entries(requiredContracts)) {
+  for (const [path, patterns] of Object.entries(files)) {
+    const content = await readFile(join(standaloneRoot, name, path), 'utf8')
+    for (const pattern of patterns) assert.match(content, pattern, `${name}/${path} is missing required guidance`)
+  }
+}
+
 // Every skill a model can route to outside Workflow has a guidance test file: routing
 // scenarios that should and should not load it, and optional rule scenarios.
 const scenariosRoot = join(repoRoot, 'tests/skills/scenarios')
@@ -122,11 +162,21 @@ for (const file of scenarioFiles) {
   const skill = ownSkills.find(({ name }) => name === owner)
   assert.ok(skill, `tests/skills/scenarios/${file} names no standalone or Field Guide skill`)
   const { routing = [], rules = [] } = JSON.parse(await readFile(join(scenariosRoot, file), 'utf8'))
-  for (const { id, prompt, expectedSkill, alsoAccept = [] } of routing) {
+  for (const { id, prompt, expectedSkill, alsoAccept = [], activation, expectedReference } of routing) {
     assert.ok(id && prompt, `${file} has a routing scenario without an id or prompt`)
     addPrompt(prompt, `${file} ${id}`)
-    for (const name of [expectedSkill, ...alsoAccept].filter((name) => name !== null)) {
-      assert.ok(routable.has(name), `${file} ${id} names ${name}, which no model can route to`)
+    // An explicit scenario names its skill in the prompt, so it may expect a manual-only skill.
+    if (activation === 'explicit') {
+      assert.equal(expectedSkill, owner, `${file} ${id} is explicit, so it must expect ${owner}`)
+      assert.ok(prompt.includes(`$${owner}`), `${file} ${id} is explicit, so its prompt must name $${owner}`)
+    } else {
+      for (const name of [expectedSkill, ...alsoAccept].filter((name) => name !== null)) {
+        assert.ok(routable.has(name), `${file} ${id} names ${name}, which no model can route to`)
+      }
+    }
+    if (expectedReference) {
+      const body = [...workflowSkills, ...ownSkills].find(({ name }) => name === expectedSkill)?.body ?? ''
+      assert.ok(body.includes(`(references/${expectedReference})`), `${file} ${id} expects ${expectedReference}, which ${expectedSkill} does not link`)
     }
   }
   if (!skill.manual) {

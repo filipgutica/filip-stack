@@ -11,9 +11,9 @@ the result.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install). Invoke simplify explicitly with
-`/workflow:simplify` in Claude or `$workflow:simplify` in Codex. Name a file,
-function, or change range, for example `/workflow:simplify src/cart/totals.ts`.
+Install the skill with the command above. Invoke it explicitly with
+`/simplify-pass` in Claude or `$simplify-pass` in Codex. Name a file, function,
+or change range, for example `/simplify-pass src/cart/totals.ts`.
 
 Use it for focused simplification or cleanup of code changed in the current
 task. Without a target, it uses that task's changes, then uncommitted changes.
@@ -43,7 +43,7 @@ unapplied. Meaningful tests and error handling stay. A new abstraction or
 dependency needs a reason beyond saving lines. After focused checks, a
 substantial final diff gets an independent read-only [review](../review/).
 
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/simplify/SKILL.md)
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/simplify-pass/SKILL.md)
 has the exact review and verification requirements.
 
 ## What you get

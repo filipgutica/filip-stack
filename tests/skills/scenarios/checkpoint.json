@@ -1,0 +1,21 @@
+{
+  "routing": [
+    {
+      "id": "explicit-checkpoint",
+      "prompt": "Use $checkpoint to capture the current work state before I hand it off.",
+      "expectedSkill": "checkpoint",
+      "activation": "explicit"
+    },
+    {
+      "id": "explicit-checkpoint-save",
+      "prompt": "Use $checkpoint and save a new checkpoint in the default notes location.",
+      "expectedSkill": "checkpoint",
+      "activation": "explicit"
+    },
+    {
+      "id": "checkpoint-near-miss",
+      "prompt": "What remains to finish this change?",
+      "expectedSkill": null
+    }
+  ]
+}

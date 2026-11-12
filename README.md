@@ -12,7 +12,7 @@ overview and lists every skill.
 
 | Part | What it is | How it installs |
 | --- | --- | --- |
-| [Workflow](#workflow) | Nine skills for the engineering loop | Plugin, from this marketplace |
+| [Workflow](#workflow) | Five skills for the engineering loop | Plugin, from this marketplace |
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
 | [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
@@ -96,16 +96,9 @@ Each skill loads only the guidance its task needs.
 | `planning` | Develops a direction, specification, implementation plan, or tickets from repository evidence. |
 | `test-audit` | Audits test value and identifies duplicate coverage, implementation-coupled tests, and test-only production code. |
 | `review` | Reviews one exact change or document and reports only the findings it can back with evidence. |
-| `simplify` | Simplifies selected code while preserving its observable behavior. |
 | `technical-writing` | Writes or revises technical documents so readers can act on them without guessing. |
-| `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. |
-| `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
-| `checkpoint` | Captures current work, evidence, and next actions for a pause or handoff. |
 
-The host may pick `engineering`, `planning`, `review`, `test-audit`, and
-`technical-writing` when a request matches. `grill-me`, `walkthrough`,
-`checkpoint`, and `simplify` run only when you call them by name, such as
-`/workflow:simplify` in Claude or `$workflow:simplify` in Codex.
+The host picks each skill when a request matches.
 
 Plans, specifications, and other writing stay in the conversation unless you
 ask for a saved document, and a saved document goes where you say. Ordinary
@@ -113,19 +106,7 @@ changes create no task ledgers or companion files. Your instructions and your
 repository's guidance override Workflow's default formats for specifications,
 plans, tickets, and PR descriptions.
 
-When you ask to save a checkpoint, grill log, or walkthrough log and name no
-place, Workflow defaults to plain notes folders that need no setup. A grill log
-can also go beside the document it questions.
-
-```text
-~/.engineering-workflow/<project-or-subject>/
-├── checkpoints/
-├── grills/
-└── walkthroughs/
-```
-
-Each checkpoint is a new snapshot, and earlier ones stay as they are. Workflow
-installs no hooks and never updates these notes on its own.
+Workflow installs no hooks.
 
 ## Field Guide
 
@@ -173,18 +154,22 @@ Independent skills install one at a time with the
 | --- | --- |
 | `agent-ready-environments` | Audits or sets up repositories and agent guidance so agents can verify their work. |
 | `babysit-pr` | Monitors a PR through CI and automated review, fixing verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `checkpoint` | Captures current work, evidence, and next actions for a pause or handoff. |
 | `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
 | `council` | Gathers independent model opinions and synthesizes advice on a question or artifact. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `fleet-sync` | Syncs a shared filip-stack baseline across linked T3 environments with per-machine exceptions. |
 | `full-send` | Finishes a change or PR through review and CI, then merges or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Finishes a change or PR through review and CI and leaves merging to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. Adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
 | `hill-climb` | Improves a working change or named goal in bounded rounds judged by blind comparisons, a score, or both. Needs `council`. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
 | `merge-council` | Runs a council on a PR, fixes agreed findings, and returns a verdict tied to the reviewed commits. Needs `council`. |
 | `pr-review-churn` | Analyzes recurring human review objections on GitHub PRs and proposes guidance changes. |
+| `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
 | `sol-loop` | Checks a change through GPT Sol review rounds and resolves findings within scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
+| `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
 
 List the skills, install one by name, or install a skill together with the
 skills it needs:
@@ -201,6 +186,20 @@ reads, and links `~/.claude/skills/<name>` to it for Claude. Standalone skills
 have no version and install from `main`, so to update a skill, run the same
 `add` command again. Avoid `npx skills update`: it reinstalls into every agent
 it detects, not only the ones you chose.
+
+When you ask `checkpoint`, `grill-me`, or `walkthrough` to save notes and name
+no place, they use plain folders that need no setup. A grill log can also go
+beside the document it questions.
+
+```text
+~/.engineering-workflow/<project-or-subject>/
+├── checkpoints/
+├── grills/
+└── walkthroughs/
+```
+
+Each checkpoint is a new snapshot, and earlier ones stay as they are. Nothing
+updates these notes on its own.
 
 The CLI does not offer Workflow or Field Guide skills. Install them with their
 plugins.

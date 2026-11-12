@@ -2,8 +2,6 @@
 name: checkpoint
 description: Produce a concise, evidence-backed checkpoint for pausing or handing off work.
 disable-model-invocation: true
-metadata:
-  internal: true
 ---
 
 # Checkpoint

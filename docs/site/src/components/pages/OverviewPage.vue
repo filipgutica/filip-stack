@@ -17,7 +17,7 @@ const skillNamed = (name: string) => {
 };
 const stages = [
   { label: "Before code", names: ["planning", "grill-me"] },
-  { label: "Change", names: ["engineering", "simplify"] },
+  { label: "Change", names: ["engineering", "simplify-pass"] },
   { label: "Check", names: ["review", "test-audit", "walkthrough"] },
   { label: "Write it up", names: ["technical-writing", "checkpoint"] },
   { label: "Before merge", names: ["sol-loop", "merge-council"] },
@@ -518,8 +518,8 @@ onMounted(() => {
     </UiCard>
     <p class="hint">
       Skills marked manual run only when you call them:
-      <code>/workflow:simplify</code> in Claude,
-      <code>$workflow:simplify</code> in Codex. The others are picked when a
+      <code>/simplify-pass</code> in Claude,
+      <code>$simplify-pass</code> in Codex. The others are picked when a
       request matches.
     </p>
   </section>

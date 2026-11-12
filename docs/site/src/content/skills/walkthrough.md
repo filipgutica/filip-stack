@@ -11,9 +11,9 @@ walkthrough continues.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install). Invoke walkthrough explicitly:
-`/workflow:walkthrough` in Claude or `$workflow:walkthrough` in Codex.
-Name the change, for example `/workflow:walkthrough this branch`.
+Install the skill with the command above. Invoke it explicitly:
+`/walkthrough` in Claude or `$walkthrough` in Codex. Name the change, for
+example `/walkthrough this branch`.
 
 Use it to understand the last completed change, working tree, branch, or PR
 before approval. For a written list of findings, use [review](../review/).
@@ -36,7 +36,7 @@ correction is resolved or explicitly deferred.
 You can request a separate read-only presenter agent. Your agent checks the
 evidence that presenter supplies.
 
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/walkthrough/SKILL.md)
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/walkthrough/SKILL.md)
 links the presentation patterns and optional log format.
 
 ## What you get

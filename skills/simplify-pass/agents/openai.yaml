@@ -1,0 +1,7 @@
+interface:
+  display_name: "Simplify Pass"
+  short_description: "Simplify code with independent agent reviews"
+  default_prompt: "Use $simplify-pass to simplify the selected code while preserving its behavior."
+
+policy:
+  allow_implicit_invocation: false

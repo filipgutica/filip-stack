@@ -79,9 +79,9 @@ test("all skill prose and README traits render without JavaScript", async ({
       await expect(page.locator("main .fg-site-facts")).toContainText(
         "Picked when a request matches",
       );
-    if (route === "skills/simplify/")
+    if (route === "skills/simplify-pass/")
       await expect(page.locator("main .fg-site-facts")).toContainText(
-        "Manual · /workflow:simplify",
+        "Manual · /simplify-pass",
       );
     if (route === "skills/grill-me/") {
       const credit = page

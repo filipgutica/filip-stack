@@ -1,12 +1,10 @@
 ---
-name: simplify
-description: Simplify the selected code while preserving its behavior.
+name: simplify-pass
+description: Simplify the selected code while preserving its behavior, after three independent read-only reviews. Manual only, so invoke it with `/simplify-pass` or `$simplify-pass`.
 disable-model-invocation: true
-metadata:
-  internal: true
 ---
 
-# Simplify
+# Simplify Pass
 
 Run only when the user invokes this skill. Improve clarity and remove needless complexity in the selected code without changing observable behavior.
 

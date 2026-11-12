@@ -1,5 +1,5 @@
 ---
-related: [review, simplify]
+related: [review, simplify-pass]
 ---
 
 ## What it does

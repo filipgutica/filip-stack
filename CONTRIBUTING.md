@@ -15,7 +15,7 @@ pnpm install --frozen-lockfile
 pnpm check
 ```
 
-The check enforces the nine-skill Workflow inventory, declared activation
+The check enforces the five-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
 Field Guide hooks and state, all three plugins' runtime payloads, plugin manifest
 validity, and standalone skill contracts. Prompt routing scenarios are
@@ -29,7 +29,7 @@ evaluation inputs; static contracts do not prove model behavior.
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
-  skills/                  The nine Workflow skills and conditional references
+  skills/                  The five Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
   hooks/                   Guidance injection and capture, ask, or skip lifecycle guidance
@@ -101,9 +101,8 @@ resumes from a checkpoint, the agent rechecks current evidence.
 
 ## Skill budgets
 
-The Workflow skill entrypoints other than Simplify share a 3,500-word limit, and
-all nine share a 4,000-word limit. Each skill entrypoint remains limited to 900
-words.
+The Workflow skill entrypoints share a 3,500-word limit. Each skill entrypoint
+remains limited to 900 words.
 
 Standalone skills load independently, so Workflow's combined budgets do not
 apply to them. Each needs a matching name, a description of at most 80 words, a

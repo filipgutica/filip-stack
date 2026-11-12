@@ -263,10 +263,6 @@ export const loadCatalog = (): {
     "review",
     "test-audit",
     "technical-writing",
-    "simplify",
-    "grill-me",
-    "walkthrough",
-    "checkpoint",
   ];
   catalog.workflow.sort(
     (a, b) => workflowOrder.indexOf(a.name) - workflowOrder.indexOf(b.name),
