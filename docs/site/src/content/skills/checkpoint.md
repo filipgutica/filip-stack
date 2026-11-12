@@ -10,12 +10,12 @@ evidence, so the person resuming can see what still needs proof.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install). Checkpoint runs only when you
-invoke it: `/workflow:checkpoint` in Claude or `$workflow:checkpoint` in Codex.
+Install the skill with the command above. Checkpoint runs only when you
+invoke it: `/checkpoint` in Claude or `$checkpoint` in Codex.
 Use it before pausing work, handing it off, or recording what your checks prove.
 
 The default result stays in conversation. Add a save request for a file, for
-example `/workflow:checkpoint save it, I'll resume tomorrow`. You can supply
+example `/checkpoint save it, I'll resume tomorrow`. You can supply
 a destination; otherwise a new Markdown snapshot goes under
 `~/.engineering-workflow/<project-or-subject>/checkpoints/`. Earlier snapshots
 stay intact.
@@ -30,7 +30,7 @@ state it covered. The agent reuses available evidence instead of rerunning
 expensive checks just for the checkpoint. It flags results made stale by later
 changes. A required check that never ran remains unrun, never passed.
 
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/checkpoint/SKILL.md)
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/checkpoint/SKILL.md)
 has the snapshot format and saving rules.
 
 ## What you get

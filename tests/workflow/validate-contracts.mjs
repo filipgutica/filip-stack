@@ -6,17 +6,12 @@ import { fileURLToPath } from 'node:url'
 import { workflowPluginRoot, workflowSkillRoot } from './plugin-paths.mjs'
 
 const expectedSkills = [
-  'checkpoint',
   'engineering',
-  'grill-me',
   'planning',
   'review',
-  'simplify',
   'technical-writing',
   'test-audit',
-  'walkthrough',
 ]
-const manualSkills = new Set(['checkpoint', 'grill-me', 'simplify', 'walkthrough'])
 const rootPath = fileURLToPath(workflowPluginRoot)
 const skillBodies = new Map()
 const skillReferences = new Map()
@@ -33,7 +28,6 @@ const actualSkills = skillEntries
 assert.deepEqual(actualSkills, expectedSkills, 'Workflow must expose the declared v2 skill inventory')
 
 let totalSkillWords = 0
-let otherSkillWords = 0
 for (const name of expectedSkills) {
   const skillRoot = workflowSkillRoot(name)
   const skill = await readFile(new URL('SKILL.md', skillRoot), 'utf8')
@@ -43,7 +37,6 @@ for (const name of expectedSkills) {
   // The skills-CLI distribution marker is not instruction text, so it stays out of the budget.
   const count = words(skill.replace(/^metadata:\n  internal: true\n/mu, ''))
   totalSkillWords += count
-  if (name !== 'simplify') otherSkillWords += count
   skillBodies.set(name, body)
 
   assert.match(frontmatter, new RegExp(`^name: ${name}$`, 'm'))
@@ -58,16 +51,9 @@ for (const name of expectedSkills) {
 
   const metadata = await readFile(new URL('agents/openai.yaml', skillRoot), 'utf8')
   assert.match(metadata, new RegExp(`\\$workflow:${name.replaceAll('-', '\\-')}`))
-  assert.match(
-    metadata,
-    new RegExp(`allow_implicit_invocation: ${manualSkills.has(name) ? 'false' : 'true'}`),
-  )
-
-  if (manualSkills.has(name)) {
-    assert.match(frontmatter, /^disable-model-invocation: true$/m)
-  } else {
-    assert.doesNotMatch(frontmatter, /^disable-model-invocation: true$/m)
-  }
+  // Workflow skills run inside the autonomous loop, so the host must be able to pick each one.
+  assert.match(metadata, /allow_implicit_invocation: true/u)
+  assert.doesNotMatch(frontmatter, /^disable-model-invocation: true$/m)
 
   const referencesUrl = new URL('references/', skillRoot)
   const referenceEntries = await readdir(referencesUrl, { withFileTypes: true }).catch(() => [])
@@ -86,8 +72,7 @@ for (const name of expectedSkills) {
     assert.ok(await exists(new URL(link, skillRoot)), `${name}/SKILL.md links to missing ${link}`)
   }
 }
-assert.ok(otherSkillWords <= 3500, `Skills other than Simplify exceed 3,500 words (${otherSkillWords})`)
-assert.ok(totalSkillWords <= 4000, `Top-level skills exceed 4,000 words (${totalSkillWords})`)
+assert.ok(totalSkillWords <= 3500, `Top-level skills exceed 3,500 words (${totalSkillWords})`)
 
 // Lock only authority boundaries and the few rules other skills or global
 // guidance depend on; routing behavior is covered by contract scenarios.
@@ -115,25 +100,9 @@ const requiredContracts = {
     /\[delegation and review\]\(\.\.\/engineering\/references\/delegation-and-review\.md\)/u,
     /checks and exact results, and limitations for every review/u,
   ],
-  'grill-me': [
-    /Ask exactly one consequential question/u,
-    /read-only except for an authorized grill log/u,
-  ],
   'technical-writing': [
     /Do not invent behavior, verification, ownership, or rationale/u,
     /code, commands, and identifiers are unchanged/u,
-  ],
-  simplify: [
-    /Run only when the user invokes this skill/u,
-    /three independent, read-only assessments/u,
-    /report the incomplete review and stop before editing/u,
-    /Keep one writer in the main thread/u,
-  ],
-  walkthrough: [
-    /Present one coherent slice at a time/u,
-    /read-only except for an authorized walkthrough log/u,
-    /every changed file is covered/u,
-    /Do not treat silence/u,
   ],
 }
 for (const [name, patterns] of Object.entries(requiredContracts)) {
@@ -143,16 +112,6 @@ for (const [name, patterns] of Object.entries(requiredContracts)) {
 }
 
 const requiredReferenceContracts = {
-  walkthrough: {
-    'presentation-patterns.md': [
-      /Lesson:.*\nExample:.*\nTry it:.*\nObserve:/u,
-      /Agent execution requires existing authorization/u,
-      /Keep expected results separate from observed results/u,
-    ],
-    'walkthrough-log.md': [
-      /Keep exercise outcomes separate from acceptance/u,
-    ],
-  },
   engineering: {
     'delegation-and-review.md': [
       /The main thread owns integration, scope, and acceptance/u,
@@ -225,12 +184,6 @@ for (const scenario of scenarios.scenarios) {
 }
 for (const name of expectedSkills) {
   assert.ok(scenarios.scenarios.some((scenario) => scenario.expectedSkill === name), `${name} has no positive scenario`)
-}
-for (const name of manualSkills) {
-  const matching = scenarios.scenarios.filter((scenario) => scenario.expectedSkill === name)
-  assert.ok(matching.length > 0)
-  assert.ok(matching.every((scenario) => scenario.activation === 'explicit'))
-  assert.ok(scenarios.scenarios.some((scenario) => scenario.id === `${name.replace('-me', '')}-near-miss`))
 }
 assert.ok(
   scenarios.scenarios.some((scenario) => (

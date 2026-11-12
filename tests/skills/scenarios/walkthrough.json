@@ -1,0 +1,16 @@
+{
+  "routing": [
+    {
+      "id": "explicit-walkthrough",
+      "prompt": "Use $walkthrough to explain this branch one slice at a time.",
+      "expectedSkill": "walkthrough",
+      "activation": "explicit",
+      "expectedReference": "presentation-patterns.md"
+    },
+    {
+      "id": "walkthrough-near-miss",
+      "prompt": "Summarize what changed in this file.",
+      "expectedSkill": null
+    }
+  ]
+}

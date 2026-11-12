@@ -17,7 +17,7 @@ const skillNamed = (name: string) => {
 };
 const stages = [
   { label: "Before code", names: ["planning", "grill-me"] },
-  { label: "Change", names: ["engineering", "simplify"] },
+  { label: "Change", names: ["engineering", "simplify-pass"] },
   { label: "Check", names: ["review", "test-audit", "walkthrough"] },
   { label: "Write it up", names: ["technical-writing", "checkpoint"] },
   { label: "Before merge", names: ["sol-loop", "merge-council"] },
@@ -220,7 +220,7 @@ onMounted(() => {
     <ul class="parts">
       <li>
         <a href="#workflow">Workflow</a>
-        <p>Install it to get all nine Workflow skills.</p>
+        <p>Install it to get all {{ catalog.workflow.length }} Workflow skills.</p>
       </li>
       <li>
         <a href="#standalone">Standalone skills</a>
@@ -378,8 +378,10 @@ onMounted(() => {
         <a :href="`/filip-stack/skills/${selected.name}/`">Open skill page</a>
         <p v-html="selected.summaryHtml" />
         <p v-if="selected.manual" class="map-muted">
-          Call it with <code>/workflow:{{ selected.name }}</code> in Claude or
-          <code>$workflow:{{ selected.name }}</code> in Codex.
+          Call it with <code>/{{ selected.group === "Workflow" ? "workflow:" : "" }}{{ selected.name }}</code>
+          in Claude or
+          <code>${{ selected.group === "Workflow" ? "workflow:" : "" }}{{ selected.name }}</code>
+          in Codex.
         </p>
         <p v-else-if="selected.group === 'Standalone'" class="map-muted">
           Not part of the Workflow plugin. Install it on its own; the host picks
@@ -518,8 +520,8 @@ onMounted(() => {
     </UiCard>
     <p class="hint">
       Skills marked manual run only when you call them:
-      <code>/workflow:simplify</code> in Claude,
-      <code>$workflow:simplify</code> in Codex. The others are picked when a
+      <code>/simplify-pass</code> in Claude,
+      <code>$simplify-pass</code> in Codex. The others are picked when a
       request matches.
     </p>
   </section>

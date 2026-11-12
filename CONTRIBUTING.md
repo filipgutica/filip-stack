@@ -15,7 +15,7 @@ pnpm install --frozen-lockfile
 pnpm check
 ```
 
-The check enforces the nine-skill Workflow inventory, declared activation
+The check enforces the five-skill Workflow inventory, declared activation
 policy, context budgets, conditional-reference integrity, the separation of
 Field Guide hooks and state, all three plugins' runtime payloads, plugin manifest
 validity, and standalone skill contracts. Prompt routing scenarios are
@@ -29,7 +29,7 @@ evaluation inputs; static contracts do not prove model behavior.
 plugins/workflow/          Runtime plugin shared by Claude and Codex
   .claude-plugin/          Claude manifest
   .codex-plugin/           Codex manifest
-  skills/                  The nine Workflow skills and conditional references
+  skills/                  The five Workflow skills and conditional references
   THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
 plugins/field-guide/       Optional local-learning plugin
   hooks/                   Guidance injection and capture, ask, or skip lifecycle guidance
@@ -101,9 +101,8 @@ resumes from a checkpoint, the agent rechecks current evidence.
 
 ## Skill budgets
 
-The Workflow skill entrypoints other than Simplify share a 3,500-word limit, and
-all nine share a 4,000-word limit. Each skill entrypoint remains limited to 900
-words.
+The Workflow skill entrypoints share a 3,500-word limit. Each skill entrypoint
+remains limited to 900 words.
 
 Standalone skills load independently, so Workflow's combined budgets do not
 apply to them. Each needs a matching name, a description of at most 80 words, a
@@ -283,13 +282,18 @@ Each routable standalone skill, and Field Guide, has a test file at
 `tests/skills/scenarios/<skill>.json`. `node tests/skills/validate-skills.mjs`
 fails when one is missing.
 
-- `routing`: `{ id, prompt, expectedSkill, alsoAccept? }`. Give at least one
-  prompt that should load the skill and one near miss that should load
-  another skill or none (`expectedSkill: null`). Use `alsoAccept` only when a
-  second skill is also a correct choice.
-- `rules`: optional, and the only section for a manual-only skill. Each
-  scenario has an `id`, a `task`, `options` as `{ key: description }`, and an
-  `accept` list of keys. The prompt holds only that skill's `SKILL.md`.
+- `routing`: `{ id, prompt, expectedSkill, alsoAccept?, expectedReference? }`.
+  Give at least one prompt that should load the skill and one near miss that
+  should load another skill or none (`expectedSkill: null`). Use `alsoAccept`
+  only when a second skill is also a correct choice. `expectedReference` names
+  the reference file the skill's body should send the request to.
+- A manual-only skill needs no file. Its routing scenarios, if any, set
+  `activation: "explicit"` and name the skill in the prompt as `$<skill>`, so
+  they test only `expectedReference`. Add a near miss for a similar request
+  that should load no skill or another one.
+- `rules`: optional. Each scenario has an `id`, a `task`, `options` as
+  `{ key: description }`, and an `accept` list of keys. The prompt holds only
+  that skill's `SKILL.md`.
 
 Run one skill's tests with `pnpm eval:routing --skill <name>` or
 `pnpm eval:skill-rules --skill <name>`. They run without a base, and every
