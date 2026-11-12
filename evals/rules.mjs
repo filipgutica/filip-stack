@@ -71,12 +71,14 @@ export const skillRulesTests = () => {
       .map((test, index) => withRules({ files: [skillFile(skill)], options: rules[index].options })({ ...test, metadata: { ...test.metadata, owner: skill } })))
 }
 
-// Models sometimes echo the option's description, so match on the key prefix.
+// Models sometimes echo the option's description, so match on the key prefix. The
+// longest key matches first, so "designer" is not read as a "design" option.
 export const scoreRule = (output, context) => {
   const reply = parseReply(output)
   const action = String(reply.action ?? '')
+  const keys = context.test.metadata.options.toSorted((a, b) => b.length - a.length)
   const choice = reply.invalid !== undefined
     ? `invalid reply "${reply.invalid}"`
-    : context.test.metadata.options.find((key) => action.startsWith(key)) ?? `unknown action ${JSON.stringify(reply.action)}`
+    : keys.find((key) => action.startsWith(key)) ?? `unknown action ${JSON.stringify(reply.action)}`
   return scoreChoice({ choice, context })
 }

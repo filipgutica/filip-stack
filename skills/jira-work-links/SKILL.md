@@ -4,7 +4,8 @@ description: >-
   Use when creating, correcting, or reviewing Jira links, blockers, dependency
   order, parent or Epic relationships, or Development references. Use also when
   finding pull requests or commits for a Jira issue. Do not use for a simple Jira
-  summary that does not need relationship or development evidence.
+  summary that does not need relationship or development evidence, or to draft
+  tickets from a specification; planning does that.
 ---
 
 # Jira work links
