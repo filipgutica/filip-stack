@@ -1,3 +1,10 @@
+# [5.10.0](https://github.com/filipgutica/filip-stack/compare/v5.9.0...v5.10.0) (2026-11-12)
+
+
+### Features
+
+* **workflow:** run planning and engineering work as review loops ([db011ec](https://github.com/filipgutica/filip-stack/commit/db011ec83c7dbdc0be21f3a18814acf110505cc2))
+
 # [5.9.0](https://github.com/filipgutica/filip-stack/compare/v5.8.0...v5.9.0) (2026-11-12)
 
 
