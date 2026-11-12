@@ -1,3 +1,10 @@
+## [5.11.2](https://github.com/filipgutica/filip-stack/compare/v5.11.1...v5.11.2) (2026-11-12)
+
+
+### Bug Fixes
+
+* **workflow:** tie each engineering task loop to the change steps ([c40b48b](https://github.com/filipgutica/filip-stack/commit/c40b48b21836f668813e823ffbcb6ab814744247))
+
 ## [5.11.1](https://github.com/filipgutica/filip-stack/compare/v5.11.0...v5.11.1) (2026-11-12)
 
 
