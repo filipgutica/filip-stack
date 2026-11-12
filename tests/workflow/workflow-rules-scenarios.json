@@ -108,8 +108,7 @@
       },
       "accept": [
         "review-task-1"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "task-loop-routine",
@@ -120,7 +119,8 @@
         "review-at-end": "start task 2 and have task 1 reviewed with the rest of the PR"
       },
       "accept": [
-        "start-task-2"
+        "start-task-2",
+        "review-at-end"
       ]
     },
     {
@@ -132,8 +132,7 @@
       },
       "accept": [
         "re-review"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "plan-review-clean",
@@ -181,8 +180,7 @@
       },
       "accept": [
         "final-now"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "final-review-not-asked",
