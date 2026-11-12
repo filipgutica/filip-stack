@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { UiCodeBlock, UiAlert } from "@filipgutica/ui";
+import { UiAlert, UiBreadcrumbs, UiCodeBlock } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
 const commands = {
   claude: "claude plugin install field-guide@filip-stack",
@@ -31,6 +31,9 @@ const tables = {
 
 <template>
   <section class="intro" aria-labelledby="title">
+    <UiBreadcrumbs
+      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'Field Guide' }]"
+    />
     <h1 id="title">Field Guide</h1>
     <p class="lede">
       Use the optional Field Guide plugin when you want agents to remember

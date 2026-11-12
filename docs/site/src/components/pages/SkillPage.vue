@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UiBadge, UiCodeBlock } from "@filipgutica/ui";
+import { UiBadge, UiBreadcrumbs, UiCodeBlock } from "@filipgutica/ui";
 import { onMounted, ref } from "vue";
 import SkillList from "../SkillList.vue";
 import type { Catalog, CatalogSkill, SkillContent } from "../../catalog";
@@ -24,14 +24,15 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
 
 <template>
   <section class="intro" aria-labelledby="title">
-    <nav class="breadcrumb" aria-label="Breadcrumb">
-      <a
-        :href="`/filip-stack/#${skill.group === 'Workflow' ? 'workflow' : 'standalone'}`"
-        >{{
-          skill.group === "Workflow" ? "Workflow skills" : "Standalone skills"
-        }}</a
-      >
-    </nav>
+    <UiBreadcrumbs
+      :items="[
+        { label: 'Overview', href: '/filip-stack/' },
+        skill.group === 'Workflow'
+          ? { label: 'Workflow skills', href: '/filip-stack/#workflow' }
+          : { label: 'Standalone skills', href: '/filip-stack/#standalone' },
+        { label: skill.name },
+      ]"
+    />
     <h1 id="title">
       <code>{{ skill.name }}</code>
     </h1>

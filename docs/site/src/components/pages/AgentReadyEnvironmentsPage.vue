@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
-import { UiAlert, UiBadge, UiCodeBlock, UiFigure, UiScore, UiTabs } from "@filipgutica/ui";
+import { UiAlert, UiBadge, UiBreadcrumbs, UiCodeBlock, UiFigure, UiScore, UiTabs } from "@filipgutica/ui";
 import type { Catalog } from "../../catalog";
 import CatchFigure from "../lesson/CatchFigure.vue";
 import PillarSection from "../lesson/PillarSection.vue";
@@ -117,6 +117,9 @@ onMounted(() => {
 
 <template>
   <section class="intro" aria-labelledby="agent-ready-environments">
+    <UiBreadcrumbs
+      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'Agent-ready environments' }]"
+    />
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
       An agent-ready environment lets a coding agent check its own work in

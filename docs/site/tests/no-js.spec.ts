@@ -29,6 +29,12 @@ for (const width of widths)
         "href",
         `/filip-stack/${entry.path}`,
       );
+      // Every page below the home page names its path, ending at the current page.
+      const trail = page.locator('nav[aria-label="Breadcrumb"]');
+      if (entry.path) {
+        await expect(trail.locator('[aria-current="page"]')).toHaveText(entry.title);
+        await expect(trail.locator("a").first()).toHaveAttribute("href", "/filip-stack/");
+      } else await expect(trail).toHaveCount(0);
       expect(
         await page.evaluate(
           () => document.documentElement.scrollWidth <= innerWidth,
