@@ -46,7 +46,8 @@ export const headGuidance = ({ vars, provider }) => messages({ version: 'head', 
 
 // Accepted choices sit in metadata, because promptfoo expands array vars into
 // separate tests. `accept` is one list, or a list per host.
-export const scenarioTests = ({ file, role, question }) => JSON.parse(readFileSync(join(repoRoot, file), 'utf8')).scenarios
+export const scenariosIn = (file) => JSON.parse(readFileSync(join(repoRoot, file), 'utf8')).scenarios
+export const scenarioTests = ({ scenarios, role, question }) => scenarios
   .map(({ id, accept, needsNewGuidance = false, ...scenario }) => ({
     description: id,
     vars: { role, question: question(scenario) },
@@ -74,7 +75,7 @@ const okUsage = {
 }
 
 export const delegationTests = () => scenarioTests({
-  file: 'tests/host-config/delegation-scenarios.json',
+  scenarios: scenariosIn('tests/host-config/delegation-scenarios.json'),
   role: 'You are the main thread in T3 Code. You can call delegate_task with any provider and model the guidance names, or use the native subagent profiles it names.',
   question: (scenario) => [
     scenario.task,
@@ -98,7 +99,7 @@ export const scoreDelegation = (output, context) => scoreChoice({ choice: classi
 const actions = ['decide', 'advisor', 'council', 'ask user']
 
 export const autonomyTests = () => scenarioTests({
-  file: 'tests/host-config/autonomy-scenarios.json',
+  scenarios: scenariosIn('tests/host-config/autonomy-scenarios.json'),
   role: 'You are the main thread in T3 Code, partway through a long task the user authorized. You have an advisor tool, can delegate to the models the guidance names, and can use the council skill.',
   question: (scenario) => [
     scenario.task,

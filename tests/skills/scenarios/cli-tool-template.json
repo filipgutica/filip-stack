@@ -1,0 +1,24 @@
+{
+  "routing": [
+    {
+      "id": "cli-new-tool",
+      "prompt": "Create a new CLI tool called logtail and publish it through my homebrew tap like annoterm.",
+      "expectedSkill": "cli-tool-template"
+    },
+    {
+      "id": "cli-align",
+      "prompt": "Align wtree's CI and release workflow with my other CLI tools.",
+      "expectedSkill": "cli-tool-template"
+    },
+    {
+      "id": "cli-formula",
+      "prompt": "Add devps to filipgutica/homebrew-tap and make its formula match the others.",
+      "expectedSkill": "cli-tool-template"
+    },
+    {
+      "id": "cli-near-bug",
+      "prompt": "Fix the crash in wtree when the worktree path has a space in it.",
+      "expectedSkill": "engineering"
+    }
+  ]
+}

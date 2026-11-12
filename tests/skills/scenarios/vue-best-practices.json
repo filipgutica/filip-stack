@@ -1,0 +1,27 @@
+{
+  "routing": [
+    {
+      "id": "vue-refactor",
+      "prompt": "Refactor UserCard.vue to script setup with TypeScript props.",
+      "expectedSkill": "vue-best-practices"
+    },
+    {
+      "id": "vue-pinia",
+      "prompt": "Add a Pinia store for the cart and use it in the checkout components.",
+      "expectedSkill": "vue-best-practices"
+    },
+    {
+      "id": "vue-review",
+      "prompt": "Review this composable for reactivity bugs.",
+      "expectedSkill": "vue-best-practices",
+      "alsoAccept": [
+        "review"
+      ]
+    },
+    {
+      "id": "vue-near-ux",
+      "prompt": "Critique the hierarchy and copy of the pricing page design.",
+      "expectedSkill": "interface-design"
+    }
+  ]
+}

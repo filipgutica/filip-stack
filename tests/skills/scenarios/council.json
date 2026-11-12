@@ -1,0 +1,64 @@
+{
+  "routing": [
+    {
+      "id": "council-question",
+      "prompt": "Get a council's opinion on whether we should move the job queue from Redis to Postgres.",
+      "expectedSkill": "council"
+    },
+    {
+      "id": "council-plan",
+      "prompt": "Ask several models to independently critique this migration plan and tell me where they disagree.",
+      "expectedSkill": "council"
+    },
+    {
+      "id": "council-design",
+      "prompt": "Convene a council on these two API designs and recommend one.",
+      "expectedSkill": "council"
+    },
+    {
+      "id": "council-near-merge",
+      "prompt": "Run a merge council on PR #77.",
+      "expectedSkill": "merge-council"
+    },
+    {
+      "id": "council-near-review",
+      "prompt": "Review this diff for bugs.",
+      "expectedSkill": "review"
+    }
+  ],
+  "rules": [
+    {
+      "id": "council-nonblocking-pending",
+      "task": "You coordinate a council the user asked for. Three of four members have replied. The user marked the fourth member, Astra, as non-blocking, and it is still running.",
+      "options": {
+        "wait": "wait for Astra before synthesizing",
+        "synthesize": "synthesize now and name Astra as pending"
+      },
+      "accept": [
+        "synthesize"
+      ]
+    },
+    {
+      "id": "council-blocking-pending",
+      "task": "You coordinate a council the user asked for. Three of four members have replied. The fourth member, Astra, is still running, and nobody marked any member as non-blocking.",
+      "options": {
+        "wait": "wait for Astra before synthesizing",
+        "synthesize": "synthesize now and name Astra as pending"
+      },
+      "accept": [
+        "wait"
+      ]
+    },
+    {
+      "id": "council-own-question",
+      "task": "Partway through your own task, you want a council on whether your migration approach is sound. No member lineup or criteria were given to you.",
+      "options": {
+        "design": "choose the members and criteria yourself",
+        "designer": "have a separate designer agent build the council"
+      },
+      "accept": [
+        "designer"
+      ]
+    }
+  ]
+}

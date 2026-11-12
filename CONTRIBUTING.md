@@ -251,17 +251,20 @@ a skill's `SKILL.md` or references change.
 
 [promptfoo](https://www.promptfoo.dev/) is the test framework for guidance.
 A guidance test gives a model a fixed scenario with the guidance in its
-prompt, and checks the choice it states. Each test compares two prompts: the
-guidance at a base ref and the guidance in the working tree.
+prompt, and checks the choice it states. By default a test compares two
+prompts, the guidance at a base ref and the guidance in the working tree, to
+catch a regression from a change. With `--no-base` it checks only the working
+tree, which is how you check the guidance on a new model.
 [evals/README.md](evals/README.md) explains how a run, the rendering, and the
 gate work.
 
 | Command | Guidance under test | Scenarios |
 | --- | --- | --- |
-| `pnpm eval:routing` | Workflow `SKILL.md` descriptions and reference pointers | `tests/workflow/contract-scenarios.json` |
+| `pnpm eval:routing` | Every routable skill's description, and Workflow reference pointers | `tests/workflow/contract-scenarios.json`, `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
+| `pnpm eval:skill-rules` | The choices a standalone skill states at its decision points | `tests/skills/scenarios/<skill>.json` |
 
 ### Add a scenario
 
@@ -271,6 +274,24 @@ a list per host (`claude`, `codex`). Set `needsNewGuidance: true` when the
 change under test is meant to fix the scenario. A Workflow rules scenario also
 lists its `options` as `{ key: description }`; `accept` names keys. Pair each
 new rule with a control scenario where the rule should not apply.
+
+### Test a standalone skill
+
+Each routable standalone skill, and Field Guide, has a test file at
+`tests/skills/scenarios/<skill>.json`. `node tests/skills/validate-skills.mjs`
+fails when one is missing.
+
+- `routing`: `{ id, prompt, expectedSkill, alsoAccept? }`. Give at least one
+  prompt that should load the skill and one near miss that should load
+  another skill or none (`expectedSkill: null`). Use `alsoAccept` only when a
+  second skill is also a correct choice.
+- `rules`: optional, and the only section for a manual-only skill. Each
+  scenario has an `id`, a `task`, `options` as `{ key: description }`, and an
+  `accept` list of keys. The prompt holds only that skill's `SKILL.md`.
+
+Run one skill's tests with `pnpm eval:routing --skill <name>` or
+`pnpm eval:skill-rules --skill <name>`. They run without a base, and every
+attempt must pass.
 
 ### Assert a choice
 
@@ -293,11 +314,24 @@ pnpm eval:view                   # opens saved results in the promptfoo viewer
 (default 3), and `--model <id>` narrows the models in `evals/providers.yaml`.
 The runner needs `CLIPROXY_API_KEY` or `--api-key-file`; ask before a paid run.
 
+In a comparison, routing runs only the steps a change can affect: skill steps
+when a routable skill's name or description changed, and a skill's reference
+steps when its body changed. With no such change it exits 0 without a call.
+
 promptfoo scores each answer alone, so the runner applies the gate after the
 run. It fails when a scenario passes fewer attempts in the working tree than
 at the base, or when a `needsNewGuidance` scenario does not gain and the
-working tree misses an attempt. A provider error stops the run; it never
-counts as a failed attempt.
+working tree misses an attempt. Without a base, it fails when the working
+tree misses any attempt. A provider error stops the run; it never counts as a
+failed attempt.
+
+### Check a new model
+
+1. Add the model to `evals/providers.yaml`.
+2. Run each test with `--no-base --model <id>`, starting with a dry run.
+3. A failing row shows guidance the model reads differently. Change the
+   guidance, then confirm with a normal comparison that the change does not
+   regress the current models.
 
 ### Results
 

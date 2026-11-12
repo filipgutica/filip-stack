@@ -42,3 +42,11 @@ test('provider errors and missing attempts stop the gate instead of counting as 
   assert.throws(() => gate({ results: errored, attempts: 1 }), /errored.*HTTP 500/u)
   assert.throws(() => gate({ results: rows({ passes: { base: [true], 'working tree': [true] } }), attempts: 2 }), /expected 2/u)
 })
+
+test('without a base, a scenario fails when the working tree misses any attempt', () => {
+  const results = rows({ passes: { 'working tree': [true, false] } })
+  const { tables, regressions } = gate({ results, attempts: 2, noBase: true })
+  assert.equal(regressions, 1)
+  assert.deepEqual(tables[0].rows.map(({ base, head }) => [base, head]), [[null, 1]])
+  assert.equal(gate({ results: rows({ passes: { 'working tree': [true, true] } }), attempts: 2, noBase: true }).regressions, 0)
+})

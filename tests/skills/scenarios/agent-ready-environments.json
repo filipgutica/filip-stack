@@ -1,0 +1,29 @@
+{
+  "routing": [
+    {
+      "id": "are-audit-repo",
+      "prompt": "Audit this repository for how well coding agents can verify their own changes without me acting as the test suite.",
+      "expectedSkill": "agent-ready-environments"
+    },
+    {
+      "id": "are-new-project",
+      "prompt": "I'm starting a new TypeScript service. Set it up so agents can check their own work: fast tests, type checks, and clear instructions.",
+      "expectedSkill": "agent-ready-environments"
+    },
+    {
+      "id": "are-model-release",
+      "prompt": "A new model just came out. Re-audit our instruction files, skills, and review gates for what it now gets wrong or no longer needs.",
+      "expectedSkill": "agent-ready-environments"
+    },
+    {
+      "id": "are-near-review",
+      "prompt": "Review this diff for correctness bugs before I merge it.",
+      "expectedSkill": "review"
+    },
+    {
+      "id": "are-near-ui",
+      "prompt": "Check the onboarding flow in the running app before it ships: states, copy, and keyboard access.",
+      "expectedSkill": "interface-design"
+    }
+  ]
+}

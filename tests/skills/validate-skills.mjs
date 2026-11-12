@@ -5,6 +5,7 @@ import { readdir, readFile, stat } from 'node:fs/promises'
 import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { isDevelopmentOnlyPluginPath } from '../../scripts/plugin-payload-policy.mjs'
+import { descriptionOf, frontmatterOf, isManual, parseSkill } from '../../scripts/skill-frontmatter.mjs'
 
 const repoRoot = resolve(dirname(fileURLToPath(import.meta.url)), '../..')
 const standaloneRoot = join(repoRoot, 'skills')
@@ -14,15 +15,7 @@ const words = (content) => content.match(/[\p{L}\p{N}][\p{L}\p{N}'-]*/gu)?.lengt
 const skillDirs = async (root) => (await readdir(root, { withFileTypes: true }).catch(() => []))
   .filter((entry) => entry.isDirectory() && !entry.name.startsWith('.'))
   .map((entry) => join(root, entry.name))
-const frontmatterOf = (skill) => skill.match(/^---\n([\s\S]*?)\n---/u)?.[1] ?? ''
 const isInternal = (frontmatter) => /^metadata:\n(?:[ \t]+.*\n)*?[ \t]+internal:\s*true\s*$/mu.test(`${frontmatter}\n`)
-
-// Supports the single-line and folded (`>-`, `|`) descriptions used in this repository.
-const descriptionOf = (frontmatter) => {
-  const match = `${frontmatter}\n`.match(/^description:[ \t]*(.*)\n((?:[ \t]+.*\n|[ \t]*\n)*)/mu)
-  if (!match) return ''
-  return /^[>|][1-9+-]{0,2}\s*(?:#.*)?$/u.test(match[1]) ? match[2] : match[1]
-}
 
 // Plugin and repository-development skills must not install on their own through the skills CLI.
 const hiddenSkillDirs = [
@@ -94,7 +87,7 @@ for (const dir of standaloneDirs) {
   const metadataPath = join(dir, 'agents/openai.yaml')
   if (await exists(metadataPath)) {
     const metadata = await readFile(metadataPath, 'utf8')
-    const manual = /^disable-model-invocation: true$/mu.test(frontmatter)
+    const manual = isManual(frontmatter)
     const implicit = metadata.match(/allow_implicit_invocation:\s*(true|false)/u)?.[1]
     if (manual) assert.equal(implicit, 'false', `${name} is manual-only, so Codex must not invoke it implicitly`)
     else assert.notEqual(implicit, 'false', `${name} disables implicit invocation only for Codex`)
@@ -104,4 +97,41 @@ for (const dir of standaloneDirs) {
   }
 }
 
-console.log(`Standalone skill contracts passed (${standaloneDirs.length} skills, ${hiddenSkillDirs.length} hidden).`)
+// Every skill a model can route to outside Workflow has a guidance test file: routing
+// scenarios that should and should not load it, and optional rule scenarios.
+const scenariosRoot = join(repoRoot, 'tests/skills/scenarios')
+const readSkillFile = async (dir) => parseSkill(await readFile(join(dir, 'SKILL.md'), 'utf8'))
+const workflowSkills = await Promise.all((await skillDirs(join(repoRoot, 'plugins/workflow/skills'))).map(readSkillFile))
+const ownSkills = await Promise.all([...standaloneDirs, join(repoRoot, 'plugins/field-guide/skills/field-guide')].map(readSkillFile))
+const routable = new Set([...workflowSkills, ...ownSkills].filter((skill) => !skill.manual).map((skill) => skill.name))
+const scenarioFiles = (await readdir(scenariosRoot)).filter((file) => file.endsWith('.json'))
+for (const skill of ownSkills.filter((entry) => !entry.manual)) {
+  assert.ok(scenarioFiles.includes(`${skill.name}.json`), `${skill.name} needs routing scenarios in tests/skills/scenarios/${skill.name}.json`)
+}
+const ids = new Set(JSON.parse(await readFile(join(repoRoot, 'tests/workflow/contract-scenarios.json'), 'utf8')).scenarios.map(({ id }) => id))
+for (const file of scenarioFiles) {
+  const owner = file.replace(/\.json$/u, '')
+  const skill = ownSkills.find(({ name }) => name === owner)
+  assert.ok(skill, `tests/skills/scenarios/${file} names no standalone or Field Guide skill`)
+  const { routing = [], rules = [] } = JSON.parse(await readFile(join(scenariosRoot, file), 'utf8'))
+  for (const { id, prompt, expectedSkill, alsoAccept = [] } of routing) {
+    assert.ok(id && prompt, `${file} has a routing scenario without an id or prompt`)
+    for (const name of [expectedSkill, ...alsoAccept].filter((name) => name !== null)) {
+      assert.ok(routable.has(name), `${file} ${id} names ${name}, which no model can route to`)
+    }
+  }
+  if (!skill.manual) {
+    assert.ok(routing.some(({ expectedSkill }) => expectedSkill === owner), `${file} needs a scenario that loads ${owner}`)
+    assert.ok(routing.some(({ expectedSkill }) => expectedSkill !== owner), `${file} needs a near-miss that does not load ${owner}`)
+  }
+  for (const { id, task, options, accept } of rules) {
+    assert.ok(id && task && options, `${file} has a rule scenario without an id, task, or options`)
+    assert.ok(accept.every((key) => key in options), `${file} ${id} accepts an option it does not list`)
+  }
+  for (const { id } of [...routing, ...rules]) {
+    assert.ok(!ids.has(id), `scenario id ${id} in ${file} is not unique`)
+    ids.add(id)
+  }
+}
+
+console.log(`Standalone skill contracts passed (${standaloneDirs.length} skills, ${hiddenSkillDirs.length} hidden, ${scenarioFiles.length} scenario files).`)

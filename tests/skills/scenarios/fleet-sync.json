@@ -1,0 +1,24 @@
+{
+  "routing": [
+    {
+      "id": "fleet-update",
+      "prompt": "Sync the filip-stack baseline to all my linked T3 Code machines.",
+      "expectedSkill": "fleet-sync"
+    },
+    {
+      "id": "fleet-check",
+      "prompt": "Which of my machines are out of sync with the shared skills and guidance?",
+      "expectedSkill": "fleet-sync"
+    },
+    {
+      "id": "fleet-exception",
+      "prompt": "Update the fleet, but keep the work laptop on its own design-system pin.",
+      "expectedSkill": "fleet-sync"
+    },
+    {
+      "id": "fleet-near-cli",
+      "prompt": "Create a new CLI tool and publish it through my homebrew tap.",
+      "expectedSkill": "cli-tool-template"
+    }
+  ]
+}
