@@ -32,6 +32,13 @@ shows it is wrong or its contract changed on purpose. New coverage must catch
 a regression existing tests miss; a bug regression test must fail on the old
 code first.
 
+Work that spans several tasks or PRs runs as a loop for each task: plan,
+implement, verify, review, and fix, until the task's completion signal holds.
+Each PR is a review boundary: before it reaches you, an agent that did not
+write it reviews the whole PR. A final review you asked for, such as a
+[sol-loop](../sol-loop/) or [full-send](../full-send/), runs on each finished
+PR, not on each task.
+
 After editing, the agent reruns the affected checks and inspects the diff for
 accidental changes, duplication, and dead code. Substantial coverage changes
 get a [test-audit](../test-audit/). Risky work, such as migrations or security

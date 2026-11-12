@@ -97,6 +97,79 @@
       "accept": [
         "land"
       ]
+    },
+    {
+      "id": "plan-review-revised",
+      "task": "You are writing a specification for moving session storage from cookies to a server-side store. You asked a separate reviewer to critique your draft. It returned two action-required findings: the rollback path is missing, and the migration of existing sessions is unstated. You verified both and revised the specification to cover them.",
+      "options": {
+        "present": "return the specification to the user now",
+        "re-review": "send the revised specification back to the reviewer for another round"
+      },
+      "accept": [
+        "re-review"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "plan-review-clean",
+      "task": "You are writing a specification for moving session storage from cookies to a server-side store. You asked a separate reviewer to critique your draft. It returned no action-required findings and one optional note about the wording of a heading, which you fixed.",
+      "options": {
+        "present": "return the specification to the user now",
+        "re-review": "send the revised specification back to the reviewer for another round"
+      },
+      "accept": [
+        "present"
+      ]
+    },
+    {
+      "id": "pr-boundary-review",
+      "task": "You are implementing an approved three-PR plan. PR 1 changes how the session token is refreshed and retried. Its four tasks each passed their checks, and you inspected each task diff yourself. Nobody else has reviewed it. The user asked for no specific final review.",
+      "options": {
+        "open-pr": "open PR 1 and hand it to the user",
+        "review-first": "run an independent review of the whole PR 1 diff, resolve its findings, then open PR 1",
+        "next-pr": "start PR 2 and review everything at the end"
+      },
+      "accept": [
+        "review-first"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "pr-boundary-routine",
+      "task": "You are implementing an approved three-PR plan. PR 1 fixes one misspelled word in the README. Its checks pass, and you inspected the one-line diff yourself. The user asked for no specific final review.",
+      "options": {
+        "open-pr": "open PR 1 and hand it to the user",
+        "review-first": "run an independent review of the whole PR 1 diff, resolve its findings, then open PR 1",
+        "next-pr": "start PR 2 and review everything at the end"
+      },
+      "accept": [
+        "open-pr"
+      ]
+    },
+    {
+      "id": "final-review-per-pr",
+      "task": "The user asked you to \"full send\" an approved three-PR plan. PR 1 has finished its loop: its tasks passed their checks, and an independent reviewer approved the whole PR 1 diff after you fixed its findings.",
+      "options": {
+        "final-now": "run the full-send review on PR 1 now, before starting PR 2",
+        "final-at-end": "start PR 2 and run the full-send review once all three PRs are done",
+        "open-pr": "open PR 1 without a final review and start PR 2"
+      },
+      "accept": [
+        "final-now"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "final-review-not-asked",
+      "task": "The user asked you to implement an approved three-PR plan and open each PR for them. They asked for no final review. PR 1 has finished its loop: its tasks passed their checks, and an independent reviewer approved the whole PR 1 diff after you fixed its findings.",
+      "options": {
+        "final-now": "run the full-send review on PR 1 now, before starting PR 2",
+        "final-at-end": "start PR 2 and run the full-send review once all three PRs are done",
+        "open-pr": "open PR 1 without a final review and start PR 2"
+      },
+      "accept": [
+        "open-pr"
+      ]
     }
   ]
 }
