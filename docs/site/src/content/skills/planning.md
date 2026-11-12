@@ -42,7 +42,9 @@ observable completion signal.
 
 Before returning the artifact, the agent checks whether an engineer could
 follow it literally without guessing. A separate reviewer critiques a
-consequential or ambiguous result first.
+consequential or ambiguous result, and the agent revises it until a round
+finds nothing that needs action, for up to three rounds. A council or
+other final review you asked for runs on the finished artifact.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
 defines the four modes and links their output formats. Your format and the

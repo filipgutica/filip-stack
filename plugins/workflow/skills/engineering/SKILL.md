@@ -21,6 +21,14 @@ Deliver the smallest authorized change and prove the requested contract.
 8. Rerun the same test and only the affected existing checks. Repeat or broaden verification when the changed code, an observed failure, or an unresolved risk justifies it.
 9. Inspect the final diff and affected callers for accidental changes, duplication, dead code, redundant state or branches, needless indirection, and test value. Simplify changed code if useful, preserving behavior; rerun affected checks after edits. Stop when the contract passes and required checks and review gates pass.
 
+## Work in loops
+
+Split work that spans several tasks or PRs into tasks, each with a completion signal. Run each task as a loop: plan it, implement it, verify it, review it at the level its risk needs, and fix agreed findings. Repeat until its signal holds. Do not start a task that depends on an unverified one.
+
+Each PR is a review boundary. Before a PR goes to the user or to a final review, run the independent review that [delegation and review](references/delegation-and-review.md) describes on the whole PR diff and resolve its findings, even when every task passed its checks. A PR that is one routine, bounded change needs only focused checks and diff inspection.
+
+When the user asked for a final review, such as `sol-loop`, `full-send`, `full-stop`, or a council, run it on each finished PR after that PR's loop, before the next PR starts. Do not run it on each task, and do not add one the user did not ask for.
+
 ## Keep the design small
 
 Prefer existing local code, standard library or native framework features, and installed dependencies before bespoke code. Choose the simplest maintainable option matching the contract and repository conventions.
