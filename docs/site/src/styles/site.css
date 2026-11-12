@@ -180,11 +180,14 @@ button.map-ring-step { cursor: pointer; }
   .skill-rows li { grid-template-columns: minmax(0, 1fr) auto; }
   .skill-rows p { grid-column: 1 / -1; grid-row: 2; }
 }
+/* DESIGN.md steps documentation section gaps down on phones (640px); the library's shell steps them at 800px. */
 @media (max-width: 800px) {
+  .fg-site-docs > main { gap: var(--space-12); }
   .parts { grid-template-columns: minmax(0, 1fr); }
   .swatches { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 640px) {
+  .fg-site-docs > main { gap: var(--space-8); }
   .pager { grid-template-columns: minmax(0, 1fr); }
   .pager a[rel='next'] { grid-column: auto; }
 }
