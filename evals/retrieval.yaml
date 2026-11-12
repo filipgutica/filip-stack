@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Retrieval rules - concrete queries, one rephrase, rereading sources after compaction
+prompts:
+  - id: file://retrieval.mjs:baseRetrieval
+    label: base
+  - id: file://retrieval.mjs:headRetrieval
+    label: working tree
+providers: file://providers.yaml
+tests: file://retrieval.mjs:retrievalTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://retrieval.mjs:scoreRetrieval

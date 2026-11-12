@@ -41,13 +41,13 @@ Run commands through the bundled launcher in this skill's base directory. The la
 
 Without injected Field Guide context, retrieve once for meaningful planning, implementation, debugging, or review after the repository and concrete task are known.
 
-Injected guidance is already in context; do not retrieve it again. Retrieve when the task touches an indexed subject that was not injected. Use the task language as the query. Add a subject only when it is a known, useful ranking hint:
+Injected guidance is already in context; do not retrieve it again. Retrieve when the task touches an indexed subject that was not injected. Use the task language as the query, naming the concrete thing it implies: "confirm first" implies `confirm dialog`. Add a subject only when it is a known, useful ranking hint:
 
 ```text
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --query <concrete-task-context> [--subject <subject-hint>]
 ```
 
-An exact subject can be used without a query when the desired subject key is already known. Do not guess a subject or broaden a query merely to force a result. No relevant result means continue from live authoritative sources without Field Guide guidance.
+An exact subject can be used without a query when the desired subject key is already known. When a result is empty or unrelated, rephrase once with a more concrete noun or synonym, then try an exact subject from the injected index. Do not guess a subject or broaden a query merely to force a result. An unrelated result counts as no result. No relevant result means continue from live authoritative sources without Field Guide guidance.
 
 Use only the bounded result. Normal retrieval contains at most five active records and no evidence. Expand evidence only to resolve a provenance or conflict question:
 
@@ -55,7 +55,7 @@ Use only the bounded result. Normal retrieval contains at most five active recor
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --evidence-for <guidance-id>
 ```
 
-Retrieve again when the task scope changes materially, the user corrects the approach, or guidance conflicts. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work.
+Retrieve again when the task scope changes materially, the user corrects the approach, guidance conflicts, or you would cite after compaction guidance that the hooks did not inject again. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work.
 
 Apply guidance in this order:
 
