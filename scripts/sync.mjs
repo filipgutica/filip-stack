@@ -372,17 +372,37 @@ const acquireLock = () => {
   writeFileSync(join(lock, 'owner.json'), JSON.stringify({ pid: process.pid, startedAt: report.startedAt }))
 }
 
+const savedConfigPath = () => join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'fleet.json')
+
+// A refresh with --config saves that policy as this machine's own, so a later
+// plain sync uses the same policy. A differing saved copy is backed up first,
+// and a symlinked one is left alone because another tool owns its source.
+const savePolicy = ({ source, digest }) => {
+  const path = savedConfigPath()
+  if (resolve(source) === resolve(path)) return { path, state: 'current' }
+  if (lstatSync(path, { throwIfNoEntry: false })?.isSymbolicLink()) return { path, state: 'symlink' }
+  const content = readFileSync(source)
+  if (createHash('sha256').update(content).digest('hex') !== digest) throw new Error(`fleet config changed while loading: ${source}`)
+  const previous = existsSync(path) ? readFileSync(path) : null
+  if (previous?.equals(content)) return { path, state: 'current' }
+  const backup = previous && `${path}.bak-${new Date().toISOString().replace(/[-:]|\.\d+/gu, '')}`
+  if (backup) writeFileSync(backup, previous)
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, content)
+  return { path, state: 'saved', backup }
+}
+
 const configure = (options) => {
-  const path = resolve(options.config || join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'fleet.json'))
+  const path = resolve(options.config || savedConfigPath())
   if (options.config && !existsSync(path)) throw new Error(`fleet config does not exist: ${path}`)
   policy = loadFleetConfig({ path, environmentId: options['environment-id'], host: hostname(), repository })
-  return policy
+  return options.config && !dryRun ? { ...policy, savedPolicy: savePolicy({ source: path, digest: policy.digest }) } : policy
 }
 
 const main = () => {
   const { values } = parseArgs({ options: { 'dry-run': { type: 'boolean' }, json: { type: 'boolean' }, help: { type: 'boolean' }, config: { type: 'string' }, 'environment-id': { type: 'string' } } })
   if (values.help) {
-    process.stdout.write('Usage: filip-stack sync [--dry-run] [--json] [--config <file>] [--environment-id <id>]\n\nRefresh filip-stack guidance, skills, and plugins, including the configured fleet baseline.\n--dry-run previews local state without fetching or writing.\n--json prints component results as JSON.\n--config selects a fleet config (default: ~/.config/filip-stack/fleet.json).\n--environment-id selects this machine explicitly; otherwise match its hostname.\n')
+    process.stdout.write('Usage: filip-stack sync [--dry-run] [--json] [--config <file>] [--environment-id <id>]\n\nRefresh filip-stack guidance, skills, and plugins, including the configured fleet baseline.\n--dry-run previews local state without fetching or writing.\n--json prints component results as JSON.\n--config applies a fleet config and saves it as the default, ~/.config/filip-stack/fleet.json.\n--environment-id selects this machine explicitly; otherwise match its hostname.\n')
     return
   }
   if (!dryRun) acquireLock()

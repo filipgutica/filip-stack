@@ -23,7 +23,8 @@ machine. Valid grants and the saved selection are reused on later runs.
 ## How it works
 
 Each machine runs `filip-stack sync --json` with the shared policy and its
-environment ID. Missing baseline skills and plugins are installed; existing
+environment ID, and saves that policy as its own. A differing saved policy is
+backed up first. Missing baseline skills and plugins are installed; existing
 extras remain. Per-machine agent targets and skill/plugin exclusions preserve
 exceptions. Existing scopes, enabled states, and explicit pins remain intact.
 Missing clients and local edits appear as incomplete components.

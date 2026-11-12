@@ -40,7 +40,7 @@ Outside T3, use only a user-configured remote execution method. A fleet roster d
 
 Use a clean checkout tracking published `main`, with no local commits. Prefer the canonical checkout when it qualifies. When it is on a development branch or has local work, leave it alone and use an independent clone at `$XDG_CACHE_HOME/filip-stack/fleet-source` (default `~/.cache/filip-stack/fleet-source`). Verify an existing clone's repository identity, branch, cleanliness, and upstream; preserve collisions and edits. Create a missing clone from `https://github.com/filipgutica/filip-stack.git` without `--depth`. Use the installed command's `--repo` option to select it. An inspection uses an existing checkout; report missing source as bootstrap required instead of cloning or fetching.
 
-Send the exact policy bytes to each child as data, with its environment ID. A temporary config is sufficient for `--config`; do not replace a host's existing policy blindly. Seed a missing local policy, or refresh an unchanged managed copy only when its digest matches the last non-preview report's successful `configuration` component. Preserve any other differing local policy as a configuration conflict. Validate incoming policy before storing it. For inspection, keep policy inputs temporary and leave local configuration untouched.
+Send the exact policy bytes to each child as data, with its environment ID, for a temporary `--config` file. A refresh saves that policy as the machine's own after validating it, so every machine keeps the shared policy. The updater backs up a differing saved copy beside it as `fleet.json.bak-<UTC time>`, and leaves a symlinked saved copy to the tool that owns its source. For inspection, `--dry-run` leaves local configuration untouched.
 
 Run `filip-stack --repo <checkout> sync --config <policy-file> --environment-id <id> --json`. For inspection, add `--dry-run` and report planned results as a plan. Record the policy digest and effective profile from each result.
 
@@ -57,7 +57,7 @@ The updater installs missing baseline items and refreshes existing filip-stack i
 Require exit status and the complete JSON result from every machine. Read a delegated result before accepting its claims. Check:
 
 - Source commit and every component's state; a failed component cannot become an overall success.
-- One shared policy digest, with each machine's declared exceptions applied.
+- One shared policy digest, with each machine's declared exceptions applied. The `configuration` component's `savedPolicy` state is `saved` (report its backup), `current`, or `symlink` (the saved copy stays stale until its owner updates it).
 - Guidance applied commit and target count, skills and their host assignments, plugin versions and verified payloads.
 - Explicitly pinned, disabled, missing, blocked, and unreachable components.
 - Preservation of machine-local rules and unrelated installations.

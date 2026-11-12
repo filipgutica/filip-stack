@@ -2,7 +2,7 @@ import assert from 'node:assert/strict'
 import { spawnSync } from 'node:child_process'
 import { chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { basename, dirname, join } from 'node:path'
 import test from 'node:test'
 import { buildPackage, seedCache, writePin } from './design-system-fixture.mjs'
 
@@ -388,6 +388,42 @@ test('a pinned marketplace blocks missing baseline plugins without changing the 
   assert.equal(report.components.find(({ name }) => name === 'codex').state, 'current')
   assert.equal(readFileSync(path, 'utf8'), pin)
   assert.equal(existsSync(join(context.home, '.claude/plugins/cache/filip-stack/second')), false)
+})
+
+test('a refresh with --config saves the shared policy, backing up a differing saved copy', (t) => {
+  const context = fixture(t)
+  installedTools(context)
+  const saved = fleetBaseline(context, { label: 'stale' })
+  const stale = readFileSync(saved, 'utf8')
+  const shared = join(context.root, 'shared.json')
+  put(shared, JSON.stringify({ version: 1, environments: [{ environmentId: 'this-machine', label: 'fixture', agents: ['codex'] }] }))
+  success(context.sync('--dry-run', '--config', shared, '--environment-id', 'this-machine'))
+  assert.equal(readFileSync(saved, 'utf8'), stale)
+
+  const first = JSON.parse(success(context.sync('--config', shared, '--environment-id', 'this-machine')))
+  const { savedPolicy } = first.components.find(({ name }) => name === 'configuration')
+  assert.equal(savedPolicy.state, 'saved')
+  assert.equal(readFileSync(saved, 'utf8'), readFileSync(shared, 'utf8'))
+  assert.equal(readFileSync(savedPolicy.backup, 'utf8'), stale)
+
+  const second = JSON.parse(success(context.sync('--config', shared, '--environment-id', 'this-machine')))
+  assert.equal(second.components.find(({ name }) => name === 'configuration').savedPolicy.state, 'current')
+  assert.deepEqual(readdirSync(dirname(saved)).filter((name) => name.includes('.bak-')), [basename(savedPolicy.backup)])
+})
+
+test('a refresh with --config leaves a symlinked saved policy to the tool that owns it', (t) => {
+  const context = fixture(t)
+  installedTools(context)
+  const source = join(context.root, 'dotfiles/fleet.json')
+  put(source, JSON.stringify({ version: 1, environments: [{ environmentId: 'this-machine', label: 'dotfiles' }] }))
+  const saved = join(context.home, '.config/filip-stack/fleet.json')
+  mkdirSync(dirname(saved), { recursive: true })
+  symlinkSync(source, saved)
+  const shared = join(context.root, 'shared.json')
+  put(shared, JSON.stringify({ version: 1, environments: [{ environmentId: 'this-machine', label: 'fixture' }] }))
+  const report = JSON.parse(success(context.sync('--config', shared, '--environment-id', 'this-machine')))
+  assert.equal(report.components.find(({ name }) => name === 'configuration').savedPolicy.state, 'symlink')
+  assert.match(readFileSync(source, 'utf8'), /dotfiles/)
 })
 
 test('invalid baseline names fail before touching guidance or installers', (t) => {
