@@ -90,14 +90,19 @@ const testsFor = ({ id, prompt, activation, expectedSkill, alsoAccept = [], expe
 }
 
 // In a comparison, a skill step runs only when the catalog changed, and a reference
-// step only when its skill's body changed. A scenario whose skill the base cannot
-// offer must pass in the working tree. Without a base, every selected test runs.
+// step only when its skill's body changed. A step the base cannot offer, a skill
+// missing from its catalog or a body missing from its files, must pass in the
+// working tree. Without a base, every selected test runs.
 const compare = (tests) => {
   const { catalog, bodies } = routingChanges()
-  const atBase = new Set(skillsAt('base').filter((skill) => !skill.manual).map((skill) => skill.name))
+  const base = skillsAt('base')
+  const atBase = {
+    skill: new Set(base.filter((skill) => !skill.manual).map((skill) => skill.name)),
+    reference: new Set(base.map((skill) => skill.name)),
+  }
   return tests
     .filter(({ vars, metadata }) => (vars.step === 'skill' ? catalog : bodies.includes(metadata.expectedSkill)))
-    .map((test) => ({ ...test, metadata: { ...test.metadata, needsNewGuidance: test.metadata.expectedSkill !== null && !atBase.has(test.metadata.expectedSkill) } }))
+    .map((test) => ({ ...test, metadata: { ...test.metadata, needsNewGuidance: test.metadata.expectedSkill !== null && !atBase[test.vars.step].has(test.metadata.expectedSkill) } }))
 }
 
 export const routingTests = () => {

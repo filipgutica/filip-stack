@@ -12,7 +12,7 @@
     },
     {
       "id": "sol-near-review",
-      "prompt": "Review this diff for bugs.",
+      "prompt": "Do a read-only review of the changes on this branch before I open the PR.",
       "expectedSkill": "review"
     }
   ]

@@ -22,11 +22,8 @@
     },
     {
       "id": "jira-near-tickets",
-      "prompt": "Draft a parent issue and child stories from this approved specification, with verified blocker relationships and source links.",
-      "expectedSkill": "planning",
-      "alsoAccept": [
-        "jira-work-links"
-      ]
+      "prompt": "Write an engineering ticket for adding retry logic to the uploader.",
+      "expectedSkill": "planning"
     }
   ]
 }

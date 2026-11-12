@@ -12,7 +12,7 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | `pnpm eval:delegation` | `delegation.yaml` | `host-guidance.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | `autonomy.yaml` | `host-guidance.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/autonomy-scenarios.json` |
 | `pnpm eval:workflow-rules` | `workflow-rules.yaml` | `rules.mjs` | The Workflow files that hold the rules under test | `tests/workflow/workflow-rules-scenarios.json` |
-| `pnpm eval:skill-rules` | `skill-rules.yaml` | `rules.mjs` | The `SKILL.md` of the standalone skill that owns the scenario | The `rules` lists in `tests/skills/scenarios/<skill>.json` |
+| `pnpm eval:skill-rules` | `skill-rules.yaml` | `rules.mjs` | The `SKILL.md` of the standalone skill, or Field Guide, that owns the scenario | The `rules` lists in `tests/skills/scenarios/<skill>.json` |
 
 ## Files
 

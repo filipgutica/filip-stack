@@ -2,13 +2,13 @@
 // gives the model the files that hold the rules under test, read at EVAL_BASE_REF
 // (`baseRules`) or from the working tree (`headRules`):
 // - workflow-rules: the Workflow files that hold rules no other test covers.
-// - skill-rules: the SKILL.md of the standalone skill that owns each scenario.
+// - skill-rules: the SKILL.md of the standalone skill, or Field Guide, that owns each scenario.
 import { execFileSync } from 'node:child_process'
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 import { scenarioTests, scenariosIn, scoreChoice } from './host-guidance.mjs'
 import { parseReply } from './reply.mjs'
-import { evalOptions, readSkillScenarios } from './skill-scenarios.mjs'
+import { evalOptions, readSkillScenarios, skillFile } from './skill-scenarios.mjs'
 
 const repoRoot = new URL('../', import.meta.url).pathname
 const workflowScenarioFile = 'tests/workflow/workflow-rules-scenarios.json'
@@ -68,7 +68,7 @@ export const skillRulesTests = () => {
   return readSkillScenarios()
     .filter(({ skill }) => !only || skill === only)
     .flatMap(({ skill, rules }) => scenarioTests({ scenarios: rules, role: `You are a coding agent running the ${skill} skill below.`, question })
-      .map((test, index) => withRules({ files: [`skills/${skill}/SKILL.md`], options: rules[index].options })({ ...test, metadata: { ...test.metadata, owner: skill } })))
+      .map((test, index) => withRules({ files: [skillFile(skill)], options: rules[index].options })({ ...test, metadata: { ...test.metadata, owner: skill } })))
 }
 
 // Models sometimes echo the option's description, so match on the key prefix.

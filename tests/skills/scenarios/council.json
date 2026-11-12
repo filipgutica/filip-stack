@@ -17,7 +17,7 @@
     },
     {
       "id": "council-near-merge",
-      "prompt": "Run a merge council on PR #77.",
+      "prompt": "Convene a merge council to decide whether PR #412 can merge.",
       "expectedSkill": "merge-council"
     },
     {
