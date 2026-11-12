@@ -99,6 +99,31 @@
       ]
     },
     {
+      "id": "task-loop-review",
+      "task": "You are implementing an approved plan. Task 1 adds a database migration that backfills a new non-null column on the orders table. Its tests pass, and you inspected the diff yourself. Task 2 builds the order export on that column.",
+      "options": {
+        "start-task-2": "start task 2 now",
+        "review-task-1": "have a separate reviewer check the task 1 diff, fix agreed findings, then start task 2",
+        "review-at-end": "start task 2 and have task 1 reviewed with the rest of the PR"
+      },
+      "accept": [
+        "review-task-1"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "task-loop-routine",
+      "task": "You are implementing an approved plan. Task 1 renames a private helper function in one module and updates its two callers. Its tests pass, and you inspected the diff yourself. Task 2 builds on the renamed helper.",
+      "options": {
+        "start-task-2": "start task 2 now",
+        "review-task-1": "have a separate reviewer check the task 1 diff, fix agreed findings, then start task 2",
+        "review-at-end": "start task 2 and have task 1 reviewed with the rest of the PR"
+      },
+      "accept": [
+        "start-task-2"
+      ]
+    },
+    {
       "id": "plan-review-revised",
       "task": "You are writing a specification for moving session storage from cookies to a server-side store. You asked a separate reviewer to critique your draft. It returned two action-required findings: the rollback path is missing, and the migration of existing sessions is unstated. You verified both and revised the specification to cover them.",
       "options": {
@@ -123,7 +148,7 @@
     },
     {
       "id": "pr-boundary-review",
-      "task": "You are implementing an approved three-PR plan. PR 1 changes how the session token is refreshed and retried. Its four tasks each passed their checks, and you inspected each task diff yourself. Nobody else has reviewed it. The user asked for no specific final review.",
+      "task": "You are implementing an approved three-PR plan. PR 1 has three routine tasks: add a timeout field to the config schema, read it in the HTTP client, and show it on the settings page. Each task passed its checks, and you inspected each task diff yourself. Nobody else has reviewed the combined PR 1 diff. The user asked for no specific final review.",
       "options": {
         "open-pr": "open PR 1 and hand it to the user",
         "review-first": "run an independent review of the whole PR 1 diff, resolve its findings, then open PR 1",

@@ -35,7 +35,8 @@ code first.
 Work that spans several tasks or PRs runs as a loop for each task: plan,
 implement, verify, review, and fix, until the task's completion signal holds.
 Each PR is a review boundary: before it reaches you, an agent that did not
-write it reviews the whole PR. A final review you asked for, such as a
+write it reviews the whole PR. A PR that is one routine, bounded change needs
+only focused checks. A final review you asked for, such as a
 [sol-loop](../sol-loop/) or [full-send](../full-send/), runs on each finished
 PR, not on each task.
 
