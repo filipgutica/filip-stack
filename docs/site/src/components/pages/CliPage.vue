@@ -329,7 +329,7 @@ const tables = {
   </section>
 
   <nav class="pager" aria-label="Pages">
-    <a href="/filip-stack/"><span>Previous</span>Overview</a>
-    <a href="/filip-stack/design-language/"><span>Next</span>Design language</a>
+    <a rel="prev" href="/filip-stack/"><span>Previous</span>Overview</a>
+    <a rel="next" href="/filip-stack/design-language/"><span>Next</span>Design language</a>
   </nav>
 </template>

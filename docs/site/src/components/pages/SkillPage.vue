@@ -85,6 +85,7 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
   </section>
   <nav class="pager" aria-label="Skills">
     <a
+      rel="prev"
       :href="
         previous
           ? `/filip-stack/skills/${previous.name}/`
@@ -92,7 +93,7 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
       "
       ><span>Previous</span>{{ previous?.name ?? "Field Guide" }}</a
     >
-    <a v-if="next" :href="`/filip-stack/skills/${next.name}/`"
+    <a v-if="next" rel="next" :href="`/filip-stack/skills/${next.name}/`"
       ><span>Next</span>{{ next.name }}</a
     >
   </nav>

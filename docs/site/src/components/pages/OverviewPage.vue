@@ -1,6 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from "vue";
-import { UiCodeBlock, UiCard, UiBadge, UiToggleButton } from "@filipgutica/ui";
+import {
+  UiBadge,
+  UiButton,
+  UiCard,
+  UiCodeBlock,
+  UiSegmentedControl,
+} from "@filipgutica/ui";
 import SkillList from "../SkillList.vue";
 import type { Catalog } from "../../catalog";
 const { catalog } = defineProps<{ catalog: Catalog }>();
@@ -29,33 +35,90 @@ const stages = [
     standalone: skills.every(({ group }) => group === "Standalone"),
   };
 });
-// A named reference must exist in that skill, so a renamed file fails the build.
-const requests = [
-  { text: "Compare options for the auth refactor", skill: "planning" },
+// Each example is one request per turn: the host picks a skill again for every
+// request. A named reference must exist in its skill, so a renamed file fails the build.
+type Turn = {
+  request: string;
+  skill: string;
+  note: string;
+  /** The engineering step to show; turns for other skills keep the current one. */
+  step?: number;
+  /** Undefined when the reference depends on what the request asks for. */
+  references?: string[];
+};
+const examples: { value: string; label: string; turns: Turn[] }[] = [
   {
-    text: "Fix the failing test",
-    skill: "engineering",
-    reference: "testing-and-debugging.md",
+    value: "feature",
+    label: "Feature",
+    turns: [
+      {
+        request: "Spec rate limiting for the public API.",
+        skill: "planning",
+        note: "You start without code. planning writes the spec from repository evidence.",
+      },
+      {
+        request: "Implement the rate-limiting spec.",
+        skill: "engineering",
+        step: 1,
+        references: ["testing-and-debugging.md", "delegation-and-review.md"],
+        note: "A new request, so the host picks again. engineering runs its loop until the checks pass.",
+      },
+      {
+        request: "Review the branch.",
+        skill: "review",
+        references: [],
+        note: "review checks the exact change and reports only the findings it can back with evidence.",
+      },
+      {
+        request: "Write the PR description.",
+        skill: "technical-writing",
+        references: ["pull-requests.md"],
+        note: "technical-writing loads its pull request reference and nothing else.",
+      },
+      {
+        request: "Run a sol loop on the PR.",
+        skill: "sol-loop",
+        references: [],
+        note: "sol-loop is a standalone skill. Install it on its own.",
+      },
+    ],
   },
-  { text: "Review this diff", skill: "review" },
   {
-    text: "Edit the README section",
-    skill: "technical-writing",
-    reference: "technical-prose.md",
+    value: "bug",
+    label: "Bug fix",
+    turns: [
+      {
+        request: "Fix the failing test.",
+        skill: "engineering",
+        step: 1,
+        references: ["testing-and-debugging.md"],
+        note: "One request, one skill. engineering reproduces the failure before it changes code.",
+      },
+    ],
   },
-  { text: "Run a sol loop on this change", skill: "sol-loop" },
-].map((request) => {
-  if (
-    request.reference &&
-    !skillNamed(request.skill).references.includes(request.reference)
-  )
-    throw new Error(
-      `${request.skill} has no reference named ${request.reference}`,
-    );
-  return request;
-});
+  {
+    value: "review",
+    label: "Review",
+    turns: [
+      {
+        request: "Review this diff.",
+        skill: "review",
+        references: [],
+        note: "One request, one skill. review loads no reference.",
+      },
+    ],
+  },
+];
+for (const { turns } of examples)
+  for (const { skill, references = [] } of turns)
+    for (const reference of references)
+      if (!skillNamed(skill).references.includes(reference))
+        throw new Error(`${skill} has no reference named ${reference}`);
+const exampleItems = examples.map(({ value, label }) => ({ value, label }));
 // The ring places the engineering steps clockwise from the top, 60 degrees apart.
+// The SVG draws only the arcs; each step is HTML placed over it by percentage.
 const ring = { x: 160, y: 110, radius: 70 };
+const viewBox = { x: -24, width: 368, height: 222 };
 const pointAt = (degrees: number) => {
   const radians = ((degrees - 90) * Math.PI) / 180;
   return {
@@ -96,15 +159,13 @@ const steps = [
   },
 ].map((step, index) => {
   const { x, y } = pointAt(index * 60);
-  const side = [0, 3].includes(index) ? 0 : index < 3 ? 1 : -1;
   return {
     ...step,
-    x,
-    y,
-    label: {
-      x: x + side * 17.4,
-      y: side ? y + 4 : index === 0 ? y - 20 : y + 27,
-      anchor: ["end", "middle", "start"][side + 1],
+    // The side the label sits on, away from the ring's centre.
+    side: ["top", "right", "right", "bottom", "left", "left"][index],
+    position: {
+      left: `${((x - viewBox.x) / viewBox.width) * 100}%`,
+      top: `${(y / viewBox.height) * 100}%`,
     },
   };
 });
@@ -122,44 +183,39 @@ const commands = {
     "npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y",
 };
 const enhanced = ref(false);
-const selectedRequest = ref<number | undefined>(1);
-const selectedSkill = ref("engineering");
-const selectedStep = ref(2);
+const exampleValue = ref<string | undefined>("feature");
+const turnIndex = ref(0);
+const selectedSkill = ref("planning");
+const selectedStep = ref(0);
 const selected = computed(() => skillNamed(selectedSkill.value));
-const loadedReference = computed(() =>
-  selectedRequest.value === undefined
-    ? "Depends on the request"
-    : (requests[selectedRequest.value]!.reference ?? "No reference loaded"),
+const example = computed(() =>
+  examples.find(({ value }) => value === exampleValue.value),
 );
-const pickRequest = (index: number) => {
-  selectedRequest.value = index;
-  selectedSkill.value = requests[index]!.skill;
+const turn = computed(() => example.value?.turns[turnIndex.value]);
+const turnLabel = computed(() => {
+  if (!example.value) return "No example selected";
+  const { length } = example.value.turns;
+  return length > 1 ? `Turn ${turnIndex.value + 1} of ${length}` : "One request";
+});
+const references = computed(() => turn.value?.references);
+const showTurn = (index: number) => {
+  const next = example.value?.turns[index];
+  if (!next) return;
+  turnIndex.value = index;
+  selectedSkill.value = next.skill;
+  if (next.step !== undefined) selectedStep.value = next.step;
 };
+const pickExample = (value: string) => {
+  exampleValue.value = value;
+  showTurn(0);
+};
+// Picking a skill directly leaves the example, so no turn claims it.
 const pickSkill = (name: string) => {
-  selectedRequest.value = undefined;
+  exampleValue.value = undefined;
   selectedSkill.value = name;
-};
-// Hover and focus areas pad each step's measured number and label. The ring is
-// hidden on narrow maps, so measure again once it can be seen.
-const stepNodes: SVGGElement[] = [];
-const hitBoxes = ref<{ x: number; y: number; width: number; height: number }[]>(
-  [],
-);
-const measureSteps = () => {
-  if (hitBoxes.value.some(({ width }) => width > 14)) return;
-  hitBoxes.value = stepNodes.map((node) => {
-    const box = node.getBBox();
-    return {
-      x: box.x - 7,
-      y: box.y - 6,
-      width: box.width + 14,
-      height: box.height + 12,
-    };
-  });
 };
 onMounted(() => {
   enhanced.value = true;
-  measureSteps();
 });
 </script>
 
@@ -307,67 +363,95 @@ onMounted(() => {
       which loads only the guidance that task needs.
     </p>
     <UiCard class="workflow-map" :class="{ 'is-enhanced': enhanced }">
-      <div v-if="enhanced" class="map-requests">
-        <p id="map-requests-label" class="map-label">
-          Try a request, or click any skill or step
-        </p>
-        <div role="group" aria-labelledby="map-requests-label">
-          <UiToggleButton
-            v-for="(request, index) in requests"
-            :key="request.text"
+      <div v-if="enhanced" class="map-region map-examples">
+        <UiSegmentedControl
+          label="Example request"
+          :items="exampleItems"
+          :model-value="exampleValue"
+          @update:model-value="pickExample"
+        />
+        <div class="map-turn" aria-live="polite">
+          <span class="map-label">{{ turnLabel }}</span>
+          <p v-if="turn" class="map-turn__request">“{{ turn.request }}”</p>
+          <p class="map-turn__note">
+            {{
+              turn?.note ??
+              "Pick an example above to follow a request through the stages."
+            }}
+          </p>
+        </div>
+        <div v-if="example && example.turns.length > 1" class="map-turn-nav">
+          <UiButton
+            variant="secondary"
             size="sm"
-            :pressed="selectedRequest === index"
-            @update:pressed="pickRequest(index)"
+            :disabled="turnIndex === 0"
+            @click="showTurn(turnIndex - 1)"
+            >Back</UiButton
           >
-            {{ request.text }}
-          </UiToggleButton>
+          <UiButton
+            variant="secondary"
+            size="sm"
+            :disabled="turnIndex === example.turns.length - 1"
+            @click="showTurn(turnIndex + 1)"
+            >Next turn</UiButton
+          >
         </div>
       </div>
-      <ol class="map-stages" aria-label="Skills by stage">
-        <li
-          v-for="stage in stages"
-          :key="stage.label"
-          :class="{
-            'is-current':
-              enhanced &&
-              stage.skills.some(({ name }) => name === selectedSkill),
-            'is-standalone': stage.standalone,
-          }"
+      <div class="map-region">
+        <p id="map-stages-label" class="map-label">
+          Skills by stage{{ enhanced ? ". Pick one to see what it does." : "" }}
+        </p>
+        <ol
+          class="map-stages"
+          :role="enhanced ? 'radiogroup' : undefined"
+          aria-labelledby="map-stages-label"
         >
-          <h3>
-            {{ stage.label }}<small v-if="stage.standalone">Standalone</small>
-          </h3>
-          <ul>
-            <li v-for="skill in stage.skills" :key="skill.name">
-              <UiToggleButton
-                v-if="enhanced"
-                class="map-skill"
-                size="sm"
-                :pressed="selectedSkill === skill.name"
-                @update:pressed="pickSkill(skill.name)"
-              >
-                <span class="map-skill-label">
+          <li
+            v-for="(stage, index) in stages"
+            :key="stage.label"
+            :class="{
+              'is-current':
+                enhanced &&
+                stage.skills.some(({ name }) => name === selectedSkill),
+            }"
+          >
+            <span class="map-stage-mark" aria-hidden="true">{{
+              index + 1
+            }}</span>
+            <h3>
+              {{ stage.label }}<small v-if="stage.standalone">Standalone</small>
+            </h3>
+            <ul>
+              <li v-for="skill in stage.skills" :key="skill.name">
+                <label v-if="enhanced" class="map-skill">
+                  <input
+                    type="radio"
+                    name="map-skill"
+                    :value="skill.name"
+                    :checked="selectedSkill === skill.name"
+                    @change="pickSkill(skill.name)"
+                  />
                   <code>{{ skill.name }}</code>
                   <UiBadge v-if="skill.manual">Manual</UiBadge>
-                </span>
-              </UiToggleButton>
-              <a
-                v-else
-                class="fg-button map-skill"
-                data-variant="secondary"
-                data-size="sm"
-                :href="`/filip-stack/skills/${skill.name}/`"
-              >
-                <span class="map-skill-label">
+                </label>
+                <a
+                  v-else
+                  class="map-skill"
+                  :href="`/filip-stack/skills/${skill.name}/`"
+                >
                   <code>{{ skill.name }}</code>
                   <UiBadge v-if="skill.manual">Manual</UiBadge>
-                </span>
-              </a>
-            </li>
-          </ul>
-        </li>
-      </ol>
-      <div v-if="enhanced" class="map-skill-detail" aria-live="polite">
+                </a>
+              </li>
+            </ul>
+          </li>
+        </ol>
+      </div>
+      <div
+        v-if="enhanced"
+        class="map-region map-skill-detail"
+        aria-live="polite"
+      >
         <h3>
           <code>{{ selected.name }}</code>
           <UiBadge>{{ selected.group }}</UiBadge>
@@ -394,106 +478,102 @@ onMounted(() => {
       <div class="map-panels">
         <div>
           <h3 class="map-label">The loop inside <code>engineering</code></h3>
-          <svg
+          <div
             class="map-ring"
-            viewBox="-24 0 368 222"
-            :role="enhanced ? 'group' : 'img'"
-            aria-label="engineering repeats six steps. A failed check returns work to the step it affects."
-            @pointerenter="measureSteps"
-            @focusin="measureSteps"
+            :role="enhanced ? 'group' : undefined"
+            :aria-label="
+              enhanced
+                ? 'engineering repeats six steps. A failed check returns work to the step it affects.'
+                : undefined
+            "
+            :aria-hidden="enhanced ? undefined : 'true'"
           >
-            <defs>
-              <marker
-                id="map-ring-arrow"
-                viewBox="0 0 10 10"
-                refX="7"
-                refY="5"
-                markerWidth="5"
-                markerHeight="5"
-                orient="auto"
-              >
-                <path class="map-ring__arrow" d="M0 0L10 5L0 10z" />
-              </marker>
-              <marker
-                id="map-ring-retry"
-                viewBox="0 0 10 10"
-                refX="7"
-                refY="5"
-                markerWidth="6"
-                markerHeight="6"
-                orient="auto"
-              >
-                <path class="map-ring__retry-arrow" d="M0 0L10 5L0 10z" />
-              </marker>
-            </defs>
-            <path
-              v-for="arc in arcs"
-              :key="arc"
-              class="map-ring__arc"
-              :d="arc"
-              marker-end="url(#map-ring-arrow)"
-            />
-            <!-- From step 4 back to step 3: a failed check retries the change. -->
-            <path
-              class="map-ring__retry"
-              d="M152 166Q170 134 206 142"
-              marker-end="url(#map-ring-retry)"
-            />
-            <text class="map-ring__retry-label" x="150" y="146">fails</text>
-            <g
+            <svg viewBox="-24 0 368 222" aria-hidden="true">
+              <defs>
+                <marker
+                  id="map-ring-arrow"
+                  viewBox="0 0 10 10"
+                  refX="7"
+                  refY="5"
+                  markerWidth="5"
+                  markerHeight="5"
+                  orient="auto"
+                >
+                  <path class="map-ring__arrow" d="M0 0L10 5L0 10z" />
+                </marker>
+                <marker
+                  id="map-ring-retry"
+                  viewBox="0 0 10 10"
+                  refX="7"
+                  refY="5"
+                  markerWidth="6"
+                  markerHeight="6"
+                  orient="auto"
+                >
+                  <path class="map-ring__retry-arrow" d="M0 0L10 5L0 10z" />
+                </marker>
+              </defs>
+              <path
+                v-for="arc in arcs"
+                :key="arc"
+                class="map-ring__arc"
+                :d="arc"
+                marker-end="url(#map-ring-arrow)"
+              />
+              <!-- From step 4 back to step 3: a failed check retries the change. -->
+              <path
+                class="map-ring__retry"
+                d="M152 166Q170 134 206 142"
+                marker-end="url(#map-ring-retry)"
+              />
+            </svg>
+            <p class="map-ring__center">
+              <strong>engineering</strong><span>until checks pass</span>
+            </p>
+            <span class="map-ring__fails" aria-hidden="true">fails</span>
+            <component
+              :is="enhanced ? 'button' : 'span'"
               v-for="(step, index) in steps"
               :key="step.name"
-              :ref="
-                (node) => {
-                  if (node) stepNodes[index] = node as SVGGElement;
-                }
-              "
-              class="map-ring__step"
-              :class="{ 'is-current': enhanced && selectedStep === index }"
-              :role="enhanced ? 'button' : undefined"
-              :tabindex="enhanced ? 0 : undefined"
+              class="map-ring-step"
+              :type="enhanced ? 'button' : undefined"
+              :data-side="step.side"
+              :style="step.position"
               :aria-pressed="enhanced ? selectedStep === index : undefined"
               :aria-label="
                 enhanced ? `Step ${index + 1}: ${step.name}` : undefined
               "
               @click="selectedStep = index"
-              @keydown.enter.prevent="selectedStep = index"
-              @keydown.space.prevent="selectedStep = index"
             >
-              <rect
-                v-if="hitBoxes[index]"
-                class="map-ring__hit"
-                v-bind="hitBoxes[index]"
-                rx="3"
-              />
-              <circle :cx="step.x" :cy="step.y" r="12" />
-              <text class="map-ring__number" :x="step.x" :y="step.y + 4">
-                {{ index + 1 }}
-              </text>
-              <text
-                class="map-ring__label"
-                :x="step.label.x"
-                :y="step.label.y"
-                :text-anchor="step.label.anchor"
+              <span class="map-step-number">{{ index + 1 }}</span>
+              <span class="map-ring-step__label">{{ step.name }}</span>
+            </component>
+          </div>
+          <!-- Without JavaScript, and on phones where the ring has no room, the steps are a list. -->
+          <ol class="map-steps">
+            <li v-for="(step, index) in steps" :key="step.name">
+              <button
+                v-if="enhanced"
+                type="button"
+                :aria-pressed="selectedStep === index"
+                :aria-label="`Step ${index + 1}: ${step.name}`"
+                @click="selectedStep = index"
               >
-                {{ step.name }}
-              </text>
-            </g>
-            <text class="map-ring__name" x="160" y="106">engineering</text>
-            <text class="map-ring__sub" x="160" y="120">until checks pass</text>
-          </svg>
+                <span class="map-step-number">{{ index + 1 }}</span
+                >{{ step.name }}
+              </button>
+              <template v-else>
+                <strong>{{ step.name }}</strong>
+                <span>{{ step.detail }}</span>
+              </template>
+            </li>
+          </ol>
           <p v-if="enhanced" class="map-step-detail" aria-live="polite">
             <strong
               >{{ selectedStep + 1 }}. {{ steps[selectedStep]!.name }}</strong
             >
             <span>{{ steps[selectedStep]!.detail }}</span>
           </p>
-          <ol class="map-steps">
-            <li v-for="step in steps" :key="step.name">
-              <strong>{{ step.name }}</strong>
-              <span>{{ step.detail }}</span>
-            </li>
-          </ol>
           <p class="map-muted">
             A failed check sends work back only to the step it affects. Stop
             conditions end repeated retries.
@@ -501,20 +581,32 @@ onMounted(() => {
         </div>
         <div>
           <h3 class="map-label">What the host loads</h3>
-          <div class="map-load">
-            <strong>Skill names and descriptions</strong>
-            <span>Always loaded, except for manual skills. The host uses these to choose.</span>
-            <div class="map-load">
-              <strong><code>{{ selectedSkill }}</code> SKILL.md</strong>
-              <span>The rules for the selected skill.</span>
-              <div class="map-load">
-                <strong
-                  ><code>{{ loadedReference }}</code></strong
-                >
-                <span>A reference loads only when the task needs it.</span>
-              </div>
-            </div>
-          </div>
+          <ol class="map-load">
+            <li>
+              <strong>Skill names and descriptions</strong>
+              <span
+                >Always loaded, except for manual skills. The host uses these
+                to choose.</span
+              >
+              <ol>
+                <li>
+                  <code>{{ selectedSkill }}/SKILL.md</code>
+                  <span>The rules for the selected skill.</span>
+                  <ol>
+                    <li v-for="reference in references" :key="reference">
+                      <code>references/{{ reference }}</code>
+                      <span>Loads only when the task needs it.</span>
+                    </li>
+                    <li v-if="!references?.length" class="map-load__none">
+                      {{
+                        references ? "No reference loaded" : "Depends on the request"
+                      }}
+                    </li>
+                  </ol>
+                </li>
+              </ol>
+            </li>
+          </ol>
         </div>
       </div>
     </UiCard>
