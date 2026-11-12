@@ -44,9 +44,9 @@ const groups = [
 
 <template>
   <a class="fg-site-skip" href="#main">Skip to content</a>
-  <div class="page">
+  <!-- The library's docs shell: header, rail, main, and footer are direct children. -->
+  <div class="fg-site-docs">
     <UiSiteHeader
-      class="page-header"
       project="filip-stack"
       :links="[
         { label: 'GitHub', href: repository },
@@ -54,27 +54,25 @@ const groups = [
         { label: 'Changelog', href: `${repository}/blob/main/CHANGELOG.md` },
       ]"
     />
-    <div class="layout">
-      <UiSiteNav label="Documentation" :groups="groups" />
-      <main id="main" class="fg-site-prose">
-        <SkillPage
-          v-if="skill && content"
-          :skill="skill"
-          :content="content"
-          :catalog="catalog"
-        />
-        <CliPage v-else-if="page === '/filip-stack/cli/'" />
-        <DesignLanguagePage
-          v-else-if="page === '/filip-stack/design-language/'"
-        />
-        <FieldGuidePage v-else-if="page === '/filip-stack/field-guide/'" />
-        <AgentReadyEnvironmentsPage
-          v-else-if="page === '/filip-stack/agent-ready-environments/'"
-          :catalog="catalog"
-        />
-        <OverviewPage v-else :catalog="catalog" />
-      </main>
-    </div>
+    <UiSiteNav label="Documentation" :groups="groups" />
+    <main id="main" class="fg-site-prose">
+      <SkillPage
+        v-if="skill && content"
+        :skill="skill"
+        :content="content"
+        :catalog="catalog"
+      />
+      <CliPage v-else-if="page === '/filip-stack/cli/'" />
+      <DesignLanguagePage
+        v-else-if="page === '/filip-stack/design-language/'"
+      />
+      <FieldGuidePage v-else-if="page === '/filip-stack/field-guide/'" />
+      <AgentReadyEnvironmentsPage
+        v-else-if="page === '/filip-stack/agent-ready-environments/'"
+        :catalog="catalog"
+      />
+      <OverviewPage v-else :catalog="catalog" />
+    </main>
     <footer class="fg-site-footer">
       <a href="https://github.com/filipgutica">Built by Filip Gutica</a>
       <nav aria-label="Project links">
