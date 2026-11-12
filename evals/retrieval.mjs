@@ -1,19 +1,22 @@
 // Prompt functions, tests, and assertion for the retrieval eval. Each prompt gives
-// the model the global guidance and the Field Guide skill, which hold the retrieval
-// and citation rules under test.
+// the model its host's rendered global guidance and the Field Guide skill, which
+// hold the retrieval and citation rules under test. The raw core.md is not used:
+// its {{include:...}} placeholders break promptfoo's template rendering.
+import { renderGuidance } from './host-guidance.mjs'
 import { rulesEval } from './rules.mjs'
 
-export const {
-  prepare: prepareRetrieval,
-  base: baseRetrieval,
-  head: headRetrieval,
-  tests: retrievalTests,
-  score: scoreRetrieval,
-} = rulesEval({
-  ruleFiles: [
-    'host-config/guidance/core.md',
-    'plugins/field-guide/skills/field-guide/SKILL.md',
-  ],
+const fieldGuide = rulesEval({
+  ruleFiles: ['plugins/field-guide/skills/field-guide/SKILL.md'],
   scenarioFile: 'tests/host-config/retrieval-scenarios.json',
   role: 'You are a coding agent that follows the guidance below. The Field Guide plugin is installed.',
 })
+
+const withHostGuidance = (version, prompt) => ({ vars, provider }) => {
+  const [system, user] = prompt({ vars })
+  return [{ ...system, content: `${renderGuidance(version)[provider.label]}\n\n${system.content}` }, user]
+}
+
+export const prepareRetrieval = () => Boolean(fieldGuide.prepare() && renderGuidance('base') && renderGuidance('head'))
+export const baseRetrieval = withHostGuidance('base', fieldGuide.base)
+export const headRetrieval = withHostGuidance('head', fieldGuide.head)
+export const { tests: retrievalTests, score: scoreRetrieval } = fieldGuide
