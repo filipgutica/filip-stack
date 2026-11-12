@@ -260,6 +260,7 @@ guidance at a base ref and the guidance in the working tree.
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
+| `pnpm eval:hill-climb` | `hill-climb` rules: score checks, locked files, holdout | `tests/skills/hill-climb-scenarios.json` |
 
 ### Add a scenario
 
