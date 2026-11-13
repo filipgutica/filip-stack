@@ -55,9 +55,11 @@ When a turn ends during such a wait, even because the harness requires a final r
 
 Do not include the footer in progress updates or delegate reports. Omit it from pure Q&A replies when no work is in flight.
 
-The footer contains a brief recap, a table, a **Decided for you** list when it has entries, and a **Waiting on you** list. Build the table from live checks, not memory.
+When the host can rename this thread, such as T3 Code's `t3_thread_update`, keep its title a short description of what the thread is for. At a handoff, rename it only when the title does not describe that purpose, such as a vague generated title, or when the work has changed or broadened the purpose enough that the old title misleads. The footer carries progress, so the title stays free of status.
 
-Start with a recap of two to four bullets: what the work achieved so far and any decisions, caveats, or results from earlier messages that still matter. Do not repeat the table.
+The footer contains a goal line, a brief recap, a table, a **Decided for you** list when it has entries, and a **Waiting on you** list. Build the table from live checks, not memory.
+
+Start with one line that gives the thread's overall goal, from my current ask, and the progress toward it, such as `**Goal:** Ship the export fix · **Progress:** 2 of 3 PRs merged`. Then a recap of two to four bullets: what the work achieved so far and any decisions, caveats, or results from earlier messages that still matter. Do not repeat the table.
 
 | Item | State | Next step |
 | --- | --- | --- |

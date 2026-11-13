@@ -154,6 +154,7 @@ Independent skills install one at a time with the
 | --- | --- |
 | `agent-ready-environments` | Audits or sets up repositories and agent guidance so agents can verify their work. |
 | `babysit-pr` | Monitors a PR through CI and automated review, fixing verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `catch-up` | Recaps a thread's goal, progress, and next step in four lines when you return to it. |
 | `checkpoint` | Captures current work, evidence, and next actions for a pause or handoff. |
 | `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
 | `council` | Gathers independent model opinions and synthesizes advice on a question or artifact. Adapted from [tstack](https://github.com/t3dotgg/tstack). |

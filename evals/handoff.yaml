@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Handoff rules - footer goal line, thread title
+prompts:
+  - id: file://host-guidance.mjs:baseGuidance
+    label: base
+  - id: file://host-guidance.mjs:headGuidance
+    label: working tree
+providers: file://providers.yaml
+tests: file://handoff.mjs:handoffTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://rules.mjs:scoreRule

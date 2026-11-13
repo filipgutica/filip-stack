@@ -1,0 +1,7 @@
+interface:
+  display_name: "Catch-up"
+  short_description: "Recap this thread's goal, progress, and next step"
+  default_prompt: "Use $catch-up to remind me where this thread stands."
+
+policy:
+  allow_implicit_invocation: false
