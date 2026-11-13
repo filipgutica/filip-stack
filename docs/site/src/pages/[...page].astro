@@ -22,7 +22,7 @@ export function getStaticPaths() {
   if (!lessonSkill) throw new Error('The agent-ready environments lesson needs its skill.');
   assertLessonReferences(lessonSkill.references);
   return [
-    ...[undefined, 'cli', 'design-language', 'field-guide', 'agent-ready-environments'].map((page) => ({ params: { page }, props: { catalog } })),
+    ...[undefined, 'cli', 'design-system', 'field-guide', 'agent-ready-environments'].map((page) => ({ params: { page }, props: { catalog } })),
     ...[...catalog.workflow, ...catalog.standalone].map((skill) => ({
       params: { page: `skills/${skill.name}` }, props: { catalog, skill, content: contents[skill.name] },
     })),
@@ -30,7 +30,7 @@ export function getStaticPaths() {
 }
 const { catalog, skill, content } = Astro.props;
 const page = Astro.url.pathname;
-const title = skill?.name ?? ({ cli: 'filip-stack CLI', 'design-language': 'Design language', 'field-guide': 'Field Guide', 'agent-ready-environments': 'Agent-ready environments' }[Astro.params.page ?? ''] ?? 'Skills and setup for Claude and Codex');
+const title = skill?.name ?? ({ cli: 'filip-stack CLI', 'design-system': 'Design system', 'field-guide': 'Field Guide', 'agent-ready-environments': 'Agent-ready environments' }[Astro.params.page ?? ''] ?? 'Skills and setup for Claude and Codex');
 const description = skill ? skill.summaryHtml.replace(/<[^>]+>/g, '') : 'Workflow skills, standalone skills, optional local memory, and shared host guidance for Claude Code and Codex.';
 const canonical = new URL(page, Astro.site).href;
 const noScriptDarkCss = `@media (prefers-color-scheme: dark) { :root:not(.dark) { ${darkTokens} } }`;

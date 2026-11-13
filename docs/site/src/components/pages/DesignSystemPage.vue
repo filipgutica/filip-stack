@@ -61,9 +61,9 @@ const tables = {
 <template>
   <section class="intro" aria-labelledby="title">
     <UiBreadcrumbs
-      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'Design language' }]"
+      :items="[{ label: 'Overview', href: '/filip-stack/' }, { label: 'Design system' }]"
     />
-    <h1 id="title">Design language</h1>
+    <h1 id="title">Design system</h1>
     <p class="lede">
       The framework-agnostic foundation for every interface Filip builds.
       Its tokens, components, and rules are plain HTML and CSS: the UI library
@@ -72,7 +72,7 @@ const tables = {
     </p>
     <UiAlert tone="info">
       <p>
-        This design language is published as <code>filipgutica/design-system</code>.
+        This design system is published as <code>filipgutica/design-system</code>.
         It is the default for UX and visual work, unless you ask for another or
         the repository has its own. Browse it on the
         <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
@@ -81,7 +81,7 @@ const tables = {
     <dl class="fg-site-facts">
       <div>
         <dt>Installed to</dt>
-        <dd><code>~/design-language</code></dd>
+        <dd><code>~/design-system</code></dd>
       </div>
       <div>
         <dt>Installed by</dt>
@@ -143,7 +143,7 @@ const tables = {
     <div class="prose">
       <p>
         The shared guidance tells agents to read
-        <code>~/design-language/DESIGN.md</code> before UX or visual work.
+        <code>~/design-system/DESIGN.md</code> before UX or visual work.
         For interaction, flows, states, interface copy, and accessibility, they also use
         the <a href="/filip-stack/skills/interface-design/">interface-design</a>
         skill. <code>DESIGN.md</code> owns the look;
@@ -198,7 +198,7 @@ const tables = {
     <h2 id="reuse">Reuse it in a new project</h2>
     <div class="prose">
       <p>
-        The language has two layers. The core covers tokens, quiet depth,
+        The design system has two layers. The core covers tokens, quiet depth,
         controls and their states, focus, motion, and accessibility, and a new
         project adopts it as is. The identity layer is the personal sites'
         terminal look: the <code>~/name</code> header, mono headings, and

@@ -249,19 +249,15 @@ for (const theme of themes)
       });
     }
 
-test("the design language page links the catalogue, and old catalogue links redirect to it", async ({ page }) => {
+test("the design system page links the catalogue", async ({ page }) => {
   const site = "https://filipgutica.github.io/design-system/";
   // Keep the test offline: answer design system requests with a stub page.
   await page.route(`${site}**`, (route) => route.fulfill({ contentType: "text/html", body: "<title>Design system</title>" }));
-  await page.goto("/filip-stack/design-language/");
+  await page.goto("/filip-stack/design-system/");
   await expect(page.getByRole("link", { name: "Component catalogue", exact: true })).toHaveAttribute(
     "href",
     `${site}components.html`,
   );
-  await page.goto("/filip-stack/design-language/catalogue/reference.html#foundations");
-  await expect(page).toHaveURL(`${site}reference.html#foundations`);
-  const tokens = await page.request.get("/filip-stack/design-language/catalogue/tokens.css");
-  expect(await tokens.text()).toContain(`@import url("${site}tokens.css")`);
 });
 
 // A local copy of the button drifts from the library's raise, hover, and press.

@@ -49,7 +49,7 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
-  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-language', file)), content)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-system', file)), content)
   const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
   assert.deepEqual(manifest.designSystem, { version: '1.0.0', integrity: designSystem.pin.integrity })
 

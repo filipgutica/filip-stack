@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Pins the @filipgutica/design-system version that host config installs as ~/design-language.
+// Pins the @filipgutica/design-system version that host config installs as ~/design-system.
 //   pin-design-system.mjs <version>  writes host-config/design-system.json from the npm registry
 //   pin-design-system.mjs --check    downloads the pinned tarball and verifies its integrity
 import { createHash } from 'node:crypto'

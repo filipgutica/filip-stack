@@ -16,7 +16,7 @@ overview and lists every skill.
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
 | [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
-| [Host config](#host-config) | Global guidance, agents, styles, and design language | Homebrew CLI with a source checkout |
+| [Host config](#host-config) | Global guidance, agents, styles, and design system | Homebrew CLI with a source checkout |
 
 ## Set up a machine
 
@@ -233,7 +233,7 @@ plugins.
     "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
   }
   ```
-- the `~/design-language` files the guidance refers to, installed from the
+- the `~/design-system` files the guidance refers to, installed from the
   pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
   package in `host-config/design-system.json`; filip-stack uses it as the default
   design system for UX and visual work, unless you ask for another or the
@@ -304,7 +304,7 @@ visible in the result. See
 [Fleet Sync](https://filipgutica.github.io/filip-stack/skills/fleet-sync/).
 
 `apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,
-and `~/design-language`. It writes the shared guidance into a marked block in
+and `~/design-system`. It writes the shared guidance into a marked block in
 `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such as
 the ctx7 block or machine-local notes, stays as it is, and the shared guidance
 tells agents that it overrides the block where they conflict. Apply removes a

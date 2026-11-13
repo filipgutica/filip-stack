@@ -71,7 +71,7 @@ const tables = {
     {
       command: "host-config/design-system.json",
       description:
-        '<code>~/design-language</code>, from the pinned <code>@filipgutica/design-system</code> package. Apply downloads it once and caches it in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-language/">Design language</a>.',
+        '<code>~/design-system</code>, from the pinned <code>@filipgutica/design-system</code> package. Apply downloads it once and caches it in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-system/">Design system</a>.',
     },
   ],
 };
@@ -85,7 +85,7 @@ const tables = {
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
       Use the CLI to set up or update a machine's global guidance, agent
-      profiles, output styles, and design language.
+      profiles, output styles, and design system.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -333,6 +333,6 @@ const tables = {
 
   <nav class="pager" aria-label="Pages">
     <a rel="prev" href="/filip-stack/"><span>Previous</span>Overview</a>
-    <a rel="next" href="/filip-stack/design-language/"><span>Next</span>Design language</a>
+    <a rel="next" href="/filip-stack/design-system/"><span>Next</span>Design system</a>
   </nav>
 </template>
