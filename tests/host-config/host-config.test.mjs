@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -131,10 +131,26 @@ test('apply keeps text outside the guidance block and refuses local edits inside
   assert.match(refused.stdout, /^-## Local evidence$/m)
   assert.match(read(path), /## Local evidence/)
 
+  // A private file keeps its permissions in the backup, whatever the umask.
+  chmodSync(path, 0o600)
   run({ home, command: 'apply', args: ['--force'] })
   assert.match(read(`${path}.bak`), /## Local evidence/)
+  assert.equal(statSync(`${path}.bak`).mode & 0o777, 0o600)
   assert.doesNotMatch(read(path), /## Local evidence/)
   assert.match(read(path), /^Local preface\./)
+})
+
+test('apply --force never writes a backup through a symlink at the backup path', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-backup-link-'))
+  run({ home, command: 'apply' })
+  const path = join(home, '.codex/AGENTS.md')
+  writeFileSync(path, read(path).replace('## Evidence', '## Local evidence'))
+  const outside = join(home, 'outside.md')
+  symlinkSync(outside, `${path}.bak`)
+  run({ home, command: 'apply', args: ['--force'] })
+  assert.equal(existsSync(outside), false)
+  assert.equal(lstatSync(`${path}.bak`).isSymbolicLink(), true)
+  assert.match(read(`${path}.bak.1`), /## Local evidence/)
 })
 
 // Only design-system files refuse symlinks; a guidance file linked from a dotfile manager is written through the link.

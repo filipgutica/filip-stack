@@ -2,7 +2,7 @@
 // Applies host-config/ to the Claude, Codex, and shared agent directories in a home directory.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { constants, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -287,14 +287,14 @@ const writeManifest = ({ home, commit, designSystem, files }) => {
   writeFileSync(path, `${JSON.stringify({ commit, designSystem, files }, null, 2)}\n`)
 }
 
-// Writes the first free name of <path>.bak, <path>.bak.1, ... The wx flag never replaces an
-// existing backup and never follows a symlink at the backup path.
+// Copies to the first free name of <path>.bak, <path>.bak.1, ... COPYFILE_EXCL never replaces an
+// existing backup and never follows a symlink at the backup path, and the copy keeps the file's
+// permissions, so a private file's backup stays private.
 const backUp = (path) => {
-  const bytes = readFileSync(path)
   for (let index = 0; ; index += 1) {
     const backup = index === 0 ? `${path}.bak` : `${path}.bak.${index}`
     try {
-      writeFileSync(backup, bytes, { flag: 'wx' })
+      copyFileSync(path, backup, constants.COPYFILE_EXCL)
     } catch (error) {
       if (error.code === 'EEXIST') continue
       throw error
