@@ -1,3 +1,16 @@
+# [5.13.0](https://github.com/filipgutica/filip-stack/compare/v5.12.0...v5.13.0) (2026-11-13)
+
+
+### Bug Fixes
+
+* **host-config:** keep a backup's permissions ([f34706a](https://github.com/filipgutica/filip-stack/commit/f34706a8e7b9e99c10ea4b5de873b0302933ad90))
+* **host-config:** keep design-system files behind symlinks and earlier backups ([c9eb86c](https://github.com/filipgutica/filip-stack/commit/c9eb86c458534acba74ed195f25289b3b1521835))
+
+
+### Features
+
+* **host-config:** install the design system to ~/design-system ([77c8774](https://github.com/filipgutica/filip-stack/commit/77c87740765ddb4e7f551c89a2f26bb5b42ae2c6))
+
 # [5.12.0](https://github.com/filipgutica/filip-stack/compare/v5.11.2...v5.12.0) (2026-11-13)
 
 
