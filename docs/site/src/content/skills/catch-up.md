@@ -17,6 +17,13 @@ Use it when you return to a thread and have lost track of it.
 For verified branch state and check results before a handoff, use
 `checkpoint` instead.
 
+## How it works
+
+The agent reads the conversation and writes the recap without running tools.
+It names PRs, files, and threads as links when the conversation has them, and
+marks claims the conversation never verified. When you ask for verified state
+or a handoff, it recommends `checkpoint` instead of a recap.
+
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/catch-up/SKILL.md)
 has the exact format.
 
