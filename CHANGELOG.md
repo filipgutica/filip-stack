@@ -1,3 +1,11 @@
+# [5.12.0](https://github.com/filipgutica/filip-stack/compare/v5.11.2...v5.12.0) (2026-11-13)
+
+
+### Features
+
+* help users pick threads back up ([380415f](https://github.com/filipgutica/filip-stack/commit/380415fb080ab6ed5eb9ef7d99337cf5a984bea6))
+* **host-config:** rename a thread whose title does not describe its purpose ([8cb7be4](https://github.com/filipgutica/filip-stack/commit/8cb7be420cfac3f44e101e6043e0bea5584e9ded))
+
 ## [5.11.2](https://github.com/filipgutica/filip-stack/compare/v5.11.1...v5.11.2) (2026-11-12)
 
 
