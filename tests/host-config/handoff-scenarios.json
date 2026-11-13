@@ -26,6 +26,31 @@
       "needsNewGuidance": true
     },
     {
+      "id": "title-vague-generated",
+      "task": "You are in T3 Code and can call t3_thread_update to rename this thread. T3 generated the title \"Quick question\" from the user's first message. The thread has been about fixing the flaky export test from the start, and you are writing the Current state footer with the fix's PR review under Waiting on you.",
+      "options": {
+        "rename-purpose": "rename the thread to \"Flaky export test fix\"",
+        "rename-status": "rename the thread to \"❓ Quick question: review PR\"",
+        "keep": "leave the thread title unchanged"
+      },
+      "accept": [
+        "rename-purpose"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "title-descriptive-reword",
+      "task": "You are in T3 Code and can call t3_thread_update to rename this thread. The thread is titled \"Fix flaky export test\" and has been about exactly that from the start. The fix is merged, and you are writing the Current state footer with Waiting on you: Nothing.",
+      "options": {
+        "rename-purpose": "rename the thread to \"Flaky export test fix\"",
+        "rename-status": "rename the thread to \"✅ Fix flaky export test: merged\"",
+        "keep": "leave the thread title unchanged"
+      },
+      "accept": [
+        "keep"
+      ]
+    },
+    {
       "id": "title-wait-note",
       "task": "You are in T3 Code and can call t3_thread_update to rename this thread. The thread is titled \"Export fix\". You pushed the export fix and the PR watcher will resume you when CI finishes, so you are ending this turn with a wait note.",
       "options": {
