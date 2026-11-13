@@ -1,6 +1,6 @@
 // How host config resolves the pinned design-system package: download, verification, offline failures, and pin bumps.
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -154,6 +154,7 @@ test('apply keeps an edited ~/design-language file, and keeps and names the old 
   moveToLegacyInstall(home)
   const edited = join(home, 'design-language/DESIGN.md')
   writeFileSync(edited, '# My notes\n')
+  writeFileSync(`${edited}.bak`, '# An older backup\n')
   writeFileSync(join(home, 'design-language/.DS_Store'), '')
 
   const refused = await run({ repo, home, command: 'apply', cacheHome })
@@ -163,7 +164,9 @@ test('apply keeps an edited ~/design-language file, and keeps and names the old 
   assert.equal(existsSync(join(home, 'design-system')), false)
 
   const forced = await succeed({ repo, home, command: 'apply', args: ['--force'], cacheHome })
-  assert.equal(readFileSync(`${edited}.bak`, 'utf8'), '# My notes\n')
+  assert.equal(readFileSync(`${edited}.bak`, 'utf8'), '# An older backup\n')
+  assert.equal(readFileSync(`${edited}.bak.1`, 'utf8'), '# My notes\n')
+  assert.ok(forced.stdout.includes(`backed up ${edited} to ${edited}.bak.1`), forced.stdout)
   assert.equal(existsSync(edited), false)
   assert.ok(existsSync(join(home, 'design-language/.DS_Store')))
   assert.ok(forced.stdout.includes(`kept ${join(home, 'design-language')}`), forced.stdout)
@@ -188,4 +191,57 @@ test('a pin bump lists each design-system change, and apply removes files the ne
   const manifest = JSON.parse(readFileSync(join(home, '.agents/.filip-stack-host-config.json'), 'utf8'))
   assert.equal(manifest.designSystem.version, '1.1.0')
   assert.match((await succeed({ repo, home, command: 'status', cacheHome })).stdout, /^repository: .*, design-system 1\.1\.0$/m)
+})
+
+// Design-system folders are filip-stack's, so a symlink in one points somewhere the user owns.
+// Apply leaves such a path alone and names it, in the old folder and in the new one.
+const symlinkState = (stdout, target) => new RegExp(`^symlink +${target}$`, 'm').test(stdout)
+
+test('apply never removes old ~/design-language files through a symlinked folder', async (t) => {
+  const { root, repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+  const outside = join(root, 'outside-install')
+  renameSync(join(home, 'design-language'), outside)
+  symlinkSync(outside, join(home, 'design-language'))
+  const before = snapshot(outside)
+
+  const status = await succeed({ repo, home, command: 'status', cacheHome })
+  for (const file of Object.keys(fixturePayload)) assert.ok(symlinkState(status.stdout, `design-language/${file}`), status.stdout)
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.deepEqual(snapshot(outside), before)
+  assert.ok(lstatSync(join(home, 'design-language')).isSymbolicLink())
+  assert.match(result.stdout, /^kept design-language\/DESIGN\.md: /m)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-system', file), 'utf8'), content)
+})
+
+test('apply removes old ~/design-language files but not those under a symlinked subfolder', async (t) => {
+  const { root, repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+  const outside = join(root, 'outside-visualizations')
+  renameSync(join(home, 'design-language/visualizations'), outside)
+  symlinkSync(outside, join(home, 'design-language/visualizations'))
+  const before = snapshot(outside)
+
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.deepEqual(snapshot(outside), before)
+  assert.equal(existsSync(join(home, 'design-language/DESIGN.md')), false)
+  assert.match(result.stdout, /^kept design-language\/visualizations\/report\.css: /m)
+  assert.ok(result.stdout.includes(`kept ${join(home, 'design-language')}`), result.stdout)
+  assert.ok(symlinkState((await succeed({ repo, home, command: 'status', cacheHome })).stdout, 'design-language/visualizations/report.css'))
+})
+
+test('apply never writes a ~/design-system file through a symlink', async (t) => {
+  const { root, repo, home, first } = setup(t)
+  const cacheHome = join(root, 'cache')
+  seedCache({ cacheHome, ...first })
+  const outside = join(root, 'outside.md')
+  mkdirSync(join(home, 'design-system'))
+  symlinkSync(outside, join(home, 'design-system/DESIGN.md'))
+
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.equal(existsSync(outside), false)
+  assert.ok(lstatSync(join(home, 'design-system/DESIGN.md')).isSymbolicLink())
+  assert.match(result.stdout, /^kept design-system\/DESIGN\.md: /m)
+  assert.equal(readFileSync(join(home, 'design-system/tokens.css'), 'utf8'), fixturePayload['tokens.css'])
+  assert.ok(symlinkState((await succeed({ repo, home, command: 'status', cacheHome })).stdout, 'design-system/DESIGN.md'))
 })

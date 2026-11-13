@@ -2,7 +2,7 @@
 // Applies host-config/ to the Claude, Codex, and shared agent directories in a home directory.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -212,7 +212,16 @@ const sourceCommit = () => {
   return dirty ? `${head}+dirty` : head
 }
 
-// Classifies each target as current, update, edited, remove, edited-remove, or unknown.
+// Design-system files live in folders filip-stack owns, so a symlink there points at something the user owns.
+// Host config never reads, writes, or removes a design-system file through one; it reports the path as `symlink`.
+// Other targets, such as a CLAUDE.md linked from a dotfile manager, still follow links.
+const throughSymlink = ({ home, target }) => {
+  if (![designSystemTarget, legacyDesignSystemTarget].some((root) => target.startsWith(`${root}/`))) return false
+  const parts = target.split('/')
+  return parts.some((_, index) => lstatSync(join(home, ...parts.slice(0, index + 1)), { throwIfNoEntry: false })?.isSymbolicLink())
+}
+
+// Classifies each target as current, update, edited, remove, edited-remove, unknown, or symlink.
 // A target is edited when its managed text differs from both the repository
 // version and the version this script last applied. Retired design-system targets are
 // unknown when the pinned package is not cached, which only status allows.
@@ -221,6 +230,10 @@ const plan = ({ home, designSystemFolder }) => {
   const desired = desiredTargets({ home, designSystemFolder })
   const entries = []
   for (const [target, { kind, content }] of desired) {
+    if (throughSymlink({ home, target })) {
+      entries.push({ target, kind, content, current: { content: null }, state: 'symlink' })
+      continue
+    }
     const current = readManaged({ home, target, kind })
     const appliedHash = manifest.files[target]
     let state = 'update'
@@ -240,6 +253,7 @@ const plan = ({ home, designSystemFolder }) => {
 // No pin installs to legacyDesignSystemTarget, so those files classify like any other.
 const retiredState = ({ home, target, appliedHash, designSystemFolder }) => {
   if (!designSystemFolder && target.startsWith(`${designSystemTarget}/`)) return { current: { content: null }, state: 'unknown' }
+  if (throughSymlink({ home, target })) return { current: { content: null }, state: 'symlink' }
   const current = readManaged({ home, target, kind: 'file' })
   return { current, state: current.content === null || hash(current.content) === appliedHash ? 'remove' : 'edited-remove' }
 }
@@ -273,9 +287,21 @@ const writeManifest = ({ home, commit, designSystem, files }) => {
   writeFileSync(path, `${JSON.stringify({ commit, designSystem, files }, null, 2)}\n`)
 }
 
+// Writes the first free name of <path>.bak, <path>.bak.1, ... The wx flag never replaces an
+// existing backup and never follows a symlink at the backup path.
 const backUp = (path) => {
-  copyFileSync(path, `${path}.bak`)
-  process.stdout.write(`backed up ${path} to ${path}.bak\n`)
+  const bytes = readFileSync(path)
+  for (let index = 0; ; index += 1) {
+    const backup = index === 0 ? `${path}.bak` : `${path}.bak.${index}`
+    try {
+      writeFileSync(backup, bytes, { flag: 'wx' })
+    } catch (error) {
+      if (error.code === 'EEXIST') continue
+      throw error
+    }
+    process.stdout.write(`backed up ${path} to ${backup}\n`)
+    return
+  }
 }
 
 const writeTarget = ({ home, target, kind, content, current }) => {
@@ -319,6 +345,15 @@ const importSharedGuidance = ({ home }) => {
   for (const { id, reason } of result.skipped) process.stdout.write(`  skipped ${id}: ${reason}\n`)
 }
 
+// Reports each symlinked design-system target and returns the other entries. The manifest keeps
+// any earlier hash of a skipped target, so apply reports it again until the link is gone.
+const skipSymlinked = (entries) => {
+  for (const { target } of entries.filter(({ state }) => state === 'symlink')) {
+    process.stdout.write(`kept ${target}: it is or sits inside a symlink, and filip-stack does not write or remove design-system files through one\n`)
+  }
+  return entries.filter(({ state }) => state !== 'symlink')
+}
+
 const apply = async ({ home, force }) => {
   const pin = readPin()
   const designSystemFolder = await resolveDesignSystemFolder({ home, pin })
@@ -330,7 +365,7 @@ const apply = async ({ home, force }) => {
       + 'or rerun with --force to back up and overwrite them.')
   }
   const files = { ...manifest.files }
-  for (const entry of entries) {
+  for (const entry of skipSymlinked(entries)) {
     const path = join(home, entry.target)
     if (entry.state === 'current') {
       files[entry.target] = hash(entry.content)

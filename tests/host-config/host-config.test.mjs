@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -135,6 +135,18 @@ test('apply keeps text outside the guidance block and refuses local edits inside
   assert.match(read(`${path}.bak`), /## Local evidence/)
   assert.doesNotMatch(read(path), /## Local evidence/)
   assert.match(read(path), /^Local preface\./)
+})
+
+// Only design-system files refuse symlinks; a guidance file linked from a dotfile manager is written through the link.
+test('apply writes a symlinked guidance file through its link', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-linked-guidance-'))
+  const dotfile = join(mkdtempSync(join(tmpdir(), 'host-config-dotfiles-')), 'CLAUDE.md')
+  writeFileSync(dotfile, 'Local note.\n')
+  mkdirSync(join(home, '.claude'))
+  symlinkSync(dotfile, join(home, '.claude/CLAUDE.md'))
+  run({ home, command: 'apply', args: ['--force'] })
+  assert.ok(lstatSync(join(home, '.claude/CLAUDE.md')).isSymbolicLink())
+  assert.match(read(dotfile), /## Claude read guard/)
 })
 
 test('apply treats only whole delimiter lines as block markers', () => {
