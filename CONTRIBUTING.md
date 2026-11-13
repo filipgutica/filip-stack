@@ -262,6 +262,7 @@ gate work.
 | `pnpm eval:routing` | Every routable skill's description, and Workflow reference pointers | `tests/workflow/contract-scenarios.json`, `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
+| `pnpm eval:handoff` | The footer's goal line, and when to rename the thread | `tests/host-config/handoff-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
 | `pnpm eval:skill-rules` | The choices a standalone skill states at its decision points | `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:hill-climb` | `hill-climb` rules: score checks, locked files, holdout | `tests/skills/hill-climb-scenarios.json` |

@@ -1,0 +1,65 @@
+{
+  "scenarios": [
+    {
+      "id": "title-purpose-unchanged",
+      "task": "You are in T3 Code and can call t3_thread_update to rename this thread. The thread is titled \"Export fix\". The user's export fix is merged, CI passed, and nothing else is pending, so you are writing the Current state footer with Waiting on you: Nothing.",
+      "options": {
+        "rename-purpose": "rename the thread to \"Export pipeline rewrite\"",
+        "rename-status": "rename the thread to \"✅ Export fix: merged\"",
+        "keep": "leave the thread title unchanged"
+      },
+      "accept": [
+        "keep"
+      ]
+    },
+    {
+      "id": "title-purpose-broadened",
+      "task": "You are in T3 Code and can call t3_thread_update to rename this thread. The thread is titled \"Regex question\". It began with a question about one email regex, and the user then asked you to build a shared form validation module. You have opened that PR and are writing the Current state footer with the PR review under Waiting on you.",
+      "options": {
+        "rename-purpose": "rename the thread to \"Shared form validation module\"",
+        "rename-status": "rename the thread to \"❓ Regex question: review PR\"",
+        "keep": "leave the thread title unchanged"
+      },
+      "accept": [
+        "rename-purpose"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "title-wait-note",
+      "task": "You are in T3 Code and can call t3_thread_update to rename this thread. The thread is titled \"Export fix\". You pushed the export fix and the PR watcher will resume you when CI finishes, so you are ending this turn with a wait note.",
+      "options": {
+        "rename-purpose": "rename the thread to \"Export pipeline rewrite\"",
+        "rename-status": "rename the thread to \"⏳ Export fix: waiting on CI\"",
+        "keep": "leave the thread title unchanged"
+      },
+      "accept": [
+        "keep"
+      ]
+    },
+    {
+      "id": "title-no-rename-tool",
+      "task": "You are in a Claude Code terminal session with no tool that renames the session. The session began as \"Regex question\" and grew into building a shared form validation module, which is now merged, so you are writing the Current state footer with Waiting on you: Nothing.",
+      "options": {
+        "rename-purpose": "rename the session to \"Shared form validation module\" through any means available",
+        "keep": "write the footer and leave the session name unchanged"
+      },
+      "accept": [
+        "keep"
+      ]
+    },
+    {
+      "id": "footer-goal-line",
+      "task": "You are writing the Current state footer after merging the second of three planned PRs for the user's export fix. The third PR is not started and needs the user to choose a file format first.",
+      "options": {
+        "goal": "start with a line giving the thread's goal and progress, such as \"Goal: Ship the export fix · Progress: 2 of 3 PRs merged\", then the recap bullets",
+        "recap": "start with the recap bullets",
+        "table": "start with the status table"
+      },
+      "accept": [
+        "goal"
+      ],
+      "needsNewGuidance": true
+    }
+  ]
+}

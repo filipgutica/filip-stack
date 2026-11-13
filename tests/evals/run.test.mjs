@@ -21,7 +21,7 @@ const runEval = async ({ args, env = {} }) => {
   return { status, output }
 }
 
-for (const name of ['routing', 'delegation', 'autonomy', 'workflow-rules', 'skill-rules', 'hill-climb', 'retrieval']) {
+for (const name of ['routing', 'delegation', 'autonomy', 'handoff', 'workflow-rules', 'skill-rules', 'hill-climb', 'retrieval']) {
   test(`the ${name} eval config validates in a dry run`, async () => {
     const { status, output } = await runEval({ args: [name, '--dry-run', '--base', 'HEAD'] })
     assert.equal(status, 0, output)

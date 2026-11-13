@@ -19,6 +19,7 @@
     "eval:routing": "node evals/run.mjs routing",
     "eval:delegation": "node evals/run.mjs delegation",
     "eval:autonomy": "node evals/run.mjs autonomy",
+    "eval:handoff": "node evals/run.mjs handoff",
     "eval:workflow-rules": "node evals/run.mjs workflow-rules",
     "eval:skill-rules": "node evals/run.mjs skill-rules",
     "eval:hill-climb": "node evals/run.mjs hill-climb",

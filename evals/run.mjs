@@ -11,6 +11,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { formatTables, gate } from './gate.mjs'
+import { handoffTests } from './handoff.mjs'
 import { autonomyTests, delegationTests, renderGuidance } from './host-guidance.mjs'
 import { routingChanges, routingSkills, routingTests } from './routing.mjs'
 import { hillClimbTests, prepareHillClimb } from './hill-climb.mjs'
@@ -40,6 +41,7 @@ const evals = {
   routing: { tests: routingTests, prepare: prepareRouting, title: modelTitle, skills: routingSkills },
   delegation: { tests: delegationTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   autonomy: { tests: autonomyTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
+  handoff: { tests: handoffTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   'workflow-rules': { tests: workflowRulesTests, prepare: prepareRules, title: modelTitle },
   'skill-rules': {
     tests: skillRulesTests,

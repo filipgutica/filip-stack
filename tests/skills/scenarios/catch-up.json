@@ -1,0 +1,39 @@
+{
+  "routing": [
+    {
+      "id": "explicit-catch-up",
+      "prompt": "Use $catch-up, I forgot what this thread was about.",
+      "expectedSkill": "catch-up",
+      "activation": "explicit"
+    },
+    {
+      "id": "catch-up-near-miss",
+      "prompt": "What were we doing in this thread again?",
+      "expectedSkill": null
+    }
+  ],
+  "rules": [
+    {
+      "id": "recap-from-conversation",
+      "task": "The user invoked catch-up on a thread where you fixed a flaky export test, opened PR #41, and reported earlier that CI passed. You could rerun the test suite (about 6 minutes) to confirm the state before you answer.",
+      "options": {
+        "recap": "reply with the four-line recap from the conversation",
+        "verify": "rerun the test suite, then reply with the recap"
+      },
+      "accept": [
+        "recap"
+      ]
+    },
+    {
+      "id": "handoff-needs-checkpoint",
+      "task": "The user invoked catch-up and adds: \"A teammate takes this over tomorrow, so I need the verified branch state and check results, not a reminder.\"",
+      "options": {
+        "recap": "reply with the four-line recap from the conversation",
+        "checkpoint": "tell the user that checkpoint captures verified state, and recommend it"
+      },
+      "accept": [
+        "checkpoint"
+      ]
+    }
+  ]
+}
