@@ -1,6 +1,6 @@
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -49,7 +49,7 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
-  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-language', file)), content)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-system', file)), content)
   const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
   assert.deepEqual(manifest.designSystem, { version: '1.0.0', integrity: designSystem.pin.integrity })
 
@@ -131,10 +131,38 @@ test('apply keeps text outside the guidance block and refuses local edits inside
   assert.match(refused.stdout, /^-## Local evidence$/m)
   assert.match(read(path), /## Local evidence/)
 
+  // A private file keeps its permissions in the backup, whatever the umask.
+  chmodSync(path, 0o600)
   run({ home, command: 'apply', args: ['--force'] })
   assert.match(read(`${path}.bak`), /## Local evidence/)
+  assert.equal(statSync(`${path}.bak`).mode & 0o777, 0o600)
   assert.doesNotMatch(read(path), /## Local evidence/)
   assert.match(read(path), /^Local preface\./)
+})
+
+test('apply --force never writes a backup through a symlink at the backup path', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-backup-link-'))
+  run({ home, command: 'apply' })
+  const path = join(home, '.codex/AGENTS.md')
+  writeFileSync(path, read(path).replace('## Evidence', '## Local evidence'))
+  const outside = join(home, 'outside.md')
+  symlinkSync(outside, `${path}.bak`)
+  run({ home, command: 'apply', args: ['--force'] })
+  assert.equal(existsSync(outside), false)
+  assert.equal(lstatSync(`${path}.bak`).isSymbolicLink(), true)
+  assert.match(read(`${path}.bak.1`), /## Local evidence/)
+})
+
+// Only design-system files refuse symlinks; a guidance file linked from a dotfile manager is written through the link.
+test('apply writes a symlinked guidance file through its link', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-linked-guidance-'))
+  const dotfile = join(mkdtempSync(join(tmpdir(), 'host-config-dotfiles-')), 'CLAUDE.md')
+  writeFileSync(dotfile, 'Local note.\n')
+  mkdirSync(join(home, '.claude'))
+  symlinkSync(dotfile, join(home, '.claude/CLAUDE.md'))
+  run({ home, command: 'apply', args: ['--force'] })
+  assert.ok(lstatSync(join(home, '.claude/CLAUDE.md')).isSymbolicLink())
+  assert.match(read(dotfile), /## Claude read guard/)
 })
 
 test('apply treats only whole delimiter lines as block markers', () => {

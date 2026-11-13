@@ -1,6 +1,6 @@
 ---
 name: interface-design
-description: Design, build, review, or check user interfaces and flows, covering hierarchy, interaction, states, interface copy, and accessibility. Uses UX laws, public standards, and the design language. Use when shaping or reshaping a UI or UX direction, critiquing a screen or flow, or checking a running UI before it ships.
+description: Design, build, review, or check user interfaces and flows, covering hierarchy, interaction, states, interface copy, and accessibility. Uses UX laws, public standards, and the design system. Use when shaping or reshaping a UI or UX direction, critiquing a screen or flow, or checking a running UI before it ships.
 ---
 
 # Interface Design
@@ -8,7 +8,7 @@ description: Design, build, review, or check user interfaces and flows, covering
 Judge every choice by whether the primary user completes their task: they
 find what they need, act, recover from errors, and can tell it worked. The
 look comes from the owning design system: the repository's own, else
-`~/design-language/DESIGN.md` when it exists. Use its tokens and components.
+`~/design-system/DESIGN.md` when it exists. Use its tokens and components.
 This skill owns hierarchy, interaction, states, interface copy, and
 accessibility.
 

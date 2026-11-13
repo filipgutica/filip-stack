@@ -11,7 +11,7 @@ Number them and give each a recommended default, so the user can reply
 Read what the defaults need, so each question carries a concrete proposal:
 
 - The paths the user named, and the repository's design system or
-  `~/design-language/DESIGN.md`.
+  `~/design-system/DESIGN.md`.
 - `interface-design` when it is installed, for interaction, state, copy,
   and accessibility criteria.
 - The repository's gate and check commands, from its package scripts, CI,

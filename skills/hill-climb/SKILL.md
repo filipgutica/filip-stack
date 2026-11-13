@@ -65,7 +65,7 @@ Build the card and freeze it before round 1:
   goal.
 - **Criteria:** three to five, from the request, the focus, and the guidance
   that owns the work. For UI: the repository's design system, else
-  `~/design-language/DESIGN.md` when it exists. For code: repository
+  `~/design-system/DESIGN.md` when it exists. For code: repository
   conventions and `~/.agents/CODING_STANDARDS.md` when it exists.
 - **Scope:** the change's paths.
 - **Gates:** exact commands, run on the runtime versions CI uses, such as its

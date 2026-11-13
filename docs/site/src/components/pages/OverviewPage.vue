@@ -174,14 +174,14 @@ onMounted(() => {
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
           Run it to apply shared guidance, agent profiles,
-          output styles, and the design language on each machine.
+          output styles, and the design system on each machine.
         </p>
       </li>
       <li>
-        <a href="/filip-stack/design-language/">Design language</a>
+        <a href="/filip-stack/design-system/">Design system</a>
         <p>
           Shared visual rules for pages, mockups, and explainers. The CLI
-          installs them to <code>~/design-language</code>.
+          installs them to <code>~/design-system</code>.
         </p>
       </li>
     </ul>

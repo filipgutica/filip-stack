@@ -183,8 +183,8 @@ const tables = {
   </section>
 
   <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/design-language/"
-      ><span>Previous</span>Design language</a
+    <a rel="prev" href="/filip-stack/design-system/"
+      ><span>Previous</span>Design system</a
     >
     <a rel="next" href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
   </nav>

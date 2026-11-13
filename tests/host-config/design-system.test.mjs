@@ -1,6 +1,6 @@
 // How host config resolves the pinned design-system package: download, verification, offline failures, and pin bumps.
 import { spawn } from 'node:child_process'
-import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync } from 'node:fs'
+import { existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import test from 'node:test'
@@ -8,12 +8,12 @@ import assert from 'node:assert/strict'
 import { buildPackage, cachePath, copyHostConfig, fixturePayload, seedCache, serve, snapshot, unreachableUrl, writePin } from './design-system-fixture.mjs'
 
 // Runs asynchronously so a fixture server in this process can answer the script's download.
-const run = ({ repo, home, command, cacheHome }) => new Promise((resolve) => {
+const run = ({ repo, home, command, args = [], cacheHome }) => new Promise((resolve) => {
   const env = { ...process.env, XDG_CONFIG_HOME: join(home, '.config') }
   // Without XDG_CACHE_HOME the cache lives in the home directory.
   if (cacheHome) env.XDG_CACHE_HOME = cacheHome
   else delete env.XDG_CACHE_HOME
-  const child = spawn(process.execPath, [join(repo, 'scripts/host-config.mjs'), command, '--home', home], { env })
+  const child = spawn(process.execPath, [join(repo, 'scripts/host-config.mjs'), command, '--home', home, ...args], { env })
   let stdout = ''
   let stderr = ''
   child.stdout.on('data', (chunk) => { stdout += chunk })
@@ -47,6 +47,16 @@ const setupApplied = async (t) => {
   return { ...context, cacheHome }
 }
 
+// Turns the applied install into one made before the design system moved: the files sit in
+// ~/design-language and the manifest names them there.
+const moveToLegacyInstall = (home) => {
+  renameSync(join(home, 'design-system'), join(home, 'design-language'))
+  const path = join(home, '.agents/.filip-stack-host-config.json')
+  const manifest = JSON.parse(readFileSync(path, 'utf8'))
+  manifest.files = Object.fromEntries(Object.entries(manifest.files).map(([target, hash]) => [target.replace(/^design-system\//, 'design-language/'), hash]))
+  writeFileSync(path, `${JSON.stringify(manifest, null, 2)}\n`)
+}
+
 // Serves body as the pinned tarball and runs apply against an empty cache in the home directory.
 const applyDownload = async (t, { repo, home, pin, body }) => {
   const server = await serve(body)
@@ -65,7 +75,7 @@ test('apply downloads, verifies, and caches the pinned package when the cache is
   const cached = cachePath({ cacheHome: join(home, '.cache'), version: '1.0.0' })
   assert.ok(result.stdout.includes(`downloaded @filipgutica/design-system@1.0.0 to ${cached}`))
   assert.deepEqual(readFileSync(cached), readFileSync(first.tarball))
-  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-language', file), 'utf8'), content)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-system', file), 'utf8'), content)
 })
 
 test('apply rejects a tampered tarball and leaves the cache and the installed files unchanged', async (t) => {
@@ -107,12 +117,63 @@ test('status reports an uncached pin without downloading and still reports the o
   const result = await succeed({ repo, home, command: 'status', cacheHome: empty })
   const [, header, ...states] = result.stdout.trim().split('\n')
   assert.match(header, /, design-system 1\.0\.0 \(not cached; apply downloads it\)$/)
-  for (const file of Object.keys(fixturePayload)) assert.ok(states.includes(`unknown       design-language/${file}`), file)
+  for (const file of Object.keys(fixturePayload)) assert.ok(states.includes(`unknown       design-system/${file}`), file)
   assert.ok(states.includes('current       .agents/roles.md'))
   assert.equal(existsSync(empty), false)
 })
 
-test('a pin bump lists each design-language change, and apply removes files the new version dropped', async (t) => {
+// No pin installs to ~/design-language, so status can retire those files without the package.
+test('status without the package still reports old ~/design-language files for removal', async (t) => {
+  const { root, repo, home } = await setupApplied(t)
+  moveToLegacyInstall(home)
+
+  const result = await succeed({ repo, home, command: 'status', cacheHome: join(root, 'empty-cache') })
+  for (const file of Object.keys(fixturePayload)) assert.match(result.stdout, new RegExp(`^remove +design-language/${file}$`, 'm'))
+})
+
+test('apply moves an unchanged ~/design-language install to ~/design-system and removes the old folder', async (t) => {
+  const { repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+
+  const status = await succeed({ repo, home, command: 'status', cacheHome })
+  for (const file of Object.keys(fixturePayload)) {
+    assert.match(status.stdout, new RegExp(`^remove +design-language/${file}$`, 'm'))
+    assert.match(status.stdout, new RegExp(`^update +design-system/${file}$`, 'm'))
+  }
+
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.match(result.stdout, /^removed design-language\/$/m)
+  assert.equal(existsSync(join(home, 'design-language')), false)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-system', file), 'utf8'), content)
+  const manifest = JSON.parse(readFileSync(join(home, '.agents/.filip-stack-host-config.json'), 'utf8'))
+  assert.deepEqual(Object.keys(manifest.files).filter((target) => target.startsWith('design-language/')), [])
+})
+
+test('apply keeps an edited ~/design-language file, and keeps and names the old folder while unmanaged files remain', async (t) => {
+  const { repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+  const edited = join(home, 'design-language/DESIGN.md')
+  writeFileSync(edited, '# My notes\n')
+  writeFileSync(`${edited}.bak`, '# An older backup\n')
+  writeFileSync(join(home, 'design-language/.DS_Store'), '')
+
+  const refused = await run({ repo, home, command: 'apply', cacheHome })
+  assert.equal(refused.status, 1)
+  assert.match(refused.stdout, /^-# My notes$/m)
+  assert.equal(readFileSync(edited, 'utf8'), '# My notes\n')
+  assert.equal(existsSync(join(home, 'design-system')), false)
+
+  const forced = await succeed({ repo, home, command: 'apply', args: ['--force'], cacheHome })
+  assert.equal(readFileSync(`${edited}.bak`, 'utf8'), '# An older backup\n')
+  assert.equal(readFileSync(`${edited}.bak.1`, 'utf8'), '# My notes\n')
+  assert.ok(forced.stdout.includes(`backed up ${edited} to ${edited}.bak.1`), forced.stdout)
+  assert.equal(existsSync(edited), false)
+  assert.ok(existsSync(join(home, 'design-language/.DS_Store')))
+  assert.ok(forced.stdout.includes(`kept ${join(home, 'design-language')}`), forced.stdout)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-system', file), 'utf8'), content)
+})
+
+test('a pin bump lists each design-system change, and apply removes files the new version dropped', async (t) => {
   const { root, repo, home, cacheHome } = await setupApplied(t)
 
   const next = buildPackage({ root, version: '1.1.0', files: { 'DESIGN.md': '# Design language 1.1\n', 'tokens.css': fixturePayload['tokens.css'] } })
@@ -120,14 +181,67 @@ test('a pin bump lists each design-language change, and apply removes files the 
   writePin({ repo, pin: next.pin })
   const status = await succeed({ repo, home, command: 'status', cacheHome })
   assert.match(status.stdout, /^repository: .*, design-system 1\.0\.0 → 1\.1\.0$/m)
-  assert.match(status.stdout, /^update +design-language\/DESIGN\.md$/m)
-  assert.match(status.stdout, /^current +design-language\/tokens\.css$/m)
-  assert.match(status.stdout, /^remove +design-language\/visualizations\/report\.css$/m)
+  assert.match(status.stdout, /^update +design-system\/DESIGN\.md$/m)
+  assert.match(status.stdout, /^current +design-system\/tokens\.css$/m)
+  assert.match(status.stdout, /^remove +design-system\/visualizations\/report\.css$/m)
 
   await succeed({ repo, home, command: 'apply', cacheHome })
-  assert.equal(readFileSync(join(home, 'design-language/DESIGN.md'), 'utf8'), '# Design language 1.1\n')
-  assert.equal(existsSync(join(home, 'design-language/visualizations/report.css')), false)
+  assert.equal(readFileSync(join(home, 'design-system/DESIGN.md'), 'utf8'), '# Design language 1.1\n')
+  assert.equal(existsSync(join(home, 'design-system/visualizations/report.css')), false)
   const manifest = JSON.parse(readFileSync(join(home, '.agents/.filip-stack-host-config.json'), 'utf8'))
   assert.equal(manifest.designSystem.version, '1.1.0')
   assert.match((await succeed({ repo, home, command: 'status', cacheHome })).stdout, /^repository: .*, design-system 1\.1\.0$/m)
+})
+
+// Design-system folders are filip-stack's, so a symlink in one points somewhere the user owns.
+// Apply leaves such a path alone and names it, in the old folder and in the new one.
+const symlinkState = (stdout, target) => new RegExp(`^symlink +${target}$`, 'm').test(stdout)
+
+test('apply never removes old ~/design-language files through a symlinked folder', async (t) => {
+  const { root, repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+  const outside = join(root, 'outside-install')
+  renameSync(join(home, 'design-language'), outside)
+  symlinkSync(outside, join(home, 'design-language'))
+  const before = snapshot(outside)
+
+  const status = await succeed({ repo, home, command: 'status', cacheHome })
+  for (const file of Object.keys(fixturePayload)) assert.ok(symlinkState(status.stdout, `design-language/${file}`), status.stdout)
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.deepEqual(snapshot(outside), before)
+  assert.ok(lstatSync(join(home, 'design-language')).isSymbolicLink())
+  assert.match(result.stdout, /^kept design-language\/DESIGN\.md: /m)
+  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(readFileSync(join(home, 'design-system', file), 'utf8'), content)
+})
+
+test('apply removes old ~/design-language files but not those under a symlinked subfolder', async (t) => {
+  const { root, repo, home, cacheHome } = await setupApplied(t)
+  moveToLegacyInstall(home)
+  const outside = join(root, 'outside-visualizations')
+  renameSync(join(home, 'design-language/visualizations'), outside)
+  symlinkSync(outside, join(home, 'design-language/visualizations'))
+  const before = snapshot(outside)
+
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.deepEqual(snapshot(outside), before)
+  assert.equal(existsSync(join(home, 'design-language/DESIGN.md')), false)
+  assert.match(result.stdout, /^kept design-language\/visualizations\/report\.css: /m)
+  assert.ok(result.stdout.includes(`kept ${join(home, 'design-language')}`), result.stdout)
+  assert.ok(symlinkState((await succeed({ repo, home, command: 'status', cacheHome })).stdout, 'design-language/visualizations/report.css'))
+})
+
+test('apply never writes a ~/design-system file through a symlink', async (t) => {
+  const { root, repo, home, first } = setup(t)
+  const cacheHome = join(root, 'cache')
+  seedCache({ cacheHome, ...first })
+  const outside = join(root, 'outside.md')
+  mkdirSync(join(home, 'design-system'))
+  symlinkSync(outside, join(home, 'design-system/DESIGN.md'))
+
+  const result = await succeed({ repo, home, command: 'apply', cacheHome })
+  assert.equal(existsSync(outside), false)
+  assert.ok(lstatSync(join(home, 'design-system/DESIGN.md')).isSymbolicLink())
+  assert.match(result.stdout, /^kept design-system\/DESIGN\.md: /m)
+  assert.equal(readFileSync(join(home, 'design-system/tokens.css'), 'utf8'), fixturePayload['tokens.css'])
+  assert.ok(symlinkState((await succeed({ repo, home, command: 'status', cacheHome })).stdout, 'design-system/DESIGN.md'))
 })

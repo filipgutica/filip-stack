@@ -4,7 +4,7 @@ import { expect, type Page } from "@playwright/test";
 export const pageTypes = [
   { path: "", title: "Skills and setup for Claude and Codex." },
   { path: "cli/", title: "filip-stack CLI" },
-  { path: "design-language/", title: "Design language" },
+  { path: "design-system/", title: "Design system" },
   { path: "field-guide/", title: "Field Guide" },
   { path: "agent-ready-environments/", title: "Agent-ready environments" },
   { path: "skills/engineering/", title: "engineering" },
@@ -18,7 +18,7 @@ export const skillNames = [
 export const routes = [
   "",
   "cli/",
-  "design-language/",
+  "design-system/",
   "field-guide/",
   "agent-ready-environments/",
   ...skillNames.map((name) => `skills/${name}/`),

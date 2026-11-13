@@ -2,7 +2,7 @@
 // Applies host-config/ to the Claude, Codex, and shared agent directories in a home directory.
 import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
-import { copyFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
+import { constants, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, renameSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
 import { dirname, isAbsolute, join, relative } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -11,18 +11,20 @@ const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = join(dirname(scriptPath), '..')
 const sourceRoot = join(repoRoot, 'host-config')
 const sharedGuidancePath = (home) => join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'field-guide.json')
-// The design language comes from the published @filipgutica/design-system package that this file pins.
+// The design system comes from the published @filipgutica/design-system package that this file pins.
 const designSystemPinPath = join(sourceRoot, 'design-system.json')
 const designSystemCachePath = ({ home, version }) => (
   join(process.env.XDG_CACHE_HOME || join(home, '.cache'), 'filip-stack', 'design-system', `${version}.tgz`)
 )
-const designLanguageTarget = 'design-language'
+const designSystemTarget = 'design-system'
+// Where host config installed the design system before it moved to designSystemTarget. Kept only to migrate old installs.
+const legacyDesignSystemTarget = 'design-language'
 const fieldGuideScript = join(repoRoot, 'plugins', 'field-guide', 'skills', 'field-guide', 'scripts', 'field-guide.mjs')
 const manifestTarget = '.agents/.filip-stack-host-config.json'
 const blockStart = '<!-- filip-stack:host-config:begin (managed by filip-stack; edit host-config/ there) -->'
 const blockEnd = '<!-- filip-stack:host-config:end -->'
 
-// Source directories copied file for file into the home directory. The design language joins them once resolved.
+// Source directories copied file for file into the home directory. The design system joins them once resolved.
 const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
 // Guidance files that receive a managed block. Text outside the block stays local.
 const guidanceTargets = [['claude', '.claude/CLAUDE.md'], ['codex', '.codex/AGENTS.md']]
@@ -76,11 +78,11 @@ const renderGuidance = ({ host, home }) => {
   return renderText({ text: assembled, home })
 }
 
-// `designLanguage` is the extracted package's language/ folder, or null when status cannot read it.
-const desiredTargets = ({ home, designLanguage }) => {
+// `designSystemFolder` is the extracted package's language/ folder, or null when status cannot read it.
+const desiredTargets = ({ home, designSystemFolder }) => {
   const targets = new Map()
   const roots = fileRoots.map(([source, target]) => [join(sourceRoot, source), target])
-  if (designLanguage) roots.push([designLanguage, designLanguageTarget])
+  if (designSystemFolder) roots.push([designSystemFolder, designSystemTarget])
   for (const [directory, target] of roots) {
     for (const file of listFiles(directory)) {
       const relativePath = join(target, relative(directory, file))
@@ -151,9 +153,9 @@ const verifiedCache = ({ home, pin }) => {
 // Returns the pinned package's language/ folder, extracted to a temporary directory.
 // On a cache miss the download is verified and extracted from a staging file first,
 // so it enters the cache only when the whole install can use it.
-const resolveDesignLanguage = async ({ home, pin }) => {
+const resolveDesignSystemFolder = async ({ home, pin }) => {
   const cached = verifiedCache({ home, pin })
-  if (cached) return extractDesignLanguage(cached)
+  if (cached) return extractDesignSystemFolder(cached)
   const path = designSystemCachePath({ home, version: pin.version })
   let bytes
   try {
@@ -172,13 +174,13 @@ const resolveDesignLanguage = async ({ home, pin }) => {
   process.on('exit', () => rmSync(staging, { recursive: true, force: true }))
   const staged = join(staging, `${pin.version}.tgz`)
   writeFileSync(staged, bytes)
-  const designLanguage = extractDesignLanguage(staged)
+  const designSystemFolder = extractDesignSystemFolder(staged)
   mkdirSync(dirname(path), { recursive: true })
   const partial = `${path}.${process.pid}.partial`
   writeFileSync(partial, bytes)
   renameSync(partial, path)
   process.stdout.write(`downloaded ${pin.package}@${pin.version} to ${path}\n`)
-  return designLanguage
+  return designSystemFolder
 }
 
 const tarList = (args) => {
@@ -189,7 +191,7 @@ const tarList = (args) => {
 
 // Extracts the tarball's package/language/ into a temporary directory removed on exit.
 // Accepts only regular files and directories whose paths stay inside that directory.
-const extractDesignLanguage = (tarball) => {
+const extractDesignSystemFolder = (tarball) => {
   const names = tarList(['-tzf', tarball])
   // The first column of a verbose listing is the entry type in both GNU and BSD tar.
   const types = tarList(['-tvzf', tarball]).map((line) => line[0])
@@ -198,9 +200,9 @@ const extractDesignLanguage = (tarball) => {
   const directory = mkdtempSync(join(tmpdir(), 'host-config-design-system-'))
   process.on('exit', () => rmSync(directory, { recursive: true, force: true }))
   tarList(['-xzf', tarball, '-C', directory])
-  const designLanguage = join(directory, 'package', 'language')
-  if (!existsSync(designLanguage)) fail(`${tarball} has no package/language/ folder`)
-  return designLanguage
+  const designSystemFolder = join(directory, 'package', 'language')
+  if (!existsSync(designSystemFolder)) fail(`${tarball} has no package/language/ folder`)
+  return designSystemFolder
 }
 
 const sourceCommit = () => {
@@ -210,15 +212,28 @@ const sourceCommit = () => {
   return dirty ? `${head}+dirty` : head
 }
 
-// Classifies each target as current, update, edited, remove, edited-remove, or unknown.
+// Design-system files live in folders filip-stack owns, so a symlink there points at something the user owns.
+// Host config never reads, writes, or removes a design-system file through one; it reports the path as `symlink`.
+// Other targets, such as a CLAUDE.md linked from a dotfile manager, still follow links.
+const throughSymlink = ({ home, target }) => {
+  if (![designSystemTarget, legacyDesignSystemTarget].some((root) => target.startsWith(`${root}/`))) return false
+  const parts = target.split('/')
+  return parts.some((_, index) => lstatSync(join(home, ...parts.slice(0, index + 1)), { throwIfNoEntry: false })?.isSymbolicLink())
+}
+
+// Classifies each target as current, update, edited, remove, edited-remove, unknown, or symlink.
 // A target is edited when its managed text differs from both the repository
-// version and the version this script last applied. Design-language targets are
+// version and the version this script last applied. Retired design-system targets are
 // unknown when the pinned package is not cached, which only status allows.
-const plan = ({ home, designLanguage }) => {
+const plan = ({ home, designSystemFolder }) => {
   const manifest = readManifest(home)
-  const desired = desiredTargets({ home, designLanguage })
+  const desired = desiredTargets({ home, designSystemFolder })
   const entries = []
   for (const [target, { kind, content }] of desired) {
+    if (throughSymlink({ home, target })) {
+      entries.push({ target, kind, content, current: { content: null }, state: 'symlink' })
+      continue
+    }
     const current = readManaged({ home, target, kind })
     const appliedHash = manifest.files[target]
     let state = 'update'
@@ -228,14 +243,17 @@ const plan = ({ home, designLanguage }) => {
     entries.push({ target, kind, content, current, state })
   }
   for (const [target, appliedHash] of Object.entries(manifest.files)) {
-    if (!desired.has(target)) entries.push({ target, kind: 'file', content: null, ...retiredState({ home, target, appliedHash, designLanguage }) })
+    if (!desired.has(target)) entries.push({ target, kind: 'file', content: null, ...retiredState({ home, target, appliedHash, designSystemFolder }) })
   }
   return { manifest, entries }
 }
 
 // Classifies a target that was applied earlier but that the sources no longer produce.
-const retiredState = ({ home, target, appliedHash, designLanguage }) => {
-  if (!designLanguage && target.startsWith(`${designLanguageTarget}/`)) return { current: { content: null }, state: 'unknown' }
+// Without the package, status cannot tell whether the pin still ships a design-system file.
+// No pin installs to legacyDesignSystemTarget, so those files classify like any other.
+const retiredState = ({ home, target, appliedHash, designSystemFolder }) => {
+  if (!designSystemFolder && target.startsWith(`${designSystemTarget}/`)) return { current: { content: null }, state: 'unknown' }
+  if (throughSymlink({ home, target })) return { current: { content: null }, state: 'symlink' }
   const current = readManaged({ home, target, kind: 'file' })
   return { current, state: current.content === null || hash(current.content) === appliedHash ? 'remove' : 'edited-remove' }
 }
@@ -255,7 +273,7 @@ const printDiff = ({ target, current, content }) => {
 const status = ({ home }) => {
   const pin = readPin()
   const tarball = verifiedCache({ home, pin })
-  const { manifest, entries } = plan({ home, designLanguage: tarball && extractDesignLanguage(tarball) })
+  const { manifest, entries } = plan({ home, designSystemFolder: tarball && extractDesignSystemFolder(tarball) })
   const applied = manifest.designSystem?.version
   const version = applied && applied !== pin.version ? `${applied} → ${pin.version}` : pin.version
   const cache = tarball ? '' : ' (not cached; apply downloads it)'
@@ -269,9 +287,21 @@ const writeManifest = ({ home, commit, designSystem, files }) => {
   writeFileSync(path, `${JSON.stringify({ commit, designSystem, files }, null, 2)}\n`)
 }
 
+// Copies to the first free name of <path>.bak, <path>.bak.1, ... COPYFILE_EXCL never replaces an
+// existing backup and never follows a symlink at the backup path, and the copy keeps the file's
+// permissions, so a private file's backup stays private.
 const backUp = (path) => {
-  copyFileSync(path, `${path}.bak`)
-  process.stdout.write(`backed up ${path} to ${path}.bak\n`)
+  for (let index = 0; ; index += 1) {
+    const backup = index === 0 ? `${path}.bak` : `${path}.bak.${index}`
+    try {
+      copyFileSync(path, backup, constants.COPYFILE_EXCL)
+    } catch (error) {
+      if (error.code === 'EEXIST') continue
+      throw error
+    }
+    process.stdout.write(`backed up ${path} to ${backup}\n`)
+    return
+  }
 }
 
 const writeTarget = ({ home, target, kind, content, current }) => {
@@ -284,6 +314,20 @@ const writeTarget = ({ home, target, kind, content, current }) => {
   }
   const { before, after } = splitBlock({ text: read(path), path })
   writeFileSync(path, `${before}${blockStart}\n${content}${blockEnd}\n${after}`)
+}
+
+// Plan has retired the managed files in the old install folder by now. The folder goes only when
+// nothing but empty folders remains; anything else, such as a .bak backup, is the user's to keep.
+const removeLegacyDesignSystemFolder = ({ home }) => {
+  const path = join(home, legacyDesignSystemTarget)
+  if (!lstatSync(path, { throwIfNoEntry: false })?.isDirectory()) return
+  if (readdirSync(path, { recursive: true, withFileTypes: true }).every((entry) => entry.isDirectory())) {
+    rmSync(path, { recursive: true })
+    process.stdout.write(`removed ${legacyDesignSystemTarget}/\n`)
+    return
+  }
+  process.stdout.write(`kept ${path}: the design system now installs to ${join(home, designSystemTarget)}, `
+    + 'and the old folder still holds files filip-stack does not manage. Remove it when you no longer need them.\n')
 }
 
 const runFieldGuide = ({ home, args }) => {
@@ -301,10 +345,19 @@ const importSharedGuidance = ({ home }) => {
   for (const { id, reason } of result.skipped) process.stdout.write(`  skipped ${id}: ${reason}\n`)
 }
 
+// Reports each symlinked design-system target and returns the other entries. The manifest keeps
+// any earlier hash of a skipped target, so apply reports it again until the link is gone.
+const skipSymlinked = (entries) => {
+  for (const { target } of entries.filter(({ state }) => state === 'symlink')) {
+    process.stdout.write(`kept ${target}: it is or sits inside a symlink, and filip-stack does not write or remove design-system files through one\n`)
+  }
+  return entries.filter(({ state }) => state !== 'symlink')
+}
+
 const apply = async ({ home, force }) => {
   const pin = readPin()
-  const designLanguage = await resolveDesignLanguage({ home, pin })
-  const { manifest, entries } = plan({ home, designLanguage })
+  const designSystemFolder = await resolveDesignSystemFolder({ home, pin })
+  const { manifest, entries } = plan({ home, designSystemFolder })
   const edited = entries.filter(({ state }) => state === 'edited' || state === 'edited-remove')
   if (edited.length > 0 && !force) {
     for (const entry of edited) printDiff(entry)
@@ -312,7 +365,7 @@ const apply = async ({ home, force }) => {
       + 'or rerun with --force to back up and overwrite them.')
   }
   const files = { ...manifest.files }
-  for (const entry of entries) {
+  for (const entry of skipSymlinked(entries)) {
     const path = join(home, entry.target)
     if (entry.state === 'current') {
       files[entry.target] = hash(entry.content)
@@ -336,6 +389,7 @@ const apply = async ({ home, force }) => {
     process.stdout.write(`wrote ${entry.target}\n`)
   }
   writeManifest({ home, commit: sourceCommit(), designSystem: { version: pin.version, integrity: pin.integrity }, files })
+  removeLegacyDesignSystemFolder({ home })
   const path = sharedGuidancePath(home)
   if (existsSync(path)) {
     runFieldGuide({ home, args: ['init'] })

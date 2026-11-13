@@ -3,7 +3,7 @@ import { UiSiteHeader, UiSiteNav } from "@filipgutica/ui/site";
 import type { Catalog, CatalogSkill, SkillContent } from "./catalog";
 import OverviewPage from "./components/pages/OverviewPage.vue";
 import CliPage from "./components/pages/CliPage.vue";
-import DesignLanguagePage from "./components/pages/DesignLanguagePage.vue";
+import DesignSystemPage from "./components/pages/DesignSystemPage.vue";
 import FieldGuidePage from "./components/pages/FieldGuidePage.vue";
 import AgentReadyEnvironmentsPage from "./components/pages/AgentReadyEnvironmentsPage.vue";
 import SkillPage from "./components/pages/SkillPage.vue";
@@ -18,7 +18,7 @@ const repository = "https://github.com/filipgutica/filip-stack";
 const pages = [
   { label: "Overview", href: "/filip-stack/" },
   { label: "filip-stack CLI", href: "/filip-stack/cli/" },
-  { label: "Design language", href: "/filip-stack/design-language/" },
+  { label: "Design system", href: "/filip-stack/design-system/" },
   { label: "Field Guide", href: "/filip-stack/field-guide/" },
   {
     label: "Agent-ready environments",
@@ -63,8 +63,8 @@ const groups = [
         :catalog="catalog"
       />
       <CliPage v-else-if="page === '/filip-stack/cli/'" />
-      <DesignLanguagePage
-        v-else-if="page === '/filip-stack/design-language/'"
+      <DesignSystemPage
+        v-else-if="page === '/filip-stack/design-system/'"
       />
       <FieldGuidePage v-else-if="page === '/filip-stack/field-guide/'" />
       <AgentReadyEnvironmentsPage

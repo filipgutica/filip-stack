@@ -30,7 +30,7 @@ For each URL, width, and theme it loads a fresh page and:
   gaps that match no custom property in that CSS file. Aliases such as
   `var(--space-2)` resolve through the page, and `em` values resolve per
   element. Point it at the project's own token file, else
-  `~/design-language/tokens.css`.
+  `~/design-system/tokens.css`.
 
 Options: `--theme-attr <attribute>` for apps that switch themes with an
 attribute on `<html>` instead of `prefers-color-scheme`; `--fail-on-tokens`

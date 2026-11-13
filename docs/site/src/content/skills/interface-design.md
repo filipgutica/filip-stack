@@ -9,7 +9,7 @@ from errors, and recognizing success. UX laws, craft guidance, and public
 standards such as WCAG 2.2 help the agent assess the screen or flow.
 
 Your repository's design system owns the look. When there is none, the agent
-uses the [design language](../../design-language/) if available. A new screen
+uses the default [design system](../../design-system/) if available. A new screen
 does not get an unrelated palette or visual identity.
 
 ## When to use it

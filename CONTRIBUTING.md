@@ -137,7 +137,7 @@ manifest in `~/.agents/.filip-stack-host-config.json` records the applied
 commit, the installed design-system version and integrity, and a hash of each
 target.
 
-The design language lives in
+The design system lives in
 [filipgutica/design-system](https://github.com/filipgutica/design-system).
 `apply` installs the `language/` folder of the published
 `@filipgutica/design-system` version that `host-config/design-system.json` pins.
