@@ -85,6 +85,19 @@
         "goal"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "decided-for-you-label",
+      "task": "You are writing the Current state footer. Without asking the user, you named a new helper parseRange because the repository already has parseDate, and you settled that choice yourself without the advisor or a council. You are writing its line in the Decided for you list.",
+      "options": {
+        "who": "\"- Named the helper parseRange (agent: matches parseDate)\"",
+        "tier": "\"- Named the helper parseRange (tier 1: matches parseDate)\"",
+        "bare": "\"- Named the helper parseRange because it matches parseDate\""
+      },
+      "accept": [
+        "who"
+      ],
+      "needsNewGuidance": true
     }
   ]
 }

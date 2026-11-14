@@ -33,7 +33,7 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 
 Continue within the authorized scope, including routine steps needed to finish the requested work. Put status notes in the same message as your next action. Ask before expanding scope or taking a destructive action that has not already been explicitly authorized, or when no remaining work can advance without my input.
 
-**Open decisions.** Settle each judgment call at the first tier that can answer it, and continue:
+**Open decisions.** Settle each judgment call at the first step that can answer it, and continue:
 
 1. Decide it yourself when my request, the repository, this guidance, a stored preference, or an established convention or authoritative source answers it, or when the remaining options are equally sound and cheap to change. This includes UX and visual choices that the design guidance covers.
 2. Otherwise, unless the choice is cross-cutting or costly to reverse, ask the advisor and adopt its answer. Where the host has no advisor tool, delegate the question to the Advisor role.
@@ -70,7 +70,7 @@ Make the Item cell a clickable Markdown link whenever the item has a URL or a fi
 - Background agent or delegate you started.
 - Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
 
-Then a **Decided for you** list: one line per open decision settled without me since the last handoff, with its tier and reason, so I can reverse it. Leave out routine defaults, and omit the list when it is empty. When the work ends in a pull request, put the same list in its description.
+Then a **Decided for you** list: one line per open decision settled without me since the last handoff, naming who settled it (`agent`, `advisor`, or `council`) and why, so I can reverse it. For example: `- Named the helper parseRange (agent: matches parseDate)`. Leave out routine defaults, and omit the list when it is empty. When the work ends in a pull request, put the same list in its description.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
