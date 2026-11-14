@@ -1,3 +1,10 @@
+## [5.13.1](https://github.com/filipgutica/filip-stack/compare/v5.13.0...v5.13.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* **host-config:** label Decided for you items by who decided ([17bd89f](https://github.com/filipgutica/filip-stack/commit/17bd89f9454aa731c8cff05dbbe3c6b45355776b))
+
 # [5.13.0](https://github.com/filipgutica/filip-stack/compare/v5.12.0...v5.13.0) (2026-11-13)
 
 
