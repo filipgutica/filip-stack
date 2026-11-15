@@ -8,7 +8,7 @@ import { dirname, join, relative, resolve, sep } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 import { isDevelopmentOnlyPluginPath } from './plugin-payload-policy.mjs'
-import { loadFleetConfig } from './fleet-config.mjs'
+import { externalPlugins, loadFleetConfig } from './fleet-config.mjs'
 
 const repository = resolve(dirname(fileURLToPath(import.meta.url)), '..')
 const script = fileURLToPath(import.meta.url)
@@ -248,10 +248,21 @@ const refreshSkills = () => {
   return { skills, ...(blocked.length ? { state: 'blocked', message: blocked.map(({ message }) => message).join('; ') } : {}) }
 }
 
-const claudeInventory = () => JSON.parse(run('claude', ['plugin', 'list', '--json']))
-  .filter((plugin) => plugin.id.endsWith('@filip-stack'))
-const codexInventory = () => JSON.parse(run('codex', ['plugin', 'list', '--json'])).installed.filter((plugin) => plugin.pluginId.endsWith('@filip-stack'))
-const desiredPlugins = (installed) => [...new Set([...installed, ...policy.baseline.plugins])].filter((name) => !policy.excluded.plugins.includes(name))
+// filip-stack plugins come from this repository's marketplace, and each
+// external plugin from its own known marketplace.
+const defineMarketplace = ({ name, ...details }) => ({ name, ...details, id: (plugin) => `${plugin}@${name}` })
+const marketplaces = [
+  defineMarketplace({ name: 'filip-stack', repo: 'filipgutica/filip-stack', owns: (plugin) => !externalPlugins.has(plugin) }),
+  ...[...externalPlugins].map(([plugin, { marketplace, repo, requiredFiles }]) => defineMarketplace({ name: marketplace, repo, requiredFiles, owns: (candidate) => candidate === plugin })),
+]
+
+const claudeInventory = (marketplace) => JSON.parse(run('claude', ['plugin', 'list', '--json']))
+  .filter((plugin) => plugin.id.endsWith(`@${marketplace.name}`))
+const codexInventory = (marketplace) => JSON.parse(run('codex', ['plugin', 'list', '--json'])).installed.filter((plugin) => plugin.pluginId.endsWith(`@${marketplace.name}`))
+const claudeMarketplace = (marketplace) => readJson(join(claudeHome, 'plugins', 'known_marketplaces.json'), {})[marketplace.name]
+const codexMarketplace = (marketplace) => JSON.parse(run('codex', ['plugin', 'marketplace', 'list', '--json'])).marketplaces.find(({ name }) => name === marketplace.name)
+const desiredPlugins = ({ marketplace, installed }) => [...new Set([...installed, ...policy.baseline.plugins])]
+  .filter((name) => marketplace.owns(name) && !policy.excluded.plugins.includes(name))
 const requiredPlugins = () => policy.baseline.plugins.filter((name) => !policy.excluded.plugins.includes(name))
 
 const verifyPlugin = ({ name, path, claudeRuntime = false }) => {
@@ -261,6 +272,30 @@ const verifyPlugin = ({ name, path, claudeRuntime = false }) => {
   if (manifest.version !== expected) throw new Error(`${name}: installed ${manifest.version}, expected ${expected}`)
   return { name, version: manifest.version, files: verifyPayload({ source, installed: path, plugin: true, claudeRuntime }) }
 }
+
+const developmentVersion = '0.0.0-development'
+
+// An external plugin's payload is its whole repository, and unreleased edits
+// reach the host's marketplace clone without a version change. Compare the
+// release in the clone, read after its update, and check the required files
+// instead of every file.
+const verifyExternalPlugin = ({ marketplace, name, path, manifest, root }) => {
+  const expected = root && readJson(join(root, manifest), {}).version
+  if (typeof expected !== 'string') throw new Error(`${name}: the ${marketplace.name} marketplace clone has no ${manifest} version`)
+  const installed = readJson(join(path, manifest), {})
+  if (installed.name !== name) throw new Error(`${name}: installed manifest names ${installed.name}`)
+  if (installed.version === developmentVersion) throw new Error(`${name}: installed ${developmentVersion} is not a release`)
+  if (installed.version !== expected) throw new Error(`${name}: installed ${installed.version}, expected ${expected}`)
+  const missing = marketplace.requiredFiles.filter((file) => !existsSync(join(path, file)))
+  if (missing.length) throw new Error(`${name}: installed payload is missing ${missing.join(', ')}`)
+  return { name, version: installed.version }
+}
+
+const claudeHost = { manifest: '.claude-plugin/plugin.json', claudeRuntime: true, cloneRoot: (marketplace) => claudeMarketplace(marketplace)?.installLocation }
+const codexHost = { manifest: '.codex-plugin/plugin.json', claudeRuntime: false, cloneRoot: (marketplace) => codexMarketplace(marketplace)?.root }
+const verifyInstalled = ({ host, marketplace, name, path }) => marketplace.requiredFiles
+  ? verifyExternalPlugin({ marketplace, name, path, manifest: host.manifest, root: host.cloneRoot(marketplace) })
+  : verifyPlugin({ name, path, claudeRuntime: host.claudeRuntime })
 
 const missingClient = (name) => {
   if (requiredPlugins().length) throw new Error(`${name} is required by the baseline but is not installed; install it or select different agents for this machine`)
@@ -272,81 +307,109 @@ const pinnedMarketplace = (missing) => {
   return { state: 'pinned', message: 'Marketplace has a custom source or ref; preserved' }
 }
 
-const claudePluginResult = ({ name, before, after }) => {
-  const previous = before.find((plugin) => plugin.id === `${name}@filip-stack`)
-  const plugin = after.find((item) => item.id === `${name}@filip-stack` && item.scope === 'user')
-  if (!plugin || plugin.enabled !== (previous?.enabled ?? true)) throw new Error(`${name}: scope or enabled state changed`)
-  if (dryRun) return { name, scope: 'user', action: previous ? 'update' : 'install' }
-  return { ...verifyPlugin({ name, path: plugin.installPath, claudeRuntime: true }), scope: plugin.scope, enabled: plugin.enabled }
+// Each marketplace is prepared and reported on its own, so a pinned or blocked
+// marketplace does not stop another from refreshing. A marketplace with no
+// selected plugins is left untouched.
+const refreshMarketplaces = ({ client, refresh }) => {
+  const results = marketplaces.flatMap((marketplace) => {
+    try {
+      const result = refresh(marketplace)
+      return result ? [{ marketplace: marketplace.name, ...result }] : []
+    } catch (error) { return [{ marketplace: marketplace.name, state: 'blocked', message: error.message }] }
+  })
+  if (!results.length) return { state: 'skipped', message: `No ${client} plugins selected` }
+  const preserved = results.filter(({ state }) => state)
+  const state = preserved.some(({ state }) => state === 'blocked') ? 'blocked' : preserved.length ? 'pinned' : undefined
+  return {
+    plugins: results.flatMap(({ plugins = [] }) => plugins),
+    marketplaces: results.map(({ marketplace, state = dryRun ? 'planned' : 'current' }) => ({ name: marketplace, state })),
+    ...(state ? { state, message: preserved.map(({ marketplace, message }) => `${marketplace}: ${message}`).join('; ') } : {}),
+  }
 }
 
-const prepareClaudeMarketplace = ({ before, missing }) => {
-  const known = readJson(join(claudeHome, 'plugins', 'known_marketplaces.json'), {})['filip-stack']
+const claudePluginResult = ({ marketplace, name, before, after }) => {
+  const previous = before.find((plugin) => plugin.id === marketplace.id(name))
+  const plugin = after.find((item) => item.id === marketplace.id(name) && item.scope === 'user')
+  if (!plugin || plugin.enabled !== (previous?.enabled ?? true)) throw new Error(`${name}: scope or enabled state changed`)
+  if (dryRun) return { name, scope: 'user', action: previous ? 'update' : 'install' }
+  return { ...verifyInstalled({ host: claudeHost, marketplace, name, path: plugin.installPath }), scope: plugin.scope, enabled: plugin.enabled }
+}
+
+const prepareClaudeMarketplace = ({ marketplace, before, missing }) => {
+  const known = claudeMarketplace(marketplace)
   if (!known && before.length) throw new Error('Existing Claude marketplace source is unknown; preserve it before enrolling a baseline')
   const source = known?.source
-  if (known && (source?.ref || source?.branch || source?.source !== 'github' || source?.repo !== 'filipgutica/filip-stack')) return pinnedMarketplace(missing)
+  if (known && (source?.ref || source?.branch || source?.source !== 'github' || source?.repo !== marketplace.repo)) return pinnedMarketplace(missing)
   if (!dryRun) {
-    if (!known) run('claude', ['plugin', 'marketplace', 'add', 'filipgutica/filip-stack'])
-    run('claude', ['plugin', 'marketplace', 'update', 'filip-stack'])
+    if (!known) run('claude', ['plugin', 'marketplace', 'add', marketplace.repo])
+    run('claude', ['plugin', 'marketplace', 'update', marketplace.name])
   }
+}
+
+const refreshClaudeMarketplace = (marketplace) => {
+  const before = claudeInventory(marketplace)
+  const desired = desiredPlugins({ marketplace, installed: before.map((plugin) => plugin.id.split('@')[0]) })
+  if (!desired.length) return null
+  const missing = desired.filter((name) => !before.some((plugin) => plugin.id === marketplace.id(name)))
+  if (before.some((plugin) => desired.includes(plugin.id.split('@')[0]) && plugin.scope !== 'user')) throw new Error('Claude has project/local plugin installations; sync those scopes from their projects explicitly')
+  const preserved = prepareClaudeMarketplace({ marketplace, before, missing })
+  if (preserved) return preserved
+  if (!dryRun) {
+    for (const name of desired) {
+      run('claude', ['plugin', missing.includes(name) ? 'install' : 'update', marketplace.id(name), '--scope', 'user', '-y'])
+    }
+  }
+  const after = dryRun ? [...before, ...missing.map((name) => ({ id: marketplace.id(name), scope: 'user', enabled: true }))] : claudeInventory(marketplace)
+  return { plugins: desired.map((name) => claudePluginResult({ marketplace, name, before, after })) }
 }
 
 const refreshClaude = () => {
   if (!policy.agents.includes('claude-code')) return { state: 'excluded', message: 'Claude is excluded for this machine' }
   if (!available('claude')) return missingClient('Claude')
-  const before = claudeInventory()
-  const desired = desiredPlugins(before.map((plugin) => plugin.id.split('@')[0]))
-  if (!desired.length) return { state: 'skipped', message: 'No Claude plugins selected' }
-  const missing = desired.filter((name) => !before.some((plugin) => plugin.id === `${name}@filip-stack`))
-  if (before.some((plugin) => desired.includes(plugin.id.split('@')[0]) && plugin.scope !== 'user')) throw new Error('Claude has project/local plugin installations; sync those scopes from their projects explicitly')
-  const preserved = prepareClaudeMarketplace({ before, missing })
-  if (preserved) return preserved
-  if (!dryRun) {
-    for (const name of desired) {
-      run('claude', ['plugin', missing.includes(name) ? 'install' : 'update', `${name}@filip-stack`, '--scope', 'user', '-y'])
-    }
-  }
-  const after = dryRun ? [...before, ...missing.map((name) => ({ id: `${name}@filip-stack`, scope: 'user', enabled: true }))] : claudeInventory()
-  return { plugins: desired.map((name) => claudePluginResult({ name, before, after })) }
+  return refreshMarketplaces({ client: 'Claude', refresh: refreshClaudeMarketplace })
 }
 
-const codexPluginResult = (plugin, after) => {
+const codexPluginResult = ({ marketplace, plugin, after }) => {
   const updated = after.find((item) => item.pluginId === plugin.pluginId)
   if (!updated || updated.enabled !== plugin.enabled) throw new Error(`${plugin.pluginId}: enabled state changed`)
   if (!plugin.enabled) return { name: plugin.name, state: 'disabled' }
   if (dryRun) return { name: plugin.name, action: plugin.installed === false ? 'install' : 'update' }
-  return verifyPlugin({ name: plugin.name, path: join(codexHome, 'plugins/cache/filip-stack', plugin.name, updated.version) })
+  return verifyInstalled({ host: codexHost, marketplace, name: plugin.name, path: join(codexHome, 'plugins/cache', marketplace.name, plugin.name, updated.version) })
 }
 
-const prepareCodexMarketplace = ({ before, missing }) => {
-  const marketplace = JSON.parse(run('codex', ['plugin', 'marketplace', 'list', '--json'])).marketplaces.find(({ name }) => name === 'filip-stack')
-  if (!marketplace && before.length) throw new Error('Existing Codex marketplace source is unknown; preserve it before enrolling a baseline')
-  const source = marketplace?.marketplaceSource
-  if (marketplace && (source?.sourceType !== 'git' || !/^https:\/\/github\.com\/filipgutica\/filip-stack(?:\.git)?$/u.test(source.source) || source.ref)) return pinnedMarketplace(missing)
+const prepareCodexMarketplace = ({ marketplace, before, missing }) => {
+  const known = codexMarketplace(marketplace)
+  if (!known && before.length) throw new Error('Existing Codex marketplace source is unknown; preserve it before enrolling a baseline')
+  const source = known?.marketplaceSource
+  if (known && (source?.sourceType !== 'git' || source.source?.replace(/\.git$/u, '') !== `https://github.com/${marketplace.repo}` || source.ref)) return pinnedMarketplace(missing)
   if (!dryRun) {
-    if (!marketplace) run('codex', ['plugin', 'marketplace', 'add', 'filipgutica/filip-stack', '--json'])
-    run('codex', ['plugin', 'marketplace', 'upgrade', 'filip-stack'])
+    if (!known) run('codex', ['plugin', 'marketplace', 'add', marketplace.repo, '--json'])
+    run('codex', ['plugin', 'marketplace', 'upgrade', marketplace.name])
   }
 }
 
-const refreshCodex = () => {
-  if (!policy.agents.includes('codex')) return { state: 'excluded', message: 'Codex is excluded for this machine' }
-  if (!available('codex')) return missingClient('Codex')
-  const before = codexInventory()
-  const desired = desiredPlugins(before.map((plugin) => plugin.name))
-  if (!desired.length) return { state: 'skipped', message: 'No Codex plugins selected' }
+const refreshCodexMarketplace = (marketplace) => {
+  const before = codexInventory(marketplace)
+  const desired = desiredPlugins({ marketplace, installed: before.map((plugin) => plugin.name) })
+  if (!desired.length) return null
   const missing = desired.filter((name) => !before.some((plugin) => plugin.name === name))
-  const preserved = prepareCodexMarketplace({ before, missing })
+  const preserved = prepareCodexMarketplace({ marketplace, before, missing })
   if (preserved) return preserved
-  const targets = desired.map((name) => before.find((plugin) => plugin.name === name) || { name, pluginId: `${name}@filip-stack`, enabled: true, installed: false })
+  const targets = desired.map((name) => before.find((plugin) => plugin.name === name) || { name, pluginId: marketplace.id(name), enabled: true, installed: false })
   if (!dryRun) {
     for (const plugin of targets) {
       if (!plugin.enabled) continue
       run('codex', ['plugin', 'add', plugin.pluginId, '--json'])
     }
   }
-  const after = dryRun ? targets : codexInventory()
-  return { plugins: targets.map((plugin) => codexPluginResult(plugin, after)) }
+  const after = dryRun ? targets : codexInventory(marketplace)
+  return { plugins: targets.map((plugin) => codexPluginResult({ marketplace, plugin, after })) }
+}
+
+const refreshCodex = () => {
+  if (!policy.agents.includes('codex')) return { state: 'excluded', message: 'Codex is excluded for this machine' }
+  if (!available('codex')) return missingClient('Codex')
+  return refreshMarketplaces({ client: 'Codex', refresh: refreshCodexMarketplace })
 }
 
 const finish = (persist = !dryRun) => {

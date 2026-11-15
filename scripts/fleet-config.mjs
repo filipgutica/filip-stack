@@ -3,6 +3,17 @@ import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
 
 const agentNames = ['codex', 'claude-code']
+
+// Baseline plugins that come from their own marketplace instead of this
+// checkout's plugins/<name>. The list is closed: each entry names a known source.
+export const externalPlugins = new Map([
+  ['design-system', {
+    marketplace: 'design-system',
+    repo: 'filipgutica/design-system',
+    requiredFiles: ['skills/design-system/SKILL.md', 'language/DESIGN.md', 'language/tokens.css'],
+  }],
+])
+
 const fields = (value, field, allowed) => {
   if (!value || typeof value !== 'object' || Array.isArray(value)) throw new Error(`${field} must be an object`)
   if (Object.keys(value).some((key) => !allowed.includes(key))) throw new Error(`${field} supports only ${allowed.join(', ')}`)
@@ -54,7 +65,7 @@ const validateBaseline = (baseline, repository) => {
     if (!existsSync(join(repository, 'skills', name, 'SKILL.md'))) throw new Error(`baseline skill ${name} is not available in this checkout`)
   }
   for (const name of baseline.plugins) {
-    if (!existsSync(join(repository, 'plugins', name, '.claude-plugin/plugin.json'))) throw new Error(`baseline plugin ${name} is not available in this checkout`)
+    if (!externalPlugins.has(name) && !existsSync(join(repository, 'plugins', name, '.claude-plugin/plugin.json'))) throw new Error(`baseline plugin ${name} is not available in this checkout`)
   }
 }
 
