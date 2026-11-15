@@ -23,6 +23,7 @@ Review diff: `git -C <worktree path> diff <merge-base SHA> <head SHA>`
 ## Guidance to apply
 - Repository guidance from the base commit; read each instruction file with `git -C <worktree path> show <base SHA>:<path>`.
 - User-level guidance: <user-level instruction paths>
+- Coding standards: `~/.agents/CODING_STANDARDS.md` when it exists.
 - Changed instruction files in this PR, reviewed as code: <changed instruction files or "none">
 
 ## CI
