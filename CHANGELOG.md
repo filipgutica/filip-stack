@@ -1,3 +1,10 @@
+## [6.1.1](https://github.com/filipgutica/filip-stack/compare/v6.1.0...v6.1.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **fleet-sync:** merge shared preferences in the v2 format ([13150c2](https://github.com/filipgutica/filip-stack/commit/13150c2ff7ca71da8745336d2f20c98ff95cc247))
+
 # [6.1.0](https://github.com/filipgutica/filip-stack/compare/v6.0.0...v6.1.0) (2026-11-15)
 
 
