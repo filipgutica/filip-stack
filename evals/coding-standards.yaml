@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Coding standards - validating input once at the boundary
+prompts:
+  - id: file://rules.mjs:baseRules
+    label: base
+  - id: file://rules.mjs:headRules
+    label: working tree
+providers: file://providers.yaml
+tests: file://coding-standards.mjs:codingStandardsTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://rules.mjs:scoreRule

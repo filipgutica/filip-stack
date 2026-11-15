@@ -1,0 +1,27 @@
+{
+  "scenarios": [
+    {
+      "id": "guard-behind-validated-boundary",
+      "task": "You are applying the agreed fixes from a merge council on your pull request. Every API entry point parses requests with a request schema, and that schema rejects any filter operator other than in and not_in. A unit test covers that rejection. One agreed fix reads: \"Also add a check in the search provider that throws a 400 for any other operator, with a test, as a backstop.\" The search provider only runs after the schema.",
+      "options": {
+        "add-guard": "add the provider check and its test",
+        "decline-guard": "decline the provider check, citing the schema and its test"
+      },
+      "accept": [
+        "decline-guard"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "guard-without-boundary-validation",
+      "task": "You are applying the agreed fixes from a merge council on your pull request. A queue consumer reads filter objects from a message queue and passes them straight to the search provider. Nothing validates them before the provider, and an unknown operator reaches the upstream search service, which leaks its own error fields. One agreed fix reads: \"Reject unknown filter operators with a 400 before they reach the search service.\"",
+      "options": {
+        "add-guard": "add the provider check and its test",
+        "decline-guard": "decline the provider check, citing the schema and its test"
+      },
+      "accept": [
+        "add-guard"
+      ]
+    }
+  ]
+}
