@@ -57,7 +57,7 @@ const tables = {
     {
       command: "host-config/claude/",
       description:
-        "<code>~/.claude</code>: agent templates (critic, explorer, reviewer, worker-high) and output styles.",
+        "<code>~/.claude</code>: agent templates (critic, explorer, planner, reviewer, worker-high) and output styles.",
     },
     {
       command: "host-config/codex/",

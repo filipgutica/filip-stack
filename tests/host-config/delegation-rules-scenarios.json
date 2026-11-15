@@ -1,0 +1,62 @@
+{
+  "scenarios": [
+    {
+      "id": "planner-brief-explorers",
+      "task": "You are writing the brief that hands the Planner a consequential plan: move session handling out of 9 services into a shared auth gateway. The plan needs a survey of how each service handles sessions today.",
+      "options": {
+        "allow": "say in the brief that the Planner may start Explorer children for discovery",
+        "solo": "say in the brief that the Planner does all discovery itself"
+      },
+      "accept": [
+        "allow"
+      ]
+    },
+    {
+      "id": "implementer-brief-solo",
+      "task": "You are writing the brief that hands the routine implementer a bounded change: add a `--json` flag to the `report` CLI command, with a test. The brief names the two files it owns.",
+      "options": {
+        "allow": "say in the brief that the implementer may start Explorer children for discovery",
+        "solo": "say in the brief that the implementer does the work itself"
+      },
+      "accept": [
+        "solo"
+      ]
+    },
+    {
+      "id": "escalate-verify-first",
+      "task": "The routine implementer, Sol at high effort, returned a CSV parser change that mishandles quoted fields. No test covers quoted fields, and the brief gave it no way to check that case.",
+      "options": {
+        "verify": "add a failing test for quoted fields to the brief and retry at the same effort",
+        "effort": "retry at xhigh effort with the same brief",
+        "tier": "move the task to the frontier tier"
+      },
+      "accept": [
+        "verify"
+      ]
+    },
+    {
+      "id": "escalate-effort-next",
+      "task": "The routine implementer, Sol at high effort, returned a CSV parser change that still fails the quoted-field test it ran. The brief gave it that test.",
+      "options": {
+        "verify": "add another test to the brief and retry at the same effort",
+        "effort": "retry at xhigh effort with the same brief",
+        "tier": "move the task to the frontier tier"
+      },
+      "accept": [
+        "effort"
+      ]
+    },
+    {
+      "id": "escalate-tier-last",
+      "task": "The routine implementer has failed the same CSV parser change twice with the quoted-field test in its brief, the second time at xhigh effort.",
+      "options": {
+        "verify": "add another test to the brief and retry at the same effort",
+        "effort": "retry at xhigh effort with the same brief",
+        "tier": "move the task to the frontier tier"
+      },
+      "accept": [
+        "tier"
+      ]
+    }
+  ]
+}

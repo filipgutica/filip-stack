@@ -16,6 +16,11 @@
       "expectedSkill": "council"
     },
     {
+      "id": "council-preset",
+      "prompt": "Run a frontier council on whether we should adopt event sourcing for orders.",
+      "expectedSkill": "council"
+    },
+    {
       "id": "council-near-merge",
       "prompt": "Convene a merge council to decide whether PR #412 can merge.",
       "expectedSkill": "merge-council"
@@ -54,6 +59,28 @@
       "task": "Partway through your own task, you want a council on whether your migration approach is sound. No member lineup or criteria were given to you.",
       "options": {
         "design": "choose the members and criteria yourself",
+        "designer": "have a separate designer agent build the council"
+      },
+      "accept": [
+        "designer"
+      ]
+    },
+    {
+      "id": "council-preset-named",
+      "task": "The user asks you for a frontier council on whether to split the billing service. They name no members or criteria.",
+      "options": {
+        "designer": "start a designer agent to build the lineup",
+        "preset": "convene Astra and Fable 5.2 without a designer"
+      },
+      "accept": [
+        "preset"
+      ]
+    },
+    {
+      "id": "council-own-question-preset",
+      "task": "Partway through your own task, you want a quick council on whether your migration approach is sound. Nobody named a preset, members, or criteria. The pair preset of Sol 6.1 and Opus 5.5 looks like enough.",
+      "options": {
+        "preset": "convene the pair preset yourself",
         "designer": "have a separate designer agent build the council"
       },
       "accept": [

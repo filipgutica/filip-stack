@@ -1,6 +1,6 @@
 ---
 name: council
-description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria; otherwise an independent designer agent designs the council, starting from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. An explicit merge council request belongs to merge-council.
+description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent designs the council, starting from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. An explicit merge council request belongs to merge-council.
 ---
 
 # Council
@@ -15,6 +15,16 @@ The request may set any of these. A user, global guidance, or a calling skill su
 - **Criteria and constraints:** what makes an answer useful, and limits it must respect.
 - **Members:** a model and effort for each, and optionally a lens, such as security, user experience, or maintainability.
 - **Rounds:** one by default.
+
+The user or a calling skill can name a preset in place of members. Each preset runs every member at high effort and needs no designer:
+
+| Preset | Members |
+| --- | --- |
+| `pair` | Sol 6.1 and Opus 5.5 |
+| `frontier` | Astra and Fable 5.2 |
+| `full` | The default lineup below |
+
+For a council on your own question or work, the designer builds the lineup.
 
 Use the fields the request sets as given. When the request names the lineup, frame the remaining fields from the request without a designer.
 

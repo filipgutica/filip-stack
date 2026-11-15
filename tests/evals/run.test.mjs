@@ -21,7 +21,7 @@ const runEval = async ({ args, env = {} }) => {
   return { status, output }
 }
 
-for (const name of ['routing', 'delegation', 'autonomy', 'handoff', 'workflow-rules', 'skill-rules', 'hill-climb', 'retrieval']) {
+for (const name of ['routing', 'delegation', 'autonomy', 'handoff', 'delegation-rules', 'workflow-rules', 'skill-rules', 'hill-climb', 'retrieval']) {
   test(`the ${name} eval config validates in a dry run`, async () => {
     const { status, output } = await runEval({ args: [name, '--dry-run', '--base', 'HEAD'] })
     assert.equal(status, 0, output)
@@ -70,8 +70,8 @@ test('routing for one skill runs without a base and must pass every attempt', as
   const { requests, env } = await startStub(t, '{"skill": "council"}')
   const { status, output } = await runEval({ args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.1-sol'], env })
 
-  // Six scenarios name council: its own file's five and merge-council's near-miss.
-  assert.equal(requests.length, 6, output)
+  // Seven scenarios name council: its own file's six and merge-council's near-miss.
+  assert.equal(requests.length, 7, output)
   assert.match(requests[0].messages[0].content, /^- council: /mu)
   assert.match(requests[0].messages[0].content, /^- jira-work-links: Use when creating, correcting/mu)
   assert.match(output, /^\| council-question \| council \| - \| 1\/1 \| skill "council" \|$/mu)
