@@ -5,28 +5,23 @@ import { UiCommandList } from "@filipgutica/ui/site";
 const commands = {
   claude: "claude plugin install field-guide@filip-stack",
   codex: "codex plugin add field-guide@filip-stack",
+  notice:
+    'Field-guide: Activated shared guidance: "Prefer pnpm over npm." Say "undo that learning" to reverse it.',
 };
 const enhanced = ref(false);
 onMounted(() => {
   enhanced.value = true;
 });
-const tables = {
-  management: [
-    {
-      command: "/field-guide:field-guide audit",
-      description: "Lists stored guidance without changing it.",
-    },
-    {
-      command: "Say “undo that learning”",
-      description: "Reverses the last saved learning.",
-    },
-    {
-      command: "filip-stack field-guide-sync",
-      description:
-        'Imports shared preferences from <code>~/.config/filip-stack/field-guide.json</code> if present, then exports local shared guidance to that file. Sync it between machines with your dotfile manager. An undo reaches other machines after they sync. It reverses only the replacement it undoes: a withdrawal, or another replacement of the same guidance, still wins. Refresh the Field Guide plugin and restart before you run <code>filip-stack update</code>: an older plugin cannot read the newer store. See <a href="/filip-stack/cli/#sync">Sync your Field Guide preferences</a>.',
-    },
-  ],
-};
+const management = [
+  {
+    command: "/field-guide:field-guide audit",
+    description: "Lists stored guidance without changing it.",
+  },
+  {
+    command: "Say “undo that learning”",
+    description: "Reverses the last saved learning.",
+  },
+];
 </script>
 
 <template>
@@ -36,8 +31,8 @@ const tables = {
     />
     <h1 id="title">Field Guide</h1>
     <p class="lede">
-      Use the optional Field Guide plugin when you want agents to remember
-      durable preferences, corrections, and recurring lessons across sessions.
+      Field Guide is an optional plugin that remembers your preferences and
+      corrections, so you do not repeat them in every session.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -55,86 +50,11 @@ const tables = {
     </dl>
   </section>
 
-  <section aria-labelledby="decide">
-    <h2 id="decide">What it keeps</h2>
-    <dl class="fg-site-definitions">
-      <dt>Capture</dt>
-      <dd>
-        The agent saves a clear, durable correction or preference automatically
-        and tells you in one line. This includes when to use a skill that runs
-        only when you name it.
-      </dd>
-      <dt>Ask</dt>
-      <dd>
-        If scope or wording is unclear, the agent asks one question. It saves
-        nothing until you answer.
-      </dd>
-      <dt>Skip</dt>
-      <dd>
-        Anything task-specific, tentative, sensitive, or already covered by your
-        instructions, the code, or a skill that loads on its own.
-      </dd>
-    </dl>
-    <UiAlert tone="info"
-      >It stores short paraphrases, never transcripts, prompts, credentials, or
-      code dumps. Your current request and the live code always outrank anything
-      it remembers.</UiAlert
-    >
-    <p class="hint">
-      Local analytics are off until you turn them on. They record metadata only,
-      never prompts or guidance text.
-    </p>
-  </section>
-
-  <section aria-labelledby="how">
-    <h2 id="how">How it works</h2>
-    <ol class="fg-site-steps">
-      <li>
-        <div>
-          <p>
-            <strong>Session start.</strong> With an initialized guide, the hook
-            adds up to eight stored records for the current repository. It also
-            adds a one-line list of other subjects the agent can look up.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            <strong>First prompt.</strong> The hook searches with your prompt
-            and adds up to three matching records not already in context.
-          </p>
-        </div>
-      </li>
-      <li>
-        <div>
-          <p>
-            <strong>Before each final reply.</strong> The agent chooses
-            capture, ask, or skip. The hook adds this reminder, with a short
-            rule for each choice, to each prompt, but nothing enforces the
-            decision.
-          </p>
-        </div>
-      </li>
-    </ol>
-    <p class="hint">
-      Later prompts get only that last reminder until the next session start,
-      <code>/clear</code>, or compaction.
-    </p>
-    <p class="hint">
-      When the agent looks up guidance itself, it searches for the concrete
-      thing your request implies, and it looks guidance up again before quoting
-      it after compaction. The
-      <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
-      has the exact rules.
-    </p>
-  </section>
-
   <section aria-labelledby="install">
     <h2 id="install">Install</h2>
     <p class="section-intro">
-      If you haven't added the marketplace, follow the
-      <a href="/filip-stack/">overview</a> first. Then run the command for your host.
+      Add the marketplace first, as the <a href="/filip-stack/">overview</a>
+      shows. Then run the command for your agent.
     </p>
     <div class="cmd-pair">
       <div>
@@ -159,28 +79,144 @@ const tables = {
       </div>
     </div>
     <p class="hint">
-      Installing the plugin enables its session hooks. Codex runs them only after
-      you review and trust them. Leave it uninstalled to keep that context out of
-      your sessions.
+      The plugin adds hooks that run at session start and on each prompt.
+      Codex runs them only after you review and trust them.
+    </p>
+  </section>
+
+  <section aria-labelledby="first-use">
+    <h2 id="first-use">Save your first preference</h2>
+    <div class="prose">
+      <p>Tell the agent something you want it to keep:</p>
+      <blockquote><p>Remember that I prefer pnpm over npm.</p></blockquote>
+      <p>
+        The agent sets up <code>~/.field-guide</code> if it does not exist,
+        saves a short paraphrase, and confirms in one line, for example:
+      </p>
+    </div>
+    <UiCodeBlock
+      :code="commands.notice"
+      language="text"
+      variant="compact"
+      :copyable="false"
+      :wrap="true"
+    />
+    <p class="hint">
+      In later sessions, the hooks bring it back when it matches the
+      repository or your first prompt.
     </p>
   </section>
 
   <section aria-labelledby="manage">
-    <h2 id="manage">Manage what it remembers</h2>
+    <h2 id="manage">See or undo what it saved</h2>
     <UiCommandList
-      :items="tables.management"
+      :items="management"
       :copyable="false"
       command-header="Do this"
       description-header="What happens"
+    />
+  </section>
+
+  <section aria-labelledby="decide">
+    <h2 id="decide">What it keeps</h2>
+    <p class="section-intro">
+      Before each final reply, the agent makes one of three choices.
+    </p>
+    <dl class="fg-site-definitions">
+      <dt>Capture</dt>
+      <dd>
+        It saves a clear, lasting preference or correction and tells you in
+        one line. This includes when to use a skill that runs only when you
+        name it.
+      </dd>
+      <dt>Ask</dt>
+      <dd>
+        If the scope or wording is unclear, it asks you one question and saves
+        nothing until you answer.
+      </dd>
+      <dt>Skip</dt>
+      <dd>
+        It saves nothing that is specific to one task, tentative, sensitive,
+        or already covered by your instructions, the code, or a skill.
+      </dd>
+    </dl>
+    <UiAlert tone="info"
+      >It stores short paraphrases, never transcripts, prompts, credentials, or
+      code dumps. Your current request and the live code always outrank what it
+      remembers.</UiAlert
     >
-      <template #description="{ item }"
-        ><span v-html="item.description"
-      /></template>
-    </UiCommandList>
+  </section>
+
+  <section aria-labelledby="how">
+    <h2 id="how">How it works</h2>
+    <ol class="fg-site-steps">
+      <li>
+        <div>
+          <p>
+            <strong>Session start.</strong> The hook adds up to eight stored
+            records for the current repository, and a one-line list of other
+            subjects the agent can look up.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>First prompt.</strong> The hook searches with your prompt
+            and adds up to three matching records that are not already in
+            context.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>Every prompt.</strong> The hook reminds the agent to
+            choose capture, ask, or skip before its final reply. Nothing
+            enforces that choice.
+          </p>
+        </div>
+      </li>
+    </ol>
     <p class="hint">
-      The dotfile uses <code>$XDG_CONFIG_HOME</code> when set.
-      <code>filip-stack apply</code> imports it only if it exists.
+      After the first prompt, only the reminder repeats, until the next session
+      start, <code>/clear</code>, or compaction. When the agent looks guidance up
+      itself, the
+      <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
+      has the exact rules.
+    </p>
+    <p class="hint">
+      Local analytics are off until you turn them on. They record metadata
+      only, never prompts or guidance text.
     </p>
   </section>
 
+  <section aria-labelledby="sync">
+    <h2 id="sync">Advanced: share preferences between machines</h2>
+    <div class="prose">
+      <p>
+        <code>filip-stack field-guide-sync</code> imports shared preferences
+        from <code>~/.config/filip-stack/field-guide.json</code> if the file
+        exists, then exports this machine's shared guidance to it. Sync that
+        file between machines with your dotfile manager. The
+        <a href="/filip-stack/cli/#sync">CLI page</a> has the setup.
+      </p>
+      <ul>
+        <li>
+          The file is under <code>$XDG_CONFIG_HOME</code> when that is set.
+          <code>filip-stack apply</code> imports it only if it exists.
+        </li>
+        <li>
+          An undo reaches other machines after they sync. It reverses only the
+          replacement it undoes: a withdrawal, or another replacement of the
+          same guidance, still wins.
+        </li>
+        <li>
+          Refresh the Field Guide plugin and restart your agent before you run
+          <code>filip-stack update</code>. An older plugin cannot read the
+          newer store.
+        </li>
+      </ul>
+    </div>
+  </section>
 </template>
