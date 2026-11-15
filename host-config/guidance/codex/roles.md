@@ -1,9 +1,9 @@
 | Role | In T3 Code | Outside T3 Code |
 | --- | --- | --- |
-| Critic for plans, specifications, and architecture | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `critic` ({{model:codex.frontier.label}} high) |
-| Critic for diffs, worker output, and validation claims | `critic` ({{model:codex.frontier.label}} high) | `critic` |
+| Critic for consequential plans, specifications, and architecture | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `critic` ({{model:codex.frontier.label}} high) |
+| Critic for consequential or high-risk diffs, worker output, and validation claims | `critic` ({{model:codex.frontier.label}} high) | `critic` |
 | Advisor | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `advisor` ({{model:codex.frontier.label}} high) |
-| Reviewer | `reviewer` ({{model:codex.workhorse.label}} high) | `reviewer` |
+| Reviewer, the default for diffs, worker output, validation claims, and routine plans or specifications | `reviewer` ({{model:codex.workhorse.label}} high) | `reviewer` |
 | Routine implementer | `default` ({{model:codex.workhorse.label}} high) | `default` |
 | Consequential implementer | `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high` | `default` ({{model:codex.workhorse.label}} high) |
 | Visual design, UX direction, mockups, new design-system components, or other taste-driven work, even when routine (overrides in-thread work and the implementer rows) | `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high` | `default` ({{model:codex.workhorse.label}} high) |

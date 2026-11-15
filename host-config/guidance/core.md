@@ -86,11 +86,13 @@ Each brief names its role and tells the child to read that section of `{{HOME}}/
 
 {{include:roles}}
 
+Delegated review defaults to the Reviewer row on the workhorse tier. Reserve the Critic rows for consequential, adversarial, architectural, or big-picture review: hard-to-reverse or data-integrity changes, security, public contracts, concurrency, broad or ambiguous scope, and architecture or cross-cutting plans. The Advisor stays on the frontier tier.
+
 Each model belongs to a tier, and each tier has one model per provider:
 
 | Tier | Work | Claude (`claudeAgent`, option `effort`) | Codex (`codex`, options `reasoningEffort` and `serviceTier: default`) |
 | --- | --- | --- | --- |
-| Frontier | Critique, advice, and hard reasoning | `{{model:claude.frontier.id}}` ({{model:claude.frontier.label}}) | `{{model:codex.frontier.id}}` ({{model:codex.frontier.label}}) |
+| Frontier | Advice, consequential critique, and hard reasoning | `{{model:claude.frontier.id}}` ({{model:claude.frontier.label}}) | `{{model:codex.frontier.id}}` ({{model:codex.frontier.label}}) |
 | Workhorse | Production code, tests, and review | `{{model:claude.workhorse.id}}` ({{model:claude.workhorse.label}}) | `{{model:codex.workhorse.id}}` ({{model:codex.workhorse.label}}) |
 | Balanced | Mechanical edits and summaries | `{{model:claude.balanced.id}}` ({{model:claude.balanced.label}}) | `{{model:codex.balanced.id}}` ({{model:codex.balanced.label}}) |
 | Fast | Exploration, search, and classification | `{{model:claude.fast.id}}` ({{model:claude.fast.label}}) | `{{model:codex.fast.id}}` ({{model:codex.fast.label}}) |

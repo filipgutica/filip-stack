@@ -92,6 +92,50 @@
       }
     },
     {
+      "id": "diff-review-routine",
+      "task": "A worker finished a 150-line change that adds a CSV export button to the reports page, with tests. Get an independent review of the diff before I merge it.",
+      "accept": {
+        "claude": [
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "claude.workhorse",
+          "codex.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "spec-review-routine",
+      "task": "I drafted a one-page spec for adding a dark-mode toggle to the settings page. It touches one component and a stored preference. Get an independent review before I start.",
+      "accept": {
+        "claude": [
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "claude.workhorse",
+          "codex.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "diff-review-high-risk",
+      "task": "A worker finished a diff that migrates the users table to a new auth schema and rewrites session-token validation. Get an independent review before it ships.",
+      "accept": {
+        "claude": [
+          "claude.frontier",
+          "codex.frontier"
+        ],
+        "codex": [
+          "claude.frontier",
+          "codex.frontier"
+        ]
+      }
+    },
+    {
       "id": "implementer-codex-short",
       "task": "Implement the routine change we agreed on: add a `--json` flag to the `report` CLI command, with a test. Hand it to the routine implementer.",
       "usage": {

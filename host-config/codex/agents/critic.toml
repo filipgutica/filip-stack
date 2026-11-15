@@ -1,5 +1,5 @@
 name = "critic"
-description = "Read-only adversarial reviewer for plans, diffs, worker output, and validation claims."
+description = "Read-only adversarial reviewer, reserved for consequential, high-risk, or architectural plans, diffs, worker output, and validation claims; use reviewer for routine review."
 model = "{{model:codex.frontier.id}}"
 model_reasoning_effort = "high"
 developer_instructions = """
