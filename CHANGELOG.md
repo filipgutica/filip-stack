@@ -1,3 +1,11 @@
+# [6.1.0](https://github.com/filipgutica/filip-stack/compare/v6.0.0...v6.1.0) (2026-11-15)
+
+
+### Features
+
+* **host-config:** add a frontier Planner, model escalation, and council presets ([06a8671](https://github.com/filipgutica/filip-stack/commit/06a8671ba116f7de06b77cb730072e24b11b287f))
+* **host-config:** switch model family between main thread, Planner, and plan Critic ([b1c7a64](https://github.com/filipgutica/filip-stack/commit/b1c7a64acb6c0a9d74c9308c53100ea5a4464b3d))
+
 # [6.0.0](https://github.com/filipgutica/filip-stack/compare/v5.14.0...v6.0.0) (2026-11-15)
 
 
