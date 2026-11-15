@@ -93,7 +93,8 @@
         "reason": { "$ref": "#/$defs/safeText", "minLength": 1, "maxLength": 512 },
         "source": { "$ref": "#/$defs/opaqueId", "maxLength": 128 },
         "at": { "type": "string", "format": "date-time" },
-        "replacementId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" }
+        "replacementId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+        "retirementId": { "type": "string", "pattern": "^retirement:v1:[0-9a-f]{64}$" }
       }
     },
     "guidance": {

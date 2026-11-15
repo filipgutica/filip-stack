@@ -684,6 +684,42 @@ test('validate rejects restoring superseded guidance while its replacement stays
   assert.match(result.stderr, /restoration requires its replacement to be withdrawn/)
 })
 
+test('validate guards moving superseded guidance to withdrawn', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-superseded-withdrawn-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/superseded-withdrawn.git' })
+  const superseded = ({ name, undo }) => {
+    const guideRoot = join(root, name)
+    const paths = initializeMemory({ repoRoot, guideRoot })
+    const { original, replacement } = supersedeWithContradiction({ repoRoot, guideRoot, scope: 'shared', replacementExplicitPreference: true })
+    if (undo) {
+      runInputCommand({
+        command: 'transition',
+        repoRoot,
+        guideRoot,
+        input: { schemaVersion: 1, action: 'undo', targetId: replacement.targetId, reason: 'The user undid this learning.', source: 'user' },
+      })
+    }
+    const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+    return { guideRoot, paths, memory, guidance: memory.guidance.find(({ id }) => id === original.targetId) }
+  }
+  const moveToWithdrawn = ({ paths, memory, guidance }) => {
+    if (guidance.status === 'active') guidance.transitions.pop()
+    guidance.transitions.push({ from: 'superseded', to: 'withdrawn', reason: 'Invalid manual edit.', source: 'manual-edit', at: new Date().toISOString() })
+    guidance.status = 'withdrawn'
+    replaceCanonicalMemoryJson({ paths, memory })
+  }
+
+  // The replacement is still active.
+  const replacementActive = superseded({ name: 'replacement-active', undo: false })
+  moveToWithdrawn(replacementActive)
+  assert.match(run({ command: 'validate', repoRoot, guideRoot: replacementActive.guideRoot, expectFailure: true }).stderr, /superseded->withdrawn requires its replacement to be withdrawn/)
+
+  // The undo acknowledged the only retirement, so the record had to return to active.
+  const nothingOutstanding = superseded({ name: 'nothing-outstanding', undo: true })
+  moveToWithdrawn(nothingOutstanding)
+  assert.match(run({ command: 'validate', repoRoot, guideRoot: nothingOutstanding.guideRoot, expectFailure: true }).stderr, /superseded->withdrawn requires an outstanding retirement/)
+})
+
 test('validate rejects superseded history without linked replacement provenance', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-unlinked-history-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/unlinked-history.git' })
@@ -1587,14 +1623,14 @@ test('an imported retirement withdraws the active replacement of superseded guid
   writeFileSync(exported, `${JSON.stringify({ schemaVersion: 1, active: [], retired: [fingerprint] })}\n`)
 
   const result = run({ command: 'import', repoRoot, guideRoot, args: ['--input', exported] }).result
-  // Withdrawing the replacement restores the original, which then stays retired by its own
-  // supersede: only a user undo acknowledges a retirement.
+  // Withdrawing the replacement moves the original straight to withdrawn: its own supersede is
+  // still outstanding, because only a user undo acknowledges a retirement.
   assert.deepEqual(result.retired.sort(), [original.targetId, replacement.targetId].sort())
   const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
   assert.equal(memory.guidance.find(({ id }) => id === replacement.targetId).status, 'withdrawn')
   assert.deepEqual(
     memory.guidance.find(({ id }) => id === original.targetId).transitions.map(({ from, to }) => `${from}->${to}`),
-    ['null->active', 'active->superseded', 'superseded->active', 'active->withdrawn'],
+    ['null->active', 'active->superseded', 'superseded->withdrawn'],
   )
   run({ command: 'validate', repoRoot, guideRoot })
 })
@@ -1634,6 +1670,8 @@ const sharedCorrection = (name) => {
     return {
       guideRoot,
       sync: () => syncMachine({ repoRoot, guideRoot, dotfile }),
+      learn: (input) => submit({ repoRoot, guideRoot, input }).result.targetId,
+      revision: () => JSON.parse(readFileSync(join(guideRoot, 'memory.json'), 'utf8')).revision,
       record: (id) => JSON.parse(readFileSync(join(guideRoot, 'memory.json'), 'utf8')).guidance.find((guidance) => guidance.id === id),
       transition: (input) => runInputCommand({
         command: 'transition',
@@ -1716,21 +1754,106 @@ test('a retirement that the restoring undo has not seen wins', () => {
   second.validate()
 })
 
-test('a restore that has seen a retirement wins over it', () => {
-  const { first, second, original, replacement } = sharedCorrection('sync-restore-saw-retirement')
+test('undo acknowledges only its own supersession, so a withdrawal it has seen stays final', () => {
+  const { first, second, original, replacement } = sharedCorrection('sync-undo-own-supersession')
   // The second machine retires A before it learns of the supersede, and the first machine sees
   // that retirement while A is still superseded there.
   second.transition({ action: 'withdraw', targetId: original })
   second.sync()
   first.sync()
   assert.equal(first.record(original).status, 'superseded')
+  assert.equal(first.record(original).retirements.length, 2)
+  const ownRetirement = first.record(original).transitions.at(-1).retirementId
+  first.transition({ action: 'undo', targetId: replacement })
+
+  const undone = first.record(original)
+  assert.deepEqual(undone.acknowledged, [ownRetirement])
+  assert.deepEqual([undone.status, undone.transitions.at(-1).from], ['withdrawn', 'superseded'])
+  for (const machine of [first, second]) {
+    machine.sync()
+    assert.equal(machine.record(original).status, 'withdrawn')
+    machine.validate()
+  }
+})
+
+test('concurrent replacements of one record converge after one is undone', () => {
+  const { dotfile, first, second, original, replacement } = sharedCorrection('sync-concurrent-replacements')
+  // The second machine supersedes A with its own replacement C before it learns of B.
+  const otherInput = conversationSubmission({ learning: 'Inline helpers used once.', turnId: 'turn-3', scope: 'shared', explicitPreference: true })
+  otherInput.relationship = { kind: 'refines', targetId: original }
+  const other = second.learn(otherInput)
+  second.transition({ action: 'supersede', targetId: original, replacementId: other, confirmed: true })
+  second.sync()
+  first.sync()
+  assert.equal(first.record(other).status, 'active')
+  // The second machine undoes C after it has seen both retirements of A.
+  second.transition({ action: 'undo', targetId: other })
+  for (const machine of [first, second, first, second, first, second]) machine.sync()
+
+  for (const machine of [first, second]) {
+    assert.notEqual(machine.record(original).status, 'active')
+    assert.equal(machine.record(replacement).status, 'active')
+    assert.equal(machine.record(other).status, 'withdrawn')
+    machine.validate()
+  }
+  const exported = readFileSync(dotfile, 'utf8')
+  const revisions = [first.revision(), second.revision()]
+  first.sync()
+  second.sync()
+  assert.equal(readFileSync(dotfile, 'utf8'), exported)
+  assert.deepEqual([first.revision(), second.revision()], revisions)
+
+  // Undoing B as well acknowledges the last supersession of A, so A comes back everywhere,
+  // including on the second machine, whose history still holds superseded->withdrawn.
   first.transition({ action: 'undo', targetId: replacement })
   first.sync()
   second.sync()
-  assert.equal(first.record(original).status, 'active')
+  for (const machine of [first, second]) {
+    assert.equal(machine.record(original).status, 'active')
+    machine.validate()
+  }
+})
+
+for (const order of ['first', 'second']) {
+  test(`restoring a replacement keeps its own replacement retired when the ${order} machine syncs first`, () => {
+    const { first, second, original, replacement } = sharedCorrection(`sync-restored-replacement-${order}`)
+    second.sync()
+    // The second machine supersedes B with C, while the first machine undoes B and restores A.
+    const otherInput = conversationSubmission({ learning: 'Extract helpers used twice.', turnId: 'turn-3', scope: 'shared', explicitPreference: true })
+    otherInput.relationship = { kind: 'contradicts', targetId: replacement }
+    const other = second.learn(otherInput)
+    second.transition({ action: 'supersede', targetId: replacement, replacementId: other, confirmed: true })
+    first.transition({ action: 'undo', targetId: replacement })
+    first.sync()
+    second.sync()
+    first.sync()
+    assert.equal(first.record(other).status, 'active')
+    // The second machine undoes C after it has seen B's retirement on the first machine.
+    second.transition({ action: 'undo', targetId: other })
+    const [leader, follower] = order === 'first' ? [first, second] : [second, first]
+    for (let round = 0; round < 2; round += 1) {
+      leader.sync()
+      follower.sync()
+    }
+
+    for (const machine of [first, second]) {
+      assert.equal(machine.record(original).status, 'active')
+      assert.equal(machine.record(replacement).status, 'withdrawn')
+      assert.equal(machine.record(other).status, 'withdrawn')
+      machine.validate()
+    }
+  })
+}
+
+test('export leaves out active text that the existing dotfile retires', () => {
+  const { repoRoot, dotfile, second, original } = sharedCorrection('sync-export-retired-text')
+  // The first machine superseded A and exported. The second still holds A as active and exports
+  // without importing first.
   assert.equal(second.record(original).status, 'active')
-  first.validate()
-  second.validate()
+  run({ command: 'export', repoRoot, guideRoot: second.guideRoot, args: ['--output', dotfile] })
+  const exported = readFileSync(dotfile, 'utf8')
+  assert.doesNotMatch(exported, /Extract every helper/)
+  assert.ok(JSON.parse(exported).retired.some(({ fingerprint }) => fingerprint === original.replace('guidance', 'fingerprint')))
 })
 
 test('a stale v2 dotfile neither brings back retired guidance nor withdraws restored guidance', () => {
@@ -1757,6 +1880,7 @@ const dropRetirementSets = (paths) => {
   for (const guidance of memory.guidance) {
     delete guidance.retirements
     delete guidance.acknowledged
+    for (const transition of guidance.transitions) delete transition.retirementId
   }
   replaceCanonicalMemoryJson({ paths, memory })
 }

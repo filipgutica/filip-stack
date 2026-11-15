@@ -413,6 +413,13 @@ const validateEvidenceRecord = (evidence) => {
   requireTimestamp({ value: evidence.createdAt, label: 'evidence createdAt' })
 }
 
+// A shared supersede records the retirement ID it added, so an undo can acknowledge only that ID.
+const validateTransitionRetirementId = ({ guidance, transition }) => {
+  if (transition.retirementId === undefined) return
+  if (transition.to !== 'superseded' || !retirementIdPattern.test(transition.retirementId)) fail('retirementId is valid only on a superseded transition')
+  if (!guidance.retirements?.includes(transition.retirementId)) fail('a superseded transition names an unknown retirement')
+}
+
 const validateGuidanceRecord = (guidance) => {
   assertObject({ value: guidance, label: 'guidance record' })
   assertClosedFields({
@@ -458,7 +465,7 @@ const validateGuidanceRecord = (guidance) => {
   }
   for (const transition of guidance.transitions) {
     assertObject({ value: transition, label: 'guidance transition' })
-    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId'], label: 'guidance transition' })
+    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId', 'retirementId'], label: 'guidance transition' })
     if (transition.from !== null && !['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.from)) fail('invalid transition from status')
     if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.to)) fail('invalid transition to status')
     requireString({ value: transition.reason, label: 'transition reason', maxBytes: 512 })
@@ -470,6 +477,7 @@ const validateGuidanceRecord = (guidance) => {
     if ((transition.to === 'superseded') !== Boolean(transition.replacementId)) {
       fail('replacementId is required only for a superseded transition')
     }
+    validateTransitionRetirementId({ guidance, transition })
   }
   if (guidance.retirements !== undefined || guidance.acknowledged !== undefined) {
     if (guidance.scope.kind !== 'shared') fail('only shared guidance has retirement sets')
@@ -539,6 +547,7 @@ const validateMemory = (memory) => {
         'active->withdrawn',
         'active->archived',
         'superseded->active',
+        'superseded->withdrawn',
         'superseded->archived',
         'withdrawn->active',
         'withdrawn->archived',
@@ -548,10 +557,15 @@ const validateMemory = (memory) => {
       if (edge === 'withdrawn->active' && (guidance.scope.kind !== 'shared' || guidance.transitions[index].source !== 'shared-sync')) {
         fail(`${guidance.id} withdrawn->active requires shared scope and source shared-sync`)
       }
-      // Restoring superseded guidance is only the second half of withdrawing its replacement.
-      if (edge === 'superseded->active') {
+      // Superseded guidance leaves that status only as the second half of withdrawing its replacement.
+      if (edge === 'superseded->active' || edge === 'superseded->withdrawn') {
         const replacement = memory.guidance.find(({ id }) => id === guidance.transitions[index - 1].replacementId)
-        if (!replacement?.transitions.some(({ to }) => to === 'withdrawn')) fail(`${guidance.id} restoration requires its replacement to be withdrawn`)
+        if (!replacement?.transitions.some(({ to }) => to === 'withdrawn')) fail(`${guidance.id} ${edge === 'superseded->active' ? 'restoration' : edge} requires its replacement to be withdrawn`)
+      }
+      // It moves to withdrawn, not active, only because another retirement is outstanding. Sets only
+      // grow, so a later restore through shared sync may acknowledge that retirement.
+      if (edge === 'superseded->withdrawn' && index === guidance.transitions.length - 1 && !hasUnacknowledgedRetirement(retirementSetsOf(guidance))) {
+        fail(`${guidance.id} superseded->withdrawn requires an outstanding retirement`)
       }
     }
     if (guidance.transitions.at(-1).to !== guidance.status) fail(`${guidance.id} status does not match its transition history`)
@@ -1021,9 +1035,9 @@ const submitObservation = ({ paths, inputPath, inputJson }) => (
 )
 
 // Shared sync orders retirements and restores with two grow-only sets of IDs on each shared
-// fingerprint. A user retirement adds a random ID. An undo that restores a record acknowledges
-// every ID that record has seen. Import only copies IDs. A record is retired while any ID is
-// unacknowledged. A shared record retired before the sets existed counts as one baseline ID.
+// fingerprint. A user retirement adds a random ID. Withdrawing a replacement acknowledges only
+// the ID of the supersession it created. Import only copies IDs. A record is retired while any
+// ID is unacknowledged. A shared record retired before the sets existed counts as one baseline ID.
 const baselineRetirementId = (fingerprint) => hashIdentity({ prefix: 'retirement', values: ['baseline', fingerprint] })
 
 const retirementSetsOf = (guidance) => ({
@@ -1051,23 +1065,23 @@ const setRetirementSets = ({ guidance, retirements, acknowledged }) => {
 }
 
 // Call before the retirement transition, while the current status still decides the baseline.
+// Returns the new ID, or undefined for repository-scoped guidance.
 const addRetirement = (guidance) => {
-  if (guidance.scope.kind !== 'shared') return
+  if (guidance.scope.kind !== 'shared') return undefined
   const { retirements, acknowledged } = retirementSetsOf(guidance)
-  setRetirementSets({ guidance, retirements: [...retirements, `retirement:v1:${randomBytes(32).toString('hex')}`], acknowledged })
+  const retirementId = `retirement:v1:${randomBytes(32).toString('hex')}`
+  setRetirementSets({ guidance, retirements: [...retirements, retirementId], acknowledged })
+  return retirementId
 }
 
-const acknowledgeRetirements = (guidance) => {
-  if (guidance.scope.kind !== 'shared') return
-  const { retirements } = retirementSetsOf(guidance)
-  setRetirementSets({ guidance, retirements, acknowledged: retirements })
+// A supersession made before its transition stored an ID used the baseline ID.
+const acknowledgeOwnSupersession = (superseded) => {
+  const { retirements, acknowledged } = retirementSetsOf(superseded)
+  const own = superseded.transitions.at(-1).retirementId ?? baselineRetirementId(superseded.fingerprint)
+  if (retirements.includes(own)) setRetirementSets({ guidance: superseded, retirements, acknowledged: [...acknowledged, own] })
 }
 
-const appendTransition = ({ guidance, to, reason, source, now, replacementId }) => {
-  // Leaving a retired status must not drop the baseline retirement that the status implied.
-  if (!guidance.retirements && guidance.scope.kind === 'shared' && retiredStatuses.has(guidance.status)) {
-    setRetirementSets({ guidance, ...retirementSetsOf(guidance) })
-  }
+const appendTransition = ({ guidance, to, reason, source, now, replacementId, retirementId }) => {
   guidance.transitions.push({
     from: guidance.status,
     to,
@@ -1075,6 +1089,7 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId }) 
     source,
     at: now,
     ...(replacementId ? { replacementId } : {}),
+    ...(retirementId ? { retirementId } : {}),
   })
   guidance.status = to
   guidance.updatedAt = now
@@ -1105,9 +1120,10 @@ const validateTransitionInput = (input) => {
   return input
 }
 
-// A superseded record needs an active replacement, so withdrawing the
-// replacement restores the record it superseded and returns it. Only a user's
-// withdrawal adds a retirement ID and acknowledges the restored record's IDs.
+// A superseded record needs an active replacement, so withdrawing the replacement also moves
+// the record it superseded, and returns that record. Only a user's withdrawal adds a retirement
+// ID and acknowledges the supersession. The record returns to active only when none of its
+// retirements is outstanding; otherwise it moves to withdrawn.
 const withdrawGuidance = ({ memory, target, input, now, byUser }) => {
   if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
   if (byUser) addRetirement(target)
@@ -1116,8 +1132,9 @@ const withdrawGuidance = ({ memory, target, input, now, byUser }) => {
     guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === target.id
   ))
   if (!superseded) return null
-  if (byUser) acknowledgeRetirements(superseded)
-  appendTransition({ guidance: superseded, to: 'active', reason: input.reason, source: input.source, now })
+  if (byUser) acknowledgeOwnSupersession(superseded)
+  const to = hasUnacknowledgedRetirement(retirementSetsOf(superseded)) ? 'withdrawn' : 'active'
+  appendTransition({ guidance: superseded, to, reason: input.reason, source: input.source, now })
   return superseded
 }
 
@@ -1153,7 +1170,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
     if (replacement.status === 'candidate') {
       appendTransition({ guidance: replacement, to: 'active', reason: input.reason, source: input.source, now })
     }
-    addRetirement(target)
+    const retirementId = addRetirement(target)
     appendTransition({
       guidance: target,
       to: 'superseded',
@@ -1161,6 +1178,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
       source: input.source,
       now,
       replacementId: replacement.id,
+      retirementId,
     })
   }
 
@@ -1261,17 +1279,6 @@ const exportSharedGuidance = ({ paths, outputPath }) => {
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
   const shared = memory.guidance.filter(({ scope }) => scope.kind === 'shared')
-  const active = shared
-    .filter(({ status }) => status === 'active')
-    .map(({ subjectKey, linkedSubjects, learning, confidence, generic, examples }) => ({
-      subjectKey,
-      linkedSubjects: linkedSubjects ?? [],
-      learning,
-      confidence,
-      ...(generic === undefined ? {} : { generic }),
-      examples: examples ?? [],
-    }))
-    .sort((left, right) => left.subjectKey.localeCompare(right.subjectKey) || left.learning.localeCompare(right.learning))
   // Union with the output file's sets. A machine that never had a record must not drop
   // another machine's retirements or acknowledgments of it.
   const entries = new Map()
@@ -1286,6 +1293,18 @@ const exportSharedGuidance = ({ paths, outputPath }) => {
   }
   if (existsSync(resolve(outputPath))) validatePortableSharedGuidance(readJsonInput(outputPath)).retired.forEach(addEntry)
   for (const guidance of shared) addEntry({ fingerprint: guidance.fingerprint, ...retirementSetsOf(guidance) })
+  // A record that the merged sets retire is exported as its fingerprint only, so its text stays local.
+  const active = shared
+    .filter(({ status, fingerprint }) => status === 'active' && !hasUnacknowledgedRetirement(entries.get(fingerprint) ?? { retirements: [], acknowledged: [] }))
+    .map(({ subjectKey, linkedSubjects, learning, confidence, generic, examples }) => ({
+      subjectKey,
+      linkedSubjects: linkedSubjects ?? [],
+      learning,
+      confidence,
+      ...(generic === undefined ? {} : { generic }),
+      examples: examples ?? [],
+    }))
+    .sort((left, right) => left.subjectKey.localeCompare(right.subjectKey) || left.learning.localeCompare(right.learning))
   const retired = [...entries.values()].sort((left, right) => left.fingerprint.localeCompare(right.fingerprint))
   writeTextAtomically({
     path: resolve(outputPath),
@@ -1379,17 +1398,9 @@ const reconcileSharedStatus = ({ memory, now, result }) => {
       result.restored.push(guidance.id)
     }
     if (!retired || !['candidate', 'active'].includes(guidance.status)) continue
-    const restored = withdrawGuidance({ memory, target: guidance, input, now, byUser: false })
+    const superseded = withdrawGuidance({ memory, target: guidance, input, now, byUser: false })
     result.retired.push(guidance.id)
-    if (!restored) continue
-    // Withdrawing a replacement restores the record it superseded. That record stays retired
-    // unless a user undo on another machine acknowledged its retirements.
-    if (hasUnacknowledgedRetirement(retirementSetsOf(restored))) {
-      withdrawGuidance({ memory, target: restored, input, now, byUser: false })
-      result.retired.push(restored.id)
-    } else {
-      result.restored.push(restored.id)
-    }
+    if (superseded) result[superseded.status === 'active' ? 'restored' : 'retired'].push(superseded.id)
   }
 }
 
