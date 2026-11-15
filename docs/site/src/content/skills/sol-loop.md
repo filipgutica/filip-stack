@@ -4,10 +4,11 @@ related: [full-send, babysit-pr]
 
 ## What it does
 
-The reviewer is Sol (OpenAI's `gpt-6.1-sol`). Your agent checks each finding
+Your agent checks each finding
 against the code, fixes real problems with a small change, and answers
 disagreements with evidence. Findings outside the change's purpose become
-follow-ups instead of growing the diff.
+follow-ups instead of growing the diff. It uses the latest Sol unless you
+name a version.
 
 ## When to use it
 

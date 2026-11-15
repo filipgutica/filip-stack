@@ -44,6 +44,6 @@ links the detailed conventions and version notes.
 - Vue changes or review notes that match the surrounding code.
 - Focused type, lint, and component checks for the affected behavior.
 
-User-visible changes and slot, event, or model contracts get component tests.
+User-visible changes and slot, event, or model contracts favor component tests.
 Public API changes need your approval. For a closer look at test value, use
 [test-audit](../test-audit/).

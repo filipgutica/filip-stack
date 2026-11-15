@@ -96,7 +96,7 @@ Install only the standalone skills you want, with the
 | `merge-council` | Runs a council review on a PR, fixes the findings every member agrees on, and returns a merge verdict. Needs `council`. |
 | `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |
 | `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
-| `sol-loop` | Has Sol (OpenAI's `gpt-6.1-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `sol-loop` | Has Sol (currently OpenAI's `gpt-6.1-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
 | `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
 
@@ -136,6 +136,8 @@ them each session. The
 [Field Guide page](https://filipgutica.github.io/filip-stack/field-guide/)
 shows what it saves and when.
 
+Add the marketplace first, as [Try Workflow](#try-workflow) shows.
+
 ```sh
 claude plugin install field-guide@filip-stack   # Claude Code
 codex plugin add field-guide@filip-stack        # Codex, then restart it
@@ -152,6 +154,8 @@ Guardrails is a separate, optional plugin. Its `PreToolUse` hook checks each
 shell command your agent runs, including inside `bash -c` and `zsh -i -c`
 wrappers.
 
+Add the marketplace first, as [Try Workflow](#try-workflow) shows.
+
 ```sh
 claude plugin install guardrails@filip-stack   # Claude Code
 codex plugin add guardrails@filip-stack        # Codex, then restart it
@@ -166,8 +170,9 @@ If the hook hits an internal error or Node.js is missing, it steps aside and
 your normal permission prompts apply. Codex skips plugin hooks until you
 review and trust them. Codex hooks cannot ask yet, so on Codex the 1Password
 prompt comes from `~/.codex/rules/filip-stack.rules`, which host config
-installs. That rule matches only a plain `op …` command. The hook denies other
-forms and tells the agent to run the plain one.
+installs. That rule matches only a plain `op …` command. On Codex, the hook
+denies other forms, such as one inside a wrapper or a chain, and tells the
+agent to run the plain one.
 
 ## Host config
 

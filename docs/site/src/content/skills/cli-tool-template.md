@@ -31,8 +31,9 @@ The agent follows a live reference tool in the chosen language:
 | TypeScript on Node | Git, GitHub, process, or JSON-heavy logic | `wtree`, `devps` |
 
 Releases use release-please: merging the release PR tags and publishes the
-version. The squashed PR title sets the bump: `fix:` for a patch, `feat:` for
-a minor, and `!` or a `BREAKING CHANGE:` footer for a major.
+version. The squashed PR title and body set the bump: `fix:` for a patch,
+`feat:` for a minor, and `!` in the title or a `BREAKING CHANGE:` footer in
+the body for a major.
 
 Each tool supports `--help` and `--version`, and CI checks the version against
 the release manifest. The GitHub Pages site starts from a sibling tool's Astro

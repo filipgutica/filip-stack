@@ -4,7 +4,7 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 ## What it does
 
-Sol (OpenAI's
+Sol (currently OpenAI's
 `gpt-6.1-sol`) reviews the code and PR description through
 [sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
 bot findings, and makes routine decisions while you are away. It can also

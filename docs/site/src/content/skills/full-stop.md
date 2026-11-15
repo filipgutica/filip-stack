@@ -4,7 +4,7 @@ related: [full-send, sol-loop, babysit-pr]
 
 ## What it does
 
-Full stop runs [full-send](../full-send/)'s process: Sol (OpenAI's
+Full stop runs [full-send](../full-send/)'s process: Sol (currently OpenAI's
 `gpt-6.1-sol`) reviews the code and PR description, and the agent handles CI
 and bot findings. At the end, it checks that the PR is ready for your merge
 decision instead of merging.
@@ -31,8 +31,9 @@ branch.
 It uses full send's modes, proof rules, and rules for asking you, and always
 returns a verdict.
 
-In fix mode, it turns off auto-merge and takes the PR out of any merge queue,
-and checks again before each push. In review-only mode, it only reports them.
+In fix mode, it turns off auto-merge and takes the PR out of any merge queue
+before work begins, and checks again before each push. In review-only mode,
+it reports those settings without changing them.
 If it cannot prevent a merge on its own, it asks you first.
 
 Full send's merge gate becomes a readiness check on the final diff. Before
