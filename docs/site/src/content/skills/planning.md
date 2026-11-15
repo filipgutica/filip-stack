@@ -5,8 +5,8 @@ related: [technical-writing, jira-work-links]
 ## What it does
 
 You get the one output you ask for. A request for a specification ends with
-the specification, not a plan or tickets. Every claim comes from the code,
-tests, or tracker.
+the specification, not a plan or tickets. The agent grounds it in the
+repository's code, tests, and tracker.
 
 ## When to use it
 

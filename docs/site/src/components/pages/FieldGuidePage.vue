@@ -56,6 +56,7 @@ const management = [
     <p class="hint">
       The plugin adds hooks that run at session start and on each prompt.
       Codex runs them after you review and trust them.
+      In Codex, restart so a new session loads the plugin.
     </p>
   </section>
 
