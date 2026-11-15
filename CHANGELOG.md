@@ -1,3 +1,12 @@
+## [5.13.2](https://github.com/filipgutica/filip-stack/compare/v5.13.1...v5.13.2) (2026-11-15)
+
+
+### Bug Fixes
+
+* **field-guide:** require a withdrawn replacement before restoring superseded guidance ([5036c31](https://github.com/filipgutica/filip-stack/commit/5036c314f2c279f1e9da4ac0d34c2a70157a227f))
+* **field-guide:** restore superseded guidance when its replacement is undone ([58f3cb4](https://github.com/filipgutica/filip-stack/commit/58f3cb457c3935c318a77a807d3a05879b92c29c))
+* **field-guide:** skip learnings that guidance or skills already encode ([c031dd2](https://github.com/filipgutica/filip-stack/commit/c031dd2ef535b31c88f1916c731893371dd86fea))
+
 ## [5.13.1](https://github.com/filipgutica/filip-stack/compare/v5.13.0...v5.13.1) (2026-11-14)
 
 
