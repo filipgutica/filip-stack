@@ -1,3 +1,10 @@
+# [6.4.0](https://github.com/filipgutica/filip-stack/compare/v6.3.1...v6.4.0) (2026-11-15)
+
+
+### Features
+
+* **sync:** install and verify the design-system plugin from its own marketplace ([bd94df1](https://github.com/filipgutica/filip-stack/commit/bd94df11137fe8836844ec85f9ea96fffdba606d))
+
 ## [6.3.1](https://github.com/filipgutica/filip-stack/compare/v6.3.0...v6.3.1) (2026-11-15)
 
 
