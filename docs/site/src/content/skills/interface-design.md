@@ -9,8 +9,9 @@ recover from errors, and see that they succeeded. It judges the screen or
 flow with UX laws, craft guidance, and standards such as WCAG 2.2.
 
 Your repository's design system owns the look. If there is none, the agent
-uses the default [design system](../../design-system/) when it is installed.
-A new screen does not get its own palette or visual identity.
+uses the [design system](../../design-system/) plugin when it is installed, and
+otherwise uses no house style and says once that the plugin is missing. A new
+screen does not get its own palette or visual identity.
 
 ## When to use it
 

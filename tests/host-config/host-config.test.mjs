@@ -6,15 +6,12 @@ import { dirname, join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
-import { buildPackage, copyHostConfig, fixturePayload, seedCache, snapshot } from './design-system-fixture.mjs'
+import { copyHostConfig, snapshot } from './host-config-fixture.mjs'
 
 const sourceRoot = fileURLToPath(new URL('../../host-config/', import.meta.url))
-// Tests run a copy of the script pinned to a fixture package that sits in a seeded cache.
+// Tests run a copy of the script in a fixture repository.
 const fixtureRoot = mkdtempSync(join(tmpdir(), 'host-config-fixture-'))
-const designSystem = buildPackage({ root: fixtureRoot })
-const cacheHome = join(fixtureRoot, 'cache')
-seedCache({ cacheHome, ...designSystem })
-copyHostConfig({ repo: join(fixtureRoot, 'repo'), pin: designSystem.pin })
+copyHostConfig({ repo: join(fixtureRoot, 'repo') })
 // Field Guide needs its repository root to be a git checkout.
 assert.equal(spawnSync('git', ['init', '-q', join(fixtureRoot, 'repo')]).status, 0)
 const script = join(fixtureRoot, 'repo/scripts/host-config.mjs')
@@ -22,7 +19,7 @@ const blockStart = '<!-- filip-stack:host-config:begin'
 const blockEnd = '<!-- filip-stack:host-config:end -->\n'
 
 const run = ({ home, command, args = [], expectFailure = false, scriptPath = script, xdgConfigHome }) => {
-  const env = { ...process.env, XDG_CACHE_HOME: cacheHome }
+  const env = { ...process.env }
   delete env.XDG_CONFIG_HOME
   if (xdgConfigHome !== undefined) env.XDG_CONFIG_HOME = xdgConfigHome
   const result = spawnSync(process.execPath, [scriptPath, command, '--home', home, ...args], { encoding: 'utf8', env })
@@ -49,15 +46,27 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
-  for (const [file, content] of Object.entries(fixturePayload)) assert.equal(read(join(home, 'design-system', file)), content)
+  // The design system ships as a plugin, so apply installs no design folder and records no version.
+  for (const folder of ['design-system', 'design-language']) assert.equal(existsSync(join(home, folder)), false)
   const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
-  assert.deepEqual(manifest.designSystem, { version: '1.0.0', integrity: designSystem.pin.integrity })
+  assert.deepEqual(Object.keys(manifest), ['commit', 'files'])
 
   const before = read(join(home, '.agents/.filip-stack-host-config.json'))
   assert.ok(states(home).every((line) => line.startsWith('current')))
   const again = run({ home, command: 'apply' })
-  assert.doesNotMatch(again.stdout, /^(wrote|removed|downloaded) /m)
+  assert.doesNotMatch(again.stdout, /^(wrote|removed) /m)
   assert.equal(read(join(home, '.agents/.filip-stack-host-config.json')), before)
+})
+
+// sync.mjs reads the target states after exactly two header lines.
+test('status prints a two-line header, then one state line per target', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-status-'))
+  run({ home, command: 'apply' })
+  const [applied, repository, ...targets] = run({ home, command: 'status' }).stdout.trimEnd().split('\n')
+  assert.match(applied, /^applied: \S+$/)
+  assert.match(repository, /^repository: \S+$/)
+  assert.ok(targets.length > 0)
+  for (const line of targets) assert.match(line, /^current +\S+$/)
 })
 
 const portableGuidance = (learning) => ({
@@ -86,7 +95,7 @@ for (const mode of ['unset', 'empty', 'custom']) {
     const repo = mkdtempSync(join(tmpdir(), 'host-config-sync-repo-'))
     const initialized = spawnSync('git', ['init', '-q', repo], { encoding: 'utf8' })
     assert.equal(initialized.status, 0, initialized.stderr)
-    copyHostConfig({ repo, pin: designSystem.pin })
+    copyHostConfig({ repo })
     // A leftover export must never be imported or overwritten.
     mkdirSync(join(repo, 'host-config/field-guide'), { recursive: true })
     writeFileSync(join(repo, 'host-config/field-guide/shared.json'), JSON.stringify(portableGuidance('Legacy guidance.')))
@@ -166,7 +175,7 @@ test('apply --force never writes a backup through a symlink at the backup path',
   assert.match(read(`${path}.bak.1`), /## Local evidence/)
 })
 
-// Only design-system files refuse symlinks; a guidance file linked from a dotfile manager is written through the link.
+// Only retired design-system files are left alone behind a symlink; a guidance file linked from a dotfile manager is written through the link.
 test('apply writes a symlinked guidance file through its link', () => {
   const home = mkdtempSync(join(tmpdir(), 'host-config-linked-guidance-'))
   const dotfile = join(mkdtempSync(join(tmpdir(), 'host-config-dotfiles-')), 'CLAUDE.md')
@@ -200,7 +209,6 @@ test('an interrupted apply keeps the files it wrote in the manifest', () => {
   const manifest = JSON.parse(read(join(home, '.agents/.filip-stack-host-config.json')))
   assert.ok(manifest.files['.claude/agents/critic.md'])
   assert.equal(manifest.commit, null)
-  assert.equal(manifest.designSystem, undefined)
 })
 
 test('apply refuses to replace a guidance file without a block unless forced', () => {
@@ -251,7 +259,7 @@ test('update syncs the Field Guide dotfile only when it already exists', () => {
     assert.equal(result.status, 0, result.stderr)
   }
   git(['init', '-q', '-b', 'main'])
-  copyHostConfig({ repo: source, pin: designSystem.pin })
+  copyHostConfig({ repo: source })
   git(['add', '.'])
   git(['commit', '-q', '-m', 'init'])
   const checkout = join(mkdtempSync(join(tmpdir(), 'host-config-update-')), 'checkout')
@@ -279,7 +287,7 @@ test('update syncs the Field Guide dotfile only when it already exists', () => {
 // A fixture repository whose models.json the test edits.
 const rosterFixture = (edit) => {
   const root = mkdtempSync(join(tmpdir(), 'host-config-roster-'))
-  copyHostConfig({ repo: join(root, 'repo'), pin: designSystem.pin })
+  copyHostConfig({ repo: join(root, 'repo') })
   assert.equal(spawnSync('git', ['init', '-q', join(root, 'repo')]).status, 0)
   const rosterPath = join(root, 'repo/host-config/models.json')
   const roster = JSON.parse(read(rosterPath))

@@ -1,6 +1,13 @@
 <script setup lang="ts">
 import { UiAlert, UiBreadcrumbs, UiCard } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
+import HostCommands from "../HostCommands.vue";
+const commands = {
+  claude:
+    "claude plugin marketplace add filipgutica/design-system\nclaude plugin install design-system@design-system",
+  codex:
+    "codex plugin marketplace add filipgutica/design-system\ncodex plugin add design-system@design-system",
+};
 const tables = {
   files: [
     {
@@ -71,21 +78,19 @@ const tables = {
     </p>
     <UiAlert tone="info">
       <p>
-        Agents use <code>filipgutica/design-system</code> by default. Browse it on
-        the
+        Agents use <code>filipgutica/design-system</code> by default, through its
+        <code>design-system</code> plugin. Browse it on the
         <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
     <dl class="fg-site-facts">
       <div>
-        <dt>Installed to</dt>
-        <dd><code>~/design-system</code></dd>
+        <dt>Ships as</dt>
+        <dd><code>design-system</code> plugin</dd>
       </div>
       <div>
-        <dt>Installed by</dt>
-        <dd>
-          <a href="/filip-stack/cli/"><code>filip-stack apply</code></a>
-        </dd>
+        <dt>Agent skill</dt>
+        <dd><code>$design-system:design-system</code></dd>
       </div>
       <div>
         <dt>Source</dt>
@@ -98,6 +103,16 @@ const tables = {
         <dd>Graphite Indigo</dd>
       </div>
     </dl>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">Install the plugin</h2>
+    <p class="section-intro">
+      filip-stack does not install the design system. Add the plugin on each
+      machine where agents do visual work.
+    </p>
+    <HostCommands :claude="commands.claude" :codex="commands.codex" />
+    <p class="hint">In Codex, restart so a new session loads the plugin.</p>
   </section>
 
   <section aria-labelledby="catalogue">
@@ -129,6 +144,10 @@ const tables = {
           and
           <a href="https://github.com/filipgutica/design-system/blob/main/language/decisions.md">decisions</a>
         </li>
+        <li>
+          <a href="https://github.com/filipgutica/design-system/blob/main/language/visualizations.md">Data visualizations</a>:
+          consistent measurements, filterable count reports, and self-contained HTML exports.
+        </li>
       </ul>
     </div>
   </section>
@@ -137,9 +156,10 @@ const tables = {
     <h2 id="how">How agents use it</h2>
     <div class="prose">
       <p>
-        Agents read <code>~/design-system/DESIGN.md</code> before UX or visual
-        work. It owns the look. For behavior, such as flows, states, copy, and
-        accessibility, they also use the
+        Agents follow the plugin's <code>$design-system:design-system</code>
+        skill before UX or visual work. It reads the plugin's
+        <code>DESIGN.md</code> and owns the look. For behavior, such as flows,
+        states, copy, and accessibility, they also use the
         <a href="/filip-stack/skills/interface-design/">interface-design</a>
         skill.
       </p>
@@ -161,8 +181,16 @@ const tables = {
       <li>
         <div>
           <p>
-            <strong><code>filipgutica/design-system</code></strong> covers all
-            other UX and visual work.
+            <strong><code>filipgutica/design-system</code></strong>, through
+            its plugin, covers all other UX and visual work.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>Without the plugin</strong>, agents use no house style and
+            say once that the plugin is missing.
           </p>
         </div>
       </li>
@@ -268,7 +296,7 @@ const tables = {
   </section>
 
   <section aria-labelledby="files">
-    <h2 id="files">Rules and examples in the folder</h2>
+    <h2 id="files">Rules and examples in the plugin</h2>
     <UiCommandList
       :items="tables.files"
       :copyable="false"
@@ -287,11 +315,11 @@ const tables = {
       <p>
         Edit the rules, examples, and tokens in
         <a href="https://github.com/filipgutica/design-system">filipgutica/design-system</a>,
-        which publishes <code>@filipgutica/design-system</code>. filip-stack
-        pins one version in
-        <code>host-config/design-system.json</code>. After a release, bump the pin
-        with <code>node scripts/pin-design-system.mjs &lt;version&gt;</code>, merge it,
-        and run <code>filip-stack update</code> on each machine.
+        which publishes them as <code>@filipgutica/design-system</code> and as
+        the <code>design-system</code> plugin. After a release, update the plugin
+        on each machine with
+        <code>claude plugin update design-system@design-system</code> or
+        <code>codex plugin marketplace upgrade design-system</code>.
       </p>
     </div>
   </section>

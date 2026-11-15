@@ -41,7 +41,8 @@ Everything below is optional.
 | [Standalone skills](#standalone-skills) | Skills that each work alone | Skills CLI |
 | [Field Guide](#field-guide) | Memory of your preferences and lessons | Plugin |
 | [Guardrails](#guardrails) | Hook that blocks AI attribution and asks before 1Password commands | Plugin |
-| [Host config](#host-config) | Global guidance, agent profiles, and design system for each machine | Homebrew CLI and a checkout |
+| [Host config](#host-config) | Global guidance and agent profiles for each machine | Homebrew CLI and a checkout |
+| [Design system](https://github.com/filipgutica/design-system) | Design language agents follow for visual work | Plugin, from its own marketplace |
 
 ## Workflow
 
@@ -177,7 +178,7 @@ agent to run the plain one.
 ## Host config
 
 Host config gives every machine the same global agent guidance, agent
-profiles, output styles, and design system. The `filip-stack` CLI applies it
+profiles, and output styles. The `filip-stack` CLI applies it
 from a checkout of this repository.
 
 ### Set up a machine
@@ -197,7 +198,7 @@ another checkout location, running without Homebrew, and a shadowing symlink.
 ### What apply installs
 
 `apply` copies the shared setup in `host-config/` into `~/.claude`,
-`~/.codex`, `~/.agents`, and `~/design-system`:
+`~/.codex`, and `~/.agents`:
 
 - the global guidance, in a marked block in `~/.claude/CLAUDE.md` and
   `~/.codex/AGENTS.md`
@@ -209,23 +210,24 @@ another checkout location, running without Homebrew, and a shadowing symlink.
 - the model tiers in `host-config/models.json`, which fill in every model name
   in the guidance and agent profiles
 - `~/.agents/scripts/model-usage.mjs`, the usage reader described below
-- `~/design-system`, from the pinned
-  [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
-  package in `host-config/design-system.json`
 
 Text outside the marked block stays, and wins where it conflicts with the
 shared guidance. Apply removes a file it applied earlier once the repository no longer has it.
 
-Agents use the design system for UX and visual work unless you ask for another
-or the repository has its own. See its
-[component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md),
-[component catalogue](https://filipgutica.github.io/design-system/components.html),
-and [data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md).
-Apply downloads the pinned tarball once, checks its integrity, and caches it
-at `~/.cache/filip-stack/design-system/<version>.tgz`
-(`$XDG_CACHE_HOME/filip-stack/…` when set). If that version is neither cached
-nor downloadable, apply stops before it writes anything. `status` never
-downloads; it reports the pin change, such as `design-system 1.0.0 → 1.1.0`.
+For UX and visual work, the guidance sends agents to the repository's own
+design system, then to the
+[design-system plugin](https://github.com/filipgutica/design-system). Host
+config does not install it; install it with the commands in
+[Sync this machine or the fleet](#sync-this-machine-or-the-fleet), or list it
+in the fleet baseline. Without it, agents use no house style and say once that
+the plugin is missing.
+
+Earlier versions installed the design system to `~/design-system`, and before
+that to `~/design-language`. `apply` removes the unchanged files it put there,
+then each folder once only empty folders remain. It keeps files it did not
+install, and for a file behind a symlink it stops tracking the path and leaves
+the link and its target alone. It leaves the old package cache in
+`~/.cache/filip-stack/design-system/`; delete that folder when you like.
 
 Threads run `model-usage.mjs` before they delegate, and move work to the
 other provider when one is short of usage. The script needs the

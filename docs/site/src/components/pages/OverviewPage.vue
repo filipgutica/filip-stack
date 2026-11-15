@@ -242,14 +242,15 @@ onMounted(() => {
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          The same global guidance, agent profiles, and design system on every
+          The same global guidance, agent profiles, and output styles on every
           machine.
         </p>
       </li>
       <li>
         <a href="/filip-stack/design-system/">Design system</a>
         <p>
-          The visual rules agents follow for pages, mockups, and explainers.
+          The visual rules agents follow for pages, mockups, and explainers,
+          installed as a plugin.
         </p>
       </li>
       <li>
