@@ -275,7 +275,7 @@ Prerequisites, none done by this PR:
 | Judges, head vs vanilla: 3 pairs × 3 judges | | | | 9 |
 | **Total** | | | | **72** |
 
-By model: Opus 5.5 makes 60 calls (54 attempts and 6 judges), Astra 6, and Sol 6.1 6. The gates, screenshots, tally, and scoring make no model calls. Tokens are not measured; the dry run's mock reports none. [The dry-run report](dry-run-report.md#paid-run-budget) gives request sizes.
+By model: Opus 5.5 makes 60 calls (54 attempts and 6 judges), Astra 6, and Sol 6.1 6. The gates, screenshots, tally, and scoring make no model calls. Tokens are not measured; the dry run's mock reports none. [The dry-run report](dry-run-report.md#final-pipeline-rerun) gives request sizes.
 
 ## Limitations
 

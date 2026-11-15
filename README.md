@@ -242,7 +242,7 @@ plugins.
   - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
 
 Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
-`node scripts/host-config.mjs <command>` from the checkout.
+`node cli/filip-stack.mjs --repo . <command>` from the checkout.
 
 ```sh
 filip-stack status            # applied commit, then each target's state

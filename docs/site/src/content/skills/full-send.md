@@ -16,9 +16,8 @@ Use full send for a local change or existing PR you want finished, including
 merging when its mode and checks permit. To keep the merge decision, use
 [full-stop](../full-stop/).
 
-Install `full-send`, `sol-loop`, and `babysit-pr` together: replace
-`-s full-send` in the command above with `-s full-send sol-loop babysit-pr`.
-It stops if either dependency is missing.
+The install command above also installs `sol-loop` and `babysit-pr`. Full
+send stops if either is missing.
 
 Invoke it explicitly with `/full-send` in Claude or `$full-send` in Codex.
 Include a goal or PR link, for example `/full-send fix the flaky login test`.

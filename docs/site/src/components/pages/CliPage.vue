@@ -130,8 +130,8 @@ const tables = {
     <p class="hint">
       The default checkout is <code>~/code/filip-stack</code>. For another
       location, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
-      Without Homebrew, run <code>node scripts/host-config.mjs &lt;command&gt;</code>
-      from the checkout, such as <code>node scripts/host-config.mjs status</code>.
+      Without Homebrew, run <code>node cli/filip-stack.mjs --repo . &lt;command&gt;</code>
+      from the checkout, such as <code>node cli/filip-stack.mjs --repo . status</code>.
     </p>
     <p class="hint">
       If an old <code>~/.local/bin/filip-stack</code> symlink shadows Homebrew,

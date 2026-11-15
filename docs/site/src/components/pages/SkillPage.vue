@@ -19,7 +19,7 @@ const enhanced = ref(false);
 onMounted(() => {
   enhanced.value = true;
 });
-const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex -s ${skill.name} -y`;
+const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex -s ${[skill.name, ...skill.requires].join(" ")} -y`;
 </script>
 
 <template>
@@ -90,9 +90,9 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
       :href="
         previous
           ? `/filip-stack/skills/${previous.name}/`
-          : '/filip-stack/field-guide/'
+          : '/filip-stack/agent-ready-environments/'
       "
-      ><span>Previous</span>{{ previous?.name ?? "Field Guide" }}</a
+      ><span>Previous</span>{{ previous?.name ?? "Agent-ready environments" }}</a
     >
     <a v-if="next" rel="next" :href="`/filip-stack/skills/${next.name}/`"
       ><span>Next</span>{{ next.name }}</a

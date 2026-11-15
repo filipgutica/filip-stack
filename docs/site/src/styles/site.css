@@ -41,6 +41,10 @@ h1 code { overflow-wrap: anywhere; }
 .table-scroll { overflow-x: auto; }
 /* Print shows the whole code block; a scroll box would cut it off. */
 @media screen { .code-scroll { overflow-x: auto; } }
+/* Markdown code sits on the library's code panel, so a clipped line reads as code that scrolls. */
+.code-scroll { padding: var(--space-4); border: 1px solid transparent; border-radius: calc(var(--radius-panel) - var(--space-1)); background: var(--color-code); }
+.code-scroll pre { margin: 0; }
+.prose * + .code-scroll, .prose .code-scroll + * { margin-top: var(--space-4); }
 .table-scroll table { width: 100%; border-collapse: collapse; font-size: var(--text-md); font-variant-numeric: tabular-nums; }
 .table-scroll :is(th, td) { padding: var(--space-3); vertical-align: top; }
 .table-scroll th:not([align]) { text-align: start; }

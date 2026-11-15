@@ -17,6 +17,8 @@ export interface CatalogSkill {
   source: string;
   /** Inline HTML crediting the open-source work this skill adapts; empty when none. */
   upstreamHtml: string;
+  /** Skills that must be installed with this one, from the README row's "Needs" sentence. */
+  requires: string[];
 }
 
 export interface SkillContent {
@@ -52,6 +54,9 @@ const skillTable = ({
   return table.rows.map(([name, summary]) => ({
     name: name.text.replaceAll("`", ""),
     summaryHtml: marked.parseInline(summary.text, { async: false }),
+    requires: [
+      ...(summary.text.match(/Needs ([^.]+)\./)?.[1] ?? "").matchAll(/`([^`]+)`/g),
+    ].map((match) => match[1]!),
   }));
 };
 
@@ -122,6 +127,11 @@ const loadSkills = ({
     throw new Error(
       `README "## ${heading}" lists ${listed.join(", ")}, but ${directory} has ${names.join(", ")}`,
     );
+  }
+  for (const { name, requires } of rows) {
+    const unknown = requires.filter((required) => !names.includes(required));
+    if (unknown.length)
+      throw new Error(`README "## ${heading}": ${name} needs ${unknown.join(", ")}, which ${directory} does not have`);
   }
   const shared = sharedNotices
     ? readNotices(join(repoRoot, sharedNotices))

@@ -13,9 +13,8 @@ check confirms whether the PR is ready for your merge decision.
 Use it to finish a local change or existing PR while you are away and leave
 the PR open for you.
 
-Install `full-stop`, `full-send`, `sol-loop`, and `babysit-pr` together: replace
-`-s full-stop` in the command above with
-`-s full-stop full-send sol-loop babysit-pr`. A missing dependency stops the run.
+The install command above also installs `full-send`, `sol-loop`, and
+`babysit-pr`. Full stop stops if any of them is missing.
 
 Invoke it explicitly with `/full-stop` in Claude or `$full-stop` in Codex,
 followed by the goal or PR link. For example:

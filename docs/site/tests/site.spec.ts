@@ -137,7 +137,7 @@ test("copies install commands and command-table rows after hydration", async ({
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe(
-      "npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send -y",
+      "npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send sol-loop babysit-pr -y",
     );
 });
 
