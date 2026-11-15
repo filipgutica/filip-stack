@@ -210,8 +210,8 @@ plugins.
 `host-config/` holds the general agent setup shared by every machine:
 
 - the global guidance for `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`
-- Claude agent templates (`critic`, `explorer`, `reviewer`, `worker-high`) and
-  output styles
+- Claude agent templates (`critic`, `explorer`, `planner`, `reviewer`,
+  `worker-high`) and output styles
 - Codex agent profiles and `~/.codex/rules/filip-stack.rules`: the 1Password
   prompt that Guardrails relies on, and the usage reader's sandbox exception
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`

@@ -1,0 +1,13 @@
+# yaml-language-server: $schema=https://promptfoo.dev/config-schema.json
+description: Delegation rules - delegated briefs, model escalation
+prompts:
+  - id: file://host-guidance.mjs:baseGuidance
+    label: base
+  - id: file://host-guidance.mjs:headGuidance
+    label: working tree
+providers: file://providers.yaml
+tests: file://delegation-rules.mjs:delegationRulesTests
+defaultTest:
+  assert:
+    - type: javascript
+      value: file://rules.mjs:scoreRule

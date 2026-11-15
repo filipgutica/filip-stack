@@ -87,9 +87,70 @@
           "claude.frontier"
         ],
         "codex": [
+          "codex.frontier"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "plan-big-rework",
+      "task": "Before anyone writes code, plan the rework that moves session handling out of 9 services into a shared auth gateway, including the migration order.",
+      "accept": {
+        "claude": [
+          "codex.frontier"
+        ],
+        "codex": [
           "claude.frontier"
         ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "plan-routine",
+      "task": "Plan the change that adds a `--json` flag to the `report` CLI command. It touches one command file and its test.",
+      "accept": {
+        "claude": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ]
       }
+    },
+    {
+      "id": "escalate-effort-first",
+      "task": "The routine implementer, Sol at high effort, returned a CSV parser change that fails the existing parser tests. The tests run locally. Where should the retry run?",
+      "accept": {
+        "claude": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ]
+      }
+    },
+    {
+      "id": "escalate-tier",
+      "task": "The routine implementer has failed the same CSV parser change twice with the parser tests in place, the second time at xhigh effort. Where should the next attempt run?",
+      "accept": {
+        "claude": [
+          "claude.frontier",
+          "codex.frontier"
+        ],
+        "codex": [
+          "claude.frontier",
+          "codex.frontier"
+        ]
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "diff-review-routine",

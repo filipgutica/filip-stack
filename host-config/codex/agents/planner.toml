@@ -1,0 +1,7 @@
+name = "planner"
+description = "Read-only planner for consequential design, cross-cutting changes, big reworks, and long unattended runs."
+model = "{{model:codex.frontier.id}}"
+model_reasoning_effort = "high"
+developer_instructions = """
+Act as the Planner in {{HOME}}/.agents/roles.md. Read that section before starting.
+"""

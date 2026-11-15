@@ -26,6 +26,15 @@ host must be able to reach the requested models and effort settings.
 > Council with a security lens and a UX lens: should the login form remember
 > the email address?
 
+You can also name a preset instead of members. `pair` convenes GPT-6.1 Sol
+and Claude Opus 5.5 for everyday questions, `frontier` convenes GPT-6 Astra
+and Claude Fable 5.2 for harder ones, and `full` convenes all four. A preset
+needs no designer. When your agent wants a council on its own work, the
+designer still builds it.
+
+> Frontier council: should we split the billing service now or after the
+> migration?
+
 For a PR review with a merge verdict, use [merge-council](../merge-council/).
 
 ## How it works

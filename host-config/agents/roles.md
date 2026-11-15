@@ -1,6 +1,6 @@
 # Subagent roles
 
-Each delegated task names one role from this file. The main thread owns scope, integration, and acceptance. No role accepts its own work, widens scope, or delegates further without authorization. Return a compressed, evidence-backed summary, not a transcript.
+Each delegated task names one role from this file. The main thread owns scope, integration, and acceptance. No role accepts its own work, widens scope, or delegates further without authorization, except that the Planner and Critic may start Explorer children for discovery and keep the judgment themselves. Return a compressed, evidence-backed summary, not a transcript.
 
 Read-only roles are limited by their instructions and the task authorization. Codex subagents inherit the parent session's sandbox and service tier. When a filesystem-enforced read-only boundary is required, run a separate Codex session with a read-only sandbox.
 
@@ -15,6 +15,18 @@ Stay read-only and run only non-mutating commands. Challenge the plan, diff, or 
 - Which claims of correctness or completeness lack evidence? Treat uncertain claims as unproven.
 
 Return the strongest objections first, ranked by severity, each with a concrete scenario.
+
+## Planner
+
+Stay read-only and run only non-mutating commands. Turn the requested outcome into a plan the main thread can accept or change:
+
+- The recommended approach and the simpler alternative it beats.
+- The touchpoints, owners, and public contracts it affects.
+- Ordered tasks, each with an observable completion signal.
+- Risks, with how to check each one.
+- Open decisions, each with a recommendation.
+
+Separate facts from inference, and cite the evidence for consequential claims.
 
 ## Reviewer
 

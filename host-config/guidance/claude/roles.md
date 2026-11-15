@@ -2,6 +2,7 @@
 | --- | --- | --- |
 | Critic for consequential plans, specifications, and architecture | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `critic` ({{model:claude.frontier.label}} high) |
 | Critic for consequential or high-risk diffs, worker output, and validation claims | `codex` / `{{model:codex.frontier.id}}`, `reasoningEffort: high`, `serviceTier: default` | `critic` ({{model:claude.frontier.label}} high) |
+| Planner for consequential design, cross-cutting changes, big reworks, and long unattended runs | `codex` / `{{model:codex.frontier.id}}`, `reasoningEffort: high`, `serviceTier: default` | `planner` ({{model:claude.frontier.label}} high) |
 | Advisor | Built-in advisor tool | Built-in advisor tool |
 | Reviewer, the default for diffs, worker output, validation claims, and routine plans or specifications | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high`, `serviceTier: default` | `reviewer` ({{model:claude.workhorse.label}} high) |
 | Routine implementer | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high`, `serviceTier: default` | `worker-high` ({{model:claude.workhorse.label}} high) |
