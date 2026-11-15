@@ -258,12 +258,13 @@ to pick up changes. The CLI launcher has its own version and Homebrew release;
 `filip-stack update` updates the checkout, and `brew upgrade` updates the launcher.
 
 `filip-stack sync` installs missing baseline skills and plugins and refreshes
-existing filip-stack installations. It requires a clean checkout tracking
-published `main`. It preserves machine-local guidance, plugin enabled states
-and scopes, explicit pins, and existing skill host assignments. Local edits
-or unmerged applied guidance block the affected component; independent
-components continue. The command exits nonzero when a component fails and
-saves a JSON report under `~/.local/state/filip-stack/last-sync.json`
+existing filip-stack installations and an existing design-system plugin. It
+requires a clean checkout tracking published `main`. It preserves
+machine-local guidance, plugin enabled states and scopes, explicit pins, and
+existing skill host assignments. Local edits or unmerged applied guidance
+block the affected component; independent components continue. The command
+exits nonzero when a component fails and saves a JSON report under
+`~/.local/state/filip-stack/last-sync.json`
 (`$XDG_STATE_HOME/filip-stack/last-sync.json` when set).
 Guidance currently targets `~/.claude` and `~/.codex`; custom agent homes
 block that component before any guidance files are written.
@@ -289,8 +290,25 @@ agent to sync the fleet. Its policy lives at `~/.config/filip-stack/fleet.json`
 ```
 
 List the standalone skills and plugins you want in the shared baseline.
-Each machine receives that selection plus its existing extras. `agents`
-defaults to `codex` and `claude-code` for skill/plugin installation;
+Each machine receives that selection plus its existing extras.
+`plugins` takes this repository's plugins and `design-system`, the
+[design system](https://github.com/filipgutica/design-system) plugin. Sync
+installs `design-system` from its own marketplace, as these commands do:
+
+```sh
+claude plugin marketplace add filipgutica/design-system
+claude plugin install design-system@design-system --scope user
+codex plugin marketplace add filipgutica/design-system
+codex plugin add design-system@design-system
+```
+
+Sync checks that an installed `design-system` is a release, matches the
+version in its marketplace clone, and contains its skill, `DESIGN.md`, and
+tokens. It does not compare every file, because the marketplace clone also
+carries unreleased edits. Each marketplace is prepared and reported on its
+own, so a pinned marketplace does not stop the other from updating.
+
+`agents` defaults to `codex` and `claude-code` for skill/plugin installation;
 per-machine overrides and exclusions preserve exceptions without uninstalling
 anything. Shared host guidance keeps its normal managed targets. Missing
 required clients or conflicting installation ownership remain blocked.

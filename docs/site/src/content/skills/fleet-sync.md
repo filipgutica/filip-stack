@@ -25,8 +25,10 @@ machine. Valid grants and the saved selection are reused on later runs.
 Each machine runs `filip-stack sync --json` with the shared policy and its
 environment ID, and saves that policy as its own. A differing saved policy is
 backed up first. Missing baseline skills and plugins are installed; existing
-extras remain. Per-machine agent targets and skill/plugin exclusions preserve
-exceptions. Existing scopes, enabled states, and explicit pins remain intact.
+extras remain. The `design-system` plugin installs from its own marketplace,
+and each marketplace reports its state separately. Per-machine agent targets
+and skill/plugin exclusions preserve exceptions. Existing scopes, enabled
+states, and explicit pins remain intact.
 Missing clients and local edits appear as incomplete components.
 
 The workflow uses a separate clean main clone when a development checkout is
