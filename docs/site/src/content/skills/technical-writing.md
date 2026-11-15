@@ -4,52 +4,47 @@ related: [planning, review]
 
 ## What it does
 
-The agent writes for the intended reader while preserving facts, decisions,
-links, commands, identifiers, and required structure. It keeps unsupported
-claims out and makes evidence gaps visible.
+The agent writes for the intended reader. It keeps facts, decisions, links,
+commands, and required structure exactly. It adds no unsupported claims and
+says where evidence is missing.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install), then request the text or
-revision. The agent selects technical-writing when the request matches.
-Name the document or section and the format you need. For example:
+Install the [Workflow plugin](../../#install), then name the document or
+section and the format you need. For example:
 
 > Write the PR description for this branch.
 
 Use it for documentation, READMEs, reports, procedures, release notes, error
 text, code comments, and PR descriptions. It also checks whether a
-specification, plan, or ticket makes sense to a first-time reader.
-
-For those engineering artifacts, [planning](../planning/) owns the scope and
-decisions. Technical writing improves their wording without changing them.
+specification, plan, or ticket makes sense to a first-time reader. For those,
+[planning](../planning/) owns the decisions; technical writing changes only
+the wording.
 
 ## How it works
 
-The agent identifies the audience, purpose, format, and source evidence before
-writing. It edits only the artifact or section you requested.
+The agent identifies the audience, purpose, format, and sources first. It
+edits only the part you named.
 
-Familiar words, active sentences, consistent terms, and one topic per
-paragraph make instructions easier to follow. Conditions come before the
-actions they control. Sentences stay short where precision allows. Facts,
-assumptions, and unresolved questions remain distinct; missing evidence is not
-filled with invented rationale.
+The writing rules favor familiar words, active sentences, consistent terms,
+and one topic per paragraph. Conditions come before the actions they control.
+Facts, assumptions, and open questions stay separate.
 
-The final pass takes the reader's position: could someone act on the text
-without seeing your conversation or guessing what the author meant?
+Last, the agent reads the text as a newcomer would: could someone act on it
+without your conversation?
 
-For PR descriptions, the problem comes before the resulting behavior. Any
-verification instructions give an action and its expected result. Routine
-checks that CI already reports are not repeated, but a material verification
-gap is stated.
+A PR description states the problem before the new behavior. Verification
+steps give an action and its expected result. It does not repeat what CI
+already reports, but it states any real gap in verification.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/technical-writing/SKILL.md)
-links the prose rules and PR-description guidance.
+links the writing rules and PR guidance.
 
 ## What you get
 
-- Finished text in the requested format, faithful to its sources.
-- The evidence, limitations, and open questions its reader still needs.
+- Finished text in the requested format, true to its sources.
+- The evidence, limits, and open questions the reader still needs.
 
-Drafting does not authorize publication. When you request a PR update, the
-agent checks the full description and reads the saved text back afterward.
-Use [review](../review/) for a separate read-only check of a document.
+Drafting does not authorize publishing. When you ask it to update a PR, the
+agent checks the whole description and reads the saved text back. For a
+separate read-only check of a document, use [review](../review/).

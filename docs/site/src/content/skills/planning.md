@@ -4,14 +4,14 @@ related: [technical-writing, jira-work-links]
 
 ## What it does
 
-You choose one output, and the agent grounds it in the repository's code,
-tests, and tracker state. A request for a specification ends with that
-specification; it does not start a plan or create tickets automatically.
+You ask for one output, and you get that output. A request for a
+specification ends with the specification. It does not start a plan or create
+tickets on its own. Every claim comes from the code, tests, or tracker.
 
 ## When to use it
 
 Install the [Workflow plugin](../../#install), then ask for the output you
-need. The agent selects planning when your request matches.
+need:
 
 | Output | Ask for it when you need to |
 | --- | --- |
@@ -24,39 +24,34 @@ For example:
 
 > Write an implementation plan for adding CSV export to the reports page.
 
-Planning makes no code changes. Ask for implementation to use
-[engineering](../engineering/), or use [technical-writing](../technical-writing/)
-to revise finished prose without changing its decisions.
+Planning changes no code. To build the result, ask for
+[engineering](../engineering/). To improve the wording of a finished
+document without changing its decisions, use
+[technical-writing](../technical-writing/).
 
 ## How it works
 
-The agent establishes the outcome, users, constraints, exclusions, and what
-it may change. If ambiguity about the output would change the work, it asks
-one focused question.
+The agent first settles the outcome, users, constraints, and exclusions. If
+an ambiguity would change the work, it asks you one question.
 
-It reads the sources that own the proposal: code, tests, schemas,
-configuration, documentation, and tracker issues. It separates observed facts
-from decisions, assumptions, and open questions. Material tradeoffs come to
-you before they become implementation instructions. Each deliverable has an
-observable completion signal.
+It then reads the code, tests, schemas, configuration, documentation, and
+issues that the proposal touches. It keeps facts apart from decisions,
+assumptions, and open questions. It brings real tradeoffs to you before they
+become instructions. Each deliverable has a completion signal you can observe.
 
-Before returning the artifact, the agent checks whether an engineer could
-follow it literally without guessing. When the work spans several repositories
-or changes a public contract, a separate reviewer critiques the result, and the
-agent revises it until a round finds nothing that needs action, for up to three
-rounds. A council or other final review you asked for runs on the finished
-artifact.
+Before it returns, the agent checks that an engineer could follow the result
+without guessing. When the work spans several repositories or changes a public
+contract, a separate reviewer critiques it, for up to three rounds.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
-defines the four modes and links their output formats. Your format and the
-repository's format take precedence over those defaults.
+defines the four modes and their default formats. Your format, or your
+repository's, takes precedence.
 
 ## What you get
 
-- The one direction, specification, plan, or set of tickets you requested.
-- Supporting evidence, unresolved questions, and decisions that block the work.
+- The direction, specification, plan, or tickets you asked for.
+- The evidence behind it, open questions, and decisions that block the work.
 
-The result stays in conversation unless you request a file. Planning does not
-commit or publish. It creates or changes Jira or GitHub issues only when you
-ask, and it does not write local ticket files. A ticket marks each fact it
-could not verify as `TBD` instead of holding back the draft.
+The result stays in the conversation unless you ask for a file. Planning
+creates or changes Jira or GitHub issues only when you ask, and writes no
+local ticket files. A ticket marks each fact it could not verify as `TBD`.

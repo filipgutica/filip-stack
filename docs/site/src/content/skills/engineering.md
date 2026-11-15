@@ -4,58 +4,46 @@ related: [planning, review, test-audit]
 
 ## What it does
 
-The change stays focused on the behavior you requested. The agent avoids
-speculative options, dependencies, abstractions, and nearby cleanup while
-preserving validation, error handling, security, and meaningful tests.
+The agent changes only what your request needs. It adds no speculative
+options, dependencies, abstractions, or nearby cleanup. It keeps validation,
+error handling, security, and useful tests.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install), then ask for the code change
-in plain words. The agent selects engineering when the request matches;
-you do not need a special command. For example:
+Install the [Workflow plugin](../../#install), then ask for the change in plain
+words. You do not need a special command. For example:
 
 > Fix the off-by-one error in the date picker's week numbers.
 
 Use it for a feature, bug fix, refactor, failing test, CI failure, or review
-feedback you want checked or applied. An explanation alone does not need it.
-For a direction, specification, plan, or tickets without code edits, use
-[planning](../planning/).
+feedback to check or apply. For a plan, specification, or tickets without code
+changes, use [planning](../planning/).
 
 ## How it works
 
-The agent reads the code that owns the behavior and the nearest tests. It
-runs a suitable existing test before editing. For larger work, it states a
-plan and compares it with a simpler option. If no change is needed, it stops.
+1. The agent reads the code that owns the behavior and the nearest tests. It
+   runs a relevant test before it edits. If no change is needed, it stops.
+2. For larger work, it states a plan and compares it with a simpler option.
+3. It makes the change. Existing tests count as intended behavior: it changes
+   a test only when evidence shows the test is wrong or its contract changed
+   on purpose. A regression test must fail on the old code first.
+4. It reruns the affected checks and reads the diff for accidental changes,
+   duplication, and dead code.
 
-Correct tests constrain the fix. The agent changes a test only when evidence
-shows it is wrong or its contract changed on purpose. New coverage must catch
-a regression existing tests miss; a bug regression test must fail on the old
-code first.
-
-Work that spans several tasks or PRs runs as a loop for each task: plan,
-implement, verify, review, and fix, until the task's completion signal holds.
-Each PR is a review boundary: before it reaches you, an agent that did not
-write it reviews the whole PR. A PR that is one routine, bounded change needs
-only focused checks. A final review you asked for, such as a
-[sol-loop](../sol-loop/) or [full-send](../full-send/), runs on each finished
-PR, not on each task.
-
-After editing, the agent reruns the affected checks and inspects the diff for
-accidental changes, duplication, and dead code. Substantial coverage changes
-get a [test-audit](../test-audit/). Risky work, such as migrations or security
-changes, needs review by an agent that did not write it, when the host supports
-that review.
-
-Workers and reviewers keep further delegation within the brief's authority.
-Truncated output sends the agent to the named artifact first. Credential and
-token diagnostics reveal only whether a value is present.
+Work that spans several PRs repeats plan, implement, verify, review, and fix
+for each task. Before a PR reaches you, an agent that did not write it reviews
+the whole PR. A small routine PR needs only focused checks. Risky work, such
+as a migration or a security change, gets an independent review when the host
+supports one. Large test changes get a [test-audit](../test-audit/). A final
+review you ask for, such as [sol-loop](../sol-loop/) or
+[full-send](../full-send/), runs once on each finished PR.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/engineering/SKILL.md)
-has the exact implementation and verification contract.
+has the exact implementation and verification rules.
 
 ## What you get
 
-- The requested change, with the commands run and their results.
-- Remaining risks and checks that could not run, reported as unverified.
+- The change, with the commands the agent ran and their results.
+- Remaining risks, and any check that could not run, marked unverified.
 
-Engineering does not commit, push, or publish without your authorization.
+Engineering does not commit, push, or publish unless you authorize it.

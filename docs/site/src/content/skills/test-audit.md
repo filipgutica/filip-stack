@@ -4,26 +4,23 @@ related: [review, simplify-pass]
 
 ## What it does
 
-A test can duplicate another test's proof or fail after a private function
-is renamed while behavior stays the same. The audit checks these maintenance
-costs and production code exposed only for tests. A suspicious test stays
-when it is the only protection for a real contract.
+Each test must protect a real behavior that no other test already covers. The
+audit flags tests that only add maintenance cost, and production code that
+exists only for tests. It keeps a doubtful test when it is the only
+protection for a real contract.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install), then name the tests or change
-to audit. The agent selects test-audit when your request matches.
-[Engineering](../engineering/) and [review](../review/) also use it for
-substantial coverage changes or uncertain test value.
+Install the [Workflow plugin](../../#install), then name the tests or change to
+audit. [Engineering](../engineering/) and [review](../review/) also call it
+when test changes are large or a test's value is unclear.
 
 For a report without edits, say so:
 
 > Audit the tests in `src/billing/` for duplicates and implementation-coupled
 > assertions. Read-only, please.
 
-Use it when adding or removing many tests, or when you cannot tell whether a
-test adds distinct coverage. A cleanup request must authorize edits separately
-from a read-only audit.
+Edits need your request. A read-only audit does not authorize cleanup.
 
 ## How it works
 
@@ -31,31 +28,26 @@ from a read-only audit.
 | --- | --- |
 | Authoring | Each new or changed test as it is written |
 | Audit | Existing tests in the files or change you name |
-| Campaign | Every test owned by one subsystem; only on explicit request |
+| Campaign | Every test in one subsystem; only when you ask |
 
-The agent reads the whole test, its production owner, callers, and overlapping
-coverage before judging it. It asks what behavior the test protects, which
-credible regression breaks it, and why existing coverage misses that failure.
-It also checks for production exports, flags, or hooks needed only by tests.
+For each test, the agent reads the whole test, the code it covers, and any
+overlapping tests. It asks three questions: what behavior does the test
+protect, which realistic bug breaks it, and why do other tests miss that bug?
 
-A new test without those answers is not added. A test that needs a
-production seam, such as an export, flag, or hook, that no production caller
-needs moves to the real boundary instead. Patterns such as missing
-assertions or expected values calculated by the code under test need scrutiny.
-Before removing coverage, the agent identifies the remaining test that would
-catch the failure, or the change that retired the contract.
-
-Removal batches also get the repository's available checks for unused
-dependencies, files, and exports across the whole repository. This catches
-orphaned support files that changed-file CI can miss.
+A new test without good answers is not added. A test that needs an export,
+flag, or hook that no production code uses moves to the real boundary.
+Before it removes a test, the agent names the remaining test that would catch
+the same failure. After removals, it runs the repository's checks for unused
+files, exports, and dependencies.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/test-audit/SKILL.md)
-links the full value criteria and validation procedure.
+links the full criteria.
 
 ## What you get
 
-- The audited range, findings, suspicious tests retained with reasons, and limits.
-- For edits, a coverage record for each added or removed test.
-- For edits, production and test lines changed, reported separately, plus follow-ups.
+- The audited range, the findings, doubtful tests kept with reasons, and
+  limits.
+- For edits, a record for each added or removed test, and production and test
+  lines changed, counted separately.
 
-A read-only audit changes nothing. Commits, pushes, and PRs need your request.
+Commits, pushes, and PRs need your request.
