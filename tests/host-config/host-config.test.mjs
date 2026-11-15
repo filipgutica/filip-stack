@@ -76,7 +76,7 @@ for (const mode of ['unset', 'empty', 'custom']) {
     writeFileSync(path, JSON.stringify(preferences))
 
     const result = run({ home, command: 'apply', xdgConfigHome })
-    assert.match(result.stdout, /field-guide: created 1, promoted 0, retired 0, skipped 0/)
+    assert.match(result.stdout, /field-guide: created 1, promoted 0, retired 0, restored 0/)
     const memory = JSON.parse(read(join(home, '.field-guide/memory.json')))
     assert.deepEqual(memory.guidance.map(({ learning }) => learning), ['Name tests after behavior.'])
     assert.equal(read(path), JSON.stringify(preferences))
@@ -104,7 +104,7 @@ for (const mode of ['unset', 'empty', 'custom']) {
     const result = run({ ...options, command: 'field-guide-sync' })
     assert.ok(result.stdout.includes(`exported shared guidance to ${path}`))
     assert.match(result.stdout, /add it to your dotfile manager/)
-    assert.deepEqual(JSON.parse(read(path)), portableGuidance('Name tests after behavior.'))
+    assert.deepEqual(JSON.parse(read(path)), { ...portableGuidance('Name tests after behavior.'), schemaVersion: 2 })
 
     // Merge another machine's guidance before exporting the combined preferences.
     writeFileSync(path, JSON.stringify(portableGuidance('Keep tests focused.')))
@@ -116,6 +116,19 @@ for (const mode of ['unset', 'empty', 'custom']) {
     if (mode === 'custom') assert.equal(existsSync(join(home, '.config/filip-stack/field-guide.json')), false)
   })
 }
+
+test('field-guide-sync refuses an unsupported dotfile version before it exports', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-sync-version-'))
+  const path = join(home, '.config/filip-stack/field-guide.json')
+  const future = JSON.stringify({ ...portableGuidance('Name tests after behavior.'), schemaVersion: 99 })
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, future)
+
+  const result = run({ home, command: 'field-guide-sync', expectFailure: true })
+  assert.match(result.stderr, /unsupported shared guidance export version: 99/)
+  assert.doesNotMatch(result.stdout, /exported shared guidance/)
+  assert.equal(read(path), future)
+})
 
 test('apply keeps text outside the guidance block and refuses local edits inside it', () => {
   const home = mkdtempSync(join(tmpdir(), 'host-config-edits-'))
