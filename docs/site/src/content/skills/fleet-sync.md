@@ -28,6 +28,8 @@ environment ID, then saves the policy, after backing up a different saved
 one.
 
 - Missing baseline skills and plugins are installed. Existing extras stay.
+- The `design-system` plugin installs from its own marketplace, and each
+  marketplace reports its state separately.
 - Per-machine agent targets and exclusions keep each machine's exceptions.
 - Scopes, enabled states, and explicit pins stay as they are.
 - Missing clients and local edits show up as incomplete components.

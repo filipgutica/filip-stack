@@ -1,3 +1,19 @@
+# [6.4.0](https://github.com/filipgutica/filip-stack/compare/v6.3.1...v6.4.0) (2026-11-15)
+
+
+### Features
+
+* **sync:** install and verify the design-system plugin from its own marketplace ([bd94df1](https://github.com/filipgutica/filip-stack/commit/bd94df11137fe8836844ec85f9ea96fffdba606d))
+
+## [6.3.1](https://github.com/filipgutica/filip-stack/compare/v6.3.0...v6.3.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* correct code panel radius and cover lesson regressions (G-1, G-2) ([d9d4596](https://github.com/filipgutica/filip-stack/commit/d9d4596e349003d1128dd198a3964da2f49926f4))
+* document install dependencies and theme source (F-3, F-5) ([3734888](https://github.com/filipgutica/filip-stack/commit/3734888acc64cd2d830471dc568e740db452ec11))
+* **site:** repair Figure 2, install commands, and docs errors ([9e9dd37](https://github.com/filipgutica/filip-stack/commit/9e9dd37b162b124d24aa956582d0a2d70afd9d69))
+
 # [6.3.0](https://github.com/filipgutica/filip-stack/compare/v6.2.0...v6.3.0) (2026-11-15)
 
 

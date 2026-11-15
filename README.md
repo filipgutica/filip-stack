@@ -263,10 +263,11 @@ recovery and upgrading the CLI launcher.
 ### Sync this machine or the fleet
 
 `filip-stack sync` installs missing baseline skills and plugins and refreshes
-existing ones. It needs a clean checkout that tracks published `main`. It
-keeps local guidance, plugin states, pins, and host assignments. A component
-it cannot update, such as one with a local edit, does not block the others,
-but the command then exits nonzero. Its report goes to
+existing ones, including an installed design-system plugin. It needs a clean
+checkout that tracks published `main`. It keeps local guidance, plugin
+states, pins, and host assignments. A component it cannot update, such as one
+with a local edit, does not block the others, but the command then exits
+nonzero. Its report goes to
 `~/.local/state/filip-stack/last-sync.json` (under `$XDG_STATE_HOME` when
 set).
 
@@ -295,6 +296,23 @@ fleet. The policy lives at `~/.config/filip-stack/fleet.json` (under
 - `agents` defaults to `codex` and `claude-code`.
 - `exclude` and other per-machine overrides keep exceptions without
   uninstalling anything.
+
+`plugins` can also list `design-system`, the
+[design system](https://github.com/filipgutica/design-system) plugin. Sync
+installs it from its own marketplace, as these commands do:
+
+```sh
+claude plugin marketplace add filipgutica/design-system
+claude plugin install design-system@design-system --scope user
+codex plugin marketplace add filipgutica/design-system
+codex plugin add design-system@design-system
+```
+
+Sync checks that an installed `design-system` is a release, matches the
+version in its marketplace clone, and contains its skill, `DESIGN.md`, and
+tokens. It does not compare every file, because the clone also carries
+unreleased edits. Each marketplace is prepared and reported on its own, so a
+pinned one does not stop the other from updating.
 
 Pass `--environment-id <id>` when the roster label differs from the hostname,
 or `--config <file>` for another policy. The fleet workflow passes both, and
