@@ -13,6 +13,7 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | `pnpm eval:autonomy` | `autonomy.yaml` | `host-guidance.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/autonomy-scenarios.json` |
 | `pnpm eval:delegation-rules` | `delegation-rules.yaml` | `delegation-rules.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/delegation-rules-scenarios.json` |
 | `pnpm eval:handoff` | `handoff.yaml` | `handoff.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/handoff-scenarios.json` |
+| `pnpm eval:host-rules` | `host-rules.yaml` | `host-rules.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/host-rules-scenarios.json` |
 | `pnpm eval:workflow-rules` | `workflow-rules.yaml` | `workflow-rules.mjs` | The Workflow files that hold the rules under test | `tests/workflow/workflow-rules-scenarios.json` |
 | `pnpm eval:skill-rules` | `skill-rules.yaml` | `rules.mjs` | The `SKILL.md` of the standalone skill, or Field Guide, that owns the scenario | The `rules` lists in `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:hill-climb` | `hill-climb.yaml` | `hill-climb.mjs` | The `hill-climb` skill and its references | `tests/skills/hill-climb-scenarios.json` |
@@ -25,7 +26,7 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | `<name>.yaml` | promptfoo config: two prompts labeled `base` and `working tree`, the providers, a test generator, and one `javascript` assertion |
 | `providers.yaml` | The models, through the local CLIProxyAPI. The label (`claude` or `codex`) names the host whose guidance a prompt renders. |
 | `host-guidance.mjs`, `routing.mjs`, `rules.mjs` | Prompt functions, test generators, and scoring. `rules.mjs` builds every rules test: `rulesEval` for a fixed set of files, and the skill-rules tests |
-| `workflow-rules.mjs`, `hill-climb.mjs`, `retrieval.mjs`, `handoff.mjs`, `delegation-rules.mjs` | Rules tests that `rulesEval` builds |
+| `workflow-rules.mjs`, `hill-climb.mjs`, `retrieval.mjs`, `handoff.mjs`, `delegation-rules.mjs`, `host-rules.mjs` | Rules tests that `rulesEval` builds |
 | `skill-scenarios.mjs` | Reads `tests/skills/scenarios/<skill>.json` and the `--no-base` and `--skill` options |
 | `reply.mjs` | Parses the span from the first `{` to the last `}` in a reply as JSON. Invalid JSON is a failed answer, not an error. |
 | `run.mjs` | The `pnpm eval:<name>` entry point: options, validation, the promptfoo run, reading its JSON export, printing the tables, and the exit code |

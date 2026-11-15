@@ -1,0 +1,39 @@
+{
+  "scenarios": [
+    {
+      "id": "primary-checkout-implement",
+      "task": "This thread runs in the repository's primary checkout, which is on main and clean. The user asks you to fix a typo in an error message and open a PR.",
+      "options": {
+        "branch-here": "create a branch in this checkout with git switch -c, then make the fix",
+        "worktree": "move the work to a new worktree on a new branch, then make the fix",
+        "ask": "ask the user where to make the change"
+      },
+      "accept": [
+        "worktree"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "primary-checkout-question",
+      "task": "This thread runs in the repository's primary checkout, which is on main and clean. The user asks how the config loader resolves environment overrides.",
+      "options": {
+        "answer": "read the code in this checkout and answer",
+        "worktree": "move the thread to a new worktree first, then read the code and answer"
+      },
+      "accept": [
+        "answer"
+      ]
+    },
+    {
+      "id": "worktree-implement",
+      "task": "This thread runs in a worktree that T3 Code created for it, on its own branch made from the latest main. The user asks you to fix a typo in an error message and open a PR.",
+      "options": {
+        "fix-here": "make the fix on this branch in this worktree",
+        "new-worktree": "move the work to another new worktree, then make the fix"
+      },
+      "accept": [
+        "fix-here"
+      ]
+    }
+  ]
+}

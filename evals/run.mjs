@@ -13,6 +13,7 @@ import { parseArgs } from 'node:util'
 import { formatTables, gate } from './gate.mjs'
 import { delegationRulesTests } from './delegation-rules.mjs'
 import { handoffTests } from './handoff.mjs'
+import { hostRulesTests } from './host-rules.mjs'
 import { autonomyTests, delegationTests, renderGuidance } from './host-guidance.mjs'
 import { routingChanges, routingSkills, routingTests } from './routing.mjs'
 import { hillClimbTests, prepareHillClimb } from './hill-climb.mjs'
@@ -44,6 +45,7 @@ const evals = {
   autonomy: { tests: autonomyTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   handoff: { tests: handoffTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   'delegation-rules': { tests: delegationRulesTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
+  'host-rules': { tests: hostRulesTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   'workflow-rules': { tests: workflowRulesTests, prepare: prepareRules, title: modelTitle },
   'skill-rules': {
     tests: skillRulesTests,
