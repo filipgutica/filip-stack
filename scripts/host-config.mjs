@@ -301,6 +301,7 @@ const apply = ({ home, force }) => {
       continue
     }
     if (entry.state.startsWith('edited')) backUp(join(home, entry.target))
+    // Retired targets, which the sources no longer produce, have no content.
     if (entry.content === null) {
       retire({ home, ...entry })
       delete files[entry.target]
