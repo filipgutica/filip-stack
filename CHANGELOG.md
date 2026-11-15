@@ -1,3 +1,11 @@
+# [6.5.0](https://github.com/filipgutica/filip-stack/compare/v6.4.1...v6.5.0) (2026-11-15)
+
+
+### Features
+
+* **guidance:** follow the design-system plugin skill for visual work ([a1c63d8](https://github.com/filipgutica/filip-stack/commit/a1c63d811ae9cc83475d0e6565bf4aad53fb2820))
+* **host-config:** stop installing the design system and retire old installs ([93eaed5](https://github.com/filipgutica/filip-stack/commit/93eaed5f8a873d0121b3b65c6153971d48377e5c))
+
 ## [6.4.1](https://github.com/filipgutica/filip-stack/compare/v6.4.0...v6.4.1) (2026-11-15)
 
 
