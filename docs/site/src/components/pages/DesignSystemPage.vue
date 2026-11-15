@@ -65,16 +65,14 @@ const tables = {
     />
     <h1 id="title">Design system</h1>
     <p class="lede">
-      The framework-agnostic foundation for every interface Filip builds.
-      Its tokens, components, and rules are plain HTML and CSS: the UI library
-      implements them in Vue, new apps and libraries start from them, and
-      Claude and Codex follow them for visual work.
+      The visual rules behind every interface Filip builds, written as plain
+      HTML and CSS. Claude and Codex follow them for visual work, the Vue UI
+      library implements them, and new apps start from them.
     </p>
     <UiAlert tone="info">
       <p>
-        This design system is published as <code>filipgutica/design-system</code>.
-        It is the default for UX and visual work, unless you ask for another or
-        the repository has its own. Browse it on the
+        Agents use <code>filipgutica/design-system</code> by default, unless
+        you ask for another or the repository has its own. Browse it on the
         <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
@@ -106,11 +104,11 @@ const tables = {
     <h2 id="catalogue">Component catalogue</h2>
     <div class="prose">
       <p>
-        The catalogue shows every component in each state that applies. It
-        uses only <code>tokens.css</code>, and its markup carries the roles and
-        states each implementation copies.
+        The catalogue shows every component in each of its states, using only
+        <code>tokens.css</code>. Its markup shows the roles and states every
+        implementation copies.
         <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>
-        builds these components in Vue; a React library or a new app builds
+        builds these components in Vue. A React library or a new app builds
         the same ones from here.
       </p>
       <ul>
@@ -144,10 +142,10 @@ const tables = {
       <p>
         The shared guidance tells agents to read
         <code>~/design-system/DESIGN.md</code> before UX or visual work.
-        For interaction, flows, states, interface copy, and accessibility, they also use
-        the <a href="/filip-stack/skills/interface-design/">interface-design</a>
-        skill. <code>DESIGN.md</code> owns the look;
-        <code>interface-design</code> owns the behavior and its checks.
+        <code>DESIGN.md</code> owns the look. For behavior, such as flows,
+        states, interface copy, and accessibility, agents also use the
+        <a href="/filip-stack/skills/interface-design/">interface-design</a>
+        skill.
       </p>
     </div>
     <ol class="fg-site-steps" aria-label="Which rules win">
@@ -167,9 +165,9 @@ const tables = {
       <li>
         <div>
           <p>
-            <strong><code>filipgutica/design-system</code></strong> is the
-            default for all other UX and visual work. Use its palette, type, and
-            components consistently across projects.
+            <strong><code>filipgutica/design-system</code></strong> covers all
+            other UX and visual work, with the same palette, type, and
+            components across projects.
           </p>
         </div>
       </li>
@@ -198,16 +196,16 @@ const tables = {
     <h2 id="reuse">Reuse it in a new project</h2>
     <div class="prose">
       <p>
-        The design system has two layers. The core covers tokens, quiet depth,
-        controls and their states, focus, motion, and accessibility, and a new
-        project adopts it as is. The identity layer is the personal sites'
-        terminal look: the <code>~/name</code> header, mono headings, and
-        command plates. A new project replaces it with its own.
+        The design system has two layers. A new project keeps the core as is:
+        tokens, quiet depth, controls and their states, focus, motion, and
+        accessibility. It replaces the identity layer, which is the personal
+        sites' terminal look: the <code>~/name</code> header, mono headings,
+        and command plates.
       </p>
       <p>
-        To start, keep <code>tokens.css</code> unchanged and set your own hue
-        and fonts on <code>:root</code> in a stylesheet loaded after it. Then
-        build components from the catalogue and the component specs.
+        To start, keep <code>tokens.css</code> unchanged. Set your own hue and
+        fonts on <code>:root</code> in a stylesheet loaded after it. Then build
+        components from the catalogue and the component specs.
       </p>
     </div>
   </section>
@@ -265,9 +263,10 @@ const tables = {
       </div>
     </UiCard>
     <p class="hint">
-      The labels above are token names. Standalone HTML and library sites use the same names.
-      The values come from <code>tokens.css</code> in <code>@filipgutica/design-system</code>.
-      <code>@filipgutica/ui</code> builds its themes from that package.
+      The labels are token names, shared by standalone HTML and library sites.
+      The values come from <code>tokens.css</code> in
+      <code>@filipgutica/design-system</code>. <code>@filipgutica/ui</code>
+      builds its themes from that package.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.

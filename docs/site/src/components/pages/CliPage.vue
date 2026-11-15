@@ -84,8 +84,9 @@ const tables = {
     />
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
-      Use the CLI to set up or update a machine's global guidance, agent
-      profiles, output styles, and design system.
+      The CLI gives each machine the same global agent guidance, agent
+      profiles, output styles, and design system, and keeps them current. It
+      is optional: Workflow and the skills work without it.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -128,15 +129,14 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      The default checkout is <code>~/code/filip-stack</code>. For another
-      location, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
+      The CLI uses <code>~/code/filip-stack</code> by default. For another
+      location, run <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
       Without Homebrew, run <code>node cli/filip-stack.mjs --repo . &lt;command&gt;</code>
-      from the checkout, such as <code>node cli/filip-stack.mjs --repo . status</code>.
+      from the checkout.
     </p>
     <p class="hint">
       If an old <code>~/.local/bin/filip-stack</code> symlink shadows Homebrew,
-      remove that symlink. Check the active command with
-      <code>command -v filip-stack</code>.
+      remove it. <code>command -v filip-stack</code> shows which command runs.
     </p>
   </section>
 
@@ -145,7 +145,7 @@ const tables = {
     <ol class="fg-site-steps">
       <li>
         <div>
-          <p>Inspect the applied and repository commits and each target's state.</p>
+          <p>See what is applied now and what each target's state is.</p>
           <UiCodeBlock
             :code="commands.status"
             language="bash"
@@ -179,9 +179,9 @@ const tables = {
       /></template>
     </UiCommandList>
     <p class="hint">
-      The manifest at <code>~/.agents/.filip-stack-host-config.json</code>
-      records the applied commit and file hashes. Apply removes previously
-      managed files when the repository removes them.
+      <code>~/.agents/.filip-stack-host-config.json</code> records the applied
+      commit and file hashes. Apply removes files that the repository no
+      longer has.
     </p>
   </section>
 
@@ -189,17 +189,12 @@ const tables = {
     <h2 id="update">Keep up to date</h2>
     <p>
       Run <code>filip-stack sync</code> to refresh this machine's guidance,
-      standalone skills, and filip-stack plugins. Your fleet policy selects a
-      shared baseline and per-machine exceptions; existing extras remain.
-      It requires a clean checkout tracking <code>main</code> and preserves local
-      guidance. Conflicts appear in its result.
+      standalone skills, and filip-stack plugins. It needs a clean checkout
+      that tracks <code>main</code>. It keeps local guidance and your extra
+      installs, and lists any conflicts in its result. To sync every machine
+      at once, use the <a href="/filip-stack/skills/fleet-sync/">Fleet Sync skill</a>.
     </p>
-    <p>
-      For every enrolled machine, use the
-      <a href="/filip-stack/skills/fleet-sync/">Fleet Sync skill</a>.
-      Offline and unlinked machines remain visible in the fleet report.
-    </p>
-    <p>Upgrade the CLI launcher separately with Homebrew:</p>
+    <p>The CLI launcher updates separately, with Homebrew:</p>
     <UiCodeBlock
       :code="commands.upgrade"
       language="bash"
@@ -208,21 +203,18 @@ const tables = {
       :wrap="true"
     />
     <p class="hint">
-      <code>filip-stack --version</code> shows the launcher version.
-      <code>filip-stack update</code> updates host config from the checkout.
-    </p>
-    <p class="hint">
-      On another branch or a detached HEAD, <code>update</code> stops before
-      pulling or applying. Switch the checkout to <code>main</code>, or use
-      <code>apply</code> to apply its current contents.
+      <code>filip-stack --version</code> shows the launcher version. On a branch
+      other than <code>main</code>, or a detached HEAD, <code>update</code>
+      stops before it pulls. Switch to <code>main</code>, or run
+      <code>apply</code> to apply the checkout as it is.
     </p>
   </section>
 
   <section aria-labelledby="sync">
     <h2 id="sync">Sync your Field Guide preferences</h2>
     <p class="section-intro">
-      The repository ships no preferences. To share yours between machines,
-      sync this dotfile with your dotfile manager.
+      To share your <a href="/filip-stack/field-guide/">Field Guide</a>
+      preferences between machines, sync this file with your dotfile manager.
     </p>
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
@@ -290,7 +282,7 @@ const tables = {
   <section aria-labelledby="edits">
     <h2 id="edits">Recover from a local edit</h2>
     <div class="prose">
-      <p>If managed text changed locally, apply prints the diff and stops. Choose one:</p>
+      <p>If you edited a managed file locally, apply prints the diff and stops. Choose one:</p>
       <ul>
         <li>
           Move the change into <code>host-config/</code>, commit it, and rerun apply
@@ -302,12 +294,10 @@ const tables = {
         </li>
       </ul>
       <p>
-        An existing, nonempty guidance file without a managed block also counts as edited.
-        After forcing, restore machine-local text from the backup below the block.
-      </p>
-      <p>
-        Keep machine-local notes below the marked block in <code>CLAUDE.md</code>
-        or <code>AGENTS.md</code>. They stay in place and override conflicting shared guidance.
+        A nonempty guidance file without a managed block also counts as edited.
+        After a forced apply, copy your machine-local text from the backup to
+        below the block. Notes there stay in place and win over the shared
+        guidance where they conflict.
       </p>
     </div>
   </section>
