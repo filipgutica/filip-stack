@@ -24,11 +24,14 @@ Capture when every condition is true:
 4. A short paraphrase can preserve the meaning without sensitive content.
 5. Current global instructions, project instructions, or live technical sources do not already provide the same authority.
 
+A preference about when to use a manual-only skill (`disable-model-invocation: true`) meets condition 5 even when that skill's contract describes its use. Nothing routes to a manual-only skill until the user names it. The preference still fails condition 5 when global or project instructions already state it.
+
 Examples:
 
 - "Prefer named constants for non-obvious domain thresholds." Capture as shared guidance. Its meaning is portable across repositories.
 - "You missed the same generated-file check again." Capture or reinforce a project learning when the repeated miss is clear and reusable.
 - A committed review correction exposes a reusable antipattern. Keep the review record and submit the generalized guidance with review or commit evidence.
+- "Suggest `$checkpoint` before you hand a branch to someone else." Capture as shared guidance when `checkpoint` is manual-only and no instruction says when to use it.
 
 ## Ask
 
@@ -48,6 +51,7 @@ Skip when any condition is true:
 - The observation is temporary, tentative, or specific to the current patch.
 - The information contains secrets, credentials, raw prompts, raw transcripts, proprietary code, or unsafe pointers.
 - The rule is already authoritative in current global or project instructions, code, types, tests, schemas, or current documentation.
+- The rule is already encoded in global or project guidance, such as a delegation role table, or in the contract of a skill the model can invoke on its own.
 - The observation is praise, a status update, a rejected suggestion, or a no-finding review.
 - The learning would not change a future agent decision.
 
@@ -56,6 +60,7 @@ Examples:
 - "Use this temporary endpoint until staging recovers." Skip as temporary.
 - "The test is in `src/x.test.ts`." Skip because live repository search is authoritative.
 - "Nice fix." Skip because it contains no durable decision.
+- "Use Opus 5.5 for visual reviews." Skip when the global delegation role table already routes visual reviews to Opus 5.5.
 
 ## Scope and evidence
 
