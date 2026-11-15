@@ -31,8 +31,8 @@ For each URL, width, and theme it loads a fresh page and:
   `var(--space-2)` resolve through the page, and `em` values resolve per
   element. Point it at the owning design system's token file: the
   project's own, else `language/tokens.css` in the design-system plugin when
-  it is installed. With neither, omit `--tokens` and report token checking as
-  skipped.
+  it is installed and you can locate it. With neither, omit `--tokens` and
+  report token checking as skipped.
 
 Options: `--theme-attr <attribute>` for apps that switch themes with an
 attribute on `<html>` instead of `prefers-color-scheme`; `--fail-on-tokens`

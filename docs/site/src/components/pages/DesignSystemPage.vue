@@ -143,6 +143,10 @@ const tables = {
           <a href="https://github.com/filipgutica/design-system/blob/main/language/decisions.md">decisions</a>:
           what each component does, and why it looks the way it does.
         </li>
+        <li>
+          <a href="https://github.com/filipgutica/design-system/blob/main/language/visualizations.md">Data visualizations</a>:
+          consistent measurements, filterable count reports, and self-contained HTML exports.
+        </li>
       </ul>
     </div>
   </section>
