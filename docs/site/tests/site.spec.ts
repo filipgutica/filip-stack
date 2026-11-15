@@ -92,6 +92,7 @@ test("Previous and Next walk the sidebar order", async ({ page }) => {
     .getByRole("navigation", { name: "Documentation", exact: true })
     .getByRole("link")
     .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  expect(order).toHaveLength(routes.length);
   for (const [index, href] of order.entries()) {
     await page.goto(href!);
     const previous = page.locator('a[rel="prev"]');

@@ -15,31 +15,31 @@ const { catalog, page, skill, content } = defineProps<{
   content?: SkillContent;
 }>();
 const repository = "https://github.com/filipgutica/filip-stack";
-const link = (label: string, href: string, code = false) => ({
+const link = ({ label, href, code = false }: { label: string; href: string; code?: boolean }) => ({
   label,
   href,
   code,
   current: href === page,
 });
 const skillLink = ({ name }: CatalogSkill) =>
-  link(name, `/filip-stack/skills/${name}/`, true);
+  link({ label: name, href: `/filip-stack/skills/${name}/`, code: true });
 // The sidebar order is the reading order: the pager walks it too.
 const groups = [
-  { items: [link("Overview", "/filip-stack/")] },
+  { items: [link({ label: "Overview", href: "/filip-stack/" })] },
   { label: "Workflow skills", items: catalog.workflow.map(skillLink) },
   { label: "Standalone skills", items: catalog.standalone.map(skillLink) },
   {
     label: "Setup",
     items: [
-      link("filip-stack CLI", "/filip-stack/cli/"),
-      link("Design system", "/filip-stack/design-system/"),
-      link("Field Guide", "/filip-stack/field-guide/"),
+      link({ label: "filip-stack CLI", href: "/filip-stack/cli/" }),
+      link({ label: "Design system", href: "/filip-stack/design-system/" }),
+      link({ label: "Field Guide", href: "/filip-stack/field-guide/" }),
     ],
   },
   {
     label: "Guides",
     items: [
-      link("Agent-ready environments", "/filip-stack/agent-ready-environments/"),
+      link({ label: "Agent-ready environments", href: "/filip-stack/agent-ready-environments/" }),
     ],
   },
 ];

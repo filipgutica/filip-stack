@@ -31,8 +31,9 @@ For each test, the agent asks: what behavior does it protect, which realistic
 bug breaks it, and why do other tests miss that bug? A new test without good
 answers is not added. A test that needs an export, flag, or hook no
 production code uses moves to the real boundary. Before it removes a test,
-the agent names the remaining test that catches the same failure, and
-afterwards it checks for unused files, exports, and dependencies.
+the agent names the remaining test that catches the same failure, or the
+change or decision that retired the contract. Afterwards it checks for unused
+files, exports, and dependencies.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/test-audit/SKILL.md)
 links the full criteria.

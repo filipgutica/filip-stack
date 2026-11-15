@@ -179,8 +179,8 @@ const tables = {
     </UiCommandList>
     <p class="hint">
       <code>~/.agents/.filip-stack-host-config.json</code> records the applied
-      commit and file hashes. Apply removes files the repository no longer
-      has.
+      commit and file hashes. Apply removes files it applied earlier once the
+      repository removes them.
     </p>
   </section>
 

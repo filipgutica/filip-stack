@@ -31,6 +31,7 @@ feedback. For a plan, specification, or tickets without code changes, use
    duplication, and dead code.
 
 Before a PR reaches you, an agent that did not write it reviews the whole PR.
+A PR that is one routine, bounded change needs only focused checks.
 Risky work, such as a migration or security change, gets an independent
 review when the host supports one, and large test changes get a
 [test-audit](../test-audit/). A final review you ask for, such as

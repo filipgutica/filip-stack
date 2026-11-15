@@ -25,8 +25,8 @@ instead of reviewing them silently.
 
 It reads every changed file and follows the affected behavior through
 callers, tests, types, configuration, and documentation. Changed or removed
-tests must still protect the behavior, and large test changes get a
-read-only [test-audit](../test-audit/). A check that could not run is a
+tests must still protect the behavior unless the contract they checked is
+now obsolete. Large test changes get a read-only [test-audit](../test-audit/). A check that could not run is a
 limitation, never a pass. Style preferences and requests for more scope are
 not findings.
 

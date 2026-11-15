@@ -90,7 +90,7 @@ Install only the standalone skills you want, with the
 | `full-send` | Takes a change or PR through review and CI, then merges it or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `full-stop` | Takes a change or PR through review and CI and leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. Adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
-| `hill-climb` | Improves a working change in small rounds and keeps an edit only when blind judges or a score prefer it. Needs `council`. |
+| `hill-climb` | Improves a working change, or climbs toward a named goal, in small rounds, and keeps an edit only when it wins under the chosen rule: blind judges, a score, or both. Needs `council`. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
 | `merge-council` | Runs a council review on a PR, fixes the findings every member agrees on, and returns a merge verdict. Needs `council`. |
@@ -138,7 +138,7 @@ shows what it saves and when.
 
 ```sh
 claude plugin install field-guide@filip-stack   # Claude Code
-codex plugin add field-guide@filip-stack        # Codex
+codex plugin add field-guide@filip-stack        # Codex, then restart it
 ```
 
 Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
@@ -154,7 +154,7 @@ wrappers.
 
 ```sh
 claude plugin install guardrails@filip-stack   # Claude Code
-codex plugin add guardrails@filip-stack        # Codex
+codex plugin add guardrails@filip-stack        # Codex, then restart it
 ```
 
 | Rule | Commands | Decision |
@@ -209,7 +209,7 @@ another checkout location, running without Homebrew, and a shadowing symlink.
   package in `host-config/design-system.json`
 
 Text outside the marked block stays, and wins where it conflicts with the
-shared guidance. Apply removes files that the repository no longer has.
+shared guidance. Apply removes a file it applied earlier once the repository no longer has it.
 
 Agents use the design system for UX and visual work unless you ask for another
 or the repository has its own. See its

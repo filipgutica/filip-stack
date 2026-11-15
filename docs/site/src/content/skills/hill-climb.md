@@ -11,7 +11,9 @@ from a saved copy.
 ## When to use it
 
 Use it after a change already works and you want tighter copy, spacing, or
-code. Check correctness first, for example with [sol-loop](../sol-loop/):
+code. You can also start from an open-ended goal across named paths, such
+as improving the settings pages. Check correctness first, for example with
+[sol-loop](../sol-loop/):
 judges' preferences do not prove the work is correct.
 
 It needs `council`, which the install command above includes, and at least
@@ -33,7 +35,8 @@ then stays fixed. If the goal or limits are unclear, it asks up to four
 questions first.
 
 Each round makes one small edit and runs the checks. The edit stays only if
-judges or a score from a command you name prefer it. For guidance such as a
+it wins under the card's rule: judges, a score from a command you name, or
+both. For guidance such as a
 skill, judges compare work done under each version with a no-guidance
 baseline, and holdout tasks check that the gain carries over.
 
