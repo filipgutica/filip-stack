@@ -1,3 +1,10 @@
+# [6.2.0](https://github.com/filipgutica/filip-stack/compare/v6.1.1...v6.2.0) (2026-11-15)
+
+
+### Features
+
+* **host-config:** keep primary checkouts on the default branch ([2e63276](https://github.com/filipgutica/filip-stack/commit/2e632761a644d9ab8becfa8e3ce9301ab5a266c7))
+
 ## [6.1.1](https://github.com/filipgutica/filip-stack/compare/v6.1.0...v6.1.1) (2026-11-15)
 
 
