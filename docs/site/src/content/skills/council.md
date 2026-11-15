@@ -10,9 +10,11 @@ averaging it away.
 
 ## When to use it
 
-Before you install it, check that your agent can run both OpenAI and Claude
-models. In T3 Code, that means both the Codex and Claude providers are set up.
-On another host, its subagents must be able to run the models you ask for.
+The default members mix OpenAI and Claude models, so the council works best
+when your agent can run both. In T3 Code, set up both the Codex and Claude
+providers. On another host, its subagents must be able to run the models. If a
+default member cannot run, the agent swaps in a comparable model or drops it,
+and says so. A council needs at least two members.
 
 Ask for a council on a question, decision, plan, design, document, or code.
 No special command is needed. For example:

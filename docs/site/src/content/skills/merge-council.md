@@ -12,11 +12,9 @@ reviewed.
 
 ## When to use it
 
-Like council, it needs an agent that can run both OpenAI and Claude models.
-By default, the members are Astra (OpenAI's `gpt-6-astra`), Sol (OpenAI's
-`gpt-6.1-sol`), Opus (Claude Opus 5.5), and Fable (Claude Fable 5.2). The
-[council page](../council/) explains the lineup. The install command above
-also installs `council`.
+It uses council's members. The [council page](../council/) lists the models
+and what your agent needs to run them. The install command above also
+installs `council`.
 
 Ask for a merge council by name. A general "review this PR" uses a lighter
 skill such as [review](../review/). Run `/merge-council` in Claude or

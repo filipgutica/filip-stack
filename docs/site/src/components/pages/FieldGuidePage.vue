@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { UiAlert, UiBreadcrumbs, UiCodeBlock } from "@filipgutica/ui";
+import { UiAlert, UiBreadcrumbs } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
 import HostCommands from "../HostCommands.vue";
 const commands = {
@@ -28,7 +28,8 @@ const management = [
     <h1 id="title">Field Guide</h1>
     <p class="lede">
       Field Guide is an optional plugin that remembers your preferences and
-      corrections, so you do not repeat them in every session.
+      corrections. Tell your agent “Remember that I prefer pnpm over npm,” and
+      later sessions know it too.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -68,14 +69,10 @@ const management = [
         The agent sets up <code>~/.field-guide</code> if it does not exist,
         saves a short paraphrase, and confirms in one line, for example:
       </p>
+      <div class="code-scroll" tabindex="0" role="region" aria-label="Example notice">
+        <pre><code>{{ commands.notice }}</code></pre>
+      </div>
     </div>
-    <UiCodeBlock
-      :code="commands.notice"
-      language="text"
-      variant="compact"
-      :copyable="false"
-      :wrap="true"
-    />
     <p class="hint">
       In later sessions, the hooks bring it back when it matches the
       repository or your first prompt.

@@ -4,8 +4,8 @@ related: [full-send, babysit-pr]
 
 ## What it does
 
-Sol is OpenAI's review model, currently `gpt-6.1-sol`. Your agent checks each
-Sol finding against the code before it acts. It fixes real problems with a
+The reviewer is Sol (OpenAI's `gpt-6.1-sol`). Your agent checks each Sol
+finding against the code before it acts. It fixes real problems with a
 small change and answers disagreements with evidence. Findings outside the
 change's purpose become follow-ups instead of growing the diff.
 

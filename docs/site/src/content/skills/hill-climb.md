@@ -16,10 +16,9 @@ the settings pages. Check correctness first, for example with
 [sol-loop](../sol-loop/): judges' preferences do not prove that the work is
 correct.
 
-It needs `council`, which the install command above also installs, and an
-agent that can run council's OpenAI and Claude models. With the default
-members, those are Astra (OpenAI's `gpt-6-astra`), Sol (OpenAI's
-`gpt-6.1-sol`), Opus (Claude Opus 5.5), and Fable (Claude Fable 5.2).
+It needs `council`, which the install command above also installs, and at
+least two council members that can run. The [council page](../council/) lists
+the models and what your agent needs to run them.
 
 Run `/hill-climb` in Claude or `$hill-climb` in Codex with a goal and paths:
 

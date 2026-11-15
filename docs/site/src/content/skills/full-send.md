@@ -4,8 +4,8 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 ## What it does
 
-You hand off a change and come back to a result. Sol, OpenAI's review model
-(currently `gpt-6.1-sol`), reviews the code and PR description through
+You hand off a change and come back to a result. Sol (OpenAI's
+`gpt-6.1-sol`) reviews the code and PR description through
 [sol-loop](../sol-loop/). The agent then opens or updates the PR, handles CI
 and bot findings, and makes routine decisions while you are away. It can also
 close the open items from a [merge-council](../merge-council/).

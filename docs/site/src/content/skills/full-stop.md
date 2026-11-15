@@ -4,9 +4,9 @@ related: [full-send, sol-loop, babysit-pr]
 
 ## What it does
 
-Full stop runs [full-send](../full-send/)'s process: Sol, OpenAI's review
-model (currently `gpt-6.1-sol`), reviews the code and PR description, and the
-agent handles CI and bot findings. At the end, it checks whether the PR is
+Full stop runs [full-send](../full-send/)'s process: Sol (OpenAI's
+`gpt-6.1-sol`) reviews the code and PR description, and the agent handles CI
+and bot findings. At the end, it checks whether the PR is
 ready for your merge decision instead of merging.
 
 ## When to use it

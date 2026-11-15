@@ -162,7 +162,8 @@ onMounted(() => {
             The agent picks the
             <a href="/filip-stack/skills/review/"><code>review</code></a> skill
             on its own. It reads every changed file and lists findings ranked
-            by impact, each with a file and line. It changes no files.
+            by impact, each with a file and line, or says it found nothing it
+            can back with evidence. It changes no files.
           </p>
         </div>
       </li>

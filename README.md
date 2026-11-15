@@ -11,7 +11,8 @@ each skill.
 
 Workflow is a plugin with five skills for everyday engineering work: planning,
 code changes, review, test audits, and technical writing. Install it from this
-repository's plugin marketplace.
+repository's plugin marketplace, a catalog that the `claude plugin` and
+`codex plugin` commands read.
 
 In Claude Code:
 
@@ -34,8 +35,8 @@ Then open a repository that has changes on a branch, and ask:
 > Review the changes on this branch against main.
 
 The agent picks the `review` skill on its own. It reads every changed file and
-reports findings ranked by impact, each with a file and line. It changes no
-files.
+reports findings ranked by impact, each with a file and line, or says that it
+found nothing it can back with evidence. It changes no files.
 
 That is all Workflow needs. Everything below is optional.
 
@@ -103,7 +104,7 @@ Standalone skills work on their own. Install only the ones you want, with the
 | `merge-council` | Runs a council review on a PR, fixes the findings every member agrees on, and returns a merge verdict. Needs `council`. |
 | `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |
 | `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
-| `sol-loop` | Has OpenAI's Sol model review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `sol-loop` | Has Sol (OpenAI's `gpt-6.1-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
 | `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
 
@@ -213,7 +214,8 @@ If an old `~/.local/bin/filip-stack` symlink shadows Homebrew, remove it.
 
 ### What apply installs
 
-`host-config/` holds the setup that every machine shares:
+`host-config/` holds the setup that every machine shares. `apply` copies it
+into `~/.claude`, `~/.codex`, `~/.agents`, and `~/design-system`:
 
 - the global guidance, written into a marked block in `~/.claude/CLAUDE.md`
   and `~/.codex/AGENTS.md`
@@ -289,9 +291,10 @@ machine-local text below the block from the backup.
 existing ones. It needs a clean checkout that tracks published `main`. It
 keeps machine-local guidance, plugin enabled states and scopes, explicit pins,
 and skill host assignments. A local edit, unmerged applied guidance, or a
-custom agent home blocks only its own component. The command then exits
-nonzero and saves a report at `~/.local/state/filip-stack/last-sync.json`
-(under `$XDG_STATE_HOME` when set).
+custom agent home blocks only its own component. The command exits nonzero
+when a component fails. It saves a report at
+`~/.local/state/filip-stack/last-sync.json` (under `$XDG_STATE_HOME` when
+set).
 
 To sync every machine, install `fleet-sync` and ask your agent to sync the
 fleet. The policy lives at `~/.config/filip-stack/fleet.json` (under
