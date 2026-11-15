@@ -1,3 +1,18 @@
+# [6.0.0](https://github.com/filipgutica/filip-stack/compare/v5.14.0...v6.0.0) (2026-11-15)
+
+
+### Bug Fixes
+
+* **field-guide:** carry an undo to every machine through shared sync ([26c2cca](https://github.com/filipgutica/filip-stack/commit/26c2cca57cbbfd66448ccdb417bdb61823e5e3b4))
+* **field-guide:** let an undo acknowledge only its own supersession ([99ddab6](https://github.com/filipgutica/filip-stack/commit/99ddab62c1a56a732088c7899a779d502c4f61db))
+
+
+### BREAKING CHANGES
+
+* **field-guide:** older Field Guide plugins cannot read stores or dotfiles
+written by this version. Refresh the plugin and restart the host on every
+machine, then run host-config update.
+
 # [5.14.0](https://github.com/filipgutica/filip-stack/compare/v5.13.2...v5.14.0) (2026-11-15)
 
 
