@@ -105,7 +105,8 @@ input follows `schemas/lifecycle-v1.schema.json`. A confirmed correction can
 supersede one active record with a same-scope, same-subject
 replacement. The command activates a candidate replacement and stores its ID on
 the superseded transition. `undo` and `withdraw` preserve evidence and move the
-target to `withdrawn`. Archive uses the maintenance dry-run path. Age never
+target to `withdrawn`. When the target is the replacement of a superseded
+record, they also move that record back to `active`. Archive uses the maintenance dry-run path. Age never
 causes archive.
 
 Use `delete --input <json-file>` for permanent deletion. The target must be

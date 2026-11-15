@@ -533,6 +533,7 @@ const validateMemory = (memory) => {
         'active->superseded',
         'active->withdrawn',
         'active->archived',
+        'superseded->active',
         'superseded->archived',
         'withdrawn->archived',
       ])
@@ -1039,6 +1040,17 @@ const validateTransitionInput = (input) => {
   return input
 }
 
+// A superseded record needs an active replacement, so withdrawing the
+// replacement restores the record it superseded.
+const withdrawGuidance = ({ memory, target, input, now }) => {
+  if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
+  appendTransition({ guidance: target, to: 'withdrawn', reason: input.reason, source: input.source, now })
+  const superseded = memory.guidance.find((guidance) => (
+    guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === target.id
+  ))
+  if (superseded) appendTransition({ guidance: superseded, to: 'active', reason: input.reason, source: input.source, now })
+}
+
 const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
@@ -1052,10 +1064,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
     appendTransition({ guidance: target, to: 'active', reason: input.reason, source: input.source, now })
   }
 
-  if (input.action === 'withdraw' || input.action === 'undo') {
-    if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
-    appendTransition({ guidance: target, to: 'withdrawn', reason: input.reason, source: input.source, now })
-  }
+  if (input.action === 'withdraw' || input.action === 'undo') withdrawGuidance({ memory, target, input, now })
 
   if (input.action === 'supersede') {
     if (target.status !== 'active') fail('supersede requires an active target')

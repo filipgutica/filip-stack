@@ -138,6 +138,38 @@ const conversationSubmission = ({ learning, turnId, scope = 'project', explicitP
   },
 })
 
+// Submits active guidance and a contradicting replacement, then supersedes the first with the second.
+const supersedeWithContradiction = ({ repoRoot, guideRoot, scope = 'project', replacementExplicitPreference }) => {
+  const original = submit({
+    repoRoot,
+    guideRoot,
+    input: conversationSubmission({ learning: 'Extract every helper.', turnId: 'turn-1', scope, explicitPreference: true }),
+  }).result
+  const replacementInput = conversationSubmission({
+    learning: 'Keep single-use code inline.',
+    turnId: 'turn-2',
+    scope,
+    explicitPreference: replacementExplicitPreference,
+  })
+  replacementInput.relationship = { kind: 'contradicts', targetId: original.targetId }
+  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: {
+      schemaVersion: 1,
+      action: 'supersede',
+      targetId: original.targetId,
+      replacementId: replacement.targetId,
+      confirmed: true,
+      reason: 'The user confirmed the correction.',
+      source: 'user-confirmation',
+    },
+  })
+  return { original, replacement }
+}
+
 test('submit activates an explicit preference and stores sanitized examples', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-explicit-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/explicit.git' })
@@ -500,6 +532,32 @@ test('a confirmed contradiction supersedes active guidance and activates its rep
   assert.equal(memory.guidance.find(({ id }) => id === replacement.targetId).status, 'active')
   assert.equal(memory.guidance.find(({ id }) => id === original.targetId).transitions.at(-1).replacementId, replacement.targetId)
   run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('undoing a replacement withdraws it and restores the guidance it superseded', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-undo-replacement-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/undo-replacement.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const { original, replacement } = supersedeWithContradiction({ repoRoot, guideRoot, replacementExplicitPreference: true })
+
+  const undone = runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: { schemaVersion: 1, action: 'undo', targetId: replacement.targetId, reason: 'The user undid this learning.', source: 'user' },
+  }).result
+  assert.equal(undone.status, 'withdrawn')
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  const restored = memory.guidance.find(({ id }) => id === original.targetId)
+  assert.equal(restored.status, 'active')
+  assert.deepEqual(
+    restored.transitions.map(({ from, to }) => `${from}->${to}`),
+    ['null->active', 'active->superseded', 'superseded->active'],
+  )
+  assert.equal(memory.guidance.find(({ id }) => id === replacement.targetId).status, 'withdrawn')
+  run({ command: 'validate', repoRoot, guideRoot })
+  assert.deepEqual(retrieve({ repoRoot, guideRoot, subject: 'testing' }).guidance.map(({ id }) => id), [original.targetId])
 })
 
 test('undo is reversible history and permanent deletion requires a current preview', () => {
@@ -1500,28 +1558,7 @@ test('import does not retire the active replacement of superseded guidance', () 
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/shared-sync-conflict.git' })
   const guideRoot = join(root, 'guide')
   const paths = initializeMemory({ repoRoot, guideRoot })
-  const original = submit({
-    repoRoot,
-    guideRoot,
-    input: conversationSubmission({ learning: 'Extract every helper.', turnId: 'turn-1', scope: 'shared', explicitPreference: true }),
-  }).result
-  const replacementInput = conversationSubmission({ learning: 'Keep single-use code inline.', turnId: 'turn-2', scope: 'shared' })
-  replacementInput.relationship = { kind: 'contradicts', targetId: original.targetId }
-  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result
-  runInputCommand({
-    command: 'transition',
-    repoRoot,
-    guideRoot,
-    input: {
-      schemaVersion: 1,
-      action: 'supersede',
-      targetId: original.targetId,
-      replacementId: replacement.targetId,
-      confirmed: true,
-      reason: 'The user confirmed the correction.',
-      source: 'user-confirmation',
-    },
-  })
+  const { replacement } = supersedeWithContradiction({ repoRoot, guideRoot, scope: 'shared' })
   const fingerprint = replacement.targetId.replace('guidance', 'fingerprint')
   const exported = join(root, 'shared.json')
   writeFileSync(exported, `${JSON.stringify({ schemaVersion: 1, active: [], retired: [fingerprint] })}\n`)
