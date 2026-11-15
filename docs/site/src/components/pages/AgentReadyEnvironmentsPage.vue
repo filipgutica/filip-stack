@@ -238,8 +238,8 @@ onMounted(() => {
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="2">
-      <ol class="flow" aria-label="How a rule reaches an action">
-        <li class="flow__advisory">
+      <ol class="channels" aria-label="How a rule reaches an action">
+        <li class="channels__advisory">
           <span class="lesson-label">Advisory</span>
           <span>Prompt, <code>AGENTS.md</code>, skills</span>
         </li>
@@ -247,7 +247,7 @@ onMounted(() => {
           <span class="lesson-label">The agent</span>
           <span>Weighs the guidance and decides what to do</span>
         </li>
-        <li class="flow__enforced">
+        <li class="channels__enforced">
           <span class="lesson-label">Enforced, at the boundary</span>
           <span>Hooks, deny rules, sandbox, type checker, required CI</span>
         </li>
@@ -1014,6 +1014,11 @@ onMounted(() => {
       <li>An earlier draft of the worked example scored 12 of 24 under a looser rubric. The drop came from tightening the rubric, not from any change in the repository.</li>
     </ul>
   </section>
+
+  <nav class="pager" aria-label="Pages">
+    <a rel="prev" href="/filip-stack/field-guide/"><span>Previous</span>Field Guide</a>
+    <a rel="next" href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
+  </nav>
 </template>
 
 <style scoped>
@@ -1034,13 +1039,13 @@ onMounted(() => {
 .lesson-figure { margin-block: var(--space-4); }
 
 /* Figure 2: four nodes joined by arrows; the enforced node sits on the boundary. */
-.flow, .ladder, .pillar-map, .order__chips, .order p { max-width: none; }
+.channels, .ladder, .pillar-map, .order__chips, .order p { max-width: none; }
 #report { margin-top: var(--space-6); }
-.flow { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
-.flow > li { position: relative; display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
-.flow > li + li::before { content: '→'; position: absolute; top: 50%; left: calc(-1 * var(--space-6)); width: var(--space-6); color: var(--color-muted); text-align: center; translate: 0 -50%; }
-.flow__advisory { border-style: dashed !important; }
-.flow__enforced { border-color: var(--color-border) !important; }
+.channels { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
+.channels > li { position: relative; display: grid; gap: var(--space-1); align-content: start; padding: var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
+.channels > li + li::before { content: '→'; position: absolute; top: 50%; left: calc(-1 * var(--space-6)); width: var(--space-6); color: var(--color-muted); text-align: center; translate: 0 -50%; }
+.channels__advisory { border-style: dashed !important; }
+.channels__enforced { border-color: var(--color-border) !important; }
 
 /* Figure 3: each level is one step higher than the one before. */
 .ladder { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); align-items: end; gap: var(--space-2); margin: 0; padding: 0; list-style: none; font-size: var(--text-sm); }
@@ -1097,8 +1102,8 @@ onMounted(() => {
 
 @media (max-width: 800px) {
   .jobs { grid-template-columns: minmax(0, 1fr); }
-  .flow { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
-  .flow > li + li::before { content: '↓'; top: calc(-1 * var(--space-5)); left: 50%; width: auto; height: var(--space-5); line-height: var(--space-5); translate: -50% 0; }
+  .channels { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
+  .channels > li + li::before { content: '↓'; top: calc(-1 * var(--space-5)); left: 50%; width: auto; height: var(--space-5); line-height: var(--space-5); translate: -50% 0; }
   .ladder { grid-template-columns: minmax(0, 1fr); }
   .ladder > li { min-height: 0 !important; margin-left: 0; }
   .ladder > li:nth-child(2) { margin-left: var(--space-4); }

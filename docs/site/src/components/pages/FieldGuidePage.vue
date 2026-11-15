@@ -187,6 +187,8 @@ const tables = {
     <a rel="prev" href="/filip-stack/design-system/"
       ><span>Previous</span>Design system</a
     >
-    <a rel="next" href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
+    <a rel="next" href="/filip-stack/agent-ready-environments/"
+      ><span>Next</span>Agent-ready environments</a
+    >
   </nav>
 </template>

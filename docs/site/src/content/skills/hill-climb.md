@@ -16,8 +16,8 @@ can also start from an open-ended goal across named paths, such as improving
 the settings pages. Check correctness first, for example with
 [sol-loop](../sol-loop/); judge preferences do not prove correctness or quality.
 
-Install hill-climb and council together: replace `-s hill-climb` in the
-command above with `-s hill-climb council`. A missing council skill stops the run.
+The install command above also installs `council`. Hill climb stops if it is
+missing.
 
 Invoke it explicitly with `/hill-climb` in Claude or `$hill-climb` in Codex.
 Name the goal and paths, for example `/hill-climb tighter spacing on the settings page`.

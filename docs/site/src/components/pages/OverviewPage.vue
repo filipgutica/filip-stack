@@ -125,6 +125,7 @@ onMounted(() => {
           :copyable="enhanced"
           :wrap="true"
         />
+        <p class="hint">Restart Codex to load the plugin.</p>
       </div>
     </div>
     <dl class="fg-site-facts">

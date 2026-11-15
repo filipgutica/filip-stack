@@ -12,7 +12,7 @@ blocks merging. The verdict applies only to the commits reviewed.
 
 ## When to use it
 
-Install the skill together with `council`, then explicitly ask for a merge
+The install command above also installs `council`. Explicitly ask for a merge
 council. A general "review this PR" uses a lighter route such as
 [review](../review/).
 

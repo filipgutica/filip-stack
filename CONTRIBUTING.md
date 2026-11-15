@@ -191,6 +191,7 @@ the skill list and summaries from the README skill tables and each skill's
 references from its directory. Each page's text in
 `docs/site/src/content/skills/` is written by hand, so update it when the
 skill's behavior changes.
+The README row's "Needs `a` and `b`." sentence builds the skill page's install command.
 
 ```sh
 cd docs/site
