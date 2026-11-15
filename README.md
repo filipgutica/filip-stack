@@ -269,7 +269,8 @@ states, pins, and host assignments. A component it cannot update, such as one
 with a local edit, does not block the others, but the command then exits
 nonzero. Its report goes to
 `~/.local/state/filip-stack/last-sync.json` (under `$XDG_STATE_HOME` when
-set).
+set). Guidance goes only to `~/.claude` and `~/.codex`; a custom `CODEX_HOME`
+or `CLAUDE_CONFIG_DIR` blocks the guidance step.
 
 To sync every machine, install `fleet-sync` and ask your agent to sync the
 fleet. The policy lives at `~/.config/filip-stack/fleet.json` (under
