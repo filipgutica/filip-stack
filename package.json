@@ -23,6 +23,7 @@
     "eval:delegation-rules": "node evals/run.mjs delegation-rules",
     "eval:host-rules": "node evals/run.mjs host-rules",
     "eval:workflow-rules": "node evals/run.mjs workflow-rules",
+    "eval:coding-standards": "node evals/run.mjs coding-standards",
     "eval:skill-rules": "node evals/run.mjs skill-rules",
     "eval:hill-climb": "node evals/run.mjs hill-climb",
     "eval:retrieval": "node evals/run.mjs retrieval",

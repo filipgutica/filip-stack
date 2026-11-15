@@ -21,6 +21,7 @@ import { prepareRetrieval, retrievalTests } from './retrieval.mjs'
 import { skillRulesTests } from './rules.mjs'
 import { readSkillScenarios } from './skill-scenarios.mjs'
 import { prepareRules, workflowRulesTests } from './workflow-rules.mjs'
+import { codingStandardsTests } from './coding-standards.mjs'
 
 const evalsDir = new URL('./', import.meta.url).pathname
 const promptfoo = new URL('../node_modules/.bin/promptfoo', import.meta.url).pathname
@@ -47,6 +48,7 @@ const evals = {
   'delegation-rules': { tests: delegationRulesTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   'host-rules': { tests: hostRulesTests, prepare: prepareHostGuidance, title: hostGuidanceTitle },
   'workflow-rules': { tests: workflowRulesTests, prepare: prepareRules, title: modelTitle },
+  'coding-standards': { tests: codingStandardsTests, prepare: prepareRules, title: modelTitle },
   'skill-rules': {
     tests: skillRulesTests,
     prepare: prepareRules,
