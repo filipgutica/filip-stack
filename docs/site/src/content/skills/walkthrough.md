@@ -4,47 +4,42 @@ related: [review]
 
 ## What it does
 
-Files are grouped by the behavior they serve. For each part of the change,
-you see the decision, decisive evidence, verification, and remaining risk,
-with a concrete example. You decide whether to accept each part before the
-walkthrough continues.
+Files are grouped by the behavior they serve. For each part, you see the
+decision, the evidence, how it was verified, and the remaining risk, with a
+concrete example. You accept each part before the walkthrough moves on.
 
 ## When to use it
 
-Install the skill with the command above. Invoke it explicitly:
-`/walkthrough` in Claude or `$walkthrough` in Codex. Name the change, for
-example `/walkthrough this branch`.
+Install the skill, then run `/walkthrough` in Claude or `$walkthrough` in
+Codex and name the change:
 
-Use it to understand the last completed change, working tree, branch, or PR
-before approval. For a written list of findings, use [review](../review/).
+> /walkthrough this branch
+
+Use it to understand the last change, the working tree, a branch, or a PR
+before you approve it. For a written list of findings, use
+[review](../review/).
 
 ## How it works
 
-The agent verifies the selected change and reports working-tree changes
-outside it. It builds an ordered map accounting for every changed file,
-then presents one part at a time.
+The agent maps every changed file into an ordered list of parts and presents
+one at a time. For the main behavior, it offers a small exercise, such as
+running a command, and asks what you expect to see. Each part ends with an
+acceptance question.
 
-For the main behavior, it offers a small exercise, such as running a command
-or opening a page, and asks what you expect to see. You may skip the exercise.
-Each part ends with one acceptance question and waits for your answer.
-
-Corrections are recorded without being implemented. A fix needs separate
-authorization. After a fix changes the code, the agent revisits the affected
-parts. The walkthrough ends when every changed file is covered and every
-correction is resolved or explicitly deferred.
-
-You can request a separate read-only presenter agent. Your agent checks the
-evidence that presenter supplies.
+It records corrections but does not make them without your separate
+approval, and revisits affected parts after a fix. The walkthrough ends when
+every changed file is covered and every correction is resolved or deferred.
+You can ask for a separate read-only presenter agent, whose evidence your
+agent checks.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/walkthrough/SKILL.md)
-links the presentation patterns and optional log format.
+links the presentation patterns and the optional log format.
 
 ## What you get
 
 - The behavior and files covered, with your decisions and corrections.
-- Verification evidence, its limits, and unresolved risks or questions.
-- A walkthrough log, if requested.
+- Verification evidence, its limits, and open risks or questions.
+- A walkthrough log, if you ask for one.
 
-Silence, a passing test, or completing an exercise does not count as approval.
-Apart from an authorized log, walkthrough changes no files and does not
-commit, push, or publish.
+Silence, a passing test, or a finished exercise does not count as approval.
+Apart from a log you ask for, walkthrough changes no files.

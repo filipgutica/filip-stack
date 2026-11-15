@@ -4,54 +4,41 @@ related: [review, technical-writing]
 
 ## What it does
 
-Human review threads provide the evidence: the agent groups comments that
-object to the same engineering behavior, counts how many PRs each pattern
-spans, and preserves examples. Proposed guidance comes from repeated
-objections rather than one isolated comment.
+The evidence is human review threads. The agent groups comments that object
+to the same behavior, counts how many PRs each pattern spans, and keeps
+examples. It proposes guidance only for repeated objections.
 
 ## When to use it
 
-Install the skill with the command above. You also need Python 3.9 or later
-and an authenticated GitHub CLI, `gh`.
-
-Name the repositories and lookback period in your request. The agent selects
-the skill for review-churn analysis. For example:
+Install the skill. You also need Python 3.9 or later and an authenticated
+GitHub CLI, `gh`. Name the repositories and the time period:
 
 > Analyze review churn on acme/web and acme/api for the last 90 days.
 
-Neither repositories nor lookback has a default. If either is missing, the
-agent asks and waits before collecting PRs. It uses your GitHub login as the
-author unless you name someone else.
-
-Use the report to find recurring review objections and choose where team
-guidance might prevent them.
+Neither has a default, so the agent asks before it collects anything. It
+analyzes your own PRs unless you name another author.
 
 ## How it works
 
-A bundled collector fetches review threads with file locations and resolved
-or outdated status. Its cohort is PRs created on or after the cutoff date.
-Reviews submitted during that period on older PRs are excluded; the report
-states that limit.
+A bundled collector fetches review threads for PRs created on or after the
+start date, with file locations and resolved or outdated state. The report
+notes that reviews of older PRs are left out.
 
-The agent filters bot-only comments, resolved typo nits, and author comments
-that do not clarify another reviewer's point. Useful human feedback stays
-even when a thread is resolved or outdated. Comments join a pattern only when
-they object to the same behavior.
-
-A failed repository does not stop the others. The report identifies failed
-or partial coverage rather than treating a successful collector exit as proof
-of completeness.
+The agent drops bot-only comments, resolved typo nits, and author comments
+that do not clarify a reviewer's point. Useful human feedback stays even when
+resolved or outdated. If one repository fails, the others continue, and the
+report marks partial coverage.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/pr-review-churn/SKILL.md)
-has the collector and report contract.
+has the collector and report rules.
 
 ## What you get
 
-- A Markdown report with coverage limits, pattern counts, PR links, and short examples.
-- Proposed guidance changes aimed at existing files, such as `AGENTS.md` or
-  a review checklist, and recommended next actions.
-- A distinction between fully covered, partial, and inaccessible repositories.
+- A Markdown report with coverage limits, pattern counts, PR links, and short
+  examples.
+- Proposed changes to existing guidance, such as `AGENTS.md` or a review
+  checklist, and next steps.
+- Which repositories were fully covered, partly covered, or inaccessible.
 
-The analysis is read-only: it posts no comments and changes no repository,
-skill, or guidance file. Request a follow-up implementation to apply proposals;
-[technical-writing](../technical-writing/) can help write the guidance.
+The analysis is read-only. To apply a proposal, ask for it as a separate
+task; [technical-writing](../technical-writing/) can help word the guidance.

@@ -35,12 +35,12 @@ const tables = {
     {
       command: "filip-stack update",
       description:
-        "On <code>main</code>: runs <code>git pull --ff-only</code>, then apply, then <code>field-guide-sync</code> if your preferences dotfile exists.",
+        "On <code>main</code>: <code>git pull --ff-only</code>, apply, then <code>field-guide-sync</code> if your preferences dotfile exists.",
     },
     {
       command: "filip-stack sync",
       description:
-        "Applies this machine's declared fleet baseline and refreshes existing filip-stack installations. Add <code>--dry-run --json</code> for a local preview.",
+        "Applies this machine's fleet baseline and refreshes existing installations. Add <code>--dry-run --json</code> for a local preview.",
     },
     {
       command: "filip-stack field-guide-sync",
@@ -52,7 +52,7 @@ const tables = {
     {
       command: "host-config/guidance/",
       description:
-        "A marked block in <code>~/.claude/CLAUDE.md</code> and <code>~/.codex/AGENTS.md</code>. Text outside the block stays as it is.",
+        "A marked block in <code>~/.claude/CLAUDE.md</code> and <code>~/.codex/AGENTS.md</code>. Text outside the block stays.",
     },
     {
       command: "host-config/claude/",
@@ -71,7 +71,7 @@ const tables = {
     {
       command: "host-config/design-system.json",
       description:
-        '<code>~/design-system</code>, from the pinned <code>@filipgutica/design-system</code> package. Apply downloads it once and caches it in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-system/">Design system</a>.',
+        '<code>~/design-system</code>, from the pinned <code>@filipgutica/design-system</code> package, cached in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-system/">Design system</a>.',
     },
   ],
 };
@@ -84,8 +84,9 @@ const tables = {
     />
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
-      Use the CLI to set up or update a machine's global guidance, agent
-      profiles, output styles, and design system.
+      The CLI gives each machine the same global agent guidance, agent
+      profiles, output styles, and design system, and keeps them current. It
+      is optional.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -94,7 +95,7 @@ const tables = {
       </div>
       <div>
         <dt>Source checkout</dt>
-        <dd>A separate checkout of filip-stack; <code>update</code> needs <code>main</code></dd>
+        <dd>A separate checkout of filip-stack</dd>
       </div>
     </dl>
   </section>
@@ -128,15 +129,13 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      The default checkout is <code>~/code/filip-stack</code>. For another
-      location, use <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
+      The CLI expects <code>~/code/filip-stack</code>. Elsewhere, run <code>filip-stack --repo &lt;dir&gt; &lt;command&gt;</code>.
       Without Homebrew, run <code>node cli/filip-stack.mjs --repo . &lt;command&gt;</code>
-      from the checkout, such as <code>node cli/filip-stack.mjs --repo . status</code>.
+      from the checkout.
     </p>
     <p class="hint">
       If an old <code>~/.local/bin/filip-stack</code> symlink shadows Homebrew,
-      remove that symlink. Check the active command with
-      <code>command -v filip-stack</code>.
+      remove it. <code>command -v filip-stack</code> shows which command runs.
     </p>
   </section>
 
@@ -145,7 +144,7 @@ const tables = {
     <ol class="fg-site-steps">
       <li>
         <div>
-          <p>Inspect the applied and repository commits and each target's state.</p>
+          <p>Check what is applied now.</p>
           <UiCodeBlock
             :code="commands.status"
             language="bash"
@@ -179,27 +178,21 @@ const tables = {
       /></template>
     </UiCommandList>
     <p class="hint">
-      The manifest at <code>~/.agents/.filip-stack-host-config.json</code>
-      records the applied commit and file hashes. Apply removes previously
-      managed files when the repository removes them.
+      <code>~/.agents/.filip-stack-host-config.json</code> records the applied
+      commit and file hashes. Apply removes files it applied earlier once the
+      repository removes them.
     </p>
   </section>
 
   <section aria-labelledby="update">
     <h2 id="update">Keep up to date</h2>
     <p>
-      Run <code>filip-stack sync</code> to refresh this machine's guidance,
-      standalone skills, and filip-stack plugins. Your fleet policy selects a
-      shared baseline and per-machine exceptions; existing extras remain.
-      It requires a clean checkout tracking <code>main</code> and preserves local
-      guidance. Conflicts appear in its result.
+      <code>filip-stack sync</code> refreshes this machine's guidance,
+      standalone skills, and plugins. It needs a clean checkout
+      that tracks <code>main</code>, keeps local guidance and extra installs,
+      and reports conflicts. To sync every machine, use the <a href="/filip-stack/skills/fleet-sync/">Fleet Sync skill</a>.
     </p>
-    <p>
-      For every enrolled machine, use the
-      <a href="/filip-stack/skills/fleet-sync/">Fleet Sync skill</a>.
-      Offline and unlinked machines remain visible in the fleet report.
-    </p>
-    <p>Upgrade the CLI launcher separately with Homebrew:</p>
+    <p>Update the CLI launcher with Homebrew:</p>
     <UiCodeBlock
       :code="commands.upgrade"
       language="bash"
@@ -208,27 +201,23 @@ const tables = {
       :wrap="true"
     />
     <p class="hint">
-      <code>filip-stack --version</code> shows the launcher version.
-      <code>filip-stack update</code> updates host config from the checkout.
-    </p>
-    <p class="hint">
-      On another branch or a detached HEAD, <code>update</code> stops before
-      pulling or applying. Switch the checkout to <code>main</code>, or use
-      <code>apply</code> to apply its current contents.
+      Off <code>main</code>, including a detached HEAD, <code>update</code>
+      stops before it pulls. Switch to <code>main</code>, or run
+      <code>apply</code> to use the checkout as is.
     </p>
   </section>
 
   <section aria-labelledby="sync">
     <h2 id="sync">Sync your Field Guide preferences</h2>
     <p class="section-intro">
-      The repository ships no preferences. To share yours between machines,
-      sync this dotfile with your dotfile manager.
+      Share <a href="/filip-stack/field-guide/">Field Guide</a> preferences
+      between machines by syncing this file with your dotfile manager.
     </p>
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
       <dd>
-        With <code>$XDG_CONFIG_HOME</code> set and nonempty, the file is
-        <code>filip-stack/field-guide.json</code> in that folder instead.
+        When <code>$XDG_CONFIG_HOME</code> is set and nonempty, it is
+        <code>filip-stack/field-guide.json</code> there.
       </dd>
     </dl>
     <ol class="fg-site-steps">
@@ -246,7 +235,7 @@ const tables = {
       </li>
       <li>
         <div>
-          <p>Add the file to your dotfile manager, such as chezmoi. Use your configured path.</p>
+          <p>Add the file to your dotfile manager, such as chezmoi.</p>
           <UiCodeBlock
             :code="commands.chezmoi"
             language="bash"
@@ -268,8 +257,8 @@ const tables = {
       <li>
         <div>
           <p>
-            For later updates, pull your dotfiles first. After
-            <code>update</code> syncs preferences, save the changed dotfile back.
+            For later updates, pull your dotfiles first so the sync merges
+            other machines' preferences, then save the changed file back.
           </p>
           <UiCodeBlock
             :code="commands.routine"
@@ -282,7 +271,6 @@ const tables = {
       </li>
     </ol>
     <p class="hint">
-      Pulling first lets the sync merge other machines' preferences.
       <code>chezmoi re-add</code> updates chezmoi's own copy of the file.
     </p>
   </section>
@@ -290,11 +278,11 @@ const tables = {
   <section aria-labelledby="edits">
     <h2 id="edits">Recover from a local edit</h2>
     <div class="prose">
-      <p>If managed text changed locally, apply prints the diff and stops. Choose one:</p>
+      <p>If you edited a managed file, apply prints the diff and stops. Either:</p>
       <ul>
         <li>
-          Move the change into <code>host-config/</code>, commit it, and rerun apply
-          to share it across machines.
+          Move the change into <code>host-config/</code>, commit it, and rerun
+          apply.
         </li>
         <li>
           Rerun apply with <code>--force</code> to save the local file as
@@ -302,12 +290,9 @@ const tables = {
         </li>
       </ul>
       <p>
-        An existing, nonempty guidance file without a managed block also counts as edited.
-        After forcing, restore machine-local text from the backup below the block.
-      </p>
-      <p>
-        Keep machine-local notes below the marked block in <code>CLAUDE.md</code>
-        or <code>AGENTS.md</code>. They stay in place and override conflicting shared guidance.
+        A nonempty guidance file without a managed block also counts as edited.
+        After a forced apply, copy your machine-local text from the backup to
+        below the block, where it wins over the shared guidance.
       </p>
     </div>
   </section>
@@ -325,14 +310,9 @@ const tables = {
       /></template>
     </UiCommandList>
     <p class="hint">
-      <code>apply --force</code> and <code>update --force</code> back up and
-      overwrite managed local edits. Use <code>--home &lt;dir&gt;</code> to
-      target another home directory.
+      <code>--force</code> backs up and overwrites managed local edits.
+      <code>--home &lt;dir&gt;</code> targets another home directory.
     </p>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/"><span>Previous</span>Overview</a>
-    <a rel="next" href="/filip-stack/design-system/"><span>Next</span>Design system</a>
-  </nav>
 </template>

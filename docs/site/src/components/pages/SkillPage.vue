@@ -12,9 +12,6 @@ const skills = [...catalog.workflow, ...catalog.standalone];
 const relatedSkills = content.related
   .map((name) => skills.find((skill) => skill.name === name))
   .filter((skill) => skill !== undefined);
-const position = skills.findIndex(({ name }) => name === skill.name);
-const previous = skills[position - 1];
-const next = skills[position + 1];
 const enhanced = ref(false);
 onMounted(() => {
   enhanced.value = true;
@@ -84,18 +81,4 @@ const install = `npx skills add filipgutica/filip-stack -g -a claude-code codex 
     <h2 id="related">Related skills</h2>
     <SkillList :skills="relatedSkills" related />
   </section>
-  <nav class="pager" aria-label="Skills">
-    <a
-      rel="prev"
-      :href="
-        previous
-          ? `/filip-stack/skills/${previous.name}/`
-          : '/filip-stack/agent-ready-environments/'
-      "
-      ><span>Previous</span>{{ previous?.name ?? "Agent-ready environments" }}</a
-    >
-    <a v-if="next" rel="next" :href="`/filip-stack/skills/${next.name}/`"
-      ><span>Next</span>{{ next.name }}</a
-    >
-  </nav>
 </template>

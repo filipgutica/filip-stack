@@ -4,60 +4,60 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 ## What it does
 
-One Sol reviewer checks the code and PR description through
-[sol-loop](../sol-loop/). The agent then opens or updates the PR, handles CI
-and bot findings, and makes routine decisions while you are away. For a full
-council, use [merge-council](../merge-council/); full send can also finish
-its open items.
+Sol (currently OpenAI's
+`gpt-6.1-sol`) reviews the code and PR description through
+[sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
+bot findings, and makes routine decisions while you are away. It can also
+close the open items from a [merge-council](../merge-council/).
 
 ## When to use it
 
-Use full send for a local change or existing PR you want finished, including
-merging when its mode and checks permit. To keep the merge decision, use
+Use it to finish a local change or an existing PR, including the merge when
+the checks allow it. To keep the merge decision yourself, use
 [full-stop](../full-stop/).
 
-The install command above also installs `sol-loop` and `babysit-pr`. Full
-send stops if either is missing.
+Your agent must be able to run Sol; see [sol-loop](../sol-loop/). The install
+command above also installs `sol-loop` and `babysit-pr`, and full send stops
+if either is missing.
 
-Invoke it explicitly with `/full-send` in Claude or `$full-send` in Codex.
-Include a goal or PR link, for example `/full-send fix the flaky login test`.
+Run `/full-send` in Claude or `$full-send` in Codex, with a goal or PR link:
 
-Calling it authorizes commits and pushes to the PR's branch in fix mode,
-`--force-with-lease` after a rebase of that branch, and merging in merge mode.
+> /full-send fix the flaky login test
+
+This authorizes commits and pushes to the PR's branch, `--force-with-lease`
+after a rebase of that branch, and the merge, each only when its mode below
+applies.
 
 ## How it works
 
-The agent selects two modes at the start and checks them again before finishing:
+At the start and before it finishes, the agent picks two modes:
 
-| Mode | Applies when | Result |
+| Mode | Applies when | Otherwise |
 | --- | --- | --- |
-| Fix | You authored the PR, or it does not exist yet, and you can push to its head repository | Commit and push fixes on its branch |
-| Review only | Fix mode does not apply | Report findings without pushing |
-| Merge | Fix mode applies, you can push to the base repository, and the review decision permits it | Merge after the full gate passes |
-| Verdict | Merge mode does not apply | Return PASS or FAIL without merging |
+| Fix | You authored the PR, or it does not exist yet, and you can push to its head repository | Review only: reports findings without pushing |
+| Merge | Fix mode applies, you can push to the base repository, and the review decision permits it | Verdict: returns PASS or FAIL without merging |
 
-Proof must come from evidence the agent observes in the session: a failing
-then passing reproduction, repository CI checks, or the running app for UI
-and runtime behavior. Mocked tests alone do not prove the user experience.
+Proof must come from what the agent observes in the session: a failing then
+passing reproduction, repository CI, or the running app. Mocked tests alone
+do not prove the user experience.
 
-Routine fixes stay in the loop. Public-contract, migration, data, security,
-and dependency changes need your decision. So does removing a test without
-proof that a named remaining test covers it. The agent also asks when proof
-is unavailable, the goal is materially ambiguous, or the next action exceeds
-the grant, such as deleting data or touching production. It uses the host's
-question tool; without one or an answer, it leaves the PR open and unmerged.
+The agent fixes routine problems itself. It asks you about public contracts,
+migrations, data, security, dependencies, removing a test no other test is
+proven to cover, missing proof, an unclear goal, or a step beyond your grant.
+Without an answer, it leaves the PR open and unmerged.
 
-The final gate requires proof for the whole diff, Sol approval, resolved
-merge-council items, green required checks, completed bot reviews, no human
-changes request, and an up-to-date, mergeable branch. It never bypasses these
-checks with `--admin` or another override.
+The merge needs proof for the whole diff, Sol approval, resolved
+merge-council items, green required checks, finished bot reviews, no human
+change request, and an up-to-date, mergeable branch. It never bypasses these
+with `--admin` or another override.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/SKILL.md)
-defines the grant, mode selection, proof, and complete merge gate.
+defines the grant, the modes, proof, and the full merge gate.
 
 ## What you get
 
-- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main reason>`.
+- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main
+  reason>`.
 - The PR link, proof, Sol rounds, fixed and declined findings with reasons,
-  and how each earlier merge-council item closed.
-- Decisions made on your behalf and anything you still need to do.
+  and how each merge-council item closed.
+- Decisions made for you, and anything you still need to do.

@@ -4,25 +4,20 @@ related: [checkpoint]
 
 ## What it does
 
-Catch-up answers from the conversation alone, so it returns in seconds and
-runs no commands. It reminds you what the thread is for and where it stands.
-It does not re-verify the repository.
+Catch-up answers from the conversation alone. It runs no commands, so it
+returns in seconds, and it does not recheck the repository.
 
 ## When to use it
 
-Install the skill with the command above. Catch-up runs only when you invoke
-it: `/catch-up` in Claude or `$catch-up` in Codex.
-Use it when you return to a thread and have lost track of it.
-
-For verified branch state and check results before a handoff, use
-`checkpoint` instead.
+Install the skill, then run `/catch-up` in Claude or `$catch-up` in Codex when
+you return to a thread and have lost track of it. It runs only when you call
+it. For verified branch state and check results, use
+[checkpoint](../checkpoint/).
 
 ## How it works
 
-The agent reads the conversation and writes the recap without running tools.
-It names PRs, files, and threads as links when the conversation has them, and
-marks claims the conversation never verified. When you ask for verified state
-or a handoff, it recommends `checkpoint` instead of a recap.
+The agent links PRs, files, and threads the conversation names, and marks
+claims the conversation never verified.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/catch-up/SKILL.md)
 has the exact format.
