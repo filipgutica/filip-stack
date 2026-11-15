@@ -122,16 +122,15 @@ onMounted(() => {
     />
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
-      An agent-ready environment lets a coding agent check its own work in
-      the repository. Without one, the agent stops when its work looks done,
-      you find the problems in review, and you become its test suite. This
-      lesson is for engineers who want to understand what makes a repository
-      checkable and learn to audit their own. You will score one pillar by
-      hand before using the companion skill for a full audit.
+      An agent-ready environment lets a coding agent check its own work.
+      Without one, the agent stops when the work looks done, you find the
+      problems in review, and you become its test suite. This lesson shows
+      what makes a repository checkable. You will score one area by hand, then
+      see a full audit of this repository.
     </p>
     <p>
-      <a href="#where-to-start">Where to start</a> has the audit skill's
-      install command and the first steps for a new project.
+      In a hurry? <a href="#where-to-start">Where to start</a> has the audit
+      skill's install command and the first steps for a new project.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -161,15 +160,13 @@ onMounted(() => {
     <h2 id="why-agents-stop-early">Why agents stop early</h2>
     <div class="prose">
       <p>
-        When you ask a coding agent for a feature, it edits files and runs
-        the checks it can. It stops when the work <em>looks</em> done.
-        It cannot judge behavior it cannot observe.
+        A coding agent edits files, runs the checks it can, and stops when the
+        work <em>looks</em> done. It cannot judge behavior it cannot observe.
       </p>
       <p>
-        The repository's checks let the agent test whether the work is done.
-        With a type-check command and tests that cover the behavior, the agent
-        can find and fix failures. With a running app and realistic data, it
-        can also inspect the page.
+        The repository's checks are how the agent observes. With a type check
+        and tests that cover the behavior, it can find and fix failures. With a
+        running app and realistic data, it can also look at the page.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="1">
@@ -216,10 +213,9 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        In Figure 1, the check command, tests, and seeded app check the work.
-        The deny rule limits the agent's actions. None of these four does the
-        tell job. Instructions guide the agent's work but cannot verify the
-        result.
+        In Figure 1, the check command, tests, and seeded app do the check
+        job, and the deny rule does the bound job. None of them tells: an
+        instruction can guide the agent but cannot verify the result.
       </p>
     </div>
   </section>
@@ -228,13 +224,13 @@ onMounted(() => {
     <h2 id="placement-advisory-or-enforced">Advisory or enforced</h2>
     <div class="prose">
       <p>
-        A rule reaches the agent on one of two channels. <strong>Advisory</strong>
-        guidance is text in the prompt, <code>AGENTS.md</code> or
-        <code>CLAUDE.md</code>, and skills. The agent reads it and may decide
-        it does not apply. <strong>Enforced</strong> guidance uses hooks,
-        deny rules, the sandbox, the type checker, linters, or required CI
-        checks. Each mechanism runs at an action boundary, such as a tool
-        call, commit, or merge, regardless of the agent's decision.
+        A rule reaches the agent on one of two channels.
+        <strong>Advisory</strong> guidance is text: the prompt,
+        <code>AGENTS.md</code> or <code>CLAUDE.md</code>, and skills. The agent
+        reads it and may decide it does not apply. <strong>Enforced</strong>
+        guidance is a mechanism: hooks, deny rules, the sandbox, the type
+        checker, linters, or required CI. It runs at an action, such as a tool
+        call, commit, or merge, whatever the agent decided.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="2">
@@ -293,13 +289,12 @@ onMounted(() => {
     <h2 id="durable-and-decaying-guidance">Durable and decaying guidance</h2>
     <div class="prose">
       <p>
-        Some guidance compensates for model weaknesses. Other guidance
-        provides information or tools the model cannot get by itself. Vendors
+        Some guidance makes up for a model's weaknesses. It decays: it loses
+        value as models improve. Other guidance gives the model information or
+        tools it cannot get by itself. It is durable, so invest in it. Vendors
         now separate the two:
         <a :href="sources.claudeCodeBestPractices.href">Anthropic's Claude Code best practices</a>
-        include “What you can stop doing”. The first kind is decaying
-        guidance: it loses value as models improve. The second kind is
-        durable guidance. Invest in that kind.
+        include “What you can stop doing”.
       </p>
     </div>
     <div class="lesson-table">
@@ -348,8 +343,8 @@ onMounted(() => {
     <h2 id="the-pillars">The eight pillars</h2>
     <div class="prose">
       <p>
-        You can audit each pillar on its own. Each has a job (tell, check,
-        or bound) and an observable audit check.
+        Each pillar has one job (tell, check, or bound) and an audit check you
+        can observe. You can audit each one on its own.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="3">
@@ -605,9 +600,9 @@ onMounted(() => {
     <h2 id="audit-procedure">Audit a repository</h2>
     <div class="prose">
       <p>
-        An audit turns the pillar checks into a score and a fix order. Learn
-        the scoring rules first, then try one pillar in your own repository.
-        The companion skill uses the same rubric for a full audit.
+        An audit turns the pillar checks into scores and a fix order. Learn
+        how scoring works, try it on one pillar, and then let the companion
+        skill run the full audit.
       </p>
     </div>
     <h3 id="scoring">How a pillar is scored</h3>
@@ -657,103 +652,85 @@ onMounted(() => {
       <summary>Scoring rules for auditing without the skill</summary>
       <div class="prose">
         <p>
-          The skill applies these rules for you. Its
-          <a :href="skill.source">SKILL.md</a> holds the full rubric, and each
-          pillar's reference file has its detailed checks.
+          The skill applies the full rubric for you. Its
+          <a :href="skill.source">SKILL.md</a> has every rule, and each
+          pillar's reference file has the detailed checks. Three rules matter
+          most when you score by hand:
         </p>
         <ul>
-          <li>For levels 2 and 3, the pillar must pass its audit check. Use the detailed reference checks to identify the top gap. They affect the score only where the reference says so.</li>
-          <li>When a pillar covers several artifacts, such as instruction files, score the weakest applicable artifact. If the audit check needs a missing artifact, the pillar stays below level 2. The missing artifact alone does not require a score of 0.</li>
-          <li>Mark a pillar N/A when it does not apply. Give a one-line reason and exclude it from the total. When only part applies, score that part and name the checks you omitted.</li>
-          <li>For pillar 7, count a rule as enforced when the host or forge reports it active. Examples include a ruleset read with <code>gh api</code> or the host's effective deny rules. A rule stated only in prose is level 1.</li>
-          <li>Score a failed fresh setup once, in pillar 6. Other pillars can reach level 2 using CI results for the exact commit audited. They can also use a local run with dependencies supplied another way, labelled as such.</li>
-          <li>Required checks, branch rules, and review history need read access to the forge API, such as <code>gh api</code>. Without that access, mark them unverified.</li>
+          <li>When a pillar covers several artifacts, such as instruction files, score the weakest one.</li>
+          <li>Mark a pillar N/A when it does not apply, with a one-line reason, and leave it out of the total.</li>
+          <li>The best evidence is a run in a fresh checkout inside the agent's sandbox. Reading a script without running it supports level 1 at most.</li>
         </ul>
-        <p>Evidence, from strongest to weakest:</p>
-        <ol>
-          <li>A local run in a fresh checkout, inside the agent's sandbox. Record the sandbox configuration, so a failure can be traced to the repository or to the auditor's machine.</li>
-          <li>CI results on the exact commit audited.</li>
-          <li>CI results on current <code>main</code>, labelled as a different commit.</li>
-          <li>Source inspection: the script exists and reads correctly. For anything runnable, this supports level 1 at most.</li>
-        </ol>
       </div>
     </details>
     <h3>Try it: score your static gates</h3>
     <div class="prose">
       <p>
-        Use one repository you work in. Your result will be a score for
-        pillar 2, the evidence behind it, and one gap to fix.
+        Pick a repository you work in. You will end with a score for pillar 2,
+        the evidence behind it, and one gap to fix.
       </p>
       <ol>
-        <li>Find the command that runs all static gates. Check the instruction file and the scripts it points to.</li>
-        <li>Run it on clean <code>main</code>. Record the commit, command, duration, and result.</li>
-        <li>Check that CI runs the same command with the same configuration. Count suppressions by kind: inline directives, disabled rules, and allowlist entries.</li>
-        <li>Compare your evidence with pillar 2's audit check and the score ladder in Figure 4. Choose the highest level whose requirements you have verified.</li>
+        <li>Find the command that runs all static gates, such as types and lint.</li>
+        <li>Run it on clean <code>main</code>. Note the commit, duration, and result.</li>
+        <li>Check that CI runs the same command, and count the suppressions.</li>
+        <li>Compare what you found with pillar 2's audit check and Figure 4. Take the highest level you verified.</li>
       </ol>
       <p>
-        If you cannot read the CI results or required-check settings, list
-        them under Unverified. They cannot raise your score. Write one top
-        gap and a fix: for example, make an optional check required. Its
-        channel is Enforced, because the proposed fix would block merge.
+        Anything you could not check, such as CI settings you cannot read,
+        goes under Unverified and cannot raise the score. Then write one gap
+        and its fix: for example, make an optional check required. That fix
+        is Enforced, because it would block merge.
       </p>
     </div>
     <h3>Choose the full audit's modes</h3>
     <div class="prose">
       <p>
-        An audit has three modes. Use every mode that applies. The
-        new-project mode is under
-        <a href="#where-to-start">Where to start</a>. A repository that ships
-        guidance, such as Filip Stack, needs both the existing-repository and
-        engineering-guidance modes.
+        The skill has three audit modes and runs every one that applies. The
+        new-project mode is under <a href="#where-to-start">Where to start</a>.
+        A repository that ships guidance, such as Filip Stack, needs both
+        modes below. The skill's <a :href="skill.source">SKILL.md</a> has the
+        steps for each.
       </p>
     </div>
     <UiTabs v-model="mode" :items="modes" label="Audit mode" class="modes">
       <template #panel="{ value }">
         <div v-if="value === 'existing'" class="modes__panel">
             <p class="hint">Measure what is there before you change anything.</p>
-            <ol class="fg-site-steps">
-              <li>In the agent's sandbox, measure the time from a fresh worktree to a seeded, running app. Record cold and warm setup separately, including each manual step.</li>
-              <li>Run every gate on clean <code>main</code>. Record how long each takes and what fails.</li>
-              <li>Count suppressions by kind.</li>
-              <li>Check twenty sample tests and three recent features against pillars 1 and 3.</li>
-              <li>Look for repeated comments in recent human reviews. Each may indicate a missing rule, test, or documented decision, or an incorrect review. Verify the cause.</li>
-              <li>Score every pillar.</li>
-            </ol>
+            <p>
+              The skill times setup from a fresh worktree to a running app
+              inside the agent's sandbox, runs every gate on clean
+              <code>main</code>, samples tests and recent features, and looks
+              for comments that keep recurring in human reviews.
+            </p>
         </div>
         <div v-else class="modes__panel">
             <p class="hint">Check the instruction files, skills, and review gates.</p>
-            <ol class="fg-site-steps">
-              <li>Measure what each host loads every session. File sizes alone do not show this. In Claude Code, <code>/context</code> shows what loaded, as the <a :href="sources.claudeCodeBestPractices.href">Claude Code best practices</a> describe.</li>
-              <li>Classify each instruction as durable or decaying, and as advisory or enforced.</li>
-              <li>List every “always” or “never” rule that is only advisory. Each one is in the wrong place, or it is a preference worded too strongly.</li>
-              <li>Find lines that restate the layout, scripts, or config. Keep the verification commands.</li>
-              <li>Find instructions that repeat the same meaning across files.</li>
-              <li>Check that review gates sort their findings and push back on over-fixing.</li>
-              <li>Ask for evaluation evidence. Without results, a written policy scores 1 and no policy scores 0.</li>
-            </ol>
+            <p>
+              The skill measures what each host loads every session, sorts each
+              instruction as durable or decaying and advisory or enforced, and
+              flags “always” or “never” rules that are only advisory. In Claude
+              Code, <code>/context</code> shows what loaded, as the
+              <a :href="sources.claudeCodeBestPractices.href">Claude Code best practices</a>
+              describe.
+            </p>
         </div>
       </template>
     </UiTabs>
     <h3 id="report">What the report contains</h3>
     <div class="prose">
-      <p>The report has four parts, in this order:</p>
-      <ol>
-        <li>An Evidence section.</li>
-        <li>
-          One table row per pillar, with its score, evidence, top gap, fix,
-          and channel. The channel column describes the proposed fix, not the
-          current state.
-        </li>
-        <li>The places where the skill was hard to apply.</li>
-        <li>Unverified checks and what you need to run them.</li>
-      </ol>
       <p>
-        Order fixes first by blast radius, meaning how much damage a miss can
-        do. Start with
-        unenforced pillar 7 rules about secrets, protected paths, or
-        irreversible actions. Also prioritize defects that hide those rules,
-        such as instructions cut off by a size limit. Then order by
-        durability, then by cost.
+        The report starts with the evidence. Then it has one row per pillar:
+        score, evidence, top gap, fix, and whether the fix is advisory or
+        enforced. It ends with the places the skill was hard to apply, and the
+        unverified checks with what running them needs.
+      </p>
+      <p>
+        Fixes are ordered first by blast radius, meaning how much damage a
+        miss can do. Unenforced pillar 7 rules about secrets, protected paths,
+        or irreversible actions come first, with anything that hides them,
+        such as instructions cut off by a size limit. Then fixes are ordered
+        by durability, then by cost.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="5">
@@ -896,9 +873,9 @@ onMounted(() => {
     <div class="prose">
       <p>
         For an existing repository, start with an audit. Install the companion
-        skill, then ask your agent to audit the repository for agent
-        readiness. <a href="#audit-procedure">Audit a repository</a> explains
-        what it checks and what the report contains.
+        skill, then ask your agent: “Audit this repository for agent
+        readiness.” <a href="#audit-procedure">Audit a repository</a> explains
+        what it checks and what you get.
       </p>
     </div>
     <UiCodeBlock
@@ -927,10 +904,7 @@ onMounted(() => {
   <section aria-labelledby="maintenance">
     <h2 id="maintenance">Keeping guidance current</h2>
     <div class="prose">
-      <p>
-        Guidance about agents, this lesson included, goes out of date in two
-        ways.
-      </p>
+      <p>Guidance about agents, this lesson included, goes stale in two ways.</p>
     </div>
     <dl class="fg-site-definitions">
       <dt>Drift</dt>
@@ -940,9 +914,8 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        Vendors retire advice as models improve. Pillar 8 applies to this
-        guidance too. Test it with the models it targets. Add instructions
-        only where you have observed a failure.
+        Pillar 8 applies to this guidance too: test it with the models it
+        targets, and add an instruction only for a failure you have seen.
       </p>
       <p>Review the guidance when any of these happens:</p>
       <ul>
@@ -952,18 +925,17 @@ onMounted(() => {
         <li>A quarter passes with no review.</li>
       </ul>
       <p>
-        The review steps are in the skill's
-        <a :href="`${referenceBase}${maintenanceFile}`">maintenance procedure</a>.
-        For the decay test, set the tasks and budget first. Compare runs
-        with guidance against runs without it. Then test the effect of
-        removing one section at a time. Delete a section only when its
-        removal makes no difference.
+        The skill's
+        <a :href="`${referenceBase}${maintenanceFile}`">maintenance procedure</a>
+        has the review steps. The decay test is the core of it: compare runs
+        with and without the guidance, then remove one section at a time.
+        Delete a section only when removing it makes no difference. The test
+        runs paid evaluations, so set the tasks and budget first.
       </p>
       <p>
-        Each month, a scheduled agent can recheck sources, collect new
-        guidance, and open a pull request with its findings. The remaining
-        review steps need judgment and a person's approval. The decay test
-        costs money because it runs paid evaluations.
+        A monthly scheduled agent can recheck sources and open a pull request
+        with what changed. The other steps need judgment and a person's
+        approval.
       </p>
     </div>
   </section>
