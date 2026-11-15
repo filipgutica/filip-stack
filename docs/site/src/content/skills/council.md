@@ -15,8 +15,8 @@ Ask for a council on a question, decision, plan, design, document, or code:
 > Council: should we cache these API responses in Redis or in the browser?
 
 The default members mix OpenAI and Claude models, all at high reasoning
-effort, so the council works best when your agent can run both. In T3 Code,
-set up the Codex and Claude providers; on another host, its subagents must
+effort. The council works best when your agent can run both: in T3 Code, set
+up the Codex and Claude providers, and on another host, its subagents must
 run the models. A council needs at least two members.
 
 | Member | Model |
@@ -43,10 +43,10 @@ preferred answer. Each member returns a recommendation, its reasons, the
 strongest objection, and what it is unsure about.
 
 Before launch, the agent states the lineup. If a member you named is
-unavailable, it asks you; if the designer chose it, the agent swaps in a
+unavailable, it asks you. If the designer chose it, the agent swaps in a
 comparable model or drops it, and says so. A member that fails after launch
 makes the council incomplete, and it keeps the answers it has. One round is
-the default.
+the default. Another needs your request or a specific open question.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/council/SKILL.md)
 has the exact model-selection and synthesis rules.

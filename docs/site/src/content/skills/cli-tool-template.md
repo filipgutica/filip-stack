@@ -7,8 +7,8 @@ related: [review]
 A checklist covers the repository's files and settings, a docs site, release
 setup, and the Homebrew formula. The reference tools are `annoterm`, `wtree`,
 and `devps`. The
-checklist names Filip's repositories and paths; another owner should adapt
-them.
+checklist names Filip's repositories and paths, which another owner should
+adapt.
 
 ## When to use it
 

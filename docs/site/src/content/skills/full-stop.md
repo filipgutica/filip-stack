@@ -31,8 +31,9 @@ branch.
 It uses full send's modes, proof rules, and rules for asking you, and always
 returns a verdict.
 
-In fix mode, it turns off auto-merge and takes the PR out of any merge
-queue, and checks again before each push. In review-only mode, it only reports them. If it cannot prevent a merge on its own, it asks you first.
+In fix mode, it turns off auto-merge and takes the PR out of any merge queue,
+and checks again before each push. In review-only mode, it only reports them.
+If it cannot prevent a merge on its own, it asks you first.
 
 Full send's merge gate becomes a readiness check on the final diff. Before
 handoff, the agent checks that the live PR is open, not a draft, and not set

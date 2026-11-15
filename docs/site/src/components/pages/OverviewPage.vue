@@ -105,7 +105,7 @@ onMounted(() => {
     <p class="lede">
       A skill is a set of reusable instructions that a coding agent loads when
       a task needs it, such as reviewing a change or writing a plan. Start
-      with Workflow; the rest is optional.
+      with Workflow. The rest is optional.
     </p>
     <dl class="fg-site-facts">
       <div>

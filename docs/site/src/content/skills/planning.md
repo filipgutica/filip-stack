@@ -20,8 +20,6 @@ need:
 | Implementation plan | Turn an approved direction into file-specific, checkable changes |
 | Tickets | Draft Jira or GitHub issues for owned outcomes with dependencies |
 
-For example:
-
 > Write an implementation plan for adding CSV export to the reports page.
 
 Planning changes no code. To build the result, ask for
@@ -50,5 +48,5 @@ repository's, takes precedence.
 - The evidence behind it, open questions, and decisions that block the work.
 
 The result stays in the conversation unless you ask for a file. Planning
-creates or changes Jira or GitHub issues only when you ask, and marks each
-unverified ticket fact as `TBD`.
+creates or changes Jira or GitHub issues only when you ask, writes no local
+ticket files, and marks each unverified ticket fact as `TBD`.

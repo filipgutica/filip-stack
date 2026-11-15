@@ -15,7 +15,7 @@ GitHub CLI, `gh`. Name the repositories and the time period:
 
 > Analyze review churn on acme/web and acme/api for the last 90 days.
 
-Neither has a default; the agent asks before it collects anything. It
+Neither has a default, so the agent asks before it collects anything. It
 analyzes your own PRs unless you name another author.
 
 ## How it works

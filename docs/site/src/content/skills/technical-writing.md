@@ -16,9 +16,8 @@ section and the format you need:
 
 Use it for documentation, READMEs, reports, procedures, release notes, error
 text, code comments, and PR descriptions. It also checks whether a
-specification, plan, or ticket makes sense to a first-time reader; there,
-[planning](../planning/) owns the decisions and technical writing changes
-only the wording.
+specification, plan, or ticket makes sense to a first-time reader.
+[Planning](../planning/) still owns their decisions.
 
 ## How it works
 

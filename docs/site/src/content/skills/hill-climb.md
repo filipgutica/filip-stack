@@ -27,9 +27,10 @@ You can also set a line limit, such as
 
 ## How it works
 
-Before any edit, the agent fixes a *climb card*: the goal, three to five
-criteria, scope, checks, how a winner is decided, and the budget. If the goal
-or limits are unclear, it asks up to four questions first.
+Before any edit, the agent writes a *climb card* with the goal, three to five
+criteria, scope, checks, how a winner is decided, and the budget. The card
+then stays fixed. If the goal or limits are unclear, it asks up to four
+questions first.
 
 Each round makes one small edit and runs the checks. The edit stays only if
 judges or a score from a command you name prefer it. For guidance such as a
@@ -38,9 +39,10 @@ baseline, and holdout tasks check that the gain carries over.
 
 - Three rounds by default, ten at most.
 - At most 20 lines or 30% of the original change, whichever is larger,
-  unless you set another limit. Behavior stays the same.
+  unless you set another limit. Behavior stays the same, except interactions
+  you allow on the card.
 - A ten-round climb with four members can make up to 48 council calls, plus
-  retries.
+  retries. A guidance climb adds more.
 - It restores from its own saved copy, never Git stash or `git clean`, and
   stops if other work changes the same files.
 

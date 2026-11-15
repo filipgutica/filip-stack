@@ -23,8 +23,8 @@ before you approve it. For a written list of findings, use
 
 The agent maps every changed file into an ordered list of parts and presents
 one at a time. For the main behavior, it offers a small exercise, such as
-running a command, and asks what you expect to see. Each part ends with one
-acceptance question, and the agent waits for your answer.
+running a command, and asks what you expect to see. Each part ends with an
+acceptance question.
 
 It records corrections but does not make them without your separate
 approval, and revisits affected parts after a fix. The walkthrough ends when

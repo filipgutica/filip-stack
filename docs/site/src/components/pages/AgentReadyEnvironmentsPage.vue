@@ -41,7 +41,7 @@ const scorecard = [
     pillar: 6,
     name: "Reproducible environment",
     gap: "A fresh worktree could not install dependencies inside the agent's sandbox.",
-    fix: "Share dependencies or narrow the sandbox rule. Document setup in AGENTS.md. Add a site preview per PR.",
+    fix: "Share installed dependencies into worktrees, or narrow the sandbox rule. Document setup in AGENTS.md. Add a site preview per PR.",
     channel: "Enforced and advisory",
   },
   {
@@ -75,7 +75,7 @@ const scorecard = [
   {
     pillar: 8,
     name: "Guidance evaluated",
-    gap: "The Workflow skills have baseline studies; the global guidance has none.",
+    gap: "The Workflow skills have baseline studies. The global guidance has none.",
     fix: "Run the decay test on the global guidance.",
     channel: "Advisory",
   },
@@ -207,8 +207,8 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        In Figure 1, the check command, tests, and seeded app check, and the
-        deny rule bounds. An instruction only tells: it cannot verify the
+        In Figure 1, the check command, tests, and seeded app do the check job,
+        and the deny rule does the bound job. An instruction only tells: it cannot verify the
         result.
       </p>
     </div>
@@ -545,8 +545,7 @@ onMounted(() => {
     <h2 id="audit-procedure">Audit a repository</h2>
     <div class="prose">
       <p>
-        An audit turns the pillar checks into scores and a fix order. Score
-        one pillar by hand first, then let the skill run the full audit.
+        An audit turns the pillar checks into scores and a fix order.
       </p>
     </div>
     <h3 id="scoring">How a pillar is scored</h3>
@@ -761,7 +760,7 @@ onMounted(() => {
         two-question test covers only repository facts, and some checks need
         forge access.
       </p>
-      <p>Fixes merged since, in fix order:</p>
+      <p>Fixes merged since:</p>
       <ul>
         <li>
           <a :href="`${repository}/pull/83`">#83</a> added the Guardrails

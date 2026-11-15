@@ -22,7 +22,7 @@ Nuxt.
 ## How it works
 
 The agent reads the component, nearby patterns, and the installed Vue version
-before it picks features; for example, `defineModel` is stable from Vue 3.4.
+before it picks features. For example, `defineModel` is stable from Vue 3.4.
 Unless your code uses another style, it defaults to Vue 3, the Composition
 API, and `<script setup lang="ts">`. Other defaults:
 

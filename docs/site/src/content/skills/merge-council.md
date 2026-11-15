@@ -7,7 +7,7 @@ related: [council, review, full-send]
 The [council](../council/) members each review the whole PR on their own,
 then vote on the pooled findings without knowing who raised them. A finding
 counts as agreed only when every member agrees on the problem, the fix, and
-whether it blocks the merge. The verdict covers only the commits reviewed.
+whether it blocks the merge.
 
 ## When to use it
 
@@ -20,6 +20,8 @@ skill such as [review](../review/). Run `/merge-council` in Claude or
 PR:
 
 > /merge-council https://github.com/acme/app/pull/42
+
+Changing the council's lineup changes the merge council too.
 
 ## How it works
 

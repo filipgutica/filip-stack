@@ -71,7 +71,8 @@ const tables = {
     </p>
     <UiAlert tone="info">
       <p>
-        Browse the components on the
+        Agents use <code>filipgutica/design-system</code> by default. Browse it on
+        the
         <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
@@ -171,8 +172,7 @@ const tables = {
   <section aria-labelledby="formats">
     <h2 id="formats">Pick the format first</h2>
     <p class="section-intro">
-      Choose the format first: it sets the density and what the
-      reader sees first.
+      The format sets the density and what the reader sees first.
     </p>
     <UiCommandList
       :items="tables.formats"

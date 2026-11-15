@@ -159,7 +159,7 @@ codex plugin add guardrails@filip-stack        # Codex
 
 | Rule | Commands | Decision |
 | --- | --- | --- |
-| No AI attribution | `git commit`; `gh pr` and `gh issue` `create`, `edit`, and `comment`; `gh api` writes to pull requests or issues | Deny when a whole line of the message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
+| No AI attribution | `git commit`, `gh pr` and `gh issue` `create`, `edit`, and `comment`, and `gh api` writes to pull requests or issues | Deny when a whole line of the message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
 | 1Password needs approval | `op` in command position | Ask |
 
 If the hook hits an internal error or Node.js is missing, it steps aside and
@@ -299,8 +299,8 @@ T3 keeps credentials and access grants. See
 ### Share Field Guide preferences
 
 Sync `~/.config/filip-stack/field-guide.json` with a dotfile manager.
-`apply` and `update` import it, and `field-guide-sync` also exports this
-machine's shared guidance to it. See the
+`apply` imports it. `field-guide-sync` imports it, then exports this machine's
+shared guidance to it, and `update` runs `field-guide-sync` after apply. See the
 [CLI page](https://filipgutica.github.io/filip-stack/cli/#sync) for the steps,
 and [CONTRIBUTING.md](CONTRIBUTING.md#share-field-guide-preferences) for other
 locations.

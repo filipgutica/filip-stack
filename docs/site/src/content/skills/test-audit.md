@@ -13,8 +13,8 @@ protection for a real contract.
 
 Install the [Workflow plugin](../../#install), then name the tests or change to
 audit. [Engineering](../engineering/) and [review](../review/) also call it
-when test changes are large or a test's value is unclear. Edits need your
-request:
+when test changes are large or a test's value is unclear. For a report
+without edits, say so:
 
 > Audit the tests in `src/billing/` for duplicates and implementation-coupled
 > assertions. Read-only, please.

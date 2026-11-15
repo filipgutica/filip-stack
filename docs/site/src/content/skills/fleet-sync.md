@@ -6,8 +6,7 @@ related: [agent-ready-environments]
 
 Each machine runs the same local updater, `filip-stack sync`, against one
 shared policy that decides what each machine gets. T3 Code keeps the
-connection credentials and access grants. The result lists every enrolled
-machine, including offline and unlinked ones.
+connection credentials and access grants.
 
 ## When to use it
 
@@ -19,13 +18,14 @@ The agent reads your machine list from `~/.config/filip-stack/fleet.json`, or
 `$XDG_CONFIG_HOME/filip-stack/fleet.json`. The first time, you pick the
 machines and the shared baseline. Later runs reuse the saved selection and
 access grants. The
-[README](https://github.com/filipgutica/filip-stack#sync-this-machine-or-the-fleet) shows an
-example policy.
+[README](https://github.com/filipgutica/filip-stack#sync-this-machine-or-the-fleet)
+shows an example policy.
 
 ## How it works
 
 Each machine runs `filip-stack sync --json` with the shared policy and its
-environment ID, then saves the policy.
+environment ID, then saves the policy, after backing up a different saved
+one.
 
 - Missing baseline skills and plugins are installed. Existing extras stay.
 - Per-machine agent targets and exclusions keep each machine's exceptions.
@@ -42,7 +42,8 @@ does not fetch upstream changes, so it does not prove versions are current.
 
 ## What you get
 
-A result for each enrolled machine: the policy digest, source commits, plugin
+A result for each enrolled machine, including offline and unlinked ones: the
+policy digest, source commits, plugin
 versions, selections, and any conflicts or access problems. Each machine
 saves its last result in `~/.local/state/filip-stack/last-sync.json`, or
 under `XDG_STATE_HOME`.

@@ -4,7 +4,7 @@ related: [full-stop, sol-loop, babysit-pr, merge-council]
 
 ## What it does
 
-You hand off a change and come back to a result. Sol (OpenAI's
+Sol (OpenAI's
 `gpt-6.1-sol`) reviews the code and PR description through
 [sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
 bot findings, and makes routine decisions while you are away. It can also
@@ -42,9 +42,9 @@ passing reproduction, repository CI, or the running app. Mocked tests alone
 do not prove the user experience.
 
 The agent fixes routine problems itself. It asks you about public contracts,
-migrations, data, security, dependencies, removing an uncovered test, missing
-proof, an unclear goal, or a step beyond your grant. Without an answer, it
-leaves the PR open and unmerged.
+migrations, data, security, dependencies, removing a test no other test is
+proven to cover, missing proof, an unclear goal, or a step beyond your grant.
+Without an answer, it leaves the PR open and unmerged.
 
 The merge needs proof for the whole diff, Sol approval, resolved
 merge-council items, green required checks, finished bot reviews, no human
@@ -56,7 +56,8 @@ defines the grant, the modes, proof, and the full merge gate.
 
 ## What you get
 
-- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main reason>`.
+- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main
+  reason>`.
 - The PR link, proof, Sol rounds, fixed and declined findings with reasons,
   and how each merge-council item closed.
 - Decisions made for you, and anything you still need to do.

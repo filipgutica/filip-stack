@@ -13,13 +13,13 @@ Install the [Workflow plugin](../../#install), then name what to review:
 
 > Review this branch against main before I open the PR.
 
-You can name a working tree, branch, PR, commit, commit range, or document.
-To apply the findings, ask for fixes with [engineering](../engineering/). For a guided explanation of a change, use
-[walkthrough](../walkthrough/).
+You can name a working tree, branch, PR, commit, commit range, or document. To
+apply the findings, ask for fixes with [engineering](../engineering/). For a
+guided explanation of a change, use [walkthrough](../walkthrough/).
 
 ## How it works
 
-The agent first confirms the exact subject; for a branch, that is everything
+The agent first confirms the exact subject. For a branch, that is everything
 from the merge base to its head. It reports changes outside that range
 instead of reviewing them silently.
 

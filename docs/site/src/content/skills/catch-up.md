@@ -16,9 +16,8 @@ it. For verified branch state and check results, use
 
 ## How it works
 
-The agent writes the recap without running tools. It links PRs, files, and
-threads the conversation names, and marks claims the conversation never
-verified.
+The agent links PRs, files, and threads the conversation names, and marks
+claims the conversation never verified.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/catch-up/SKILL.md)
 has the exact format.
