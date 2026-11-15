@@ -22,6 +22,50 @@
       "accept": [
         "add-guard"
       ]
+    },
+    {
+      "id": "reviewer-flags-guard-behind-validated-boundary",
+      "task": "You are the Reviewer for a pull request. Every API entry point parses requests with a request schema that rejects any filter operator other than in and not_in, and a unit test covers that rejection. The diff also adds a check in the search provider that throws a 400 for any other operator, with its own test. The search provider only runs after the schema. The rest of the diff is correct.",
+      "options": {
+        "flag-guard": "report the provider check as an action-required finding and suggest removing it",
+        "no-finding": "report no action-required finding"
+      },
+      "accept": [
+        "flag-guard"
+      ]
+    },
+    {
+      "id": "reviewer-keeps-guard-without-boundary-validation",
+      "task": "You are the Reviewer for a pull request. A queue consumer reads filter objects from a message queue and passes them straight to the search provider. Nothing validates them before the provider. The diff adds a check in the search provider that throws for any filter operator other than in and not_in, with a test. The rest of the diff is correct.",
+      "options": {
+        "flag-guard": "report the provider check as an action-required finding and suggest removing it",
+        "no-finding": "report no action-required finding"
+      },
+      "accept": [
+        "no-finding"
+      ]
+    },
+    {
+      "id": "council-remedy-at-the-boundary",
+      "task": "You are a member of a merge council reviewing a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. The PR's request schema is the only way requests reach the provider. It builds its allowed operators from the datasource config, which lists empty and not_empty. You must propose a remedy for this finding.",
+      "options": {
+        "schema-only": "propose one remedy: remove empty and not_empty from the schema's allowed operators, with a schema test",
+        "schema-and-provider-check": "propose the schema change and also a provider check that throws a 400 for empty and not_empty, with its own test"
+      },
+      "accept": [
+        "schema-only"
+      ]
+    },
+    {
+      "id": "council-remedy-with-unvalidated-caller",
+      "task": "You are a member of a merge council reviewing a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. Requests reach the provider two ways: through the PR's request schema, which builds its allowed operators from the datasource config that lists empty and not_empty, and through a queue consumer that passes filters with no validation. You must propose a remedy for this finding.",
+      "options": {
+        "schema-only": "propose one remedy: remove empty and not_empty from the schema's allowed operators, with a schema test",
+        "schema-and-provider-check": "propose the schema change and also a provider check that throws a 400 for empty and not_empty, with its own test"
+      },
+      "accept": [
+        "schema-and-provider-check"
+      ]
     }
   ]
 }
