@@ -87,9 +87,10 @@
           "claude.frontier"
         ],
         "codex": [
-          "claude.frontier"
+          "codex.frontier"
         ]
-      }
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "plan-big-rework",
@@ -99,7 +100,7 @@
           "codex.frontier"
         ],
         "codex": [
-          "codex.frontier"
+          "claude.frontier"
         ]
       },
       "needsNewGuidance": true
