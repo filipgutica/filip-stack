@@ -1,6 +1,17 @@
 <script setup lang="ts">
-import { UiAlert, UiBreadcrumbs, UiCard } from "@filipgutica/ui";
+import { onMounted, ref } from "vue";
+import { UiAlert, UiBreadcrumbs, UiCard, UiCodeBlock } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
+const commands = {
+  claude:
+    "claude plugin marketplace add filipgutica/design-system\nclaude plugin install design-system@design-system",
+  codex:
+    "codex plugin marketplace add filipgutica/design-system\ncodex plugin add design-system@design-system",
+};
+const enhanced = ref(false);
+onMounted(() => {
+  enhanced.value = true;
+});
 const tables = {
   files: [
     {
@@ -72,22 +83,21 @@ const tables = {
     </p>
     <UiAlert tone="info">
       <p>
-        This design system is published as <code>filipgutica/design-system</code>.
-        It is the default for UX and visual work, unless you ask for another or
-        the repository has its own. Browse it on the
-        <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
+        This design system is published as <code>filipgutica/design-system</code>,
+        and Claude and Codex get it as the <code>design-system</code> plugin.
+        With the plugin installed, it is the default for UX and visual work,
+        unless you ask for another or the repository has its own. Browse it on the
+        <a href="https://filipgutica.github.io/design-system/">design system site</a>.
       </p>
     </UiAlert>
     <dl class="fg-site-facts">
       <div>
-        <dt>Installed to</dt>
-        <dd><code>~/design-system</code></dd>
+        <dt>Ships as</dt>
+        <dd><code>design-system</code> plugin</dd>
       </div>
       <div>
-        <dt>Installed by</dt>
-        <dd>
-          <a href="/filip-stack/cli/"><code>filip-stack apply</code></a>
-        </dd>
+        <dt>Agent skill</dt>
+        <dd><code>$design-system:design-system</code></dd>
       </div>
       <div>
         <dt>Source</dt>
@@ -100,6 +110,37 @@ const tables = {
         <dd>Graphite Indigo</dd>
       </div>
     </dl>
+  </section>
+
+  <section aria-labelledby="install">
+    <h2 id="install">Install the plugin</h2>
+    <p class="section-intro">
+      filip-stack does not install the design system. Add the plugin on each
+      machine where agents do visual work.
+    </p>
+    <div class="cmd-pair">
+      <div>
+        <p class="cmd-label">Claude Code</p>
+        <UiCodeBlock
+          :code="commands.claude"
+          language="bash"
+          variant="compact"
+          :copyable="enhanced"
+          :wrap="true"
+        />
+      </div>
+      <div>
+        <p class="cmd-label">Codex</p>
+        <UiCodeBlock
+          :code="commands.codex"
+          language="bash"
+          variant="compact"
+          :copyable="enhanced"
+          :wrap="true"
+        />
+        <p class="hint">Restart Codex to load the plugin.</p>
+      </div>
+    </div>
   </section>
 
   <section aria-labelledby="catalogue">
@@ -142,11 +183,12 @@ const tables = {
     <h2 id="how">How agents use it</h2>
     <div class="prose">
       <p>
-        The shared guidance tells agents to read
-        <code>~/design-system/DESIGN.md</code> before UX or visual work.
+        The shared guidance tells agents to follow the plugin's skill,
+        <code>$design-system:design-system</code>, for UX or visual work. The
+        skill reads the plugin's <code>DESIGN.md</code> first.
         For interaction, flows, states, interface copy, and accessibility, they also use
         the <a href="/filip-stack/skills/interface-design/">interface-design</a>
-        skill. <code>DESIGN.md</code> owns the look;
+        skill. The design system owns the look;
         <code>interface-design</code> owns the behavior and its checks.
       </p>
     </div>
@@ -167,9 +209,17 @@ const tables = {
       <li>
         <div>
           <p>
-            <strong><code>filipgutica/design-system</code></strong> is the
-            default for all other UX and visual work. Use its palette, type, and
-            components consistently across projects.
+            <strong><code>filipgutica/design-system</code></strong>, through
+            its plugin, is the default for all other UX and visual work. Use its
+            palette, type, and components consistently across projects.
+          </p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <p>
+            <strong>Without the plugin</strong>, agents use no house style and
+            say once that the plugin is missing.
           </p>
         </div>
       </li>
@@ -275,7 +325,7 @@ const tables = {
   </section>
 
   <section aria-labelledby="files">
-    <h2 id="files">Rules and examples in the folder</h2>
+    <h2 id="files">Rules and examples in the plugin</h2>
     <UiCommandList
       :items="tables.files"
       :copyable="false"
@@ -294,11 +344,11 @@ const tables = {
       <p>
         Edit the rules, examples, and tokens in
         <a href="https://github.com/filipgutica/design-system">filipgutica/design-system</a>,
-        which publishes them as <code>@filipgutica/design-system</code>.
-        filip-stack pins one published version in
-        <code>host-config/design-system.json</code>. After a release, bump the pin
-        with <code>node scripts/pin-design-system.mjs &lt;version&gt;</code>, merge it,
-        then run <code>filip-stack update</code> on each machine.
+        which publishes them as <code>@filipgutica/design-system</code> and as
+        the <code>design-system</code> plugin. After a release, update the plugin
+        on each machine with
+        <code>claude plugin update design-system@design-system</code> or
+        <code>codex plugin marketplace upgrade design-system</code>.
       </p>
     </div>
   </section>

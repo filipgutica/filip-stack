@@ -16,7 +16,8 @@ overview and lists every skill.
 | [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
 | [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
 | [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
-| [Host config](#host-config) | Global guidance, agents, styles, and design system | Homebrew CLI with a source checkout |
+| [Host config](#host-config) | Global guidance, agents, and styles | Homebrew CLI with a source checkout |
+| [Design system](https://github.com/filipgutica/design-system) | The design language the guidance follows for visual work | Plugin, from the `design-system` marketplace |
 
 ## Set up a machine
 
@@ -55,6 +56,9 @@ claude plugin install workflow@filip-stack
 claude plugin install field-guide@filip-stack
 # Optional rule enforcement:
 claude plugin install guardrails@filip-stack
+# The design system the guidance follows for visual work:
+claude plugin marketplace add filipgutica/design-system
+claude plugin install design-system@design-system
 ```
 
 Update it with:
@@ -63,6 +67,7 @@ Update it with:
 claude plugin update workflow@filip-stack
 claude plugin update field-guide@filip-stack
 claude plugin update guardrails@filip-stack
+claude plugin update design-system@design-system
 ```
 
 ## Install with Codex
@@ -74,12 +79,16 @@ codex plugin add workflow@filip-stack
 codex plugin add field-guide@filip-stack
 # Optional rule enforcement:
 codex plugin add guardrails@filip-stack
+# The design system the guidance follows for visual work:
+codex plugin marketplace add filipgutica/design-system
+codex plugin add design-system@design-system
 ```
 
-Update the marketplace with:
+Update the marketplaces with:
 
 ```sh
 codex plugin marketplace upgrade filip-stack
+codex plugin marketplace upgrade design-system
 ```
 
 Restart Codex after installing or upgrading so a new session loads the current
@@ -233,13 +242,14 @@ plugins.
     "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
   }
   ```
-- the `~/design-system` files the guidance refers to, installed from the
-  pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
-  package in `host-config/design-system.json`; filip-stack uses it as the default
-  design system for UX and visual work, unless you ask for another or the
-  repository has its own
-  - [Component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md) and the [component catalogue](https://filipgutica.github.io/design-system/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
-  - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
+
+For UX and visual work, the guidance sends agents to the repository's own
+design system, else to the `design-system` plugin from
+[filipgutica/design-system](https://github.com/filipgutica/design-system).
+Host config does not install that plugin; add it with the commands in
+[Install with Claude](#install-with-claude) or
+[Install with Codex](#install-with-codex). Without it, agents use no house
+style and say once that the plugin is missing.
 
 Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
 `node cli/filip-stack.mjs --repo . <command>` from the checkout.
@@ -321,24 +331,23 @@ T3 retains credentials and access grants. Unlinked and offline machines remain
 visible in the result. See
 [Fleet Sync](https://filipgutica.github.io/filip-stack/skills/fleet-sync/).
 
-`apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,
-and `~/design-system`. It writes the shared guidance into a marked block in
+`apply` copies the host config files into `~/.claude`, `~/.codex`, and
+`~/.agents`. It writes the shared guidance into a marked block in
 `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such as
 the ctx7 block or machine-local notes, stays as it is, and the shared guidance
 tells agents that it overrides the block where they conflict. Apply removes a
 file it applied earlier once the repository no longer has it.
 
-`apply` downloads the pinned design-system tarball from the npm registry, checks
-it against the pin's integrity, and caches it at
-`~/.cache/filip-stack/design-system/<version>.tgz`
-(`$XDG_CACHE_HOME/filip-stack/…` when set). After that, it works offline. When
-the pinned version is neither cached nor downloadable, apply stops before
-writing anything. `status` never downloads; it reports an uncached version and
-the pin change, such as `design-system 1.0.0 → 1.1.0`.
+Earlier versions installed the design system to `~/design-system`, and before
+that to `~/design-language`. `apply` removes the unchanged files it put there,
+then each folder once only empty folders remain. It keeps files it did not
+install, and for a file behind a symlink it stops tracking the path and leaves
+the link and its target alone. It leaves the old package cache in
+`~/.cache/filip-stack/design-system/`; delete that folder when you like.
 
 When managed text was changed locally, apply prints the diff and stops. Move the
 change into `host-config/` and commit it, or rerun with `--force` to save the
-local file as `<file>.bak` and overwrite it. A guidance file without a block
+local file as `<file>.bak` before apply overwrites or removes it. A guidance file without a block
 counts as changed. With `--force`, apply replaces it with the block, and you
 restore machine-local text below the block from the backup.
 

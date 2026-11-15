@@ -68,11 +68,6 @@ const tables = {
       description:
         "<code>~/.agents/roles.md</code> and <code>~/.agents/CODING_STANDARDS.md</code>.",
     },
-    {
-      command: "host-config/design-system.json",
-      description:
-        '<code>~/design-system</code>, from the pinned <code>@filipgutica/design-system</code> package. Apply downloads it once and caches it in <code>~/.cache/filip-stack</code>. See <a href="/filip-stack/design-system/">Design system</a>.',
-    },
   ],
 };
 </script>
@@ -85,7 +80,7 @@ const tables = {
     <h1 id="title">filip-stack CLI</h1>
     <p class="lede">
       Use the CLI to set up or update a machine's global guidance, agent
-      profiles, output styles, and design system.
+      profiles, and output styles.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -182,6 +177,12 @@ const tables = {
       The manifest at <code>~/.agents/.filip-stack-host-config.json</code>
       records the applied commit and file hashes. Apply removes previously
       managed files when the repository removes them.
+    </p>
+    <p class="hint">
+      Apply no longer installs the design system; it ships as a plugin. See
+      <a href="/filip-stack/design-system/">Design system</a>. Apply removes
+      the unchanged files it put in <code>~/design-system</code> or
+      <code>~/design-language</code>, and keeps files it did not install.
     </p>
   </section>
 
