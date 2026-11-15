@@ -1,17 +1,7 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
-import { UiAlert, UiBreadcrumbs, UiCard, UiCodeBlock } from "@filipgutica/ui";
+import { UiAlert, UiBreadcrumbs, UiCard } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
-const commands = {
-  claude:
-    "claude plugin marketplace add filipgutica/design-system\nclaude plugin install design-system@design-system",
-  codex:
-    "codex plugin marketplace add filipgutica/design-system\ncodex plugin add design-system@design-system",
-};
-const enhanced = ref(false);
-onMounted(() => {
-  enhanced.value = true;
-});
+import PluginInstall from "../PluginInstall.vue";
 const tables = {
   files: [
     {
@@ -118,29 +108,7 @@ const tables = {
       filip-stack does not install the design system. Add the plugin on each
       machine where agents do visual work.
     </p>
-    <div class="cmd-pair">
-      <div>
-        <p class="cmd-label">Claude Code</p>
-        <UiCodeBlock
-          :code="commands.claude"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-      </div>
-      <div>
-        <p class="cmd-label">Codex</p>
-        <UiCodeBlock
-          :code="commands.codex"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-        <p class="hint">Restart Codex to load the plugin.</p>
-      </div>
-    </div>
+    <PluginInstall marketplace="design-system" plugin="design-system" />
   </section>
 
   <section aria-labelledby="catalogue">

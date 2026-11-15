@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { onMounted, ref } from "vue";
 import { UiCodeBlock } from "@filipgutica/ui";
+import PluginInstall from "../PluginInstall.vue";
 import SkillList from "../SkillList.vue";
 import type { Catalog } from "../../catalog";
 const { catalog } = defineProps<{ catalog: Catalog }>();
@@ -85,10 +86,6 @@ for (const { skill, reads } of turns)
     if (!skillNamed(from).references.includes(file))
       throw new Error(`${from} has no reference named ${file}`);
 const commands = {
-  claude:
-    "claude plugin marketplace add filipgutica/filip-stack\nclaude plugin install workflow@filip-stack",
-  codex:
-    "codex plugin marketplace add filipgutica/filip-stack\ncodex plugin add workflow@filip-stack",
   standalone:
     "npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y",
 };
@@ -105,29 +102,7 @@ onMounted(() => {
       Choose what to install for your coding agent. Start with Workflow for
       planning, changes, review, and writing; these commands install it.
     </p>
-    <div class="cmd-pair">
-      <div id="install">
-        <p class="cmd-label">Claude Code</p>
-        <UiCodeBlock
-          :code="commands.claude"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-      </div>
-      <div>
-        <p class="cmd-label">Codex</p>
-        <UiCodeBlock
-          :code="commands.codex"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-        <p class="hint">Restart Codex to load the plugin.</p>
-      </div>
-    </div>
+    <PluginInstall marketplace="filip-stack" plugin="workflow" anchor="install" />
     <dl class="fg-site-facts">
       <div>
         <dt>Hosts</dt>
