@@ -4,56 +4,49 @@ related: [hill-climb, review]
 
 ## What it does
 
-The starting point is the user's task: finding information, acting, recovering
-from errors, and recognizing success. UX laws, craft guidance, and public
-standards such as WCAG 2.2 help the agent assess the screen or flow.
+The agent starts from what the user needs to do: find information, act,
+recover from errors, and see that they succeeded. It judges the screen or
+flow with UX laws, craft guidance, and standards such as WCAG 2.2.
 
-Your repository's design system owns the look. When there is none, the agent
+Your repository's design system owns the look. If there is none, the agent
 uses the [design system](../../design-system/) plugin when it is installed, and
 otherwise uses no house style and says once that the plugin is missing. A new
-screen does not get an unrelated palette or visual identity.
+screen does not get its own palette or visual identity.
 
 ## When to use it
 
-Install the skill with the command above, then ask to design, build, review,
-or check an interface. The agent selects it when the request matches. For example:
+Install the skill, then ask to design, build, review, or check an interface:
 
 > Review the checkout flow in `src/checkout/` and rank what to fix.
 
-Name the screens or journey and the task people need to complete. The skill
-works with React, Vue, and plain HTML. For measured improvement rounds, pair
-it with [hill-climb](../hill-climb/).
+Name the screens or journey and the task people need to complete. It works
+with React, Vue, and plain HTML. For measured improvement rounds, pair it
+with [hill-climb](../hill-climb/).
 
-For browser checks, the app must be running. Its project needs `playwright`
-or `@playwright/test`; the accessibility script also needs `@axe-core/playwright`.
+Browser checks need the app running and `playwright` or `@playwright/test` in
+the project. The accessibility script also needs `@axe-core/playwright`.
 
 ## How it works
 
-Design work covers hierarchy, flow, interface copy, and loading, empty, error,
-and success states. Checks include keyboard and touch, phone and desktop
-widths, supported light and dark themes, and reduced motion.
+Each review finding names a real element and the rule it fails. Safety and
+accessibility come first: missing focus or low contrast outranks taste.
 
-Reviews point to an actual element and the question or rule it fails. User
-safety and accessibility come first; problems such as missing focus and low
-contrast take priority over taste. The owning design system stays in charge
-of appearance.
-
-Two bundled scripts check a running UI: one for accessibility, sideways
-scrolling, and off-token values; one for key tasks under reduced motion,
-dark mode, 200% text, and grayscale. Unrun checks remain unchecked. Automated
-tools cover only part of accessibility: Deque's study reported 57% coverage,
-so a clean run does not establish accessibility.
+Two bundled scripts check a running UI for accessibility, sideways
+scrolling, and token use, and run key tasks under reduced motion, dark mode,
+200% text, and grayscale. Automated tools catch only part of accessibility
+problems (57% in Deque's study), so a clean run is not proof.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/interface-design/SKILL.md)
-links the review questions and exact browser-check instructions.
+links the review questions and browser-check steps.
 
 ## What you get
 
-- For design: the hierarchy, flow, reasons, edge states, and riskiest assumption to test.
-- For review: findings ranked by user impact, each naming the element, rule,
-  proposed fix, and how to verify it helped.
-- For checks: commands, results, screenshots, widths and themes covered,
-  and what remains unchecked.
+- For design: the hierarchy, flow, loading, empty, error, and success
+  states, and the riskiest assumption to test.
+- For review: findings ranked by user impact, each with the element, rule,
+  fix, and how to check it helped.
+- For checks: commands, results, screenshots, the keyboard, widths, and
+  themes covered, and what was not checked.
 
-Laws and standards guide decisions; they do not prove usability. The agent
-does not invent user research, and usability testing remains a separate step.
+Laws and standards guide decisions but do not prove usability. The agent
+does not invent user research.

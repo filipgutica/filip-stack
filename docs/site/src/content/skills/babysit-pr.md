@@ -4,46 +4,42 @@ related: [full-send, sol-loop]
 
 ## What it does
 
-Bot comments are checked against the source before they lead to code changes.
-The agent separates real repository failures from flaky infrastructure and
-keeps fixes within the PR's intended behavior.
+The agent checks each bot comment against the code before it changes
+anything. It tells real failures from flaky infrastructure, and keeps fixes
+within what the PR is meant to do.
 
 ## When to use it
 
-Install the skill with the command above, then name the PR and ask the agent
-to watch it. For example: "babysit PR 42". The agent selects the skill for
-requests to monitor, watch, or babysit a PR.
+Install the skill, then name the PR:
 
-Use it after opening a PR, while CI and automated reviewers run, or when
-failures and bot findings need attention. [Full-send](../full-send/) and
-[full-stop](../full-stop/) use it for this part of their work.
+> babysit PR 42
 
-The skill uses T3 Code's PR watcher there, or its bundled `pr-wait` script
-elsewhere. One watcher owns each PR; the agent does not create a polling loop.
+Use it after you open a PR, while CI and bots run.
+[Full-send](../full-send/) and [full-stop](../full-stop/) use it for this
+step.
+
+In T3 Code, it uses the PR watcher, and elsewhere its bundled `pr-wait`
+script. One watcher owns each PR, so the agent does not poll in a loop.
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/babysit-pr/SKILL.md)
-has the host-specific waiting and recovery instructions.
+has the waiting and recovery steps for each host.
 
 ## How it works
 
-The agent handles existing checks and comments before waiting for new events.
-It acts only on checks and comments newer than the latest push. When nothing
-needs action, it stays quiet.
+The agent handles existing checks and comments, then waits for ones newer
+than the latest push. When nothing needs action, it stays quiet.
 
-Real findings get fixes. False positives get a written dismissal. Extra tests,
-unneeded edge-case guards, and small speedups outside the goal become
-follow-ups with reasons. CodeRabbit findings get the same scrutiny, but the
-agent never waits for CodeRabbit or holds a merge for it.
+Extra tests, unneeded guards, and small speedups outside the goal become
+follow-ups. CodeRabbit findings are checked like any other, but the agent
+never waits for CodeRabbit or holds a merge for it.
 
-Before reporting readiness, the agent checks the base branch, conflicts, and
-whether the PR is behind. If base commits after the last green run touch the
-PR's files, it rebases, pushes, and waits for green again.
+Before it reports the PR ready, the agent checks the base branch. If new
+base commits touch the PR's files, it rebases, pushes, and waits for green
+again.
 
 ## What you get
 
-- Real CI failures and findings resolved, with false positives answered.
-- A ready PR or a concrete blocker.
-- Declined changes recorded as follow-ups.
+- Real CI failures and findings fixed, and false positives answered.
+- A ready PR, or a concrete blocker.
 
-Merging requires your explicit request. Immediately before a merge, the agent
-fetches and rechecks the PR. If another PR makes this one obsolete, it stops
-and asks before closing it unless closure was already authorized.
+Merging needs your explicit request. If another PR makes this one obsolete,
+the agent asks before closing it, unless you already authorized that.

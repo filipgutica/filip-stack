@@ -1,7 +1,13 @@
 <script setup lang="ts">
 import { UiAlert, UiBreadcrumbs, UiCard } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
-import PluginInstall from "../PluginInstall.vue";
+import HostCommands from "../HostCommands.vue";
+const commands = {
+  claude:
+    "claude plugin marketplace add filipgutica/design-system\nclaude plugin install design-system@design-system",
+  codex:
+    "codex plugin marketplace add filipgutica/design-system\ncodex plugin add design-system@design-system",
+};
 const tables = {
   files: [
     {
@@ -11,7 +17,7 @@ const tables = {
     },
     {
       command: "tokens.css",
-      description: "Theme values to import or inline in standalone HTML. The project hue and fonts sit in one block at the top.",
+      description: "Theme values to import or inline. The project hue and fonts sit in one block at the top.",
     },
     {
       command: "components.md",
@@ -19,7 +25,7 @@ const tables = {
     },
     {
       command: "components.html",
-      description: "Every component in each of its states, in plain HTML and CSS.",
+      description: "Every component in each state, in plain HTML and CSS.",
     },
     {
       command: "decisions.md",
@@ -35,7 +41,7 @@ const tables = {
     },
     {
       command: "reference.html",
-      description: "Example application, and a catalogue of type, color, spacing, shape, borders, elevation, focus, and motion.",
+      description: "Example application and the foundations catalogue.",
     },
   ],
   formats: [
@@ -66,18 +72,15 @@ const tables = {
     />
     <h1 id="title">Design system</h1>
     <p class="lede">
-      The framework-agnostic foundation for every interface Filip builds.
-      Its tokens, components, and rules are plain HTML and CSS: the UI library
-      implements them in Vue, new apps and libraries start from them, and
-      Claude and Codex follow them for visual work.
+      The visual rules behind every interface Filip builds, written as plain
+      HTML and CSS. Agents follow them for visual work, the Vue UI library
+      implements them, and new apps start from them.
     </p>
     <UiAlert tone="info">
       <p>
-        This design system is published as <code>filipgutica/design-system</code>,
-        and Claude and Codex get it as the <code>design-system</code> plugin.
-        With the plugin installed, it is the default for UX and visual work,
-        unless you ask for another or the repository has its own. Browse it on the
-        <a href="https://filipgutica.github.io/design-system/">design system site</a>.
+        Agents use <code>filipgutica/design-system</code> by default, through its
+        <code>design-system</code> plugin. Browse it on the
+        <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
     <dl class="fg-site-facts">
@@ -108,24 +111,23 @@ const tables = {
       filip-stack does not install the design system. Add the plugin on each
       machine where agents do visual work.
     </p>
-    <PluginInstall marketplace="design-system" plugin="design-system" />
+    <HostCommands :claude="commands.claude" :codex="commands.codex" />
+    <p class="hint">In Codex, restart so a new session loads the plugin.</p>
   </section>
 
   <section aria-labelledby="catalogue">
     <h2 id="catalogue">Component catalogue</h2>
     <div class="prose">
       <p>
-        The catalogue shows every component in each state that applies. It
-        uses only <code>tokens.css</code>, and its markup carries the roles and
-        states each implementation copies.
+        The catalogue shows every component in each state, using only
+        <code>tokens.css</code>. Its markup sets the roles and states that
+        every implementation copies:
         <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>
-        builds these components in Vue; a React library or a new app builds
-        the same ones from here.
+        in Vue, a React library, or a new app.
       </p>
       <ul>
         <li>
-          <a href="https://filipgutica.github.io/design-system/components.html">Component catalogue</a>:
-          each component and its states.
+          <a href="https://filipgutica.github.io/design-system/components.html">Component catalogue</a>
         </li>
         <li>
           <a href="https://filipgutica.github.io/design-system/reference.html#foundations">Foundations</a>:
@@ -140,8 +142,7 @@ const tables = {
         <li>
           <a href="https://github.com/filipgutica/design-system/blob/main/language/components.md">Component specs</a>
           and
-          <a href="https://github.com/filipgutica/design-system/blob/main/language/decisions.md">decisions</a>:
-          what each component does, and why it looks the way it does.
+          <a href="https://github.com/filipgutica/design-system/blob/main/language/decisions.md">decisions</a>
         </li>
         <li>
           <a href="https://github.com/filipgutica/design-system/blob/main/language/visualizations.md">Data visualizations</a>:
@@ -155,19 +156,18 @@ const tables = {
     <h2 id="how">How agents use it</h2>
     <div class="prose">
       <p>
-        The shared guidance tells agents to follow the plugin's skill,
-        <code>$design-system:design-system</code>, for UX or visual work. The
-        skill reads the plugin's <code>DESIGN.md</code> first.
-        For interaction, flows, states, interface copy, and accessibility, they also use
-        the <a href="/filip-stack/skills/interface-design/">interface-design</a>
-        skill. The design system owns the look;
-        <code>interface-design</code> owns the behavior and its checks.
+        Agents follow the plugin's <code>$design-system:design-system</code>
+        skill before UX or visual work. It reads the plugin's
+        <code>DESIGN.md</code> and owns the look. For behavior, such as flows,
+        states, copy, and accessibility, they also use the
+        <a href="/filip-stack/skills/interface-design/">interface-design</a>
+        skill.
       </p>
     </div>
     <ol class="fg-site-steps" aria-label="Which rules win">
       <li>
         <div>
-          <p><strong>Your request</strong> wins over everything else.</p>
+          <p><strong>Your request</strong> wins.</p>
         </div>
       </li>
       <li>
@@ -182,8 +182,7 @@ const tables = {
         <div>
           <p>
             <strong><code>filipgutica/design-system</code></strong>, through
-            its plugin, is the default for all other UX and visual work. Use its
-            palette, type, and components consistently across projects.
+            its plugin, covers all other UX and visual work.
           </p>
         </div>
       </li>
@@ -201,8 +200,7 @@ const tables = {
   <section aria-labelledby="formats">
     <h2 id="formats">Pick the format first</h2>
     <p class="section-intro">
-      Choose the format before styling. It determines the density and what the
-      reader sees first.
+      The format sets the density and what the reader sees first.
     </p>
     <UiCommandList
       :items="tables.formats"
@@ -220,16 +218,16 @@ const tables = {
     <h2 id="reuse">Reuse it in a new project</h2>
     <div class="prose">
       <p>
-        The design system has two layers. The core covers tokens, quiet depth,
-        controls and their states, focus, motion, and accessibility, and a new
-        project adopts it as is. The identity layer is the personal sites'
-        terminal look: the <code>~/name</code> header, mono headings, and
-        command plates. A new project replaces it with its own.
+        The design system has two layers. A new project keeps the core as is:
+        tokens, quiet depth, controls and their states, focus, motion, and
+        accessibility. It replaces the identity layer: the personal sites'
+        terminal look, with the <code>~/name</code> header, mono headings, and
+        command plates.
       </p>
       <p>
-        To start, keep <code>tokens.css</code> unchanged and set your own hue
-        and fonts on <code>:root</code> in a stylesheet loaded after it. Then
-        build components from the catalogue and the component specs.
+        Keep <code>tokens.css</code> unchanged, and set your own hue and fonts
+        on <code>:root</code> in a stylesheet loaded after it. Build
+        components from the catalogue and specs.
       </p>
     </div>
   </section>
@@ -238,7 +236,7 @@ const tables = {
     <h2 id="theme">Theme and token names</h2>
     <p class="section-intro">
       Graphite surfaces separate regions. Indigo marks primary actions; blue marks links.
-      Focus is one indigo ring with a 3px gap. Switch the appearance in the header
+      Focus is one indigo ring with a 3px gap. Use the header's appearance switch
       to compare light and dark.
     </p>
     <UiCard title="Graphite Indigo tokens">
@@ -287,9 +285,10 @@ const tables = {
       </div>
     </UiCard>
     <p class="hint">
-      The labels above are token names. Standalone HTML and library sites use the same names.
-      The values come from <code>tokens.css</code> in <code>@filipgutica/design-system</code>.
-      <code>@filipgutica/ui</code> builds its themes from that package.
+      Labels are token names shared by standalone HTML and library sites.
+      Values come from <code>tokens.css</code> in
+      <code>@filipgutica/design-system</code>. <code>@filipgutica/ui</code>
+      builds its themes from that package.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.
@@ -325,8 +324,4 @@ const tables = {
     </div>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/cli/"><span>Previous</span>filip-stack CLI</a>
-    <a rel="next" href="/filip-stack/field-guide/"><span>Next</span>Field Guide</a>
-  </nav>
 </template>
