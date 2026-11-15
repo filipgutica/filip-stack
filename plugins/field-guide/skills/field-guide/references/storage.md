@@ -166,20 +166,88 @@ token from the same canonical store and cache state.
 
 ## Shared guidance sync
 
-`export --output <json-file>` writes active shared guidance in a portable form:
-subject, linked subjects, learning, confidence, `generic`, and examples. It
-omits evidence, repository identities, relationships, and candidates. Retired
-shared records (superseded, withdrawn, or archived) appear only as fingerprints.
-When the output file already exists, export keeps its retired fingerprints
-unless the record is active locally.
+`export --output <json-file>` writes shared guidance in a portable form, version
+2. Active records keep their subject, linked subjects, learning, confidence,
+`generic`, and examples. The export omits evidence, repository identities,
+relationships, and candidates. Retired shared records appear only as a
+fingerprint with two sets of retirement IDs: `retirements` and `acknowledged`.
+The IDs are random and carry no machine identity or time. When the output file
+already exists, export keeps the union of its sets and the local sets for each
+fingerprint.
 
-`import --input <json-file>` merges an export by fingerprint. It adds missing
-records as active with source `shared-sync` and no evidence, promotes a matching
-local candidate, and withdraws a local candidate or active record whose
-fingerprint is retired. It does not retire the active replacement of a local
-superseded record; it reports that record as skipped. Records retired locally
-stay retired. filip-stack's `host-config` script runs import on apply and
-import followed by export on `field-guide-sync`.
+A fingerprint is retired while any of its retirement IDs is not acknowledged.
+These rules order retirements and restores across machines:
+
+- A user retirement of shared guidance adds a new ID: `withdraw`, `undo`, the
+  target of `supersede`, and archive. The `superseded` transition stores its
+  ID as `retirementId`.
+- A user `withdraw` or `undo` of a replacement acknowledges only the ID of the
+  supersession it created. A superseded transition with no `retirementId`
+  predates the sets and uses the fingerprint's baseline ID.
+- Import only copies IDs. It never adds an ID or an acknowledgment.
+
+Withdrawing a replacement, by the user or by import, moves the record it
+superseded back to `active` only when none of that record's IDs is
+outstanding. Otherwise the record moves to `withdrawn` through
+`superseded->withdrawn`. `validate` allows that edge only when the replacement
+named on the superseded transition has been withdrawn, and, while it is the
+latest transition, only when the record has an outstanding ID.
+
+So an undo reverses only its own supersession. It never reverses a withdrawal,
+an archive, or another machine's supersession of the same record, even one it
+has seen.
+
+`import --input <json-file>` merges an export by fingerprint, into shared-scope
+records only. It accepts version 1 and version 2. Each version 1 retired
+fingerprint becomes one baseline retirement ID for that fingerprint. A local
+shared record retired before the sets existed counts as the same baseline ID.
+Import does these steps:
+
+1. It copies both sets onto the matching shared record.
+2. It adds a missing active record as active, with source `shared-sync` and no
+   evidence, and promotes a matching local candidate.
+3. It withdraws a candidate or active record that the sets retire. When that
+   record is the active replacement of superseded guidance, the superseded
+   record moves by the rule above. Import acknowledges nothing, so it returns
+   to `active` only if a user undo on another machine acknowledged its
+   supersession and nothing else retires it.
+4. It restores a withdrawn record that the sets no longer retire, through
+   `withdrawn->active` with source `shared-sync`. Only shared sync uses that
+   transition.
+
+Export merges the output file's sets with the local sets first. It then leaves
+out of `active` any record whose fingerprint has an outstanding ID, so a
+machine that has not yet imported a retirement does not publish the retired
+text.
+
+Local records store the sets as optional `retirements` and `acknowledged`
+arrays. They are written only when a retirement, a restore, or an import
+changes them. `validate` rejects an active shared record with an unacknowledged
+retirement.
+
+filip-stack's `host-config` script runs import on apply and import followed by
+export on `field-guide-sync`.
+
+Known limits:
+
+- A restore reaches every machine only after repeated syncs, not in one pass.
+- A retirement or restore whose every copy a dotfile manager overwrote cannot
+  be recovered.
+- The sets grow without bound.
+- Withdrawal and archive IDs are never acknowledged, so they are final across
+  every machine. Only a supersession can be reversed, and only by undoing its
+  replacement on a machine that holds the supersede relationship. Export does
+  not carry relationships, so a machine that imported the replacement cannot.
+- Every retirement made before the sets existed shares one baseline ID per
+  fingerprint. Undoing a supersession made before the sets existed
+  acknowledges that ID, which also stands for any withdrawal of the same
+  fingerprint from that time.
+- A checkout that predates version 2 refuses a version 2 dotfile. An older
+  plugin cannot read a store that has the new fields and silently stops
+  injecting guidance. A retirement made on an older machine can lose to a
+  restore made in the same window.
+- Update each machine in this order: refresh the Field Guide plugin, restart
+  the host, then run `filip-stack update` (`host-config update`).
 
 The optional `.obsidian/` directory is not part of the index contract. Field-guide
 commands ignore all files below it.

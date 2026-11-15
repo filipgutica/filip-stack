@@ -341,8 +341,7 @@ const runFieldGuide = ({ home, args }) => {
 const importSharedGuidance = ({ home }) => {
   const result = runFieldGuide({ home, args: ['import', '--input', sharedGuidancePath(home)] })
   process.stdout.write(`field-guide: created ${result.created.length}, promoted ${result.promoted.length}, `
-    + `retired ${result.retired.length}, skipped ${result.skipped.length}\n`)
-  for (const { id, reason } of result.skipped) process.stdout.write(`  skipped ${id}: ${reason}\n`)
+    + `retired ${result.retired.length}, restored ${result.restored.length}\n`)
 }
 
 // Reports each symlinked design-system target and returns the other entries. The manifest keeps

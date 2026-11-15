@@ -23,7 +23,7 @@ const tables = {
     {
       command: "filip-stack field-guide-sync",
       description:
-        'Imports shared preferences from <code>~/.config/filip-stack/field-guide.json</code> if present, then exports local shared guidance to that file. Sync it between machines with your dotfile manager. See <a href="/filip-stack/cli/#sync">Sync your Field Guide preferences</a>.',
+        'Imports shared preferences from <code>~/.config/filip-stack/field-guide.json</code> if present, then exports local shared guidance to that file. Sync it between machines with your dotfile manager. An undo reaches other machines after they sync. It reverses only the replacement it undoes: a withdrawal, or another replacement of the same guidance, still wins. Refresh the Field Guide plugin and restart before you run <code>filip-stack update</code>: an older plugin cannot read the newer store. See <a href="/filip-stack/cli/#sync">Sync your Field Guide preferences</a>.',
     },
   ],
 };

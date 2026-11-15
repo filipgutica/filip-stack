@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { spawnSync } from 'node:child_process'
-import { createHash, randomUUID } from 'node:crypto'
+import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import {
   closeSync,
   existsSync,
@@ -220,6 +220,7 @@ const sourceKeyPattern = /^source:v1:[0-9a-f]{64}$/
 const fingerprintPattern = /^fingerprint:v1:[0-9a-f]{64}$/
 const evidenceIdPattern = /^evidence:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const guidanceIdPattern = /^guidance:v1:[0-9a-f]{64}$/
+const retirementIdPattern = /^retirement:v1:[0-9a-f]{64}$/
 
 const requireString = ({ value, label, maxBytes, nonEmpty = true, noWhitespace = false, allowNewlines = false }) => {
   if (typeof value !== 'string' || (nonEmpty && value.trim().length === 0)) {
@@ -412,11 +413,18 @@ const validateEvidenceRecord = (evidence) => {
   requireTimestamp({ value: evidence.createdAt, label: 'evidence createdAt' })
 }
 
+// A shared supersede records the retirement ID it added, so an undo can acknowledge only that ID.
+const validateTransitionRetirementId = ({ guidance, transition }) => {
+  if (transition.retirementId === undefined) return
+  if (transition.to !== 'superseded' || !retirementIdPattern.test(transition.retirementId)) fail('retirementId is valid only on a superseded transition')
+  if (!guidance.retirements?.includes(transition.retirementId)) fail('a superseded transition names an unknown retirement')
+}
+
 const validateGuidanceRecord = (guidance) => {
   assertObject({ value: guidance, label: 'guidance record' })
   assertClosedFields({
     value: guidance,
-    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'status', 'confidence', 'generic', 'relationship', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'createdAt', 'updatedAt'],
+    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'status', 'confidence', 'generic', 'relationship', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'retirements', 'acknowledged', 'createdAt', 'updatedAt'],
     label: 'guidance record',
   })
   if (!guidanceIdPattern.test(guidance.id)) fail('guidance record has invalid id')
@@ -457,7 +465,7 @@ const validateGuidanceRecord = (guidance) => {
   }
   for (const transition of guidance.transitions) {
     assertObject({ value: transition, label: 'guidance transition' })
-    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId'], label: 'guidance transition' })
+    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId', 'retirementId'], label: 'guidance transition' })
     if (transition.from !== null && !['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.from)) fail('invalid transition from status')
     if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.to)) fail('invalid transition to status')
     requireString({ value: transition.reason, label: 'transition reason', maxBytes: 512 })
@@ -469,6 +477,11 @@ const validateGuidanceRecord = (guidance) => {
     if ((transition.to === 'superseded') !== Boolean(transition.replacementId)) {
       fail('replacementId is required only for a superseded transition')
     }
+    validateTransitionRetirementId({ guidance, transition })
+  }
+  if (guidance.retirements !== undefined || guidance.acknowledged !== undefined) {
+    if (guidance.scope.kind !== 'shared') fail('only shared guidance has retirement sets')
+    validateRetirementSets({ ...guidance, label: 'guidance' })
   }
   requireTimestamp({ value: guidance.createdAt, label: 'guidance createdAt' })
   requireTimestamp({ value: guidance.updatedAt, label: 'guidance updatedAt' })
@@ -534,17 +547,31 @@ const validateMemory = (memory) => {
         'active->withdrawn',
         'active->archived',
         'superseded->active',
+        'superseded->withdrawn',
         'superseded->archived',
+        'withdrawn->active',
         'withdrawn->archived',
       ])
       if (!allowedEdges.has(edge)) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
-      // Restoring superseded guidance is only the second half of withdrawing its replacement.
-      if (edge === 'superseded->active') {
+      // Only shared sync restores withdrawn guidance, after another machine's undo acknowledged its retirements.
+      if (edge === 'withdrawn->active' && (guidance.scope.kind !== 'shared' || guidance.transitions[index].source !== 'shared-sync')) {
+        fail(`${guidance.id} withdrawn->active requires shared scope and source shared-sync`)
+      }
+      // Superseded guidance leaves that status only as the second half of withdrawing its replacement.
+      if (edge === 'superseded->active' || edge === 'superseded->withdrawn') {
         const replacement = memory.guidance.find(({ id }) => id === guidance.transitions[index - 1].replacementId)
-        if (!replacement?.transitions.some(({ to }) => to === 'withdrawn')) fail(`${guidance.id} restoration requires its replacement to be withdrawn`)
+        if (!replacement?.transitions.some(({ to }) => to === 'withdrawn')) fail(`${guidance.id} ${edge === 'superseded->active' ? 'restoration' : edge} requires its replacement to be withdrawn`)
+      }
+      // It moves to withdrawn, not active, only because another retirement is outstanding. Sets only
+      // grow, so a later restore through shared sync may acknowledge that retirement.
+      if (edge === 'superseded->withdrawn' && index === guidance.transitions.length - 1 && !hasUnacknowledgedRetirement(retirementSetsOf(guidance))) {
+        fail(`${guidance.id} superseded->withdrawn requires an outstanding retirement`)
       }
     }
     if (guidance.transitions.at(-1).to !== guidance.status) fail(`${guidance.id} status does not match its transition history`)
+    if (guidance.status === 'active' && hasUnacknowledgedRetirement(retirementSetsOf(guidance))) {
+      fail(`${guidance.id} is active with an unacknowledged retirement`)
+    }
     for (const transition of guidance.transitions.filter(({ to }) => to === 'superseded')) {
       const replacement = memory.guidance.find(({ id }) => id === transition.replacementId)
       if (!replacement
@@ -1007,7 +1034,54 @@ const submitObservation = ({ paths, inputPath, inputJson }) => (
   withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
 )
 
-const appendTransition = ({ guidance, to, reason, source, now, replacementId }) => {
+// Shared sync orders retirements and restores with two grow-only sets of IDs on each shared
+// fingerprint. A user retirement adds a random ID. Withdrawing a replacement acknowledges only
+// the ID of the supersession it created. Import only copies IDs. A record is retired while any
+// ID is unacknowledged. A shared record retired before the sets existed counts as one baseline ID.
+const baselineRetirementId = (fingerprint) => hashIdentity({ prefix: 'retirement', values: ['baseline', fingerprint] })
+
+const retirementSetsOf = (guidance) => ({
+  retirements: guidance.retirements
+    ?? (guidance.scope.kind === 'shared' && retiredStatuses.has(guidance.status) ? [baselineRetirementId(guidance.fingerprint)] : []),
+  acknowledged: guidance.acknowledged ?? [],
+})
+
+const hasUnacknowledgedRetirement = ({ retirements, acknowledged }) => retirements.some((id) => !acknowledged.includes(id))
+
+const sortedUnion = (...lists) => [...new Set(lists.flat())].sort()
+
+const validateRetirementSets = ({ retirements, acknowledged, label }) => {
+  for (const [name, ids] of [['retirements', retirements], ['acknowledged', acknowledged]]) {
+    if (!Array.isArray(ids) || new Set(ids).size !== ids.length || ids.some((id) => !retirementIdPattern.test(id))) {
+      fail(`${label} ${name} must be a unique array of retirement IDs`)
+    }
+  }
+  if (acknowledged.some((id) => !retirements.includes(id))) fail(`${label} acknowledges an unknown retirement`)
+}
+
+const setRetirementSets = ({ guidance, retirements, acknowledged }) => {
+  guidance.retirements = sortedUnion(retirements)
+  guidance.acknowledged = sortedUnion(acknowledged)
+}
+
+// Call before the retirement transition, while the current status still decides the baseline.
+// Returns the new ID, or undefined for repository-scoped guidance.
+const addRetirement = (guidance) => {
+  if (guidance.scope.kind !== 'shared') return undefined
+  const { retirements, acknowledged } = retirementSetsOf(guidance)
+  const retirementId = `retirement:v1:${randomBytes(32).toString('hex')}`
+  setRetirementSets({ guidance, retirements: [...retirements, retirementId], acknowledged })
+  return retirementId
+}
+
+// A supersession made before its transition stored an ID used the baseline ID.
+const acknowledgeOwnSupersession = (superseded) => {
+  const { retirements, acknowledged } = retirementSetsOf(superseded)
+  const own = superseded.transitions.at(-1).retirementId ?? baselineRetirementId(superseded.fingerprint)
+  if (retirements.includes(own)) setRetirementSets({ guidance: superseded, retirements, acknowledged: [...acknowledged, own] })
+}
+
+const appendTransition = ({ guidance, to, reason, source, now, replacementId, retirementId }) => {
   guidance.transitions.push({
     from: guidance.status,
     to,
@@ -1015,6 +1089,7 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId }) 
     source,
     at: now,
     ...(replacementId ? { replacementId } : {}),
+    ...(retirementId ? { retirementId } : {}),
   })
   guidance.status = to
   guidance.updatedAt = now
@@ -1045,15 +1120,22 @@ const validateTransitionInput = (input) => {
   return input
 }
 
-// A superseded record needs an active replacement, so withdrawing the
-// replacement restores the record it superseded.
-const withdrawGuidance = ({ memory, target, input, now }) => {
+// A superseded record needs an active replacement, so withdrawing the replacement also moves
+// the record it superseded, and returns that record. Only a user's withdrawal adds a retirement
+// ID and acknowledges the supersession. The record returns to active only when none of its
+// retirements is outstanding; otherwise it moves to withdrawn.
+const withdrawGuidance = ({ memory, target, input, now, byUser }) => {
   if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
+  if (byUser) addRetirement(target)
   appendTransition({ guidance: target, to: 'withdrawn', reason: input.reason, source: input.source, now })
   const superseded = memory.guidance.find((guidance) => (
     guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === target.id
   ))
-  if (superseded) appendTransition({ guidance: superseded, to: 'active', reason: input.reason, source: input.source, now })
+  if (!superseded) return null
+  if (byUser) acknowledgeOwnSupersession(superseded)
+  const to = hasUnacknowledgedRetirement(retirementSetsOf(superseded)) ? 'withdrawn' : 'active'
+  appendTransition({ guidance: superseded, to, reason: input.reason, source: input.source, now })
+  return superseded
 }
 
 const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
@@ -1069,7 +1151,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
     appendTransition({ guidance: target, to: 'active', reason: input.reason, source: input.source, now })
   }
 
-  if (input.action === 'withdraw' || input.action === 'undo') withdrawGuidance({ memory, target, input, now })
+  if (input.action === 'withdraw' || input.action === 'undo') withdrawGuidance({ memory, target, input, now, byUser: true })
 
   if (input.action === 'supersede') {
     if (target.status !== 'active') fail('supersede requires an active target')
@@ -1088,6 +1170,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
     if (replacement.status === 'candidate') {
       appendTransition({ guidance: replacement, to: 'active', reason: input.reason, source: input.source, now })
     }
+    const retirementId = addRetirement(target)
     appendTransition({
       guidance: target,
       to: 'superseded',
@@ -1095,6 +1178,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
       source: input.source,
       now,
       replacementId: replacement.id,
+      retirementId,
     })
   }
 
@@ -1188,14 +1272,30 @@ const retiredStatuses = new Set(['superseded', 'withdrawn', 'archived'])
 const portableGuidanceFields = ['subjectKey', 'linkedSubjects', 'learning', 'confidence', 'generic', 'examples']
 
 // Shared guidance travels between machines without evidence, repository identities, or
-// relationships. Retired records travel as fingerprints only, so their text stays local.
+// relationships. Retired records travel as fingerprints with their retirement sets only, so
+// their text stays local.
 const exportSharedGuidance = ({ paths, outputPath }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
   const shared = memory.guidance.filter(({ scope }) => scope.kind === 'shared')
+  // Union with the output file's sets. A machine that never had a record must not drop
+  // another machine's retirements or acknowledgments of it.
+  const entries = new Map()
+  const addEntry = ({ fingerprint, retirements, acknowledged }) => {
+    if (retirements.length === 0) return
+    const current = entries.get(fingerprint) ?? { retirements: [], acknowledged: [] }
+    entries.set(fingerprint, {
+      fingerprint,
+      retirements: sortedUnion(current.retirements, retirements),
+      acknowledged: sortedUnion(current.acknowledged, acknowledged),
+    })
+  }
+  if (existsSync(resolve(outputPath))) validatePortableSharedGuidance(readJsonInput(outputPath)).retired.forEach(addEntry)
+  for (const guidance of shared) addEntry({ fingerprint: guidance.fingerprint, ...retirementSetsOf(guidance) })
+  // A record that the merged sets retire is exported as its fingerprint only, so its text stays local.
   const active = shared
-    .filter(({ status }) => status === 'active')
+    .filter(({ status, fingerprint }) => status === 'active' && !hasUnacknowledgedRetirement(entries.get(fingerprint) ?? { retirements: [], acknowledged: [] }))
     .map(({ subjectKey, linkedSubjects, learning, confidence, generic, examples }) => ({
       subjectKey,
       linkedSubjects: linkedSubjects ?? [],
@@ -1205,69 +1305,69 @@ const exportSharedGuidance = ({ paths, outputPath }) => {
       examples: examples ?? [],
     }))
     .sort((left, right) => left.subjectKey.localeCompare(right.subjectKey) || left.learning.localeCompare(right.learning))
-  // Keep retirements already in the output file. A machine that never had a record must
-  // not drop another machine's retirement of it.
-  const activeFingerprints = new Set(shared.filter(({ status }) => status === 'active').map(({ fingerprint }) => fingerprint))
-  const previouslyRetired = existsSync(resolve(outputPath))
-    ? validatePortableSharedGuidance(readJsonInput(outputPath)).retired.filter((fingerprint) => !activeFingerprints.has(fingerprint))
-    : []
-  const retired = [...new Set([
-    ...previouslyRetired,
-    ...shared.filter(({ status }) => retiredStatuses.has(status)).map(({ fingerprint }) => fingerprint),
-  ])].sort()
+  const retired = [...entries.values()].sort((left, right) => left.fingerprint.localeCompare(right.fingerprint))
   writeTextAtomically({
     path: resolve(outputPath),
-    content: `${JSON.stringify({ schemaVersion: 1, active, retired }, null, 2)}\n`,
+    content: `${JSON.stringify({ schemaVersion: 2, active, retired }, null, 2)}\n`,
   })
   return { active: active.length, retired: retired.length }
 }
 
+// Returns the export in version 2 form. Version 1 listed retired fingerprints only, so each
+// becomes its fingerprint's baseline retirement.
 const validatePortableSharedGuidance = (input) => {
   assertObject({ value: input, label: 'shared guidance export' })
   assertClosedFields({ value: input, fields: ['schemaVersion', 'active', 'retired'], label: 'shared guidance export' })
-  if (input.schemaVersion !== 1) fail(`unsupported shared guidance export version: ${input.schemaVersion}`)
+  if (![1, 2].includes(input.schemaVersion)) fail(`unsupported shared guidance export version: ${input.schemaVersion}`)
   if (!Array.isArray(input.active) || !Array.isArray(input.retired)) fail('shared guidance export needs active and retired arrays')
   input.active.forEach((record) => {
     assertObject({ value: record, label: 'shared guidance' })
     assertClosedFields({ value: record, fields: portableGuidanceFields, label: 'shared guidance' })
   })
-  if (input.retired.some((fingerprint) => !fingerprintPattern.test(fingerprint))) fail('shared guidance export has an invalid retired fingerprint')
-  return input
+  const retired = input.schemaVersion === 1
+    ? input.retired.map((fingerprint) => ({ fingerprint, retirements: [baselineRetirementId(fingerprint)], acknowledged: [] }))
+    : input.retired
+  for (const entry of retired) {
+    assertObject({ value: entry, label: 'shared guidance retirement' })
+    assertClosedFields({ value: entry, fields: ['fingerprint', 'retirements', 'acknowledged'], label: 'shared guidance retirement' })
+    if (!fingerprintPattern.test(entry.fingerprint)) fail('shared guidance export has an invalid retired fingerprint')
+    validateRetirementSets({ ...entry, label: 'shared guidance retirement' })
+    if (entry.retirements.length === 0) fail('shared guidance retirement needs at least one retirement ID')
+  }
+  if (new Set(retired.map(({ fingerprint }) => fingerprint)).size !== retired.length) fail('shared guidance export repeats a retired fingerprint')
+  return { ...input, retired }
 }
 
-// Merges exported shared guidance by fingerprint. Retirement wins over activation, and
-// local candidates are promoted because another machine already activated them.
-const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
-  requireInitialized(paths)
-  const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run init first')
-  const input = validatePortableSharedGuidance(readJsonInput(inputPath))
-  const now = new Date().toISOString()
-  const result = { created: [], promoted: [], retired: [], skipped: [] }
-  const retiredFingerprints = new Set(input.retired)
-  for (const fingerprint of input.retired) {
-    const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
-    if (!local || retiredStatuses.has(local.status)) continue
-    const replacesSuperseded = memory.guidance.some((guidance) => (
-      guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === local.id
-    ))
-    if (replacesSuperseded) {
-      result.skipped.push({ id: local.id, reason: 'active-replacement-of-superseded-guidance' })
-      continue
-    }
-    appendTransition({ guidance: local, to: 'withdrawn', reason: 'retired-on-another-machine', source: 'shared-sync', now })
-    result.retired.push(local.id)
+// Copies each export retirement set onto the matching shared record. Returns whether any set grew.
+const mergeRetirementSets = ({ entries, local }) => {
+  let changed = false
+  for (const entry of entries) {
+    const guidance = local.get(entry.fingerprint)
+    if (!guidance) continue
+    const current = retirementSetsOf(guidance)
+    const retirements = sortedUnion(current.retirements, entry.retirements)
+    const acknowledged = sortedUnion(current.acknowledged, entry.acknowledged)
+    if (retirements.length === current.retirements.length && acknowledged.length === current.acknowledged.length) continue
+    setRetirementSets({ guidance, retirements, acknowledged })
+    changed = true
   }
+  return changed
+}
+
+// Adds each exported active record that is not retired, and promotes a matching local candidate.
+const addActiveRecords = ({ memory, input, local, now, result }) => {
+  const entries = new Map(input.retired.map((entry) => [entry.fingerprint, entry]))
   for (const record of input.active) {
     const scope = { kind: 'shared' }
     const fingerprint = fingerprintFor({ scope, subjectKey: record.subjectKey, learning: record.learning })
-    if (retiredFingerprints.has(fingerprint)) continue
-    const local = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
-    if (local?.status === 'candidate') {
-      appendTransition({ guidance: local, to: 'active', reason: 'active-on-another-machine', source: 'shared-sync', now })
-      result.promoted.push(local.id)
+    const existing = local.get(fingerprint)
+    const entry = entries.get(fingerprint)
+    if (hasUnacknowledgedRetirement(existing ? retirementSetsOf(existing) : entry ?? { retirements: [], acknowledged: [] })) continue
+    if (existing?.status === 'candidate') {
+      appendTransition({ guidance: existing, to: 'active', reason: 'active-on-another-machine', source: 'shared-sync', now })
+      result.promoted.push(existing.id)
     }
-    if (local) continue
+    if (existing) continue
     const guidance = {
       id: fingerprint.replace('fingerprint', 'guidance'),
       fingerprint,
@@ -1277,6 +1377,7 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
       evidenceIds: [],
       independentEvidenceCount: 0,
       transitions: [{ from: null, to: 'active', reason: 'imported-shared-guidance', source: 'shared-sync', at: now }],
+      ...(entry ? { retirements: entry.retirements, acknowledged: entry.acknowledged } : {}),
       createdAt: now,
       updatedAt: now,
     }
@@ -1284,7 +1385,40 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
     memory.guidance.push(guidance)
     result.created.push(guidance.id)
   }
-  if (result.created.length + result.promoted.length + result.retired.length > 0) {
+}
+
+// Withdraws each candidate or active shared record that its sets retire, and restores each
+// withdrawn shared record that its sets no longer retire.
+const reconcileSharedStatus = ({ memory, now, result }) => {
+  const input = { action: 'import', reason: 'retired-on-another-machine', source: 'shared-sync' }
+  for (const guidance of memory.guidance.filter(({ scope }) => scope.kind === 'shared')) {
+    const retired = hasUnacknowledgedRetirement(retirementSetsOf(guidance))
+    if (!retired && guidance.status === 'withdrawn') {
+      appendTransition({ guidance, to: 'active', reason: 'restored-on-another-machine', source: 'shared-sync', now })
+      result.restored.push(guidance.id)
+    }
+    if (!retired || !['candidate', 'active'].includes(guidance.status)) continue
+    const superseded = withdrawGuidance({ memory, target: guidance, input, now, byUser: false })
+    result.retired.push(guidance.id)
+    if (superseded) result[superseded.status === 'active' ? 'restored' : 'retired'].push(superseded.id)
+  }
+}
+
+// Merges exported shared guidance by fingerprint into shared-scope records only. A fingerprint
+// is retired while any retirement ID is unacknowledged. Local candidates are promoted because
+// another machine already activated them.
+const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
+  requireInitialized(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
+  const input = validatePortableSharedGuidance(readJsonInput(inputPath))
+  const now = new Date().toISOString()
+  const result = { created: [], promoted: [], retired: [], restored: [] }
+  const local = new Map(memory.guidance.filter(({ scope }) => scope.kind === 'shared').map((guidance) => [guidance.fingerprint, guidance]))
+  const setsChanged = mergeRetirementSets({ entries: input.retired, local })
+  addActiveRecords({ memory, input, local, now, result })
+  reconcileSharedStatus({ memory, now, result })
+  if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
   return result
@@ -1788,6 +1922,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
   if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
   const now = new Date().toISOString()
   for (const target of targets) {
+    addRetirement(target)
     appendTransition({
       guidance: target,
       to: 'archived',
