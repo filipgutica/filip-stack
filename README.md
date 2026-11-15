@@ -1,179 +1,114 @@
 # Filip Stack
 
-Filip Stack is Filip's collection of skills and agent setup for Claude and
-Codex: an engineering workflow, standalone skills, optional local memory, and
-one command that sets up the agent guidance on each machine. Install it to give
-your agents the same skills and the same guidance on every machine you use.
+Filip Stack is a set of skills and agent setup for Claude Code and Codex. A
+skill is a set of reusable instructions that an agent loads when a task needs
+them, such as reviewing a change or writing a plan.
 
-The plugins install from this repository's plugin marketplace, a catalog that
-the `claude plugin` and `codex plugin` commands read. The
-[Filip Stack site](https://filipgutica.github.io/filip-stack/) gives an
-overview and lists every skill.
+The [Filip Stack site](https://filipgutica.github.io/filip-stack/) explains
+each skill.
 
-| Part | What it is | How it installs |
-| --- | --- | --- |
-| [Workflow](#workflow) | Five skills for the engineering loop | Plugin, from this marketplace |
-| [Field Guide](#field-guide) | Optional local memory of preferences and lessons | Plugin, from this marketplace |
-| [Guardrails](#guardrails) | Optional hook that enforces attribution and 1Password rules | Plugin, from this marketplace |
-| [Standalone skills](#standalone-skills) | Independent skills | One at a time with the skills CLI |
-| [Host config](#host-config) | Global guidance, agents, styles, and design system | Homebrew CLI with a source checkout |
+## Try Workflow
 
-## Set up a machine
+Workflow is a plugin with five skills for everyday engineering work: planning,
+code changes, review, test audits, and technical writing. Install it from this
+repository's plugin marketplace.
 
-1. Clone the repository. Host config runs from this checkout, and
-   `filip-stack update` pulls it, so keep it on `main`.
-
-   ```sh
-   git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack
-   ```
-
-2. Install the plugins in [Claude](#install-with-claude) or
-   [Codex](#install-with-codex).
-3. Install the [standalone skills](#standalone-skills) you use.
-4. Install the CLI with Homebrew and apply host config:
-
-   ```sh
-   brew install filipgutica/tap/filip-stack
-   filip-stack apply
-   ```
-
-   The CLI uses `~/code/filip-stack` by default. For another location, pass
-   `filip-stack --repo <dir> <command>`. If an old
-   `~/.local/bin/filip-stack` symlink shadows Homebrew, remove that symlink.
-   Check the active command with `command -v filip-stack`.
-
-   Upgrade the CLI with `brew update` and
-   `brew upgrade filipgutica/tap/filip-stack`. Check its version with
-   `filip-stack --version`.
-
-## Install with Claude
+In Claude Code:
 
 ```sh
 claude plugin marketplace add filipgutica/filip-stack
 claude plugin install workflow@filip-stack
-# Optional local learning:
-claude plugin install field-guide@filip-stack
-# Optional rule enforcement:
-claude plugin install guardrails@filip-stack
 ```
 
-Update it with:
-
-```sh
-claude plugin update workflow@filip-stack
-claude plugin update field-guide@filip-stack
-claude plugin update guardrails@filip-stack
-```
-
-## Install with Codex
+In Codex:
 
 ```sh
 codex plugin marketplace add filipgutica/filip-stack
 codex plugin add workflow@filip-stack
-# Optional local learning:
-codex plugin add field-guide@filip-stack
-# Optional rule enforcement:
-codex plugin add guardrails@filip-stack
 ```
 
-Update the marketplace with:
+If you use Codex, restart it so a new session loads the plugin.
 
-```sh
-codex plugin marketplace upgrade filip-stack
-```
+Then open a repository that has changes on a branch, and ask:
 
-Restart Codex after installing or upgrading so a new session loads the current
-skill inventory.
+> Review the changes on this branch against main.
+
+The agent picks the `review` skill on its own. It reads every changed file and
+reports findings ranked by impact, each with a file and line. It changes no
+files.
+
+That is all Workflow needs. Everything below is optional.
+
+## What else is here
+
+| Part | What it is | How it installs |
+| --- | --- | --- |
+| [Workflow](#workflow) | Five skills that work together on engineering tasks | Plugin |
+| [Standalone skills](#standalone-skills) | Skills that each work on their own | One at a time, with the skills CLI |
+| [Field Guide](#field-guide) | Optional memory of your preferences and lessons | Plugin |
+| [Guardrails](#guardrails) | Optional hook that blocks AI attribution and asks before 1Password commands | Plugin |
+| [Host config](#host-config) | Optional global guidance, agent profiles, and design system for each machine | Homebrew CLI and a checkout |
 
 ## Workflow
 
-Workflow gives your agent one skill for each stage of the engineering loop.
+Workflow gives your agent one skill for each stage of engineering work. You
+describe the task in your own words, and the host picks the skill that fits.
 Each skill loads only the guidance its task needs.
 
 | Skill | Use |
 | --- | --- |
-| `engineering` | Makes an authorized code change and verifies the requested behavior with tests and checks. |
-| `planning` | Develops a direction, specification, PRD, ADR, implementation plan, or tickets from repository evidence. |
-| `test-audit` | Audits test value and identifies duplicate coverage, implementation-coupled tests, and test-only production code. |
+| `engineering` | Makes the code change you ask for and proves it with tests and checks. |
+| `planning` | Writes a direction, specification, PRD, ADR, implementation plan, or tickets from what the repository shows. |
+| `test-audit` | Finds tests that duplicate other tests, break on harmless refactors, or need test-only production code. |
 | `review` | Reviews one exact change or document and reports only the findings it can back with evidence. |
 | `technical-writing` | Writes or revises technical documents so readers can act on them without guessing. |
 
-The host picks each skill when a request matches.
+Plans and other writing stay in the conversation unless you ask for a file.
+Ordinary changes create no extra files. Your instructions and your
+repository's guidance override Workflow's default formats. Workflow installs
+no hooks.
 
-Plans, specifications, and other writing stay in the conversation unless you
-ask for a saved document, and a saved document goes where you say. Ordinary
-changes create no task ledgers or companion files. Your instructions and your
-repository's guidance override Workflow's default formats for specifications,
-plans, tickets, and PR descriptions.
+To update Workflow and the other plugins:
 
-Workflow installs no hooks.
+```sh
+# Claude Code
+claude plugin update workflow@filip-stack
+claude plugin update field-guide@filip-stack
+claude plugin update guardrails@filip-stack
 
-## Field Guide
-
-Field Guide is a separate, optional plugin. It keeps durable preferences,
-corrections, and recurring lessons under `~/.field-guide`. At session start, it
-adds the stored guidance for the current repository and a list of other stored
-subjects. On your first prompt, it adds up to three more records that match it.
-Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
-guidance; leaving it uninstalled keeps that context out of normal Workflow use.
-
-Workflow does not invoke or depend on Field Guide. Current instructions, live
-code, and repository contracts continue to outrank stored guidance.
-
-After you initialize the guide, you can turn on local effectiveness analytics.
-They record metadata in a local JSONL file and report activity, agent-reported
-impact, and reviewed outcomes separately.
-
-## Guardrails
-
-Guardrails is a separate, optional plugin. Its `PreToolUse` hook checks each
-shell command your agent runs, including commands inside `bash -c` and
-`zsh -i -c` wrappers:
-
-| Rule | Commands | Decision |
-| --- | --- | --- |
-| No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create`, `gh issue edit`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line of the write's message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
-| 1Password needs approval | `op` in command position | Ask |
-
-If the hook hits an internal error or Node.js is missing, it steps aside and
-your normal permission prompts apply. Codex skips plugin hooks until you review
-and trust them.
-
-Codex hooks cannot ask yet, so on Codex the 1Password prompt comes from
-`~/.codex/rules/filip-stack.rules`, which host config installs. That rule
-matches only a plain `op …` command. On Codex the hook denies any other form,
-such as one inside a wrapper or a chain, and tells the agent to run the plain
-form.
+# Codex, then restart it
+codex plugin marketplace upgrade filip-stack
+```
 
 ## Standalone skills
 
-Independent skills install one at a time with the
-[skills CLI](https://github.com/vercel-labs/skills):
+Standalone skills work on their own. Install only the ones you want, with the
+[skills CLI](https://github.com/vercel-labs/skills).
 
 | Skill | Use |
 | --- | --- |
-| `agent-ready-environments` | Audits or sets up repositories and agent guidance so agents can verify their work. |
-| `babysit-pr` | Monitors a PR through CI and automated review, fixing verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `agent-ready-environments` | Audits a repository or its agent guidance for how well agents can check their own work. |
+| `babysit-pr` | Watches a PR through CI and automated review and fixes verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `catch-up` | Recaps a thread's goal, progress, and next step in four lines when you return to it. |
-| `checkpoint` | Captures current work, evidence, and next actions for a pause or handoff. |
+| `checkpoint` | Records current work, evidence, and next actions for a pause or handoff. |
 | `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
-| `council` | Gathers independent model opinions and synthesizes advice on a question or artifact. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `fleet-sync` | Syncs a shared filip-stack baseline across linked T3 environments with per-machine exceptions. |
-| `full-send` | Finishes a change or PR through review and CI, then merges or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-stop` | Finishes a change or PR through review and CI and leaves merging to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `council` | Asks several models the same question separately and combines their advice. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `fleet-sync` | Keeps the same filip-stack skills, plugins, and guidance on every machine linked in T3 Code, with per-machine exceptions. |
+| `full-send` | Takes a change or PR through review and CI, then merges it or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-stop` | Takes a change or PR through review and CI and leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. Adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
-| `hill-climb` | Improves a working change or named goal in bounded rounds judged by blind comparisons, a score, or both. Needs `council`. |
+| `hill-climb` | Improves a working change in small rounds and keeps an edit only when blind judges or a score prefer it. Needs `council`. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
-| `merge-council` | Runs a council on a PR, fixes agreed findings, and returns a verdict tied to the reviewed commits. Needs `council`. |
-| `pr-review-churn` | Analyzes recurring human review objections on GitHub PRs and proposes guidance changes. |
+| `merge-council` | Runs a council review on a PR, fixes the findings every member agrees on, and returns a merge verdict. Needs `council`. |
+| `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |
 | `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
-| `sol-loop` | Checks a change through GPT Sol review rounds and resolves findings within scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `sol-loop` | Has OpenAI's Sol model review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
 | `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
 
-List the skills, install one by name, or install a skill together with the
-skills it needs:
+List the skills, install one by name, or install a skill with the skills it
+needs:
 
 ```sh
 npx skills add filipgutica/filip-stack --list
@@ -182,15 +117,17 @@ npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send full
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s hill-climb council -y
 ```
 
-The CLI keeps the canonical copy in `~/.agents/skills/<name>`, which Codex
-reads, and links `~/.claude/skills/<name>` to it for Claude. Standalone skills
-have no version and install from `main`, so to update a skill, run the same
-`add` command again. Avoid `npx skills update`: it reinstalls into every agent
-it detects, not only the ones you chose.
+To update a skill, run the same `add` command again. Standalone skills have no
+version and install from `main`. Avoid `npx skills update`: it reinstalls into
+every agent it detects, not only the ones you chose.
 
-When you ask `checkpoint`, `grill-me`, or `walkthrough` to save notes and name
-no place, they use plain folders that need no setup. A grill log can also go
-beside the document it questions.
+The skills CLI keeps each skill in `~/.agents/skills/<name>` for Codex and
+links `~/.claude/skills/<name>` to it for Claude. Workflow and Field Guide
+skills install only with their plugins.
+
+When you ask `checkpoint`, `grill-me`, or `walkthrough` to save notes without
+naming a place, they use these folders. A grill log can also go beside the
+document it questions. Each checkpoint is a new snapshot.
 
 ```text
 ~/.engineering-workflow/<project-or-subject>/
@@ -199,17 +136,87 @@ beside the document it questions.
 └── walkthroughs/
 ```
 
-Each checkpoint is a new snapshot, and earlier ones stay as they are. Nothing
-updates these notes on its own.
+## Field Guide
 
-The CLI does not offer Workflow or Field Guide skills. Install them with their
-plugins.
+Field Guide is a separate, optional plugin. It remembers durable preferences,
+corrections, and recurring lessons in `~/.field-guide`, so you do not repeat
+them each session. At session start it adds the stored guidance for the
+current repository. On your first prompt it adds up to three more records that
+match.
+
+```sh
+claude plugin install field-guide@filip-stack   # Claude Code
+codex plugin add field-guide@filip-stack        # Codex
+```
+
+Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
+hooks. Leave it uninstalled to keep that context out of your sessions.
+Workflow does not invoke or depend on Field Guide. Your current instructions,
+the live code, and repository contracts always outrank what it remembers.
+
+You can also turn on local analytics, which record metadata only, in a local
+JSONL file.
+
+## Guardrails
+
+Guardrails is a separate, optional plugin. Its `PreToolUse` hook checks each
+shell command your agent runs, including commands inside `bash -c` and
+`zsh -i -c` wrappers.
+
+```sh
+claude plugin install guardrails@filip-stack   # Claude Code
+codex plugin add guardrails@filip-stack        # Codex
+```
+
+| Rule | Commands | Decision |
+| --- | --- | --- |
+| No AI attribution | `git commit`, `gh pr create`, `gh pr edit`, `gh pr comment`, `gh issue create`, `gh issue edit`, `gh issue comment`, and `gh api` writes to pull requests or issues | Deny when a whole line of the message is a `Co-Authored-By` naming an AI or a "Generated with" footer. Lines inside fenced code blocks are examples and pass. |
+| 1Password needs approval | `op` in command position | Ask |
+
+If the hook hits an internal error or Node.js is missing, it steps aside and
+your normal permission prompts apply. Codex skips plugin hooks until you
+review and trust them.
+
+Codex hooks cannot ask yet, so on Codex the 1Password prompt comes from
+`~/.codex/rules/filip-stack.rules`, which host config installs. It matches
+only a plain `op …` command; the hook denies other forms and tells the agent
+to run the plain one.
 
 ## Host config
 
-`host-config/` holds the general agent setup shared by every machine:
+Host config is optional. It gives every machine the same global agent
+guidance, agent profiles, output styles, and design system. The `filip-stack`
+CLI applies it from a checkout of this repository.
 
-- the global guidance for `~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`
+### Set up a machine
+
+1. Clone the repository and keep the checkout on `main`. `filip-stack update`
+   pulls it.
+
+   ```sh
+   git clone https://github.com/filipgutica/filip-stack.git ~/code/filip-stack
+   ```
+
+2. Install the CLI with Homebrew and apply host config:
+
+   ```sh
+   brew install filipgutica/tap/filip-stack
+   filip-stack apply
+   ```
+
+The CLI uses `~/code/filip-stack` by default. For another location, run
+`filip-stack --repo <dir> <command>`. Without Homebrew, run
+`node cli/filip-stack.mjs --repo . <command>` from the checkout.
+
+If an old `~/.local/bin/filip-stack` symlink shadows Homebrew, remove it.
+`command -v filip-stack` shows which command runs.
+
+### What apply installs
+
+`host-config/` holds the setup that every machine shares:
+
+- the global guidance, written into a marked block in `~/.claude/CLAUDE.md`
+  and `~/.codex/AGENTS.md`
 - Claude agent templates (`critic`, `explorer`, `planner`, `reviewer`,
   `worker-high`) and output styles
 - Codex agent profiles and `~/.codex/rules/filip-stack.rules`: the 1Password
@@ -217,32 +224,44 @@ plugins.
 - `~/.agents/roles.md` and `~/.agents/CODING_STANDARDS.md`
 - the model tiers in `host-config/models.json`, which fill in every model name
   in the guidance and agent profiles
-- `~/.agents/scripts/model-usage.mjs`, which threads run before delegating so
-  work moves to the other provider when one is short of usage. It needs the
-  [CodexBar](https://codexbar.app) CLI (`brew install --cask codexbar` on macOS,
-  `brew install steipete/tap/codexbar` on Linux) and uses
-  [claude-swap](https://github.com/realiti4/claude-swap) for Claude when it manages the
-  active account. Without CodexBar, threads use the role tables as written.
-  Both tools need network and Keychain access, so the reader runs outside the
-  sandbox. On Codex, the host config rules file allows it. On Claude Code, add
-  this to `~/.claude/settings.json` yourself, with your home directory:
+- `~/.agents/scripts/model-usage.mjs`, described below
+- `~/design-system`, from the pinned
+  [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
+  package in `host-config/design-system.json`
 
-  ```json
-  {
-    "permissions": { "allow": ["Bash(node /Users/you/.agents/scripts/model-usage.mjs)"] },
-    "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
-  }
-  ```
-- the `~/design-system` files the guidance refers to, installed from the
-  pinned [`@filipgutica/design-system`](https://github.com/filipgutica/design-system)
-  package in `host-config/design-system.json`; filip-stack uses it as the default
-  design system for UX and visual work, unless you ask for another or the
-  repository has its own
-  - [Component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md) and the [component catalogue](https://filipgutica.github.io/design-system/components.html) cover each component's states, marked core or identity, so another project can reuse the core.
-  - [Data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md) covers source-consistent snapshots, filterable count reports, and self-contained HTML exports using the shared design tokens.
+Machine-local text outside the marked block stays, and it wins where it
+conflicts with the shared guidance. Apply removes files that the repository
+no longer has.
 
-Without the Homebrew CLI from [Set up a machine](#set-up-a-machine), run
-`node cli/filip-stack.mjs --repo . <command>` from the checkout.
+The design system is the default for UX and visual work, unless you ask for
+another or the repository has its own. See its
+[component specs](https://github.com/filipgutica/design-system/blob/main/language/components.md),
+[component catalogue](https://filipgutica.github.io/design-system/components.html),
+and [data visualizations](https://github.com/filipgutica/design-system/blob/main/language/visualizations.md).
+Apply downloads the pinned tarball once, checks its integrity, and caches it
+at `~/.cache/filip-stack/design-system/<version>.tgz`
+(`$XDG_CACHE_HOME/filip-stack/…` when set). If the version is neither cached
+nor downloadable, apply stops before it writes anything. `status` never
+downloads; it reports the pin change, such as `design-system 1.0.0 → 1.1.0`.
+
+Threads run `model-usage.mjs` before they delegate, so work moves to the other
+provider when one is short of usage. It needs the
+[CodexBar](https://codexbar.app) CLI (`brew install --cask codexbar` on macOS,
+`brew install steipete/tap/codexbar` on Linux), and uses
+[claude-swap](https://github.com/realiti4/claude-swap) when it manages the
+active Claude account. Without CodexBar, threads use the role tables as
+written. The script needs network and Keychain access, so it runs outside the
+sandbox. Host config allows it on Codex. On Claude Code, add this to
+`~/.claude/settings.json`, with your home directory:
+
+```json
+{
+  "permissions": { "allow": ["Bash(node /Users/you/.agents/scripts/model-usage.mjs)"] },
+  "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
+}
+```
+
+### Commands
 
 ```sh
 filip-stack status            # applied commit, then each target's state
@@ -254,23 +273,29 @@ filip-stack field-guide-sync  # import, then export local shared guidance
 ```
 
 Host config has no version. It ships from `main`, so run `filip-stack update`
-to pick up changes. The CLI launcher has its own version and Homebrew release;
-`filip-stack update` updates the checkout, and `brew upgrade` updates the launcher.
+to pick up changes. The CLI launcher has its own version: check it with
+`filip-stack --version`, and upgrade it with `brew update` and
+`brew upgrade filipgutica/tap/filip-stack`.
+
+When managed text was changed locally, apply prints the diff and stops. Move
+the change into `host-config/` and commit it, or rerun with `--force`. Force
+saves the local file as `<file>.bak` and overwrites it. A guidance file
+without a marked block counts as changed; after a forced apply, restore your
+machine-local text below the block from the backup.
+
+### Sync this machine or the fleet
 
 `filip-stack sync` installs missing baseline skills and plugins and refreshes
-existing filip-stack installations. It requires a clean checkout tracking
-published `main`. It preserves machine-local guidance, plugin enabled states
-and scopes, explicit pins, and existing skill host assignments. Local edits
-or unmerged applied guidance block the affected component; independent
-components continue. The command exits nonzero when a component fails and
-saves a JSON report under `~/.local/state/filip-stack/last-sync.json`
-(`$XDG_STATE_HOME/filip-stack/last-sync.json` when set).
-Guidance currently targets `~/.claude` and `~/.codex`; custom agent homes
-block that component before any guidance files are written.
+existing ones. It needs a clean checkout that tracks published `main`. It
+keeps machine-local guidance, plugin enabled states and scopes, explicit pins,
+and skill host assignments. A local edit, unmerged applied guidance, or a
+custom agent home blocks only its own component. The command then exits
+nonzero and saves a report at `~/.local/state/filip-stack/last-sync.json`
+(under `$XDG_STATE_HOME` when set).
 
-For the whole fleet, install `fleet-sync` and invoke `$fleet-sync`, or ask your
-agent to sync the fleet. Its policy lives at `~/.config/filip-stack/fleet.json`
-(under `XDG_CONFIG_HOME` when set):
+To sync every machine, install `fleet-sync` and ask your agent to sync the
+fleet. The policy lives at `~/.config/filip-stack/fleet.json` (under
+`XDG_CONFIG_HOME` when set):
 
 ```json
 {
@@ -288,49 +313,29 @@ agent to sync the fleet. Its policy lives at `~/.config/filip-stack/fleet.json`
 }
 ```
 
-List the standalone skills and plugins you want in the shared baseline.
-Each machine receives that selection plus its existing extras. `agents`
-defaults to `codex` and `claude-code` for skill/plugin installation;
-per-machine overrides and exclusions preserve exceptions without uninstalling
-anything. Shared host guidance keeps its normal managed targets. Missing
-required clients or conflicting installation ownership remain blocked.
-Without a baseline, the command refreshes existing selections.
+- `baseline` lists what every machine gets. Machines keep their extras.
+  Without a baseline, sync refreshes existing selections.
+- `agents` defaults to `codex` and `claude-code`.
+- `exclude` and other per-machine overrides keep exceptions without
+  uninstalling anything.
 
 Pass `--environment-id <id>` when the roster label differs from the hostname,
-or `--config <file>` to select another policy. The fleet workflow supplies both.
-It can use a separate clean source clone while a development checkout is busy.
-T3 retains credentials and access grants. Unlinked and offline machines remain
-visible in the result. See
+or `--config <file>` for another policy; the fleet workflow passes both. T3
+keeps credentials and access grants. See
 [Fleet Sync](https://filipgutica.github.io/filip-stack/skills/fleet-sync/).
 
-`apply` copies the host config files into `~/.claude`, `~/.codex`, `~/.agents`,
-and `~/design-system`. It writes the shared guidance into a marked block in
-`~/.claude/CLAUDE.md` and `~/.codex/AGENTS.md`. Text outside the block, such as
-the ctx7 block or machine-local notes, stays as it is, and the shared guidance
-tells agents that it overrides the block where they conflict. Apply removes a
-file it applied earlier once the repository no longer has it.
+### Share Field Guide preferences
 
-`apply` downloads the pinned design-system tarball from the npm registry, checks
-it against the pin's integrity, and caches it at
-`~/.cache/filip-stack/design-system/<version>.tgz`
-(`$XDG_CACHE_HOME/filip-stack/…` when set). After that, it works offline. When
-the pinned version is neither cached nor downloadable, apply stops before
-writing anything. `status` never downloads; it reports an uncached version and
-the pin change, such as `design-system 1.0.0 → 1.1.0`.
+Keep shared preferences in `~/.config/filip-stack/field-guide.json` and sync
+that file with a dotfile manager.
 
-When managed text was changed locally, apply prints the diff and stops. Move the
-change into `host-config/` and commit it, or rerun with `--force` to save the
-local file as `<file>.bak` and overwrite it. A guidance file without a block
-counts as changed. With `--force`, apply replaces it with the block, and you
-restore machine-local text below the block from the backup.
+- `apply` imports the file when it exists. If it is missing, apply prints
+  where to put it and continues.
+- `field-guide-sync` imports the file if present, then exports this machine's
+  shared guidance to it.
+- `update` runs `field-guide-sync` after apply when the file exists, so
+  guidance saved on this machine reaches the file.
 
-To share Field Guide preferences between machines, keep them in
-`~/.config/filip-stack/field-guide.json` and sync that file with a dotfile
-manager. `apply` imports the file when it exists; if it is missing, apply prints
-where to put it and continues. `field-guide-sync` imports the file if present,
-then exports this machine's shared guidance to it. `update` runs
-`field-guide-sync` after apply when the file exists, so guidance saved on this
-machine reaches the file.
 [CONTRIBUTING.md](CONTRIBUTING.md#share-field-guide-preferences) covers other
 locations for the file and a chezmoi setup.
 
