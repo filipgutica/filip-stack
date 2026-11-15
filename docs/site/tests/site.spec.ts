@@ -84,20 +84,23 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
   });
   await openMaintenanceFromContents(page);
   await expectSkillLinks(page);
+});
 
-  await page.goto("/filip-stack/field-guide/");
-  await page.locator('a[rel="next"]').click();
-  await expect(page).toHaveURL("/filip-stack/agent-ready-environments/");
-  await expect(page.locator('a[rel="prev"]')).toHaveAttribute(
-    "href",
-    "/filip-stack/field-guide/",
-  );
-  await page.locator('a[rel="next"]').click();
-  await expect(page).toHaveURL("/filip-stack/skills/engineering/");
-  await expect(page.locator('a[rel="prev"]')).toHaveAttribute(
-    "href",
-    "/filip-stack/agent-ready-environments/",
-  );
+test("Previous and Next walk the sidebar order", async ({ page }) => {
+  await page.goto("/filip-stack/");
+  const order = await page
+    .getByRole("navigation", { name: "Documentation", exact: true })
+    .getByRole("link")
+    .evaluateAll((links) => links.map((link) => link.getAttribute("href")));
+  for (const [index, href] of order.entries()) {
+    await page.goto(href!);
+    const previous = page.locator('a[rel="prev"]');
+    const next = page.locator('a[rel="next"]');
+    if (index === 0) await expect(previous).toHaveCount(0);
+    else await expect(previous).toHaveAttribute("href", order[index - 1]!);
+    if (index === order.length - 1) await expect(next).toHaveCount(0);
+    else await expect(next).toHaveAttribute("href", order[index + 1]!);
+  }
 });
 
 test("every route is reachable and marks only its current navigation link", async ({
