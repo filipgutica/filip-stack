@@ -27,6 +27,23 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
   // Appearance controls only exist once the shared shell has hydrated.
   await expect(page.getByRole("group", { name: "Color theme" })).toBeVisible();
 
+  const channels = page.locator(".channels > li");
+  await expect(channels).toHaveCount(4);
+  for (const width of [1280, 390]) {
+    await page.setViewportSize({ width, height: 900 });
+    await expect
+      .poll(() =>
+        channels.first().evaluate((element) =>
+          getComputedStyle(element, "::before").content,
+        ),
+      )
+      .toBe("none");
+    for (const card of await channels.all()) {
+      await expect(card).toHaveCSS("grid-template-columns", /^\d+(?:\.\d+)?px$/);
+    }
+  }
+  await page.setViewportSize({ width: 1280, height: 900 });
+
   const figure = page.locator(".catch");
   const tally = figure.locator(".catch__tally");
   await expect(tally).toHaveText(
@@ -67,6 +84,20 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
   });
   await openMaintenanceFromContents(page);
   await expectSkillLinks(page);
+
+  await page.goto("/filip-stack/field-guide/");
+  await page.locator('a[rel="next"]').click();
+  await expect(page).toHaveURL("/filip-stack/agent-ready-environments/");
+  await expect(page.locator('a[rel="prev"]')).toHaveAttribute(
+    "href",
+    "/filip-stack/field-guide/",
+  );
+  await page.locator('a[rel="next"]').click();
+  await expect(page).toHaveURL("/filip-stack/skills/engineering/");
+  await expect(page.locator('a[rel="prev"]')).toHaveAttribute(
+    "href",
+    "/filip-stack/agent-ready-environments/",
+  );
 });
 
 test("every route is reachable and marks only its current navigation link", async ({
