@@ -28,7 +28,7 @@ const turns: Turn[] = [
   {
     request: "Write a spec for rate limiting on the public API.",
     skill: "planning",
-    does: "It writes the spec from what the repository shows and changes no code. A public API is a public contract, so a separate reviewer critiques the spec before you get it.",
+    does: "It writes the spec from what the repository shows and changes no code. A public API is a public contract, so a separate reviewer critiques the spec first.",
     reads: [
       { file: "spec.md", when: "the format for a specification" },
       {
@@ -41,7 +41,7 @@ const turns: Turn[] = [
   {
     request: "Implement the spec and open a PR.",
     skill: "engineering",
-    does: "It makes the smallest change that meets the spec and reruns the affected tests and checks. A public API change is risky, so a separate reviewer checks it before you get the PR. If none is available, it says so.",
+    does: "It makes the smallest change that meets the spec and reruns the affected checks. A public API change is risky, so a separate reviewer checks the PR first, or the agent says none was available.",
     reads: [
       {
         file: "testing-and-debugging.md",
@@ -102,32 +102,10 @@ onMounted(() => {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Skills and setup for Claude and Codex.</h1>
     <p class="lede">
-      Choose what to install for your coding agent. Start with Workflow for
-      planning, changes, review, and writing; these commands install it.
+      A skill is a set of reusable instructions that a coding agent loads when
+      a task needs it, such as reviewing a change or writing a plan. Start
+      with Workflow. Everything else here is optional.
     </p>
-    <div class="cmd-pair">
-      <div id="install">
-        <p class="cmd-label">Claude Code</p>
-        <UiCodeBlock
-          :code="commands.claude"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-      </div>
-      <div>
-        <p class="cmd-label">Codex</p>
-        <UiCodeBlock
-          :code="commands.codex"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-        <p class="hint">Restart Codex to load the plugin.</p>
-      </div>
-    </div>
     <dl class="fg-site-facts">
       <div>
         <dt>Hosts</dt>
@@ -151,56 +129,74 @@ onMounted(() => {
     </dl>
   </section>
 
-  <section aria-labelledby="parts">
-    <h2 id="parts">Choose your setup</h2>
-    <ul class="parts">
+  <section aria-labelledby="first-skill">
+    <h2 id="first-skill">Try your first skill</h2>
+    <ol class="fg-site-steps">
       <li>
-        <a href="#workflow">Workflow</a>
-        <p>Install it to get all {{ catalog.workflow.length }} Workflow skills.</p>
+        <div>
+          <p>Install the Workflow plugin for your agent.</p>
+          <div class="cmd-pair">
+            <div id="install">
+              <p class="cmd-label">Claude Code</p>
+              <UiCodeBlock
+                :code="commands.claude"
+                language="bash"
+                variant="compact"
+                :copyable="enhanced"
+                :wrap="true"
+              />
+            </div>
+            <div>
+              <p class="cmd-label">Codex</p>
+              <UiCodeBlock
+                :code="commands.codex"
+                language="bash"
+                variant="compact"
+                :copyable="enhanced"
+                :wrap="true"
+              />
+            </div>
+          </div>
+        </div>
       </li>
       <li>
-        <a href="#standalone">Standalone skills</a>
-        <p>
-          Choose individual tools for PRs, Jira, Vue, and UX. They install
-          separately from Workflow.
-        </p>
+        <div>
+          <p>If you use Codex, restart it so a new session loads the plugin.</p>
+        </div>
       </li>
       <li>
-        <a href="#field-guide">Field Guide</a>
-        <p>
-          Add this optional plugin to keep preferences and lessons across sessions.
-        </p>
+        <div>
+          <p>
+            Open a repository that has changes on a branch, and ask:
+            “Review the changes on this branch against main.”
+          </p>
+        </div>
       </li>
       <li>
-        <a href="/filip-stack/cli/">filip-stack CLI</a>
-        <p>
-          Run it to apply shared guidance, agent profiles,
-          output styles, and the design system on each machine.
-        </p>
+        <div>
+          <p>
+            The agent picks the
+            <a href="/filip-stack/skills/review/"><code>review</code></a> skill
+            on its own. It reads every changed file and lists findings ranked
+            by impact, each with a file and line. It changes no files.
+          </p>
+        </div>
       </li>
-      <li>
-        <a href="/filip-stack/design-system/">Design system</a>
-        <p>
-          Shared visual rules for pages, mockups, and explainers. The CLI
-          installs them to <code>~/design-system</code>.
-        </p>
-      </li>
-    </ul>
+    </ol>
   </section>
 
   <section id="workflow" aria-labelledby="workflow-title">
     <h2 id="workflow-title">How Workflow works</h2>
     <div class="prose">
       <p>
-        Workflow is {{ catalog.workflow.length }} skills that install together.
-        You describe a task in Claude or Codex in your own words, without
-        naming a skill, though you can. For each request, the host compares it with each
-        skill's name and description and picks the skill that fits.
+        Workflow is {{ catalog.workflow.length }} skills that install together
+        as one plugin. You describe a task in your own words. The host compares
+        your request with each skill's description and picks the one that fits.
+        You can also name a skill.
       </p>
       <p>
-        The picked skill reads its own <code>SKILL.md</code>. It reads a
-        longer guide from a <code>references</code> folder only when the task
-        needs it.
+        Each skill keeps its main instructions short. It reads a longer guide
+        only when the task needs one.
       </p>
     </div>
     <h3 id="workflow-example" class="workflow-heading">
@@ -233,22 +229,22 @@ onMounted(() => {
     <h3 class="workflow-heading">The {{ catalog.workflow.length }} Workflow skills</h3>
     <SkillList :skills="catalog.workflow" :trait="false" />
     <p class="hint">
-      Some standalone skills fit before or after this flow:
+      Some standalone skills fit around this flow.
       <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a>
-      stress-tests a plan before the spec, and
+      tests a plan before you write the spec.
       <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
       <a href="/filip-stack/skills/merge-council/"><code>merge-council</code></a>
-      run final reviews before merge. They install separately and run only
-      when asked: by you, or for <code>merge-council</code>, also by your
-      repository's guidance. See <a href="#standalone">Standalone skills</a>.
+      give a final review before merge. They run only when you ask, or, for
+      <code>merge-council</code>, when your repository's guidance asks.
     </p>
   </section>
 
   <section id="standalone" aria-labelledby="standalone-title">
     <h2 id="standalone-title">Standalone skills</h2>
     <p class="section-intro">
-      Replace <code>&lt;name&gt;</code> with a skill below. Run the same command
-      again to update it.
+      Each standalone skill works on its own. Install the ones you want:
+      replace <code>&lt;name&gt;</code> with a skill below. Run the same
+      command again to update it.
     </p>
     <UiCodeBlock
       :code="commands.standalone"
@@ -260,21 +256,31 @@ onMounted(() => {
     <SkillList :skills="catalog.standalone" />
   </section>
 
-  <section id="field-guide" aria-labelledby="fg-title">
-    <h2 id="fg-title">Field Guide</h2>
-    <div class="prose">
-      <p>
-        Field Guide stores preferences, corrections, and recurring lessons under
-        <code>~/.field-guide</code>. Its hooks add repository guidance at session
-        start and matching records on your first prompt. Current instructions
-        and live code take priority.
-      </p>
-      <p>
-        Install <code>field-guide@filip-stack</code> through the same marketplace.
-        Workflow does not depend on it.
-        <a href="/filip-stack/field-guide/">How Field Guide works</a>.
-      </p>
-    </div>
+  <section aria-labelledby="setup">
+    <h2 id="setup">Optional setup</h2>
+    <ul class="parts">
+      <li>
+        <a href="/filip-stack/cli/">filip-stack CLI</a>
+        <p>
+          Gives every machine the same global guidance, agent profiles, output
+          styles, and design system.
+        </p>
+      </li>
+      <li>
+        <a href="/filip-stack/design-system/">Design system</a>
+        <p>
+          The visual rules agents follow for pages, mockups, and explainers.
+          The CLI installs them to <code>~/design-system</code>.
+        </p>
+      </li>
+      <li>
+        <a href="/filip-stack/field-guide/">Field Guide</a>
+        <p>
+          A plugin that remembers your preferences and corrections across
+          sessions. Workflow does not need it.
+        </p>
+      </li>
+    </ul>
   </section>
 
   <section aria-labelledby="guides">
@@ -285,8 +291,8 @@ onMounted(() => {
           >Agent-ready environments</a
         >
         <p>
-          A lesson on setting up repositories so coding agents can check their
-          own work, with a worked audit of this repository.
+          How to set up a repository so coding agents can check their own
+          work, with a worked audit of this repository.
         </p>
       </li>
     </ul>
