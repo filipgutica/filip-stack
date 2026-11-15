@@ -61,7 +61,8 @@ const tables = {
       <dt>Capture</dt>
       <dd>
         The agent saves a clear, durable correction or preference automatically
-        and tells you in one line.
+        and tells you in one line. This includes when to use a skill that runs
+        only when you name it.
       </dd>
       <dt>Ask</dt>
       <dd>
@@ -71,7 +72,7 @@ const tables = {
       <dt>Skip</dt>
       <dd>
         Anything task-specific, tentative, sensitive, or already covered by your
-        instructions or the code.
+        instructions, the code, or a skill that loads on its own.
       </dd>
     </dl>
     <UiAlert tone="info"

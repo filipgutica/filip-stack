@@ -20,5 +20,55 @@
       "prompt": "Write a README section about how to install this plugin.",
       "expectedSkill": "technical-writing"
     }
+  ],
+  "rules": [
+    {
+      "id": "skip-rule-in-global-guidance",
+      "task": "Your global instructions include a delegation role table that routes visual reviews to Opus 5.5. While you finish a UI change, the user says: \"Use Opus 5.5 for visual reviews.\" The task is done, and you now make the end-of-task learning decision.",
+      "options": {
+        "capture": "save it as Field Guide guidance and append the change notice",
+        "ask": "append one focused learning question and save nothing yet",
+        "skip": "save nothing and append nothing"
+      },
+      "accept": [
+        "skip"
+      ]
+    },
+    {
+      "id": "skip-rule-in-model-invocable-skill",
+      "task": "The interface-design skill loads automatically for UI work, and its contract already requires checking empty, loading, and error states. No global or project instruction mentions those states. While you finish a UI change, the user says: \"Always check empty, loading, and error states when you build UI, in every repository.\" The task is done, and you now make the end-of-task learning decision.",
+      "options": {
+        "capture": "save it as Field Guide guidance and append the change notice",
+        "ask": "append one focused learning question and save nothing yet",
+        "skip": "save nothing and append nothing"
+      },
+      "accept": [
+        "skip"
+      ]
+    },
+    {
+      "id": "capture-manual-only-skill-timing",
+      "task": "The checkpoint skill sets `disable-model-invocation: true`, so it loads only when the user names it. No global or project instruction says when to use it. While you finish a task, the user says: \"Whenever you hand a branch to someone else, suggest $checkpoint first, in every repository.\" The task is done, and you now make the end-of-task learning decision.",
+      "options": {
+        "capture": "save it as Field Guide guidance and append the change notice",
+        "ask": "append one focused learning question and save nothing yet",
+        "skip": "save nothing and append nothing"
+      },
+      "accept": [
+        "capture"
+      ]
+    },
+    {
+      "id": "capture-delegation-preference-not-in-guidance",
+      "task": "Your global instructions include a delegation role table. It does not say which model writes database migrations. While you finish a task, the user says: \"From now on, have Opus 5.5 write database migrations, in every repository.\" The task is done, and you now make the end-of-task learning decision.",
+      "options": {
+        "capture": "save it as Field Guide guidance and append the change notice",
+        "ask": "append one focused learning question and save nothing yet",
+        "skip": "save nothing and append nothing"
+      },
+      "accept": [
+        "capture"
+      ]
+    }
   ]
 }

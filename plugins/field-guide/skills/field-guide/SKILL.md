@@ -77,9 +77,9 @@ Do not claim that either label proves an error was prevented.
 
 Classify an observation as `capture`, `ask`, or `skip`. Read [references/capture-policy.md](references/capture-policy.md) for the decision rules and examples. Choose scope from the guidance's semantic applicability, not from the current working repository.
 
-- `capture`: The correction, preference, or repeated miss is explicit, durable, reusable, and safe. Store it automatically and tell the user.
+- `capture`: The correction, preference, or repeated miss is explicit, durable, reusable, and safe. Store it automatically and tell the user. A preference about when to use a manual-only skill qualifies unless global or project instructions already state it.
 - `ask`: Durability, intended behavior, scope, or safe wording is ambiguous. Preserve the task result, append one focused learning question, and write no memory until the user confirms. Learning does not block task completion.
-- `skip`: The observation is task-local, tentative, sensitive, authoritative in current global or project instructions, authoritative in live technical sources, or unlikely to help later work.
+- `skip`: The observation is task-local, tentative, sensitive, already encoded in current global or project instructions or in the contract of a model-invocable skill, authoritative in live technical sources, or unlikely to help later work.
 
 Confidence is audit metadata. It never overrides these rules or evidence thresholds.
 
