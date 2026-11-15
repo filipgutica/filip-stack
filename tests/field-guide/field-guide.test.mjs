@@ -662,6 +662,28 @@ test('validate rejects illegal lifecycle edges before replacing canonical state'
   assert.match(result.stderr, /illegal lifecycle transition: active->candidate/)
 })
 
+test('validate rejects restoring superseded guidance while its replacement stays active', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-restore-without-withdrawal-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/restore-without-withdrawal.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const { original } = supersedeWithContradiction({ repoRoot, guideRoot, replacementExplicitPreference: true })
+  const memory = JSON.parse(readFileSync(paths.memoryFile, 'utf8'))
+  const superseded = memory.guidance.find(({ id }) => id === original.targetId)
+  superseded.transitions.push({
+    from: 'superseded',
+    to: 'active',
+    reason: 'Invalid manual edit.',
+    source: 'manual-edit',
+    at: new Date().toISOString(),
+  })
+  superseded.status = 'active'
+  replaceCanonicalMemoryJson({ paths, memory })
+
+  const result = run({ command: 'validate', repoRoot, guideRoot, expectFailure: true })
+  assert.match(result.stderr, /restoration requires its replacement to be withdrawn/)
+})
+
 test('validate rejects superseded history without linked replacement provenance', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-unlinked-history-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/unlinked-history.git' })

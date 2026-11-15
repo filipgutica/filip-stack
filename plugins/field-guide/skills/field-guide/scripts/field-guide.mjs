@@ -538,6 +538,11 @@ const validateMemory = (memory) => {
         'withdrawn->archived',
       ])
       if (!allowedEdges.has(edge)) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
+      // Restoring superseded guidance is only the second half of withdrawing its replacement.
+      if (edge === 'superseded->active') {
+        const replacement = memory.guidance.find(({ id }) => id === guidance.transitions[index - 1].replacementId)
+        if (!replacement?.transitions.some(({ to }) => to === 'withdrawn')) fail(`${guidance.id} restoration requires its replacement to be withdrawn`)
+      }
     }
     if (guidance.transitions.at(-1).to !== guidance.status) fail(`${guidance.id} status does not match its transition history`)
     for (const transition of guidance.transitions.filter(({ to }) => to === 'superseded')) {
