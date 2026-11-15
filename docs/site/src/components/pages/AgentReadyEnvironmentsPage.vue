@@ -1015,10 +1015,6 @@ onMounted(() => {
     </ul>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/field-guide/"><span>Previous</span>Field Guide</a>
-    <a rel="next" href="/filip-stack/skills/engineering/"><span>Next</span>engineering</a>
-  </nav>
 </template>
 
 <style scoped>

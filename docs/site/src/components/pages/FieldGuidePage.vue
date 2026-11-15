@@ -183,12 +183,4 @@ const tables = {
     </p>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/design-system/"
-      ><span>Previous</span>Design system</a
-    >
-    <a rel="next" href="/filip-stack/agent-ready-environments/"
-      ><span>Next</span>Agent-ready environments</a
-    >
-  </nav>
 </template>

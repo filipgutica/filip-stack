@@ -331,8 +331,4 @@ const tables = {
     </p>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/"><span>Previous</span>Overview</a>
-    <a rel="next" href="/filip-stack/design-system/"><span>Next</span>Design system</a>
-  </nav>
 </template>

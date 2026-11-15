@@ -303,8 +303,4 @@ const tables = {
     </div>
   </section>
 
-  <nav class="pager" aria-label="Pages">
-    <a rel="prev" href="/filip-stack/cli/"><span>Previous</span>filip-stack CLI</a>
-    <a rel="next" href="/filip-stack/field-guide/"><span>Next</span>Field Guide</a>
-  </nav>
 </template>

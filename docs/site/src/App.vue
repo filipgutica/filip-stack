@@ -15,31 +15,38 @@ const { catalog, page, skill, content } = defineProps<{
   content?: SkillContent;
 }>();
 const repository = "https://github.com/filipgutica/filip-stack";
-const pages = [
-  { label: "Overview", href: "/filip-stack/" },
-  { label: "filip-stack CLI", href: "/filip-stack/cli/" },
-  { label: "Design system", href: "/filip-stack/design-system/" },
-  { label: "Field Guide", href: "/filip-stack/field-guide/" },
+const link = (label: string, href: string, code = false) => ({
+  label,
+  href,
+  code,
+  current: href === page,
+});
+const skillLink = ({ name }: CatalogSkill) =>
+  link(name, `/filip-stack/skills/${name}/`, true);
+// The sidebar order is the reading order: the pager walks it too.
+const groups = [
+  { items: [link("Overview", "/filip-stack/")] },
+  { label: "Workflow skills", items: catalog.workflow.map(skillLink) },
+  { label: "Standalone skills", items: catalog.standalone.map(skillLink) },
   {
-    label: "Agent-ready environments",
-    href: "/filip-stack/agent-ready-environments/",
+    label: "Setup",
+    items: [
+      link("filip-stack CLI", "/filip-stack/cli/"),
+      link("Design system", "/filip-stack/design-system/"),
+      link("Field Guide", "/filip-stack/field-guide/"),
+    ],
+  },
+  {
+    label: "Guides",
+    items: [
+      link("Agent-ready environments", "/filip-stack/agent-ready-environments/"),
+    ],
   },
 ];
-const groups = [
-  { items: pages.map((item) => ({ ...item, current: item.href === page })) },
-  ...[
-    { label: "Workflow skills", skills: catalog.workflow },
-    { label: "Standalone skills", skills: catalog.standalone },
-  ].map(({ label, skills }) => ({
-    label,
-    items: skills.map(({ name }) => ({
-      label: name,
-      href: `/filip-stack/skills/${name}/`,
-      current: skill?.name === name,
-      code: true,
-    })),
-  })),
-];
+const order = groups.flatMap(({ items }) => items);
+const position = order.findIndex(({ current }) => current);
+const previous = order[position - 1];
+const next = order[position + 1];
 </script>
 
 <template>
@@ -72,6 +79,14 @@ const groups = [
         :catalog="catalog"
       />
       <OverviewPage v-else :catalog="catalog" />
+      <nav class="pager" aria-label="Pages">
+        <a v-if="previous" rel="prev" :href="previous.href"
+          ><span>Previous</span>{{ previous.label }}</a
+        >
+        <a v-if="next" rel="next" :href="next.href"
+          ><span>Next</span>{{ next.label }}</a
+        >
+      </nav>
     </main>
     <footer class="fg-site-footer">
       <a href="https://github.com/filipgutica">Built by Filip Gutica</a>
