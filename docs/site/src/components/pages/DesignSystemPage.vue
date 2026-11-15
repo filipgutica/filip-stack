@@ -267,7 +267,7 @@ const tables = {
     <p class="hint">
       The labels above are token names. Standalone HTML and library sites use the same names.
       The values come from <code>tokens.css</code> in <code>@filipgutica/design-system</code>.
-      <code>@filipgutica/ui</code> builds its themes from that file.
+      <code>@filipgutica/ui</code> builds its themes from that package.
       <a href="https://filipgutica.github.io/ui/"
         >See the components in the UI library</a
       >.

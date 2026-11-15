@@ -132,13 +132,30 @@ test("copies install commands and command-table rows after hydration", async ({
   await expect
     .poll(() => page.evaluate(() => navigator.clipboard.readText()))
     .toBe("filip-stack field-guide-sync");
-  await page.goto("/filip-stack/skills/full-send/");
-  await page.getByRole("button", { name: "Copy code", exact: true }).click();
-  await expect
-    .poll(() => page.evaluate(() => navigator.clipboard.readText()))
-    .toBe(
+  for (const [skill, command] of [
+    [
+      "full-send",
       "npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send sol-loop babysit-pr -y",
-    );
+    ],
+    [
+      "full-stop",
+      "npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-stop full-send sol-loop babysit-pr -y",
+    ],
+    [
+      "hill-climb",
+      "npx skills add filipgutica/filip-stack -g -a claude-code codex -s hill-climb council -y",
+    ],
+    [
+      "merge-council",
+      "npx skills add filipgutica/filip-stack -g -a claude-code codex -s merge-council council -y",
+    ],
+  ]) {
+    await page.goto(`/filip-stack/skills/${skill}/`);
+    await page.getByRole("button", { name: "Copy code", exact: true }).click();
+    await expect
+      .poll(() => page.evaluate(() => navigator.clipboard.readText()))
+      .toBe(command);
+  }
 });
 
 test("wide code scrolls inside a region keyboard readers can scroll", async ({
