@@ -25,5 +25,44 @@
       "prompt": "Write the release notes for version 3.2.",
       "expectedSkill": "technical-writing"
     }
+  ],
+  "rules": [
+    {
+      "id": "design-plugin-installed",
+      "task": "You are asked to design a settings screen for a prototype. The prototype has no design system of its own. The design-system plugin is installed. There is no `~/design-system` folder.",
+      "options": {
+        "plugin": "take the look from the design-system plugin's design language",
+        "home-folder": "look for `~/design-system/DESIGN.md` and take the look from it",
+        "fresh-identity": "choose a palette, typeface, and layout concept for this prototype"
+      },
+      "accept": [
+        "plugin"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "design-plugin-missing",
+      "task": "You are asked to design a settings screen for a prototype. The prototype has no design system of its own. The design-system plugin is not installed, and there is no `~/design-system` folder.",
+      "options": {
+        "plain": "design with no house style and tell the user once that the design-system plugin is missing",
+        "fresh-identity": "choose a palette, typeface, and layout concept for this prototype",
+        "ask": "stop and ask the user to install a design system first"
+      },
+      "accept": [
+        "plain"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "design-repo-precedence",
+      "task": "You are asked to design a settings screen in a repository that has its own design system in `docs/DESIGN.md` and `src/styles/tokens.css`. The design-system plugin is also installed.",
+      "options": {
+        "repository": "take the look from the repository's own design system",
+        "plugin": "take the look from the design-system plugin's design language"
+      },
+      "accept": [
+        "repository"
+      ]
+    }
   ]
 }

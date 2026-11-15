@@ -12,7 +12,7 @@
     },
     {
       "id": "fleet-exception",
-      "prompt": "Update the fleet, but keep the work laptop on its own design-system pin.",
+      "prompt": "Update the fleet, but keep the work laptop on its own pinned workflow plugin version.",
       "expectedSkill": "fleet-sync"
     },
     {

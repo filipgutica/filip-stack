@@ -7,10 +7,11 @@ description: Design, build, review, or check user interfaces and flows, covering
 
 Judge every choice by whether the primary user completes their task: they
 find what they need, act, recover from errors, and can tell it worked. The
-look comes from the owning design system: the repository's own, else
-`~/design-system/DESIGN.md` when it exists. Use its tokens and components.
-This skill owns hierarchy, interaction, states, interface copy, and
-accessibility.
+look comes from the owning design system: the repository's own, else the
+design-system plugin's design language when that plugin is installed. Use its
+tokens and components. With neither, use no house style and say once that the
+design-system plugin is missing. This skill owns hierarchy, interaction,
+states, interface copy, and accessibility.
 
 ## Ground the work
 

@@ -29,8 +29,10 @@ For each URL, width, and theme it loads a fresh page and:
 - with `--tokens`, lists computed colors, font sizes, radii, and padding or
   gaps that match no custom property in that CSS file. Aliases such as
   `var(--space-2)` resolve through the page, and `em` values resolve per
-  element. Point it at the project's own token file, else
-  `~/design-system/tokens.css`.
+  element. Point it at the owning design system's token file: the
+  project's own, else `language/tokens.css` in the design-system plugin when
+  it is installed. With neither, omit `--tokens` and report token checking as
+  skipped.
 
 Options: `--theme-attr <attribute>` for apps that switch themes with an
 attribute on `<html>` instead of `prefers-color-scheme`; `--fail-on-tokens`

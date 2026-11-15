@@ -164,6 +164,43 @@
       "accept": [
         "without-holdout"
       ]
+    },
+    {
+      "id": "ui-criteria-design-plugin",
+      "task": "The user invoked hill-climb on the settings page of a prototype. You are writing the card's UI criteria before it freezes. The prototype has no design system of its own. The design-system plugin is installed. There is no `~/design-system` folder.",
+      "options": {
+        "plugin": "take the UI criteria from the design-system plugin's design language",
+        "home-folder": "look for `~/design-system/DESIGN.md` and take the UI criteria from it",
+        "focus-only": "take the UI criteria from the user's focus alone"
+      },
+      "accept": [
+        "plugin"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ui-criteria-no-design-system",
+      "task": "The user invoked hill-climb on the settings page of a prototype. You are writing the card's UI criteria before it freezes. The prototype has no design system of its own. The design-system plugin is not installed, and there is no `~/design-system` folder.",
+      "options": {
+        "plain": "take no house-style criteria, use the request and the focus, and tell the user once that the design-system plugin is missing",
+        "fresh-identity": "choose a palette and typeface for the page and take criteria from them",
+        "ask": "stop and ask the user to install a design system first"
+      },
+      "accept": [
+        "plain"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ui-criteria-repo-design-system",
+      "task": "The user invoked hill-climb on the settings page of a repository that has its own design system in `docs/DESIGN.md` and `src/styles/tokens.css`. You are writing the card's UI criteria before it freezes. The design-system plugin is also installed.",
+      "options": {
+        "repository": "take the UI criteria from the repository's own design system",
+        "plugin": "take the UI criteria from the design-system plugin's design language"
+      },
+      "accept": [
+        "repository"
+      ]
     }
   ]
 }

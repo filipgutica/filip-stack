@@ -64,9 +64,11 @@ Build the card and freeze it before round 1:
 - **Goal:** one sentence, from the thread's original request or the user's
   goal.
 - **Criteria:** three to five, from the request, the focus, and the guidance
-  that owns the work. For UI: the repository's design system, else
-  `~/design-system/DESIGN.md` when it exists. For code: repository
-  conventions and `~/.agents/CODING_STANDARDS.md` when it exists.
+  that owns the work. For UI: the repository's design system, else the
+  design-system plugin's design language when that plugin is installed;
+  with neither, take no house-style criteria and say once that the plugin
+  is missing. For code: repository conventions and
+  `~/.agents/CODING_STANDARDS.md` when it exists.
 - **Scope:** the change's paths.
 - **Gates:** exact commands, run on the runtime versions CI uses, such as its
   Node version, not whatever the shell resolves. For UI, also the exact

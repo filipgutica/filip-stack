@@ -34,6 +34,55 @@
       "accept": [
         "fix-here"
       ]
+    },
+    {
+      "id": "design-plugin-installed",
+      "task": "The user asks for a standalone HTML page that charts this week's build times. The thread runs in a scratch folder with no design system of its own. `$design-system:design-system` is in your skill list. There is no `~/design-system` folder.",
+      "options": {
+        "plugin": "load `$design-system:design-system` and follow the design language it points to",
+        "home-folder": "look for `~/design-system/DESIGN.md` and follow it",
+        "fresh-identity": "choose a palette, typeface, and layout concept that suit this page"
+      },
+      "accept": [
+        "plugin"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "design-plugin-missing",
+      "task": "The user asks for a standalone HTML page that charts this week's build times. The thread runs in a scratch folder with no design system of its own. No design-system skill is in your skill list, and there is no `~/design-system` folder.",
+      "options": {
+        "plain": "build the page with no house style and tell the user once that the design-system plugin is missing",
+        "fresh-identity": "choose a palette, typeface, and layout concept that suit this page",
+        "ask": "stop and ask the user to install a design system before you build the page"
+      },
+      "accept": [
+        "plain"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "design-repo-precedence",
+      "task": "The user asks for a new settings page in this repository. The repository has its own design system: `docs/DESIGN.md` and `src/styles/tokens.css`. `$design-system:design-system` is also in your skill list.",
+      "options": {
+        "repository": "follow the repository's own design system",
+        "plugin": "follow `$design-system:design-system` instead",
+        "blend": "mix the repository's tokens with the design-system plugin's palette"
+      },
+      "accept": [
+        "repository"
+      ]
+    },
+    {
+      "id": "design-not-visual",
+      "task": "The user asks you to fix an off-by-one error in the date parser of a command-line tool. Nothing in the task touches an interface. `$design-system:design-system` is in your skill list.",
+      "options": {
+        "fix": "fix the parser",
+        "load-design": "load `$design-system:design-system` first, then fix the parser"
+      },
+      "accept": [
+        "fix"
+      ]
     }
   ]
 }
