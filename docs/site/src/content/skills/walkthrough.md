@@ -21,21 +21,16 @@ before you approve it. For a written list of findings, use
 
 ## How it works
 
-The agent confirms the change and reports any working-tree changes outside
-it. It maps every changed file into an ordered list of parts, then presents
-one part at a time.
+The agent maps every changed file into an ordered list of parts and presents
+one at a time. For the main behavior, it offers a small exercise, such as
+running a command, and asks what you expect to see. Each part ends with one
+acceptance question, and the agent waits for your answer.
 
-For the main behavior, it offers a small exercise, such as running a command
-or opening a page, and asks what you expect to see. You can skip it. Each part
-ends with one acceptance question, and the agent waits for your answer.
-
-It records corrections but does not make them; a fix needs your separate
-approval. After a fix, it revisits the affected parts. The walkthrough ends
-when every changed file is covered and every correction is resolved or
-deferred.
-
-You can ask for a separate read-only presenter agent. Your agent then checks
-the evidence the presenter gives.
+It records corrections but does not make them without your separate
+approval, and revisits affected parts after a fix. The walkthrough ends when
+every changed file is covered and every correction is resolved or deferred.
+You can ask for a separate read-only presenter agent, whose evidence your
+agent checks.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/walkthrough/SKILL.md)
 links the presentation patterns and the optional log format.
@@ -47,5 +42,4 @@ links the presentation patterns and the optional log format.
 - A walkthrough log, if you ask for one.
 
 Silence, a passing test, or a finished exercise does not count as approval.
-Apart from a log you ask for, walkthrough changes no files and does not
-commit, push, or publish.
+Apart from a log you ask for, walkthrough changes no files.

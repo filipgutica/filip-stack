@@ -16,19 +16,14 @@ Codex with a file, function, or change range:
 > /simplify-pass src/cart/totals.ts
 
 Without a target, it uses the current task's changes, then uncommitted
-changes. If it finds neither, it asks you. Unrelated work stays out of scope.
-
-Your host must support helper agents. All three reviews must finish before
-any edit. If one is still missing after a retry, the run ends incomplete.
+changes, and otherwise asks you. Your host must support helper agents.
 
 ## How it works
 
 The agent reads the target, its callers, the project guidance, and the
-nearest tests. It writes down the behavior to keep: APIs, outputs, side
-effects, errors, ordering, concurrency, and edge cases. It runs a useful
-existing check first as a baseline.
-
-Three read-only reviewers then look at the same target:
+nearest tests, writes down the behavior to keep, and runs an existing check
+as a baseline. Three read-only reviewers then look at the same target, and
+all must finish before any edit:
 
 | Review | Purpose |
 | --- | --- |
@@ -38,7 +33,7 @@ Three read-only reviewers then look at the same target:
 
 The agent checks each proposal against the code and skips uncertain ones.
 Useful tests and error handling stay. A new abstraction or dependency needs a
-reason beyond fewer lines. A large final diff gets an independent read-only
+reason beyond fewer lines. A large final diff gets an independent
 [review](../review/).
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/simplify-pass/SKILL.md)

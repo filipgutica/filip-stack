@@ -11,23 +11,20 @@ using the issues and the code.
 ## When to use it
 
 Install the skill. The agent needs access to your Jira site and your code
-host, such as GitHub. Name the issues and what you want done:
+host, such as GitHub. Name the issues, and say whether you want a report or
+edits:
 
 > Check the links on PROJ-120 to PROJ-128 and fix any blockers that are wrong.
 
 Use it to create or check issue links, dependency order, parent or Epic
-relationships, and the PRs and commits behind an issue, including Jira's
-Development section. A plain issue summary does not need it.
-
-Say whether you want a report or edits. Reading issues does not authorize
-changes; the agent changes only what you ask for.
+relationships, and the PRs and commits behind an issue. A plain issue summary
+does not need it. The agent changes only what you ask for.
 
 ## How it works
 
 The agent reads each issue's type, status, parent, description, links, and
 Development section. If code references are missing, it searches the code
-host for the issue key in PR titles, descriptions, branches, and commits. It
-sketches the relationships before it writes any.
+host for the issue key in PRs, branches, and commits.
 
 The link rules keep scope apart from order:
 
@@ -35,12 +32,11 @@ The link rules keep scope apart from order:
 - `relates to` covers Epics, specifications, context, parallel work, and
   merged work that produces no such artifact.
 - Parent and child links show hierarchy, not order.
-- A merged PR proves the code exists. It does not prove validation, release,
-  or every acceptance criterion.
+- A merged PR proves the code exists, not validation, release, or every
+  acceptance criterion.
 
-After a change, the agent reloads both issues to confirm the direction, for
-example "blocks PROJ-124" on one and "is blocked by PROJ-120" on the other. A
-wrong link is removed and recreated.
+After a change, the agent reloads both issues to confirm the direction, and
+recreates a link that points the wrong way.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/jira-work-links/SKILL.md)
 has the exact link and evidence rules.
