@@ -264,7 +264,7 @@ gate work.
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
 | `pnpm eval:delegation-rules` | What a delegated brief allows, and how a failing task escalates | `tests/host-config/delegation-rules-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
-| `pnpm eval:handoff` | The footer's goal line, and when to rename the thread | `tests/host-config/handoff-scenarios.json` |
+| `pnpm eval:handoff` | The footer's goal line, where the Decided for you list goes, and when to rename the thread | `tests/host-config/handoff-scenarios.json` |
 | `pnpm eval:host-rules` | Host guidance rules no other test covers | `tests/host-config/host-rules-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
 | `pnpm eval:coding-standards` | `host-config/agents/CODING_STANDARDS.md`, read with the Engineering skill | `tests/host-config/coding-standards-scenarios.json` |

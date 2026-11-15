@@ -71,7 +71,7 @@ Make the Item cell a clickable Markdown link whenever the item has a URL or a fi
 - Background agent or delegate you started.
 - Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
 
-Then a **Decided for you** list: one line per open decision settled without me since the last handoff, naming who settled it (`agent`, `advisor`, or `council`) and why, so I can reverse it. For example: `- Named the helper parseRange (agent: matches parseDate)`. Leave out routine defaults, and omit the list when it is empty. When the work ends in a pull request, put the same list in its description.
+Then a **Decided for you** list: one line per open decision settled without me since the last handoff, naming who settled it (`agent`, `advisor`, or `council`) and why, so I can reverse it. For example: `- Named the helper parseRange (agent: matches parseDate)`. Leave out routine defaults, and omit the list when it is empty. Keep the list out of PR descriptions.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
