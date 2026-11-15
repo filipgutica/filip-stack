@@ -98,6 +98,29 @@
         "who"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "decided-for-you-not-in-pr-description",
+      "task": "You finished the user's export fix and opened a pull request. Without asking the user, you named a new helper parseRange because the repository already has parseDate, and you settled that choice yourself. You are now writing the PR description.",
+      "options": {
+        "omit": "write the description without a Decided for you list",
+        "include": "add a Decided for you section to the description that lists the parseRange decision"
+      },
+      "accept": [
+        "omit"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "decided-for-you-in-footer",
+      "task": "You finished the user's export fix and opened a pull request. Without asking the user, you named a new helper parseRange because the repository already has parseDate, and you settled that choice yourself. You are now writing the Current state footer for your final response.",
+      "options": {
+        "omit": "write the footer without a Decided for you list",
+        "include": "add a Decided for you list to the footer that lists the parseRange decision"
+      },
+      "accept": [
+        "include"
+      ]
     }
   ]
 }
