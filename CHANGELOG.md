@@ -1,3 +1,10 @@
+## [6.4.1](https://github.com/filipgutica/filip-stack/compare/v6.4.0...v6.4.1) (2026-11-15)
+
+
+### Bug Fixes
+
+* **site:** address council findings (F-1, F-2, F-3, F-4, F-6, F-8, F-9) ([5c431ef](https://github.com/filipgutica/filip-stack/commit/5c431efba853377bcf68508cea9dc4525b1cc47b))
+
 # [6.4.0](https://github.com/filipgutica/filip-stack/compare/v6.3.1...v6.4.0) (2026-11-15)
 
 
