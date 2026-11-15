@@ -29,28 +29,28 @@ const turns: Turn[] = [
   {
     request: "Write a spec for rate limiting on the public API.",
     skill: "planning",
-    does: "It writes the spec from what the repository shows and changes no code. A public API is a public contract, so a separate reviewer critiques the spec first.",
+    does: "It writes the spec from the repository and changes no code. A public API is a public contract, so a separate reviewer critiques the spec first.",
     reads: [
       { file: "spec.md", when: "the format for a specification" },
       {
         file: "technical-prose.md",
         from: "technical-writing",
-        when: "the writing rules for the spec's text",
+        when: "writing rules for the spec",
       },
     ],
   },
   {
     request: "Implement the spec and open a PR.",
     skill: "engineering",
-    does: "It makes the smallest change that meets the spec and reruns the affected checks. A public API change is risky, so a separate reviewer checks the PR first, or the agent says none was available.",
+    does: "It makes the smallest change that meets the spec and reruns the affected checks. A separate reviewer checks this risky change first, or the agent says none was available.",
     reads: [
       {
         file: "testing-and-debugging.md",
-        when: "only if it is unclear how to reproduce or test the change",
+        when: "only if reproducing or testing the change is unclear",
       },
       {
         file: "delegation-and-review.md",
-        when: "because a public API change needs a separate reviewer",
+        when: "because the change needs a separate reviewer",
       },
       {
         file: "commit-and-pr-hygiene.md",
@@ -61,12 +61,12 @@ const turns: Turn[] = [
   {
     request: "Review the PR before I merge it.",
     skill: "review",
-    does: "It reports only the findings it can back with evidence and changes nothing. If the tests changed a lot, it also calls test-audit.",
+    does: "It reports only findings it can back with evidence and changes nothing. If tests changed a lot, it also calls test-audit.",
     reads: [
       {
         file: "delegation-and-review.md",
         from: "engineering",
-        when: "to tell you whether this review counts as independent, which needs a reviewer that did not write the change",
+        when: "to say whether the review is independent of the change's author",
       },
     ],
   },
@@ -105,7 +105,7 @@ onMounted(() => {
     <p class="lede">
       A skill is a set of reusable instructions that a coding agent loads when
       a task needs it, such as reviewing a change or writing a plan. Start
-      with Workflow. Everything else here is optional.
+      with Workflow; the rest is optional.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -135,7 +135,7 @@ onMounted(() => {
     <ol class="fg-site-steps">
       <li>
         <div>
-          <p>Install the Workflow plugin for your agent.</p>
+          <p>Install the Workflow plugin.</p>
           <HostCommands
             :claude="commands.claude"
             :codex="commands.codex"
@@ -145,13 +145,13 @@ onMounted(() => {
       </li>
       <li>
         <div>
-          <p>If you use Codex, restart it so a new session loads the plugin.</p>
+          <p>In Codex, restart so a new session loads the plugin.</p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            Open a repository that has changes on a branch, and ask:
+            In a repository with changes on a branch, ask:
             “Review the changes on this branch against main.”
           </p>
         </div>
@@ -161,9 +161,9 @@ onMounted(() => {
           <p>
             The agent picks the
             <a href="/filip-stack/skills/review/"><code>review</code></a> skill
-            on its own. It reads every changed file and lists findings ranked
-            by impact, each with a file and line, or says it found nothing it
-            can back with evidence. It changes no files.
+            on its own. It reads every changed file, changes none, and lists
+            findings ranked by impact with a file and line each, or says it
+            found none it can back with evidence.
           </p>
         </div>
       </li>
@@ -174,14 +174,10 @@ onMounted(() => {
     <h2 id="workflow-title">How Workflow works</h2>
     <div class="prose">
       <p>
-        Workflow is {{ catalog.workflow.length }} skills that install together
-        as one plugin. You describe a task in your own words. The host compares
-        your request with each skill's description and picks the one that fits.
-        You can also name a skill.
-      </p>
-      <p>
-        Each skill keeps its main instructions short. It reads a longer guide
-        only when the task needs one.
+        Workflow's {{ catalog.workflow.length }} skills install together as one
+        plugin. Describe a task, and the host picks the skill whose
+        description fits, or name one yourself. Each skill reads a
+        longer guide only when the task needs it.
       </p>
     </div>
     <h3 id="workflow-example" class="workflow-heading">
@@ -214,12 +210,12 @@ onMounted(() => {
     <h3 class="workflow-heading">The {{ catalog.workflow.length }} Workflow skills</h3>
     <SkillList :skills="catalog.workflow" :trait="false" />
     <p class="hint">
-      Some standalone skills fit around this flow.
       <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a>
-      tests a plan before you write the spec.
+      tests a plan before the spec.
       <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
       <a href="/filip-stack/skills/merge-council/"><code>merge-council</code></a>
-      give a final review before merge. They run only when you ask, or, for
+      give a final review before merge. These standalone skills run only
+      when you ask, or, for
       <code>merge-council</code>, when your repository's guidance asks.
     </p>
   </section>
@@ -227,9 +223,8 @@ onMounted(() => {
   <section id="standalone" aria-labelledby="standalone-title">
     <h2 id="standalone-title">Standalone skills</h2>
     <p class="section-intro">
-      Each standalone skill works on its own. Install the ones you want:
-      replace <code>&lt;name&gt;</code> with a skill below. Run the same
-      command again to update it.
+      Install the ones you want, replacing <code>&lt;name&gt;</code> with a
+      skill below. Run the command again to update.
     </p>
     <UiCodeBlock
       :code="commands.standalone"
@@ -247,22 +242,21 @@ onMounted(() => {
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          Gives every machine the same global guidance, agent profiles, output
-          styles, and design system.
+          The same global guidance, agent profiles, and design system on every
+          machine.
         </p>
       </li>
       <li>
         <a href="/filip-stack/design-system/">Design system</a>
         <p>
           The visual rules agents follow for pages, mockups, and explainers.
-          The CLI installs them to <code>~/design-system</code>.
         </p>
       </li>
       <li>
         <a href="/filip-stack/field-guide/">Field Guide</a>
         <p>
           A plugin that remembers your preferences and corrections across
-          sessions. Workflow does not need it.
+          sessions.
         </p>
       </li>
     </ul>
@@ -276,8 +270,8 @@ onMounted(() => {
           >Agent-ready environments</a
         >
         <p>
-          How to set up a repository so coding agents can check their own
-          work, with a worked audit of this repository.
+          Set up a repository so agents can check their own work, with a
+          worked audit.
         </p>
       </li>
     </ul>
