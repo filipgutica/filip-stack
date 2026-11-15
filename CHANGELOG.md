@@ -1,3 +1,10 @@
+# [5.14.0](https://github.com/filipgutica/filip-stack/compare/v5.13.2...v5.14.0) (2026-11-15)
+
+
+### Features
+
+* **host-config:** route routine reviews to the workhorse tier ([2f08cc7](https://github.com/filipgutica/filip-stack/commit/2f08cc7322b363cf82cf2fb7c6f89dd98172dbd7))
+
 ## [5.13.2](https://github.com/filipgutica/filip-stack/compare/v5.13.1...v5.13.2) (2026-11-15)
 
 
