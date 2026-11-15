@@ -1,3 +1,10 @@
+# [6.3.0](https://github.com/filipgutica/filip-stack/compare/v6.2.0...v6.3.0) (2026-11-15)
+
+
+### Features
+
+* **host-config:** validate input once at the boundary ([#237](https://github.com/filipgutica/filip-stack/issues/237)) ([8e523af](https://github.com/filipgutica/filip-stack/commit/8e523af45cc4dcfb582bef87252c15461c16cbc3)), closes [kong-konnect/kanalytics#1642](https://github.com/kong-konnect/kanalytics/issues/1642)
+
 # [6.2.0](https://github.com/filipgutica/filip-stack/compare/v6.1.1...v6.2.0) (2026-11-15)
 
 
