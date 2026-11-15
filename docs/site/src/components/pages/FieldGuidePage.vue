@@ -28,8 +28,7 @@ const management = [
     <h1 id="title">Field Guide</h1>
     <p class="lede">
       Field Guide is an optional plugin that remembers your preferences and
-      corrections. Tell your agent “Remember that I prefer pnpm over npm,” and
-      later sessions know it too.
+      corrections across sessions.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -50,32 +49,32 @@ const management = [
   <section aria-labelledby="install">
     <h2 id="install">Install</h2>
     <p class="section-intro">
-      Add the marketplace first, as the <a href="/filip-stack/">overview</a>
-      shows. Then run the command for your agent.
+      After you add the marketplace, as the
+      <a href="/filip-stack/">overview</a> shows, run:
     </p>
     <HostCommands :claude="commands.claude" :codex="commands.codex" />
     <p class="hint">
       The plugin adds hooks that run at session start and on each prompt.
-      Codex runs them only after you review and trust them.
+      Codex runs them after you review and trust them.
     </p>
   </section>
 
   <section aria-labelledby="first-use">
     <h2 id="first-use">Save your first preference</h2>
     <div class="prose">
-      <p>Tell the agent something you want it to keep:</p>
+      <p>Tell the agent what to keep:</p>
       <blockquote><p>Remember that I prefer pnpm over npm.</p></blockquote>
       <p>
-        The agent sets up <code>~/.field-guide</code> if it does not exist,
-        saves a short paraphrase, and confirms in one line, for example:
+        The agent creates <code>~/.field-guide</code> if needed, saves a short
+        paraphrase, and confirms in one line:
       </p>
       <div class="code-scroll" tabindex="0" role="region" aria-label="Example notice">
         <pre><code>{{ commands.notice }}</code></pre>
       </div>
     </div>
     <p class="hint">
-      In later sessions, the hooks bring it back when it matches the
-      repository or your first prompt.
+      Later sessions recall it when it matches the repository or your first
+      prompt.
     </p>
   </section>
 
@@ -97,14 +96,13 @@ const management = [
     <dl class="fg-site-definitions">
       <dt>Capture</dt>
       <dd>
-        It saves a clear, lasting preference or correction and tells you in
-        one line. This includes when to use a skill that runs only when you
-        name it.
+        It saves a clear, lasting preference or correction, including when to
+        use a manual-only skill, and tells you in one line.
       </dd>
       <dt>Ask</dt>
       <dd>
-        If the scope or wording is unclear, it asks you one question and saves
-        nothing until you answer.
+        If the scope or wording is unclear, it asks one question and waits to
+        save.
       </dd>
       <dt>Skip</dt>
       <dd>
@@ -114,7 +112,7 @@ const management = [
     </dl>
     <UiAlert tone="info"
       >It stores short paraphrases, never transcripts, prompts, credentials, or
-      code dumps. Your current request and the live code always outrank what it
+      code dumps. Your current request and the live code outrank what it
       remembers.</UiAlert
     >
   </section>
@@ -135,8 +133,7 @@ const management = [
         <div>
           <p>
             <strong>First prompt.</strong> The hook searches with your prompt
-            and adds up to three matching records that are not already in
-            context.
+            and adds up to three new matching records.
           </p>
         </div>
       </li>
@@ -144,8 +141,7 @@ const management = [
         <div>
           <p>
             <strong>Every prompt.</strong> The hook reminds the agent to
-            choose capture, ask, or skip before its final reply. Nothing
-            enforces that choice.
+            choose capture, ask, or skip before its final reply. Nothing enforces it.
           </p>
         </div>
       </li>
@@ -155,11 +151,11 @@ const management = [
       start, <code>/clear</code>, or compaction. When the agent looks guidance up
       itself, the
       <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
-      has the exact rules.
+      has the rules.
     </p>
     <p class="hint">
-      Local analytics are off until you turn them on. They record metadata
-      only, never prompts or guidance text.
+      Local analytics are off by default and record metadata only, never
+      prompts or guidance text.
     </p>
   </section>
 
@@ -167,17 +163,13 @@ const management = [
     <h2 id="sync">Advanced: share preferences between machines</h2>
     <div class="prose">
       <p>
-        <code>filip-stack field-guide-sync</code> imports shared preferences
-        from <code>~/.config/filip-stack/field-guide.json</code> if the file
-        exists, then exports this machine's shared guidance to it. Sync that
-        file between machines with your dotfile manager. The
+        Sync <code>~/.config/filip-stack/field-guide.json</code> between
+        machines with your dotfile manager.
+        <code>filip-stack field-guide-sync</code> imports it, then exports this
+        machine's shared guidance to it. The
         <a href="/filip-stack/cli/#sync">CLI page</a> has the setup.
       </p>
       <ul>
-        <li>
-          The file is under <code>$XDG_CONFIG_HOME</code> when that is set.
-          <code>filip-stack apply</code> imports it only if it exists.
-        </li>
         <li>
           An undo reaches other machines after they sync. It reverses only the
           replacement it undoes: a withdrawal, or another replacement of the
