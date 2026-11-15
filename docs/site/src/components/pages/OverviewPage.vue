@@ -2,6 +2,7 @@
 import { onMounted, ref } from "vue";
 import { UiCodeBlock } from "@filipgutica/ui";
 import SkillList from "../SkillList.vue";
+import HostCommands from "../HostCommands.vue";
 import type { Catalog } from "../../catalog";
 const { catalog } = defineProps<{ catalog: Catalog }>();
 const skillsByName = new Map(
@@ -135,28 +136,11 @@ onMounted(() => {
       <li>
         <div>
           <p>Install the Workflow plugin for your agent.</p>
-          <div class="cmd-pair">
-            <div id="install">
-              <p class="cmd-label">Claude Code</p>
-              <UiCodeBlock
-                :code="commands.claude"
-                language="bash"
-                variant="compact"
-                :copyable="enhanced"
-                :wrap="true"
-              />
-            </div>
-            <div>
-              <p class="cmd-label">Codex</p>
-              <UiCodeBlock
-                :code="commands.codex"
-                language="bash"
-                variant="compact"
-                :copyable="enhanced"
-                :wrap="true"
-              />
-            </div>
-          </div>
+          <HostCommands
+            :claude="commands.claude"
+            :codex="commands.codex"
+            claude-id="install"
+          />
         </div>
       </li>
       <li>

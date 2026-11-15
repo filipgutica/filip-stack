@@ -1,17 +1,13 @@
 <script setup lang="ts">
-import { onMounted, ref } from "vue";
 import { UiAlert, UiBreadcrumbs, UiCodeBlock } from "@filipgutica/ui";
 import { UiCommandList } from "@filipgutica/ui/site";
+import HostCommands from "../HostCommands.vue";
 const commands = {
   claude: "claude plugin install field-guide@filip-stack",
   codex: "codex plugin add field-guide@filip-stack",
   notice:
     'Field-guide: Activated shared guidance: "Prefer pnpm over npm." Say "undo that learning" to reverse it.',
 };
-const enhanced = ref(false);
-onMounted(() => {
-  enhanced.value = true;
-});
 const management = [
   {
     command: "/field-guide:field-guide audit",
@@ -56,28 +52,7 @@ const management = [
       Add the marketplace first, as the <a href="/filip-stack/">overview</a>
       shows. Then run the command for your agent.
     </p>
-    <div class="cmd-pair">
-      <div>
-        <p class="cmd-label">Claude Code</p>
-        <UiCodeBlock
-          :code="commands.claude"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-      </div>
-      <div>
-        <p class="cmd-label">Codex</p>
-        <UiCodeBlock
-          :code="commands.codex"
-          language="bash"
-          variant="compact"
-          :copyable="enhanced"
-          :wrap="true"
-        />
-      </div>
-    </div>
+    <HostCommands :claude="commands.claude" :codex="commands.codex" />
     <p class="hint">
       The plugin adds hooks that run at session start and on each prompt.
       Codex runs them only after you review and trust them.
