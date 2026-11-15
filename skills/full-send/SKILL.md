@@ -57,7 +57,7 @@ Decide both at the start and check them again before you finish.
 
 - **Local change:** complete the goal from the user's request with the
   smallest change that works. If you are on the default branch, create a
-  branch first.
+  branch in a new worktree first, so the primary checkout stays on it.
 - **Existing PR:** start from its head.
 - **After a merge council:** find the newest
   `${TMPDIR:-/tmp}/merge-council/*/record.json` whose `subject.repo` and

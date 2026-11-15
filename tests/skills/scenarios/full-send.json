@@ -1,6 +1,28 @@
 {
   "rules": [
     {
+      "id": "fs-primary-checkout",
+      "task": "You run full send for a local change. The user has not made a branch. This thread runs in the repository's primary checkout, which is on the default branch.",
+      "options": {
+        "branch-here": "create a branch in this checkout and make the change",
+        "worktree": "create a branch in a new worktree and make the change there"
+      },
+      "accept": [
+        "worktree"
+      ]
+    },
+    {
+      "id": "fs-feature-worktree",
+      "task": "You run full send for a local change. This thread runs in a worktree on its own feature branch, made for this task from the latest default branch.",
+      "options": {
+        "continue": "make the change on this branch",
+        "worktree": "create a branch in another new worktree and make the change there"
+      },
+      "accept": [
+        "continue"
+      ]
+    },
+    {
       "id": "fs-bot-running",
       "task": "You run full send on your own PR with merge permission. Your proof covers the diff, Sol approved, required checks are green, and the branch is up to date and mergeable. Greptile's review of the latest head is still running.",
       "options": {
