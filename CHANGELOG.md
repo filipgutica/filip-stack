@@ -1,3 +1,17 @@
+# [6.7.0](https://github.com/filipgutica/filip-stack/compare/v6.6.0...v6.7.0) (2026-11-16)
+
+
+### Bug Fixes
+
+* **full-send:** close council gate review findings ([f1b8bd2](https://github.com/filipgutica/filip-stack/commit/f1b8bd25d8060e2d77f07be15b1df8449df166fe))
+* **full-send:** let a backed declined finding get its fix before the no-progress stop ([80f93c0](https://github.com/filipgutica/filip-stack/commit/80f93c07ada5cae8cfa71365aa339cbb1f0fd114))
+* **full-send:** settle council gate stop rules after a pass ([dce8d05](https://github.com/filipgutica/filip-stack/commit/dce8d05a9d697bc1c52177857caf95e73fc0b131))
+
+
+### Features
+
+* **full-send:** gate full send and full stop on a council score ([43094e7](https://github.com/filipgutica/filip-stack/commit/43094e73249f75dae734357d5438c2c9118ebea2))
+
 # [6.6.0](https://github.com/filipgutica/filip-stack/compare/v6.5.1...v6.6.0) (2026-11-16)
 
 
