@@ -4,9 +4,11 @@
 adaptation uses Astra, Sol 6.1, Opus 5.5, and Fable 5.2 at high effort, with
 the current agent coordinating one round by default. The request sets members,
 lenses, goal, and criteria, or a separate designer agent does, never the
-coordinating agent. It retains independent advice and synthesis. It replaces
-mandatory review scores with a per-member confidence score in a written
-report, and omits PR updates and fix/review loops. It adds Codex metadata and
+coordinating agent. It retains independent advice and synthesis. Members
+score a proposal or artifact against the criteria, drafting a proposal first
+when the request has none, or give a confidence score on an open question,
+in a written report. PR updates, per-round score tables, and fix/review loops
+live in full-send's council gate. It adds Codex metadata and
 keeps implementation authority separate from advice.
 
 ## tstack

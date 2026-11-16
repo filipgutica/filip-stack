@@ -1,6 +1,6 @@
 ---
 name: council
-description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent designs the council, starting from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. An explicit merge council request belongs to merge-council.
+description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent designs the council, starting from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
 ---
 
 # Council
@@ -9,7 +9,7 @@ Use independent opinions from several models to help answer the request. You coo
 
 ## Design the council
 
-The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request.
+The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request. When the request runs `full-send` or `full-stop` with a score threshold, such as `council 9.5`, or a bare `council`, full-send's council gate sets the lineup, score, rounds, and verdict, and replaces this skill's Synthesize step.
 
 - **Goal:** the question to decide or the output to produce.
 - **Criteria and constraints:** what makes an answer useful, and limits it must respect.
@@ -39,7 +39,9 @@ Relay the designer's questions to the user and wait for answers. Then use its de
 
 ## Frame the question
 
-Give every member the same question, relevant context or artifact, constraints, and criteria for a useful answer. Preserve the user's uncertainty; omit your preferred answer. For changing artifacts, identify the version reviewed, such as commit SHAs and any uncommitted diff.
+Give every member the same question, relevant context or artifact, constraints, and criteria for a useful answer. Preserve the user's uncertainty. For an open question with nothing to build, omit your preferred answer.
+
+When the request asks for thoughts on work to do, such as a change, plan, or design, and supplies no proposal, write one after the design is set: draft it yourself, or have the Planner role draft it when host guidance sends that design work there. Members review that proposal. When the requester supplies a proposal, members review theirs. For changing artifacts, identify the version reviewed, such as commit SHAs and any uncommitted diff.
 
 Council members advise read-only. A council request alone does not authorize implementation, publication, or merging.
 
@@ -64,7 +66,7 @@ Launch the members in parallel with separate contexts and no access to each othe
 
 - The shared question, context, constraints, and criteria, plus the member's lens if it has one.
 - Read-only responsibility, permitted sources, and any relevant instruction files.
-- A request for a recommendation, a score from 0 to 10 for confidence that it is right, supporting evidence or reasoning, the strongest objection or alternative, and material uncertainties. A calling skill may replace the score with its own, such as a judge's vote or scorecard.
+- A request for a recommendation, a score from 0 to 10, supporting evidence or reasoning, the strongest objection or alternative, and material uncertainties. For a proposal or artifact, the score rates it against the criteria, and the recommendation lists the changes that would raise the score. For an open question, the score is confidence that the member's own recommendation is right. A calling skill may replace the score with its own, such as a judge's vote or scorecard.
 - A direction to do the work themselves without further delegation.
 
 Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. One round is the default. Run another only when the user requests it or a specific unresolved question warrants it within the authorized task.
@@ -84,7 +86,7 @@ Report missing members or unverified model settings beside the conclusion. Counc
 
 ## Report
 
-Write a report for every council run, including runs a calling skill convenes, and link it in your answer. Use the path the requester gives, otherwise `${TMPDIR:-/tmp}/council/<UTC timestamp>-<subject-slug>/report.md`, a temporary location like the run directories of `merge-council` and `hill-climb`. A requester who needs a lasting record names a path. Invoking the skill authorizes this one file.
+Write a report for every council run, including runs a calling skill convenes, and link it in your answer. Use the path the requester gives, otherwise `${TMPDIR:-/tmp}/council/<UTC timestamp>-<subject-slug>/report.md`, a temporary location like the run directories of `hill-climb`. A requester who needs a lasting record names a path. Invoking the skill authorizes this one file.
 
 The report contains:
 
