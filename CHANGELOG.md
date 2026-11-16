@@ -1,3 +1,10 @@
+## [6.5.1](https://github.com/filipgutica/filip-stack/compare/v6.5.0...v6.5.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **site:** update @filipgutica/ui to 2.2.1 ([#247](https://github.com/filipgutica/filip-stack/issues/247)) ([00f810f](https://github.com/filipgutica/filip-stack/commit/00f810f296fc239869ebcefa56b7baa63a23d289))
+
 # [6.5.0](https://github.com/filipgutica/filip-stack/compare/v6.4.1...v6.5.0) (2026-11-15)
 
 
