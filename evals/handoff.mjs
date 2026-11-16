@@ -1,5 +1,5 @@
 // Tests for the handoff eval: the goal line that starts the Current state footer,
-// where the Decided for you list goes, and when to rename the thread. Each prompt gives the model its host's rendered
+// where the Decided for you list goes, the Ready to close line, and when to rename the thread. Each prompt gives the model its host's rendered
 // global guidance, which holds those rules, so handoff.yaml uses host-guidance.mjs's
 // prompts and rules.mjs's `scoreRule`.
 import { rulesEval } from './rules.mjs'

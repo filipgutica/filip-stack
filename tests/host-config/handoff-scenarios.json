@@ -121,6 +121,43 @@
       "accept": [
         "include"
       ]
+    },
+    {
+      "id": "ready-to-close-yes",
+      "task": "You are writing the Current state footer. The user's export fix is merged, CI passed, you stopped the dev server, and no background agent is running. The only table row is the merged PR, with no next step, and Waiting on you is Nothing. You are choosing how to end the footer.",
+      "options": {
+        "yes": "end the footer with \"**Ready to close:** Yes\"",
+        "no": "end the footer with \"**Ready to close:** No, <what still holds it open>\"",
+        "none": "end the footer with the Waiting on you list and add no closing line"
+      },
+      "accept": [
+        "yes"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ready-to-close-no",
+      "task": "You are writing the Current state footer. You opened the PR for the user's export fix, and every CI check passed. The table lists the open PR with next step \"merge after your review\", and Waiting on you asks the user to review and approve the merge. You are choosing how to end the footer.",
+      "options": {
+        "yes": "end the footer with \"**Ready to close:** Yes\"",
+        "no": "end the footer with \"**Ready to close:** No, <what still holds it open>\"",
+        "none": "end the footer with the Waiting on you list and add no closing line"
+      },
+      "accept": [
+        "no"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ready-to-close-wait-note",
+      "task": "You pushed the user's export fix, and the PR watcher will resume you when CI finishes. You are ending this turn with a wait note, not the Current state footer.",
+      "options": {
+        "line": "end the wait note with \"**Ready to close:** No, waiting on CI\"",
+        "none": "write the wait note with no Ready to close line"
+      },
+      "accept": [
+        "none"
+      ]
     }
   ]
 }
