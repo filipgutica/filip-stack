@@ -25,7 +25,7 @@ Run `/full-stop` in Claude or `$full-stop` in Codex, with a goal or PR link:
 Add a council threshold to hold the handoff until every council member
 scores the PR at or above it, as [full-send](../full-send/) describes:
 
-> /full-stop https://github.com/acme/app/pull/42 $council 9.5
+> /full-stop https://github.com/acme/app/pull/42 council 9.5
 
 This authorizes commits and pushes to the PR's own branch in fix mode. It
 never authorizes merging, auto-merge, a merge queue, or a push to the default

@@ -37,7 +37,7 @@ and Opus, `frontier` is Astra and Fable, and `full` is all four.
 To make a PR pass a council score before it merges, add a threshold to
 [full-send](../full-send/) or [full-stop](../full-stop/):
 
-> /full-stop fix the flaky login test $council 9.5
+> /full-stop fix the flaky login test council 9.5
 
 ## How it works
 

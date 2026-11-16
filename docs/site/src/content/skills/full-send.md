@@ -26,7 +26,7 @@ Run `/full-send` in Claude or `$full-send` in Codex, with a goal or PR link:
 
 > /full-send fix the flaky login test
 
-> /full-send fix the flaky login test $council 9.5
+> /full-send fix the flaky login test council 9.5
 
 This authorizes commits and pushes to the PR's branch, `--force-with-lease`
 after a rebase of that branch, and the merge, each only when its mode below
