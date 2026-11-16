@@ -112,7 +112,6 @@
     },
     {
       "id": "council-designer-pair",
-      "needsNewGuidance": true,
       "task": "You are the designer this council skill starts. The question: should the `formatDate` helper in one module return null or throw on invalid input? Only that module calls it, and the choice is easy to change later.",
       "options": {
         "pair": "the pair preset: Sol 6.1 and Opus 5.5",
@@ -173,7 +172,6 @@
     },
     {
       "id": "council-later-round",
-      "needsNewGuidance": true,
       "task": "You coordinate a two-round pair council on a plan you drafted. Round 1 just ended, and you accept two of Sol 6.1's findings. Round 2 is next.",
       "options": {
         "revised": "revise the plan for the accepted findings, then send round 2 the revised plan and a ledger of round 1 findings, without round 1 scores",
