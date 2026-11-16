@@ -1,6 +1,10 @@
 # Third-party notices
 
 `grill-me` adapts the `grill-me` skill from Matt Pocock's public skills.
+Upstream `grill-me` runs the `grilling` skill, so the tracked path is
+`grilling`. The local adaptation asks one question at a time instead of
+upstream's rounds of numbered questions, and looks up facts itself instead of
+starting subagents.
 
 The repository's `upstream-sync` skill compares the tracked path with upstream
 and advances the baseline after review.
@@ -8,8 +12,8 @@ and advances the baseline after review.
 ## Matt Pocock skills
 
 Source: https://github.com/mattpocock/skills
-Tracked path: `skills/productivity/grill-me`
-Baseline: `84fdeffd12f2` (default branch at adoption, 2026-08-10)
+Tracked path: `skills/productivity/grilling`
+Baseline: `5863806dd4e1` (default branch, reviewed 2026-11-16)
 
 MIT License
 
