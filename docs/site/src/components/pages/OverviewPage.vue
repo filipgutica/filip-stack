@@ -214,7 +214,7 @@ onMounted(() => {
       tests a plan before the spec.
       <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
       <a href="/filip-stack/skills/full-stop/"><code>full-stop</code></a>
-      give a final review before merge, and a council score can gate it. These standalone skills run only
+      give a final review before merge. Add a council threshold to full-stop to hold the handoff for a council score. These standalone skills run only
       when you ask.
     </p>
   </section>

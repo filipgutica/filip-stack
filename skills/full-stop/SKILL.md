@@ -9,8 +9,8 @@ disable-model-invocation: true
 Do the same work as `full-send`, but stop with the PR ready for the user to
 merge. Never merge it.
 
-Requires the `full-send` skill, and through it `babysit-pr`, plus `sol-loop`,
-or `council` for a council gate. If any is missing, stop and say so.
+Requires the `full-send` skill, and through it `sol-loop` and `babysit-pr`,
+plus `council` for a council gate. If any is missing, stop and say so.
 
 `full-send` is manual-only, so hosts do not list it. Read
 `../full-send/SKILL.md` from this skill's directory; the skills CLI installs

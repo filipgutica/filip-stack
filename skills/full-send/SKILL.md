@@ -17,7 +17,7 @@ council threshold, such as `council 9.5` or `$council 9.5`, read
 [council gate](references/council-gate.md): a council of models must score
 the PR at or above that threshold, and the gate replaces `sol-loop`.
 
-Requires the `babysit-pr` skill, plus `sol-loop`, or `council` for a council
+Requires the `sol-loop` and `babysit-pr` skills, and `council` for a council
 gate. If one is missing, stop and say so.
 
 ## Grant

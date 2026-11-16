@@ -145,7 +145,7 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Three scored council rounds are done. The lowest score rose from 8.0 to 9.2, and Sol still holds one should finding you could fix.",
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Three scored council rounds are done. The lowest score rose from 8.0 to 8.9, and Sol still holds one should finding you could fix.",
       "options": {
         "round-4": "fix the finding and run a fourth round",
         "ask": "leave the PR unmerged, report FAIL with the scores, and ask the user"
@@ -169,6 +169,88 @@
         "ask"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "fs-ui-media",
+      "needsNewGuidance": true,
+      "task": "You run full send for a change to a settings page's layout and its save flow. The unit tests pass and you ran the app.",
+      "options": {
+        "tests": "rely on the passing tests and your run of the app",
+        "media": "capture screenshots of the changed page and a recording of the save flow, and add them to the PR"
+      },
+      "accept": [
+        "media"
+      ]
+    },
+    {
+      "id": "fs-backend-proof",
+      "task": "You run full send for a fix to a CLI's argument parser. It has no UI. You reproduced the bug, applied the fix, and watched the same command pass.",
+      "options": {
+        "command": "use the reproduction output as proof",
+        "screenshots": "also capture screenshots and a recording of the terminal"
+      },
+      "accept": [
+        "command"
+      ]
+    },
+    {
+      "id": "fs-council-scores-where",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 1 just finished. You are about to record the members' scores.",
+      "options": {
+        "comment": "post the scores as a PR comment",
+        "description": "put the scores in a collapsed section at the end of the PR description"
+      },
+      "accept": [
+        "description"
+      ]
+    },
+    {
+      "id": "fs-council-declined-rejected",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, every other member says the declined finding is not real. Sol still scores 8.5 because of that finding alone; everyone else scores 9.5 or higher.",
+      "options": {
+        "fix": "make the change Sol asked for anyway",
+        "ask": "take both sides of that finding to the user"
+      },
+      "accept": [
+        "ask"
+      ]
+    },
+    {
+      "id": "fs-council-declined-backed",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, Opus says the declined finding is real. One scored round remains in the budget.",
+      "options": {
+        "fix": "fix the finding and run the next round",
+        "ask": "take both sides of that finding to the user"
+      },
+      "accept": [
+        "fix"
+      ]
+    },
+    {
+      "id": "fs-council-no-progress",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 2 just finished. The lowest score is 8.5, the same as in round 1, and the same two should findings are still open after your fixes. One scored round remains in the budget.",
+      "options": {
+        "round-3": "fix again and run round 3",
+        "fail": "leave the PR unmerged, report FAIL with the scores, and ask the user"
+      },
+      "accept": [
+        "fail"
+      ]
     }
   ]
 }
