@@ -17,7 +17,7 @@ Build a small decision tree around the goal, users, constraints, ownership, boun
 ## Interview loop
 
 1. Ask exactly one consequential question.
-2. Include the answer you recommend from current evidence.
+2. Include the answer you recommend from current evidence. Word the question so "yes" accepts that answer.
 3. Label an answer as an assumption when evidence is missing.
 4. State why the decision matters.
 5. Challenge vague scope, hidden assumptions, premature abstractions, and weak verification.

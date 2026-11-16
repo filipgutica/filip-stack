@@ -18,5 +18,29 @@
       "prompt": "Do you see any obvious risk in this small plan?",
       "expectedSkill": null
     }
+  ],
+  "rules": [
+    {
+      "id": "grill-yes-accepts",
+      "task": "You are running grill-me on a proposal to add a Redis cache in front of session lookups. Evidence shows the existing Postgres sessions table already serves lookups well under current load, so you recommend keeping it and not adding the cache. Write the next question.",
+      "options": {
+        "keep-postgres": "Ask: \"Should session lookups keep using the existing Postgres table, without a Redis cache?\" Recommended answer: Yes.",
+        "add-redis": "Ask: \"Should we add a Redis cache in front of session lookups?\" Recommended answer: No."
+      },
+      "accept": [
+        "keep-postgres"
+      ]
+    },
+    {
+      "id": "grill-one-question-control",
+      "task": "You are running grill-me on a migration plan. Three decisions are open and none depends on another: the rollback trigger, the batch size, and who owns the cutover. Write your next message to the user.",
+      "options": {
+        "one": "Ask one question about one of the decisions, with its recommended answer and why it matters.",
+        "round": "Ask all three as a numbered round, each with its recommended answer."
+      },
+      "accept": [
+        "one"
+      ]
+    }
   ]
 }
