@@ -9,7 +9,7 @@ Use independent opinions from several models to help answer the request. You coo
 
 ## Design the council
 
-The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request. When the request runs `full-send` or `full-stop` with a score threshold, such as `council 9.5`, full-send's council gate sets the lineup, score, rounds, and verdict, and replaces this skill's Synthesize step.
+The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request. When the request runs `full-send` or `full-stop` with a score threshold, such as `council 9.5`, or a bare `council`, full-send's council gate sets the lineup, score, rounds, and verdict, and replaces this skill's Synthesize step.
 
 - **Goal:** the question to decide or the output to produce.
 - **Criteria and constraints:** what makes an answer useful, and limits it must respect.

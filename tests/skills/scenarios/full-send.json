@@ -108,8 +108,7 @@
       },
       "accept": [
         "next-round"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "fs-council-pass",
@@ -137,8 +136,7 @@
       },
       "accept": [
         "rescore"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "fs-council-cap",
@@ -152,8 +150,7 @@
       },
       "accept": [
         "ask"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "fs-council-instruction-file",
@@ -167,8 +164,7 @@
       },
       "accept": [
         "ask"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "fs-ui-media",
@@ -213,7 +209,6 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "needsNewGuidance": true,
       "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, every other member says the declined finding is not real. Sol still scores 8.5 because of that finding alone; everyone else scores 9.5 or higher.",
       "options": {
         "fix": "make the change Sol asked for anyway",
@@ -228,7 +223,7 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, the lowest score rose from 7.5 to 8.5, and Opus says the declined finding is real. One scored round remains in the budget.",
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, the lowest score stayed at 8.5, no other finding is open, and Opus says the declined finding is real. One scored round remains in the budget.",
       "options": {
         "fix": "fix the finding and run the next round",
         "ask": "take both sides of that finding to the user"
@@ -257,7 +252,6 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "needsNewGuidance": true,
       "task": "You run full send on your own PR with merge permission and the request `$council 8`. Round 1 just finished: every member scored 8.5, and Sol holds one open should finding. Required checks are green and the branch is mergeable.",
       "options": {
         "merge": "merge now: every member scored at least 8",
@@ -272,7 +266,6 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "needsNewGuidance": true,
       "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Every member scored 9.5 or higher on the head. The default branch then moved, and you rebased the PR with no conflicts and no change of your own. Required checks are green on the new head.",
       "options": {
         "merge": "merge the rebased head: the patches did not change",
@@ -291,6 +284,49 @@
       "options": {
         "merge": "merge now",
         "fail": "report FAIL: the lowest score did not rise"
+      },
+      "accept": [
+        "merge"
+      ]
+    },
+    {
+      "id": "fs-council-review-only-behind",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send with `$council 9.5` on another author's PR, so you are in review-only mode. The PR branch is behind the default branch.",
+      "options": {
+        "wait": "wait for the author to update the branch before scoring",
+        "round": "run one council round on the current head and report the scores and findings"
+      },
+      "accept": [
+        "round"
+      ]
+    },
+    {
+      "id": "fs-council-fix-mode-behind",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "task": "You run full send with `$council 9.5` on your own PR in fix mode. The PR branch is behind the default branch, and round 1 has not started.",
+      "options": {
+        "score-now": "run round 1 on the current head",
+        "update-first": "update the branch, wait for green checks, then run round 1"
+      },
+      "accept": [
+        "update-first"
+      ]
+    },
+    {
+      "id": "fs-council-rescore-after-cap",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 3 passed: every member scored 9.5 or higher. The default branch then moved, so you rebased with no change of your own, and the rescore again gave every member 9.5 or higher with nothing open. Every other merge gate condition holds.",
+      "options": {
+        "merge": "merge now",
+        "fail": "report FAIL: the rescore is a fourth round past the cap"
       },
       "accept": [
         "merge"

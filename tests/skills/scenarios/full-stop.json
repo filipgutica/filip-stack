@@ -6,7 +6,6 @@
         "skills/full-send/SKILL.md",
         "skills/full-send/references/council-gate.md"
       ],
-      "needsNewGuidance": true,
       "task": "You run full stop on your own PR with the request `$council 9.5`. Three scored council rounds are done and the lowest score is 8.9, from a member with an open should finding. Required checks are green, bots finished, and the branch is mergeable.",
       "options": {
         "pass": "hand off with PASS: ready to merge",

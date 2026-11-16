@@ -17,8 +17,7 @@ plus `council` for a council gate. If any is missing, stop and say so.
 the two side by side. Follow its modes, starting point, steps, proof,
 routine fixes, merge gate, and rules for asking the user. When the request
 sets a council threshold, such as `council 9.5`, or a bare `council`, also
-follow
-`../full-send/references/council-gate.md`. Invoking full stop
+follow `../full-send/references/council-gate.md`. Invoking full stop
 grants what full send's grant and testing permission cover, except merging.
 The overrides below take precedence.
 

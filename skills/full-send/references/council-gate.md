@@ -1,9 +1,9 @@
 # Council gate
 
 Use this when the request sets a council threshold, such as `council 9.5` or
-`$council 9.5`, or names a bare `council`. The gate replaces the `sol-loop` review for this run,
-including the description review and follow-up rounds; its severities and
-step 3 still apply below. It needs the `council` skill; if it is missing,
+`$council 9.5`, or names a bare `council`. The gate replaces the `sol-loop`
+review for this run, including the description review and follow-up rounds;
+its severities and step 3 still apply below. It needs the `council` skill; if it is missing,
 stop and say so. Council's Convene section launches the members. This file
 sets the lineup, the score, the rounds, and the verdict, and council's
 Synthesize step does not apply.
@@ -12,8 +12,8 @@ Synthesize step does not apply.
 
 - **Threshold `N`:** a number from 0 to 10. A bare `council` means 9.5. Ask
   about an out-of-range value before work starts. The gate always needs no
-  open blocker or should, so any `N` at or below 9.5 acts as 9.5; say so at
-  the start when `N` is lower. Above 9.5, it also needs nits fixed.
+  open blocker or should, so treat any `N` at or below 9.5 as 9.5 everywhere
+  below; say so at the start when `N` is lower. Above 9.5, it also needs nits fixed.
 - **Lineup:** council's `full` preset, unless the request names a preset or
   members. No designer: the author never shapes the panel that scores it.
   Never drop, swap, or re-run a member to change a score.
@@ -29,7 +29,8 @@ The PR exists before round 1. Start each round when your proof covers the
 diff, the branch is up to date with the default branch, required checks are
 green, and review bots have finished on the head, so the scored head is the
 head that merges. In review-only mode, run one round on the current head,
-even when the branch is behind, and report the scores and findings.
+even when the branch is behind, and report the scores and findings. The
+result is FAIL unless every member reaches `N`.
 
 ## Score
 
@@ -105,8 +106,8 @@ The gate **fails** at any of these:
 
 - Three scored rounds end below `N`. Add rounds only when the user asks.
 - From round 2, while a member is below `N`, the lowest score did not rise
-  and open blockers and shoulds did not shrink, not counting findings
-  declined in the previous round.
+  and open blockers and shoulds did not shrink. Skip this check in a round
+  where another member backs a declined finding: fix that finding first.
 - A fixed finding reopens, or two members want opposite remedies.
 - Review-driven growth exceeds `max(50 lines, 25% of the round 1 changed
   lines)` over the round 1 `--shortstat`.
