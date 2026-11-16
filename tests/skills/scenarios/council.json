@@ -192,6 +192,17 @@
       "accept": [
         "opus"
       ]
+    },
+    {
+      "id": "council-later-round-supplied",
+      "task": "You coordinate a two-round pair council on a plan the user supplied. Round 1 just ended: you accept two findings, and one question about the plan's rollout is still open. Round 2 is next.",
+      "options": {
+        "revise": "revise the user's plan for the accepted findings and send round 2 the revised plan",
+        "open": "leave the user's plan unchanged and send round 2 the round 1 findings ledger, focused on the open rollout question"
+      },
+      "accept": [
+        "open"
+      ]
     }
   ]
 }

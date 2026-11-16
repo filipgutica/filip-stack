@@ -78,22 +78,19 @@ security.
 
 On its own:
 
-1. Unless you named a preset or members, the designer chooses the lineup,
-   criteria, and number of rounds.
-2. The agent writes the question, context, and criteria. For a plan, it
+1. The agent writes the question, context, and criteria. For a plan, it
    adds your plan or drafts one. For an open question, it leaves out its
    own answer.
-3. It states the lineup before launch. If a member you named is
+2. It states the lineup before launch. If a member you named is
    unavailable, it asks you. If the designer chose that member, the agent
    swaps in a comparable model or drops it, and says so.
-4. Each member answers separately with its reasons, its strongest
+3. Each member answers separately with its reasons, its strongest
    objection, what it is unsure about, and a score from 0 to 10. For a plan,
    the score rates the plan. For an open question, it is the member's
    confidence.
-5. In a later round, members see the revised plan and a list of earlier
-   findings, but not earlier scores. The agent stops early when a round
-   finds nothing that would change the answer.
-6. The agent checks the important claims and writes the synthesis.
+4. With more than one round, the agent revises its own draft between
+   rounds, and members review it again.
+5. The agent checks the important claims and writes the synthesis.
 
 A member that fails after launch makes the council incomplete, and the agent
 keeps the answers it has.
