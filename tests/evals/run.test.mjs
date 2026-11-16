@@ -70,12 +70,12 @@ test('routing for one skill runs without a base and must pass every attempt', as
   const { requests, env } = await startStub(t, '{"skill": "council"}')
   const { status, output } = await runEval({ args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.1-sol'], env })
 
-  // Seven scenarios name council: its own file's six and merge-council's near-miss.
-  assert.equal(requests.length, 7, output)
+  // Six scenarios name council, all in its own file.
+  assert.equal(requests.length, 6, output)
   assert.match(requests[0].messages[0].content, /^- council: /mu)
   assert.match(requests[0].messages[0].content, /^- jira-work-links: Use when creating, correcting/mu)
   assert.match(output, /^\| council-question \| council \| - \| 1\/1 \| skill "council" \|$/mu)
-  assert.match(output, /^\| council-near-merge \| merge-council \| - \| 0\/1 \| skill "council" \|$/mu)
-  assert.match(output, /^2 scenario result\(s\) missed an attempt in the working tree\./mu)
+  assert.match(output, /^\| council-near-review \| review \| - \| 0\/1 \| skill "council" \|$/mu)
+  assert.match(output, /^1 scenario result\(s\) missed an attempt in the working tree\./mu)
   assert.equal(status, 1)
 })

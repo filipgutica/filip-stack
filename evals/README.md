@@ -15,7 +15,7 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | `pnpm eval:handoff` | `handoff.yaml` | `handoff.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/handoff-scenarios.json` |
 | `pnpm eval:host-rules` | `host-rules.yaml` | `host-rules.mjs` | Global guidance rendered by `scripts/host-config.mjs` | `tests/host-config/host-rules-scenarios.json` |
 | `pnpm eval:workflow-rules` | `workflow-rules.yaml` | `workflow-rules.mjs` | The Workflow files that hold the rules under test | `tests/workflow/workflow-rules-scenarios.json` |
-| `pnpm eval:coding-standards` | `coding-standards.yaml` | `coding-standards.mjs` | `host-config/agents/CODING_STANDARDS.md`, the Engineering skill, the Reviewer role, and the merge council member brief | `tests/host-config/coding-standards-scenarios.json` |
+| `pnpm eval:coding-standards` | `coding-standards.yaml` | `coding-standards.mjs` | `host-config/agents/CODING_STANDARDS.md`, the Engineering skill, the Reviewer role, and full send's council gate | `tests/host-config/coding-standards-scenarios.json` |
 | `pnpm eval:skill-rules` | `skill-rules.yaml` | `rules.mjs` | The `SKILL.md` of the standalone skill, or Field Guide, that owns the scenario | The `rules` lists in `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:hill-climb` | `hill-climb.yaml` | `hill-climb.mjs` | The `hill-climb` skill and its references | `tests/skills/hill-climb-scenarios.json` |
 | `pnpm eval:retrieval` | `retrieval.yaml` | `retrieval.mjs` | Global guidance rendered by `scripts/host-config.mjs`, then the Field Guide skill | `tests/host-config/retrieval-scenarios.json` |

@@ -1,5 +1,5 @@
 ---
-related: [merge-council]
+related: [full-send, full-stop, hill-climb]
 ---
 
 ## What it does
@@ -34,13 +34,20 @@ and Opus, `frontier` is Astra and Fable, and `full` is all four.
 > Frontier council: should we split the billing service now or after the
 > migration?
 
-For a PR review with a merge verdict, use [merge-council](../merge-council/).
+To make a PR pass a council score before it merges, add a threshold to
+[full-send](../full-send/) or [full-stop](../full-stop/):
+
+> /full-stop fix the flaky login test $council 9.5
 
 ## How it works
 
-The agent writes the question, context, and criteria without its own
-preferred answer. Each member returns a recommendation, its reasons, the
-strongest objection, and what it is unsure about.
+The agent writes the question, context, and criteria. When you ask for
+thoughts on work to do and give no plan, the agent, or a planner agent,
+drafts one, and members score that plan from 0 to 10 and say what would
+raise the score. On an open question, the agent leaves out its own answer,
+and each member gives its own recommendation and confidence. Every member
+also returns its reasons, the strongest objection, and what it is unsure
+about.
 
 Before launch, the agent states the lineup. If a member you named is
 unavailable, it asks you. If the designer chose it, the agent swaps in a
@@ -57,7 +64,7 @@ has the exact model-selection and synthesis rules.
 - Each position, credited to the model that actually ran.
 - The agreements, disagreements, and doubts that affect the decision.
 - The next action, including any decision you must make.
-- A per-round report of each member's position, confidence, and strongest
+- A per-round report of each member's position, score, and strongest
   objection, in a temporary folder unless you give a path.
 
 Council advice does not authorize edits, publishing, or merging.

@@ -1,0 +1,35 @@
+{
+  "rules": [
+    {
+      "id": "fstop-council-cap",
+      "files": [
+        "skills/full-send/SKILL.md",
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full stop on your own PR with the request `$council 9.5`. Three scored council rounds are done and the lowest score is 9.2. Required checks are green, bots finished, and the branch is mergeable.",
+      "options": {
+        "pass": "hand off with PASS: ready to merge",
+        "fail": "hand off with FAIL: council 9.2/9.5 after 3 rounds and ask the user"
+      },
+      "accept": [
+        "fail"
+      ]
+    },
+    {
+      "id": "fstop-council-pass",
+      "files": [
+        "skills/full-send/SKILL.md",
+        "skills/full-send/references/council-gate.md"
+      ],
+      "task": "You run full stop on your own PR with the request `$council 9.5`. Every member scored 9.5 or higher on the current head, no blocker or should is open, the diff changes no instruction file, required checks are green, bots finished, and the branch is up to date and mergeable.",
+      "options": {
+        "pass": "hand off with PASS: ready to merge",
+        "merge": "merge the PR"
+      },
+      "accept": [
+        "pass"
+      ]
+    }
+  ]
+}

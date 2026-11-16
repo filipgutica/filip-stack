@@ -1,6 +1,6 @@
 ---
 name: full-send
-description: Take a change or pull request to a merged PR, or to a pass or fail verdict for human review, while the user is not watching. Reviews the code and the PR description with sol-loop, babysits CI and review bots with babysit-pr, fixes routine findings, and finishes the open items of an earlier merge council. Manual only, so invoke it with `/full-send` or `$full-send`.
+description: Take a change or pull request to a merged PR, or to a pass or fail verdict for human review, while the user is not watching. Reviews the code and the PR description with sol-loop, or with a council score gate such as `council 9.5`, babysits CI and review bots with babysit-pr, and fixes routine findings. Manual only, so invoke it with `/full-send` or `$full-send`.
 disable-model-invocation: true
 ---
 
@@ -11,12 +11,14 @@ unread until long after you stop. You own the work from its current state to a
 merged PR, or to a verdict that tells the user whether the PR is ready for
 human review.
 
-This is the light review path: one Sol reviewer, routine fixes in the loop,
-and the user only for what needs them. Use merge council for a full
-council review.
+By default this is the light review path: one Sol reviewer, routine fixes in
+the loop, and the user only for what needs them. When the request sets a
+council threshold, such as `council 9.5` or `$council 9.5`, read
+[council gate](references/council-gate.md): a council of models must score
+the PR at or above that threshold, and the gate replaces `sol-loop`.
 
-Requires the `sol-loop` and `babysit-pr` skills. If either is missing, stop
-and say so.
+Requires the `babysit-pr` skill, plus `sol-loop`, or `council` for a council
+gate. If one is missing, stop and say so.
 
 ## Grant
 
@@ -59,17 +61,6 @@ Decide both at the start and check them again before you finish.
   smallest change that works. If you are on the default branch, create a
   branch in a new worktree first, so the primary checkout stays on it.
 - **Existing PR:** start from its head.
-- **After a merge council:** find the newest
-  `${TMPDIR:-/tmp}/merge-council/*/record.json` whose `subject.repo` and
-  `subject.pr` match the PR and whose verdict is not `APPROVE`, or a record
-  path the user names. Its open items are the work list: findings whose
-  `resolution` is `open` or `needs-decision`, contested blocking findings,
-  changed instruction files, and unmet coverage. Each item needs a fix that
-  Sol accepts, or the user's decision in their own words. Invoking full send
-  is not a decision. When the record is `complete`, every member met coverage,
-  and the PR head descends from its `subject.headSha`, use that SHA as the
-  `sol-loop` base and add the open items to its brief. Otherwise review the
-  whole PR.
 
 ## Steps
 
@@ -85,7 +76,9 @@ Decide both at the start and check them again before you finish.
    list checks CI already reports, such as tests, lint, type checks, or the
    build. Add no AI attribution or model footer.
 3. **Review with `sol-loop`.** Add the description section below to its round 1
-   brief, so Sol reviews the title and description with the code.
+   brief, so Sol reviews the title and description with the code. With a
+   council gate, skip this step: the gate runs after step 5 reaches green
+   checks, and it reviews the description too.
 4. **File the PR** if none exists. Rebase onto the latest default branch
    first. Open a real PR, not a draft, so review bots run. For an existing PR
    in fix mode, apply the reviewed title and description with `gh pr edit`.
@@ -93,7 +86,8 @@ Decide both at the start and check them again before you finish.
 5. **Babysit the PR** with `babysit-pr`. In fix mode, fix real findings and CI
    failures, and get proof for each fix before you push it. In review-only
    mode, report them instead. A fix that changes behavior
-   gets a `sol-loop` follow-up round while its budget lasts.
+   gets a `sol-loop` follow-up round while its budget lasts, or the next
+   council round with a gate.
 6. **Finish.** In merge mode, merge when the merge gate passes. In verdict
    mode, finish when the merge gate passes except for human approval.
 7. **Report.** See "Report".
@@ -151,7 +145,10 @@ reproduction, a screenshot. Use the most direct proof the change allows:
 - Add one focused test that fails without the fix, when the behavior has none
   and the repository has a test setup.
 - For UI and runtime behavior, run the app and look at the change. Green
-  mocked tests do not prove that the user experience works.
+  mocked tests do not prove that the user experience works. Capture
+  screenshots of the changed UI, and a recording of a changed interactive
+  flow when the host can record; if it cannot, say so. Add them to the PR
+  as the PR-description guidance says.
 
 When you cannot prove a change, you do not have full confidence. Ask the user.
 
@@ -162,8 +159,8 @@ All of these must be true on the latest commit:
 - Your proof covers every change in the diff.
 - Sol approved the current behavior diff, and no blocker or should is open
   for the code or the description. A fix to a description blocker gets one
-  more Sol round; other description fixes need none.
-- Every merge council item from the starting point is fixed or decided.
+  more Sol round; other description fixes need none. With a council gate,
+  the gate passed on the latest commit instead.
 - Required checks are green.
 - Review bots have finished, and each finding is fixed or dismissed with a
   written reason.
@@ -186,7 +183,7 @@ link, what blocks you, and the options with your recommendation first.
 Ask only when you cannot continue alone:
 
 - You cannot prove the change.
-- A finding or merge council item needs the user's decision.
+- A finding needs the user's decision, or the council gate failed.
 - The merge gate cannot pass, and you cannot fix that yourself.
 - The next step is outside the grant: deleting data, touching production,
   changing things outside the repository, closing a PR, or force-pushing any
@@ -202,6 +199,6 @@ PR open and unmerged, and start your final message with the question.
 
 Lead with one line: `Merged: <merge commit>`, `PASS: ready for human review`,
 or `FAIL: <the single main reason>`. Then give the PR link, your proof, the Sol
-rounds and what they changed, findings fixed and declined with reasons, merge
-council items and how each closed, the decisions you made for the user, and
+rounds and what they changed, findings fixed and declined with reasons, council
+rounds and scores when a gate ran, the decisions you made for the user, and
 what the user must do next, if anything.

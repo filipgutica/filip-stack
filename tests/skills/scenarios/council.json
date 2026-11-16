@@ -21,9 +21,9 @@
       "expectedSkill": "council"
     },
     {
-      "id": "council-near-merge",
-      "prompt": "Convene a merge council to decide whether PR #412 can merge.",
-      "expectedSkill": "merge-council"
+      "id": "council-pr-merge",
+      "prompt": "Convene a council to decide whether PR #412 can merge.",
+      "expectedSkill": "council"
     },
     {
       "id": "council-near-review",
@@ -85,6 +85,29 @@
       },
       "accept": [
         "designer"
+      ]
+    },
+    {
+      "id": "council-draft-proposal",
+      "needsNewGuidance": true,
+      "task": "The user asks a council for thoughts on how to add rate limiting to the API. They supply no plan. The designer has returned the lineup and criteria.",
+      "options": {
+        "open": "send members the question and ask each for its own recommendation and confidence",
+        "proposal": "draft a proposal, or have a planner draft it, and ask members to score it and say what would raise the score"
+      },
+      "accept": [
+        "proposal"
+      ]
+    },
+    {
+      "id": "council-user-proposal",
+      "task": "The user asks a council for thoughts on their attached rate-limiting plan. The designer has returned the lineup and criteria.",
+      "options": {
+        "draft": "draft your own proposal and have members score it",
+        "theirs": "have members score the user's plan and say what would raise the score"
+      },
+      "accept": [
+        "theirs"
       ]
     }
   ]

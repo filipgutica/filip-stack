@@ -262,7 +262,7 @@ gate work.
 | `pnpm eval:handoff` | The footer's goal line, where the Decided for you list goes, the Ready to close line, and when to rename the thread | `tests/host-config/handoff-scenarios.json` |
 | `pnpm eval:host-rules` | Host guidance rules no other test covers | `tests/host-config/host-rules-scenarios.json` |
 | `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
-| `pnpm eval:coding-standards` | `host-config/agents/CODING_STANDARDS.md`, read with the Engineering skill, the Reviewer role, and the merge council member brief | `tests/host-config/coding-standards-scenarios.json` |
+| `pnpm eval:coding-standards` | `host-config/agents/CODING_STANDARDS.md`, read with the Engineering skill, the Reviewer role, and full send's council gate | `tests/host-config/coding-standards-scenarios.json` |
 | `pnpm eval:skill-rules` | The choices a standalone skill states at its decision points | `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:hill-climb` | `hill-climb` rules: score checks, locked files, holdout | `tests/skills/hill-climb-scenarios.json` |
 | `pnpm eval:retrieval` | Retrieval queries and rereading sources after compaction, in host guidance and Field Guide | `tests/host-config/retrieval-scenarios.json` |
@@ -292,8 +292,9 @@ fails when one is missing.
   they test only `expectedReference`. Add a near miss for a similar request
   that should load no skill or another one.
 - `rules`: optional. Each scenario has an `id`, a `task`, `options` as
-  `{ key: description }`, and an `accept` list of keys. The prompt holds only
-  that skill's `SKILL.md`.
+  `{ key: description }`, and an `accept` list of keys. The prompt holds
+  that skill's `SKILL.md`, plus the repository paths a scenario lists in an
+  optional `files` array, such as a reference the scenario's route loads.
 
 Run one skill's tests with `pnpm eval:routing --skill <name>` or
 `pnpm eval:skill-rules --skill <name>`. They run without a base, and every

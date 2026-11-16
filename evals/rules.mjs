@@ -2,7 +2,8 @@
 // `vars.files`, read at EVAL_BASE_REF (`baseRules`) or from the working tree
 // (`headRules`), and asks the model to pick one of the scenario's options.
 // - `rulesEval` builds an eval over a fixed set of files, such as workflow-rules.
-// - `skillRulesTests` sends the SKILL.md of the skill whose test file holds each scenario.
+// - `skillRulesTests` sends the SKILL.md of the skill whose test file holds each scenario,
+//   plus any repository files the scenario lists in `files`, such as a reference it loads.
 import { execFileSync } from 'node:child_process'
 import { readFileSync } from 'node:fs'
 import { join } from 'node:path'
@@ -79,6 +80,6 @@ export const skillRulesTests = () => {
   const { skill: only } = evalOptions()
   return readSkillScenarios()
     .filter(({ skill, rules }) => rules.length > 0 && (!only || skill === only))
-    .flatMap(({ skill, rules }) => ruleTests({ scenarios: rules, role: `You are a coding agent running the ${skill} skill below.`, files: [skillFile(skill)] })
+    .flatMap(({ skill, rules }) => rules.flatMap((scenario) => ruleTests({ scenarios: [scenario], role: `You are a coding agent running the ${skill} skill below.`, files: [skillFile(skill), ...scenario.files ?? []] }))
       .map((test) => ({ ...test, metadata: { ...test.metadata, owner: skill } })))
 }

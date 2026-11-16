@@ -88,13 +88,12 @@ Install only the standalone skills you want, with the
 | `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
 | `council` | Asks several models the same question separately and combines their advice. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `fleet-sync` | Keeps the same filip-stack skills, plugins, and guidance on every machine linked in T3 Code, with per-machine exceptions. |
-| `full-send` | Takes a change or PR through review and CI, then merges it or returns a verdict. Needs `sol-loop` and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
-| `full-stop` | Takes a change or PR through review and CI and leaves the merge to you. Needs `full-send`, `sol-loop`, and `babysit-pr`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-send` | Takes a change or PR through review and CI, then merges it or returns a verdict. Add `council 9.5` to require a council score. Needs `sol-loop`, `babysit-pr`, and `council`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `full-stop` | Takes a change or PR through review and CI and leaves the merge to you. Needs `full-send`, `sol-loop`, `babysit-pr`, and `council`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. Adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
 | `hill-climb` | Improves a working change, or climbs toward a named goal, in small rounds, and keeps an edit only when it wins under the chosen rule: blind judges, a score, or both. Needs `council`. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
-| `merge-council` | Runs a council review on a PR, fixes the findings every member agrees on, and returns a merge verdict. Needs `council`. |
 | `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |
 | `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
 | `sol-loop` | Has Sol (currently OpenAI's `gpt-6.1-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
@@ -107,7 +106,7 @@ needs:
 ```sh
 npx skills add filipgutica/filip-stack --list
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s <name> -y
-npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send full-stop sol-loop babysit-pr -y
+npx skills add filipgutica/filip-stack -g -a claude-code codex -s full-send full-stop sol-loop babysit-pr council -y
 npx skills add filipgutica/filip-stack -g -a claude-code codex -s hill-climb council -y
 ```
 

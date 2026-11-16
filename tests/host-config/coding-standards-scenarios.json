@@ -2,7 +2,7 @@
   "scenarios": [
     {
       "id": "guard-behind-validated-boundary",
-      "task": "You are applying the agreed fixes from a merge council on your pull request. Every API entry point parses requests with a request schema, and that schema rejects any filter operator other than in and not_in. A unit test covers that rejection. One agreed fix reads: \"Also add a check in the search provider that throws a 400 for any other operator, with a test, as a backstop.\" The search provider only runs after the schema.",
+      "task": "You are applying the findings from a council gate on your pull request. Every API entry point parses requests with a request schema, and that schema rejects any filter operator other than in and not_in. A unit test covers that rejection. One finding's fix reads: \"Also add a check in the search provider that throws a 400 for any other operator, with a test, as a backstop.\" The search provider only runs after the schema.",
       "options": {
         "add-guard": "add the provider check and its test",
         "decline-guard": "decline the provider check, citing the schema and its test"
@@ -14,7 +14,7 @@
     },
     {
       "id": "guard-without-boundary-validation",
-      "task": "You are applying the agreed fixes from a merge council on your pull request. A queue consumer reads filter objects from a message queue and passes them straight to the search provider. Nothing validates them before the provider, and an unknown operator reaches the upstream search service, which leaks its own error fields. One agreed fix reads: \"Reject unknown filter operators with a 400 before they reach the search service.\"",
+      "task": "You are applying the findings from a council gate on your pull request. A queue consumer reads filter objects from a message queue and passes them straight to the search provider. Nothing validates them before the provider, and an unknown operator reaches the upstream search service, which leaks its own error fields. One finding's fix reads: \"Reject unknown filter operators with a 400 before they reach the search service.\"",
       "options": {
         "add-guard": "add the provider check and its test",
         "decline-guard": "decline the provider check, citing the schema and its test"
@@ -47,7 +47,7 @@
     },
     {
       "id": "council-remedy-at-the-boundary",
-      "task": "You are a member of a merge council reviewing a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. The PR's request schema is the only way requests reach the provider. It builds its allowed operators from the datasource config, which lists empty and not_empty. You must propose a remedy for this finding.",
+      "task": "You are a member of a council gate scoring a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. The PR's request schema is the only way requests reach the provider. It builds its allowed operators from the datasource config, which lists empty and not_empty. You must propose a remedy for this finding.",
       "options": {
         "schema-only": "propose one remedy: remove empty and not_empty from the schema's allowed operators, with a schema test",
         "schema-and-provider-check": "propose the schema change and also a provider check that throws a 400 for empty and not_empty, with its own test"
@@ -58,7 +58,7 @@
     },
     {
       "id": "council-remedy-with-unvalidated-caller",
-      "task": "You are a member of a merge council reviewing a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. Requests reach the provider two ways: through the PR's request schema, which builds its allowed operators from the datasource config that lists empty and not_empty, and through a queue consumer that passes filters with no validation. You must propose a remedy for this finding.",
+      "task": "You are a member of a council gate scoring a pull request. You find that the search provider silently drops filters that use the empty and not_empty operators, so the query runs without them. Requests reach the provider two ways: through the PR's request schema, which builds its allowed operators from the datasource config that lists empty and not_empty, and through a queue consumer that passes filters with no validation. You must propose a remedy for this finding.",
       "options": {
         "schema-only": "propose one remedy: remove empty and not_empty from the schema's allowed operators, with a schema test",
         "schema-and-provider-check": "propose the schema change and also a provider check that throws a 400 for empty and not_empty, with its own test"

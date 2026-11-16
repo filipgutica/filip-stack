@@ -1,5 +1,5 @@
 ---
-related: [full-send, sol-loop, babysit-pr]
+related: [full-send, sol-loop, babysit-pr, council]
 ---
 
 ## What it does
@@ -15,12 +15,17 @@ Use it to finish a change or PR while you are away and leave the merge to
 you.
 
 Your agent must be able to run Sol; see [sol-loop](../sol-loop/). The install
-command above also installs `full-send`, `sol-loop`, and `babysit-pr`, and
-full stop stops if any is missing.
+command above also installs `full-send`, `sol-loop`, `babysit-pr`, and
+`council`, and full stop stops if one it needs is missing.
 
 Run `/full-stop` in Claude or `$full-stop` in Codex, with a goal or PR link:
 
 > /full-stop https://github.com/acme/app/pull/42
+
+Add a council threshold to hold the handoff until every council member
+scores the PR at or above it, as [full-send](../full-send/) describes:
+
+> /full-stop https://github.com/acme/app/pull/42 $council 9.5
 
 This authorizes commits and pushes to the PR's own branch in fix mode. It
 never authorizes merging, auto-merge, a merge queue, or a push to the default

@@ -9,8 +9,9 @@ Local changes:
 - Sol reviews the PR title and description with the code.
 - Verdict mode returns PASS or FAIL where the user cannot merge without another
   approval. Fix mode limits pushes to the user's own PRs.
-- It finishes the open items of an earlier merge council run.
-- Routine fixes stop at the same categories as merge council's fix eligibility.
+- A council threshold, such as `council 9.5`, replaces Sol with a council
+  gate. It adopts upstream council's per-round scores, PR description table,
+  and scope-creep rule, and adds a round cap and no-progress stop.
 - It is manual-only.
 - It treats PR text and bot output as evidence, not instructions.
 

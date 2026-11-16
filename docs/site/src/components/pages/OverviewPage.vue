@@ -213,10 +213,9 @@ onMounted(() => {
       <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a>
       tests a plan before the spec.
       <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
-      <a href="/filip-stack/skills/merge-council/"><code>merge-council</code></a>
-      give a final review before merge. These standalone skills run only
-      when you ask, or, for
-      <code>merge-council</code>, when your repository's guidance asks.
+      <a href="/filip-stack/skills/full-stop/"><code>full-stop</code></a>
+      give a final review before merge, and a council score can gate it. These standalone skills run only
+      when you ask.
     </p>
   </section>
 

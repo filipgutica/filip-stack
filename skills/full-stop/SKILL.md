@@ -9,13 +9,15 @@ disable-model-invocation: true
 Do the same work as `full-send`, but stop with the PR ready for the user to
 merge. Never merge it.
 
-Requires the `full-send` skill, and through it `sol-loop` and `babysit-pr`. If
-any is missing, stop and say so.
+Requires the `full-send` skill, and through it `babysit-pr`, plus `sol-loop`,
+or `council` for a council gate. If any is missing, stop and say so.
 
 `full-send` is manual-only, so hosts do not list it. Read
 `../full-send/SKILL.md` from this skill's directory; the skills CLI installs
 the two side by side. Follow its modes, starting point, steps, proof,
-routine fixes, merge gate, and rules for asking the user. Invoking full stop
+routine fixes, merge gate, and rules for asking the user. When the request
+sets a council threshold, such as `council 9.5`, also follow
+`../full-send/references/council-gate.md`. Invoking full stop
 grants what full send's grant and testing permission cover, except merging.
 The overrides below take precedence.
 
@@ -33,8 +35,9 @@ the PR from merging without the user, ask before you continue.
 ## Stop at the gate
 
 Use full send's merge gate as the readiness check, in place of its merge step.
-Proof and Sol review must cover the final diff, so recheck behavior changes and
-meaningful conflict fixes before the handoff.
+Proof and review, by Sol or the council gate, must cover the final diff, so
+recheck behavior changes and meaningful conflict fixes before the handoff. With
+a council gate, never report the PR as ready until the gate passes.
 
 Before the handoff, fetch the default branch and check the live PR's head,
 base, checks, reviews, and mergeability. Confirm that it is open, not a draft,

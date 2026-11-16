@@ -1,5 +1,5 @@
 ---
-related: [council, sol-loop, merge-council]
+related: [council, sol-loop, full-send]
 ---
 
 ## What it does
