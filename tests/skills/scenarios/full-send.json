@@ -294,7 +294,6 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "needsNewGuidance": true,
       "task": "You run full send with `$council 9.5` on another author's PR, so you are in review-only mode. The PR branch is behind the default branch.",
       "options": {
         "wait": "wait for the author to update the branch before scoring",
