@@ -1,7 +1,7 @@
 # Council gate
 
 Use this when the request sets a council threshold, such as `council 9.5` or
-`$council 9.5`. The gate replaces the `sol-loop` review for this run,
+`$council 9.5`, or names a bare `council`. The gate replaces the `sol-loop` review for this run,
 including the description review and follow-up rounds; its severities and
 step 3 still apply below. It needs the `council` skill; if it is missing,
 stop and say so. Council's Convene section launches the members. This file
@@ -28,7 +28,8 @@ Synthesize step does not apply.
 The PR exists before round 1. Start each round when your proof covers the
 diff, the branch is up to date with the default branch, required checks are
 green, and review bots have finished on the head, so the scored head is the
-head that merges.
+head that merges. In review-only mode, run one round on the current head,
+even when the branch is behind, and report the scores and findings.
 
 ## Score
 
@@ -90,7 +91,8 @@ brief asks every other member whether the declined finding is real:
   user with both sides in two or three lines.
 
 Any new head voids every score, including a rebase: all members score the
-new head.
+new head. A rescore that only a rebase after a pass requires does not count
+toward the round cap.
 
 ## Stop
 
@@ -102,8 +104,9 @@ mode, merge with `--match-head-commit <scored head SHA>`.
 The gate **fails** at any of these:
 
 - Three scored rounds end below `N`. Add rounds only when the user asks.
-- From round 2, the lowest score did not rise and open blockers and shoulds
-  did not shrink.
+- From round 2, while a member is below `N`, the lowest score did not rise
+  and open blockers and shoulds did not shrink, not counting findings
+  declined in the previous round.
 - A fixed finding reopens, or two members want opposite remedies.
 - Review-driven growth exceeds `max(50 lines, 25% of the round 1 changed
   lines)` over the round 1 `--shortstat`.
@@ -125,7 +128,7 @@ mode, put it in the report only.
 
 ```markdown
 <details>
-<summary>Council review: <passed|failed> at N in k rounds</summary>
+<summary>Council review: <passed|failed|in progress> at N in k rounds</summary>
 
 | Member | Round 1 (`<short sha>`) | Round 2 (`<short sha>`) |
 | --- | --- | --- |

@@ -228,7 +228,7 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, Opus says the declined finding is real. One scored round remains in the budget.",
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. In round 1 you declined Sol's should finding with evidence. In round 2, the lowest score rose from 7.5 to 8.5, and Opus says the declined finding is real. One scored round remains in the budget.",
       "options": {
         "fix": "fix the finding and run the next round",
         "ask": "take both sides of that finding to the user"
@@ -250,6 +250,50 @@
       },
       "accept": [
         "fail"
+      ]
+    },
+    {
+      "id": "fs-council-low-threshold",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send on your own PR with merge permission and the request `$council 8`. Round 1 just finished: every member scored 8.5, and Sol holds one open should finding. Required checks are green and the branch is mergeable.",
+      "options": {
+        "merge": "merge now: every member scored at least 8",
+        "fix": "fix the should finding and run another round"
+      },
+      "accept": [
+        "fix"
+      ]
+    },
+    {
+      "id": "fs-council-rebase-after-pass",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "needsNewGuidance": true,
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Every member scored 9.5 or higher on the head. The default branch then moved, and you rebased the PR with no conflicts and no change of your own. Required checks are green on the new head.",
+      "options": {
+        "merge": "merge the rebased head: the patches did not change",
+        "rescore": "run a council round on the rebased head before merging"
+      },
+      "accept": [
+        "rescore"
+      ]
+    },
+    {
+      "id": "fs-council-rescore-passes",
+      "files": [
+        "skills/full-send/references/council-gate.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 1 passed. After a rebase, the rescore round gave every member the same scores of 9.5 or higher, with no blocker or should open. Your proof covers the diff, required checks are green, bots finished, the diff changes no instruction file, and the branch is up to date and mergeable.",
+      "options": {
+        "merge": "merge now",
+        "fail": "report FAIL: the lowest score did not rise"
+      },
+      "accept": [
+        "merge"
       ]
     }
   ]
