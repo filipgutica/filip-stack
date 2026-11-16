@@ -12,7 +12,7 @@ The site credits each source on those skills' pages.
 ## Superpowers
 
 Source: https://github.com/obra/superpowers
-Baseline: `3dcbd5c4b48e` (tag v6.2.0, 2026-07-24)
+Baseline: `22f0b463e7a5` (tag v7.0.2, reviewed 2026-11-16)
 Adapted in: `engineering`, `planning`, `technical-writing`
 
 MIT License
@@ -40,7 +40,7 @@ SOFTWARE.
 ## Ponytail
 
 Source: https://github.com/DietrichGebert/ponytail
-Baseline: `2ed6c52c9d7e` (default branch at adoption, 2026-08-10)
+Baseline: `96608e078b2d` (default branch, reviewed 2026-11-16)
 Adapted in: `engineering`
 
 Workflow adapts Ponytail's decision order: avoid an unnecessary change, reuse
@@ -74,7 +74,7 @@ SOFTWARE.
 ## ASD-STE100 skill
 
 Source: https://github.com/danyuchn/asd-ste100-skill
-Baseline: `e355af3edcec` (default branch at adoption, 2026-08-10)
+Baseline: `9c351694439e` (default branch, reviewed 2026-11-16)
 Adapted in: `technical-writing`
 
 The technical-prose reference adapts its guidance on sentence structure,
@@ -106,7 +106,7 @@ SOFTWARE.
 ## OpenClaw test-audit
 
 Source: https://github.com/openclaw/openclaw/tree/main/.agents/skills/test-audit
-Baseline: `80930af448eb` (last change to that path at adoption, 2026-09-26)
+Baseline: `3195fba90643` (last change to that path, reviewed 2026-11-16)
 Adapted in: `test-audit`
 
 Workflow retains the authoring gate, test value criteria, and campaign guide,
