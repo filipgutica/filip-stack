@@ -91,7 +91,7 @@ With full send or full stop:
    picks the judges of its own work. Each member scores merge readiness from
    0 to 10 and does not see the threshold or earlier scores. A blocking
    finding caps the score at 6 and a should-fix finding at 8.9, so only a PR
-   with nits left can reach 9.5.
+   with nits left can reach 9.5. A threshold below 9.5 runs as 9.5.
 3. The agent fixes the findings, pushes, and starts a new round. A new
    commit voids every score, so all members score the same commit.
 4. The gate passes when every member reaches the threshold on that commit.
