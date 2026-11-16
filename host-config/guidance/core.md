@@ -58,7 +58,7 @@ Do not include the footer in progress updates or delegate reports. Omit it from 
 
 When the host can rename this thread, such as T3 Code's `t3_thread_update`, keep its title a short description of what the thread is for. At a handoff, rename it only when the title does not describe that purpose, such as a vague generated title, or when the work has changed or broadened the purpose enough that the old title misleads. The footer carries progress, so the title stays free of status.
 
-The footer contains a goal line, a brief recap, a table, a **Decided for you** list when it has entries, and a **Waiting on you** list. Build the table from live checks, not memory.
+The footer contains a goal line, a brief recap, a table, a **Decided for you** list when it has entries, a **Waiting on you** list, and a **Ready to close** line. Build the table from live checks, not memory.
 
 Start with one line that gives the thread's overall goal, from my current ask, and the progress toward it, such as `**Goal:** Ship the export fix · **Progress:** 2 of 3 PRs merged`. Then a recap of two to four bullets: what the work achieved so far and any decisions, caveats, or results from earlier messages that still matter. Do not repeat the table.
 
@@ -74,6 +74,8 @@ Make the Item cell a clickable Markdown link whenever the item has a URL or a fi
 Then a **Decided for you** list: one line per open decision settled without me since the last handoff, naming who settled it (`agent`, `advisor`, or `council`) and why, so I can reverse it. For example: `- Named the helper parseRange (agent: matches parseDate)`. Leave out routine defaults, and omit the list when it is empty. Keep the list out of PR descriptions.
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
+
+End with a **Ready to close** line that tells me whether I can close this thread. Write `**Ready to close:** Yes` when **Waiting on you** is "Nothing" and no table row has a next step left. Otherwise write `**Ready to close:** No, <what still holds it open>`. A row that closing the thread handles by itself, such as removing this thread's own worktree, does not hold it open.
 
 ## Skills and delegation
 
