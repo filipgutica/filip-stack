@@ -23,7 +23,8 @@ Run `/full-stop` in Claude or `$full-stop` in Codex, with a goal or PR link:
 > /full-stop https://github.com/acme/app/pull/42
 
 Add a council threshold to hold the handoff until every council member
-scores the PR at or above it, as [full-send](../full-send/) describes:
+scores the PR at or above it. [Council](../council/) explains how the gate
+works:
 
 > /full-stop https://github.com/acme/app/pull/42 council 9.5
 

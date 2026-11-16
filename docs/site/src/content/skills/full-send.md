@@ -51,7 +51,8 @@ scores the PR's merge readiness once checks are green. The agent fixes their
 findings and runs another round, for at most three rounds. It stops early
 when scores stop improving or the diff grows past its scope. Below the
 threshold, it never merges and asks you what to do. The scores go in a
-collapsed section of the PR description.
+collapsed section of the PR description. [Council](../council/) explains the
+gate and the Codex form of the threshold.
 
 The agent fixes routine problems itself. It asks you about public contracts,
 migrations, data, security, dependencies, removing a test no other test is
