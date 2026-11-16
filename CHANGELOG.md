@@ -1,3 +1,10 @@
+# [6.6.0](https://github.com/filipgutica/filip-stack/compare/v6.5.1...v6.6.0) (2026-11-16)
+
+
+### Features
+
+* **grill-me:** word questions so yes accepts the recommendation ([eda9e11](https://github.com/filipgutica/filip-stack/commit/eda9e115a795e067f1352eedb7e5d4254bacdad4))
+
 ## [6.5.1](https://github.com/filipgutica/filip-stack/compare/v6.5.0...v6.5.1) (2026-11-16)
 
 
