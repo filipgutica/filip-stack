@@ -1,3 +1,10 @@
+# [6.8.0](https://github.com/filipgutica/filip-stack/compare/v6.7.0...v6.8.0) (2026-11-17)
+
+
+### Features
+
+* **council:** size the council and its rounds to the question ([9057083](https://github.com/filipgutica/filip-stack/commit/90570831e73feb555af8ca9623bf81f1cbf4f13a))
+
 # [6.7.0](https://github.com/filipgutica/filip-stack/compare/v6.6.0...v6.7.0) (2026-11-16)
 
 
