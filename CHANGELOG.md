@@ -1,3 +1,16 @@
+# [6.13.0](https://github.com/filipgutica/filip-stack/compare/v6.12.0...v6.13.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **interface-design:** link the signs list from review and add a hero control ([708c056](https://github.com/filipgutica/filip-stack/commit/708c056f69ac49bbd649f5e1ac9c2cc0cc9aa524))
+
+
+### Features
+
+* **interface-design:** adopt the rest of frontend-design's craft guidance ([59a687c](https://github.com/filipgutica/filip-stack/commit/59a687c59b3b4b081dc83c544ccee1cf3cf33b0c))
+* **interface-design:** check sketches against the signs list, including redesigns ([d825e47](https://github.com/filipgutica/filip-stack/commit/d825e475bd7e0669f41807b797c30f352f8912e0))
+
 # [6.12.0](https://github.com/filipgutica/filip-stack/compare/v6.11.0...v6.12.0) (2026-11-17)
 
 
