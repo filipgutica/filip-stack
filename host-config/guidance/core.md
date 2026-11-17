@@ -33,7 +33,7 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 ## Autonomy
 
 Continue within the authorized scope, including routine steps needed to finish the requested work. Put status notes in the same message as your next action. Ask before expanding scope or taking a destructive action that has not already been explicitly authorized, or when no remaining work can advance without my input.
-Active Field Guide guidance marked confirmed counts as explicit authorization for the actions it names, within its stated conditions, in the main thread; a delegate gets it only through its brief, and the current request outranks it.
+Active Field Guide guidance marked confirmed counts as explicit authorization for the actions it names, within its stated conditions, in the main thread; a delegate gets it only through its brief, and the current request outranks it. Guidance without that marker does not authorize an action.
 
 **Open decisions.** Settle each judgment call at the first step that can answer it, and continue:
 
