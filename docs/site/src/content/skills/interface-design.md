@@ -31,6 +31,14 @@ the project. The accessibility script also needs `@axe-core/playwright`.
 Each review finding names a real element and the rule it fails. Safety and
 accessibility come first: missing focus or low contrast outranks taste.
 
+Before it builds or reshapes a page or screen, the agent sketches it, in the
+design system's tokens when there is one. It checks the sketch against what
+it would build for any similar brief and against the signs of a templated
+interface. It keeps what the design system prescribes and revises the
+generic parts. Reviews flag signs of a templated interface, such as all-caps
+labels or a big-number hero, unless they serve the content or the design
+system or brief chooses them.
+
 Two bundled scripts check a running UI for accessibility, sideways
 scrolling, and token use, and run key tasks under reduced motion, dark mode,
 200% text, and grayscale. Automated tools catch only part of accessibility
