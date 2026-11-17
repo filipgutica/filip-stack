@@ -1,6 +1,6 @@
 ---
 name: council
-description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent designs the council, starting from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
+description: Gather independent opinions from a council of models when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent sizes the council from Astra, Sol 6.1, Opus 5.5, and Fable 5.2. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
 ---
 
 # Council
@@ -14,9 +14,9 @@ The request may set any of these. A user, global guidance, or a calling skill su
 - **Goal:** the question to decide or the output to produce.
 - **Criteria and constraints:** what makes an answer useful, and limits it must respect.
 - **Members:** a model and effort for each, and optionally a lens, such as security, user experience, or maintainability.
-- **Rounds:** one by default.
+- **Rounds:** one by default. A designer sets at most three.
 
-The user or a calling skill can name a preset in place of members. Each preset runs every member at high effort and needs no designer:
+A preset names the members. The user or a calling skill can name one, which needs no designer, or the designer can choose one. Each preset runs every member at high effort:
 
 | Preset | Members |
 | --- | --- |
@@ -28,11 +28,16 @@ For a council on your own question or work, the designer builds the lineup.
 
 Use the fields the request sets as given. When the request names the lineup, frame the remaining fields from the request without a designer.
 
-When the request leaves the lineup open, start one designer before the members: Fable 5.2 at high effort, read-only, with no further delegation. If it is unavailable, use Astra. Send it the request in the requester's words, the context and artifacts, the fields already set, the default lineup below, and the models the host can reach. Do not send your preferred answer. Ask it to return:
+When the request leaves the lineup open, start one designer before the members: Opus 5.5 at high effort, read-only, with no further delegation. If it is unavailable, use Sol 6.1. Send it the request in the requester's words, the context and artifacts, the fields already set, the default lineup below, and the models the host can reach. Do not send your preferred answer. Ask it to return:
 
 - The goal, criteria, and constraints.
-- Each member's model, effort, and optional lens. Start from the default lineup and change it only for a reason the question gives. Include at least two providers when they are available. A lens adds focus to the full shared brief; it does not replace it.
-- The number of rounds.
+- A preset sized to the question:
+  - `pair` for a contained question that is easy to reverse, such as a routine plan or a change to one area.
+  - `frontier` for hard reasoning within a contained scope, such as a subtle bug, an algorithm, or a close trade-off.
+  - `full` for a cross-cutting or hard-to-reverse decision, or one that touches security, data, or a public contract.
+
+  Name members instead only for a reason the question gives, with at least two providers when they are available. Give any member an optional lens; a lens adds focus to the full shared brief and does not replace it.
+- The number of rounds. Plan two or three when a proposal or artifact gains from revision between rounds, such as a `pair` council on a plan you revise. Keep one for an open question.
 - Any question about the requester's goal or intent that no source answers and whose answer would change the design. The designer settles the lineup, lenses, and other internal choices itself.
 
 Relay the designer's questions to the user and wait for answers. Then use its design unchanged, except for unavailable members as Convene describes. If no designer can run, use the default lineup and say so. State the design in one line when you launch.
@@ -47,7 +52,7 @@ Council members advise read-only. A council request alone does not authorize imp
 
 ## Convene
 
-Default lineup, which the designer starts from:
+Default lineup, the `full` preset:
 
 | Member | Model | Effort |
 | --- | --- | --- |
@@ -69,7 +74,7 @@ Launch the members in parallel with separate contexts and no access to each othe
 - A request for a recommendation, a score from 0 to 10, supporting evidence or reasoning, the strongest objection or alternative, and material uncertainties. For a proposal or artifact, the score rates it against the criteria, and the recommendation lists the changes that would raise the score. For an open question, the score is confidence that the member's own recommendation is right. A calling skill may replace the score with its own, such as a judge's vote or scorecard.
 - A direction to do the work themselves without further delegation.
 
-Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. One round is the default. Run another only when the user requests it or a specific unresolved question warrants it within the authorized task.
+Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. Run the rounds the design sets. When the proposal is your draft, revise it before each later round for the findings you accept. Send each later round the current version, a ledger of earlier findings marked fixed, declined with a reason, or open, and no earlier scores. When you may not change the proposal or artifact, a later round takes up the questions the last one left open. Stop early when a round leaves no finding that would change the recommendation. Run more rounds than the design sets only when the user requests it or a specific unresolved question warrants it within the authorized task.
 
 ## Synthesize
 

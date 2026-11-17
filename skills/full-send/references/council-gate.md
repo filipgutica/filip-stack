@@ -15,8 +15,8 @@ Synthesize step does not apply.
   open blocker or should, so treat any `N` at or below 9.5 as 9.5 everywhere
   below; say so at the start when `N` is lower. Above 9.5, it also needs nits fixed.
 - **Lineup:** council's `full` preset, unless the request names a preset or
-  members. No designer: the author never shapes the panel that scores it.
-  Never drop, swap, or re-run a member to change a score.
+  members. No designer: the same panel scores every round, so scores stay
+  comparable. Never drop, swap, or re-run a member to change a score.
 - **Bar:** merge readiness, below. The request can name another bar, such as
   "would the maintainer be happy with this"; members then score that bar
   with the same severity rubric.

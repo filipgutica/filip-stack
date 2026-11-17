@@ -14,7 +14,8 @@ decision instead of merging.
 Use it to finish a change or PR while you are away and leave the merge to
 you.
 
-Your agent must be able to run Sol; see [sol-loop](../sol-loop/). The install
+Your agent must be able to run Sol; see [sol-loop](../sol-loop/). A council
+threshold also needs every model in the [council](../council/). The install
 command above also installs `full-send`, `sol-loop`, `babysit-pr`, and
 `council`, and full stop stops if one it needs is missing.
 

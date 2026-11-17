@@ -109,6 +109,100 @@
       "accept": [
         "theirs"
       ]
+    },
+    {
+      "id": "council-designer-pair",
+      "task": "You are the designer this council skill starts. The question: should the `formatDate` helper in one module return null or throw on invalid input? Only that module calls it, and the choice is easy to change later.",
+      "options": {
+        "pair": "the pair preset: Sol 6.1 and Opus 5.5",
+        "frontier": "the frontier preset: Astra and Fable 5.2",
+        "full": "the full preset: all four default members"
+      },
+      "accept": [
+        "pair"
+      ]
+    },
+    {
+      "id": "council-designer-frontier",
+      "needsNewGuidance": true,
+      "task": "You are the designer this council skill starts. The question: why does the pagination cursor algorithm in one module skip a row when two rows share a timestamp, and what is the correct fix? No API or stored data changes.",
+      "options": {
+        "pair": "the pair preset: Sol 6.1 and Opus 5.5",
+        "frontier": "the frontier preset: Astra and Fable 5.2",
+        "full": "the full preset: all four default members"
+      },
+      "accept": [
+        "frontier"
+      ]
+    },
+    {
+      "id": "council-designer-full",
+      "task": "You are the designer this council skill starts. The question: should every service move session tokens to a new storage format? It changes stored user data and a public API that other teams call.",
+      "options": {
+        "pair": "the pair preset: Sol 6.1 and Opus 5.5",
+        "frontier": "the frontier preset: Astra and Fable 5.2",
+        "full": "the full preset: all four default members"
+      },
+      "accept": [
+        "full"
+      ]
+    },
+    {
+      "id": "council-designer-rounds",
+      "needsNewGuidance": true,
+      "task": "You are the designer this council skill starts. The user asks a council for thoughts on adding pagination to one endpoint and gives no plan, so the coordinator will draft one. You have chosen the pair preset. Now set the number of rounds.",
+      "options": {
+        "one": "one round",
+        "several": "two or three rounds, with the drafted plan revised between them"
+      },
+      "accept": [
+        "several"
+      ]
+    },
+    {
+      "id": "council-designer-rounds-open",
+      "task": "You are the designer this council skill starts. The user asks an open question with nothing to build: should we cache these API responses in Redis or in the browser? Set the number of rounds.",
+      "options": {
+        "one": "one round",
+        "several": "two or three rounds"
+      },
+      "accept": [
+        "one"
+      ]
+    },
+    {
+      "id": "council-later-round",
+      "task": "You coordinate a two-round pair council on a plan you drafted. Round 1 just ended, and you accept two of Sol 6.1's findings. Round 2 is next.",
+      "options": {
+        "revised": "revise the plan for the accepted findings, then send round 2 the revised plan and a ledger of round 1 findings, without round 1 scores",
+        "scores": "send round 2 the same plan with round 1's findings and scores"
+      },
+      "accept": [
+        "revised"
+      ]
+    },
+    {
+      "id": "council-designer-model",
+      "needsNewGuidance": true,
+      "task": "The user asks for a council and names no preset, members, or criteria. You are about to start the designer, and every model is available.",
+      "options": {
+        "opus": "Opus 5.5 at high effort",
+        "fable": "Fable 5.2 at high effort"
+      },
+      "accept": [
+        "opus"
+      ]
+    },
+    {
+      "id": "council-later-round-supplied",
+      "task": "You coordinate a two-round pair council on a plan the user supplied. Round 1 just ended: you accept two findings, and one question about the plan's rollout is still open. Round 2 is next.",
+      "options": {
+        "revise": "revise the user's plan for the accepted findings and send round 2 the revised plan",
+        "open": "leave the user's plan unchanged and send round 2 the round 1 findings ledger, focused on the open rollout question"
+      },
+      "accept": [
+        "open"
+      ]
     }
   ]
 }

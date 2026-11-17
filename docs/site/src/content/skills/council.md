@@ -4,9 +4,10 @@ related: [full-send, full-stop, hill-climb]
 
 ## What it does
 
-No member sees another member's answer. Your agent then checks the important
-claims, weighs the reasoning, and keeps disagreement visible instead of
-averaging it away.
+Your agent sends the same question to each member in a separate context,
+so no member sees another's answer. It then checks the important claims,
+weighs the reasoning, and keeps disagreement visible instead of averaging it
+away.
 
 ## When to use it
 
@@ -55,10 +56,20 @@ run the models. A council needs at least two members.
 | Opus | Claude Opus 5.5 (`claude-opus-5-5`) |
 | Fable | Claude Fable 5.2 (`claude-fable-5-2`) |
 
-By default, a separate designer agent picks the members, so your agent never
-picks the judges for its own question. You can instead set the members,
-goal, criteria, or lenses such as security, or name a preset: `pair` is Sol
-and Opus, `frontier` is Astra and Fable, and `full` is all four.
+You don't have to choose members. By default, a separate designer agent
+(Opus 5.5) sizes the council to the question, so your agent never picks the
+judges for its own question:
+
+| Preset | Members | The designer picks it for |
+| --- | --- | --- |
+| `pair` | Sol and Opus | A contained question that is easy to reverse, such as a routine plan |
+| `frontier` | Astra and Fable | Hard reasoning in a contained scope, such as a subtle bug |
+| `full` | All four | A cross-cutting or hard-to-reverse decision, or one that touches security, data, or a public contract |
+
+The designer can also plan up to three rounds, such as a `pair` council that
+reviews a plan, sees it revised, and reviews it again. To choose yourself,
+name a preset, or set the members, goal, criteria, rounds, or lenses such as
+security.
 
 > Frontier council: should we split the billing service now or after the
 > migration?
@@ -77,27 +88,29 @@ On its own:
    objection, what it is unsure about, and a score from 0 to 10. For a plan,
    the score rates the plan. For an open question, it is the member's
    confidence.
-4. The agent checks the important claims and writes the synthesis.
+4. With more than one round, the agent revises its own draft between
+   rounds, and members review it again.
+5. The agent checks the important claims and writes the synthesis.
 
 A member that fails after launch makes the council incomplete, and the agent
-keeps the answers it has. One round is the default. Another needs your
-request or a specific open question.
+keeps the answers it has.
 
 With full send or full stop:
 
 1. The agent makes the change, opens the PR, proves the change, and waits
    for green checks.
-2. The `full` council reviews the PR, with no designer, so the agent never
-   picks the judges of its own work. Each member scores merge readiness from
+2. The `full` council reviews the PR. There is no designer, so the same
+   panel scores every round. Each member scores merge readiness from
    0 to 10 and does not see the threshold or earlier scores. A blocking
    finding caps the score at 6 and a should-fix finding at 8.9, so only a PR
-   with nits left can reach 9.5. A threshold below 9.5 runs as 9.5.
+   with nothing above a nit can reach 9.5. A threshold below 9.5 runs as 9.5.
 3. The agent fixes the findings, pushes, and starts a new round. A new
    commit voids every score, so all members score the same commit.
 4. The gate passes when every member reaches the threshold on that commit.
-5. After three rounds below the threshold, or when a round makes no
-   progress or the diff grows past its scope, the gate fails. The agent leaves the PR unmerged and asks you
-   once: accept the scores, allow more rounds, or rescope.
+5. The gate fails after three rounds below the threshold, or earlier, for
+   example when a round makes no progress or the diff grows past its scope.
+   The agent leaves the PR unmerged and asks you once: accept the scores,
+   allow more rounds, or rescope.
 
 Council's
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/council/SKILL.md)

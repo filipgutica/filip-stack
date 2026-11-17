@@ -4,7 +4,9 @@
 adaptation uses Astra, Sol 6.1, Opus 5.5, and Fable 5.2 at high effort, with
 the current agent coordinating one round by default. The request sets members,
 lenses, goal, and criteria, or a separate designer agent does, never the
-coordinating agent. It retains independent advice and synthesis. Members
+coordinating agent. The designer sizes the council from the pair, frontier,
+and full presets and can plan up to three rounds, revising a drafted proposal
+between them. It retains independent advice and synthesis. Members
 score a proposal or artifact against the criteria, drafting a proposal first
 when the request has none, or give a confidence score on an open question,
 in a written report. PR updates, per-round score tables, and fix/review loops

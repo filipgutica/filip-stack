@@ -18,7 +18,8 @@ Use it to finish a local change or an existing PR, including the merge when
 the checks allow it. To keep the merge decision yourself, use
 [full-stop](../full-stop/).
 
-Your agent must be able to run Sol; see [sol-loop](../sol-loop/). The install
+Your agent must be able to run Sol; see [sol-loop](../sol-loop/). A council
+threshold also needs every model in the [council](../council/). The install
 command above also installs `sol-loop`, `babysit-pr`, and `council`, and
 full send stops if one it needs is missing.
 
