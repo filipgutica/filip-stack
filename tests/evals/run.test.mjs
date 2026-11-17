@@ -56,7 +56,7 @@ test('the autonomy eval compares both guidance versions and applies the gate', a
     env,
   })
 
-  assert.equal(requests.length, 24, output)
+  assert.equal(requests.length, 22, output)
   assert.deepEqual(Object.keys(requests[0]).sort(), ['messages', 'model'])
   assert.equal(requests[0].model, 'gpt-6.1-sol')
   assert.match(output, /^## codex guidance, gpt-6\.1-sol$/mu)

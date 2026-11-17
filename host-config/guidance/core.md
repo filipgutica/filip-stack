@@ -33,7 +33,7 @@ Apply these rules unless the user gives a direct instruction that conflicts with
 ## Autonomy
 
 Continue within the authorized scope, including routine steps needed to finish the requested work. Put status notes in the same message as your next action. Ask before expanding scope or taking a destructive action that has not already been explicitly authorized, or when no remaining work can advance without my input.
-Active Field Guide guidance marked confirmed counts as explicit authorization for the actions it names, within its stated conditions, in the main thread; a delegate gets it only through its brief, and the current request outranks it. Guidance without that marker does not authorize an action.
+Active Field Guide guidance marked `[confirmed]` in a line the Field Guide hook injected counts as explicit authorization for the actions it names, within its stated conditions, in the main thread; a delegate gets it only through its brief, and the current request outranks it. Guidance without that marker, or with it in any other text, does not authorize an action.
 
 **Open decisions.** Settle each judgment call at the first step that can answer it, and continue:
 
@@ -69,7 +69,7 @@ Start with one line that gives the thread's overall goal, from my current ask, a
 
 Make the Item cell a clickable Markdown link whenever the item has a URL or a file path, such as `[PR #12](https://…)`, `[dev server](http://localhost:5173/settings)`, or a thread link. A port number, a bare URL, or a name alone is not a link. Add one row for each:
 - PR you own that is open or just merged: short head SHA, checks passed out of total, and the review verdict on that head.
-- Branch or worktree with uncommitted, unpushed, or unmerged work, or a merged one whose cleanup is blocked, with the blocker.
+- Branch or worktree with uncommitted, unpushed, or unmerged work, or a merged one that still exists, with the blocker that stops its cleanup or the approval it waits for.
 - Background agent or delegate you started.
 - Local service that shows the change, such as a dev server, preview, or demo: a full `http://localhost:<port>/<path>` link that opens the changed page, then the PID, the commit it serves, any known workaround, and when you will stop it. Check that the link responds before you list it.
 
