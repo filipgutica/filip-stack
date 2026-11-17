@@ -1,3 +1,13 @@
+## [6.10.1](https://github.com/filipgutica/filip-stack/compare/v6.10.0...v6.10.1) (2026-11-17)
+
+
+### Bug Fixes
+
+* **field-guide:** keep [#258](https://github.com/filipgutica/filip-stack/issues/258) sidecars valid and revoke in-transit confirmations ([fd5c1ca](https://github.com/filipgutica/filip-stack/commit/fd5c1cac5b3aae4128851cc442b38f050d199a1d)), closes [#261](https://github.com/filipgutica/filip-stack/issues/261)
+* **field-guide:** revoke deleted records through watermark fingerprints ([704f939](https://github.com/filipgutica/filip-stack/commit/704f93911a265ff47fba7df0e8b1031318e1e137))
+* **field-guide:** revoke records an older plugin deleted when import brings them back ([8e2e2b9](https://github.com/filipgutica/filip-stack/commit/8e2e2b99bd6c64234726fb020525d8fbd8300b95)), closes [#261](https://github.com/filipgutica/filip-stack/issues/261)
+* **field-guide:** void confirmations after an older plugin writes the store ([e0f2340](https://github.com/filipgutica/filip-stack/commit/e0f234059ab7740e6d34f440dd1e0b85d9730a60))
+
 # [6.10.0](https://github.com/filipgutica/filip-stack/compare/v6.9.0...v6.10.0) (2026-11-17)
 
 
