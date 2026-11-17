@@ -190,8 +190,8 @@ const sessionStartOutput = (input) => {
 
 // The two command substitutions the hook reads past: `$(cat <<'EOF'` with its body up to the
 // first delimiter line and a `)` on the next, and a one-line `$(…)` with no quotes, parentheses,
-// expansions, redirects, or separators. Each becomes one plain word; any other heredoc,
-// substitution, or backtick makes the command unrecognized.
+// expansions, redirects, or separators. Each becomes the word `$_`, which is never a literal
+// path or PR; any other heredoc, substitution, or backtick makes the command unrecognized.
 const heredocSubstitution = /\$\([^\S\n]*cat[^\S\n]+<<[^\S\n]*(['"]?)([A-Za-z_]\w*)\1[^\S\n]*\n(?:(?!\2\n)[^\n]*\n)*\2\n[^\S\n]*\)/gu
 const plainSubstitution = /\$\([^'"()`$<>;&|\n]*\)/gu
 // One separator run or one word. A word joins plain characters, escapes, quoted spans, and a
@@ -210,7 +210,7 @@ const unquote = (word) => word.replace(
  * commands; it is not a shell parser.
  */
 const simpleCommands = (command) => {
-  const text = command.replace(heredocSubstitution, '_').replace(plainSubstitution, '_')
+  const text = command.replace(heredocSubstitution, '$$_').replace(plainSubstitution, '$$_')
   if (/<<|\$\(|`/u.test(text)) return null
   const commands = [{ words: [], next: null }]
   let end = 0
@@ -239,13 +239,14 @@ const withoutPrefixes = (words) => {
   return start < 0 ? [] : words.slice(start)
 }
 
-// Returns the script of `bash -c '…'`, `zsh -i -c '…'`, and similar wrappers, or null.
+// Returns the script of `bash -c '…'`, `zsh -i -c '…'`, and similar wrappers, or null. Every word
+// before the script must be an option, and none may be `-n` or `-o`, which can stop it running.
 const wrappedScript = (command) => {
   if (!['sh', 'bash', 'zsh'].includes(basename(command[0] ?? ''))) return null
-  const flag = command.findIndex((word, index) => index > 0 && /^-[A-Za-z]*c[A-Za-z]*$/u.test(word))
-  // `-n` only checks syntax, so the script does not run.
-  if (flag < 0 || command.slice(1, flag + 1).some((word) => /^-[A-Za-z]*n/u.test(word))) return null
-  return command.slice(flag + 1).find((word) => !word.startsWith('-')) ?? null
+  const script = command.findIndex((word, index) => index > 0 && !word.startsWith('-'))
+  const options = command.slice(1, script)
+  if (script < 0 || !options.some((word) => /^-[A-Za-z]*c/u.test(word)) || options.some((word) => /^-[A-Za-z]*[no]/u.test(word))) return null
+  return command[script]
 }
 
 // A path the hook can resolve without the shell: no expansion, globbing, or `cd -`.
@@ -297,8 +298,9 @@ const pullRequestUrl = /^https?:\/\/([^/\s]+\/[^/\s]+\/[^/\s]+)\/pull\/(\d+)(?:[
 const valueOptions = ['-A', '--author-email', '-b', '--body', '-F', '--body-file', '--match-head-commit', '-t', '--subject', '-R', '--repo']
 
 // The positional PR of a `gh pr merge` by number or URL; null for the current branch.
+const positionalOf = (words) => words.slice(3).find((word, index, rest) => !word.startsWith('-') && !valueOptions.includes(rest[index - 1]))
 const pullRequestOf = (words) => {
-  const target = words.slice(3).find((word, index, rest) => !word.startsWith('-') && !valueOptions.includes(rest[index - 1])) ?? ''
+  const target = positionalOf(words) ?? ''
   const url = pullRequestUrl.exec(target)
   if (url) return { repo: url[1], number: url[2] }
   return /^#?\d+$/u.test(target) ? { repo: null, number: target.replace(/^#/u, '') } : null
@@ -311,10 +313,18 @@ const repoFlagOf = (words) => {
   return repo === undefined ? null : repo.split('/').length === 2 ? `github.com/${repo}` : repo
 }
 
+// Option spellings the hook does not read: a short-option cluster or attached value that includes
+// a value option, and `--flag=value` for a flag that takes no value.
+const unreadOption = (word) => (/^-[^-]./u.test(word) && /[AFRbt]/u.test(word.slice(1)))
+  || (/^--[^=]+=/u.test(word) && !valueOptions.includes(word.slice(0, word.indexOf('='))))
+
 const ghEventFor = ({ command, dir }) => {
   const event = ghEvents.get(command.slice(1, 3).join(' '))
-  if (!event) return null
-  const pullRequest = command[1] === 'pr' && event === 'pr-merged' ? pullRequestOf(command) : null
+  if (!event || command.some(unreadOption)) return null
+  const merge = command[1] === 'pr' && event === 'pr-merged'
+  // A substitution or variable in the PR position can name another PR or repository.
+  if (merge && positionalOf(command)?.includes('$')) return null
+  const pullRequest = merge ? pullRequestOf(command) : null
   const repo = pullRequest?.repo ?? repoFlagOf(command)
   return { event, dir, repo, pullRequest, queuedMerge: event === 'pr-merged' && command.includes('--auto') }
 }

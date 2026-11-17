@@ -119,9 +119,12 @@ nothing. The hook reads past two command substitutions, each as one word:
 and a one-line `$(…)` without quotes, parentheses, `$`, redirects, or
 separators. A heredoc body is never a command, and the rest of the input is
 checked as usual, so `"$(date)" || echo failed` counts as nothing. Any other
-heredoc, substitution, or backtick, a `#` comment, a parenthesis, a `-n`
-wrapper flag, a `GH_REPO=` or `GH_HOST=` anywhere in the input, `--help`,
-`--dry-run`, `--web`, and `--disable-auto` also count as nothing. Any form the
+heredoc, substitution, or backtick, a `#` comment, a parenthesis, a wrapper
+with a `-n` or `-o` option or a word before `-c`, a `GH_REPO=` or `GH_HOST=`
+anywhere in the input, `--help`, `--dry-run`, `--web`, and `--disable-auto`
+also count as nothing. So do an attached or `=` spelling such as `-Ro/r`,
+`-sb`, or `--auto=true`, and a substitution or `$` in the PR position; a
+substitution is never a literal path for `cd` or `--repo-root`. Any form the
 hook does not recognize falls back to the skill's retrieval rule. The adapter
 loads the Field Guide modules only when the input names `gh` or the Field Guide
 script, and makes no network calls.
@@ -133,8 +136,8 @@ events in different repositories inject nothing. All events in one command
 share one block of up to three active records tagged with any of them, project
 records first, then shared, within 1.5 KB, with the markers described above. A
 `retrieve --event` command gets these lines because the CLI never reports
-confirmation, so a footer that retrieves `handoff` guidance sees which records
-are confirmed. For `gh pr merge --auto`, the text says the merge may only be
+confirmation, so a footer that retrieves `handoff` guidance sees which of the
+first three records are confirmed. For `gh pr merge --auto`, the text says the merge may only be
 queued and to confirm that the PR merged before acting on the guidance.
 
 A `gh pr merge` that names its PR by number or URL as its positional argument

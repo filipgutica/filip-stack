@@ -785,6 +785,8 @@ test('merge and create commands inject their event once per target', () => {
   const { home, repoRoot, guideRoot, capture } = seedIncident()
   const createdId = captureId(capture, { scope: 'project', subjectKey: 'pr-description', learning: 'Link the ticket in every pull request description.', turnId: 'turn-created' })
   annotateTriggers({ repoRoot, guideRoot, id: createdId, triggers: 'pr-created' })
+  // A substitution is never a directory, even when one is named like its placeholder.
+  mkdirSync(join(repoRoot, '_'))
   let session = 0
   const once = (command) => toolContext(toolHook({ home, repoRoot, sessionId: `session-forms-${session += 1}`, command }))
 
@@ -834,6 +836,17 @@ test('merge and create commands inject their event once per target', () => {
     'ls # && gh pr merge 7',
     'echo "No merge" # ; gh pr merge 5',
     'sh -n -c "gh pr merge 5"',
+    'bash -c -n "gh pr merge 5"',
+    'bash -o noexec -c "gh pr merge 5"',
+    'bash deploy.sh -c "gh pr merge 5"',
+    // A spelling the hook does not read, or a PR it cannot see.
+    'gh pr merge 5 -Rexample/other',
+    'gh pr merge 5 -R=example/other',
+    'gh pr merge -sb "5" 7',
+    'gh pr merge 5 --auto=true',
+    'gh pr merge 5 --disable-auto=true',
+    'gh pr merge "$(gh pr view 5 --json url --jq .url)" --squash',
+    'cd "$(git rev-parse --show-toplevel)" && gh pr merge 5',
     "cat <<'EOF'\ngh pr merge 13\nEOF",
     'echo "field-guide.mjs" retrieve --event handoff',
     // The repository is unknown or not this one.
