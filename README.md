@@ -143,8 +143,9 @@ claude plugin install field-guide@filip-stack   # Claude Code
 codex plugin add field-guide@filip-stack        # Codex, then restart it
 ```
 
-Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
-hooks. Workflow does not invoke or depend on Field Guide. Your current
+Installing it opts into its `SessionStart`, `UserPromptSubmit`, and
+`PostToolUse` lifecycle hooks. The `PostToolUse` hook adds guidance you tagged
+for a merge or a new pull request after `gh pr merge` or `gh pr create`. Workflow does not invoke or depend on Field Guide. Your current
 instructions, the live code, and repository contracts always outrank what it
 remembers. To confirm a stored record yourself, send a prompt that is exactly
 `confirm fg:<id>` in a main thread. No Field Guide command creates a

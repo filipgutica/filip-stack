@@ -2,8 +2,9 @@
 
 ## Purpose
 
-The Field Guide plugin injects bounded stored guidance at session start and the
-first prompt, and adds a short lifecycle instruction for Claude and Codex agents.
+The Field Guide plugin injects bounded stored guidance at session start, the
+first prompt, and the events that guidance is tagged for, and adds a short
+lifecycle instruction for Claude and Codex agents.
 Command details remain in the field-guide skill and do not appear in hook output.
 The adapter reads only the event fields listed under Privacy boundary.
 
@@ -19,9 +20,11 @@ no output.
 
 ## Lifecycle behavior
 
-Claude and Codex register the `SessionStart` and `UserPromptSubmit` hooks.
-The `UserPromptSubmit` hook instructs the agent to evaluate `capture`, `ask`, or
-`skip` before its final response.
+Claude and Codex register the `SessionStart`, `UserPromptSubmit`, and
+`PostToolUse` hooks. The `UserPromptSubmit` hook instructs the agent to
+evaluate `capture`, `ask`, or `skip` before its final response. The
+`PostToolUse` hook matches `Bash` and injects event-tagged guidance; see
+[Event injection](#event-injection).
 
 ## Guidance injection
 
@@ -39,6 +42,13 @@ that are not already in context. Later prompts receive only the lifecycle
 instruction until the next session start. A prompt with no session start, such
 as one in a session that began before the plugin was installed, is treated as
 the first prompt.
+
+After compaction, the session start also restores the active shared records
+the session received from the hooks before it: from the first prompt, an
+event, or an earlier restore. They follow the project records in the same
+eight-record, 1.5 KB section, at their current text and markers; a retired
+record is skipped, and a record that does not fit goes to the subject index.
+The next prompt does not inject a restored record again.
 
 A `startup` event for a session that already has state injects nothing and keeps
 that state. Codex subagent hooks reuse the parent's session ID, so this stops a
@@ -79,9 +89,97 @@ use the Field Guide through normal skill routing.
 
 When local analytics is enabled, the adapter appends one `hook_invoked` event
 for a supported `UserPromptSubmit` call and one `injection` event with the
-trigger and guidance IDs for each injection. This records invocation activity only.
+trigger and guidance IDs for each session-start or prompt injection. A
+compaction restore counts as a session-start injection. Event injections
+record no analytics, because a plugin copy that has not been updated rejects
+an unknown trigger in the shared event log. This records invocation activity only.
 It does not prove that the host delivered the context or that the agent used
 guidance. Analytics write failures do not change the hook output.
+
+## Event injection
+
+The `PostToolUse` hook, with a `Bash` matcher, injects guidance tagged for an
+event after a main-thread shell command in a form it recognizes, when the
+result shows the command ran and succeeded:
+
+| Command | Event |
+| --- | --- |
+| `gh pr merge`, `gh stack merge` | `pr-merged` |
+| `gh pr create` | `pr-created` |
+| The Field Guide CLI's `retrieve --event <trigger>`, run directly or as the script of `node`, `sh`, or `bash` | `<trigger>` |
+
+The hook splits the Bash input into simple commands at `&&`, `||`, `;`, `|`,
+`&`, and newlines, and skips leading `NAME=value`, `env`, and `command`. Quoted
+text is one word, so `echo "gh pr merge"` matches nothing. The script of a
+`sh`, `bash`, or `zsh -c` wrapper is checked one level deep. A command counts
+only when the input has no `||` and only `&&` follows it, so a zero exit proves
+it succeeded: `gh pr merge 5 || true`, `| tail`, and `; git pull` count as
+nothing. The hook reads past two command substitutions, each as one word:
+`$(cat <<'EOF'` with its body up to the first `EOF` line and a `)` on the next,
+and a one-line `$(…)` without quotes, parentheses, `$`, redirects, or
+separators. A heredoc body is never a command, and the rest of the input is
+checked as usual, so `"$(date)" || echo failed` counts as nothing. Any other
+heredoc, substitution, or backtick, a `#` comment, a parenthesis, a wrapper
+with a `-n` or `-o` option or a word before `-c`, a `GH_REPO=` or `GH_HOST=`
+anywhere in the input, `--help`, `--dry-run`, `--web`, and `--disable-auto`
+also count as nothing. So do an attached or `=` spelling such as `-Ro/r`,
+`-sb`, or `--auto=true`, and a substitution or `$` in the PR position; a
+substitution is never a literal path for `cd` or `--repo-root`. Any form the
+hook does not recognize falls back to the skill's retrieval rule. The adapter
+loads the Field Guide modules only when the input names `gh` or the Field Guide
+script, and makes no network calls.
+
+The records come from the repository the command acted on: `cwd`, changed by
+each `cd <literal path> &&` before the command, or a retrieve's `--repo-root`.
+Any other `cd`, a PR URL or `--repo` outside that repository's `origin`, or
+events in different repositories inject nothing. All events in one command
+share one block of up to three active records tagged with any of them, project
+records first, then shared, within 1.5 KB, with the markers described above. A
+`retrieve --event` command gets these lines because the CLI never reports
+confirmation, so a footer that retrieves `handoff` guidance sees which of the
+first three records are confirmed. For `gh pr merge --auto`, the text says the merge may only be
+queued and to confirm that the PR merged before acting on the guidance.
+
+A `gh pr merge` that names its PR by number or URL as its positional argument
+injects once per PR per session; a URL in an option value such as `--body` is
+not the PR. A `--auto` merge leaves the PR pending. The PR's key is
+`host/owner/repo#number`, from the URL or from `--repo` or `origin` with the
+number, so both forms of one PR match.
+`gh repo set-default` can name another repository than `origin`; that affects
+only this key. Session state stores only a SHA-256 hash of the event and key,
+and keeps it through compaction. Other events inject every time.
+
+The hook injects nothing, and changes no state, when:
+
+- The command ran in the background, by `run_in_background` or a
+  `backgroundTaskId` in the result, because the result arrives when it starts.
+- A retrieve names another `--guide-root`.
+- The command did not succeed. Claude reports a failed call as
+  `PostToolUseFailure`, which the plugin does not register, and the hook also
+  skips an interrupted or error result and a non-zero exit code. Codex sends
+  failures to `PostToolUse` too, so a Codex event needs a zero exit: a first
+  `Exit code: 0` or `Process exited with code 0` line, or an exit code field
+  of 0.
+- The call runs in a subagent or a T3 Code delegate. See
+  [Main-thread detection](#main-thread-detection). A delegate's merge leaves
+  the main thread's event pending.
+- No guide exists, the repository is unknown, or nothing is tagged with the
+  event.
+
+The hook does not see a merge done through a GitHub tool or MCP server instead
+of a shell command; the skill tells the agent to retrieve the event's guidance
+then.
+
+[Codex supports `PostToolUse` for shell commands, matched as `Bash`, and adds its
+`additionalContext` as developer context](https://learn.chatgpt.com/docs/hooks).
+Codex 0.169's bundled hook schema confirms `agent_id`, `session_id`, `cwd`, and
+`hookSpecificOutput.additionalContext` in the output; the command and response
+shapes come from the documentation. A live Codex probe has not
+been run. Claude's per-handler `if` filter matches each subcommand and could
+skip unrelated commands before a process starts. It takes one rule per handler,
+so it would need one handler per command form. One `hooks.json` serves both
+hosts, and Codex does not document `if`; if Codex ignored it, each of those
+handlers would run on every shell command. The plugin therefore sets no `if`.
 
 ## Main-thread detection
 
@@ -129,18 +227,21 @@ it.
 ## Privacy boundary
 
 Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, `source`,
-`prompt`, and `agent_id` fields, and the `T3CODE_THREAD_ID` environment
-variable. It runs Git in `cwd` to identify the repository and reads the
+`prompt`, `agent_id`, `tool_input.command`, and `tool_response` fields, and the
+`T3CODE_THREAD_ID` environment variable. It runs Git in `cwd`, or the directory a command's `cd` or `--repo-root` names, to identify the repository and reads the
 local guidance store. It does not access source files or files referenced by
 the event. It uses the prompt only as an in-memory retrieval query and to
-recognize a confirmation prompt, and never emits or persists it. A
+recognize a confirmation prompt, and never emits or persists it. It uses the
+Bash command only in memory to recognize an event and its target, and reads
+`tool_response` only to detect a failure; it never emits or persists either. A
 confirmation stores an entry ID, the time, the host, and the revocation IDs it
-saw, some derived from retirement IDs, keyed by the record's fingerprint. Hook output contains
-static text and stored guidance only.
+saw, some derived from retirement IDs, keyed by the record's fingerprint. Hook
+output contains static text and stored guidance only.
 
 Session state lives in `~/.field-guide/sessions/`, one file per SHA-256 hash of
-the session ID. It holds only injected guidance IDs and whether the next prompt
-should receive matched guidance. The adapter writes the state before it returns
+the session ID. It holds only injected guidance IDs, whether the next prompt
+should receive matched guidance, the IDs of shared records the session received,
+and SHA-256 hashes of the events and targets already injected. The adapter writes the state before it returns
 guidance, so a failed write prevents repeated injection. It writes each state
 file to a new temporary file and renames it into place, so it never follows a
 symlink at the state path. If `sessions/` is not a local directory, for example a

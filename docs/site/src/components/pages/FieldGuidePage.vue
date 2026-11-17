@@ -54,7 +54,8 @@ const management = [
     </p>
     <HostCommands :claude="commands.claude" :codex="commands.codex" />
     <p class="hint">
-      The plugin adds hooks that run at session start and on each prompt.
+      The plugin adds hooks that run at session start, on each prompt, and
+      after each shell command.
       Codex runs them after you review and trust them.
       In Codex, restart so a new session loads the plugin.
     </p>
@@ -171,15 +172,18 @@ const management = [
     </ol>
     <p class="hint">
       After the first prompt, only the reminder repeats, until the next session
-      start, <code>/clear</code>, or compaction. When the agent looks guidance up
+      start, <code>/clear</code>, or compaction. Compaction also brings back
+      the shared records the session had received. When the agent looks guidance up
       itself, the
       <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
       has the rules.
     </p>
     <p class="hint">
-      The agent can tag guidance for a merge, a new pull request, or a handoff,
-      and look up the tagged guidance at that moment. Tags only choose when
-      guidance appears.
+      The agent can tag guidance for a merge, a new pull request, or a handoff.
+      After a <code>gh pr merge</code> or <code>gh pr create</code> in the main
+      thread, the hook adds up to three tagged records, once per named pull request.
+      At a handoff, the agent looks the tagged guidance up. Tags only choose
+      when guidance appears.
     </p>
     <p class="hint">
       Local analytics are off by default and record metadata only, never
