@@ -560,7 +560,7 @@ test('only an exact confirm prompt in a main thread confirms guidance', () => {
   const hex = hexOf(guidanceId)
   const short = hex.slice(0, 8)
   const send = (prompt, options = {}) => promptHook({ home, repoRoot, prompt, ...options })
-  // Capture writes revocation barriers, so a prompt that confirms nothing must leave the file as it was.
+  // Capture writes revocations, so a prompt that confirms nothing must leave the file as it was.
   const captured = sidecarText(guideRoot)
 
   const notConfirming = [
@@ -591,6 +591,7 @@ test('only an exact confirm prompt in a main thread confirms guidance', () => {
     const output = send(`confirm fg:${short}`, options)
     assert.equal(sidecarText(guideRoot), captured, JSON.stringify(options))
     assert.match(output.systemMessage, /nothing confirmed.*main thread/, JSON.stringify(options))
+    assert.doesNotMatch(JSON.stringify(send(`please confirm fg:${short}`, options)), /nothing confirmed/, JSON.stringify(options))
   }
 
   assert.match(send('confirm fg:0123abcd').systemMessage, /nothing confirmed.*no guidance/)
@@ -610,7 +611,7 @@ test('only an exact confirm prompt in a main thread confirms guidance', () => {
   assert.doesNotMatch(context, /Before your final response/)
   const record = JSON.parse(sidecarText(guideRoot)).records[guidanceId.replace('guidance', 'fingerprint')]
   assert.equal(record.confirmations.length, 1)
-  assert.deepEqual(Object.keys(record.confirmations[0]).sort(), ['at', 'host', 'id'])
+  assert.deepEqual(Object.keys(record.confirmations[0]).sort(), ['at', 'host', 'id', 'seen'])
   assert.equal(record.confirmations[0].host, 'claude')
   assert.doesNotMatch(sidecarText(guideRoot), /confirm fg|worktrees|session-confirm|\/home\//)
 
@@ -680,7 +681,8 @@ test('annotation markers render only in a main thread and cannot be spoofed by s
 })
 
 test('session start shows one visible line when the store is newer than the plugin', () => {
-  const { home, repoRoot, guideRoot } = seedGuide()
+  const { home, repoRoot, guideRoot, capture } = seedGuide()
+  const guidanceId = captureId(capture, cleanupRecord)
   const start = (sessionId) => {
     const result = run({ home, input: `${JSON.stringify({ hook_event_name: 'SessionStart', session_id: sessionId, cwd: repoRoot, source: 'startup' })}\n`, env: hostEnvironment.claude })
     assert.equal(result.status, 0, result.stderr)
@@ -693,6 +695,8 @@ test('session start shows one visible line when the store is newer than the plug
   assert.match(newerAnnotations.systemMessage, /^Field Guide: .*newer.*Update the Field Guide plugin/)
   assert.equal(newerAnnotations.systemMessage.split('\n').length, 1)
   assert.match(newerAnnotations.hookSpecificOutput.additionalContext, /release-process/)
+  const refused = promptHook({ home, repoRoot, prompt: `confirm fg:${hexOf(guidanceId).slice(0, 8)}` })
+  assert.match(refused.systemMessage, /nothing confirmed; .*annotations\.json is unreadable or newer/)
 
   const memoryPath = join(guideRoot, 'memory.md')
   writeFileSync(memoryPath, readFileSync(memoryPath, 'utf8').replace('"schemaVersion": 1', '"schemaVersion": 2'))

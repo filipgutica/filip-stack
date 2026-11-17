@@ -132,7 +132,8 @@ records by guidance fingerprint and keeps two kinds of entries per record:
   `UserPromptSubmit` hook writes one, for a prompt that is exactly
   `confirm fg:<id>` in a main thread; see
   [hook lifecycle](lifecycle-hooks.md#confirmation-prompt). It stores a random
-  entry ID, the time, and the host (`claude` or `codex`). It stores no prompt
+  entry ID, the time, the host (`claude` or `codex`), and `seen`: the
+  record's revocation IDs known when the user confirmed. It stores no prompt
   text, hostname, user name, or path.
 - A **trigger** tags a record for an event: `pr-merged`, `pr-created`, or
   `handoff`. An agent adds one with `annotate --id <id> --triggers <list>` and
@@ -143,27 +144,25 @@ records by guidance fingerprint and keeps two kinds of entries per record:
 characters.
 
 Removing an entry adds its ID to the record's `acknowledged` set, as
-retirement sets do. An entry counts while its ID is not acknowledged. A
-confirmation also counts only when its time is later than the record's
-`revokedAt` barrier. A merge keeps the latest barrier, so a revocation also
-covers a confirmation made on a machine that has not synced yet.
+retirement sets do. An entry counts while its ID is not acknowledged.
 
-These actions raise the barrier to the current time and acknowledge the
-record's known confirmations:
+A revocation adds a random ID to the record's `revocations` set. A
+confirmation counts only when its `seen` holds every revocation ID of its
+record, so a revocation also covers a confirmation that its machine has not
+seen. Clocks never decide this. When a confirmation and a revocation happen
+on different machines before they sync, the revocation wins; the user confirms
+again. These actions add a revocation:
 
 - `unconfirm --id <id>`. It needs no approval, because it only removes
   authority.
-- Withdrawal, undo, supersession, and archive, for every record they retire,
-  and import, for every local record it retires.
-- `delete`, for the deleted record.
+- A transition or archive, for every record whose status it changes. A
+  restored record starts unconfirmed.
+- `delete` of a shared record. Delete of a project record drops its
+  annotations, which never sync.
 - `submit`, when it creates a record, so recaptured text starts unconfirmed.
 
-Restoring a record does not lower its barrier; the user confirms it again.
-The barrier compares clocks of different machines. A confirmation that the
-revoking machine has not seen, stamped by a clock that runs ahead, outlasts
-the revocation by up to that clock difference. A clock that runs behind can
-revoke a later confirmation. While a known barrier is later than the
-machine's clock, a confirm prompt confirms nothing and says why.
+Import adds none: it unions entries, acknowledgments, and revocations, so
+machines converge in any delivery order.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
@@ -173,8 +172,7 @@ confirmation.
 A confirmation binds to the fingerprint, which hashes the scope, subject, and
 normalized learning. Changed text is a new record and starts unconfirmed. A
 record that is withdrawn, deleted, and captured again with the same text also
-starts unconfirmed, because each of those steps raises the barrier. Delete
-keeps the annotation record for that reason.
+starts unconfirmed, because each of those steps adds a revocation.
 
 `memory.md`, its cache, and the shared export keep their versions. A plugin
 that predates annotations ignores `annotations.json`: it injects the same
@@ -304,8 +302,8 @@ format. `export --output <json-file> --annotations <json-file>` writes it: it
 keeps every entry already in the file and adds the local entries for every
 fingerprint that is not a local project record. `import --input <json-file>
 --annotations <json-file>` validates both files before it changes anything,
-then unions the entries and acknowledgments into `annotations.json`. Union
-makes revocations converge in any sync order: once any machine acknowledges an
+then unions the entries, acknowledgments, and revocations into
+`annotations.json`. Union makes revocations converge in any sync order: once any machine acknowledges an
 entry, every machine does after it syncs.
 
 No command creates a confirmation, but import copies confirmations from the
@@ -324,7 +322,7 @@ Known limits:
 
 - A restore reaches every machine only after repeated syncs, not in one pass.
 - Annotation entries and acknowledgments grow without bound, and every
-  captured fingerprint keeps a record for its barrier.
+  captured fingerprint keeps a record for its revocations.
 - A retirement or restore whose every copy a dotfile manager overwrote cannot
   be recovered.
 - The sets grow without bound.

@@ -153,7 +153,7 @@ test('field-guide-sync carries confirmations and their revocation in a second po
   const [{ id, fingerprint }] = JSON.parse(read(join(first, '.field-guide/memory.json'))).guidance
   const outstanding = (home) => {
     const record = JSON.parse(read(join(home, '.field-guide/annotations.json'))).records[fingerprint]
-    return record.confirmations.filter((entry) => !record.acknowledged.includes(entry.id))
+    return record.confirmations.filter((entry) => !record.acknowledged.includes(entry.id) && record.revocations.every((revocation) => entry.seen.includes(revocation)))
   }
 
   confirmFromPrompt({ guideRoot: join(first, '.field-guide'), prompt: `confirm fg:${id}`, mainThread: true, host: 'codex' })

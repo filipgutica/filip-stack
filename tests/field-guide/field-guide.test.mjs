@@ -2000,13 +2000,13 @@ test('validate guards restores from shared sync and unacknowledged retirements',
 const cleanupLearning = 'After a merge, remove its worktrees and branches without asking.'
 const fingerprintOf = (guidanceId) => guidanceId.replace('guidance', 'fingerprint')
 const readAnnotations = (guideRoot) => JSON.parse(readFileSync(join(guideRoot, 'annotations.json'), 'utf8'))
-// Confirmation IDs that still count, by the storage.md rule: not acknowledged, and later than the
-// record's revocation barrier.
+// Confirmation IDs that still count, by the storage.md rule: not acknowledged, and having seen
+// every revocation of the record.
 const outstandingConfirmations = ({ guideRoot, guidanceId }) => {
   if (!existsSync(join(guideRoot, 'annotations.json'))) return []
   const record = readAnnotations(guideRoot).records[fingerprintOf(guidanceId)]
   return (record?.confirmations ?? [])
-    .filter(({ id, at }) => !record.acknowledged.includes(id) && (!record.revokedAt || at > record.revokedAt))
+    .filter(({ id, seen }) => !record.acknowledged.includes(id) && record.revocations.every((revocation) => seen.includes(revocation)))
     .map(({ id }) => id)
 }
 // Reads confirmation the way a main-thread hook renders it; the CLI never reports confirmation.
@@ -2132,29 +2132,20 @@ test('unconfirm removes authority, and guidance recaptured after withdrawal star
   assert.equal(confirmed(), false)
   assert.equal(run({ command: 'unconfirm', repoRoot, guideRoot, args: ['--id', guidanceId] }).result.outcome, 'not-confirmed')
 
-  // While a barrier is later than this machine's clock, a confirmation would not count, so the
-  // prompt confirms nothing. Stamping past the barrier would let it outlast an unsynced unconfirm.
-  const synced = readFileSync(join(guideRoot, 'annotations.json'), 'utf8')
-  const skewed = JSON.parse(synced)
-  skewed.records[fingerprintOf(guidanceId)].revokedAt = new Date(Date.now() + 3_600_000).toISOString()
-  writeFileSync(join(guideRoot, 'annotations.json'), JSON.stringify(skewed))
-  assert.match(confirmByHook({ guideRoot, guidanceId }).systemMessage, /nothing confirmed; a revocation .* later than this machine's clock/)
-  assert.equal(confirmed(), false)
-  assert.deepEqual(readAnnotations(guideRoot), skewed)
-  writeFileSync(join(guideRoot, 'annotations.json'), synced)
-
   confirmByHook({ guideRoot, guidanceId })
   assert.equal(confirmed(), true)
   runInputCommand({ command: 'transition', repoRoot, guideRoot, input: { schemaVersion: 1, action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' } })
   assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId }), [])
   const preview = runInputCommand({ command: 'delete', repoRoot, guideRoot, input: { schemaVersion: 1, targetId: guidanceId } }).result
   runInputCommand({ command: 'delete', repoRoot, guideRoot, input: { schemaVersion: 1, targetId: guidanceId, apply: true, previewToken: preview.previewToken } })
+  // Project annotations never sync, so delete drops them instead of leaving them for export.
+  assert.equal(readAnnotations(guideRoot).records[fingerprintOf(guidanceId)], undefined)
   assert.equal(submit({ repoRoot, guideRoot, input: { ...input, evidence: { ...input.evidence, pointers: [{ kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId: 'turn-2' }] } } }).result.targetId, guidanceId)
   assert.equal(confirmed(), false)
   run({ command: 'validate', repoRoot, guideRoot })
 })
 
-test('a changed fingerprint is unconfirmed: supersession and archive acknowledge confirmations', () => {
+test('a changed fingerprint is unconfirmed: supersession and archive revoke confirmations', () => {
   const root = mkdtempSync(join(tmpdir(), 'field-guide-fingerprint-'))
   const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/fingerprint.git' })
   const guideRoot = join(root, 'guide')
@@ -2223,8 +2214,7 @@ for (const order of [[0, 1, 2], [0, 2, 1], [1, 0, 2], [1, 2, 0], [2, 0, 1], [2, 
     for (const { guideRoot } of machines) assert.equal(outstandingConfirmations({ guideRoot, guidanceId }).length, 1)
     assert.doesNotMatch(readFileSync(annotationsFile, 'utf8'), /worktrees|repositoryIdentity|\/home\//)
 
-    // The third machine confirms again; the second revokes before it has seen that entry.
-    confirmByHook({ guideRoot: machines[2].guideRoot, guidanceId })
+    // The second machine revokes; the others still hold the synced confirmation until they sync.
     machines[1].unconfirm(guidanceId)
     for (const index of [...order, ...order]) machines[index].sync()
     for (const { guideRoot } of machines) {
@@ -2302,18 +2292,43 @@ for (const action of ['withdraw', 'archive']) {
   })
 }
 
-test('an unconfirm revokes a confirmation it has not seen', () => {
+test('an unconfirm revokes a confirmation it has not seen, whatever its clock says', () => {
   const { first, second, guidanceId } = machinePair('revoke-unseen')
   confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  // The first machine's clock runs a year ahead.
+  const annotationsFile = join(first.guideRoot, 'annotations.json')
+  const skewed = readAnnotations(first.guideRoot)
+  skewed.records[fingerprintOf(guidanceId)].confirmations[0].at = new Date(Date.now() + 31_536_000_000).toISOString()
+  writeFileSync(annotationsFile, JSON.stringify(skewed))
   confirmByHook({ guideRoot: second.guideRoot, guidanceId })
-  first.unconfirm(guidanceId)
-  first.exportFiles()
-  second.importFrom(first)
+  second.unconfirm(guidanceId)
   second.exportFiles()
   first.importFrom(second)
+  first.exportFiles()
+  second.importFrom(first)
   assert.equal(first.confirmed(), false)
   assert.equal(second.confirmed(), false)
 })
+
+for (const staleFirst of [true, false]) {
+  test(`a stale retirement snapshot keeps a newer confirmation when it arrives ${staleFirst ? 'first' : 'last'}`, () => {
+    const { first, second, guidanceId } = machinePair(`stale-snapshot-${staleFirst}`)
+    const snapshot = () => Object.values(first.files).map((path) => [path, readFileSync(path, 'utf8')])
+    const replacement = first.learn({ learning: 'After a merge, remove its clean worktrees without asking.', relationship: { kind: 'refines', targetId: guidanceId } })
+    first.transition({ action: 'supersede', targetId: guidanceId, replacementId: replacement, confirmed: true })
+    first.exportFiles()
+    const stale = snapshot()
+    first.transition({ action: 'undo', targetId: replacement })
+    confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+    first.exportFiles()
+    const fresh = snapshot()
+    for (const files of staleFirst ? [stale, fresh] : [fresh, stale]) {
+      for (const [path, text] of files) writeFileSync(path, text)
+      second.importFrom(first)
+    }
+    assert.equal(second.confirmed(), true)
+  })
+}
 
 test('a supersession that is undone keeps a delayed confirmation revoked', () => {
   const { first, second, guidanceId } = machinePair('revoke-supersede-undo')

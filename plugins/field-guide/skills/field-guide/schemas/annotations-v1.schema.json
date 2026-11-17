@@ -19,7 +19,7 @@
     "record": {
       "type": "object",
       "additionalProperties": false,
-      "required": ["confirmations", "triggers", "acknowledged"],
+      "required": ["confirmations", "triggers", "acknowledged", "revocations"],
       "properties": {
         "confirmations": { "type": "array", "items": { "$ref": "#/$defs/confirmation" } },
         "triggers": { "type": "array", "items": { "$ref": "#/$defs/trigger" } },
@@ -29,10 +29,11 @@
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/entryId" }
         },
-        "revokedAt": {
-          "description": "Revocation barrier. A confirmation counts only when its time is later. Merges by maximum.",
-          "type": "string",
-          "format": "date-time"
+        "revocations": {
+          "description": "One random ID per revocation, merged by union. A confirmation counts only when its seen list holds every one.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/entryId" }
         }
       }
     },
@@ -40,11 +41,17 @@
       "description": "Written only by the UserPromptSubmit hook for an exact confirm prompt in a main thread.",
       "type": "object",
       "additionalProperties": false,
-      "required": ["id", "at"],
+      "required": ["id", "at", "seen"],
       "properties": {
         "id": { "$ref": "#/$defs/entryId" },
-        "at": { "type": "string", "format": "date-time" },
-        "host": { "enum": ["claude", "codex"] }
+        "at": { "description": "Metadata only; clocks never decide whether a confirmation counts.", "type": "string", "format": "date-time" },
+        "host": { "enum": ["claude", "codex"] },
+        "seen": {
+          "description": "The record's revocation IDs that this machine knew when the user confirmed.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/entryId" }
+        }
       }
     },
     "trigger": {

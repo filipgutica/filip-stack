@@ -134,9 +134,11 @@ const confirmation = (input) => {
   if (typeof input.prompt !== 'string') return null
   try {
     return confirmFromPrompt({ guideRoot: guideRoot(), prompt: input.prompt, mainThread: mainThreadFor(input), host: hostName() })
-  } catch {
-    // A locked or unreadable guide confirms nothing; say so instead of failing silently.
-    const text = 'Field Guide: nothing confirmed; the guide could not be updated, so try again.'
+  } catch (error) {
+    // A busy or unreadable guide confirms nothing; say which instead of failing silently.
+    const text = /locked by another writer/u.test(error.message)
+      ? 'Field Guide: nothing confirmed; another writer holds the guide lock, so try again.'
+      : 'Field Guide: nothing confirmed; the guide or annotations.json is unreadable or newer than this plugin reads. Run validate or update the plugin.'
     return { exact: true, systemMessage: text, context: text }
   }
 }

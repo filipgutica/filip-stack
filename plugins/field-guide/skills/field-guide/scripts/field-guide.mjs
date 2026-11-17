@@ -244,8 +244,8 @@ const assertClosedFields = ({ value, fields, label }) => {
 const byteLength = (value) => Buffer.byteLength(value, 'utf8')
 const hasControlCharacters = ({ value, allowNewlines }) => (
   allowNewlines
-    ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u0085\u2028\u2029]/u.test(value)
-    : /[\u0000-\u001f\u007f\u0085\u2028\u2029]/u.test(value)
+    ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)
+    : /[\u0000-\u001f\u007f]/u.test(value)
 )
 const portableKey = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const sourceKeyPattern = /^source:v1:[0-9a-f]{64}$/
@@ -1014,13 +1014,15 @@ const removeStaleLock = (lockFile) => {
 // stale-lock recovery cannot mistake a lock that was just taken for an empty old one.
 const acquireLock = (lockFile) => {
   const deadline = Date.now() + lockWaitMs
-  const ownerFile = `${lockFile}.${randomUUID()}.tmp`
-  writeFileSync(ownerFile, JSON.stringify({ pid: process.pid, pidNamespace: pidNamespace(), createdAt: Date.now() }))
+  const token = randomUUID()
+  const ownerFile = `${lockFile}.${token}.tmp`
+  const owner = JSON.stringify({ pid: process.pid, pidNamespace: pidNamespace(), createdAt: Date.now(), token })
+  writeFileSync(ownerFile, owner)
   try {
     for (;;) {
       try {
         linkSync(ownerFile, lockFile)
-        return
+        return owner
       } catch (error) {
         if (error.code !== 'EEXIST') throw error
       }
@@ -1035,11 +1037,16 @@ const acquireLock = (lockFile) => {
 
 // Serializes writes to memory and annotations in one guide.
 const withMemoryLock = ({ lockFile, action }) => {
-  acquireLock(lockFile)
+  const owner = acquireLock(lockFile)
   try {
     return action()
   } finally {
-    unlinkSync(lockFile)
+    // A lock that stale recovery handed to another writer is no longer this writer's to remove.
+    try {
+      if (readFileSync(lockFile, 'utf8') === owner) unlinkSync(lockFile)
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+    }
   }
 }
 
@@ -1047,7 +1054,11 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
-  const submission = validateSubmission({ submission: readSubmissionInput({ inputPath, inputJson }), paths })
+  const input = readSubmissionInput({ inputPath, inputJson })
+  // Unicode line separators would split an injected line. Only new input is checked, so a store
+  // that already holds one still loads; injection renders them as spaces.
+  if (/[\u0085\u2028\u2029]/u.test(JSON.stringify(input))) fail('submission must not contain control characters')
+  const submission = validateSubmission({ submission: input, paths })
   const fingerprint = fingerprintFor(submission)
   const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
   const target = submission.relationship
@@ -1203,15 +1214,21 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId, re
 // memory.md and its export keep their formats. Each confirmation and each trigger is an entry
 // with a random ID. Removing one acknowledges its ID, as retirement sets do. A merge is the union
 // of entries and acknowledgments, so a removal reaches every machine in any sync order.
-// A record's revokedAt is a barrier that merges by maximum: a confirmation made before it does
-// not count, so a revocation also covers confirmations that this machine has not seen yet.
+// Each revocation adds a random ID to the record's revocations, merged by union. A confirmation
+// lists in seen the revocations its machine knew; it counts only while it has seen them all, so a
+// revocation also covers confirmations it has not seen, and a concurrent revocation wins.
 // Only the UserPromptSubmit hook adds a confirmation; agent commands can only remove one.
 const annotationTriggers = ['handoff', 'pr-created', 'pr-merged']
 const annotationIdPattern = /^annotation:v1:[0-9a-f]{64}$/
 const supportedSchemaVersion = 1
 
 const emptyAnnotations = () => ({ schemaVersion: supportedSchemaVersion, records: {} })
-const emptyAnnotationRecord = () => ({ confirmations: [], triggers: [], acknowledged: [] })
+const emptyAnnotationRecord = () => ({ confirmations: [], triggers: [], acknowledged: [], revocations: [] })
+const requireAnnotationIds = ({ ids, label }) => {
+  if (!Array.isArray(ids) || ids.some((id) => !annotationIdPattern.test(id)) || new Set(ids).size !== ids.length) {
+    fail(`${label} must list unique annotation IDs`)
+  }
+}
 
 const requireTrigger = (trigger) => {
   if (!annotationTriggers.includes(trigger)) fail(`trigger must be one of: ${annotationTriggers.join(', ')}`)
@@ -1221,7 +1238,8 @@ const requireTrigger = (trigger) => {
 const validateAnnotationEntry = ({ entry, kind }) => {
   const label = `annotation ${kind}`
   assertObject({ value: entry, label })
-  assertClosedFields({ value: entry, fields: kind === 'trigger' ? ['id', 'trigger', 'at'] : ['id', 'at', 'host'], label })
+  assertClosedFields({ value: entry, fields: kind === 'trigger' ? ['id', 'trigger', 'at'] : ['id', 'at', 'host', 'seen'], label })
+  if (kind === 'confirmation') requireAnnotationIds({ ids: entry.seen, label: `${label} seen` })
   if (!annotationIdPattern.test(entry.id)) fail(`${label} has an invalid id`)
   requireTimestamp({ value: entry.at, label: `${label} at` })
   if (kind === 'trigger') requireTrigger(entry.trigger)
@@ -1230,11 +1248,11 @@ const validateAnnotationEntry = ({ entry, kind }) => {
 
 const validateAnnotationRecord = (record) => {
   assertObject({ value: record, label: 'annotations record' })
-  assertClosedFields({ value: record, fields: ['confirmations', 'triggers', 'acknowledged', 'revokedAt'], label: 'annotations record' })
+  assertClosedFields({ value: record, fields: ['confirmations', 'triggers', 'acknowledged', 'revocations'], label: 'annotations record' })
   if (![record.confirmations, record.triggers, record.acknowledged].every(Array.isArray)) {
     fail('annotations record needs confirmations, triggers, and acknowledged arrays')
   }
-  if (record.revokedAt !== undefined) requireTimestamp({ value: record.revokedAt, label: 'annotations record revokedAt' })
+  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations' })
   record.confirmations.forEach((entry) => validateAnnotationEntry({ entry, kind: 'confirmation' }))
   record.triggers.forEach((entry) => validateAnnotationEntry({ entry, kind: 'trigger' }))
   const ids = [...record.confirmations, ...record.triggers].map(({ id }) => id)
@@ -1275,22 +1293,17 @@ const readAnnotationsForDisplay = (annotationsFile) => {
 const uniqueEntries = (entries) => [...new Map(entries.map((entry) => [entry.id, entry])).values()]
   .sort((left, right) => left.id.localeCompare(right.id))
 
-// Validated timestamps are canonical ISO strings, so string order is time order.
-const laterTime = (left, right) => (left === undefined || (right !== undefined && right > left) ? right : left)
-
-// Unions entries and acknowledgments per fingerprint, in a stable order, and keeps the latest
-// revocation barrier.
+// Unions entries, acknowledgments, and revocations per fingerprint, in a stable order.
 const mergeAnnotations = (...sources) => {
   const records = {}
   for (const source of sources) {
     for (const [fingerprint, record] of Object.entries(source.records)) {
       const current = records[fingerprint] ?? emptyAnnotationRecord()
-      const revokedAt = laterTime(current.revokedAt, record.revokedAt)
       records[fingerprint] = {
         confirmations: uniqueEntries([...current.confirmations, ...record.confirmations]),
         triggers: uniqueEntries([...current.triggers, ...record.triggers]),
         acknowledged: sortedUnion(current.acknowledged, record.acknowledged),
-        ...(revokedAt === undefined ? {} : { revokedAt }),
+        revocations: sortedUnion(current.revocations, record.revocations),
       }
     }
   }
@@ -1319,17 +1332,16 @@ const acknowledgeEntries = ({ record, entries }) => {
   return ids.length > 0
 }
 
-const newAnnotationEntry = (fields) => ({ id: `annotation:v1:${randomBytes(32).toString('hex')}`, at: new Date().toISOString(), ...fields })
+const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
+const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
 
-// A confirmation counts while it is outstanding and was made after the revocation barrier.
+// A confirmation counts while it is outstanding and has seen every revocation of its record.
+// Its time is metadata only, so machine clocks never decide authority.
 const countingConfirmations = (record) => outstandingEntries({ record, entries: record.confirmations })
-  .filter(({ at }) => record.revokedAt === undefined || at > record.revokedAt)
+  .filter(({ seen }) => record.revocations.every((id) => seen.includes(id)))
 
-// Raises the barrier to now and acknowledges the known confirmations, so a plugin that ignores
-// the barrier also sees them removed.
 const revokeRecord = (record) => {
-  record.revokedAt = laterTime(record.revokedAt, new Date().toISOString())
-  acknowledgeEntries({ record, entries: record.confirmations })
+  record.revocations.push(newAnnotationId())
 }
 
 const annotationMarkers = ({ annotations, guidance }) => {
@@ -1345,8 +1357,8 @@ const displayMarkers = ({ annotations, guidance, mainThread }) => (
   mainThread ? annotationMarkers({ annotations, guidance }) : { confirmed: false, triggers: [] }
 )
 
-// Retiring, deleting, or capturing a record revokes earlier confirmations of its fingerprint, so
-// the same text never inherits authority, even from a confirmation that arrives by sync later.
+// Retiring, restoring, deleting, or capturing a record revokes the confirmations of its
+// fingerprint, so the same text never inherits authority, even from one that arrives by sync.
 // Call it before the memory write: a failed write then leaves authority removed, not lingering.
 const revokeConfirmations = ({ annotationsFile, fingerprints }) => {
   if (fingerprints.length === 0) return
@@ -1385,7 +1397,7 @@ const unconfirmUnlocked = ({ paths, reference }) => {
   const annotations = readAnnotations(paths.annotationsFile)
   const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
   const confirmed = countingConfirmations(record).length > 0
-  // The barrier also covers a confirmation made on another machine that has not synced yet.
+  // The revocation also covers a confirmation made on another machine that has not synced yet.
   revokeRecord(record)
   writeAnnotations({ path: paths.annotationsFile, annotations })
   return { outcome: confirmed ? 'unconfirmed' : 'not-confirmed', targetId: guidance.id }
@@ -1448,13 +1460,7 @@ const confirmUnlocked = ({ files, reference, host }) => {
   if (countingConfirmations(record).length > 0) {
     return confirmationMessage({ exact: true, text: `Field Guide: already confirmed: "${guidance.learning}"` })
   }
-  // A barrier stamped by a clock that runs ahead would revoke this confirmation at once.
-  // Stamping past it would let it outlast an unsynced revocation, so confirm nothing instead.
-  const entry = newAnnotationEntry(host ? { host } : {})
-  if (record.revokedAt !== undefined && entry.at <= record.revokedAt) {
-    return notConfirmed(`a revocation of this guidance is stamped ${record.revokedAt}, later than this machine's clock; confirm again after that time`)
-  }
-  record.confirmations.push(entry)
+  record.confirmations.push(newAnnotationEntry({ ...(host ? { host } : {}), seen: [...record.revocations] }))
   writeAnnotations({ path: files.annotationsFile, annotations })
   const line = injectionLine({ guidance, markers: annotationMarkers({ annotations, guidance }) })
   return {
@@ -1468,12 +1474,13 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * Handles a prompt that names a confirmation. A trimmed prompt that is exactly
  * `confirm fg:<id>`, in a main thread, confirms one active record; the result reports why
  * anything else confirms nothing. Returns null for a prompt that does not mention
- * `confirm fg:`. Stores only an entry ID, the time, and the host, never prompt text.
+ * `confirm fg:`, and for a near miss outside a main thread. Stores only an entry ID, the time,
+ * the host, and the revocation IDs seen, never prompt text.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
   if (reference === undefined) {
-    if (!/confirm fg:/iu.test(prompt)) return null
+    if (!/confirm fg:/iu.test(prompt) || !mainThread) return null
     return confirmationMessage({ exact: false, text: 'Field Guide: nothing confirmed; a confirmation is a prompt that is exactly `confirm fg:<id>`, typed by the user' })
   }
   if (!mainThread) return notConfirmed('only a prompt the user types in a main thread can confirm guidance')
@@ -1549,6 +1556,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
   const input = validateTransitionInput(readJsonInput(inputPath))
+  const statusBefore = new Map(memory.guidance.map(({ id, status }) => [id, status]))
   const target = memory.guidance.find(({ id }) => id === input.targetId)
   if (!target) fail('transition target does not exist')
   const now = new Date().toISOString()
@@ -1590,7 +1598,9 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   }
 
   const nextMemory = { ...memory, revision: memory.revision + 1 }
-  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: retiredStatuses.has(target.status) ? [target.fingerprint] : [] })
+  // Retirement and restore both change authority, so each record whose status changed is revoked.
+  const changed = memory.guidance.filter(({ id, status }) => statusBefore.get(id) !== status)
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: changed.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: input.action,
@@ -1657,7 +1667,14 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
     }
   }
   if (input.previewToken !== previewToken) fail('delete apply requires the current dry-run previewToken')
-  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [target.fingerprint] })
+  if (target.scope.kind === 'shared') {
+    revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [target.fingerprint] })
+  } else {
+    // Project annotations never sync, and once the record is gone export would treat them as shared.
+    const annotations = readAnnotations(paths.annotationsFile)
+    delete annotations.records[target.fingerprint]
+    writeAnnotations({ path: paths.annotationsFile, annotations })
+  }
   const nextMemory = {
     ...memory,
     revision: memory.revision + 1,
@@ -1840,14 +1857,11 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
   const incoming = annotationsPath ? validateAnnotations(readJsonInput(annotationsPath)) : null
   const now = new Date().toISOString()
   const result = { created: [], promoted: [], retired: [], restored: [] }
-  const activeBefore = new Set(memory.guidance.filter(({ status }) => !retiredStatuses.has(status)).map(({ id }) => id))
   const local = new Map(memory.guidance.filter(({ scope }) => scope.kind === 'shared').map((guidance) => [guidance.fingerprint, guidance]))
   const setsChanged = mergeRetirementSets({ entries: input.retired, local })
   addActiveRecords({ memory, input, local, now, result })
   reconcileSharedStatus({ memory, now, result })
   if (incoming) writeAnnotations({ path: paths.annotationsFile, annotations: mergeAnnotations(readAnnotations(paths.annotationsFile), incoming) })
-  const retiredHere = memory.guidance.filter(({ id, status }) => activeBefore.has(id) && retiredStatuses.has(status))
-  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: retiredHere.map(({ fingerprint }) => fingerprint) })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
@@ -2083,7 +2097,7 @@ const markerWordPattern = new RegExp(`\\[(${[...markerWords].join('|')})\\]`, 'g
 const injectionLine = ({ guidance, markers }) => {
   const prefix = [...(markers.confirmed ? ['confirmed'] : []), ...markers.triggers].map((marker) => `[${marker}] `).join('')
   const subject = `${markerWords.has(guidance.subjectKey) ? '\\' : ''}[${guidance.subjectKey}]`
-  const learning = guidance.learning.replace(markerWordPattern, '\\[$1]').replace(/^\s*\[/u, '\\[')
+  const learning = guidance.learning.replace(/[\u0085\u2028\u2029]/gu, ' ').replace(markerWordPattern, '\\[$1]').replace(/^\s*\[/u, '\\[')
   return `- ${prefix}${subject} ${learning}`
 }
 
