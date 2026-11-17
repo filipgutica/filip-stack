@@ -71,8 +71,9 @@ user impact.
    (Nielsen 2)
 4. Does each button name its result, and does the flow keep that verb?
    (craft.md)
-5. Does each word, box, and control on the screen earn its place? Compare
-   counts from `ui-check.mjs --count` before and after the change, and judge
+5. Does each word, box, and control on the screen earn its place? When you
+   change a screen, compare counts from `ui-check.mjs --count` before and
+   after, and judge
    them against the owning design system's rules for minimal screens.
    (Nielsen 8, owning design system)
 
