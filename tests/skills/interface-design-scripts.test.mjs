@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import test from 'node:test'
-import { fileStem, summarize as summarizeCheck, tokenValues } from '../../skills/interface-design/scripts/ui-check.mjs'
+import { fileStem, parseArgs, summarize as summarizeCheck, tokenValues } from '../../skills/interface-design/scripts/ui-check.mjs'
 import { summarize as summarizeModes, validateTasks } from '../../skills/interface-design/scripts/ui-modes.mjs'
 
 test('reads token names and values, skipping commented-out tokens', () => {
@@ -20,6 +20,18 @@ test('fails ui-check on axe or overflow findings, and on tokens only when asked'
   // The score line counts axe nodes plus pages that overflow.
   const both = summarizeCheck([run(2, true, null), run(0, false, null)], { failOnTokens: false })
   assert.deepEqual([both.violations, both.failed], [3, true])
+})
+
+test('counts only with --count, which takes no value', () => {
+  assert.equal(parseArgs(['--url', 'http://x/']).count, false)
+  const opts = parseArgs(['--count', '--url', 'http://x/'])
+  assert.deepEqual([opts.count, opts.urls], [true, ['http://x/']])
+})
+
+test('never fails ui-check on counts', () => {
+  const counts = { firstScreen: { words: 900, boxes: 90, controls: 90 }, wholePage: { words: 9000, boxes: 900, controls: 900 } }
+  assert.deepEqual(summarizeCheck([{ axe: [], overflow: false, offToken: null, counts }], { failOnTokens: true }),
+    { axe: 0, overflow: 0, tokens: 0, violations: 0, failed: false })
 })
 
 test('rejects a tasks module that would run no tasks', () => {

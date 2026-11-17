@@ -234,8 +234,9 @@ the event. It uses the prompt only as an in-memory retrieval query and to
 recognize a confirmation prompt, and never emits or persists it. It uses the
 Bash command only in memory to recognize an event and its target, and reads
 `tool_response` only to detect a failure; it never emits or persists either. A
-confirmation stores an entry ID, the time, the host, and the revocation IDs
-seen, keyed by the record's fingerprint. Hook output contains static text and stored guidance only.
+confirmation stores an entry ID, the time, the host, and the revocation IDs it
+saw, some derived from retirement IDs, keyed by the record's fingerprint. Hook
+output contains static text and stored guidance only.
 
 Session state lives in `~/.field-guide/sessions/`, one file per SHA-256 hash of
 the session ID. It holds only injected guidance IDs, whether the next prompt
