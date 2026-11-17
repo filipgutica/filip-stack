@@ -46,6 +46,37 @@
       "accept": [
         "dry-run"
       ]
+    },
+    {
+      "id": "fleet-preferences-carry-annotations",
+      "files": [
+        "skills/fleet-sync/references/preferences.md"
+      ],
+      "task": "The user asked you to refresh the whole fleet. On this machine chezmoi already manages both ~/.config/filip-stack/field-guide.json and ~/.config/filip-stack/field-guide-annotations.json, and both chezmoi copies pass validation.",
+      "options": {
+        "both": "merge and import both chezmoi copies, then export both files",
+        "guidance-only": "merge and import only field-guide.json and leave the annotations file untouched",
+        "add-and-commit": "merge both files, then chezmoi add and commit them to the dotfiles source"
+      },
+      "accept": [
+        "both"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fleet-preferences-unmanaged-annotations",
+      "files": [
+        "skills/fleet-sync/references/preferences.md"
+      ],
+      "task": "The user asked you to refresh the whole fleet. On this machine chezmoi manages ~/.config/filip-stack/field-guide.json, but ~/.config/filip-stack/field-guide-annotations.json exists only locally and chezmoi does not manage it.",
+      "options": {
+        "both": "chezmoi add the annotations file, then merge and import both files",
+        "guidance-only": "merge and import field-guide.json, keep the annotations file local, and report its transport as unconfigured",
+        "add-and-commit": "chezmoi add the annotations file and commit it to the dotfiles source"
+      },
+      "accept": [
+        "guidance-only"
+      ]
     }
   ]
 }

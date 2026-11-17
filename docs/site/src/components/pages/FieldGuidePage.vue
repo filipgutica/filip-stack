@@ -89,6 +89,28 @@ const management = [
     />
   </section>
 
+  <section aria-labelledby="confirm">
+    <h2 id="confirm">Confirm guidance for a gated action</h2>
+    <div class="prose">
+      <p>
+        Some guidance names an action that your instructions tell the agent to
+        ask about first, such as removing merged branches. For that guidance,
+        the agent offers an ID. Send a prompt that is exactly
+        <code>confirm fg:&lt;id&gt;</code>, and the hook marks the guidance
+        <code>[confirmed]</code> and shows you the text you confirmed.
+      </p>
+      <p>
+        Only that prompt confirms. Extra text, a quoted ID, a pasted report, or
+        a prompt in a delegate or subagent confirms nothing. No Field Guide
+        command adds a confirmation; import copies them from your synced file,
+        which you trust.
+        The hook cannot tell who sent the prompt, so the agent's guidance
+        forbids it from sending one. Changing, withdrawing, or deleting the
+        guidance removes the confirmation.
+      </p>
+    </div>
+  </section>
+
   <section aria-labelledby="decide">
     <h2 id="decide">What it keeps</h2>
     <p class="section-intro">
@@ -155,6 +177,11 @@ const management = [
       has the rules.
     </p>
     <p class="hint">
+      The agent can tag guidance for a merge, a new pull request, or a handoff,
+      and look up the tagged guidance at that moment. Tags only choose when
+      guidance appears.
+    </p>
+    <p class="hint">
       Local analytics are off by default and record metadata only, never
       prompts or guidance text.
     </p>
@@ -164,13 +191,18 @@ const management = [
     <h2 id="sync">Advanced: share preferences between machines</h2>
     <div class="prose">
       <p>
-        Sync <code>~/.config/filip-stack/field-guide.json</code> between
-        machines with your dotfile manager.
-        <code>filip-stack field-guide-sync</code> imports it, then exports this
-        machine's shared guidance to it. The
+        Sync <code>~/.config/filip-stack/field-guide.json</code> and
+        <code>field-guide-annotations.json</code> beside it between machines
+        with your dotfile manager. The second file carries confirmations and
+        tags. <code>filip-stack field-guide-sync</code> imports both, then
+        exports this machine's shared guidance to them. The
         <a href="/filip-stack/cli/#sync">CLI page</a> has the setup.
       </p>
       <ul>
+        <li>
+          A confirmation you remove on one machine is removed everywhere after
+          each machine syncs.
+        </li>
         <li>
           An undo reaches other machines after they sync. It reverses only the
           replacement it undoes: a withdrawal, or another replacement of the

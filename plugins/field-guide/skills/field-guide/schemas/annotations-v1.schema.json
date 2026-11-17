@@ -1,0 +1,68 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/field-guide/annotations-v1.schema.json",
+  "title": "Field-guide annotations version 1",
+  "description": "User confirmations and event triggers keyed by guidance fingerprint. The same format serves annotations.json and its portable sync copy.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "records"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "records": {
+      "type": "object",
+      "propertyNames": { "pattern": "^fingerprint:v1:[0-9a-f]{64}$" },
+      "additionalProperties": { "$ref": "#/$defs/record" }
+    }
+  },
+  "$defs": {
+    "entryId": { "type": "string", "pattern": "^annotation:v1:[0-9a-f]{64}$" },
+    "record": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["confirmations", "triggers", "acknowledged", "revocations"],
+      "properties": {
+        "confirmations": { "type": "array", "items": { "$ref": "#/$defs/confirmation" } },
+        "triggers": { "type": "array", "items": { "$ref": "#/$defs/trigger" } },
+        "acknowledged": {
+          "description": "Entry IDs that were removed. An entry counts only while its ID is not here.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/entryId" }
+        },
+        "revocations": {
+          "description": "One random ID per revocation, merged by union. A confirmation counts only when its seen list holds every one.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "$ref": "#/$defs/entryId" }
+        }
+      }
+    },
+    "confirmation": {
+      "description": "Written only by the UserPromptSubmit hook for an exact confirm prompt in a main thread.",
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "at", "seen"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entryId" },
+        "at": { "description": "Metadata only; clocks never decide whether a confirmation counts.", "type": "string", "format": "date-time" },
+        "host": { "enum": ["claude", "codex"] },
+        "seen": {
+          "description": "The record's revocation IDs and memory retirement IDs that this machine knew when the user confirmed.",
+          "type": "array",
+          "uniqueItems": true,
+          "items": { "anyOf": [{ "$ref": "#/$defs/entryId" }, { "type": "string", "pattern": "^retirement:v1:[0-9a-f]{64}$" }] }
+        }
+      }
+    },
+    "trigger": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["id", "trigger", "at"],
+      "properties": {
+        "id": { "$ref": "#/$defs/entryId" },
+        "trigger": { "enum": ["handoff", "pr-created", "pr-merged"] },
+        "at": { "type": "string", "format": "date-time" }
+      }
+    }
+  }
+}

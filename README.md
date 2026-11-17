@@ -146,7 +146,11 @@ codex plugin add field-guide@filip-stack        # Codex, then restart it
 Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
 hooks. Workflow does not invoke or depend on Field Guide. Your current
 instructions, the live code, and repository contracts always outrank what it
-remembers.
+remembers. To confirm a stored record yourself, send a prompt that is exactly
+`confirm fg:<id>` in a main thread. No Field Guide command creates a
+confirmation; import copies them from your synced file, which you trust. The
+hook cannot tell who sent the prompt, so only guidance stops an agent from
+sending it through a host tool.
 
 ## Guardrails
 
@@ -323,9 +327,11 @@ T3 keeps credentials and access grants. See
 
 ### Share Field Guide preferences
 
-Sync `~/.config/filip-stack/field-guide.json` with a dotfile manager.
-`apply` imports it. `field-guide-sync` imports it, then exports this machine's
-shared guidance to it, and `update` runs `field-guide-sync` after apply. See the
+Sync `~/.config/filip-stack/field-guide.json` and
+`field-guide-annotations.json` beside it with a dotfile manager. The second
+file carries confirmations and event triggers. `apply` imports them.
+`field-guide-sync` imports them, then exports this machine's shared guidance to
+them, and `update` runs `field-guide-sync` after apply. See the
 [CLI page](https://filipgutica.github.io/filip-stack/cli/#sync) for the steps,
 and [CONTRIBUTING.md](CONTRIBUTING.md#share-field-guide-preferences) for other
 locations.

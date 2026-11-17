@@ -50,6 +50,28 @@
           }
         }
       }
+    },
+    {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["mode", "event", "guidance", "bytes", "omittedCount", "limits"],
+      "properties": {
+        "mode": { "const": "event" },
+        "event": { "$ref": "#/$defs/trigger" },
+        "guidance": { "type": "array", "maxItems": 5, "items": { "$ref": "#/$defs/guidance" } },
+        "bytes": { "type": "integer", "maximum": 6144 },
+        "omittedCount": { "type": "integer", "minimum": 0 },
+        "analyticsEventId": { "type": "string", "format": "uuid" },
+        "limits": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["maxRecords", "maxBytes"],
+          "properties": {
+            "maxRecords": { "const": 5 },
+            "maxBytes": { "const": 6144 }
+          }
+        }
+      }
     }
   ],
   "$defs": {
@@ -87,9 +109,11 @@
         "status": { "const": "active" },
         "examples": { "type": "array", "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
         "updatedAt": { "type": "string", "format": "date-time" },
-        "match": { "enum": ["project-subject", "shared-subject", "linked-subject", "applicability"] }
+        "match": { "enum": ["project-subject", "shared-subject", "linked-subject", "applicability", "event"] },
+        "triggers": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/trigger" } }
       }
     },
+    "trigger": { "enum": ["handoff", "pr-created", "pr-merged"] },
     "candidate": {
       "type": "object",
       "additionalProperties": false,

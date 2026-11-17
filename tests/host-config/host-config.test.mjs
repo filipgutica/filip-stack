@@ -112,7 +112,8 @@ for (const mode of ['unset', 'empty', 'custom']) {
     rmSync(dirname(path), { recursive: true })
     const result = run({ ...options, command: 'field-guide-sync' })
     assert.ok(result.stdout.includes(`exported shared guidance to ${path}`))
-    assert.match(result.stdout, /add it to your dotfile manager/)
+    assert.match(result.stdout, /add both to your dotfile manager/)
+    assert.equal(JSON.parse(read(join(dirname(path), 'field-guide-annotations.json'))).schemaVersion, 1)
     assert.deepEqual(JSON.parse(read(path)), { ...portableGuidance('Name tests after behavior.'), schemaVersion: 2 })
 
     // Merge another machine's guidance before exporting the combined preferences.
@@ -137,6 +138,42 @@ test('field-guide-sync refuses an unsupported dotfile version before it exports'
   assert.match(result.stderr, /unsupported shared guidance export version: 99/)
   assert.doesNotMatch(result.stdout, /exported shared guidance/)
   assert.equal(read(path), future)
+})
+
+test('field-guide-sync carries confirmations and their revocation in a second portable file', async () => {
+  const fieldGuideScript = join(fixtureRoot, 'repo/plugins/field-guide/skills/field-guide/scripts/field-guide.mjs')
+  const { confirmFromPrompt } = await import(fieldGuideScript)
+  const xdgConfigHome = mkdtempSync(join(tmpdir(), 'host-config-annotations-xdg-'))
+  const path = join(xdgConfigHome, 'filip-stack/field-guide.json')
+  const annotationsPath = join(xdgConfigHome, 'filip-stack/field-guide-annotations.json')
+  const [first, second] = ['first', 'second'].map((name) => mkdtempSync(join(tmpdir(), `host-config-annotations-${name}-`)))
+  mkdirSync(dirname(path), { recursive: true })
+  writeFileSync(path, JSON.stringify(portableGuidance('Remove merged worktrees without asking.')))
+  run({ home: first, command: 'apply', xdgConfigHome })
+  const [{ id, fingerprint }] = JSON.parse(read(join(first, '.field-guide/memory.json'))).guidance
+  const outstanding = (home) => {
+    const record = JSON.parse(read(join(home, '.field-guide/annotations.json'))).records[fingerprint]
+    return record.confirmations.filter((entry) => !record.acknowledged.includes(entry.id) && record.revocations.every((revocation) => entry.seen.includes(revocation)))
+  }
+
+  confirmFromPrompt({ guideRoot: join(first, '.field-guide'), prompt: `confirm fg:${id}`, mainThread: true, host: 'codex' })
+  run({ home: first, command: 'field-guide-sync', xdgConfigHome })
+  assert.equal(JSON.parse(read(annotationsPath)).records[fingerprint].confirmations.length, 1)
+  assert.doesNotMatch(read(annotationsPath), /worktrees/)
+  run({ home: second, command: 'apply', xdgConfigHome })
+  assert.equal(outstanding(second).length, 1)
+
+  const unconfirmed = spawnSync(process.execPath, [fieldGuideScript, 'unconfirm', '--id', id, '--repo-root', join(fixtureRoot, 'repo'), '--guide-root', join(second, '.field-guide')], { encoding: 'utf8' })
+  assert.equal(unconfirmed.status, 0, unconfirmed.stderr)
+  run({ home: second, command: 'field-guide-sync', xdgConfigHome })
+  run({ home: first, command: 'field-guide-sync', xdgConfigHome })
+  assert.deepEqual(outstanding(first), [])
+
+  const exported = read(path)
+  writeFileSync(annotationsPath, JSON.stringify({ schemaVersion: 1, records: { [fingerprint]: { confirmations: [{ id: 'forged' }], triggers: [], acknowledged: [] } } }))
+  const refused = run({ home: first, command: 'field-guide-sync', xdgConfigHome, expectFailure: true })
+  assert.match(refused.stderr, /annotation/)
+  assert.equal(read(path), exported)
 })
 
 test('apply keeps text outside the guidance block and refuses local edits inside it', () => {

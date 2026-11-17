@@ -47,6 +47,17 @@ subagent start from resetting the parent session.
 Each injected record is one line: its subject and its learning. Injection never
 includes evidence. Without an initialized guide, both hooks inject nothing.
 
+In a main thread, a line starts with markers from `annotations.json`:
+`[confirmed]` for a user confirmation, then one `[<trigger>]` per event trigger,
+then the subject, as in
+`- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees.`
+Only these lines show confirmation; `retrieve` never reports it. Stored text
+that uses a marker word in brackets is escaped. A subject named `confirmed` or
+like a trigger renders as `\[confirmed]`, a marker word anywhere in the
+learning renders with a backslash, and a learning that starts with `[` renders
+with a leading backslash. Unicode line separators render as spaces.
+Delegates and subagents receive the same lines without markers.
+
 [Codex supports plugin-bundled hooks and `UserPromptSubmit` additional
 context](https://learn.chatgpt.com/docs/hooks#plugin-bundled-hooks). Codex parses
 `suppressOutput` but does not implement it. Codex can therefore show the hook
@@ -72,14 +83,59 @@ trigger and guidance IDs for each injection. This records invocation activity on
 It does not prove that the host delivered the context or that the agent used
 guidance. Analytics write failures do not change the hook output.
 
+## Main-thread detection
+
+A hook runs in a main thread unless one of these holds:
+
+- The hook input has `agent_id`. Claude and Codex set it for subagents.
+- `T3CODE_THREAD_ID` starts with `thread:delegated-task:` (a local T3 Code
+  delegate) or `mcp:launch:` (a remote one). Main T3 Code threads have a plain
+  UUID, and other hosts set no value.
+
+## Confirmation prompt
+
+A `UserPromptSubmit` prompt that, trimmed, is exactly `confirm fg:<id>` in a
+main thread confirms one active record. `<id>` is a full guidance ID or an
+unambiguous hex prefix of at least eight characters. The hook writes the
+confirmation to `annotations.json`, bound to the record's fingerprint, and
+shows the confirmed text twice: as `systemMessage`, which the user sees, and
+as context, which the model sees. Both hosts support `systemMessage` on
+`UserPromptSubmit` and `SessionStart`.
+
+Anything else confirms nothing: extra text, a quoted ID, several IDs, a pasted
+report, an unknown or ambiguous ID, a record that is not active, and every
+prompt in a delegate or subagent. A prompt in that exact shape gets one short
+reason. Any other prompt that mentions `confirm fg:` keeps its normal output
+and gains one line that says nothing was confirmed. A confirm prompt gets no
+lifecycle instruction and neither receives nor consumes the first-prompt
+guidance match, so the next prompt still gets it.
+
+The hook cannot tell who sent a prompt. An agent that sends the exact prompt
+to a main thread through a host tool is barred by guidance, not by the hook.
+No Field Guide command creates a confirmation; import copies them from the
+synced file, which the user trusts like the store.
+
+## Version line
+
+When `memory.md` or `annotations.json` has a schema version newer than the
+plugin reads, `SessionStart` returns one `systemMessage` line that asks the user
+to update the Field Guide plugin. Guidance from a newer `memory.md` is not
+injected; with newer annotations, guidance is injected without markers.
+Commands that write annotations, including a capture that creates a record,
+retirement, and delete, stop with an error until the plugin is updated. A
+malformed `annotations.json` stops them the same way, and `validate` reports
+it.
+
 ## Privacy boundary
 
-Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, `source`, and
-`prompt` fields. It runs Git in `cwd` to identify the repository and reads the
+Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, `source`,
+`prompt`, and `agent_id` fields, and the `T3CODE_THREAD_ID` environment
+variable. It runs Git in `cwd` to identify the repository and reads the
 local guidance store. It does not access source files or files referenced by
-the event. It uses the prompt only as an in-memory retrieval query and
-never emits or persists it. Hook output contains static text and stored
-guidance only.
+the event. It uses the prompt only as an in-memory retrieval query and to
+recognize a confirmation prompt, and never emits or persists it. A
+confirmation stores an entry ID, the time, the host, and the revocation IDs
+seen, keyed by the record's fingerprint. Hook output contains static text and stored guidance only.
 
 Session state lives in `~/.field-guide/sessions/`, one file per SHA-256 hash of
 the session ID. It holds only injected guidance IDs and whether the next prompt

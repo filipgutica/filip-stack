@@ -3,14 +3,16 @@
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import {
-  closeSync,
   existsSync,
+  linkSync,
   mkdirSync,
-  openSync,
   readFileSync,
   readdirSync,
+  readlinkSync,
   realpathSync,
   renameSync,
+  rmSync,
+  statSync,
   unlinkSync,
   writeFileSync,
 } from 'node:fs'
@@ -43,7 +45,7 @@ const git = ({ repoRoot, args, optional = false }) => {
 
 const commands = new Set([
   'analytics-disable', 'analytics-enable', 'analytics-impact', 'analytics-report', 'analytics-review',
-  'audit', 'candidates', 'delete', 'export', 'import', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'validate',
+  'annotate', 'audit', 'candidates', 'delete', 'export', 'import', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'unconfirm', 'validate',
 ])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
@@ -53,10 +55,23 @@ const optionNames = new Map([
   ['--subject', 'subject'],
   ['--query', 'query'],
   ['--evidence-for', 'evidence-for'],
+  ['--event', 'event'],
   ['--scope', 'scope'],
   ['--since', 'since'],
   ['--output', 'output'],
+  ['--annotations', 'annotations'],
+  ['--id', 'id'],
+  ['--triggers', 'triggers'],
+  ['--remove-trigger', 'remove-trigger'],
 ])
+// Options that only some commands accept.
+const commandOptions = {
+  event: ['retrieve'],
+  annotations: ['export', 'import'],
+  id: ['annotate', 'unconfirm'],
+  triggers: ['annotate'],
+  'remove-trigger': ['annotate'],
+}
 const parseOptions = (args) => {
   const options = {}
   for (let index = 0; index < args.length; index += 1) {
@@ -72,13 +87,24 @@ const parseOptions = (args) => {
   return options
 }
 
+const validateCommandOptions = ({ command, options }) => {
+  for (const [option, allowed] of Object.entries(commandOptions)) {
+    if (options[option] && !allowed.includes(command)) fail(`--${option} is supported only for ${allowed.join(' and ')}`)
+  }
+  if (commandOptions.id.includes(command) && !options.id) fail('--id is required')
+  if (command === 'annotate' && Boolean(options.triggers) === Boolean(options['remove-trigger'])) {
+    fail('annotate requires exactly one of --triggers or --remove-trigger')
+  }
+}
+
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
   if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|audit|candidates|delete|export|import|init|maintain|paths|retrieve|submit|transition|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--since <YYYY-MM-DD>] [--output <json-file>]')
+    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|annotate|audit|candidates|delete|export|import|init|maintain|paths|retrieve|submit|transition|unconfirm|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--event <trigger>] [--since <YYYY-MM-DD>] [--output <json-file>] [--annotations <json-file>] [--id <guidance-id>] [--triggers <list> | --remove-trigger <trigger>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
+  validateCommandOptions({ command, options })
   if (options['input-json'] && !['submit', 'analytics-impact', 'analytics-review'].includes(command)) {
     fail('--input-json is supported only for submit, analytics-impact, and analytics-review')
   }
@@ -137,6 +163,14 @@ const guideRootFor = (inputGuideRoot) => (
   resolve(inputGuideRoot ? inputGuideRoot : join(homedir(), '.field-guide'))
 )
 
+// Store files that need no repository, so the confirm hook can use them outside Git.
+const guideFilesFor = (guideRoot) => ({
+  memoryFile: join(guideRoot, 'memory.json'),
+  memoryIndexFile: join(guideRoot, 'memory.md'),
+  memoryLockFile: join(guideRoot, 'memory.lock'),
+  annotationsFile: join(guideRoot, 'annotations.json'),
+})
+
 const readIdentity = (projectIndex) => {
   if (!existsSync(projectIndex)) return ''
   return readFileSync(projectIndex, 'utf8').match(/^- Identity: `(.+)`$/m)?.[1] ?? ''
@@ -180,9 +214,7 @@ const resolvePaths = ({ repoRoot: inputRoot, guideRoot: inputGuideRoot }) => {
     projectIndex: join(projectRoot, 'init.md'),
     patternsFile: join(projectRoot, 'patterns.md'),
     reviewsRoot: join(projectRoot, 'reviews'),
-    memoryFile: join(guideRoot, 'memory.json'),
-    memoryIndexFile: join(guideRoot, 'memory.md'),
-    memoryLockFile: join(guideRoot, 'memory.lock'),
+    ...guideFilesFor(guideRoot),
     repositoryName,
     repositoryRoot: gitRoot,
     origin: remote.length > 0 ? remote : null,
@@ -615,7 +647,8 @@ const readJsonMemory = (paths) => {
   return validateMemory(parsed)
 }
 
-const readMarkdownMemory = (paths) => {
+// Returns the unvalidated JSON block of canonical memory.md, or null when there is none.
+const readMemoryBlock = (paths) => {
   if (!existsSync(paths.memoryIndexFile)) return null
   const content = readFileSync(paths.memoryIndexFile, 'utf8')
   const marker = '<!-- field-guide-memory-json:v1 -->\n```json\n'
@@ -624,13 +657,16 @@ const readMarkdownMemory = (paths) => {
   const jsonStart = start + marker.length
   const jsonEnd = content.indexOf('\n```', jsonStart)
   if (jsonEnd === -1) fail('memory.md has an unterminated machine-readable record')
-  let parsed
   try {
-    parsed = JSON.parse(content.slice(jsonStart, jsonEnd))
+    return JSON.parse(content.slice(jsonStart, jsonEnd))
   } catch (error) {
     fail(`memory.md machine-readable record is not valid JSON: ${error.message}`)
   }
-  return validateMemory(parsed)
+}
+
+const readMarkdownMemory = (paths) => {
+  const parsed = readMemoryBlock(paths)
+  return parsed === null ? null : validateMemory(parsed)
 }
 
 const readMemory = (paths) => readMarkdownMemory(paths)
@@ -925,19 +961,97 @@ const writeMemoryViews = ({ paths, memory }) => {
   writeMemoryAtomically({ paths, memory })
 }
 
-const withMemoryLock = ({ paths, action }) => {
-  let descriptor
+// A writer waits briefly for the lock, inside the hook's five-second timeout. It removes a lock
+// that is older than any write takes, or whose owner process exited. A PID proves an exit only
+// within the same PID namespace, because each sandboxed command can run in its own.
+const lockWaitMs = 1500
+const lockRetryMs = 50
+const staleLockMs = 60 * 1000
+
+const pidNamespace = () => {
   try {
-    descriptor = openSync(paths.memoryLockFile, 'wx')
+    return readlinkSync('/proc/self/ns/pid')
+  } catch {
+    // Without /proc (macOS), every process shares one PID space.
+    return null
+  }
+}
+
+const isStaleLock = ({ text, ageMs }) => {
+  if (ageMs > staleLockMs) return true
+  let owner
+  try {
+    owner = JSON.parse(text)
+  } catch {
+    // A lock without owner data, such as one from an older plugin, is stale only by age.
+    return false
+  }
+  if (!Number.isSafeInteger(owner?.pid) || owner.pidNamespace !== pidNamespace()) return false
+  try {
+    process.kill(owner.pid, 0)
+    return false
   } catch (error) {
-    if (error.code === 'EEXIST') fail('Field-guide memory is locked by another writer; retry the operation')
+    return error.code === 'ESRCH'
+  }
+}
+
+// Removes a stale lock only while it still holds the content judged stale, so a lock that a new
+// owner took in the meantime survives. Only a lock taken between the second read and the unlink
+// can be lost. Returns whether the lock is gone.
+const removeStaleLock = (lockFile) => {
+  try {
+    const text = readFileSync(lockFile, 'utf8')
+    if (!isStaleLock({ text, ageMs: Date.now() - statSync(lockFile).mtimeMs })) return false
+    if (readFileSync(lockFile, 'utf8') === text) unlinkSync(lockFile)
+    return true
+  } catch (error) {
+    if (error.code === 'ENOENT') return true
     throw error
   }
+}
+
+// Links a file that already holds the owner data into place, so a live lock is never empty and
+// stale-lock recovery cannot mistake a lock that was just taken for an empty old one.
+const acquireLock = (lockFile) => {
+  const deadline = Date.now() + lockWaitMs
+  // A writer that died while holding its owner file leaves it behind; remove those past the stale age.
+  for (const name of readdirSync(dirname(lockFile)).filter((each) => each.startsWith(`${basename(lockFile)}.`) && each.endsWith('.tmp'))) {
+    const path = join(dirname(lockFile), name)
+    if (Date.now() - (statSync(path, { throwIfNoEntry: false })?.mtimeMs ?? Date.now()) > staleLockMs) rmSync(path, { force: true })
+  }
+  const token = randomUUID()
+  const ownerFile = `${lockFile}.${token}.tmp`
+  const owner = JSON.stringify({ pid: process.pid, pidNamespace: pidNamespace(), createdAt: Date.now(), token })
+  writeFileSync(ownerFile, owner)
+  try {
+    for (;;) {
+      try {
+        linkSync(ownerFile, lockFile)
+        return owner
+      } catch (error) {
+        if (error.code !== 'EEXIST') throw error
+      }
+      if (removeStaleLock(lockFile)) continue
+      if (Date.now() >= deadline) fail('Field-guide memory is locked by another writer; retry the operation')
+      Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, lockRetryMs)
+    }
+  } finally {
+    rmSync(ownerFile, { force: true })
+  }
+}
+
+// Serializes writes to memory and annotations in one guide.
+const withMemoryLock = ({ lockFile, action }) => {
+  const owner = acquireLock(lockFile)
   try {
     return action()
   } finally {
-    closeSync(descriptor)
-    unlinkSync(paths.memoryLockFile)
+    // A lock that stale recovery handed to another writer is no longer this writer's to remove.
+    try {
+      if (readFileSync(lockFile, 'utf8') === owner) unlinkSync(lockFile)
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error
+    }
   }
 }
 
@@ -945,7 +1059,11 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
-  const submission = validateSubmission({ submission: readSubmissionInput({ inputPath, inputJson }), paths })
+  const input = readSubmissionInput({ inputPath, inputJson })
+  // Unicode line separators would split an injected line. Only new input is checked, so a store
+  // that already holds one still loads; injection renders them as spaces.
+  if (/[\u0085\u2028\u2029]/u.test(JSON.stringify(input))) fail('submission must not contain control characters')
+  const submission = validateSubmission({ submission: input, paths })
   const fingerprint = fingerprintFor(submission)
   const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
   const target = submission.relationship
@@ -1015,6 +1133,8 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   }
   guidance.status = promotion.status
   const nextMemory = { ...memory, revision: memory.revision + 1 }
+  // A new record starts unconfirmed, even when an earlier record with the same text was confirmed.
+  if (!reinforcementTarget) revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [fingerprint] })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: previousStatus === 'candidate' && guidance.status === 'active'
@@ -1031,7 +1151,7 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
 }
 
 const submitObservation = ({ paths, inputPath, inputJson }) => (
-  withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
 )
 
 // Shared sync orders retirements and restores with two grow-only sets of IDs on each shared
@@ -1095,6 +1215,310 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId, re
   guidance.updatedAt = now
 }
 
+// Annotations live in annotations.json beside memory.md, keyed by guidance fingerprint, so
+// memory.md and its export keep their formats. Each confirmation and each trigger is an entry
+// with a random ID. Removing one acknowledges its ID, as retirement sets do. A merge is the union
+// of entries and acknowledgments, so a removal reaches every machine in any sync order.
+// Each revocation adds a random ID to the record's revocations, merged by union. A confirmation
+// lists in seen the revocations its machine knew; it counts only while it has seen them all, so a
+// revocation also covers confirmations it has not seen, and a concurrent revocation wins.
+// Only the UserPromptSubmit hook adds a confirmation; agent commands can only remove one.
+const annotationTriggers = ['handoff', 'pr-created', 'pr-merged']
+const annotationIdPattern = /^annotation:v1:[0-9a-f]{64}$/
+const supportedSchemaVersion = 1
+
+const emptyAnnotations = () => ({ schemaVersion: supportedSchemaVersion, records: {} })
+const emptyAnnotationRecord = () => ({ confirmations: [], triggers: [], acknowledged: [], revocations: [] })
+const requireAnnotationIds = ({ ids, label, allowRetirements = false }) => {
+  const valid = (id) => annotationIdPattern.test(id) || (allowRetirements && retirementIdPattern.test(id))
+  if (!Array.isArray(ids) || !ids.every(valid) || new Set(ids).size !== ids.length) {
+    fail(`${label} must list unique annotation IDs`)
+  }
+}
+
+const requireTrigger = (trigger) => {
+  if (!annotationTriggers.includes(trigger)) fail(`trigger must be one of: ${annotationTriggers.join(', ')}`)
+  return trigger
+}
+
+const validateAnnotationEntry = ({ entry, kind }) => {
+  const label = `annotation ${kind}`
+  assertObject({ value: entry, label })
+  assertClosedFields({ value: entry, fields: kind === 'trigger' ? ['id', 'trigger', 'at'] : ['id', 'at', 'host', 'seen'], label })
+  if (kind === 'confirmation') requireAnnotationIds({ ids: entry.seen, label: `${label} seen`, allowRetirements: true })
+  if (!annotationIdPattern.test(entry.id)) fail(`${label} has an invalid id`)
+  requireTimestamp({ value: entry.at, label: `${label} at` })
+  if (kind === 'trigger') requireTrigger(entry.trigger)
+  if (entry.host !== undefined && !['claude', 'codex'].includes(entry.host)) fail(`${label} host must be claude or codex`)
+}
+
+const validateAnnotationRecord = (record) => {
+  assertObject({ value: record, label: 'annotations record' })
+  assertClosedFields({ value: record, fields: ['confirmations', 'triggers', 'acknowledged', 'revocations'], label: 'annotations record' })
+  if (![record.confirmations, record.triggers, record.acknowledged].every(Array.isArray)) {
+    fail('annotations record needs confirmations, triggers, and acknowledged arrays')
+  }
+  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations' })
+  record.confirmations.forEach((entry) => validateAnnotationEntry({ entry, kind: 'confirmation' }))
+  record.triggers.forEach((entry) => validateAnnotationEntry({ entry, kind: 'trigger' }))
+  const ids = [...record.confirmations, ...record.triggers].map(({ id }) => id)
+  if (new Set(ids).size !== ids.length) fail('annotations record repeats an entry ID')
+  if (new Set(record.acknowledged).size !== record.acknowledged.length || record.acknowledged.some((id) => !ids.includes(id))) {
+    fail('annotations record acknowledges an unknown or repeated entry')
+  }
+}
+
+const validateAnnotations = (annotations) => {
+  assertObject({ value: annotations, label: 'annotations' })
+  assertClosedFields({ value: annotations, fields: ['schemaVersion', 'records'], label: 'annotations' })
+  if (annotations.schemaVersion !== supportedSchemaVersion) fail(`annotations have unsupported schema version: ${annotations.schemaVersion}`)
+  assertObject({ value: annotations.records, label: 'annotations records' })
+  for (const [fingerprint, record] of Object.entries(annotations.records)) {
+    if (!fingerprintPattern.test(fingerprint)) fail('annotations record key must be a guidance fingerprint')
+    validateAnnotationRecord(record)
+  }
+  return annotations
+}
+
+// A missing file holds no annotations.
+const readAnnotations = (annotationsFile) => {
+  if (!existsSync(annotationsFile)) return emptyAnnotations()
+  return validateAnnotations(readJsonInput(annotationsFile))
+}
+
+// Markers carry authority, so guidance renders without them when annotations cannot be read.
+// validate and the hook's version line report the problem instead.
+const readAnnotationsForDisplay = (annotationsFile) => {
+  try {
+    return readAnnotations(annotationsFile)
+  } catch {
+    return emptyAnnotations()
+  }
+}
+
+const uniqueEntries = (entries) => [...new Map(entries.map((entry) => [entry.id, entry])).values()]
+  .sort((left, right) => left.id.localeCompare(right.id))
+
+// Unions entries, acknowledgments, and revocations per fingerprint, in a stable order.
+const mergeAnnotations = (...sources) => {
+  const records = {}
+  for (const source of sources) {
+    for (const [fingerprint, record] of Object.entries(source.records)) {
+      const current = records[fingerprint] ?? emptyAnnotationRecord()
+      records[fingerprint] = {
+        confirmations: uniqueEntries([...current.confirmations, ...record.confirmations]),
+        triggers: uniqueEntries([...current.triggers, ...record.triggers]),
+        acknowledged: sortedUnion(current.acknowledged, record.acknowledged),
+        revocations: sortedUnion(current.revocations, record.revocations),
+      }
+    }
+  }
+  const sorted = Object.keys(records).sort().map((fingerprint) => [fingerprint, records[fingerprint]])
+  return { schemaVersion: supportedSchemaVersion, records: Object.fromEntries(sorted) }
+}
+
+// Writes only a changed file, so a repeated sync leaves both copies byte for byte unchanged.
+const writeAnnotations = ({ path, annotations }) => {
+  const content = `${JSON.stringify(validateAnnotations(mergeAnnotations(annotations)), null, 2)}\n`
+  if (existsSync(path) && readFileSync(path, 'utf8') === content) return
+  writeTextAtomically({ path, content })
+}
+
+const annotationRecordFor = ({ annotations, fingerprint }) => {
+  annotations.records[fingerprint] ??= emptyAnnotationRecord()
+  return annotations.records[fingerprint]
+}
+
+const outstandingEntries = ({ record, entries }) => entries.filter(({ id }) => !record.acknowledged.includes(id))
+
+// Acknowledges the given entries that are still outstanding. Returns whether any were.
+const acknowledgeEntries = ({ record, entries }) => {
+  const ids = outstandingEntries({ record, entries }).map(({ id }) => id)
+  record.acknowledged.push(...ids)
+  return ids.length > 0
+}
+
+const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
+const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
+
+// A record's revocations, plus the retirement IDs that memory keeps and sync carries for shared
+// records, so a retirement or undo by a plugin without annotations also revokes.
+const revocationIds = ({ record, guidance }) => [...record.revocations, ...retirementSetsOf(guidance).retirements]
+
+// A confirmation counts while it is outstanding and has seen every revocation of its record.
+// Its time is metadata only, so machine clocks never decide authority.
+const countingConfirmations = ({ record, guidance }) => outstandingEntries({ record, entries: record.confirmations })
+  .filter(({ seen }) => revocationIds({ record, guidance }).every((id) => seen.includes(id)))
+
+const revokeRecord = (record) => {
+  record.revocations.push(newAnnotationId())
+}
+
+const annotationMarkers = ({ annotations, guidance }) => {
+  const record = annotations.records[guidance.fingerprint] ?? emptyAnnotationRecord()
+  return {
+    confirmed: countingConfirmations({ record, guidance }).length > 0,
+    triggers: [...new Set(outstandingEntries({ record, entries: record.triggers }).map(({ trigger }) => trigger))].sort(),
+  }
+}
+
+// Only a main thread sees markers; a delegate or subagent reads the same guidance without them.
+const displayMarkers = ({ annotations, guidance, mainThread }) => (
+  mainThread ? annotationMarkers({ annotations, guidance }) : { confirmed: false, triggers: [] }
+)
+
+// Retiring, restoring, deleting, or capturing a record revokes the confirmations of its
+// fingerprint, so the same text never inherits authority, even from one that arrives by sync.
+// Call it before the memory write: a failed write then leaves authority removed, not lingering.
+const revokeConfirmations = ({ annotationsFile, fingerprints }) => {
+  if (fingerprints.length === 0) return
+  const annotations = readAnnotations(annotationsFile)
+  fingerprints.forEach((fingerprint) => revokeRecord(annotationRecordFor({ annotations, fingerprint })))
+  writeAnnotations({ path: annotationsFile, annotations })
+}
+
+const guidanceReferencePattern = /^(?:guidance:v1:[0-9a-f]{64}|[0-9a-f]{8,64})$/
+
+// Finds the record for a full guidance ID or an unambiguous hex prefix. Returns the record or a
+// short reason that it cannot be used.
+const findGuidance = ({ memory, reference }) => {
+  if (!guidanceReferencePattern.test(reference)) return { problem: 'use a full guidance ID or a hex prefix of at least 8 characters' }
+  const prefix = `guidance:v1:${reference.replace(/^guidance:v1:/u, '')}`
+  const matches = memory.guidance.filter(({ id }) => id.startsWith(prefix))
+  if (matches.length === 0) return { problem: 'no guidance matches that ID' }
+  if (matches.length > 1) return { problem: 'that prefix matches more than one guidance record' }
+  return { guidance: matches[0] }
+}
+
+const requireGuidance = ({ memory, reference }) => {
+  const { guidance, problem } = findGuidance({ memory, reference })
+  if (problem) fail(problem)
+  return guidance
+}
+
+const readInitializedMemory = (paths) => {
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
+  return memory
+}
+
+const unconfirmUnlocked = ({ paths, reference }) => {
+  const guidance = requireGuidance({ memory: readInitializedMemory(paths), reference })
+  const annotations = readAnnotations(paths.annotationsFile)
+  const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
+  const confirmed = countingConfirmations({ record, guidance }).length > 0
+  // The revocation also covers a confirmation made on another machine that has not synced yet.
+  revokeRecord(record)
+  writeAnnotations({ path: paths.annotationsFile, annotations })
+  return { outcome: confirmed ? 'unconfirmed' : 'not-confirmed', targetId: guidance.id }
+}
+
+/** Removes the user's confirmation of a record. It needs no approval because it only removes authority. */
+const unconfirm = ({ paths, reference }) => (
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => unconfirmUnlocked({ paths, reference }) })
+)
+
+const annotateUnlocked = ({ paths, reference, triggers, removeTrigger }) => {
+  const guidance = requireGuidance({ memory: readInitializedMemory(paths), reference })
+  if (!['candidate', 'active'].includes(guidance.status)) fail('annotate requires a candidate or active target')
+  const annotations = readAnnotations(paths.annotationsFile)
+  const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
+  let changed
+  if (removeTrigger === undefined) {
+    const current = annotationMarkers({ annotations, guidance }).triggers
+    const added = [...new Set(triggers.split(',').map((trigger) => requireTrigger(trigger.trim())))].filter((trigger) => !current.includes(trigger))
+    record.triggers.push(...added.map((trigger) => newAnnotationEntry({ trigger })))
+    changed = added.length > 0
+  } else {
+    requireTrigger(removeTrigger)
+    changed = acknowledgeEntries({ record, entries: record.triggers.filter(({ trigger }) => trigger === removeTrigger) })
+  }
+  if (changed) writeAnnotations({ path: paths.annotationsFile, annotations })
+  return { outcome: changed ? 'annotated' : 'unchanged', targetId: guidance.id, triggers: annotationMarkers({ annotations, guidance }).triggers }
+}
+
+/** Adds or removes event triggers. Triggers choose when guidance is retrieved; they grant no authority. */
+const annotate = ({ paths, reference, triggers, removeTrigger }) => (
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => annotateUnlocked({ paths, reference, triggers, removeTrigger }) })
+)
+
+const delegateThreadPrefixes = ['thread:delegated-task:', 'mcp:launch:']
+
+/**
+ * Reports whether a hook or command runs in a main thread. Claude and Codex subagent hook input
+ * carries agent_id. T3 Code delegate threads have a prefixed T3CODE_THREAD_ID; main T3 threads
+ * have a plain UUID, and other hosts set none. A command cannot see agent_id, so a Claude
+ * subagent that runs the CLI in a main T3 thread counts as main.
+ */
+export const isMainThread = ({ agentId, env }) => (
+  !(typeof agentId === 'string' && agentId.length > 0)
+    && !delegateThreadPrefixes.some((prefix) => (env.T3CODE_THREAD_ID ?? '').startsWith(prefix))
+)
+
+const confirmPromptPattern = /^confirm fg:(\S+)$/u
+const confirmationMessage = ({ exact, text }) => ({ exact, systemMessage: text, context: text })
+const notConfirmed = (reason) => confirmationMessage({ exact: true, text: `Field Guide: nothing confirmed; ${reason}.` })
+
+const confirmUnlocked = ({ files, reference, host }) => {
+  const memory = readMarkdownMemory(files)
+  if (!memory) return notConfirmed('no Field Guide memory exists')
+  const { guidance, problem } = findGuidance({ memory, reference })
+  if (problem) return notConfirmed(problem)
+  if (guidance.status !== 'active') return notConfirmed(`that guidance is ${guidance.status}, not active`)
+  const annotations = readAnnotations(files.annotationsFile)
+  const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
+  if (countingConfirmations({ record, guidance }).length > 0) {
+    return confirmationMessage({ exact: true, text: `Field Guide: already confirmed: "${guidance.learning}"` })
+  }
+  record.confirmations.push(newAnnotationEntry({ ...(host ? { host } : {}), seen: revocationIds({ record, guidance }) }))
+  writeAnnotations({ path: files.annotationsFile, annotations })
+  const line = injectionLine({ guidance, markers: annotationMarkers({ annotations, guidance }) })
+  return {
+    exact: true,
+    systemMessage: `Field Guide confirmed ${guidance.id.slice('guidance:v1:'.length, 'guidance:v1:'.length + 8)}: "${guidance.learning}"`,
+    context: `Field Guide: the user confirmed this guidance with an exact confirm prompt, so it now carries the [confirmed] marker:\n${line}\nAcknowledge the confirmation in one line. The prompt asks for nothing else.`,
+  }
+}
+
+/**
+ * Handles a prompt that names a confirmation. A trimmed prompt that is exactly
+ * `confirm fg:<id>`, in a main thread, confirms one active record; the result reports why
+ * anything else confirms nothing. Returns null for a prompt that does not mention
+ * `confirm fg:`, and for a near miss outside a main thread. Stores only an entry ID, the time,
+ * the host, and the revocation IDs seen, never prompt text.
+ */
+export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
+  const reference = prompt.trim().match(confirmPromptPattern)?.[1]
+  if (reference === undefined) {
+    if (!/confirm fg:/iu.test(prompt) || !mainThread) return null
+    return confirmationMessage({ exact: false, text: 'Field Guide: nothing confirmed; a confirmation is a prompt that is exactly `confirm fg:<id>`, typed by the user' })
+  }
+  if (!mainThread) return notConfirmed('only a prompt the user types in a main thread can confirm guidance')
+  const files = guideFilesFor(guideRootFor(guideRoot))
+  if (!existsSync(files.memoryIndexFile)) return notConfirmed('no Field Guide memory exists')
+  return withMemoryLock({ lockFile: files.memoryLockFile, action: () => confirmUnlocked({ files, reference, host }) })
+}
+
+/** Returns one line when the store's memory or annotations are newer than this plugin reads. */
+export const storeVersionNotice = ({ guideRoot }) => {
+  const files = guideFilesFor(guideRootFor(guideRoot))
+  const versionOf = (read) => {
+    try {
+      return read()?.schemaVersion
+    } catch {
+      // Malformed content is not a version problem; validate reports it.
+      return undefined
+    }
+  }
+  const versions = [
+    versionOf(() => readMemoryBlock(files)),
+    versionOf(() => (existsSync(files.annotationsFile) ? readJsonInput(files.annotationsFile) : null)),
+  ]
+  return versions.some((version) => Number.isSafeInteger(version) && version > supportedSchemaVersion)
+    ? 'Field Guide: the guide uses a newer format than this plugin reads, so some stored guidance is not applied. Update the Field Guide plugin.'
+    : null
+}
+
 const validateTransitionInput = (input) => {
   assertObject({ value: input, label: 'transition input' })
   assertClosedFields({
@@ -1142,6 +1566,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
   const input = validateTransitionInput(readJsonInput(inputPath))
+  const statusBefore = new Map(memory.guidance.map(({ id, status }) => [id, status]))
   const target = memory.guidance.find(({ id }) => id === input.targetId)
   if (!target) fail('transition target does not exist')
   const now = new Date().toISOString()
@@ -1183,6 +1608,9 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   }
 
   const nextMemory = { ...memory, revision: memory.revision + 1 }
+  // Retirement and restore both change authority, so each record whose status changed is revoked.
+  const changed = memory.guidance.filter(({ id, status }) => statusBefore.get(id) !== status)
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: changed.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: input.action,
@@ -1193,7 +1621,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
 }
 
 const transitionGuidance = ({ paths, inputPath }) => (
-  withMemoryLock({ paths, action: () => transitionGuidanceUnlocked({ paths, inputPath }) })
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => transitionGuidanceUnlocked({ paths, inputPath }) })
 )
 
 const deletionPreviewToken = ({ memory, targetId }) => (
@@ -1249,6 +1677,14 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
     }
   }
   if (input.previewToken !== previewToken) fail('delete apply requires the current dry-run previewToken')
+  if (target.scope.kind === 'shared') {
+    revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [target.fingerprint] })
+  } else {
+    // Project annotations never sync, and once the record is gone export would treat them as shared.
+    const annotations = readAnnotations(paths.annotationsFile)
+    delete annotations.records[target.fingerprint]
+    writeAnnotations({ path: paths.annotationsFile, annotations })
+  }
   const nextMemory = {
     ...memory,
     revision: memory.revision + 1,
@@ -1265,7 +1701,7 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
 }
 
 const deleteGuidance = ({ paths, inputPath }) => (
-  withMemoryLock({ paths, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
 )
 
 const retiredStatuses = new Set(['superseded', 'withdrawn', 'archived'])
@@ -1274,10 +1710,12 @@ const portableGuidanceFields = ['subjectKey', 'linkedSubjects', 'learning', 'con
 // Shared guidance travels between machines without evidence, repository identities, or
 // relationships. Retired records travel as fingerprints with their retirement sets only, so
 // their text stays local.
-const exportSharedGuidance = ({ paths, outputPath }) => {
+const exportSharedGuidance = ({ paths, outputPath, annotationsPath }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
+  // Read and validate both outputs before either is written.
+  const annotations = annotationsPath ? portableAnnotations({ paths, memory, annotationsPath }) : null
   const shared = memory.guidance.filter(({ scope }) => scope.kind === 'shared')
   // Union with the output file's sets. A machine that never had a record must not drop
   // another machine's retirements or acknowledgments of it.
@@ -1310,7 +1748,19 @@ const exportSharedGuidance = ({ paths, outputPath }) => {
     path: resolve(outputPath),
     content: `${JSON.stringify({ schemaVersion: 2, active, retired }, null, 2)}\n`,
   })
-  return { active: active.length, retired: retired.length }
+  if (annotations) writeAnnotations({ path: resolve(annotationsPath), annotations })
+  return { active: active.length, retired: retired.length, ...(annotations ? { annotated: Object.keys(annotations.records).length } : {}) }
+}
+
+// The portable annotations file has the local format. It keeps every entry already in the file,
+// so a machine never drops another machine's entries, and adds the local entries for every
+// fingerprint that is not a local project record, as the shared guidance export does.
+const portableAnnotations = ({ paths, memory, annotationsPath }) => {
+  const existing = existsSync(resolve(annotationsPath)) ? validateAnnotations(readJsonInput(annotationsPath)) : emptyAnnotations()
+  const projectFingerprints = new Set(memory.guidance.filter(({ scope }) => scope.kind === 'project').map(({ fingerprint }) => fingerprint))
+  const local = readAnnotations(paths.annotationsFile)
+  const records = Object.entries(local.records).filter(([fingerprint]) => !projectFingerprints.has(fingerprint))
+  return mergeAnnotations(existing, { records: Object.fromEntries(records) })
 }
 
 // Returns the export in version 2 form. Version 1 listed retired fingerprints only, so each
@@ -1406,26 +1856,30 @@ const reconcileSharedStatus = ({ memory, now, result }) => {
 
 // Merges exported shared guidance by fingerprint into shared-scope records only. A fingerprint
 // is retired while any retirement ID is unacknowledged. Local candidates are promoted because
-// another machine already activated them.
-const importSharedGuidanceUnlocked = ({ paths, inputPath }) => {
+// another machine already activated them. Annotations merge as a union, which is how a
+// confirmation made on another machine arrives. That trusts the portable file: confirmation
+// guards against agent error, not against someone who can write the file.
+const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
   const input = validatePortableSharedGuidance(readJsonInput(inputPath))
+  const incoming = annotationsPath ? validateAnnotations(readJsonInput(annotationsPath)) : null
   const now = new Date().toISOString()
   const result = { created: [], promoted: [], retired: [], restored: [] }
   const local = new Map(memory.guidance.filter(({ scope }) => scope.kind === 'shared').map((guidance) => [guidance.fingerprint, guidance]))
   const setsChanged = mergeRetirementSets({ entries: input.retired, local })
   addActiveRecords({ memory, input, local, now, result })
   reconcileSharedStatus({ memory, now, result })
+  if (incoming) writeAnnotations({ path: paths.annotationsFile, annotations: mergeAnnotations(readAnnotations(paths.annotationsFile), incoming) })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
   return result
 }
 
-const importSharedGuidance = ({ paths, inputPath }) => (
-  withMemoryLock({ paths, action: () => importSharedGuidanceUnlocked({ paths, inputPath }) })
+const importSharedGuidance = ({ paths, inputPath, annotationsPath }) => (
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => importSharedGuidanceUnlocked({ paths, inputPath, annotationsPath }) })
 )
 
 const fitWholeRecords = ({ records, maxRecords, maxBytes }) => {
@@ -1442,7 +1896,7 @@ const fitWholeRecords = ({ records, maxRecords, maxBytes }) => {
   }
 }
 
-const retrievalRecord = ({ guidance, match }) => ({
+const retrievalRecord = ({ guidance, match, markers }) => ({
   id: guidance.id,
   scope: guidance.scope,
   subjectKey: guidance.subjectKey,
@@ -1452,6 +1906,8 @@ const retrievalRecord = ({ guidance, match }) => ({
   examples: guidance.examples ?? [],
   updatedAt: guidance.updatedAt,
   match,
+  // Confirmation renders only in hook lines, so the CLI never reports it.
+  ...(markers.triggers.length > 0 ? { triggers: markers.triggers } : {}),
 })
 
 const retrievalStopwords = new Set([
@@ -1561,7 +2017,7 @@ const rankGuidance = ({ applicable, subjectKey, query }) => {
   return { ranked, linkedSubjects }
 }
 
-const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
+const retrieveGuidance = ({ memory, paths, subjectKey, query, markersFor }) => {
   if (subjectKey !== undefined && (!portableKey.test(subjectKey) || byteLength(subjectKey) > 128)) {
     fail('--subject must be a portable subject key')
   }
@@ -1572,7 +2028,7 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
     subjectKey,
     query,
   })
-  const records = ranked.map(({ guidance, match }) => retrievalRecord({ guidance, match }))
+  const records = ranked.map(({ guidance, match }) => retrievalRecord({ guidance, match, markers: markersFor(guidance) }))
   const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
   const routingCandidates = linkedSubjects.map((linkedSubject) => ({ subjectKey: linkedSubject }))
   const routingFit = fitWholeRecords({ records: routingCandidates, maxRecords: 16, maxBytes: 1800 })
@@ -1600,34 +2056,81 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query }) => {
   }
 }
 
-const retrieve = ({ paths, subjectKey, query, evidenceFor }) => {
+// Returns active guidance tagged with the event trigger, project records first, within the
+// normal retrieval budget.
+const retrieveEvent = ({ memory, paths, event, annotations, markersFor }) => {
+  requireTrigger(event)
+  const tagged = applicableGuidance({ memory, paths })
+    .filter((guidance) => annotationMarkers({ annotations, guidance }).triggers.includes(event))
+    .sort((left, right) => (
+      Number(left.scope.kind === 'shared') - Number(right.scope.kind === 'shared')
+        || right.updatedAt.localeCompare(left.updatedAt)
+        || left.id.localeCompare(right.id)
+    ))
+  const records = tagged.map((guidance) => retrievalRecord({ guidance, match: 'event', markers: markersFor(guidance) }))
+  const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
+  return {
+    mode: 'event',
+    event,
+    guidance: fitted.records,
+    bytes: fitted.bytes,
+    omittedCount: fitted.omittedCount,
+    limits: { maxRecords: 5, maxBytes: 6144 },
+  }
+}
+
+const retrieve = ({ paths, subjectKey, query, evidenceFor, event, mainThread }) => {
   const memory = readMemory(paths) ?? emptyMemory()
   if (evidenceFor && (subjectKey !== undefined || query !== undefined)) {
     fail('--evidence-for cannot be combined with --subject or --query')
   }
-  return evidenceFor
-    ? retrieveEvidence({ memory, guidanceId: evidenceFor })
-    : retrieveGuidance({ memory, paths, subjectKey, query })
+  if (event !== undefined && (evidenceFor || subjectKey !== undefined || query !== undefined)) {
+    fail('--event cannot be combined with --subject, --query, or --evidence-for')
+  }
+  if (evidenceFor) return retrieveEvidence({ memory, guidanceId: evidenceFor })
+  const annotations = readAnnotationsForDisplay(paths.annotationsFile)
+  const markersFor = (guidance) => displayMarkers({ annotations, guidance, mainThread })
+  return event === undefined
+    ? retrieveGuidance({ memory, paths, subjectKey, query, markersFor })
+    : retrieveEvent({ memory, paths, event, annotations, markersFor })
 }
 
-const injectionLine = ({ subjectKey, learning }) => `- [${subjectKey}] ${learning}`
+const markerWords = new Set(['confirmed', ...annotationTriggers])
 
-const readInjectionMemory = ({ repoRoot, guideRoot }) => {
+const markerWordPattern = new RegExp(`\\[(${[...markerWords].join('|')})\\]`, 'giu')
+
+/**
+ * Renders one guidance line. Markers come only from annotations, before the subject. A subject
+ * named like a marker, a marker word anywhere in the learning, and a learning that starts with
+ * "[" get a backslash, so stored text never reads as a marker.
+ */
+const injectionLine = ({ guidance, markers }) => {
+  const prefix = [...(markers.confirmed ? ['confirmed'] : []), ...markers.triggers].map((marker) => `[${marker}] `).join('')
+  const subject = `${markerWords.has(guidance.subjectKey) ? '\\' : ''}[${guidance.subjectKey}]`
+  const learning = guidance.learning.replace(/[\u0085\u2028\u2029]/gu, ' ').replace(markerWordPattern, '\\[$1]').replace(/^\s*\[/u, '\\[')
+  return `- ${prefix}${subject} ${learning}`
+}
+
+const readInjectionMemory = ({ repoRoot, guideRoot, mainThread }) => {
   // Hooks run on every session; skip Git work when no guide exists.
   if (!existsSync(join(guideRootFor(guideRoot), 'memory.md'))) return null
   const paths = resolvePaths({ repoRoot, guideRoot })
   const memory = readMemory(paths)
-  return memory ? { paths, applicable: applicableGuidance({ memory, paths }) } : null
+  if (!memory) return null
+  const annotations = readAnnotationsForDisplay(paths.annotationsFile)
+  const lineFor = (guidance) => injectionLine({ guidance, markers: displayMarkers({ annotations, guidance, mainThread }) })
+  return { paths, applicable: applicableGuidance({ memory, paths }), lineFor }
 }
 
 /**
  * Selects session-start context: this repository's newest project guidance and
  * an index of the other applicable subjects. Returns null when nothing applies.
+ * Lines carry annotation markers only when mainThread is true.
  */
-export const sessionStartInjection = ({ repoRoot, guideRoot }) => {
-  const loaded = readInjectionMemory({ repoRoot, guideRoot })
+export const sessionStartInjection = ({ repoRoot, guideRoot, mainThread = false }) => {
+  const loaded = readInjectionMemory({ repoRoot, guideRoot, mainThread })
   if (!loaded) return null
-  const { paths, applicable } = loaded
+  const { paths, applicable, lineFor } = loaded
   const project = applicable
     .filter(({ scope }) => scope.kind === 'project')
     .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id))
@@ -1635,11 +2138,11 @@ export const sessionStartInjection = ({ repoRoot, guideRoot }) => {
   // budget minus the framing text keeps each rendered section within budget.
   const projectHeader = 'Field Guide: stored user guidance for this repository. Follow it when it applies.'
   const fittedLines = fitWholeRecords({
-    records: project.map(injectionLine),
+    records: project.map(lineFor),
     maxRecords: 8,
     maxBytes: 1536 - byteLength(projectHeader),
   })
-  const injected = project.filter((guidance) => fittedLines.records.includes(injectionLine(guidance)))
+  const injected = project.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
   const injectedIds = injected.map(({ id }) => id)
   const otherSubjects = [...new Set(
     applicable.filter(({ id }) => !injectedIds.includes(id)).map(({ subjectKey }) => subjectKey),
@@ -1664,27 +2167,28 @@ export const sessionStartInjection = ({ repoRoot, guideRoot }) => {
 
 /**
  * Selects up to three applicable records that match the user's prompt and were
- * not already injected. Returns null when nothing new matches.
+ * not already injected. Returns null when nothing new matches. Lines carry
+ * annotation markers only when mainThread is true.
  */
-export const promptInjection = ({ repoRoot, guideRoot, prompt, excludeIds }) => {
+export const promptInjection = ({ repoRoot, guideRoot, prompt, excludeIds, mainThread = false }) => {
   // Match on the prompt's distinct terms: the whole prompt counts, but a long
   // paste costs no more than its vocabulary.
   const query = [...relevanceTerms(prompt)].join(' ')
   if (query.length === 0) return null
-  const loaded = readInjectionMemory({ repoRoot, guideRoot })
+  const loaded = readInjectionMemory({ repoRoot, guideRoot, mainThread })
   if (!loaded) return null
-  const { paths, applicable } = loaded
+  const { paths, applicable, lineFor } = loaded
   const candidates = rankGuidance({ applicable, query }).ranked
     .map(({ guidance }) => guidance)
     .filter(({ id }) => !excludeIds.includes(id))
   const header = 'Field Guide: stored user guidance that may apply to this request. Follow it when it applies.'
   const fittedLines = fitWholeRecords({
-    records: candidates.map(injectionLine),
+    records: candidates.map(lineFor),
     maxRecords: 3,
     maxBytes: 2048 - byteLength(header),
   })
   if (fittedLines.records.length === 0) return null
-  const injected = candidates.filter((guidance) => fittedLines.records.includes(injectionLine(guidance)))
+  const injected = candidates.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
   return {
     projectKey: paths.projectKey,
     guidanceIds: injected.map(({ id }) => id),
@@ -1932,6 +2436,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     })
   }
   const nextMemory = { ...memory, revision: memory.revision + 1 }
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: targets.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: 'maintained',
@@ -1942,7 +2447,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
 }
 
 const maintain = ({ paths, inputPath }) => (
-  withMemoryLock({ paths, action: () => maintainUnlocked({ paths, inputPath }) })
+  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => maintainUnlocked({ paths, inputPath }) })
 )
 
 const initialize = (paths) => {
@@ -2202,8 +2707,36 @@ const validate = (paths) => {
       errors.push(`${paths.memoryFile} does not match canonical memory.md`)
     }
   }
+  try {
+    readAnnotations(paths.annotationsFile)
+  } catch (error) {
+    errors.push(`${paths.annotationsFile} is invalid: ${error.message}`)
+  }
 
   if (errors.length > 0) fail(`Field guide validation failed:\n- ${errors.join('\n- ')}`)
+}
+
+// Runs retrieve from the CLI, where only the environment shows a delegate thread, and records
+// guidance retrievals in analytics.
+const retrieveCommand = ({ paths, options }) => {
+  const result = retrieve({
+    paths,
+    subjectKey: options.subject,
+    query: options.query,
+    evidenceFor: options['evidence-for'],
+    event: options.event,
+    mainThread: isMainThread({ env: process.env }),
+  })
+  if (result.mode === 'evidence') return result
+  const event = appendAnalyticsEvent({
+    guideRoot: paths.guideRoot,
+    event: {
+      type: 'retrieval',
+      projectKey: paths.projectKey,
+      guidanceIds: result.guidance.map(({ id }) => id),
+    },
+  })
+  return event ? { ...result, analyticsEventId: event.id } : result
 }
 
 const main = () => {
@@ -2225,6 +2758,12 @@ const main = () => {
     guideRoot: paths.guideRoot,
     input: readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] }),
   })
+  if (command === 'annotate') result = annotate({
+    paths,
+    reference: options.id,
+    triggers: options.triggers,
+    removeTrigger: options['remove-trigger'],
+  })
   if (command === 'audit') result = audit(paths)
   if (command === 'candidates') result = candidateMatches({
     paths,
@@ -2232,29 +2771,11 @@ const main = () => {
     scope: options.scope,
   })
   if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
-  if (command === 'export') result = exportSharedGuidance({ paths, outputPath: options.output })
-  if (command === 'import') result = importSharedGuidance({ paths, inputPath: options.input })
+  if (command === 'export') result = exportSharedGuidance({ paths, outputPath: options.output, annotationsPath: options.annotations })
+  if (command === 'import') result = importSharedGuidance({ paths, inputPath: options.input, annotationsPath: options.annotations })
   if (command === 'init') initialize(paths)
   if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
-  if (command === 'retrieve') {
-    result = retrieve({
-      paths,
-      subjectKey: options.subject,
-      query: options.query,
-      evidenceFor: options['evidence-for'],
-    })
-    if (result.mode === 'guidance') {
-      const event = appendAnalyticsEvent({
-        guideRoot: paths.guideRoot,
-        event: {
-          type: 'retrieval',
-          projectKey: paths.projectKey,
-          guidanceIds: result.guidance.map(({ id }) => id),
-        },
-      })
-      if (event) result.analyticsEventId = event.id
-    }
-  }
+  if (command === 'retrieve') result = retrieveCommand({ paths, options })
   if (command === 'submit') {
     result = submitObservation({
       paths,
@@ -2283,6 +2804,7 @@ const main = () => {
       },
     })
   }
+  if (command === 'unconfirm') result = unconfirm({ paths, reference: options.id })
   if (command === 'validate') validate(paths)
 
   process.stdout.write(`${JSON.stringify({ ...paths, ...(result ? { result } : {}) }, null, 2)}\n`)

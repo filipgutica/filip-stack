@@ -10,7 +10,8 @@ const commands = {
   status: "filip-stack status",
   apply: "filip-stack apply",
   sync: "filip-stack field-guide-sync",
-  chezmoi: "chezmoi add ~/.config/filip-stack/field-guide.json",
+  chezmoi:
+    "chezmoi add ~/.config/filip-stack/field-guide.json ~/.config/filip-stack/field-guide-annotations.json",
   routine: "chezmoi update\nfilip-stack update\nchezmoi re-add",
 };
 const enhanced = ref(false);
@@ -211,13 +212,18 @@ const tables = {
     <h2 id="sync">Sync your Field Guide preferences</h2>
     <p class="section-intro">
       Share <a href="/filip-stack/field-guide/">Field Guide</a> preferences
-      between machines by syncing this file with your dotfile manager.
+      between machines by syncing these files with your dotfile manager.
     </p>
     <dl class="fg-site-definitions">
       <dt><code>~/.config/filip-stack/field-guide.json</code></dt>
       <dd>
         When <code>$XDG_CONFIG_HOME</code> is set and nonempty, it is
         <code>filip-stack/field-guide.json</code> there.
+      </dd>
+      <dt><code>field-guide-annotations.json</code></dt>
+      <dd>
+        In the same directory. It carries your confirmations and the agent's
+        event tags.
       </dd>
     </dl>
     <ol class="fg-site-steps">
@@ -235,7 +241,7 @@ const tables = {
       </li>
       <li>
         <div>
-          <p>Add the file to your dotfile manager, such as chezmoi.</p>
+          <p>Add both files to your dotfile manager, such as chezmoi.</p>
           <UiCodeBlock
             :code="commands.chezmoi"
             language="bash"
@@ -248,9 +254,10 @@ const tables = {
       <li>
         <div>
           <p>
-            On other machines, restore the dotfile, then run
-            <code>filip-stack apply</code> to import it. Without it, apply
-            prints its expected path and continues.
+            On other machines, restore the dotfiles, then run
+            <code>filip-stack apply</code> to import them. Without
+            <code>field-guide.json</code>, apply prints its expected path and
+            continues.
           </p>
         </div>
       </li>
