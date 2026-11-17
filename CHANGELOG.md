@@ -1,3 +1,17 @@
+# [6.9.0](https://github.com/filipgutica/filip-stack/compare/v6.8.0...v6.9.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **field-guide:** count memory retirement IDs as revocations ([7956e0a](https://github.com/filipgutica/filip-stack/commit/7956e0a0afc29e746fc7d6a2f7f451f87ab49053)), closes [#258](https://github.com/filipgutica/filip-stack/issues/258)
+* **field-guide:** make confirmation revocation causal ([118fca0](https://github.com/filipgutica/filip-stack/commit/118fca073d0d6a6e84d2117114397d52334cd73a)), closes [#258](https://github.com/filipgutica/filip-stack/issues/258)
+* **field-guide:** make confirmation revocation durable across sync ([c9b6d2d](https://github.com/filipgutica/filip-stack/commit/c9b6d2d8b0779d47c4e3a583d8d9dd184a77c062)), closes [#258](https://github.com/filipgutica/filip-stack/issues/258)
+
+
+### Features
+
+* **field-guide:** hook-proven confirmation and event triggers ([def60bc](https://github.com/filipgutica/filip-stack/commit/def60bc8533a7a3a157b71ae7e6132f53e8b725d))
+
 # [6.8.0](https://github.com/filipgutica/filip-stack/compare/v6.7.0...v6.8.0) (2026-11-17)
 
 
