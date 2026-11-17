@@ -799,6 +799,8 @@ test('merge and create commands inject their event once per target', () => {
     "zsh -i -c 'gh pr merge 21'",
     'bash -lc "cd ../repo && GH_TOKEN=private-token gh pr merge 22"',
     'gh pr merge 23 --body "$(cat <<\'EOF\'\nIt\'s done; || true\nEOF\n)"',
+    'gh pr merge 24 --body "$(cat <<\'EOF\'\n(see log)\nEOF\n)" --squash',
+    'gh pr merge 25 --body "$(date)" --squash',
   ]) {
     const context = once(command)
     assert.ok(context?.split('\n').includes(cleanupLine), command)
@@ -826,6 +828,12 @@ test('merge and create commands inject their event once per target', () => {
     'gh pr merge 5 &',
     'gh pr merge 5 --body "$(cat notes.md)" || true',
     'gh pr merge 5 --body "$(cat <<\'EOF\'\nx\nEOF\n)"\ngit pull',
+    'gh pr merge 5 --body "$(date)" || echo "merge failed (ok)"',
+    'gh pr merge 5 --body "$(cat <<\'EOF\'\nx\nEOF\n)" || echo "failed (see log)"',
+    'gh pr merge 5 --body "$(git log -1 | head -1)"',
+    'ls # && gh pr merge 7',
+    'echo "No merge" # ; gh pr merge 5',
+    'sh -n -c "gh pr merge 5"',
     "cat <<'EOF'\ngh pr merge 13\nEOF",
     'echo "field-guide.mjs" retrieve --event handoff',
     // The repository is unknown or not this one.
@@ -837,6 +845,7 @@ test('merge and create commands inject their event once per target', () => {
     'gh pr merge https://github.com/example/other/pull/5',
     'gh pr merge feature -R example/other',
     'gh pr create --fill --repo=example/other',
+    'GH_REPO=example/other gh pr merge 5',
     // These merge nothing.
     'gh pr merge 5 --help',
     'gh pr merge 5 --disable-auto',
@@ -858,7 +867,13 @@ test('merge and create commands inject their event once per target', () => {
   assert.match(merge('gh pr merge 1'), /clean up without asking/)
   assert.match(merge('gh pr merge 2'), /clean up without asking/)
   assert.equal(merge('gh pr merge 1'), null)
-  assert.equal(merge('gh pr merge #1 --squash'), null)
+  // A URL in an option value is not the PR.
+  assert.match(merge('gh pr merge 4 --body https://github.com/example/injection/pull/1'), /clean up without asking/)
+  assert.equal(merge('gh pr merge 4'), null)
+  // A queued merge leaves the PR pending.
+  assert.match(merge('gh pr merge 6 --auto'), /clean up without asking/)
+  assert.match(merge('gh pr merge 6 --squash'), /clean up without asking/)
+  assert.equal(merge('gh pr merge 6'), null)
   assert.equal(merge('gh pr merge https://github.com/Example/injection/pull/2'), null)
   assert.match(merge('gh pr merge 3 --repo example/injection'), /clean up without asking/)
   assert.equal(merge('gh pr merge https://github.com/example/injection/pull/3'), null)
@@ -922,6 +937,19 @@ test('a failed command injects nothing and leaves the target pending', () => {
   assert.match(toolContext(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 13', env: hostEnvironment.codex, response: { metadata: { exit_code: 0 } } })), /clean up without asking/)
 })
 
+test('a background command injects nothing and leaves the target pending', () => {
+  const { home, repoRoot, guideRoot } = seedIncident()
+  const sessionId = 'session-background'
+  const command = 'gh pr checks 15 --watch && gh pr merge 15 --squash'
+  const before = stateText(guideRoot)
+  for (const options of [
+    { extra: { tool_input: { command, run_in_background: true } } },
+    { response: { ...succeeded, backgroundTaskId: 'bash_1' } },
+  ]) assert.deepEqual(toolHook({ home, repoRoot, sessionId, command, ...options }), {}, JSON.stringify(options))
+  assert.equal(stateText(guideRoot), before)
+  assert.match(toolContext(toolHook({ home, repoRoot, sessionId, command })), /clean up without asking/)
+})
+
 test('subagent and delegate commands inject nothing and leave the main thread pending', () => {
   const { home, repoRoot, guideRoot } = seedIncident()
   const sessionId = 'session-shared'
@@ -951,6 +979,7 @@ test('a main-thread retrieve --event command gets the marked lines the CLI omits
   assert.doesNotMatch(stateText(guideRoot), /"eventKeys":\["/)
   assert.equal(toolContext(toolHook({ home, repoRoot, sessionId: 'session-handoff-other', command: `/bin/sh "${fieldGuideShell}" retrieve --repo-root "${repoRoot}" --query handoff` })), null)
   assert.equal(toolContext(toolHook({ home, repoRoot, sessionId: 'session-handoff-other', command: `/bin/sh "${fieldGuideShell}" retrieve --repo-root "${repoRoot}" --event unknown-event` })), null)
+  assert.equal(toolContext(toolHook({ home, repoRoot, sessionId: 'session-handoff-other', command: `${command} --guide-root /nonexistent/other` })), null)
 })
 
 test('compaction restores the shared records the session received, at their current text', () => {

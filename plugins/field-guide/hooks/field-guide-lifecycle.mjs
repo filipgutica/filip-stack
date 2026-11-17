@@ -188,8 +188,12 @@ const sessionStartOutput = (input) => {
   }
 }
 
-// Text from the first heredoc, command substitution, or backtick on is never read as commands.
-const inertStart = /<<|\$\(|`/u
+// The two command substitutions the hook reads past: `$(cat <<'EOF'` with its body up to the
+// first delimiter line and a `)` on the next, and a one-line `$(…)` with no quotes, parentheses,
+// expansions, redirects, or separators. Each becomes one plain word; any other heredoc,
+// substitution, or backtick makes the command unrecognized.
+const heredocSubstitution = /\$\([^\S\n]*cat[^\S\n]+<<[^\S\n]*(['"]?)([A-Za-z_]\w*)\1[^\S\n]*\n(?:(?!\2\n)[^\n]*\n)*\2\n[^\S\n]*\)/gu
+const plainSubstitution = /\$\([^'"()`$<>;&|\n]*\)/gu
 // One separator run or one word. A word joins plain characters, escapes, quoted spans, and a
 // redirect's `>&`, so `echo "gh pr merge"` has the words `echo` and `gh pr merge`. A parenthesis
 // matches neither, so a subshell stops the scan.
@@ -201,31 +205,26 @@ const unquote = (word) => word.replace(
 
 /**
  * Splits a shell command into simple commands, each with its unquoted words and the separator
- * after it without whitespace ('' for a newline, null at the end). Reads only the text before
- * the first `<<`, `$(`, or backtick; a quote left open there ends the scan. Returns null for text
- * it cannot split, or when anything but quotes follows the last `)` or backtick of the unread
- * text, so `"$(…)" || true` hides no separator. This recognizes commands; it is not a shell parser.
+ * after it without whitespace ('' for a newline, null at the end). Returns null for text it
+ * cannot split, including a comment and any substitution it does not read past. This recognizes
+ * commands; it is not a shell parser.
  */
 const simpleCommands = (command) => {
-  const inert = command.search(inertStart)
-  const text = inert < 0 ? command : command.slice(0, inert)
-  if (inert >= 0) {
-    const unread = command.slice(inert)
-    if (!/^["'\s]*$/u.test(unread.slice(Math.max(unread.lastIndexOf(')'), unread.lastIndexOf('`')) + 1))) return null
-  }
+  const text = command.replace(heredocSubstitution, '_').replace(plainSubstitution, '_')
+  if (/<<|\$\(|`/u.test(text)) return null
   const commands = [{ words: [], next: null }]
   let end = 0
   shellToken.lastIndex = 0
   for (let match = shellToken.exec(text); match; match = shellToken.exec(text)) {
     end = shellToken.lastIndex
+    if (match.groups.word?.startsWith('#')) return null
     if (match.groups.word !== undefined) commands.at(-1).words.push(unquote(match.groups.word))
     else {
       commands.at(-1).next = match.groups.separator.replace(/\s/gu, '')
       commands.push({ words: [], next: null })
     }
   }
-  const rest = text.slice(end).trim()
-  if (rest !== '' && !(inert >= 0 && /^["']/u.test(rest))) return null
+  if (text.slice(end).trim() !== '') return null
   // A trailing newline or `;` ends the command; a trailing `&` stays and fails the `&&` check.
   if (commands.at(-1).words.length === 0 && commands.length > 1) {
     commands.pop()
@@ -244,7 +243,9 @@ const withoutPrefixes = (words) => {
 const wrappedScript = (command) => {
   if (!['sh', 'bash', 'zsh'].includes(basename(command[0] ?? ''))) return null
   const flag = command.findIndex((word, index) => index > 0 && /^-[A-Za-z]*c[A-Za-z]*$/u.test(word))
-  return flag < 0 ? null : command.slice(flag + 1).find((word) => !word.startsWith('-')) ?? null
+  // `-n` only checks syntax, so the script does not run.
+  if (flag < 0 || command.slice(1, flag + 1).some((word) => /^-[A-Za-z]*n/u.test(word))) return null
+  return command.slice(flag + 1).find((word) => !word.startsWith('-')) ?? null
 }
 
 // A path the hook can resolve without the shell: no expansion, globbing, or `cd -`.
@@ -292,12 +293,15 @@ const ghEvents = new Map([['pr merge', 'pr-merged'], ['stack merge', 'pr-merged'
 const nonActions = ['--help', '-h', '--dry-run', '--web', '-w', '--disable-auto']
 const pullRequestUrl = /^https?:\/\/([^/\s]+\/[^/\s]+\/[^/\s]+)\/pull\/(\d+)(?:[/?#]\S*)?$/u
 
-// A `gh pr merge` PR named by number or URL; null for the current branch.
+// The `gh pr merge` options that take a separate value, from `gh pr merge --help`.
+const valueOptions = ['-A', '--author-email', '-b', '--body', '-F', '--body-file', '--match-head-commit', '-t', '--subject', '-R', '--repo']
+
+// The positional PR of a `gh pr merge` by number or URL; null for the current branch.
 const pullRequestOf = (words) => {
-  const url = words.map((word) => pullRequestUrl.exec(word)).find(Boolean)
+  const target = words.slice(3).find((word, index, rest) => !word.startsWith('-') && !valueOptions.includes(rest[index - 1])) ?? ''
+  const url = pullRequestUrl.exec(target)
   if (url) return { repo: url[1], number: url[2] }
-  const number = words.slice(3).find((word) => /^#?\d+$/u.test(word))
-  return number === undefined ? null : { repo: null, number: number.replace(/^#/u, '') }
+  return /^#?\d+$/u.test(target) ? { repo: null, number: target.replace(/^#/u, '') } : null
 }
 
 // The `-R`, `--repo`, or `--repo=` value as host/owner/repo, or null.
@@ -320,7 +324,8 @@ const retrieveEventFor = ({ command, dir }) => {
   // The script runs directly or as a node, sh, or bash script; elsewhere it is only an argument.
   const script = fieldGuideScript.test(basename(command[0])) ? 0
     : ['node', 'sh', 'bash'].includes(basename(command[0])) && fieldGuideScript.test(basename(command[1] ?? '')) ? 1 : -1
-  if (script < 0 || command[script + 1] !== 'retrieve') return null
+  // Another guide root is not the store this hook reads.
+  if (script < 0 || command[script + 1] !== 'retrieve' || command.some((word) => word.startsWith('--guide-root'))) return null
   const valueOf = (option) => (command.includes(option) ? command[command.indexOf(option) + 1] ?? null : undefined)
   const event = valueOf('--event')
   const repoRoot = valueOf('--repo-root')
@@ -343,6 +348,10 @@ const eventFor = ({ command, dir }) => {
 const toolEvents = (input) => {
   const command = input.tool_input?.command
   if (typeof command !== 'string' || typeof input.cwd !== 'string' || !mayNameEvent.test(command)) return []
+  // A background command returns when it starts, so its result proves nothing.
+  if (input.tool_input.run_in_background === true || input.tool_response?.backgroundTaskId !== undefined) return []
+  // GH_REPO and GH_HOST change the repository gh acts on.
+  if (/\bGH_(?:REPO|HOST)=/u.test(command)) return []
   const chain = chainOf({ script: command, cwd: input.cwd }) ?? []
   if (chain.some(({ next }) => next === '||')) return []
   const events = chain
@@ -380,7 +389,8 @@ const toolOutput = ({ input, events }) => {
     if (events.some(({ repo }) => repo && repo.toLowerCase() !== origin)) return {}
     const state = readSessionState(input.session_id)
     // The key names the PR as host/owner/repo#number, so its number and URL forms match.
-    const keyed = events.map((event) => ({ ...event, key: event.pullRequest && origin ? hashOf(`${event.event}\0${origin}#${event.pullRequest.number}`) : null }))
+    // A queued merge has not happened yet, so it leaves the PR pending.
+    const keyed = events.map((event) => ({ ...event, key: event.pullRequest && origin && !event.queuedMerge ? hashOf(`${event.event}\0${origin}#${event.pullRequest.number}`) : null }))
     const pending = keyed.filter(({ key }, index) => key === null || (!state.eventKeys.includes(key) && keyed.findIndex((other) => other.key === key) === index))
     if (pending.length === 0) return {}
     const injection = fieldGuide.eventInjection({

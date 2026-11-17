@@ -99,7 +99,8 @@ guidance. Analytics write failures do not change the hook output.
 ## Event injection
 
 The `PostToolUse` hook, with a `Bash` matcher, injects guidance tagged for an
-event after a main-thread shell command that provably ran it and succeeded:
+event after a main-thread shell command in a form it recognizes, when the
+result shows the command ran and succeeded:
 
 | Command | Event |
 | --- | --- |
@@ -113,12 +114,17 @@ text is one word, so `echo "gh pr merge"` matches nothing. The script of a
 `sh`, `bash`, or `zsh -c` wrapper is checked one level deep. A command counts
 only when the input has no `||` and only `&&` follows it, so a zero exit proves
 it succeeded: `gh pr merge 5 || true`, `| tail`, and `; git pull` count as
-nothing. Text from the first `<<`, `$(`, or backtick on is not parsed, so a
-heredoc body is never a command; only quotes may follow its last `)` or
-backtick. A parenthesis, `--help`, `--dry-run`, `--web`, and `--disable-auto`
-also count as nothing. Any form the hook does not recognize falls back to the
-skill's retrieval rule, and a `GH_REPO` prefix is not read. The adapter loads the Field Guide modules only when
-the input names `gh` or the Field Guide script, and makes no network calls.
+nothing. The hook reads past two command substitutions, each as one word:
+`$(cat <<'EOF'` with its body up to the first `EOF` line and a `)` on the next,
+and a one-line `$(…)` without quotes, parentheses, `$`, redirects, or
+separators. A heredoc body is never a command, and the rest of the input is
+checked as usual, so `"$(date)" || echo failed` counts as nothing. Any other
+heredoc, substitution, or backtick, a `#` comment, a parenthesis, a `-n`
+wrapper flag, a `GH_REPO=` or `GH_HOST=` anywhere in the input, `--help`,
+`--dry-run`, `--web`, and `--disable-auto` also count as nothing. Any form the
+hook does not recognize falls back to the skill's retrieval rule. The adapter
+loads the Field Guide modules only when the input names `gh` or the Field Guide
+script, and makes no network calls.
 
 The records come from the repository the command acted on: `cwd`, changed by
 each `cd <literal path> &&` before the command, or a retrieve's `--repo-root`.
@@ -131,16 +137,21 @@ confirmation, so a footer that retrieves `handoff` guidance sees which records
 are confirmed. For `gh pr merge --auto`, the text says the merge may only be
 queued and to confirm that the PR merged before acting on the guidance.
 
-A `gh pr merge` that names its PR by number or URL injects once per PR per
-session. The PR's key is `host/owner/repo#number`, from the URL or from
-`--repo` or `origin` with the number, so both forms of one PR match.
+A `gh pr merge` that names its PR by number or URL as its positional argument
+injects once per PR per session; a URL in an option value such as `--body` is
+not the PR. A `--auto` merge leaves the PR pending. The PR's key is
+`host/owner/repo#number`, from the URL or from `--repo` or `origin` with the
+number, so both forms of one PR match.
 `gh repo set-default` can name another repository than `origin`; that affects
 only this key. Session state stores only a SHA-256 hash of the event and key,
 and keeps it through compaction. Other events inject every time.
 
 The hook injects nothing, and changes no state, when:
 
-- The command did not provably succeed. Claude reports a failed call as
+- The command ran in the background, by `run_in_background` or a
+  `backgroundTaskId` in the result, because the result arrives when it starts.
+- A retrieve names another `--guide-root`.
+- The command did not succeed. Claude reports a failed call as
   `PostToolUseFailure`, which the plugin does not register, and the hook also
   skips an interrupted or error result and a non-zero exit code. Codex sends
   failures to `PostToolUse` too, so a Codex event needs a zero exit: a first
