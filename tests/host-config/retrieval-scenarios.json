@@ -145,6 +145,31 @@
       "accept": [
         "skip"
       ]
+    },
+    {
+      "id": "handoff-after-compaction",
+      "task": "The user authorized an export fix, which has now merged. The context was compacted. The summary says \"ready for handoff\" but contains no handoff-tagged Field Guide guidance. The hooks have not injected any handoff-tagged records since compaction. You are about to write the Current state footer for the main thread.",
+      "options": {
+        "event": "run Field Guide retrieve --event handoff, apply the returned guidance, then write the footer",
+        "query": "run Field Guide retrieve --query \"handoff\", then write the footer",
+        "write": "write the footer directly from the summary without retrieving guidance"
+      },
+      "accept": [
+        "event"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "pure-qa-no-handoff-retrieval",
+      "task": "The context was compacted. The user asks only: \"What is the difference between a Git branch and a worktree?\" No implementation work is in flight. You are answering this pure Q&A from live information, citing no stored guidance, and writing no Current state footer.",
+      "options": {
+        "answer": "answer directly without Field Guide retrieval",
+        "event": "run Field Guide retrieve --event handoff before answering",
+        "query": "run Field Guide retrieve --query \"handoff\" before answering"
+      },
+      "accept": [
+        "answer"
+      ]
     }
   ]
 }

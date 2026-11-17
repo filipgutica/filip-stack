@@ -158,6 +158,53 @@
       "accept": [
         "none"
       ]
+    },
+    {
+      "id": "footer-completed-cleanup",
+      "task": "The export fix PR merged. Field Guide injected this active main-thread record:\n- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees and branches without asking.\nYou removed its clean worktree and fully merged branch. Live Git checks confirm both are gone. You are writing the Current state footer and deciding whether those removed resources need a table row.",
+      "options": {
+        "omit": "omit the removed branch and worktree from the footer table",
+        "pending": "list them with next step \"ask the user to remove them\"",
+        "completed": "list them as completed cleanup with no next step"
+      },
+      "accept": [
+        "omit"
+      ]
+    },
+    {
+      "id": "footer-dirty-worktree-blocker",
+      "task": "The export fix PR merged. Field Guide injected this active main-thread record:\n- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees and branches without asking.\nA live check shows its merged worktree still contains uncommitted user changes in notes.md. Cleanup is blocked because those changes must be preserved. You are writing the Current state footer.",
+      "options": {
+        "blocker": "list the merged worktree with the blocker \"uncommitted user changes in notes.md\"",
+        "pending": "list the merged worktree with only next step \"remove worktree\" and no blocker",
+        "omit": "omit the merged worktree because its PR merged"
+      },
+      "accept": [
+        "blocker"
+      ]
+    },
+    {
+      "id": "footer-occupied-worktree-blocker",
+      "task": "The export fix PR merged. Field Guide injected this active main-thread record:\n- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees and branches without asking.\nA live check shows its clean merged worktree is still occupied by another running agent. Cleanup is blocked until that agent releases it. You are writing the Current state footer.",
+      "options": {
+        "blocker": "list the merged worktree with the blocker \"occupied by another running agent\"",
+        "pending": "list the merged worktree with only next step \"remove worktree\" and no blocker",
+        "omit": "omit the merged worktree because it is clean"
+      },
+      "accept": [
+        "blocker"
+      ]
+    },
+    {
+      "id": "footer-removed-clean-merged-worktree",
+      "task": "You are writing the Current state footer after the export fix merged. An earlier status note listed its clean merged worktree as waiting for removal. Cleanup has since removed it, and a fresh git worktree list confirms that path is absent. You are deciding whether to carry forward the earlier worktree row.",
+      "options": {
+        "omit": "omit the removed worktree from the table based on the live check",
+        "carry": "carry forward the earlier worktree row as waiting for removal"
+      },
+      "accept": [
+        "omit"
+      ]
     }
   ]
 }
