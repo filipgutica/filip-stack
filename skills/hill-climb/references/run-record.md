@@ -33,7 +33,7 @@ Use `schemaVersion: 1`. Every field is required unless marked optional. Write vo
   },
   "goal": "One sentence from the climb card.",
   "criteria": [{ "id": "C1", "name": "Clarity", "description": "From the climb card." }],
-  "lineup": [{ "member": "Astra", "model": "gpt-6-astra", "effort": "high", "provider": "OpenAI" }],
+  "lineup": [{ "member": "Astra", "model": "gpt-6.2-astra", "effort": "high", "provider": "OpenAI" }],
   "budget": { "rounds": 3, "sizeLimit": 20, "originalChangedLines": 8, "maxCalls": 20 },
   "decisionRule": "judges",
   "score": { "command": "pnpm a11y:count", "direction": "lower", "minGain": 1, "start": 7, "final": 2 },

@@ -133,7 +133,7 @@ mode, put it in the report only.
 
 | Member | Round 1 (`<short sha>`) | Round 2 (`<short sha>`) |
 | --- | --- | --- |
-| Astra (gpt-6-astra, high) | 8/10 | 9.5/10 |
+| Astra (gpt-6.2-astra, high) | 8/10 | 9.5/10 |
 
 </details>
 ```
