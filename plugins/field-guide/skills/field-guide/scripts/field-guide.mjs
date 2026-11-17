@@ -2180,9 +2180,11 @@ const readInjectionMemory = ({ repoRoot, guideRoot, mainThread }) => {
   const paths = resolvePaths({ repoRoot, guideRoot })
   const memory = readMemory(paths)
   if (!memory) return null
-  const annotations = readAnnotationsForDisplay(paths.annotationsFile)
   // After an older plugin wrote memory, no confirmation counts until a current write reconciles.
+  // Reconcile writes annotations before the watermark, so reading the watermark first never pairs
+  // a reconciled watermark with annotations from before the reconcile.
   const current = watermarkCurrent({ paths, memory })
+  const annotations = readAnnotationsForDisplay(paths.annotationsFile)
   const lineFor = (guidance) => {
     const markers = displayMarkers({ annotations, guidance, mainThread })
     return injectionLine({ guidance, markers: { ...markers, confirmed: markers.confirmed && current } })
