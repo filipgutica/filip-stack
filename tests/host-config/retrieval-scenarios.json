@@ -156,8 +156,7 @@
       },
       "accept": [
         "event"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "pure-qa-no-handoff-retrieval",
