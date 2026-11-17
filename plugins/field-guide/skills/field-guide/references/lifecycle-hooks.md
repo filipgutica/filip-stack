@@ -208,10 +208,19 @@ and gains one line that says nothing was confirmed. A confirm prompt gets no
 lifecycle instruction and neither receives nor consumes the first-prompt
 guidance match, so the next prompt still gets it.
 
+A prompt that, trimmed, is exactly `confirm fg:proposal:<id>` in a main thread
+approves one stored proposal in `proposals.json`, by the same rules. `<id>` is
+an unambiguous hex prefix of at least eight characters. The hook stores the
+time and the host on the proposal and shows the proposed text. An expired or
+applied proposal is not approved. The agent then applies it with
+`consolidate --approval`, which confirms the replacement.
+
 The hook cannot tell who sent a prompt. An agent that sends the exact prompt
 to a main thread through a host tool is barred by guidance, not by the hook.
-No Field Guide command creates a confirmation; import copies them from the
-synced file, which the user trusts like the store.
+No Field Guide command creates a confirmation or an approval; import copies
+confirmations from the synced file, which the user trusts like the store.
+`consolidate --approval` confirms only the replacement of a proposal that the
+hook approved.
 
 ## Version line
 

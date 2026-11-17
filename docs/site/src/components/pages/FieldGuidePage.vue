@@ -17,6 +17,10 @@ const management = [
     command: "Say “undo that learning”",
     description: "Reverses the last saved learning.",
   },
+  {
+    command: "Ask the agent to consolidate overlapping guidance",
+    description: "Merges records that say the same thing into one, and gives you an undo command.",
+  },
 ];
 </script>
 
@@ -108,6 +112,28 @@ const management = [
         The hook cannot tell who sent the prompt, so the agent's guidance
         forbids it from sending one. Changing, withdrawing, or deleting the
         guidance removes the confirmation.
+      </p>
+    </div>
+  </section>
+
+  <section aria-labelledby="maintain">
+    <h2 id="maintain">Keep the guide small</h2>
+    <div class="prose">
+      <p>
+        Over time, several records can say the same thing. The agent can merge
+        them into one record, and nightly maintenance can find overlaps,
+        duplicates of your global instructions, and contradictions for you.
+        Every change it applies can be undone for 90 days. If you undo a
+        merge, it is not suggested again.
+      </p>
+      <p>
+        Maintenance never rewrites guidance you confirmed, and for now it only
+        proposes changes to shared guidance. To accept a proposal, send the
+        exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt it gives you.
+        It never edits your instructions or skills; it can only suggest an
+        edit. The
+        <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
+        has the exact rules.
       </p>
     </div>
   </section>

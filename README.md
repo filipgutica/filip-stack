@@ -153,6 +153,13 @@ confirmation; import copies them from your synced file, which you trust. The
 hook cannot tell who sent the prompt, so only guidance stops an agent from
 sending it through a host tool.
 
+Field Guide can merge records that say the same thing, and a nightly
+maintenance script can propose merges, archives, and flags. Every change it
+applies is journaled and can be undone for 90 days. It never rewrites
+confirmed guidance; you approve those changes with an exact
+`confirm fg:proposal:<id>` prompt. See
+[dreaming.md](plugins/field-guide/skills/field-guide/references/dreaming.md).
+
 ## Guardrails
 
 Guardrails is a separate, optional plugin. Its `PreToolUse` hook checks each

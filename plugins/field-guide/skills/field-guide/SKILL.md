@@ -157,6 +157,8 @@ Treat `$field-guide:field-guide audit` as a manual, read-only audit request:
 
 Report findings without changing memory. Maintenance and permanent deletion require their explicit preview-and-apply flows in [references/storage.md](references/storage.md). Never infer approval to apply either operation from an audit request.
 
+To consolidate overlapping guidance, undo a journaled change, or run nightly maintenance, read [references/dreaming.md](references/dreaming.md).
+
 ## Utility
 
 ### Local analytics
@@ -181,6 +183,7 @@ All commands accept `--guide-root <path>` for tests or alternate local storage:
 field-guide.mjs annotate --repo-root <path> --id <guidance-id> (--triggers <list> | --remove-trigger <trigger>)
 field-guide.mjs audit --repo-root <path>
 field-guide.mjs candidates --repo-root <path> --subject <key> --scope <project|shared>
+field-guide.mjs consolidate --repo-root <path> (--input <json-file> | --approval proposal:<id>)
 field-guide.mjs delete --repo-root <path> --input <json-file>
 field-guide.mjs init --repo-root <path>
 field-guide.mjs maintain --repo-root <path> --input <json-file>
@@ -189,6 +192,7 @@ field-guide.mjs retrieve --repo-root <path> ((--query <text> [--subject <key>]) 
 field-guide.mjs submit --repo-root <path> --input <json-file>
 field-guide.mjs transition --repo-root <path> --input <json-file>
 field-guide.mjs unconfirm --repo-root <path> --id <guidance-id>
+field-guide.mjs undo-operation --repo-root <path> --id <operation-id>
 field-guide.mjs validate --repo-root <path>
 ```
 

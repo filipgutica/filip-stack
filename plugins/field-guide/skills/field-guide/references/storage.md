@@ -20,6 +20,8 @@ Use these terms:
 ├── memory.lock         # Present only while a write runs
 ├── memory.md           # Canonical readable and machine-recorded memory
 ├── memory.json         # Validated machine cache
+├── operations.jsonl    # Local write-ahead journal of reversible operations
+├── proposals.json      # Local proposals that wait for the user's approval
 ├── sessions/           # Hook session state; pruned after seven days
 ├── shared/
 └── projects/
@@ -111,6 +113,63 @@ the superseded transition. `undo` and `withdraw` preserve evidence and move the
 target to `withdrawn`. When the target is the replacement of a superseded
 record, they also move that record back to `active`. Archive uses the maintenance dry-run path. Age never
 causes archive.
+
+### Memory versions
+
+`memory.md` holds version 1 (`schemas/memory-v1.schema.json`) until the store
+holds a consolidation link or a journaled transition. Then the utility writes
+version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
+replacement and `operationId` on a transition. A plugin that reads only version
+1 refuses a version 2 store and writes nothing to it, and its hook shows one
+line that the store is newer. The commands that write version 2, `consolidate`,
+`undo-operation`, and `field-guide-dream.mjs apply`, refuse to run while a
+plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
+They check the Claude Code copy that `installed_plugins.json` names and every
+Codex copy in its plugin cache. The shared export format does not change, so an
+older plugin on another machine still imports a consolidation and its undo.
+
+### Consolidation and undo
+
+Use `consolidate --input <json-file>` to replace 2 to 8 active records of one
+scope and subject with one new record. The input follows
+`schemas/consolidation-v1.schema.json`. The default is a dry run; apply
+requires its preview token. The replacement keeps the predecessors' evidence
+links without adding evidence, takes their triggers, and lists them in
+`consolidates`. Each predecessor is superseded, and a shared predecessor gets
+its own retirement ID. A record that still replaces superseded records cannot be
+consolidated.
+
+When a predecessor is confirmed, `consolidate` changes nothing. It stores a
+proposal and returns `confirm fg:proposal:<id>` for the user to send. After the
+hook records that approval, `consolidate --approval proposal:<id>` recomputes the
+proposal ID from the current records and the stored text, applies it, and
+confirms the replacement in the same commit. A proposal expires after 14 days.
+
+Use `undo-operation --id <operation-id>` to reverse a consolidation or an
+automated archive within 90 days. It withdraws the replacement the way a user's
+undo does, restores each predecessor it still supersedes, and acknowledges only
+the retirement IDs its operation created. A predecessor that something else
+retired stays retired, and the result lists it. The undone set is recorded as
+declined, so nightly maintenance does not propose it again. Repeating the undo
+changes nothing. When a later change blocks a clean inverse, the command names
+the conflict and changes nothing. `transition` refuses to withdraw or undo a
+consolidated replacement and names `undo-operation`.
+
+### Operation journal
+
+`operations.jsonl` is a local write-ahead journal. No hook reads it, and it never
+syncs. An operation appends a `pending` entry, then writes annotations and
+memory, then appends a `commit` entry. Every transition the operation makes
+carries its operation ID. Before the next journaled command, recovery commits
+a pending operation whose ID reached memory and aborts the rest. An entry holds
+IDs, fingerprints, revisions, retirement IDs, a sanitized reason, and the undo
+command. It never holds guidance text, prompts, or paths. A nightly `run` entry
+also records the subject and live-guidance digests it reviewed.
+
+`proposals.json` is local and never syncs. Each proposal holds the target
+fingerprints, the replacement text, the reason, its expiry, and the user's
+approval once the hook records it. Read [nightly maintenance](dreaming.md) for
+the nightly pass.
 
 Use `delete --input <json-file>` for permanent deletion. The target must be
 `withdrawn` or `archived`. The first call returns a preview token and the orphan
@@ -249,8 +308,9 @@ without them.
 
 Use `audit` for a manual read-only inspection. It reports validation errors,
 candidates that already meet evidence thresholds, unresolved refinements and
-contradictions, broken local or commit pointers, orphan evidence, and oversized
-records. It does not fetch stored URLs. It does not use record age as an archive
+contradictions, broken local or commit pointers, orphan evidence, oversized
+records, and `duplicateCandidates`: groups of live records in one subject whose
+terms overlap, without groups the user declined by an undo. It does not fetch stored URLs. It does not use record age as an archive
 signal, and it does not change files.
 
 Use `maintain --input <json-file>` for explicit archive or cache-repair
