@@ -135,7 +135,20 @@
       "accept": [
         "subject"
       ],
-      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
+      "id": "first-screen-number-is-subject",
+      "task": "You are building the public status page for a hosting service. Its readers come to learn whether the service is up right now. The design system sets the type, palette, and components, and leaves the first screen's content open.",
+      "options": {
+        "stats": "open with the current uptime as a large number with a small label, and supporting stats for the last 90 days",
+        "story": "open with a headline about the team's commitment to reliability and a product image of the dashboard"
+      },
+      "accept": [
+        "stats"
+      ],
       "files": [
         "skills/interface-design/references/craft.md"
       ]

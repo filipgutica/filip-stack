@@ -8,16 +8,18 @@ system wins wherever it sets a rule; these fill the gaps it leaves.
 
 - Open with the subject. On a product or landing page, the first screen
   leads with the most characteristic thing in the product's world, such as a
-  headline, a live demo, a real product image, or the key evidence. A big number with a small
-  label, supporting stats, and a gradient accent is the default first screen;
-  use it only when it best serves this subject.
+  headline, a live demo, a real product image, or the key evidence. A big
+  number with a small label, supporting stats, and a gradient accent is the
+  default first screen; use it only when it best serves this subject.
 - Sketch first. Write a short plan, in the owning design system's tokens and
-  components when there is one: the layout as one-sentence descriptions or an ASCII wireframe,
-  its alignment, and the one element that should stand out.
+  components when there is one: the layout as one-sentence descriptions or
+  an ASCII wireframe, its alignment, and the one element that should stand
+  out.
 - Check the sketch against the generic default. Keep what the owning design
   system prescribes. Revise each part it leaves free that matches what you
   would produce for any similar brief, say what you changed and why, and then
-  build.
+  build. Without a design system, palette and type stay plain; the check
+  covers layout and content.
 
 ## Emphasis
 
@@ -89,9 +91,9 @@ not a finding.
   and a gradient accent.
 - A palette from the common generated set: a warm cream background with a
   high-contrast serif and a terracotta accent (near `#D97757`, Anthropic's
-  own accent); a near-black background with one acid-green or vermilion
-  accent; or a broadsheet layout with hairline rules, zero radius, and dense
-  columns.
+  own accent), or a near-black background with one acid-green or vermilion
+  accent.
+- A broadsheet layout with hairline rules, zero radius, and dense columns.
 
 ## Build notes
 
