@@ -2553,6 +2553,12 @@ const repairCache = ({ paths, input }) => {
   }
 }
 
+// Archives one record. A shared record gets a retirement ID, so the archive reaches other machines.
+const archiveRecord = ({ guidance, reason, source, now, operationId }) => {
+  addRetirement(guidance)
+  appendTransition({ guidance, to: 'archived', reason, source, now, operationId })
+}
+
 const maintainUnlocked = ({ paths, inputPath }) => {
   const input = validateMaintenanceInput(readJsonInput(inputPath))
   if (input.action === 'repair-cache') return repairCache({ paths, input })
@@ -2579,16 +2585,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
   }
   if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
   const now = new Date().toISOString()
-  for (const target of targets) {
-    addRetirement(target)
-    appendTransition({
-      guidance: target,
-      to: 'archived',
-      reason: input.reason,
-      source: 'maintenance',
-      now,
-    })
-  }
+  for (const target of targets) archiveRecord({ guidance: target, reason: input.reason, source: 'maintenance', now })
   const nextMemory = { ...memory, revision: memory.revision + 1 }
   revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: targets.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
@@ -2806,8 +2803,8 @@ const validateConsolidationInput = (input) => {
 }
 
 // Checks that the targets are active and share one scope and subject, and that the replacement
-// is new text. The proposal ID hashes the target fingerprints and the replacement fingerprint,
-// which covers the replacement text.
+// is new text. The proposal ID hashes the target fingerprints and the replacement, whose
+// fingerprint covers its text.
 const planConsolidation = ({ memory, targetIds, replacement }) => {
   const targets = targetIds.map((id) => {
     const target = memory.guidance.find((guidance) => guidance.id === id)
@@ -2833,7 +2830,8 @@ const planConsolidation = ({ memory, targetIds, replacement }) => {
     replacement,
     fingerprint,
     targetFingerprints,
-    proposalId: hashIdentity({ prefix: 'proposal', values: [1, targetFingerprints, fingerprint] }),
+    // The whole replacement is hashed, so an approval binds its confidence and examples too.
+    proposalId: hashIdentity({ prefix: 'proposal', values: [1, targetFingerprints, fingerprint, replacement.confidence, replacement.examples ?? []] }),
   }
 }
 
@@ -2908,7 +2906,7 @@ const archiveInPlace = ({ memory, annotations, target, reason, now, fields = {} 
   if (target.status !== 'active' || target.scope.kind !== 'project') fail('an automated archive requires active project guidance')
   const operationId = newOperationId()
   const revision = memory.revision
-  appendTransition({ guidance: target, to: 'archived', reason, source: 'dream', now, operationId })
+  archiveRecord({ guidance: target, reason, source: 'dream', now, operationId })
   revokeRecord(annotationRecordFor({ annotations, fingerprint: target.fingerprint }))
   return pendingEntry({
     memory: { revision },
@@ -3390,8 +3388,8 @@ const dreamReport = ({ run, applied, stored = [] }) => ({
 
 // The live guidance and each subject must still be as the plan saw them.
 const requireCurrentPlan = ({ input, liveDigests, subjects }) => {
-  for (const [source, digest] of Object.entries(input.live)) {
-    if (liveDigests[source] !== digest) fail(`live guidance ${source} changed since the plan; plan again`)
+  for (const [source, digest] of Object.entries(liveDigests)) {
+    if ((input.live[source] ?? null) !== digest) fail(`live guidance ${source} changed since the plan; plan again`)
   }
   for (const { subjectId, digest } of input.subjects) {
     const subject = subjects.get(subjectId)
@@ -3399,9 +3397,11 @@ const requireCurrentPlan = ({ input, liveDigests, subjects }) => {
   }
 }
 
-// The run entry makes a replay a no-op, and its digests let the next plan skip unchanged subjects.
+// The run entry makes a replay a no-op. Its digests let the next plan skip a subject that is
+// unchanged and left nothing unresolved.
 const recordRun = ({ paths, input, run, stored }) => {
   const after = subjectStates({ memory: run.memory, annotations: run.annotations })
+  const resolved = input.subjects.filter(({ subjectId }) => after.has(subjectId) && !run.unresolved.has(subjectId))
   appendJournal({
     paths,
     entries: [{
@@ -3411,7 +3411,7 @@ const recordRun = ({ paths, input, run, stored }) => {
       revision: run.memory.revision + (run.entries.length > 0 ? 1 : 0),
       operationIds: run.entries.map(({ operationId }) => operationId),
       proposalIds: stored.map(({ id }) => id),
-      subjectDigests: Object.fromEntries(input.subjects.flatMap(({ subjectId }) => (after.has(subjectId) ? [[subjectId, after.get(subjectId).digest]] : []))),
+      subjectDigests: Object.fromEntries(resolved.map(({ subjectId }) => [subjectId, after.get(subjectId).digest])),
       liveDigests: input.live,
     }],
   })
@@ -3437,13 +3437,17 @@ const applyDreamRunUnlocked = ({ paths, input, liveDigests, previewToken }) => {
     annotations: structuredClone(annotations),
     declined: declinedSets(operationsIn(journal)),
     targeted: new Set(),
+    unresolved: new Set(),
     entries: [],
     proposals: [],
     queued: [],
     flags: [],
   }
   for (const subject of input.subjects) {
+    const reported = run.flags.length + run.queued.length
     for (const action of subject.actions) decideDreamAction({ action, subject: subjects.get(subject.subjectId), run })
+    // A flag or a queued decision lives only in this report, so its subject is reviewed again.
+    if (run.flags.length + run.queued.length > reported) run.unresolved.add(subject.subjectId)
   }
   if (run.entries.length > maxDreamOperations) fail(`a dream run applies at most ${maxDreamOperations} changes`)
   if (previewToken === undefined) return { mode: 'dream-apply', outcome: 'preview', runId, previewToken: token, ...dreamReport({ run, applied: false }) }

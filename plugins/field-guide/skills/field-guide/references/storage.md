@@ -149,7 +149,9 @@ Use `undo-operation --id <operation-id>` to reverse a consolidation or an
 automated archive within 90 days. It withdraws the replacement the way a user's
 undo does, restores each predecessor it still supersedes, and acknowledges only
 the retirement IDs its operation created. A predecessor that something else
-retired stays retired, and the result lists it. The undone set is recorded as
+retired stays retired, and the result lists it. Restored predecessors start
+unconfirmed, because a restore revokes confirmations; the user confirms them
+again if needed. The undone set is recorded as
 declined, so nightly maintenance does not propose it again. Repeating the undo
 changes nothing. When a later change blocks a clean inverse, the command names
 the conflict and changes nothing. `transition` refuses to withdraw or undo a

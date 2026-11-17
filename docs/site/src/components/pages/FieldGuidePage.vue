@@ -107,8 +107,9 @@ const management = [
       <p>
         Only that prompt confirms. Extra text, a quoted ID, a pasted report, or
         a prompt in a delegate or subagent confirms nothing. No Field Guide
-        command adds a confirmation; import copies them from your synced file,
-        which you trust.
+        command adds a confirmation on its own; import copies them from your
+        synced file, which you trust, and applying a proposal you approved
+        confirms its replacement.
         The hook cannot tell who sent the prompt, so the agent's guidance
         forbids it from sending one. Changing, withdrawing, or deleting the
         guidance removes the confirmation.

@@ -149,7 +149,8 @@ for a merge or a new pull request after `gh pr merge` or `gh pr create`. Workflo
 instructions, the live code, and repository contracts always outrank what it
 remembers. To confirm a stored record yourself, send a prompt that is exactly
 `confirm fg:<id>` in a main thread. No Field Guide command creates a
-confirmation; import copies them from your synced file, which you trust. The
+confirmation on its own; import copies them from your synced file, which you
+trust, and applying a proposal you approved confirms its replacement. The
 hook cannot tell who sent the prompt, so only guidance stops an agent from
 sending it through a host tool.
 

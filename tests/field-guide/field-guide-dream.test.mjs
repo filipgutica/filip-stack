@@ -373,6 +373,9 @@ test('replaying a finished dream run changes nothing', () => {
   assert.equal(guide.dreamApply(input).outcome, 'already-applied')
   assert.equal(guide.dreamApply(input, { previewToken: 'anything' }).outcome, 'already-applied')
   assert.deepEqual(['memory.md', 'operations.jsonl'].map((name) => readFileSync(join(guide.guideRoot, name), 'utf8')), files)
+  const next = guide.plan()
+  assert.equal(subjectFor(next), undefined, 'a subject the run resolved is not reviewed again')
+  assert.equal(next.skippedSubjects, 1)
 })
 
 test('dream apply and consolidate reject confirmation fields', () => {
@@ -479,6 +482,9 @@ test('dream apply changes no confirmed record and queues a contradiction with co
   assert.equal(applied.proposals.length, 1)
   assert.match(applied.proposals[0].confirmPrompt, /^confirm fg:proposal:/u)
   assert.equal(guide.confirmed(cleanupTexts[0]), true)
+  // Queued decisions and flags live only in the report, so their subjects are reviewed again.
+  const next = guide.plan()
+  assert.ok(subjectFor(next) && subjectFor(next, 'git-cleanup', 'shared'))
 })
 
 test('dream apply archives an unconfirmed project duplicate reversibly', () => {
@@ -514,6 +520,8 @@ test('dream plan writes nothing and its output and the journal hold no home path
   assert.doesNotMatch(plan.stdout, /The user stated a cleanup preference|Body text the plan leaves out/)
   assert.match(plan.stdout, /Read ~\/\.agents\/roles\.md/)
   assert.deepEqual(plan.live.find(({ source }) => source === 'skills').text.trim(), 'cleanup: Clean up after a merge.')
+  const withoutLive = { ...dreamInput(plan, [{ action: 'flag', kind: 'conflict', targetIds: [first], reason: 'Conflicts.' }]), live: {} }
+  assert.match(guide.dreamApply(withoutLive, { expectFailure: true }).stderr, /live guidance claude-md changed since the plan/)
 
   const applied = guide.consolidateApplied([first, second])
   guide.undo(applied.operationId)
@@ -549,7 +557,17 @@ test('the consolidation writer refuses while another host\'s installed plugin ca
   assert.equal(readFileSync(join(guide.guideRoot, 'memory.md'), 'utf8'), memoryBefore)
 
   installCopy(codexCopy, { v2: true })
-  assert.equal(guide.consolidateApplied([first, second]).outcome, 'consolidated')
+  const applied = guide.consolidateApplied([first, second])
+  assert.equal(applied.outcome, 'consolidated')
+
+  // Every writer of version 2 checks: undo and a nightly change refuse while a copy is older.
+  rmSync(codexCopy, { recursive: true })
+  installCopy(codexCopy, { v2: false })
+  assert.match(guide.undo(applied.operationId, { expectFailure: true }).stderr, /Codex .*older/)
+  const archive = dreamInput(guide.plan(), [{ action: 'archive', targetId: applied.replacementId, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
+  const preview = guide.dreamApply(archive)
+  assert.match(guide.dreamApply(archive, { previewToken: preview.previewToken, expectFailure: true }).stderr, /Codex .*older/)
+  assert.equal(guide.record(applied.replacementId).status, 'active')
 })
 
 test('the released CLI reads a store this version writes, and fails closed after a consolidation', () => {

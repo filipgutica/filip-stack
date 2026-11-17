@@ -229,6 +229,21 @@
       "accept": [
         "undo-operation"
       ]
+    },
+    {
+      "id": "undo-fresh-capture",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/dreaming.md"
+      ],
+      "task": "During this task you captured the user's preference as active project guidance whose ID starts with 4d5e6f7a, and appended the change notice. No consolidation or nightly change touched it. The user now says: \"Undo that learning.\"",
+      "options": {
+        "undo-operation": "run `undo-operation --id` with that guidance ID",
+        "transition-undo": "run `transition` with action `undo` on that guidance record",
+        "delete": "permanently delete that guidance record with `delete`"
+      },
+      "accept": [
+        "transition-undo"
+      ]
     }
   ]
 }
