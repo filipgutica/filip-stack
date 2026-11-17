@@ -961,42 +961,42 @@ const writeMemoryViews = ({ paths, memory }) => {
   writeTextAtomically({ path: paths.memoryIndexFile, content: renderMemoryIndex(memory) })
   writeMemoryAtomically({ paths, memory })
   // Last, so a crash between the writes leaves a mismatch, which voids confirmations.
-  writeWatermark({ paths, revision: memory.revision })
+  writeWatermark({ paths, memory })
 }
 
-// The memory revision written by the last annotation-aware writer. It stays local and never syncs.
-// Any other revision means an older plugin wrote memory since then. pendingImport stays set until
-// an import revokes what it brings back, since an older delete leaves no fingerprint to revoke.
+// The memory revision and fingerprints of the last annotation-aware write. It stays local and
+// never syncs. Any other revision means an older plugin wrote memory since then, and the
+// fingerprints still name the records that plugin may have deleted.
 const readWatermark = (paths) => {
+  if (!existsSync(paths.annotationsWatermarkFile)) return {}
+  // A watermark that does not parse counts as a mismatch, which only voids confirmations.
   try {
-    return JSON.parse(readFileSync(paths.annotationsWatermarkFile, 'utf8'))
+    return JSON.parse(readFileSync(paths.annotationsWatermarkFile, 'utf8')) ?? {}
   } catch {
     return {}
   }
 }
 
-const writeWatermark = ({ paths, revision, pendingImport = readWatermark(paths).pendingImport }) => (
-  writeTextAtomically({ path: paths.annotationsWatermarkFile, content: `${JSON.stringify({ memoryRevision: revision, ...(pendingImport ? { pendingImport } : {}) })}\n` })
-)
+const writeWatermark = ({ paths, memory }) => {
+  const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint))
+  writeTextAtomically({ path: paths.annotationsWatermarkFile, content: `${JSON.stringify({ memoryRevision: memory.revision, fingerprints })}\n` })
+}
 
 const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevision === memory.revision
 
-const revokeEveryFingerprint = ({ memory, annotations }) => {
-  const fingerprints = new Set([...memory.guidance.map(({ fingerprint }) => fingerprint), ...Object.keys(annotations.records)])
-  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
-}
-
 // An older plugin may have retired, restored, deleted, or recaptured guidance since the last
-// annotation-aware write. Revoke every fingerprint in memory or annotations once, which also covers
-// confirmations still in transit, then record the revision. A store without a watermark, such as
-// one from the first annotation release, is treated the same.
+// annotation-aware write. Revoke every fingerprint in memory, annotations, or the watermark once,
+// which covers deleted records and confirmations still in transit, then record the revision.
+// A store without a watermark, such as one from the first annotation release, is treated the same.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
   const annotations = readAnnotations(paths.annotationsFile)
-  revokeEveryFingerprint({ memory, annotations })
+  const { fingerprints: known } = readWatermark(paths)
+  const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
+  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
   writeAnnotations({ path: paths.annotationsFile, annotations })
-  writeWatermark({ paths, revision: memory.revision, pendingImport: true })
+  writeWatermark({ paths, memory })
 }
 
 // A writer waits briefly for the lock, inside the hook's five-second timeout. It removes a lock
@@ -1923,10 +1923,7 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
     const record = annotationRecordFor({ annotations, fingerprint })
     record.revocations = sortedUnion(record.revocations, retirements.map(retirementRevocationId))
   }
-  const { pendingImport } = readWatermark(paths)
-  if (pendingImport) revokeEveryFingerprint({ memory, annotations })
   if (Object.keys(annotations.records).length > 0) writeAnnotations({ path: paths.annotationsFile, annotations })
-  if (pendingImport) writeWatermark({ paths, revision: memory.revision, pendingImport: false })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }

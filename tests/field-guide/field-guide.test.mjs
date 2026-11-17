@@ -2439,6 +2439,8 @@ test('an import after an older plugin deleted a record revokes the confirmation 
   third.importFiles({ dotfile: first.files.dotfile })
   third.olderRemove(guidanceId)
   third.exportFiles()
+  // An import without the record comes first, so the revocation must outlast it.
+  third.importFiles({ dotfile: third.files.dotfile })
   third.importFrom(second)
   assert.equal(third.confirmed(), false)
 })
@@ -2456,7 +2458,7 @@ test('a sidecar that imported a retirement stays valid for the first annotation 
 })
 
 test('a store from before the watermark voids its confirmations until the user confirms again', () => {
-  const { first, guidanceId } = machinePair('watermark-upgrade')
+  const { first, second, guidanceId } = machinePair('watermark-upgrade')
   const watermark = join(first.guideRoot, 'annotations-watermark.json')
   confirmByHook({ guideRoot: first.guideRoot, guidanceId })
   rmSync(watermark)
@@ -2464,6 +2466,10 @@ test('a store from before the watermark voids its confirmations until the user c
   first.learn({ learning: 'Name tests after behavior.' })
   assert.equal(first.confirmed(), false)
   confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  assert.equal(first.confirmed(), true)
+  // The next sync keeps the new confirmation.
+  second.exportFiles()
+  first.importFrom(second)
   assert.equal(first.confirmed(), true)
   // Without annotations there is nothing to void, so the first confirmation counts.
   rmSync(watermark)

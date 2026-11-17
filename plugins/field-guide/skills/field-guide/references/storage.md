@@ -15,7 +15,7 @@ Use these terms:
 │   └── events.jsonl
 ├── .obsidian/          # Optional client-owned vault settings
 ├── annotations.json    # Optional user confirmations and event triggers
-├── annotations-watermark.json  # Memory revision of the last annotation-aware write
+├── annotations-watermark.json  # Memory revision and fingerprints of the last annotation-aware write
 ├── init.md
 ├── memory.lock         # Present only while a write runs
 ├── memory.md           # Canonical readable and machine-recorded memory
@@ -172,17 +172,21 @@ order.
 
 A plugin that predates this rule can retire, restore, delete, or recapture
 guidance without touching annotations. `annotations-watermark.json` stays
-local and holds the memory revision of the last annotation-aware write; a crash
-between the memory and watermark writes leaves a mismatch. While memory has
-another revision, no confirmation counts. The next locked command of a current
-plugin, including export and a delete or archive preview, first revokes every
-fingerprint in memory or annotations, which covers confirmations in transit,
-then records the revision and marks an import pending. The next import revokes
-every fingerprint again after it merges, so a record that an older plugin
-deleted returns unconfirmed, and a current plugin's recapture revokes anyway.
-The user confirms again. A store without the watermark, such as one from the
-first annotation release, is treated the same way: confirmations do not yet
-grant authority, so voiding them costs one confirm prompt each.
+local and holds the memory revision and record fingerprints of the last
+annotation-aware write; a crash between the memory and watermark writes leaves
+a mismatch. While memory has another revision, no confirmation counts. The next
+locked command of a current plugin, including export and a delete or archive
+preview, first revokes every fingerprint in memory, annotations, or the
+watermark, then records the revision. That covers confirmations in transit and
+records an older plugin deleted, so a deleted record that a later import brings
+back stays unconfirmed in any delivery order. The user confirms again, and that
+confirmation survives later syncs. A store without the watermark, such as one
+from the first annotation release, is treated the same way: confirmations do
+not yet grant authority, so voiding them costs one confirm prompt each. Each
+machine voids once when it upgrades, and its revocations reach the others when
+they sync. A record that an older plugin both imports and deletes between two
+current writes leaves no fingerprint, so a confirmation in transit for it can
+still count.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
