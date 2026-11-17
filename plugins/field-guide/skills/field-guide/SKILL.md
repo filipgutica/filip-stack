@@ -61,7 +61,7 @@ Guidance tagged for an event is retrieved by that event, not by a query. Retriev
 /bin/sh <field-guide-skill-directory>/scripts/field-guide.sh retrieve --repo-root <git-root> --event <pr-merged|pr-created|handoff>
 ```
 
-Retrieve again when the task scope changes materially, the user corrects the approach, guidance conflicts, or you would cite after compaction guidance that the hooks did not inject again. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work. A merge or a handoff is not routine: retrieve its `--event` guidance unless a hook injected it for that merge or handoff.
+Retrieve again when the task scope changes materially, the user corrects the approach, guidance conflicts, or you would cite after compaction guidance that the hooks did not inject again. Skip retrieval for casual conversation, status checks, routine Git mechanics, and administrative work. A merge, PR creation, or handoff is not routine: retrieve its `--event` guidance unless a hook injected it for that event.
 
 Apply guidance in this order:
 

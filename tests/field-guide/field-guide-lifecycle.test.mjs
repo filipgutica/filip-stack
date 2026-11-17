@@ -259,11 +259,14 @@ test('the hook runner fails open when an explicit Node runtime is unavailable', 
   assert.equal(result.stderr, '')
 })
 
+const initRepo = ({ repoRoot, origin }) => {
+  execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
+  execFileSync('git', ['-C', repoRoot, 'remote', 'add', 'origin', origin])
+}
 const seedGuide = () => {
   const home = mkdtempSync(join(tmpdir(), 'field-guide-hook-injection-'))
   const repoRoot = join(home, 'repo')
-  execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
-  execFileSync('git', ['-C', repoRoot, 'remote', 'add', 'origin', 'git@github.com:example/injection.git'])
+  initRepo({ repoRoot, origin: 'git@github.com:example/injection.git' })
   const guideRoot = join(home, '.field-guide')
   const fieldGuide = (...args) => execFileSync(
     process.execPath,
@@ -773,7 +776,7 @@ test('incident replay: a merge in a later turn injects the confirmed cleanup rec
   assert.deepEqual(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 5 --squash' }), {})
 
   for (const [index, env] of [hostEnvironment.claude, hostEnvironment.codex].entries()) {
-    const codexStyle = toolContext(toolHook({ home, repoRoot, sessionId: `session-incident-host-${index}`, env, command: 'cd ../injection && gh pr merge 5', response: 'Exit code: 0\nWall time: 1.2 seconds\nOutput:\nMerged' }))
+    const codexStyle = toolContext(toolHook({ home, repoRoot, sessionId: `session-incident-host-${index}`, env, command: 'cd ../repo && gh pr merge 5', response: 'Exit code: 0\nWall time: 1.2 seconds\nOutput:\nMerged' }))
     assert.ok(codexStyle.split('\n').includes(cleanupLine), codexStyle)
   }
 })
@@ -788,13 +791,14 @@ test('merge and create commands inject their event once per target', () => {
   for (const command of [
     'gh pr merge 5',
     'gh stack merge',
-    'cd ../repo && gh pr merge 7 --squash',
+    'cd ../repo && gh pr merge 7 --squash && git pull',
     'GH_TOKEN=private-token gh pr merge 8',
+    'env GH_TOKEN=private-token command gh pr merge 8 2>&1',
     'git fetch; gh pr merge https://github.com/example/injection/pull/9',
-    'git push\ngh pr merge 10 --delete-branch',
-    'true || /usr/bin/gh pr merge 11',
+    'git push\ngh pr merge 10 --delete-branch\n',
     "zsh -i -c 'gh pr merge 21'",
     'bash -lc "cd ../repo && GH_TOKEN=private-token gh pr merge 22"',
+    'gh pr merge 23 --body "$(cat <<\'EOF\'\nIt\'s done; || true\nEOF\n)"',
   ]) {
     const context = once(command)
     assert.ok(context?.split('\n').includes(cleanupLine), command)
@@ -812,12 +816,42 @@ test('merge and create commands inject their event once per target', () => {
     'ls',
     `bash -c 'echo "gh pr merge 5"'`,
     "sh -c 'gh pr view 5'",
+    // The merge may not have run or succeeded, though the whole command exits 0.
+    'true || /usr/bin/gh pr merge 11',
+    'gh pr merge 12 || true',
+    "zsh -c 'gh pr merge 12 || true'",
+    'gh pr merge 5 | tail -3',
+    'gh pr merge 5; git pull',
+    'gh pr merge 5\ngit pull',
+    'gh pr merge 5 &',
+    'gh pr merge 5 --body "$(cat notes.md)" || true',
+    'gh pr merge 5 --body "$(cat <<\'EOF\'\nx\nEOF\n)"\ngit pull',
+    "cat <<'EOF'\ngh pr merge 13\nEOF",
+    'echo "field-guide.mjs" retrieve --event handoff',
+    // The repository is unknown or not this one.
+    '(cd ../other && gh pr merge 5)',
+    'cd ../repo; gh pr merge 5',
+    'cd "$REPO" && gh pr merge 5',
+    'cd ../missing && gh pr merge 5',
+    'gh pr merge 5 -R example/other',
+    'gh pr merge https://github.com/example/other/pull/5',
+    'gh pr merge feature -R example/other',
+    'gh pr create --fill --repo=example/other',
+    // These merge nothing.
+    'gh pr merge 5 --help',
+    'gh pr merge 5 --disable-auto',
   ]) assert.equal(once(command), null, command)
 
   const created = once('gh pr create --fill --base main')
   assert.match(created, /tagged \[pr-created\]/)
   assert.ok(created.split('\n').includes('- [pr-created] [pr-description] Link the ticket in every pull request description.'), created)
   assert.doesNotMatch(created, /clean up without asking/)
+  assert.match(once(`gh pr create --title "Fix \\"x\\"" --body "$(cat <<'EOF'\nIt's a 27" fix\nEOF\n)"`), /tagged \[pr-created\]/)
+  for (const command of ['gh pr create --web', 'gh pr create --fill --dry-run', 'gh pr create -h']) assert.equal(once(command), null, command)
+  // Several events in one command share one block and one budget.
+  const both = once('gh pr create --fill && gh pr merge 30 --auto').split('\n')
+  assert.match(both[0], /^Field Guide: stored user guidance tagged \[pr-created\] or \[pr-merged\]\. .*--auto/)
+  assert.ok(both.includes(cleanupLine) && both.some((line) => /Link the ticket/.test(line)) && both.length === 3, both.join('\n'))
 
   const sessionId = 'session-two-prs'
   const merge = (command) => toolContext(toolHook({ home, repoRoot, sessionId, command }))
@@ -825,8 +859,32 @@ test('merge and create commands inject their event once per target', () => {
   assert.match(merge('gh pr merge 2'), /clean up without asking/)
   assert.equal(merge('gh pr merge 1'), null)
   assert.equal(merge('gh pr merge #1 --squash'), null)
-  assert.match(merge('gh pr merge 1 -R example/other'), /clean up without asking/)
-  assert.match(merge('gh pr create --fill'), /tagged \[pr-created\]/)
+  assert.equal(merge('gh pr merge https://github.com/Example/injection/pull/2'), null)
+  assert.match(merge('gh pr merge 3 --repo example/injection'), /clean up without asking/)
+  assert.equal(merge('gh pr merge https://github.com/example/injection/pull/3'), null)
+  // The same number in another repository is another PR.
+  initRepo({ repoRoot: join(home, 'other'), origin: 'git@github.com:example/other.git' })
+  assert.match(merge('cd ../other && gh pr merge 1'), /clean up without asking/)
+  assert.equal(merge('cd ../other && gh pr merge https://github.com/example/other/pull/1'), null)
+  // A merge or creation that names no PR injects every time.
+  for (const command of ['gh pr merge --squash', 'gh pr merge --squash', 'gh pr create --fill', 'gh pr create --fill']) assert.match(merge(command), /tagged \[pr-/, command)
+})
+
+test('event injection uses the project records of the repository the command acted on', () => {
+  const { home, repoRoot, guideRoot, capture } = seedIncident()
+  annotateTriggers({ repoRoot, guideRoot, id: captureId(capture, { scope: 'project', subjectKey: 'handoff-check', learning: 'List open worktrees in the handoff.', turnId: 'turn-repo' }), triggers: 'handoff' })
+  const otherRoot = join(home, 'other')
+  initRepo({ repoRoot: otherRoot, origin: 'git@github.com:example/other.git' })
+  const context = (command, cwd = repoRoot) => toolContext(toolHook({ home, repoRoot: cwd, sessionId: 'session-repo', command }))
+  assert.match(context(`node "${fieldGuideScript}" retrieve --event handoff`), /List open worktrees/)
+  for (const [command, cwd] of [
+    [`node "${fieldGuideScript}" retrieve --repo-root ../other --event handoff`],
+    [`cd ../other && /bin/sh "${fieldGuideShell}" retrieve --event handoff`],
+    [`node "${fieldGuideScript}" retrieve --event handoff`, otherRoot],
+  ]) {
+    const lines = context(command, cwd).split('\n')
+    assert.ok(lines.includes(cleanupLine) && !lines.some((line) => /List open worktrees/.test(line)), command)
+  }
 })
 
 test('an --auto merge says it may only be queued', () => {
@@ -840,7 +898,7 @@ test('an --auto merge says it may only be queued', () => {
 test('a failed command injects nothing and leaves the target pending', () => {
   const { home, repoRoot, guideRoot } = seedIncident()
   const sessionId = 'session-failed'
-  for (const response of [
+  for (const [env, response] of [
     { ...succeeded, interrupted: true },
     { is_error: true },
     { isError: true },
@@ -849,12 +907,19 @@ test('a failed command injects nothing and leaves the target pending', () => {
     { error: 'Exit code 1' },
     'Exit code: 1\nWall time: 0.4 seconds\nOutput:\nPull request is not mergeable',
     'Chunk ID: 1\nWall time: 0.4 seconds\nProcess exited with code 1\nOutput:\nfailed',
-  ]) {
+  ].map((response) => [hostEnvironment.claude, response]).concat([
+    // Codex needs a zero exit, because a failed command also reaches PostToolUse.
+    { metadata: { exit_code: 1 } },
+    succeeded,
+    '{"output":"Pull request is not mergeable","metadata":{"exit_code":1}}',
+    'failed',
+    'Exit code: 1\nOutput:\nExit code: 0',
+  ].map((response) => [hostEnvironment.codex, response]))) {
     const before = stateText(guideRoot)
-    assert.deepEqual(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 13', response }), {}, JSON.stringify(response))
+    assert.deepEqual(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 13', env, response }), {}, JSON.stringify(response))
     assert.equal(stateText(guideRoot), before)
   }
-  assert.match(toolContext(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 13' })), /clean up without asking/)
+  assert.match(toolContext(toolHook({ home, repoRoot, sessionId, command: 'gh pr merge 13', env: hostEnvironment.codex, response: { metadata: { exit_code: 0 } } })), /clean up without asking/)
 })
 
 test('subagent and delegate commands inject nothing and leave the main thread pending', () => {
@@ -920,6 +985,8 @@ test('compaction restores the shared records the session received, at their curr
 
 test('event injection keeps project records first within three records and 1.5 KB', () => {
   const { home, repoRoot, guideRoot, capture } = seedGuide()
+  // A merge with nothing tagged records nothing, so the same PR injects once guidance is tagged.
+  assert.equal(toolContext(toolHook({ home, repoRoot, sessionId: 'session-budget', command: 'gh pr merge 16' })), null)
   const long = (index) => `Shared merge rule ${index}: ${'keep the merged branch history readable and tidy. '.repeat(9)}`.trim()
   for (let index = 0; index < 5; index += 1) {
     const id = captureId(capture, { scope: 'shared', subjectKey: `merge-rule-${index}`, learning: long(index), turnId: `turn-long-${index}` })
@@ -937,9 +1004,9 @@ test('event injection keeps project records first within three records and 1.5 K
 
 test('the PostToolUse command resolves Claude and Codex plugin roots', () => {
   const { home, repoRoot } = seedIncident()
-  for (const [index, env] of [{ CLAUDE_PLUGIN_ROOT: pluginRoot }, { PLUGIN_ROOT: pluginRoot }].entries()) {
+  for (const [index, [env, response]] of [[{ CLAUDE_PLUGIN_ROOT: pluginRoot }, succeeded], [{ PLUGIN_ROOT: pluginRoot }, 'Process exited with code 0\nOutput:\nMerged']].entries()) {
     const result = spawnSync('/bin/sh', ['-c', postToolCommand], {
-      input: `${JSON.stringify({ hook_event_name: 'PostToolUse', session_id: `session-root-${index}`, cwd: repoRoot, tool_name: 'Bash', tool_input: { command: 'gh pr merge 17' }, tool_response: succeeded })}\n`,
+      input: `${JSON.stringify({ hook_event_name: 'PostToolUse', session_id: `session-root-${index}`, cwd: repoRoot, tool_name: 'Bash', tool_input: { command: 'gh pr merge 17' }, tool_response: response })}\n`,
       encoding: 'utf8',
       env: { ...process.env, HOME: home, PLUGIN_ROOT: undefined, CLAUDE_PLUGIN_ROOT: undefined, T3CODE_THREAD_ID: undefined, ...env },
     })

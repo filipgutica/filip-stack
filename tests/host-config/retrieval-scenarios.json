@@ -112,6 +112,17 @@
       ]
     },
     {
+      "id": "pr-create-without-hook-retrieves-event",
+      "task": "The user asked you to open a PR for the export fix. You opened it with a GitHub MCP tool, not a shell command, and it succeeded. No Field Guide line tagged [pr-created] was injected. The injected subject index lists: agent-autonomy, pr-coordination, stacked-prs. You are about to report the new PR.",
+      "options": {
+        "retrieve": "run Field Guide retrieve with --event pr-created, then follow what it returns",
+        "skip": "report the PR without retrieving Field Guide guidance; opening a PR is routine Git mechanics"
+      },
+      "accept": [
+        "retrieve"
+      ]
+    },
+    {
       "id": "merge-without-hook-retrieves-event",
       "task": "The user asked you to merge PR #42. You merged it with a GitHub MCP tool, not a shell command, and it succeeded. No Field Guide line tagged [pr-merged] was injected. The injected subject index lists: agent-autonomy, git-branching, stacked-prs. You are about to report the merge.",
       "options": {

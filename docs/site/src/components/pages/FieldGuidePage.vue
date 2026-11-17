@@ -181,7 +181,7 @@ const management = [
     <p class="hint">
       The agent can tag guidance for a merge, a new pull request, or a handoff.
       After a <code>gh pr merge</code> or <code>gh pr create</code> in the main
-      thread, the hook adds up to three tagged records, once per pull request.
+      thread, the hook adds up to three tagged records, once per named pull request.
       At a handoff, the agent looks the tagged guidance up. Tags only choose
       when guidance appears.
     </p>

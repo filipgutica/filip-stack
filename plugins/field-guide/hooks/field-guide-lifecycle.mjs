@@ -3,7 +3,7 @@
 import { createHash } from 'node:crypto'
 import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { basename, join } from 'node:path'
+import { basename, join, resolve } from 'node:path'
 
 // The Field Guide modules load only after an event needs them, so a PostToolUse call for an
 // unrelated command exits without parsing them.
@@ -11,9 +11,9 @@ let fieldGuide
 const loadFieldGuide = async () => {
   const { appendAnalyticsEvent } = await import('../skills/field-guide/scripts/field-guide-analytics.mjs')
   const {
-    confirmFromPrompt, eventInjection, isMainThread, promptInjection, sessionStartInjection, storeVersionNotice,
+    confirmFromPrompt, eventInjection, isMainThread, originOf, promptInjection, sessionStartInjection, storeVersionNotice,
   } = await import('../skills/field-guide/scripts/field-guide.mjs')
-  fieldGuide = { appendAnalyticsEvent, confirmFromPrompt, eventInjection, isMainThread, promptInjection, sessionStartInjection, storeVersionNotice }
+  fieldGuide = { appendAnalyticsEvent, confirmFromPrompt, eventInjection, isMainThread, originOf, promptInjection, sessionStartInjection, storeVersionNotice }
 }
 
 const isSupportedHost = () => Boolean(process.env.PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT)
@@ -188,53 +188,55 @@ const sessionStartOutput = (input) => {
   }
 }
 
-// One separator run or one word. A word joins plain characters, escapes, and quoted spans, so
-// `echo "gh pr merge"` has the words `echo` and `gh pr merge`.
-const shellToken = /[^\S\n]*(?:(?<separator>[;&|\n]+)|(?<word>(?:'[^']*'|"(?:[^"\\]|\\[\s\S])*"|\\[\s\S]|[^\s'"\\;&|])+))/uy
+// Text from the first heredoc, command substitution, or backtick on is never read as commands.
+const inertStart = /<<|\$\(|`/u
+// One separator run or one word. A word joins plain characters, escapes, quoted spans, and a
+// redirect's `>&`, so `echo "gh pr merge"` has the words `echo` and `gh pr merge`. A parenthesis
+// matches neither, so a subshell stops the scan.
+const shellToken = /[^\S\n]*(?:(?<separator>[;&|\n][;&|\s]*)|(?<word>(?:'[^']*'|"(?:[^"\\]|\\[\s\S])*"|\\[\s\S]|[<>]&|[^\s'"\\;&|()])+))/uy
 const unquote = (word) => word.replace(
   /'([^']*)'|"((?:[^"\\]|\\[\s\S])*)"|\\([\s\S])/gu,
   (_, single, double, escaped) => single ?? double?.replace(/\\([\s\S])/gu, '$1') ?? escaped,
 )
 
 /**
- * Splits a shell command at `&&`, `||`, `;`, `|`, `&`, and newlines into simple commands, each
- * a list of unquoted words. Returns null for an unclosed quote. This recognizes commands; it is
- * not a full shell parser.
+ * Splits a shell command into simple commands, each with its unquoted words and the separator
+ * after it without whitespace ('' for a newline, null at the end). Reads only the text before
+ * the first `<<`, `$(`, or backtick; a quote left open there ends the scan. Returns null for text
+ * it cannot split, or when anything but quotes follows the last `)` or backtick of the unread
+ * text, so `"$(…)" || true` hides no separator. This recognizes commands; it is not a shell parser.
  */
 const simpleCommands = (command) => {
-  const commands = [[]]
+  const inert = command.search(inertStart)
+  const text = inert < 0 ? command : command.slice(0, inert)
+  if (inert >= 0) {
+    const unread = command.slice(inert)
+    if (!/^["'\s]*$/u.test(unread.slice(Math.max(unread.lastIndexOf(')'), unread.lastIndexOf('`')) + 1))) return null
+  }
+  const commands = [{ words: [], next: null }]
   let end = 0
   shellToken.lastIndex = 0
-  for (let match = shellToken.exec(command); match; match = shellToken.exec(command)) {
+  for (let match = shellToken.exec(text); match; match = shellToken.exec(text)) {
     end = shellToken.lastIndex
-    if (match.groups.word === undefined) commands.push([])
-    else commands.at(-1).push(unquote(match.groups.word))
+    if (match.groups.word !== undefined) commands.at(-1).words.push(unquote(match.groups.word))
+    else {
+      commands.at(-1).next = match.groups.separator.replace(/\s/gu, '')
+      commands.push({ words: [], next: null })
+    }
   }
-  // Tokens stop only at trailing whitespace or at an unclosed quote.
-  if (command.slice(end).trim() !== '') return null
-  return commands.filter((words) => words.length > 0)
+  const rest = text.slice(end).trim()
+  if (rest !== '' && !(inert >= 0 && /^["']/u.test(rest))) return null
+  // A trailing newline or `;` ends the command; a trailing `&` stays and fails the `&&` check.
+  if (commands.at(-1).words.length === 0 && commands.length > 1) {
+    commands.pop()
+    if (['', ';'].includes(commands.at(-1).next)) commands.at(-1).next = null
+  }
+  return commands.filter(({ words }) => words.length > 0)
 }
 
-// A cheap check that runs before any parsing: every recognized command names gh or the CLI.
-const mayNameEvent = /\bgh\b|field-guide\.(?:sh|mjs)/u
-const fieldGuideScript = /^field-guide\.(?:sh|mjs)$/u
-const hashOf = (text) => createHash('sha256').update(text).digest('hex')
-const pullRequestTarget = /^(?:#?\d+|https?:\/\/\S+\/pull\/\d+\S*)$/u
-
-// A PR number or URL (with any --repo value) names the target; otherwise the working
-// directory and the command's words do. Only a hash of the target is stored.
-const ghTarget = ({ words, cwd }) => {
-  const pullRequest = words.find((word) => pullRequestTarget.test(word))
-  if (pullRequest === undefined) return `${cwd}\0${words.join(' ')}`
-  const repoIndex = words.findIndex((word) => word === '-R' || word === '--repo')
-  const repo = repoIndex >= 0 ? words[repoIndex + 1] : words.find((word) => word.startsWith('--repo='))?.slice('--repo='.length)
-  return `${repo ?? ''}#${pullRequest.replace(/^#/u, '').toLowerCase()}`
-}
-
-const ghEvents = new Map([['pr merge', 'pr-merged'], ['stack merge', 'pr-merged'], ['pr create', 'pr-created']])
-
-const withoutAssignments = (words) => {
-  const start = words.findIndex((word) => !/^[A-Za-z_][A-Za-z0-9_]*=/u.test(word))
+// Drops leading `NAME=value` assignments and `env` or `command` prefixes.
+const withoutPrefixes = (words) => {
+  const start = words.findIndex((word) => !/^[A-Za-z_][A-Za-z0-9_]*=/u.test(word) && !['env', 'command'].includes(basename(word)))
   return start < 0 ? [] : words.slice(start)
 }
 
@@ -245,36 +247,111 @@ const wrappedScript = (command) => {
   return flag < 0 ? null : command.slice(flag + 1).find((word) => !word.startsWith('-')) ?? null
 }
 
-// Lists a script's simple commands without leading assignments, opening shell wrappers one level.
-const commandsIn = (script) => (simpleCommands(script) ?? []).map(withoutAssignments).flatMap((command) => {
-  const inner = wrappedScript(command)
-  return inner === null ? [command] : (simpleCommands(inner) ?? []).map(withoutAssignments)
-})
+// A path the hook can resolve without the shell: no expansion, globbing, or `cd -`.
+const literalPath = (word) => word !== undefined && !/^[-~]|[$*?[\]{}]/u.test(word)
 
-// Returns the Field Guide event a simple command stands for, or null. A retrieve has no target:
-// the agent asked for that output, so it gets the marked lines every time.
-const eventFor = ({ command, cwd }) => {
-  if (basename(command[0] ?? '') === 'gh') {
-    const event = ghEvents.get(command.slice(1, 3).join(' '))
-    if (!event) return null
-    return { event, target: ghTarget({ words: command, cwd }), queuedMerge: event === 'pr-merged' && command.includes('--auto') }
-  }
-  const script = command.findIndex((word) => fieldGuideScript.test(basename(word)))
-  if (script < 0 || command[script + 1] !== 'retrieve') return null
-  const eventIndex = command.indexOf('--event', script)
-  if (eventIndex < 0 || command[eventIndex + 1] === undefined) return null
-  return { event: command[eventIndex + 1], target: null, queuedMerge: false }
+// Only `cd <literal path> &&` changes the directory; any other `cd`, `pushd`, or `popd` makes it unknown.
+const directoryAfter = ({ command, next, dir }) => {
+  if (!['cd', 'pushd', 'popd'].includes(command[0])) return dir
+  const literal = command[0] === 'cd' && command.length === 2 && next === '&&' && literalPath(command[1])
+  return dir !== null && literal ? resolve(dir, command[1]) : null
 }
 
-/** Lists the Field Guide events in a PostToolUse Bash call, or none. Loads no module. */
+/**
+ * Lists a script's simple commands with the directory each runs in, opening shell wrappers one
+ * level. A wrapper's last command takes the wrapper's separator, because its exit status is the
+ * wrapper's. A wrapper's `cd` stays inside the wrapper; an unknown directory is null.
+ */
+const chainOf = ({ script, cwd, nested = false }) => {
+  const commands = simpleCommands(script)
+  if (commands === null) return null
+  const chain = []
+  let dir = cwd
+  for (const { words, next } of commands) {
+    const command = withoutPrefixes(words)
+    const inner = nested ? null : wrappedScript(command)
+    if (inner !== null) {
+      const innerChain = chainOf({ script: inner, cwd: dir, nested: true })
+      if (!innerChain?.length) return null
+      innerChain.at(-1).next ??= next
+      chain.push(...innerChain)
+      continue
+    }
+    chain.push({ command, next, dir })
+    dir = directoryAfter({ command, next, dir })
+  }
+  return chain
+}
+
+// A cheap check that runs before any parsing: every recognized command names gh or the CLI.
+const mayNameEvent = /\bgh\b|field-guide\.(?:sh|mjs)/u
+const fieldGuideScript = /^field-guide\.(?:sh|mjs)$/u
+const hashOf = (text) => createHash('sha256').update(text).digest('hex')
+const ghEvents = new Map([['pr merge', 'pr-merged'], ['stack merge', 'pr-merged'], ['pr create', 'pr-created']])
+// Help, a dry run, a browser form, and turning off auto-merge create or merge nothing.
+const nonActions = ['--help', '-h', '--dry-run', '--web', '-w', '--disable-auto']
+const pullRequestUrl = /^https?:\/\/([^/\s]+\/[^/\s]+\/[^/\s]+)\/pull\/(\d+)(?:[/?#]\S*)?$/u
+
+// A `gh pr merge` PR named by number or URL; null for the current branch.
+const pullRequestOf = (words) => {
+  const url = words.map((word) => pullRequestUrl.exec(word)).find(Boolean)
+  if (url) return { repo: url[1], number: url[2] }
+  const number = words.slice(3).find((word) => /^#?\d+$/u.test(word))
+  return number === undefined ? null : { repo: null, number: number.replace(/^#/u, '') }
+}
+
+// The `-R`, `--repo`, or `--repo=` value as host/owner/repo, or null.
+const repoFlagOf = (words) => {
+  const index = words.findIndex((word) => word === '-R' || word === '--repo')
+  const repo = index >= 0 ? words[index + 1] : words.find((word) => word.startsWith('--repo='))?.slice('--repo='.length)
+  return repo === undefined ? null : repo.split('/').length === 2 ? `github.com/${repo}` : repo
+}
+
+const ghEventFor = ({ command, dir }) => {
+  const event = ghEvents.get(command.slice(1, 3).join(' '))
+  if (!event) return null
+  const pullRequest = command[1] === 'pr' && event === 'pr-merged' ? pullRequestOf(command) : null
+  const repo = pullRequest?.repo ?? repoFlagOf(command)
+  return { event, dir, repo, pullRequest, queuedMerge: event === 'pr-merged' && command.includes('--auto') }
+}
+
+// A retrieve has no PR: the agent asked for that output, so it gets the marked lines every time.
+const retrieveEventFor = ({ command, dir }) => {
+  // The script runs directly or as a node, sh, or bash script; elsewhere it is only an argument.
+  const script = fieldGuideScript.test(basename(command[0])) ? 0
+    : ['node', 'sh', 'bash'].includes(basename(command[0])) && fieldGuideScript.test(basename(command[1] ?? '')) ? 1 : -1
+  if (script < 0 || command[script + 1] !== 'retrieve') return null
+  const valueOf = (option) => (command.includes(option) ? command[command.indexOf(option) + 1] ?? null : undefined)
+  const event = valueOf('--event')
+  const repoRoot = valueOf('--repo-root')
+  if (typeof event !== 'string' || repoRoot === null) return null
+  const root = repoRoot === undefined ? dir : dir !== null && literalPath(repoRoot) ? resolve(dir, repoRoot) : null
+  return { event, dir: root, pullRequest: null, queuedMerge: false }
+}
+
+// Returns the Field Guide event a simple command stands for, or null.
+const eventFor = ({ command, dir }) => {
+  if (command.length === 0 || command.some((word) => nonActions.includes(word))) return null
+  return basename(command[0]) === 'gh' ? ghEventFor({ command, dir }) : retrieveEventFor({ command, dir })
+}
+
+/**
+ * Lists the Field Guide events in a PostToolUse Bash call that a zero exit proves ran and
+ * succeeded: no `||` anywhere, and only `&&` after the event's command. Returns none when the
+ * events' repository is unknown or differs. Loads no module.
+ */
 const toolEvents = (input) => {
   const command = input.tool_input?.command
   if (typeof command !== 'string' || typeof input.cwd !== 'string' || !mayNameEvent.test(command)) return []
-  return commandsIn(command).map((words) => eventFor({ command: words, cwd: input.cwd })).filter(Boolean)
+  const chain = chainOf({ script: command, cwd: input.cwd }) ?? []
+  if (chain.some(({ next }) => next === '||')) return []
+  const events = chain
+    .map((entry, index) => (chain.slice(index).every(({ next }) => next === '&&' || next === null) ? eventFor(entry) : null))
+    .filter(Boolean)
+  return events.every(({ dir }) => dir !== null && dir === events[0].dir) ? events : []
 }
 
-// Claude reports failures as PostToolUseFailure; these checks cover the other result shapes,
-// including Codex's model-facing text, which PostToolUse also receives after a non-zero exit.
+// Claude reports failures as PostToolUseFailure; these checks cover the other result shapes.
 const commandFailed = (response) => {
   if (typeof response === 'string') return /^(?:Exit code:|Process exited with code) *[1-9]/mu.test(response)
   if (!response || typeof response !== 'object') return false
@@ -283,35 +360,47 @@ const commandFailed = (response) => {
     || (typeof response.error === 'string' && response.error.length > 0)
 }
 
-/** Injects event-tagged guidance in a main thread only, once per event and target per session. */
+// Codex sends a failed command to PostToolUse too, with a response of any type, so a Codex event
+// needs a zero exit: the first exit line of the output text, which precedes the command's own
+// output, or a numeric exit code field.
+const codexSucceeded = (response) => (typeof response === 'string'
+  ? /^(?:Exit code:|Process exited with code) *(\d+)/mu.exec(response)?.[1] === '0'
+  : [response?.exit_code, response?.exitCode, response?.metadata?.exit_code].includes(0))
+
+/**
+ * Injects one block of event-tagged guidance in a main thread only. A merge that names its PR
+ * injects once per PR per session; other events inject every time.
+ */
 const toolOutput = ({ input, events }) => {
   if (typeof input.session_id !== 'string' || !mainThreadFor(input) || !hasGuide()) return {}
   try {
+    const repoRoot = events[0].dir
+    const origin = events.some(({ repo, pullRequest }) => repo || pullRequest) ? fieldGuide.originOf({ repoRoot }).toLowerCase() : ''
+    // A PR URL or `--repo` outside the directory's origin leaves the project unknown.
+    if (events.some(({ repo }) => repo && repo.toLowerCase() !== origin)) return {}
     const state = readSessionState(input.session_id)
-    const pending = events
-      .map((event) => ({ ...event, key: event.target === null ? null : hashOf(`${event.event}\0${event.target}`) }))
-      .filter(({ key }, index, all) => key === null || (!state.eventKeys.includes(key) && all.findIndex((other) => other.key === key) === index))
+    // The key names the PR as host/owner/repo#number, so its number and URL forms match.
+    const keyed = events.map((event) => ({ ...event, key: event.pullRequest && origin ? hashOf(`${event.event}\0${origin}#${event.pullRequest.number}`) : null }))
+    const pending = keyed.filter(({ key }, index) => key === null || (!state.eventKeys.includes(key) && keyed.findIndex((other) => other.key === key) === index))
     if (pending.length === 0) return {}
-    const injections = []
-    for (const { event, queuedMerge } of pending) {
-      try {
-        const injection = fieldGuide.eventInjection({ repoRoot: input.cwd, event, queuedMerge, mainThread: true })
-        if (injection) injections.push(injection)
-      } catch {
-        // Failed retrieval consumes this event so the same command does not retry.
-      }
-    }
+    const injection = fieldGuide.eventInjection({
+      repoRoot,
+      events: unique(pending.map(({ event }) => event)),
+      queuedMerge: pending.some(({ queuedMerge }) => queuedMerge),
+      mainThread: true,
+    })
+    // With nothing tagged, the event records nothing, so a later one can still inject.
+    if (!injection) return {}
     // Write state before returning text so a failed write never repeats injection.
     writeSessionState(input.session_id, {
       ...state,
-      injectedIds: unique([...state.injectedIds, ...injections.flatMap(({ guidanceIds }) => guidanceIds)]),
+      injectedIds: unique([...state.injectedIds, ...injection.guidanceIds]),
       eventKeys: [...state.eventKeys, ...pending.map(({ key }) => key).filter(Boolean)],
-      sharedIds: unique([...state.sharedIds, ...injections.flatMap(({ sharedIds }) => sharedIds)]),
+      sharedIds: unique([...state.sharedIds, ...injection.sharedIds]),
     })
-    if (injections.length === 0) return {}
-    return { hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: injections.map(({ text }) => text).join('\n\n') } }
+    return { hookSpecificOutput: { hookEventName: 'PostToolUse', additionalContext: injection.text } }
   } catch {
-    // A state-read or state-write failure suppresses guidance and never blocks the tool result.
+    // A failed retrieval, state read, or state write suppresses guidance and records nothing.
     return {}
   }
 }
@@ -330,7 +419,8 @@ const outputFor = async (input) => {
   }
   if (input.hook_event_name === 'PostToolUse') {
     const events = toolEvents(input)
-    if (events.length === 0 || commandFailed(input.tool_response)) return {}
+    if (events.length === 0) return {}
+    if (hostName() === 'codex' ? !codexSucceeded(input.tool_response) : commandFailed(input.tool_response)) return {}
     await loadFieldGuide()
     return toolOutput({ input, events })
   }

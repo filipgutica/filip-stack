@@ -99,45 +99,58 @@ guidance. Analytics write failures do not change the hook output.
 ## Event injection
 
 The `PostToolUse` hook, with a `Bash` matcher, injects guidance tagged for an
-event after a main-thread shell command that stands for it:
+event after a main-thread shell command that provably ran it and succeeded:
 
 | Command | Event |
 | --- | --- |
 | `gh pr merge`, `gh stack merge` | `pr-merged` |
 | `gh pr create` | `pr-created` |
-| The Field Guide CLI's `retrieve --event <trigger>` | `<trigger>` |
+| The Field Guide CLI's `retrieve --event <trigger>`, run directly or as the script of `node`, `sh`, or `bash` | `<trigger>` |
 
-The hook checks each simple command in the Bash input, split at `&&`, `||`,
-`;`, `|`, `&`, and newlines, after leading `NAME=value` assignments. Quoted
+The hook splits the Bash input into simple commands at `&&`, `||`, `;`, `|`,
+`&`, and newlines, and skips leading `NAME=value`, `env`, and `command`. Quoted
 text is one word, so `echo "gh pr merge"` matches nothing. The script of a
-`sh`, `bash`, or `zsh` wrapper such as `zsh -i -c '…'` is checked one level
-deep. Before it parses
-anything, the adapter checks that the command names `gh` or the Field Guide
-script; any other command returns `{}` without loading the Field Guide
-modules. It makes no network calls.
+`sh`, `bash`, or `zsh -c` wrapper is checked one level deep. A command counts
+only when the input has no `||` and only `&&` follows it, so a zero exit proves
+it succeeded: `gh pr merge 5 || true`, `| tail`, and `; git pull` count as
+nothing. Text from the first `<<`, `$(`, or backtick on is not parsed, so a
+heredoc body is never a command; only quotes may follow its last `)` or
+backtick. A parenthesis, `--help`, `--dry-run`, `--web`, and `--disable-auto`
+also count as nothing. Any form the hook does not recognize falls back to the
+skill's retrieval rule, and a `GH_REPO` prefix is not read. The adapter loads the Field Guide modules only when
+the input names `gh` or the Field Guide script, and makes no network calls.
 
-It injects up to three active records tagged with the event, project records
-first, then shared, within 1.5 KB, with the markers described above. A
+The records come from the repository the command acted on: `cwd`, changed by
+each `cd <literal path> &&` before the command, or a retrieve's `--repo-root`.
+Any other `cd`, a PR URL or `--repo` outside that repository's `origin`, or
+events in different repositories inject nothing. All events in one command
+share one block of up to three active records tagged with any of them, project
+records first, then shared, within 1.5 KB, with the markers described above. A
 `retrieve --event` command gets these lines because the CLI never reports
 confirmation, so a footer that retrieves `handoff` guidance sees which records
 are confirmed. For `gh pr merge --auto`, the text says the merge may only be
 queued and to confirm that the PR merged before acting on the guidance.
 
-A `gh` event injects once per target per session. A PR number or URL, with any
-`-R` or `--repo` value, names the target; without one, the working directory
-and the command's words do. Session state stores only a SHA-256 hash of the
-event and target, and keeps it through compaction. A `retrieve --event` command
-gets the lines every time, because the agent asked for that output.
+A `gh pr merge` that names its PR by number or URL injects once per PR per
+session. The PR's key is `host/owner/repo#number`, from the URL or from
+`--repo` or `origin` with the number, so both forms of one PR match.
+`gh repo set-default` can name another repository than `origin`; that affects
+only this key. Session state stores only a SHA-256 hash of the event and key,
+and keeps it through compaction. Other events inject every time.
 
 The hook injects nothing, and changes no state, when:
 
-- The command failed: an interrupted or error result, a non-zero exit code, or
-  Codex output that reports a non-zero exit. Claude reports a failed call as
-  `PostToolUseFailure`, which the plugin does not register.
+- The command did not provably succeed. Claude reports a failed call as
+  `PostToolUseFailure`, which the plugin does not register, and the hook also
+  skips an interrupted or error result and a non-zero exit code. Codex sends
+  failures to `PostToolUse` too, so a Codex event needs a zero exit: a first
+  `Exit code: 0` or `Process exited with code 0` line, or an exit code field
+  of 0.
 - The call runs in a subagent or a T3 Code delegate. See
   [Main-thread detection](#main-thread-detection). A delegate's merge leaves
   the main thread's event pending.
-- No guide exists, or nothing is tagged with the event.
+- No guide exists, the repository is unknown, or nothing is tagged with the
+  event.
 
 The hook does not see a merge done through a GitHub tool or MCP server instead
 of a shell command; the skill tells the agent to retrieve the event's guidance
@@ -145,8 +158,9 @@ then.
 
 [Codex supports `PostToolUse` for shell commands, matched as `Bash`, and adds its
 `additionalContext` as developer context](https://learn.chatgpt.com/docs/hooks).
-Codex 0.169's bundled hook schema confirms the input fields the hook reads and
-`hookSpecificOutput.additionalContext` in the output. A live Codex probe has not
+Codex 0.169's bundled hook schema confirms `agent_id`, `session_id`, `cwd`, and
+`hookSpecificOutput.additionalContext` in the output; the command and response
+shapes come from the documentation. A live Codex probe has not
 been run. Claude's per-handler `if` filter matches each subcommand and could
 skip unrelated commands before a process starts. It takes one rule per handler,
 so it would need one handler per command form. One `hooks.json` serves both
@@ -200,7 +214,7 @@ it.
 
 Besides `hook_event_name`, the adapter reads only the `session_id`, `cwd`, `source`,
 `prompt`, `agent_id`, `tool_input.command`, and `tool_response` fields, and the
-`T3CODE_THREAD_ID` environment variable. It runs Git in `cwd` to identify the repository and reads the
+`T3CODE_THREAD_ID` environment variable. It runs Git in `cwd`, or the directory a command's `cd` or `--repo-root` names, to identify the repository and reads the
 local guidance store. It does not access source files or files referenced by
 the event. It uses the prompt only as an in-memory retrieval query and to
 recognize a confirmation prompt, and never emits or persists it. It uses the

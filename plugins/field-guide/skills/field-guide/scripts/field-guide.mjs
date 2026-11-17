@@ -222,6 +222,9 @@ const resolvePaths = ({ repoRoot: inputRoot, guideRoot: inputGuideRoot }) => {
   }
 }
 
+/** Returns the repository's normalized `origin` remote, such as `github.com/owner/repo`, or ''. */
+export const originOf = ({ repoRoot }) => normalizeRemote(git({ repoRoot, args: ['remote', 'get-url', 'origin'], optional: true }))
+
 const emptyMemory = () => ({
   schemaVersion: 1,
   revision: 0,
@@ -2056,9 +2059,9 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query, markersFor }) => {
   }
 }
 
-// Active guidance tagged with the event trigger: project records first, then shared, newest first.
-const eventTagged = ({ applicable, annotations, event }) => applicable
-  .filter((guidance) => annotationMarkers({ annotations, guidance }).triggers.includes(event))
+// Active guidance tagged with any of the event triggers: project records first, then shared, newest first.
+const eventTagged = ({ applicable, annotations, events }) => applicable
+  .filter((guidance) => annotationMarkers({ annotations, guidance }).triggers.some((trigger) => events.includes(trigger)))
   .sort((left, right) => (
     Number(left.scope.kind === 'shared') - Number(right.scope.kind === 'shared')
       || right.updatedAt.localeCompare(left.updatedAt)
@@ -2068,7 +2071,7 @@ const eventTagged = ({ applicable, annotations, event }) => applicable
 // Returns active guidance tagged with the event trigger within the normal retrieval budget.
 const retrieveEvent = ({ memory, paths, event, annotations, markersFor }) => {
   requireTrigger(event)
-  const tagged = eventTagged({ applicable: applicableGuidance({ memory, paths }), annotations, event })
+  const tagged = eventTagged({ applicable: applicableGuidance({ memory, paths }), annotations, events: [event] })
   const records = tagged.map((guidance) => retrievalRecord({ guidance, match: 'event', markers: markersFor(guidance) }))
   const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
   return {
@@ -2207,19 +2210,20 @@ export const promptInjection = ({ repoRoot, guideRoot, prompt, excludeIds, mainT
 }
 
 /**
- * Selects up to three active records tagged with an event trigger, project
- * records first, within 1.5 KB. queuedMerge adds that an `--auto` merge may
- * only be queued. Returns null for an unknown trigger or when nothing is
- * tagged. Lines carry annotation markers only when mainThread is true.
+ * Selects up to three active records tagged with any of the event triggers,
+ * project records first, within 1.5 KB. queuedMerge adds that an `--auto`
+ * merge may only be queued. Returns null when no trigger is known or nothing
+ * is tagged. Lines carry annotation markers only when mainThread is true.
  */
-export const eventInjection = ({ repoRoot, guideRoot, event, queuedMerge = false, mainThread = false }) => {
-  if (!annotationTriggers.includes(event)) return null
+export const eventInjection = ({ repoRoot, guideRoot, events, queuedMerge = false, mainThread = false }) => {
+  const known = events.filter((event) => annotationTriggers.includes(event))
+  if (known.length === 0) return null
   const loaded = readInjectionMemory({ repoRoot, guideRoot, mainThread })
   if (!loaded) return null
   const { paths, annotations, applicable, lineFor } = loaded
-  const tagged = eventTagged({ applicable, annotations, event })
+  const tagged = eventTagged({ applicable, annotations, events: known })
   const queued = queuedMerge ? ' The merge used --auto, so it may only be queued: confirm the PR merged before acting on this guidance.' : ''
-  const header = `Field Guide: stored user guidance tagged [${event}]. Follow it when it applies.${queued}`
+  const header = `Field Guide: stored user guidance tagged ${known.map((event) => `[${event}]`).join(' or ')}. Follow it when it applies.${queued}`
   return fittedInjection({ paths, header, candidates: tagged, lineFor, maxRecords: 3, maxBytes: 1536 })
 }
 
