@@ -1,0 +1,88 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://filip-stack.local/field-guide/dream-apply-v1.schema.json",
+  "title": "Field-guide nightly maintenance input version 1",
+  "description": "The actions a reviewer returns for one dream plan. Each subject names the digest it was planned against. No action carries a confirmation field.",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["schemaVersion", "live", "subjects"],
+  "properties": {
+    "schemaVersion": { "const": 1 },
+    "live": {
+      "type": "object",
+      "additionalProperties": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
+    },
+    "subjects": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": ["subjectId", "digest", "actions"],
+        "properties": {
+          "subjectId": { "type": "string", "pattern": "^subject:v1:[0-9a-f]{64}$" },
+          "digest": { "type": "string", "pattern": "^subject-state:v1:[0-9a-f]{64}$" },
+          "actions": { "type": "array", "items": { "$ref": "#/$defs/action" } }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "guidanceId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+    "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
+    "action": {
+      "oneOf": [
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "targetIds", "replacement", "reason"],
+          "properties": {
+            "action": { "const": "consolidate" },
+            "targetIds": { "$ref": "consolidation-v1.schema.json#/$defs/targetIds" },
+            "replacement": { "$ref": "consolidation-v1.schema.json#/$defs/replacement" },
+            "reason": { "$ref": "#/$defs/reason" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "targetId", "duplicateOf", "reason"],
+          "properties": {
+            "action": { "const": "archive" },
+            "targetId": { "$ref": "#/$defs/guidanceId" },
+            "duplicateOf": {
+              "anyOf": [
+                { "$ref": "#/$defs/guidanceId" },
+                { "type": "string", "pattern": "^live:[a-z0-9-]+$" }
+              ]
+            },
+            "reason": { "$ref": "#/$defs/reason" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "targetId", "conflictingId", "reason"],
+          "properties": {
+            "action": { "const": "contradiction" },
+            "targetId": { "$ref": "#/$defs/guidanceId" },
+            "conflictingId": { "$ref": "#/$defs/guidanceId" },
+            "reason": { "$ref": "#/$defs/reason" }
+          }
+        },
+        {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["action", "kind", "targetIds", "reason"],
+          "properties": {
+            "action": { "const": "flag" },
+            "kind": { "enum": ["conflict", "unused", "live-edit"] },
+            "targetIds": { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": { "$ref": "#/$defs/guidanceId" } },
+            "source": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+            "reason": { "$ref": "#/$defs/reason" }
+          }
+        }
+      ]
+    }
+  }
+}
