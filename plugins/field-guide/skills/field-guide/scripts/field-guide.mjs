@@ -177,6 +177,12 @@ const guideFilesFor = (guideRoot) => ({
   proposalsFile: join(guideRoot, 'proposals.json'),
 })
 
+/** Returns the paths of a guide's store, for a command that runs outside any repository. */
+export const guidePathsFor = (inputGuideRoot) => {
+  const guideRoot = guideRootFor(inputGuideRoot)
+  return { guideRoot, rootIndex: join(guideRoot, 'init.md'), ...guideFilesFor(guideRoot) }
+}
+
 const readIdentity = (projectIndex) => {
   if (!existsSync(projectIndex)) return ''
   return readFileSync(projectIndex, 'utf8').match(/^- Identity: `(.+)`$/m)?.[1] ?? ''
@@ -599,7 +605,9 @@ const validateMemory = (memory) => {
         'withdrawn->archived',
         'archived->active',
       ])
-      if (!allowedEdges.has(edge)) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
+      // Only undo-operation demotes, when it reverses a nightly promotion, and it is journaled.
+      const journaledDemotion = edge === 'active->candidate' && guidance.transitions[index].operationId !== undefined
+      if (!allowedEdges.has(edge) && !journaledDemotion) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
       // Only undo-operation restores archived guidance, and only an archive that an operation made.
       if (edge === 'archived->active' && (guidance.transitions[index].source !== 'undo-operation' || !guidance.transitions[index - 1].operationId)) {
         fail(`${guidance.id} archived->active requires undo-operation of a journaled archive`)
@@ -1132,20 +1140,7 @@ const withMemoryLock = ({ paths, action }) => {
   }
 }
 
-const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
-  requireInitialized(paths)
-  const memory = readMemory(paths)
-  if (!memory) fail('Field-guide memory is not initialized; run init first')
-  const input = readSubmissionInput({ inputPath, inputJson })
-  // Unicode line separators would split an injected line. Only new input is checked, so a store
-  // that already holds one still loads; injection renders them as spaces.
-  if (/[\u0085\u2028\u2029]/u.test(JSON.stringify(input))) fail('submission must not contain control characters')
-  const submission = validateSubmission({ submission: input, paths })
-  const fingerprint = fingerprintFor(submission)
-  const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
-  const target = submission.relationship
-    ? memory.guidance.find((guidance) => guidance.id === submission.relationship.targetId)
-    : exact
+const requireRelationshipTarget = ({ submission, target }) => {
   if (submission.relationship && !target) fail('relationship target does not exist')
   if (target && (!sameScope(target.scope, submission.scope) || target.subjectKey !== submission.subjectKey)) {
     fail('relationship target must use the same scope and subjectKey')
@@ -1153,52 +1148,36 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   if (submission.relationship && !['candidate', 'active'].includes(target.status)) {
     fail('relationship target must be candidate or active')
   }
+}
 
-  const now = new Date().toISOString()
-  const { evidence, created: createdEvidence, changed: evidenceChanged } = addEvidence({ submission, memory, paths, now })
-  const reinforcementTarget = exact ?? (submission.relationship?.kind === 'reinforces' ? target : null)
-  if (reinforcementTarget && reinforcementTarget.evidenceIds.includes(evidence.id)) {
-    if (createdEvidence) fail('internal evidence identity error')
-    if (evidenceChanged) writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
-    return {
-      outcome: 'duplicate-evidence',
-      targetId: reinforcementTarget.id,
-      independentEvidenceCount: reinforcementTarget.independentEvidenceCount,
-      status: reinforcementTarget.status,
-      evidenceId: evidence.id,
-      sourceKeys: evidence.sourceKeys,
-    }
-  }
+const newGuidanceFor = ({ submission, fingerprint, now }) => ({
+  id: fingerprint.replace('fingerprint', 'guidance'),
+  fingerprint,
+  scope: submission.scope,
+  subjectKey: submission.subjectKey,
+  linkedSubjects: submission.linkedSubjects,
+  learning: submission.learning,
+  status: 'candidate',
+  confidence: submission.confidence,
+  ...(submission.generic === undefined ? {} : { generic: submission.generic }),
+  ...(submission.relationship ? { relationship: submission.relationship } : {}),
+  examples: submission.examples,
+  evidenceIds: [],
+  independentEvidenceCount: 0,
+  transitions: [],
+  createdAt: now,
+  updatedAt: now,
+})
 
-  let guidance = reinforcementTarget
-  let previousStatus = guidance?.status
-  if (!guidance) {
-    guidance = {
-      id: fingerprint.replace('fingerprint', 'guidance'),
-      fingerprint,
-      scope: submission.scope,
-      subjectKey: submission.subjectKey,
-      linkedSubjects: submission.linkedSubjects,
-      learning: submission.learning,
-      status: 'candidate',
-      confidence: submission.confidence,
-      ...(submission.generic === undefined ? {} : { generic: submission.generic }),
-      ...(submission.relationship ? { relationship: submission.relationship } : {}),
-      examples: submission.examples,
-      evidenceIds: [],
-      independentEvidenceCount: 0,
-      transitions: [],
-      createdAt: now,
-      updatedAt: now,
-    }
-    memory.guidance.push(guidance)
-  }
-  if (submission.generic === true) guidance.generic = true
-  guidance.linkedSubjects = [...new Set([...(guidance.linkedSubjects ?? []), ...submission.linkedSubjects])].sort()
-  guidance.evidenceIds.push(evidence.id)
-  guidance.independentEvidenceCount = evidenceCountFor({ guidance, memory })
-  guidance.updatedAt = now
+// A caller that holds shared promotions keeps a shared record at candidate where thresholds
+// would promote it, and reports the promotion as proposed.
+const promotionFor = ({ submission, guidance, memory, holdSharedPromotion }) => {
   const promotion = desiredStatus({ submission, guidance, memory })
+  const proposed = holdSharedPromotion && guidance.scope.kind === 'shared' && promotion.status === 'active' && guidance.status !== 'active'
+  return proposed ? { status: 'candidate', reason: 'shared-promotion-proposed', proposed } : promotion
+}
+
+const recordPromotion = ({ guidance, promotion, submission, now, operationId }) => {
   if (guidance.transitions.length === 0 || promotion.status !== guidance.status) {
     guidance.transitions.push({
       from: guidance.transitions.length === 0 ? null : guidance.status,
@@ -1206,25 +1185,94 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
       reason: promotion.reason,
       source: submission.explicitPreference ? 'user' : 'observation',
       at: now,
+      ...(operationId ? { operationId } : {}),
     })
   }
   guidance.status = promotion.status
+}
+
+const duplicateEvidenceResult = ({ guidance, evidence }) => ({
+  outcome: 'duplicate-evidence',
+  targetId: guidance.id,
+  independentEvidenceCount: guidance.independentEvidenceCount,
+  status: guidance.status,
+  evidenceId: evidence.id,
+  sourceKeys: evidence.sourceKeys,
+})
+
+const submissionResult = ({ guidance, evidence, previousStatus, promotion }) => ({
+  outcome: previousStatus === 'candidate' && guidance.status === 'active'
+    ? 'promoted'
+    : (previousStatus ? 'reinforced' : 'created'),
+  targetId: guidance.id,
+  evidenceId: evidence.id,
+  sourceKeys: evidence.sourceKeys,
+  independentEvidenceCount: guidance.independentEvidenceCount,
+  ...(previousStatus ? { previousStatus } : {}),
+  status: guidance.status,
+  promotionReason: promotion.reason,
+})
+
+// Applies one validated submission to memory in place and returns what it changed. Every
+// transition it adds carries a journaled caller's operation ID.
+const applySubmission = ({ memory, submission, paths, now, operationId, holdSharedPromotion = false }) => {
+  const fingerprint = fingerprintFor(submission)
+  const exact = memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)
+  const target = submission.relationship
+    ? memory.guidance.find((guidance) => guidance.id === submission.relationship.targetId)
+    : exact
+  requireRelationshipTarget({ submission, target })
+
+  const { evidence, created: createdEvidence, changed: evidenceChanged } = addEvidence({ submission, memory, paths, now })
+  const reinforcementTarget = exact ?? (submission.relationship?.kind === 'reinforces' ? target : null)
+  if (reinforcementTarget && reinforcementTarget.evidenceIds.includes(evidence.id)) {
+    if (createdEvidence) fail('internal evidence identity error')
+    return { evidenceChanged, result: duplicateEvidenceResult({ guidance: reinforcementTarget, evidence }) }
+  }
+
+  const guidance = reinforcementTarget ?? newGuidanceFor({ submission, fingerprint, now })
+  const previousStatus = reinforcementTarget?.status
+  if (!reinforcementTarget) memory.guidance.push(guidance)
+  if (submission.generic === true) guidance.generic = true
+  guidance.linkedSubjects = [...new Set([...(guidance.linkedSubjects ?? []), ...submission.linkedSubjects])].sort()
+  guidance.evidenceIds.push(evidence.id)
+  guidance.independentEvidenceCount = evidenceCountFor({ guidance, memory })
+  guidance.updatedAt = now
+  const { proposed = false, ...promotion } = promotionFor({ submission, guidance, memory, holdSharedPromotion })
+  recordPromotion({ guidance, promotion, submission, now, operationId })
+  return {
+    guidance,
+    evidence,
+    createdRecord: !reinforcementTarget,
+    createdEvidence,
+    proposedPromotion: proposed,
+    result: submissionResult({ guidance, evidence, previousStatus, promotion }),
+  }
+}
+
+// Unicode line separators would split an injected line. Only new input is checked, so a store
+// that already holds one still loads; injection renders them as spaces.
+const validateNewSubmission = ({ input, paths }) => {
+  if (/[\u0085\u2028\u2029]/u.test(JSON.stringify(input))) fail('submission must not contain control characters')
+  return validateSubmission({ submission: input, paths })
+}
+
+const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
+  requireInitialized(paths)
+  const memory = readMemory(paths)
+  if (!memory) fail('Field-guide memory is not initialized; run init first')
+  const input = readSubmissionInput({ inputPath, inputJson })
+  const submission = validateNewSubmission({ input, paths })
+  const applied = applySubmission({ memory, submission, paths, now: new Date().toISOString() })
+  if (applied.result.outcome === 'duplicate-evidence') {
+    if (applied.evidenceChanged) writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
+    return applied.result
+  }
   const nextMemory = { ...memory, revision: memory.revision + 1 }
   // A new record starts unconfirmed, even when an earlier record with the same text was confirmed.
-  if (!reinforcementTarget) revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [fingerprint] })
+  if (applied.createdRecord) revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [applied.guidance.fingerprint] })
   writeMemoryViews({ paths, memory: nextMemory })
-  return {
-    outcome: previousStatus === 'candidate' && guidance.status === 'active'
-      ? 'promoted'
-      : (reinforcementTarget ? 'reinforced' : 'created'),
-    targetId: guidance.id,
-    evidenceId: evidence.id,
-    sourceKeys: evidence.sourceKeys,
-    independentEvidenceCount: guidance.independentEvidenceCount,
-    ...(previousStatus ? { previousStatus } : {}),
-    status: guidance.status,
-    promotionReason: promotion.reason,
-  }
+  return applied.result
 }
 
 const submitObservation = ({ paths, inputPath, inputJson }) => (
@@ -2653,9 +2701,16 @@ const operationsIn = (journal) => {
   return operations
 }
 
-const operationLanded = ({ memory, operationId }) => memory.guidance.some(({ transitions }) => (
-  transitions.some((transition) => transition.operationId === operationId)
-))
+// An operation landed when a transition carries its ID. A session submit that only links
+// evidence, and an undo that only unlinks it, add no transition, so their evidence link decides.
+const operationLanded = ({ memory, operation }) => {
+  const { operationId, action, evidenceId, unlinksEvidenceId, fingerprints } = operation
+  if (memory.guidance.some(({ transitions }) => transitions.some((transition) => transition.operationId === operationId))) return true
+  const target = memory.guidance.find(({ fingerprint }) => fingerprint === fingerprints?.[0])
+  if (action === 'session-submit') return Boolean(target?.evidenceIds.includes(evidenceId))
+  if (unlinksEvidenceId) return Boolean(target) && !target.evidenceIds.includes(unlinksEvidenceId)
+  return false
+}
 
 // Commits each pending operation whose transitions reached memory and aborts the rest. Returns
 // the journal with the entries it added.
@@ -2663,9 +2718,10 @@ const recoverOperations = ({ paths, memory }) => {
   const journal = readJournal(paths)
   const at = new Date().toISOString()
   const entries = []
-  for (const { operationId, state, replacementFingerprint } of operationsIn(journal).values()) {
+  for (const operation of operationsIn(journal).values()) {
+    const { operationId, state, replacementFingerprint } = operation
     if (state !== 'pending') continue
-    if (operationLanded({ memory, operationId })) {
+    if (operationLanded({ memory, operation })) {
       entries.push({ type: 'commit', operationId, at, revision: memory.revision, recovered: true })
       continue
     }
@@ -2747,10 +2803,15 @@ const installedCopies = () => {
 
 const displayPath = (path) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path)
 
-const requireCurrentReaders = () => {
+// A demotion, which undoing a nightly promotion writes, is readable by copies that ship the
+// session review.
+const demotionReaderFile = join('skills', 'field-guide', 'scripts', 'field-guide-review.mjs')
+
+const requireCurrentReaders = ({ demotion = false } = {}) => {
+  const readerFile = demotion ? demotionReaderFile : v2ReaderFile
   for (const { host, path } of installedCopies()) {
-    if (typeof path !== 'string' || !existsSync(join(path, v2ReaderFile))) {
-      fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read memory version 2; refresh the Field Guide plugin on both hosts first`)
+    if (typeof path !== 'string' || !existsSync(join(path, readerFile))) {
+      fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read this change; refresh the Field Guide plugin on both hosts first`)
     }
   }
 }
@@ -3134,6 +3195,35 @@ const undoArchive = ({ memory, operation, operationId, now }) => {
   return { restoredIds: [target.id], keptRetiredIds: [], retirementIds: [] }
 }
 
+// Reverses one nightly session submit. A record the submit created is withdrawn. Otherwise the
+// submit's evidence is unlinked, and a promotion it caused returns to the earlier status. A
+// record whose status the submit no longer explains, or a created record that gained other
+// evidence, is a conflict. Unlinking evidence does not demote a record that a later change promoted.
+const undoSessionSubmit = ({ memory, operation, operationId, now }) => {
+  const target = memory.guidance.find(({ fingerprint }) => fingerprint === operation.fingerprints[0])
+  if (!target?.evidenceIds.includes(operation.evidenceId)) conflict(`the record of operation ${shortId(operation.operationId)} no longer holds its evidence`)
+  const own = target.transitions.findLastIndex((transition) => transition.operationId === operation.operationId)
+  if ((own !== -1 && target.status !== target.transitions[own].to) || (operation.createdRecord && target.evidenceIds.length > 1)) {
+    conflict(`${shortId(target.id)} changed after operation ${shortId(operation.operationId)}`)
+  }
+  const reason = 'The user undid this session review observation.'
+  if (operation.createdRecord) {
+    const input = { action: 'undo-operation', reason, source: 'undo-operation', operationId }
+    const { retirementId } = withdrawGuidance({ memory, target, input, now, byUser: true })
+    return { targetId: target.id, withdrawn: true, retirementIds: retirementId ? [retirementId] : [] }
+  }
+  target.evidenceIds = target.evidenceIds.filter((id) => id !== operation.evidenceId)
+  target.independentEvidenceCount = evidenceCountFor({ guidance: target, memory })
+  target.updatedAt = now
+  if (operation.createdEvidence && !memory.guidance.some(({ evidenceIds }) => evidenceIds.includes(operation.evidenceId))) {
+    memory.evidence = memory.evidence.filter(({ id }) => id !== operation.evidenceId)
+  }
+  if (own !== -1) appendTransition({ guidance: target, to: target.transitions[own].from, reason, source: 'undo-operation', now, operationId })
+  return { targetId: target.id, reverted: own !== -1, retirementIds: [], unlinksEvidenceId: operation.evidenceId }
+}
+
+const undoers = { consolidate: undoConsolidation, archive: undoArchive, 'session-submit': undoSessionSubmit }
+
 const undoOperationUnlocked = ({ paths, reference }) => {
   const memory = readInitializedMemory(paths)
   const operations = operationsIn(recoverOperations({ paths, memory }))
@@ -3148,10 +3238,9 @@ const undoOperationUnlocked = ({ paths, reference }) => {
   const now = new Date().toISOString()
   const operationId = newOperationId()
   const revision = memory.revision
-  const { declined, retirementIds, ...undone } = operation.action === 'consolidate'
-    ? undoConsolidation({ memory, operation, operationId, now })
-    : undoArchive({ memory, operation, operationId, now })
-  requireCurrentReaders()
+  const undoer = undoers[operation.action] ?? fail(`operation ${shortId(operation.operationId)} has no inverse`)
+  const { declined, retirementIds, unlinksEvidenceId, ...undone } = undoer({ memory, operation, operationId, now })
+  requireCurrentReaders({ demotion: undone.reverted === true })
   // Retirement and restore both change authority, so each record whose status changed is revoked.
   for (const { fingerprint } of memory.guidance.filter(({ id, status }) => statusBefore.get(id) !== status)) {
     revokeRecord(annotationRecordFor({ annotations, fingerprint }))
@@ -3165,7 +3254,12 @@ const undoOperationUnlocked = ({ paths, reference }) => {
     fingerprints: operation.fingerprints,
     reason: 'The user undid this operation.',
     now,
-    fields: { undoes: operation.operationId, retirementIds, ...(declined ? { declined: [...declined].sort() } : {}) },
+    fields: {
+      undoes: operation.operationId,
+      retirementIds,
+      ...(declined ? { declined: [...declined].sort() } : {}),
+      ...(unlinksEvidenceId ? { unlinksEvidenceId } : {}),
+    },
   })
   commitOperations({ paths, memory, annotations, entries: [entry] })
   return { outcome: 'undone', operationId, undoes: operation.operationId, ...undone }
@@ -3174,6 +3268,124 @@ const undoOperationUnlocked = ({ paths, reference }) => {
 /** Undoes one journaled operation by its ID. Repeating it changes nothing. */
 const undoOperation = ({ paths, reference }) => (
   withMemoryLock({ paths, action: () => undoOperationUnlocked({ paths, reference }) })
+)
+
+/**
+ * Lists live guidance, active records first, as a session review's classifier sees it: ID,
+ * scope, subject, and text, within a byte budget.
+ */
+export const sessionReviewRecords = ({ paths, maxBytes }) => {
+  const live = readInitializedMemory(paths).guidance
+    .filter(({ status }) => ['active', 'candidate'].includes(status))
+    .sort((left, right) => (left.status === right.status ? left.id.localeCompare(right.id) : (left.status === 'active' ? -1 : 1)))
+    .map(({ id, scope, subjectKey, learning }) => ({ id, scope: scope.kind, subjectKey, learning }))
+  return fitWholeRecords({ records: live, maxRecords: live.length, maxBytes })
+}
+
+// A nightly session review submits each observation as its own journaled operation, so each
+// one can be undone. Evidence from one thread counts once: an observation whose record already
+// holds conversation evidence from the same client and thread, from an earlier night or a live
+// capture, changes nothing. A shared record is held at candidate where it would be promoted,
+// and the report proposes the promotion instead.
+const sessionReviewReason = 'Nightly session review observation.'
+
+const threadCounted = ({ memory, guidance, thread }) => guidance.evidenceIds.some((id) => (
+  memory.evidence.find((evidence) => evidence.id === id)?.pointers.some((pointer) => (
+    pointer.kind === 'conversation' && pointer.client === thread.client && pointer.threadId === thread.threadId
+  ))
+))
+
+const sessionTarget = ({ memory, submission }) => (submission.relationship?.kind === 'reinforces'
+  ? memory.guidance.find(({ id }) => id === submission.relationship.targetId)
+  : memory.guidance.find(({ fingerprint }) => fingerprint === fingerprintFor(submission)))
+
+const validateObservation = ({ paths, input }) => {
+  rejectConfirmationFields({ value: input, label: 'session observation' })
+  const submission = validateNewSubmission({ input, paths })
+  const [thread] = submission.evidence.pointers
+  if (submission.evidence.pointers.length !== 1 || thread.kind !== 'conversation') fail('a session observation needs one conversation pointer')
+  return { submission, thread }
+}
+
+/**
+ * Checks one session observation the way submit does, including the privacy guard, without
+ * reading or writing the store. Returns the reason it would be rejected, or null.
+ */
+export const sessionObservationProblem = ({ guidePaths, item }) => {
+  try {
+    validateObservation({ paths: { ...guidePaths, identity: item.repositoryIdentity }, input: item.submission })
+    return null
+  } catch (error) {
+    return error.message
+  }
+}
+
+const applySessionObservation = ({ run, paths, input }) => {
+  const { submission, thread } = validateObservation({ paths, input })
+  const target = sessionTarget({ memory: run.memory, submission })
+  if (target && threadCounted({ memory: run.memory, guidance: target, thread })) return { outcome: 'thread-already-counted', targetId: target.id }
+  const operationId = newOperationId()
+  const revision = run.memory.revision
+  const applied = applySubmission({ memory: run.memory, submission, paths, now: run.now, operationId, holdSharedPromotion: true })
+  if (applied.result.outcome === 'duplicate-evidence') return { outcome: 'thread-already-counted', targetId: applied.result.targetId }
+  const { guidance, evidence, createdRecord, createdEvidence, proposedPromotion } = applied
+  if (createdRecord) revokeRecord(annotationRecordFor({ annotations: run.annotations, fingerprint: guidance.fingerprint }))
+  const entry = pendingEntry({
+    memory: { revision },
+    operationId,
+    action: 'session-submit',
+    scope: guidance.scope,
+    subjectKey: guidance.subjectKey,
+    fingerprints: [guidance.fingerprint],
+    reason: sessionReviewReason,
+    now: run.now,
+    fields: { runId: run.runId, evidenceId: evidence.id, createdRecord, createdEvidence, inverse: `undo-operation --id ${operationId}` },
+  })
+  run.entries.push(entry)
+  const contradicted = submission.relationship?.kind === 'contradicts'
+    && run.memory.guidance.find(({ id }) => id === submission.relationship.targetId)
+  return {
+    outcome: applied.result.outcome,
+    targetId: guidance.id,
+    status: guidance.status,
+    scope: guidance.scope.kind,
+    subjectKey: guidance.subjectKey,
+    learning: guidance.learning,
+    ...(submission.relationship ? { relationship: submission.relationship } : {}),
+    ...(proposedPromotion ? { proposedPromotion: true } : {}),
+    ...(contradicted && annotationMarkers({ annotations: run.annotations, guidance: contradicted }).confirmed ? { queued: true } : {}),
+    ...appliedResult(entry),
+  }
+}
+
+const applySessionObservationsUnlocked = ({ paths, items, runId }) => {
+  const memory = readInitializedMemory(paths)
+  recoverOperations({ paths, memory })
+  const run = { runId, now: new Date().toISOString(), memory: structuredClone(memory), annotations: readAnnotations(paths.annotationsFile), entries: [] }
+  const results = items.map((item) => {
+    // A rejected observation leaves no partial change behind.
+    const before = { memory: structuredClone(run.memory), annotations: structuredClone(run.annotations), entries: [...run.entries] }
+    try {
+      return applySessionObservation({ run, paths: { ...paths, identity: item.repositoryIdentity }, input: item.submission })
+    } catch (error) {
+      Object.assign(run, before)
+      return { outcome: 'rejected', reason: error.message }
+    }
+  })
+  if (run.entries.length > 0) {
+    requireCurrentReaders()
+    commitOperations({ paths, memory: run.memory, annotations: run.annotations, entries: run.entries })
+  }
+  return results
+}
+
+/**
+ * Submits a nightly session review's observations, each as one journaled operation, in one
+ * memory write. Each item carries the identity of the repository its session ran in and a
+ * submission with one conversation pointer. Returns one result per item, in order.
+ */
+export const applySessionObservations = ({ guidePaths, items, runId }) => (
+  withMemoryLock({ paths: guidePaths, action: () => applySessionObservationsUnlocked({ paths: guidePaths, items, runId }) })
 )
 
 // Subjects group live records by scope and subject key. A subject's digest covers each record's

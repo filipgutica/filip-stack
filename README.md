@@ -158,7 +158,10 @@ Field Guide can merge records that say the same thing, and a nightly
 maintenance script can propose merges, archives, and flags. Every change it
 applies is journaled and can be undone for 90 days. It never rewrites
 confirmed guidance; you approve those changes with an exact
-`confirm fg:proposal:<id>` prompt. See
+`confirm fg:proposal:<id>` prompt. An opt-in session review can also read
+recent sessions in place and submit what you said as candidate guidance.
+It sends only your typed turns, redacted, to a headless classifier, and each
+change it makes can be undone. See
 [dreaming.md](plugins/field-guide/skills/field-guide/references/dreaming.md).
 
 ## Guardrails

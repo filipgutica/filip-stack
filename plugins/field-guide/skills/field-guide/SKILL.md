@@ -157,7 +157,7 @@ Treat `$field-guide:field-guide audit` as a manual, read-only audit request:
 
 Report findings without changing memory. Maintenance and permanent deletion require their explicit preview-and-apply flows in [references/storage.md](references/storage.md). Never infer approval to apply either operation from an audit request.
 
-To consolidate overlapping guidance, undo a journaled change, or run nightly maintenance, read [references/dreaming.md](references/dreaming.md).
+To consolidate overlapping guidance, undo a journaled change, or run nightly maintenance or the session review, read [references/dreaming.md](references/dreaming.md).
 
 ## Utility
 

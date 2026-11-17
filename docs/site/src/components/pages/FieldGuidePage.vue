@@ -136,6 +136,15 @@ const management = [
         <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
         has the exact rules.
       </p>
+      <p>
+        You can also turn on a session review on each machine. Each run reads
+        the sessions since the last run where they are stored, keeps only what
+        you typed, and removes code, quoted and pasted text, paths, and secrets.
+        It sends the rest to a small headless model, which returns short
+        paraphrases. Each paraphrase becomes candidate guidance that you can
+        undo. One conversation counts only once, so a single remark never
+        becomes active guidance by itself.
+      </p>
     </div>
   </section>
 

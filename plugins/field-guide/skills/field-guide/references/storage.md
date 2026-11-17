@@ -22,6 +22,7 @@ Use these terms:
 ├── memory.json         # Validated machine cache
 ├── operations.jsonl    # Local write-ahead journal of reversible operations
 ├── proposals.json      # Local proposals that wait for the user's approval
+├── session-review/     # Local opt-in, cursors, and pending observations of the session review
 ├── sessions/           # Hook session state; pruned after seven days
 ├── shared/
 └── projects/
@@ -112,7 +113,9 @@ replacement. The command activates a candidate replacement and stores its ID on
 the superseded transition. `undo` and `withdraw` preserve evidence and move the
 target to `withdrawn`. When the target is the replacement of a superseded
 record, they also move that record back to `active`. Archive uses the maintenance dry-run path. Age never
-causes archive.
+causes archive. Only `undo-operation` moves an active record back to `candidate`,
+when it reverses a promotion by the nightly session review; it refuses while a
+plugin copy installed on the machine lacks `scripts/field-guide-review.mjs`.
 
 ### Memory versions
 
@@ -145,8 +148,8 @@ hook records that approval, `consolidate --approval proposal:<id>` recomputes th
 proposal ID from the current records and the stored text, applies it, and
 confirms the replacement in the same commit. A proposal expires after 14 days.
 
-Use `undo-operation --id <operation-id>` to reverse a consolidation or an
-automated archive within 90 days. It withdraws the replacement the way a user's
+Use `undo-operation --id <operation-id>` to reverse a consolidation, an
+automated archive, or a session review submit within 90 days. It withdraws the replacement the way a user's
 undo does, restores each predecessor it still supersedes, and acknowledges only
 the retirement IDs its operation created. A predecessor that something else
 retired stays retired, and the result lists it. Restored predecessors start

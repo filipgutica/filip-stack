@@ -88,6 +88,8 @@ Examples:
 
 An explicit preference can activate immediately. An inferred project learning remains a candidate until two independent evidence events support it. Manual evidence and conversation evidence without an occurrence ID do not satisfy promotion thresholds.
 
+A conversation pointer names the thread the way the nightly session review does, so one thread counts once. In a T3 Code main thread, use client `t3-code` and the `T3CODE_THREAD_ID` value as `threadId`. Elsewhere, use client `claude-code` or `codex` with the host's session ID only when you know it. Otherwise, and in a delegate, use a manual pointer.
+
 An inferred shared learning still requires independent evidence from two repository identities and `generic: true`. This promotion threshold does not force a semantically portable explicit user preference into project scope.
 
 Run `candidates` before `submit`. Exact duplicates are deterministic. Semantic duplicates and `reinforces`, `refines`, or `contradicts` relationships are agent judgments over the bounded candidate set.

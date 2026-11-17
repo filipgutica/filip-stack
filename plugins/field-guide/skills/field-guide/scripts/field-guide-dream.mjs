@@ -72,7 +72,7 @@ const liveDigests = () => {
 }
 
 // Replaces the guide root and any home directory with placeholders, so no output names a local path.
-const scrubPaths = ({ text, guideRoot }) => text
+export const scrubPaths = ({ text, guideRoot }) => text
   .replaceAll(guideRoot, '<guide-root>')
   .replaceAll(homedir(), '~')
   .replace(/\/(?:Users|home)\/[^/\s"]+\//gu, '~/')

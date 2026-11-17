@@ -1,4 +1,4 @@
-import { execFileSync, spawnSync } from 'node:child_process'
+import { spawnSync } from 'node:child_process'
 import { appendFileSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
@@ -7,6 +7,7 @@ import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import Ajv2020 from 'ajv/dist/2020.js'
 import { fieldGuideSkillRoot } from './plugin-paths.mjs'
+import { createRepo } from './repositories.mjs'
 
 const script = fileURLToPath(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot))
 const dreamScript = fileURLToPath(new URL('scripts/field-guide-dream.mjs', fieldGuideSkillRoot))
@@ -36,19 +37,6 @@ const releasedCli = (() => {
 })()
 
 const homePathPattern = /\/(?:Users|home)\/[^/\s]+\/|[A-Za-z]:\\Users\\/u
-
-const createRepo = ({ parent, name }) => {
-  const repoRoot = join(parent, name)
-  const git = (...args) => execFileSync('git', ['-C', repoRoot, ...args], { stdio: 'ignore' })
-  execFileSync('git', ['init', repoRoot], { stdio: 'ignore' })
-  git('config', 'user.name', 'Field Guide Test')
-  git('config', 'user.email', 'field-guide@example.test')
-  writeFileSync(join(repoRoot, 'README.md'), '# Test\n')
-  git('add', 'README.md')
-  git('commit', '-m', 'test: initialize repository')
-  git('remote', 'add', 'origin', `git@github.com:example/${name}.git`)
-  return repoRoot
-}
 
 // One machine: a guide, a repository, and a HOME of its own, so the writer gate never reads
 // the real installed plugins.
