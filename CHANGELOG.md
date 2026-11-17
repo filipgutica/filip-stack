@@ -1,3 +1,10 @@
+# [6.10.0](https://github.com/filipgutica/filip-stack/compare/v6.9.0...v6.10.0) (2026-11-17)
+
+
+### Features
+
+* **interface-design:** count visible words, boxes, and controls in ui-check ([#260](https://github.com/filipgutica/filip-stack/issues/260)) ([9ebc8e6](https://github.com/filipgutica/filip-stack/commit/9ebc8e62109620f3adda6f72bd512ef516fbef3b))
+
 # [6.9.0](https://github.com/filipgutica/filip-stack/compare/v6.8.0...v6.9.0) (2026-11-17)
 
 
