@@ -94,6 +94,82 @@
       "files": [
         "skills/interface-design/references/checks.md"
       ]
+    },
+    {
+      "id": "sketch-before-build",
+      "task": "You are asked to build the home page for a command-line tool that compares database schemas. The repository uses the design-system plugin's design language, and you have read its tokens and components.",
+      "options": {
+        "sketch": "sketch the page in the design system's tokens and components, check the sketch against what you would build for any developer tool, revise the parts that match it, and then build",
+        "direct": "build the page with the design system's components, then review screenshots at 375px and desktop width, in light and dark, and refine",
+        "fresh-identity": "choose a palette and typefaces that suit database tooling, and then build"
+      },
+      "accept": [
+        "sketch"
+      ],
+      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
+      "id": "sketch-small-change",
+      "task": "You are asked to rename the Submit button on an existing settings screen to Save changes. The repository uses the design-system plugin's design language.",
+      "options": {
+        "direct": "change the label and check the screen",
+        "sketch": "sketch the settings screen in the design system's tokens, check the sketch against the generic default, and revise the screen before changing the label"
+      },
+      "accept": [
+        "direct"
+      ],
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
+      "id": "first-screen-subject",
+      "task": "You are building the product page for a command-line tool that compares database schemas. The design system sets the type, palette, and components, and leaves the first screen's content open.",
+      "options": {
+        "subject": "open with a real schema diff the tool produced, with the install command beside it",
+        "stats": "open with a headline naming the tool, a large count of schemas compared with a small label, and three supporting stats"
+      },
+      "accept": [
+        "subject"
+      ],
+      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
+      "id": "deliberate-sign-not-finding",
+      "task": "You are reviewing a documentation page that follows its design system. That design system's identity layer sets captions and metadata in its monospace face.",
+      "options": {
+        "keep": "treat the monospace captions as the design system's deliberate choice, not a finding",
+        "flag": "report the monospace captions as a sign of a templated interface and ask for the body face"
+      },
+      "accept": [
+        "keep"
+      ],
+      "files": [
+        "skills/interface-design/references/craft.md",
+        "skills/interface-design/references/standards.md"
+      ]
+    },
+    {
+      "id": "replaced-identity-mono",
+      "task": "You are reviewing a dashboard in a project that replaced its design system's identity layer with its own. The new identity names a sans-serif body face and a type scale, and says nothing about data labels. The dashboard sets its small data labels, such as stat captions and axis ticks, in a monospace face.",
+      "options": {
+        "flag": "report the monospace data labels as a sign of a templated interface and suggest the project's sans-serif face",
+        "keep": "leave the monospace data labels, since nothing on the screen breaks"
+      },
+      "accept": [
+        "flag"
+      ],
+      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/craft.md",
+        "skills/interface-design/references/standards.md"
+      ]
     }
   ]
 }

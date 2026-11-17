@@ -1,11 +1,14 @@
 # Third-party notices
 
 `interface-design` adapts parts of Anthropic's `frontend-design` skill in
-`references/craft.md`: emphasis, structure, motion, interface copy, signs of
-a templated interface, and build notes. The local adaptation drops the
-upstream direction to invent a distinct palette, typefaces, and layout for
-each brief, because the owning design system sets the look. It defers motion
-rules to that design system and rewrites the remaining guidance as review
+`references/craft.md`: the first screen and the sketch check before building,
+emphasis, structure, motion, interface copy, signs of a templated interface,
+and build notes. The local adaptation drops the upstream direction to invent
+a distinct palette, typefaces, and layout for each brief, because the owning
+design system sets the look; grounding a look in its subject belongs to the
+design system when a project sets its identity. It defers motion rules
+and typeface choice to that design system, leaves notes on earlier attempts to
+the host's memory, and rewrites the remaining guidance as design and review
 rules.
 
 `references/laws.md` adapts summaries from
@@ -20,7 +23,7 @@ and advances the baseline after review.
 
 Source: https://github.com/anthropics/skills
 Tracked path: `skills/frontend-design`
-Baseline: `41bbe19d1a1a` (latest commit touching the tracked path at adoption, 2026-11-05)
+Baseline: `41bbe19d1a1a` (last change to that path, reviewed 2026-11-05 and 2026-11-17)
 Author: Anthropic
 
 

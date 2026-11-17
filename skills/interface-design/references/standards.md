@@ -74,7 +74,8 @@ user impact.
 5. Does each word, box, and control on the screen earn its place? When you
    change a screen, compare counts from `ui-check.mjs --count` before and
    after, and judge them against the owning design system's rules for minimal screens.
-   (Nielsen 8, owning design system)
+   Flag the signs of a templated interface listed in craft.md, with the
+   exceptions it lists. (Nielsen 8, owning design system, craft.md)
 
 ### Flow and control
 
