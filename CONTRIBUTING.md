@@ -281,6 +281,46 @@ change under test is meant to fix the scenario. A Workflow rules scenario also
 lists its `options` as `{ key: description }`; `accept` names keys. Pair each
 new rule with a control scenario where the rule should not apply.
 
+### Write a regression and its control
+
+Start with the decision the old guidance got wrong. Give the model the facts
+it had at that point and offer plausible choices. Keep the same choices in the
+control. Change only the condition that determines whether the new rule applies.
+
+Suppose a review skill now requires automated approval to cover the current
+PR head. The two cases differ only in the commit the approval covers. For a
+standalone skill, put both objects in its `rules` array.
+
+```json
+[
+  {
+    "id": "review-approval-stale-head",
+    "task": "The user asks whether the PR is ready. The current head is b6e091c and all required checks passed. The automated review approved a489d2f. No other review is required.",
+    "options": {
+      "ready": "report that the PR is ready",
+      "wait": "report that approval of the current head is still needed"
+    },
+    "accept": ["wait"],
+    "needsNewGuidance": true
+  },
+  {
+    "id": "review-approval-current-head",
+    "task": "The user asks whether the PR is ready. The current head is b6e091c and all required checks passed. The automated review approved b6e091c. No other review is required.",
+    "options": {
+      "ready": "report that the PR is ready",
+      "wait": "report that approval of the current head is still needed"
+    },
+    "accept": ["ready"]
+  }
+]
+```
+
+Compare both cases against the base. To show the change fixes the regression,
+look for a base miss followed by a pass on the working tree. The control should
+pass on both versions. A regression case that passes on both versions can
+still guard the intended behavior. When you need evidence of a fix, use a
+case that more closely reproduces the original decision.
+
 ### Test a standalone skill
 
 Each routable standalone skill, and Field Guide, has a test file at
