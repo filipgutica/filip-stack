@@ -1,3 +1,17 @@
+# [6.12.0](https://github.com/filipgutica/filip-stack/compare/v6.11.0...v6.12.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **field-guide:** read the watermark before annotations when rendering markers ([5526673](https://github.com/filipgutica/filip-stack/commit/552667371d30f8117b4cf92fba68b484d18ebc4f))
+* **host-config:** scope authority to hook-injected markers and keep merged worktree rows ([467efb1](https://github.com/filipgutica/filip-stack/commit/467efb13fdc4a7e36aba6ad35ceb596bd9bc83be))
+
+
+### Features
+
+* **host-config:** confirmed Field Guide guidance authorizes what it names ([80ddcd3](https://github.com/filipgutica/filip-stack/commit/80ddcd3398bf680f02408c43830fb085664e3102))
+* **host-config:** say unconfirmed Field Guide guidance does not authorize ([a6ee332](https://github.com/filipgutica/filip-stack/commit/a6ee3328bc918038fc2990735136348a63d96b82))
+
 # [6.11.0](https://github.com/filipgutica/filip-stack/compare/v6.10.1...v6.11.0) (2026-11-17)
 
 
