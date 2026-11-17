@@ -12,6 +12,8 @@ import {
   utimesSync,
   writeFileSync,
 } from 'node:fs'
+import fs from 'node:fs'
+import { syncBuiltinESMExports } from 'node:module'
 import { tmpdir } from 'node:os'
 import { dirname, join } from 'node:path'
 import test from 'node:test'
@@ -2386,7 +2388,7 @@ const confirmedGuide = (name, scope) => {
   const confirmed = () => renderedConfirmed({ repoRoot, guideRoot, learning: cleanupLearning })
   assert.equal(confirmed(), true)
   const older = (command, input) => runInputCommand({ command, repoRoot, guideRoot, cli: olderScript(), input: { schemaVersion: 1, ...input } }).result
-  return { guideRoot, guidanceId, learn, confirmed, older }
+  return { repoRoot, guideRoot, guidanceId, learn, confirmed, older }
 }
 
 test('an older plugin that supersedes and undoes a confirmed project record voids the confirmation', () => {
@@ -2400,6 +2402,29 @@ test('an older plugin that supersedes and undoes a confirmed project record void
   assert.equal(confirmed(), false)
   confirmByHook({ guideRoot, guidanceId })
   assert.equal(confirmed(), true)
+})
+
+test('a render that races a reconcile never shows a revoked confirmation', () => {
+  const { repoRoot, guideRoot, learn, confirmed } = confirmedGuide('render-race', 'project')
+  learn('Name tests after behavior.', 'turn-2', { cli: olderScript() })
+  // The render reads annotations from before the reconcile, then the reconcile finishes.
+  const original = fs.readFileSync
+  fs.readFileSync = (path, ...rest) => {
+    const text = original(path, ...rest)
+    if (String(path).endsWith('/annotations.json')) {
+      fs.readFileSync = original
+      syncBuiltinESMExports()
+      run({ command: 'export', repoRoot, guideRoot, args: ['--output', join(dirname(guideRoot), 'race.json')] })
+    }
+    return text
+  }
+  syncBuiltinESMExports()
+  try {
+    assert.equal(confirmed(), false)
+  } finally {
+    fs.readFileSync = original
+    syncBuiltinESMExports()
+  }
 })
 
 for (const retirementFirst of [true, false]) {
