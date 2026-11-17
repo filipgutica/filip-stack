@@ -2056,17 +2056,19 @@ const retrieveGuidance = ({ memory, paths, subjectKey, query, markersFor }) => {
   }
 }
 
-// Returns active guidance tagged with the event trigger, project records first, within the
-// normal retrieval budget.
+// Active guidance tagged with the event trigger: project records first, then shared, newest first.
+const eventTagged = ({ applicable, annotations, event }) => applicable
+  .filter((guidance) => annotationMarkers({ annotations, guidance }).triggers.includes(event))
+  .sort((left, right) => (
+    Number(left.scope.kind === 'shared') - Number(right.scope.kind === 'shared')
+      || right.updatedAt.localeCompare(left.updatedAt)
+      || left.id.localeCompare(right.id)
+  ))
+
+// Returns active guidance tagged with the event trigger within the normal retrieval budget.
 const retrieveEvent = ({ memory, paths, event, annotations, markersFor }) => {
   requireTrigger(event)
-  const tagged = applicableGuidance({ memory, paths })
-    .filter((guidance) => annotationMarkers({ annotations, guidance }).triggers.includes(event))
-    .sort((left, right) => (
-      Number(left.scope.kind === 'shared') - Number(right.scope.kind === 'shared')
-        || right.updatedAt.localeCompare(left.updatedAt)
-        || left.id.localeCompare(right.id)
-    ))
+  const tagged = eventTagged({ applicable: applicableGuidance({ memory, paths }), annotations, event })
   const records = tagged.map((guidance) => retrievalRecord({ guidance, match: 'event', markers: markersFor(guidance) }))
   const fitted = fitWholeRecords({ records, maxRecords: 5, maxBytes: 6144 })
   return {
@@ -2119,30 +2121,49 @@ const readInjectionMemory = ({ repoRoot, guideRoot, mainThread }) => {
   if (!memory) return null
   const annotations = readAnnotationsForDisplay(paths.annotationsFile)
   const lineFor = (guidance) => injectionLine({ guidance, markers: displayMarkers({ annotations, guidance, mainThread }) })
-  return { paths, applicable: applicableGuidance({ memory, paths }), lineFor }
+  return { paths, annotations, applicable: applicableGuidance({ memory, paths }), lineFor }
+}
+
+// Fits whole lines after the header and reports which records they show. Returns null when none fits.
+const fittedInjection = ({ paths, header, candidates, lineFor, maxRecords, maxBytes }) => {
+  const fittedLines = fitWholeRecords({ records: candidates.map(lineFor), maxRecords, maxBytes: maxBytes - byteLength(header) })
+  if (fittedLines.records.length === 0) return null
+  const injected = candidates.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
+  return {
+    projectKey: paths.projectKey,
+    guidanceIds: injected.map(({ id }) => id),
+    sharedIds: injected.filter(({ scope }) => scope.kind === 'shared').map(({ id }) => id),
+    text: [header, ...fittedLines.records].join('\n'),
+  }
 }
 
 /**
- * Selects session-start context: this repository's newest project guidance and
- * an index of the other applicable subjects. Returns null when nothing applies.
- * Lines carry annotation markers only when mainThread is true.
+ * Selects session-start context: this repository's newest project guidance, then
+ * the active shared records named by restoreIds (those a session received before
+ * compaction) in the room left, and an index of the other applicable subjects.
+ * Returns null when nothing applies. Lines carry annotation markers only when
+ * mainThread is true.
  */
-export const sessionStartInjection = ({ repoRoot, guideRoot, mainThread = false }) => {
+export const sessionStartInjection = ({ repoRoot, guideRoot, mainThread = false, restoreIds = [] }) => {
   const loaded = readInjectionMemory({ repoRoot, guideRoot, mainThread })
   if (!loaded) return null
   const { paths, applicable, lineFor } = loaded
-  const project = applicable
-    .filter(({ scope }) => scope.kind === 'project')
-    .sort((left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id))
+  const newestFirst = (left, right) => right.updatedAt.localeCompare(left.updatedAt) || left.id.localeCompare(right.id)
+  const project = applicable.filter(({ scope }) => scope.kind === 'project').sort(newestFirst)
+  // Retired records are not applicable, so a restored record has its current text and status.
+  const restored = applicable.filter(({ scope, id }) => scope.kind === 'shared' && restoreIds.includes(id)).sort(newestFirst)
   // JSON-array bytes are an upper bound for the rendered lines, so fitting to the
   // budget minus the framing text keeps each rendered section within budget.
-  const projectHeader = 'Field Guide: stored user guidance for this repository. Follow it when it applies.'
+  const projectHeader = restored.length > 0
+    ? 'Field Guide: stored user guidance for this repository, and shared guidance this session received before compaction. Follow it when it applies.'
+    : 'Field Guide: stored user guidance for this repository. Follow it when it applies.'
+  const candidates = [...project, ...restored]
   const fittedLines = fitWholeRecords({
-    records: project.map(lineFor),
+    records: candidates.map(lineFor),
     maxRecords: 8,
     maxBytes: 1536 - byteLength(projectHeader),
   })
-  const injected = project.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
+  const injected = candidates.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
   const injectedIds = injected.map(({ id }) => id)
   const otherSubjects = [...new Set(
     applicable.filter(({ id }) => !injectedIds.includes(id)).map(({ subjectKey }) => subjectKey),
@@ -2182,18 +2203,24 @@ export const promptInjection = ({ repoRoot, guideRoot, prompt, excludeIds, mainT
     .map(({ guidance }) => guidance)
     .filter(({ id }) => !excludeIds.includes(id))
   const header = 'Field Guide: stored user guidance that may apply to this request. Follow it when it applies.'
-  const fittedLines = fitWholeRecords({
-    records: candidates.map(lineFor),
-    maxRecords: 3,
-    maxBytes: 2048 - byteLength(header),
-  })
-  if (fittedLines.records.length === 0) return null
-  const injected = candidates.filter((guidance) => fittedLines.records.includes(lineFor(guidance)))
-  return {
-    projectKey: paths.projectKey,
-    guidanceIds: injected.map(({ id }) => id),
-    text: [header, ...fittedLines.records].join('\n'),
-  }
+  return fittedInjection({ paths, header, candidates, lineFor, maxRecords: 3, maxBytes: 2048 })
+}
+
+/**
+ * Selects up to three active records tagged with an event trigger, project
+ * records first, within 1.5 KB. queuedMerge adds that an `--auto` merge may
+ * only be queued. Returns null for an unknown trigger or when nothing is
+ * tagged. Lines carry annotation markers only when mainThread is true.
+ */
+export const eventInjection = ({ repoRoot, guideRoot, event, queuedMerge = false, mainThread = false }) => {
+  if (!annotationTriggers.includes(event)) return null
+  const loaded = readInjectionMemory({ repoRoot, guideRoot, mainThread })
+  if (!loaded) return null
+  const { paths, annotations, applicable, lineFor } = loaded
+  const tagged = eventTagged({ applicable, annotations, event })
+  const queued = queuedMerge ? ' The merge used --auto, so it may only be queued: confirm the PR merged before acting on this guidance.' : ''
+  const header = `Field Guide: stored user guidance tagged [${event}]. Follow it when it applies.${queued}`
+  return fittedInjection({ paths, header, candidates: tagged, lineFor, maxRecords: 3, maxBytes: 1536 })
 }
 
 const candidateMatches = ({ paths, subjectKey, scope: scopeKind }) => {
