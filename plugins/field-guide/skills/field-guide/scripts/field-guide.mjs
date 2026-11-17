@@ -1014,6 +1014,11 @@ const removeStaleLock = (lockFile) => {
 // stale-lock recovery cannot mistake a lock that was just taken for an empty old one.
 const acquireLock = (lockFile) => {
   const deadline = Date.now() + lockWaitMs
+  // A writer that died while holding its owner file leaves it behind; remove those past the stale age.
+  for (const name of readdirSync(dirname(lockFile)).filter((each) => each.startsWith(`${basename(lockFile)}.`) && each.endsWith('.tmp'))) {
+    const path = join(dirname(lockFile), name)
+    if (Date.now() - (statSync(path, { throwIfNoEntry: false })?.mtimeMs ?? Date.now()) > staleLockMs) rmSync(path, { force: true })
+  }
   const token = randomUUID()
   const ownerFile = `${lockFile}.${token}.tmp`
   const owner = JSON.stringify({ pid: process.pid, pidNamespace: pidNamespace(), createdAt: Date.now(), token })
@@ -1224,8 +1229,9 @@ const supportedSchemaVersion = 1
 
 const emptyAnnotations = () => ({ schemaVersion: supportedSchemaVersion, records: {} })
 const emptyAnnotationRecord = () => ({ confirmations: [], triggers: [], acknowledged: [], revocations: [] })
-const requireAnnotationIds = ({ ids, label }) => {
-  if (!Array.isArray(ids) || ids.some((id) => !annotationIdPattern.test(id)) || new Set(ids).size !== ids.length) {
+const requireAnnotationIds = ({ ids, label, allowRetirements = false }) => {
+  const valid = (id) => annotationIdPattern.test(id) || (allowRetirements && retirementIdPattern.test(id))
+  if (!Array.isArray(ids) || !ids.every(valid) || new Set(ids).size !== ids.length) {
     fail(`${label} must list unique annotation IDs`)
   }
 }
@@ -1239,7 +1245,7 @@ const validateAnnotationEntry = ({ entry, kind }) => {
   const label = `annotation ${kind}`
   assertObject({ value: entry, label })
   assertClosedFields({ value: entry, fields: kind === 'trigger' ? ['id', 'trigger', 'at'] : ['id', 'at', 'host', 'seen'], label })
-  if (kind === 'confirmation') requireAnnotationIds({ ids: entry.seen, label: `${label} seen` })
+  if (kind === 'confirmation') requireAnnotationIds({ ids: entry.seen, label: `${label} seen`, allowRetirements: true })
   if (!annotationIdPattern.test(entry.id)) fail(`${label} has an invalid id`)
   requireTimestamp({ value: entry.at, label: `${label} at` })
   if (kind === 'trigger') requireTrigger(entry.trigger)
@@ -1335,10 +1341,14 @@ const acknowledgeEntries = ({ record, entries }) => {
 const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
 const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
 
+// A record's revocations, plus the retirement IDs that memory keeps and sync carries for shared
+// records, so a retirement or undo by a plugin without annotations also revokes.
+const revocationIds = ({ record, guidance }) => [...record.revocations, ...retirementSetsOf(guidance).retirements]
+
 // A confirmation counts while it is outstanding and has seen every revocation of its record.
 // Its time is metadata only, so machine clocks never decide authority.
-const countingConfirmations = (record) => outstandingEntries({ record, entries: record.confirmations })
-  .filter(({ seen }) => record.revocations.every((id) => seen.includes(id)))
+const countingConfirmations = ({ record, guidance }) => outstandingEntries({ record, entries: record.confirmations })
+  .filter(({ seen }) => revocationIds({ record, guidance }).every((id) => seen.includes(id)))
 
 const revokeRecord = (record) => {
   record.revocations.push(newAnnotationId())
@@ -1347,7 +1357,7 @@ const revokeRecord = (record) => {
 const annotationMarkers = ({ annotations, guidance }) => {
   const record = annotations.records[guidance.fingerprint] ?? emptyAnnotationRecord()
   return {
-    confirmed: countingConfirmations(record).length > 0,
+    confirmed: countingConfirmations({ record, guidance }).length > 0,
     triggers: [...new Set(outstandingEntries({ record, entries: record.triggers }).map(({ trigger }) => trigger))].sort(),
   }
 }
@@ -1396,7 +1406,7 @@ const unconfirmUnlocked = ({ paths, reference }) => {
   const guidance = requireGuidance({ memory: readInitializedMemory(paths), reference })
   const annotations = readAnnotations(paths.annotationsFile)
   const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
-  const confirmed = countingConfirmations(record).length > 0
+  const confirmed = countingConfirmations({ record, guidance }).length > 0
   // The revocation also covers a confirmation made on another machine that has not synced yet.
   revokeRecord(record)
   writeAnnotations({ path: paths.annotationsFile, annotations })
@@ -1457,10 +1467,10 @@ const confirmUnlocked = ({ files, reference, host }) => {
   if (guidance.status !== 'active') return notConfirmed(`that guidance is ${guidance.status}, not active`)
   const annotations = readAnnotations(files.annotationsFile)
   const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
-  if (countingConfirmations(record).length > 0) {
+  if (countingConfirmations({ record, guidance }).length > 0) {
     return confirmationMessage({ exact: true, text: `Field Guide: already confirmed: "${guidance.learning}"` })
   }
-  record.confirmations.push(newAnnotationEntry({ ...(host ? { host } : {}), seen: [...record.revocations] }))
+  record.confirmations.push(newAnnotationEntry({ ...(host ? { host } : {}), seen: revocationIds({ record, guidance }) }))
   writeAnnotations({ path: files.annotationsFile, annotations })
   const line = injectionLine({ guidance, markers: annotationMarkers({ annotations, guidance }) })
   return {

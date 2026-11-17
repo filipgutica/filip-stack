@@ -55,7 +55,8 @@ Only these lines show confirmation; `retrieve` never reports it. Stored text
 that uses a marker word in brackets is escaped. A subject named `confirmed` or
 like a trigger renders as `\[confirmed]`, a marker word anywhere in the
 learning renders with a backslash, and a learning that starts with `[` renders
-with a leading backslash. Unicode line separators render as spaces. Delegates and subagents receive the same lines without markers.
+with a leading backslash. Unicode line separators render as spaces.
+Delegates and subagents receive the same lines without markers.
 
 [Codex supports plugin-bundled hooks and `UserPromptSubmit` additional
 context](https://learn.chatgpt.com/docs/hooks#plugin-bundled-hooks). Codex parses

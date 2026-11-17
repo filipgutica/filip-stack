@@ -2330,6 +2330,23 @@ for (const staleFirst of [true, false]) {
   })
 }
 
+test('a supersession and undo by a plugin without annotations revoke a confirmation', () => {
+  const { first, second, guidanceId } = machinePair('older-plugin')
+  confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  first.exportFiles()
+  second.importFrom(first)
+  // The older plugin keeps retirement IDs in memory but leaves annotations as they were.
+  const sidecar = join(second.guideRoot, 'annotations.json')
+  const untouched = readFileSync(sidecar, 'utf8')
+  const replacement = second.learn({ learning: 'After a merge, remove its clean worktrees without asking.', relationship: { kind: 'refines', targetId: guidanceId } })
+  second.transition({ action: 'supersede', targetId: guidanceId, replacementId: replacement, confirmed: true })
+  second.transition({ action: 'undo', targetId: replacement })
+  writeFileSync(sidecar, untouched)
+  second.exportFiles()
+  first.importFrom(second)
+  assert.equal(first.confirmed(), false)
+})
+
 test('a supersession that is undone keeps a delayed confirmation revoked', () => {
   const { first, second, guidanceId } = machinePair('revoke-supersede-undo')
   confirmByHook({ guideRoot: second.guideRoot, guidanceId })
@@ -2392,7 +2409,12 @@ test('a writer waits for a live lock and recovers a lock whose owner died or tha
   writeFileSync(paths.memoryLockFile, 'held\n')
   const old = new Date(Date.now() - 10 * 60 * 1000)
   utimesSync(paths.memoryLockFile, old, old)
+  // An owner file that a dead writer left behind is removed once it is stale.
+  const orphan = `${paths.memoryLockFile}.orphan.tmp`
+  writeFileSync(orphan, '{}')
+  utimesSync(orphan, old, old)
   learn('turn-2')
+  assert.equal(existsSync(orphan), false)
 
   // A dead PID in another PID namespace proves nothing, so a fresh lock still blocks.
   lockedBy({ pid: exitedPid, pidNamespace: 'pid:[1]' })

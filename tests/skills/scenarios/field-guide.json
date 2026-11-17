@@ -117,6 +117,68 @@
       "accept": [
         "ask-and-offer"
       ]
+    },
+    {
+      "id": "tag-event-guidance",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/capture-policy.md"
+      ],
+      "task": "No global or project instruction mentions final reports. During this task the user said: \"Before every final report, list the verification commands you ran, in every repository.\" You captured it as active shared guidance whose ID starts with 3c4d5e6f. The task is done, and you are writing the final response with the Field Guide change notice.",
+      "options": {
+        "tag": "run `annotate --id 3c4d5e6f --triggers <event>` with the matching trigger, then append the change notice",
+        "notice-only": "append only the change notice",
+        "offer": "append the change notice and offer `confirm fg:3c4d5e6f`"
+      },
+      "accept": [
+        "tag"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "no-tag-for-topic-guidance",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/capture-policy.md"
+      ],
+      "task": "No global or project instruction gates naming decisions. During this task the user said: \"Prefer named constants for non-obvious domain thresholds, in every repository.\" You captured it as active shared guidance whose ID starts with 3c4d5e6f. The task is done, and you are writing the final response with the Field Guide change notice.",
+      "options": {
+        "tag": "run `annotate --id 3c4d5e6f --triggers <event>` with the matching trigger, then append the change notice",
+        "notice-only": "append only the change notice",
+        "offer": "append the change notice and offer `confirm fg:3c4d5e6f`"
+      },
+      "accept": [
+        "notice-only"
+      ]
+    },
+    {
+      "id": "unconfirm-withdrawn-authority",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/capture-policy.md"
+      ],
+      "task": "Field Guide injected this line: `- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees and branches without asking.` Its ID starts with 87e38790. The user now says: \"Keep that cleanup guidance, but I no longer authorize doing it without asking me first.\"",
+      "options": {
+        "unconfirm": "run `unconfirm --id 87e38790` and keep the guidance",
+        "withdraw": "withdraw the guidance with `transition`",
+        "leave": "leave the confirmed guidance as it is"
+      },
+      "accept": [
+        "unconfirm"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "no-unconfirm-for-unrelated-preference",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/capture-policy.md"
+      ],
+      "task": "Field Guide injected this line: `- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees and branches without asking.` Its ID starts with 87e38790. The user now says: \"From now on, write pull request descriptions as bullet lists.\" You are deciding what to do with the git-cleanup guidance.",
+      "options": {
+        "unconfirm": "run `unconfirm --id 87e38790` and keep the guidance",
+        "withdraw": "withdraw the guidance with `transition`",
+        "leave": "leave the confirmed guidance as it is"
+      },
+      "accept": [
+        "leave"
+      ]
     }
   ]
 }

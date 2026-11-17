@@ -133,7 +133,7 @@ records by guidance fingerprint and keeps two kinds of entries per record:
   `confirm fg:<id>` in a main thread; see
   [hook lifecycle](lifecycle-hooks.md#confirmation-prompt). It stores a random
   entry ID, the time, the host (`claude` or `codex`), and `seen`: the
-  record's revocation IDs known when the user confirmed. It stores no prompt
+  record's revocation and retirement IDs known when the user confirmed. It stores no prompt
   text, hostname, user name, or path.
 - A **trigger** tags a record for an event: `pr-merged`, `pr-created`, or
   `handoff`. An agent adds one with `annotate --id <id> --triggers <list>` and
@@ -143,12 +143,14 @@ records by guidance fingerprint and keeps two kinds of entries per record:
 `--id` takes a full guidance ID or an unambiguous hex prefix of at least eight
 characters.
 
-Removing an entry adds its ID to the record's `acknowledged` set, as
+Removing a trigger adds its ID to the record's `acknowledged` set, as
 retirement sets do. An entry counts while its ID is not acknowledged.
 
 A revocation adds a random ID to the record's `revocations` set. A
 confirmation counts only when its `seen` holds every revocation ID of its
-record, so a revocation also covers a confirmation that its machine has not
+record and every retirement ID that memory keeps for a shared record, even an
+acknowledged one, so a retirement or undo by a plugin without annotations
+also revokes. A revocation covers a confirmation that its machine has not
 seen. Clocks never decide this. When a confirmation and a revocation happen
 on different machines before they sync, the revocation wins; the user confirms
 again. These actions add a revocation:
@@ -160,6 +162,7 @@ again. These actions add a revocation:
 - `delete` of a shared record. Delete of a project record drops its
   annotations, which never sync.
 - `submit`, when it creates a record, so recaptured text starts unconfirmed.
+  An independent capture of the same text on another machine revokes too.
 
 Import adds none: it unions entries, acknowledgments, and revocations, so
 machines converge in any delivery order.

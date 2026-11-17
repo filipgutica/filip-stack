@@ -47,10 +47,10 @@
         "at": { "description": "Metadata only; clocks never decide whether a confirmation counts.", "type": "string", "format": "date-time" },
         "host": { "enum": ["claude", "codex"] },
         "seen": {
-          "description": "The record's revocation IDs that this machine knew when the user confirmed.",
+          "description": "The record's revocation IDs and memory retirement IDs that this machine knew when the user confirmed.",
           "type": "array",
           "uniqueItems": true,
-          "items": { "$ref": "#/$defs/entryId" }
+          "items": { "anyOf": [{ "$ref": "#/$defs/entryId" }, { "type": "string", "pattern": "^retirement:v1:[0-9a-f]{64}$" }] }
         }
       }
     },
