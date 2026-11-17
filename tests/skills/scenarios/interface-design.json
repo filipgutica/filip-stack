@@ -63,6 +63,37 @@
       "accept": [
         "repository"
       ]
+    },
+    {
+      "id": "count-before-after",
+      "task": "You simplified a dashboard screen in a running app that has Playwright installed, and are about to report the change. The user wants less text and fewer boxes on the screen.",
+      "options": {
+        "count": "run `ui-check.mjs --count` on the screen before and after the change and report the words, boxes, and controls",
+        "screenshots": "describe the screen as simpler from before and after screenshots, without counts",
+        "budget": "fail the change unless the screen has fewer than 200 words"
+      },
+      "accept": [
+        "count"
+      ],
+      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/checks.md"
+      ]
+    },
+    {
+      "id": "count-rise-keeps-consent",
+      "task": "While simplifying a sign-up screen, you added the required consent sentence that the screen was missing. The word count rose by 14.",
+      "options": {
+        "keep": "keep the consent sentence and report the reason the count rose",
+        "cut": "cut the consent sentence so the word count goes down",
+        "hide": "move the consent sentence behind a closed disclosure so it is not counted"
+      },
+      "accept": [
+        "keep"
+      ],
+      "files": [
+        "skills/interface-design/references/checks.md"
+      ]
     }
   ]
 }

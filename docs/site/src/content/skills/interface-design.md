@@ -36,6 +36,10 @@ scrolling, and token use, and run key tasks under reduced motion, dark mode,
 200% text, and grayscale. Automated tools catch only part of accessibility
 problems (57% in Deque's study), so a clean run is not proof.
 
+With `--count`, the accessibility script also counts the visible words,
+boxes, and controls on each page, so you can show that a simpler version is
+simpler. Screen-reader-only text is not counted, and counts never fail a run.
+
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/interface-design/SKILL.md)
 links the review questions and browser-check steps.
 
