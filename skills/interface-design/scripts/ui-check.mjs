@@ -1,8 +1,9 @@
 #!/usr/bin/env node
 // Checks a running UI at each URL, width, and theme: screenshots, axe-core WCAG 2.2 AA, horizontal
-// overflow, and computed values that match no design token.
+// overflow, computed values that match no design token, and with --count, visible words, boxes, and
+// controls.
 // Usage: node ui-check.mjs --url <url> [--url <url>] [--widths 320,375,1280] [--themes light,dark]
-//   [--theme-attr data-theme] [--tokens <css file>] [--fail-on-tokens] [--project <dir>] [--out <dir>]
+//   [--theme-attr data-theme] [--tokens <css file>] [--fail-on-tokens] [--count] [--project <dir>] [--out <dir>]
 // Playwright and @axe-core/playwright resolve from --project (default: the current directory).
 // Writes <out>/results.json and one PNG per combination. Prints the accessibility violation count as
 // the last line. Exits 1 when a check fails and 2 when a check cannot run.
@@ -14,9 +15,11 @@ import { join, resolve } from 'node:path'
 import { pathToFileURL } from 'node:url'
 
 export const AXE_TAGS = ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa']
+// Every page loads at this height; --count takes it as the first screen.
+const VIEWPORT_HEIGHT = 900
 
 export const parseArgs = (argv) => {
-  const opts = { urls: [], widths: [375, 1280], themes: ['light', 'dark'], themeAttr: null, tokens: null, failOnTokens: false, project: process.cwd(), out: null }
+  const opts = { urls: [], widths: [375, 1280], themes: ['light', 'dark'], themeAttr: null, tokens: null, failOnTokens: false, count: false, project: process.cwd(), out: null }
   for (let i = 0; i < argv.length; i += 1) {
     const flag = argv[i]
     const value = () => {
@@ -30,6 +33,7 @@ export const parseArgs = (argv) => {
     else if (flag === '--theme-attr') opts.themeAttr = value()
     else if (flag === '--tokens') opts.tokens = value()
     else if (flag === '--fail-on-tokens') opts.failOnTokens = true
+    else if (flag === '--count') opts.count = true
     else if (flag === '--project') opts.project = value()
     else if (flag === '--out') opts.out = value()
     else throw new Error(`Unknown option ${flag}`)
@@ -101,6 +105,69 @@ const offTokenScan = (tokens) => {
   return [...found.values()]
 }
 
+// Runs in the page. Counts visible words, boxes, and controls on the first screen (elements that start
+// above `screenHeight` as loaded) and on the whole page. Words leave out text that only screen readers
+// get, so cutting visible words never means cutting accessible names. Counts are evidence, not checks.
+export const countUi = (screenHeight) => {
+  const wordsIn = (text) => (text.match(/[\p{L}\p{N}$%+−-]+/gu) ?? []).length
+  // Inside a closed <details>, everything but its <summary> is hidden.
+  const inClosedDetails = (el) => {
+    for (let a = el; a; a = a.parentElement) {
+      if (a.parentElement?.tagName === 'DETAILS' && !a.parentElement.open && a.tagName !== 'SUMMARY') return true
+    }
+    return false
+  }
+  const visible = (el, bottom) => {
+    const r = el.getBoundingClientRect()
+    return r.width > 0 && r.height > 0 && r.top < bottom && r.bottom > 0 && !inClosedDetails(el) && !el.closest('[hidden]') &&
+      getComputedStyle(el).visibility !== 'hidden'
+  }
+  // The usual screen-reader-only patterns: clipped to nothing, or a box of 1px or less that hides its overflow.
+  const srOnlyCache = new Map()
+  const srOnly = (el) => {
+    if (!el) return false
+    if (!srOnlyCache.has(el)) {
+      const s = getComputedStyle(el)
+      const r = el.getBoundingClientRect()
+      const hidden = s.clip === 'rect(0px, 0px, 0px, 0px)' || s.clipPath === 'inset(50%)' || (r.width <= 1 && r.height <= 1 && s.overflow === 'hidden')
+      srOnlyCache.set(el, hidden || srOnly(el.parentElement))
+    }
+    return srOnlyCache.get(el)
+  }
+  const transparent = /^rgba\(.*, 0\)$|\/ 0\)$/
+  // A box has three or more visible borders, or any shadow.
+  const isBox = (el) => {
+    const s = getComputedStyle(el)
+    const borders = ['Top', 'Right', 'Bottom', 'Left'].filter((side) =>
+      parseFloat(s[`border${side}Width`]) > 0 && s[`border${side}Style`] !== 'none' && !transparent.test(s[`border${side}Color`]))
+    return borders.length >= 3 || s.boxShadow !== 'none'
+  }
+  const count = (bottom) => {
+    let words = 0
+    const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT)
+    while (walker.nextNode()) {
+      const el = walker.currentNode.parentElement
+      if (!el || el.closest('script,style,svg,[hidden],dialog:not([open])') || srOnly(el) || !visible(el, bottom)) continue
+      words += wordsIn(walker.currentNode.textContent)
+    }
+    // The walk above skips svg; its <text> labels count here.
+    for (const text of document.querySelectorAll('svg text')) if (visible(text, bottom)) words += wordsIn(text.textContent)
+    const shown = [...document.querySelectorAll('body *')].filter((el) => !el.closest('svg,dialog:not([open])') && visible(el, bottom))
+    const controls = shown.filter((el) => el.matches('button,select,input:not([type=hidden]),a[href],[role=button],summary'))
+    return { words, boxes: shown.filter(isBox).length, controls: controls.length }
+  }
+  return { firstScreen: count(screenHeight), wholePage: count(Infinity) }
+}
+
+// Waits for scripts that render after load, then counts.
+const countPage = async (page) => {
+  await page.waitForTimeout(600)
+  return page.evaluate(countUi, VIEWPORT_HEIGHT)
+}
+
+const countLine = ({ url, width, theme, counts: { firstScreen: f, wholePage: w } }) =>
+  `Counts, first screen / whole page, ${url} at ${width}px ${theme}: words ${f.words} / ${w.words}, boxes ${f.boxes} / ${w.boxes}, controls ${f.controls} / ${w.controls}`
+
 // One pass or fail summary across every combination, for the exit code and the last output line.
 export const summarize = (runs, { failOnTokens }) => {
   const axe = runs.reduce((n, r) => n + r.axe.reduce((m, v) => m + v.nodes.length, 0), 0)
@@ -137,17 +204,18 @@ const run = async (opts) => {
       for (const width of opts.widths) {
         for (const theme of opts.themes) {
           // A fresh context per combination, so each screenshot comes from a fresh page load.
-          const context = await browser.newContext({ viewport: { width, height: 900 }, colorScheme: theme })
+          const context = await browser.newContext({ viewport: { width, height: VIEWPORT_HEIGHT }, colorScheme: theme })
           const page = await context.newPage()
           assertLoaded(await page.goto(url, { waitUntil: 'load' }), url)
           if (opts.themeAttr) await page.evaluate(([attr, value]) => document.documentElement.setAttribute(attr, value), [opts.themeAttr, theme])
+          const counts = opts.count ? await countPage(page) : null
           const screenshot = join(out, `${fileStem(url, index)}-${width}-${theme}.png`)
           await page.screenshot({ path: screenshot, fullPage: true })
           const result = await new AxeBuilder({ page }).withTags(AXE_TAGS).analyze()
           const overflow = await page.evaluate(() => document.documentElement.scrollWidth > document.documentElement.clientWidth)
           const offToken = tokens ? await page.evaluate(offTokenScan, tokens) : null
           runs.push({
-            url, width, theme, screenshot, overflow, offToken,
+            url, width, theme, screenshot, overflow, offToken, counts,
             axe: result.violations.map((v) => ({ id: v.id, impact: v.impact, help: v.help, nodes: v.nodes.map((n) => n.target.join(' ')) })),
           })
           await context.close()
@@ -162,6 +230,7 @@ const run = async (opts) => {
   if (!tokens) unchecked.push('Design tokens (pass --tokens)')
   writeFileSync(join(out, 'results.json'), `${JSON.stringify({ summary, unchecked, runs }, null, 2)}\n`)
   console.log(`axe violations: ${summary.axe} nodes; horizontal overflow: ${summary.overflow} of ${runs.length} pages; off-token values: ${tokens ? summary.tokens : 'not checked'}`)
+  for (const counted of runs.filter((r) => r.counts)) console.log(countLine(counted))
   console.log(`Not checked: ${unchecked.join('; ')}`)
   console.log(`Results: ${join(out, 'results.json')}`)
   console.log(summary.violations)

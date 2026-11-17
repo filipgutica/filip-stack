@@ -71,53 +71,58 @@ user impact.
    (Nielsen 2)
 4. Does each button name its result, and does the flow keep that verb?
    (craft.md)
+5. Does each word, box, and control on the screen earn its place? Compare
+   counts from `ui-check.mjs --count` before and after the change, and judge
+   them against the owning design system's minimal-by-default rules, such as
+   the design-system plugin's `language/DESIGN.md`, section "Minimal by
+   default". (Nielsen 8, owning design system)
 
 ### Flow and control
 
-5. Can the user tell what the system is doing right now, including during
+6. Can the user tell what the system is doing right now, including during
    loading? (Nielsen 1)
-6. Can the user cancel, go back, or undo without losing work? (Nielsen 3)
-7. Does the screen show the options and information needed, rather than
+7. Can the user cancel, go back, or undo without losing work? (Nielsen 3)
+8. Does the screen show the options and information needed, rather than
    relying on memory from an earlier step? (Nielsen 6)
-8. Do equivalent controls look and behave the same across screens?
+9. Do equivalent controls look and behave the same across screens?
    (Nielsen 4)
 
 ### Forms, errors, and states
 
-9. Does every field have a visible label that stays when the user types,
-   placed as the pattern for that control places it: above text inputs and
-   selects, beside checkboxes and radios? (GOV.UK, USWDS)
-10. Does each error say what went wrong and how to fix it, next to the field?
+10. Does every field have a visible label that stays when the user types,
+    placed as the pattern for that control places it: above text inputs and
+    selects, beside checkboxes and radios? (GOV.UK, USWDS)
+11. Does each error say what went wrong and how to fix it, next to the field?
     (Nielsen 9, GOV.UK)
-11. Do empty, error, and success states exist and point to a next step?
+12. Do empty, error, and success states exist and point to a next step?
     (craft.md)
-12. Does the design prevent the likely mistake rather than only report it?
+13. Does the design prevent the likely mistake rather than only report it?
     (Nielsen 5)
 
 ### Accessibility
 
-13. Do text and the visual information needed to identify each control and
+14. Do text and the visual information needed to identify each control and
     its state meet the WCAG contrast thresholds in both themes, apart from
     the documented exceptions? (WCAG 1.4.3, 1.4.11)
-14. Is keyboard focus visible on every interactive element and never hidden?
+15. Is keyboard focus visible on every interactive element and never hidden?
     (WCAG 2.4.7, 2.4.11)
-15. Is each pointer target at least 24 by 24 CSS pixels, or does it pass the
+16. Is each pointer target at least 24 by 24 CSS pixels, or does it pass the
     24px circle spacing test, apart from the documented exceptions?
     (WCAG 2.5.8)
-16. Does the content reflow at 320 CSS pixels wide without sideways
+17. Does the content reflow at 320 CSS pixels wide without sideways
     scrolling, apart from content that needs two dimensions, and work with
     text at 200%? (WCAG 1.4.10, 1.4.4)
-17. Is every state or series told apart by more than color? (WCAG 1.4.1)
-18. Does motion stop or reduce when reduced motion is on? (Apple labels,
+18. Is every state or series told apart by more than color? (WCAG 1.4.1)
+19. Does motion stop or reduce when reduced motion is on? (Apple labels,
     WCAG 2.3.3)
 
 ### Charts
 
-19. Does the most important comparison use position or length on a shared,
+20. Does the most important comparison use position or length on a shared,
     zero-based axis where bars are used? (Cleveland and McGill)
-20. Does the chart use one y-axis, a readable number of parts, and a palette
+21. Does the chart use one y-axis, a readable number of parts, and a palette
     that does not depend on hue alone? (Chartability shortlist, Draco)
-21. Are units, the legend, and the labels next to the data they describe?
+22. Are units, the legend, and the labels next to the data they describe?
     (Chartability)
-22. Could a reader look up a value, compare two values, and name the trend
+23. Could a reader look up a value, compare two values, and name the trend
     from the chart alone? (VLAT)

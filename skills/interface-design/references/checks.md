@@ -14,7 +14,7 @@ framework. Both live in this skill's `scripts/` directory.
 - A page that answers with an HTTP error also exits 2, so an error page is
   never checked as a pass.
 
-## `ui-check.mjs`: accessibility, reflow, and tokens
+## `ui-check.mjs`: accessibility, reflow, tokens, and counts
 
 ```sh
 node <skill-directory>/scripts/ui-check.mjs --url http://localhost:5173/settings \
@@ -33,14 +33,28 @@ For each URL, width, and theme it loads a fresh page and:
   project's own, else `language/tokens.css` in the design-system plugin when
   it is installed and you can locate it. With neither, omit `--tokens` and
   report token checking as skipped.
+- with `--count`, waits 600ms for scripts that render after load, then
+  counts what is visible on the first screen (the top 900px as loaded) and
+  on the whole page:
+  - **words**: words in visible text, including SVG text. Text that only
+    screen readers get, such as an `sr-only` label, is left out, so cutting
+    visible words never means cutting accessible names.
+  - **boxes**: elements with three or more visible borders or any shadow,
+    including raised buttons.
+  - **controls**: visible buttons, selects, inputs, links, `role=button`
+    elements, and `<summary>` elements.
+
+  Content in a closed `<details>` (apart from its summary), a `[hidden]`
+  element, or an unopened `<dialog>` does not count.
 
 Options: `--theme-attr <attribute>` for apps that switch themes with an
 attribute on `<html>` instead of `prefers-color-scheme`; `--fail-on-tokens`
 to make off-token values fail the run; `--out <dir>` for the results.
 
-It writes `results.json` and the screenshots, prints what it did not check,
-and prints the violation count (axe nodes plus pages that overflow) as its
-last line. It exits 1 when axe or overflow finds a problem.
+It writes `results.json` and the screenshots, prints each page's counts
+when asked, prints what it did not check, and prints the violation count
+(axe nodes plus pages that overflow) as its last line. It exits 1 when axe
+or overflow finds a problem.
 
 ## `ui-modes.mjs`: tasks in every accessibility mode
 
@@ -77,5 +91,9 @@ prints the passed count as its last line and exits 1 on any failure. Without
 - The token scan matches values, not intent: a value that matches the wrong
   token passes, and tokens built from `calc()`, `clamp()`, or percentages may
   appear as off-token. Treat its list as places to look.
+- Counts are before and after evidence for the owning design system's
+  minimal-by-default rules. Run `--count` before and after a UI change at
+  the same widths and themes, and give a reason for any count that rises.
+  There is no budget: counts never fail a run or change the last line.
 - For a hill climb, use the exit code as a gate and the last output line as a
   score: lower is better for `ui-check.mjs`, higher for `ui-modes.mjs`.
