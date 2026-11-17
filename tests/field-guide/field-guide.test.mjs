@@ -2257,9 +2257,9 @@ const machinePair = (name) => {
     return {
       guideRoot,
       files,
-      learn: (input = {}) => {
+      learn: (input = {}, cli) => {
         turn += 1
-        return submit({ repoRoot, guideRoot, input: { ...conversationSubmission({ learning: cleanupLearning, turnId: `turn-${turn}`, scope: 'shared', explicitPreference: true }), ...input } }).result.targetId
+        return submit({ repoRoot, guideRoot, cli, input: { ...conversationSubmission({ learning: cleanupLearning, turnId: `turn-${turn}`, scope: 'shared', explicitPreference: true }), ...input } }).result.targetId
       },
       exportFiles: () => run({ command: 'export', repoRoot, guideRoot, args: ['--output', files.dotfile, '--annotations', files.annotations] }),
       importFrom: (other) => run({ command: 'import', repoRoot, guideRoot, args: ['--input', other.files.dotfile, '--annotations', other.files.annotations] }),
@@ -2350,18 +2350,22 @@ test('a supersession and undo by a plugin without annotations revoke a confirmat
   assert.equal(first.confirmed(), false)
 })
 
-// The dd51bb9 CLI predates annotations. CI checks out full history, so the commit is present.
-let olderCli
-const olderScript = () => {
-  if (olderCli) return olderCli
+// Older CLIs come from Git history: dd51bb9 predates annotations, and 4497bb1 is the first
+// annotation release. CI checks out full history, so both commits are present.
+const firstAnnotationRelease = '4497bb10578b83f4ee497828ca79282f79ccfbfa'
+const olderClis = new Map()
+const cliAt = (commit) => {
+  if (olderClis.has(commit)) return olderClis.get(commit)
   const directory = mkdtempSync(join(tmpdir(), 'field-guide-older-cli-'))
   for (const name of ['field-guide.mjs', 'field-guide-analytics.mjs']) {
-    const source = execFileSync('git', ['show', `dd51bb9:plugins/field-guide/skills/field-guide/scripts/${name}`], { cwd: dirname(script) })
-    writeFileSync(join(directory, name), source)
+    const shown = spawnSync('git', ['show', `${commit}:plugins/field-guide/skills/field-guide/scripts/${name}`], { cwd: dirname(script) })
+    assert.equal(shown.status, 0, `commit ${commit} is missing; run git fetch --unshallow`)
+    writeFileSync(join(directory, name), shown.stdout)
   }
-  olderCli = join(directory, 'field-guide.mjs')
-  return olderCli
+  olderClis.set(commit, join(directory, 'field-guide.mjs'))
+  return olderClis.get(commit)
 }
+const olderScript = () => cliAt('dd51bb955c4f748708961291cd26a2ab49673c77')
 
 // A guide with one confirmed record, and a learn helper that can run either CLI.
 const confirmedGuide = (name, scope) => {
@@ -2416,6 +2420,31 @@ for (const retirementFirst of [true, false]) {
     assert.equal(fresh.confirmed(), false)
   })
 }
+
+test('a reconcile revokes a confirmation that arrives after an older plugin recaptured the record', () => {
+  const { first, second, guidanceId, repoRoot } = machinePair('older-in-transit')
+  confirmByHook({ guideRoot: second.guideRoot, guidanceId })
+  second.exportFiles()
+  const older = (command, input) => runInputCommand({ command, repoRoot, guideRoot: first.guideRoot, cli: olderScript(), input: { schemaVersion: 1, ...input } }).result
+  older('transition', { action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' })
+  older('delete', { targetId: guidanceId, apply: true, previewToken: older('delete', { targetId: guidanceId }).previewToken })
+  first.learn({}, olderScript())
+  first.exportFiles()
+  first.importFrom(second)
+  assert.equal(first.confirmed(), false)
+})
+
+test('a sidecar that imported a retirement stays valid for the first annotation release', () => {
+  const { first, second, guidanceId, repoRoot } = machinePair('first-release-compat')
+  first.retire('withdraw', guidanceId)
+  first.exportFiles()
+  second.importFrom(first)
+  const release = { repoRoot, guideRoot: second.guideRoot, cli: cliAt(firstAnnotationRelease) }
+  run({ ...release, command: 'validate' })
+  submit({ ...release, input: conversationSubmission({ learning: 'Name tests after behavior.', turnId: 'turn-release', scope: 'shared', explicitPreference: true }) })
+  run({ ...release, command: 'import', args: ['--input', first.files.dotfile, '--annotations', first.files.annotations] })
+  run({ ...release, command: 'export', args: ['--output', second.files.dotfile, '--annotations', second.files.annotations] })
+})
 
 test('a store from before the watermark voids its confirmations until the user confirms again', () => {
   const { first, guidanceId } = machinePair('watermark-upgrade')

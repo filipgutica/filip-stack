@@ -30,10 +30,10 @@
           "items": { "$ref": "#/$defs/entryId" }
         },
         "revocations": {
-          "description": "One random ID per revocation, plus retirement IDs from imported exports, merged by union. A confirmation counts only when its seen list holds every one.",
+          "description": "One random ID per revocation, merged by union. A confirmation counts only when its seen list holds every one.",
           "type": "array",
           "uniqueItems": true,
-          "items": { "anyOf": [{ "$ref": "#/$defs/entryId" }, { "type": "string", "pattern": "^retirement:v1:[0-9a-f]{64}$" }] }
+          "items": { "$ref": "#/$defs/entryId" }
         }
       }
     },

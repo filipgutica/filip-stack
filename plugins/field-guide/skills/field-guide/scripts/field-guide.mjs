@@ -981,18 +981,16 @@ const writeWatermark = ({ paths, revision }) => (
 const watermarkCurrent = ({ paths, memory }) => readWatermark(paths) === memory.revision
 
 // An older plugin may have retired, restored, deleted, or recaptured guidance since the last
-// annotation-aware write. Revoke every outstanding confirmation once, then record the revision.
-// A store without a watermark, such as one from the first annotation release, is treated the same.
+// annotation-aware write. Revoke every fingerprint in memory or annotations once, which also covers
+// confirmations still in transit, then record the revision. A store without a watermark, such as
+// one from the first annotation release, is treated the same.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
-  if (existsSync(paths.annotationsFile)) {
-    const annotations = readAnnotations(paths.annotationsFile)
-    for (const record of Object.values(annotations.records)) {
-      if (outstandingEntries({ record, entries: record.confirmations }).length > 0) revokeRecord(record)
-    }
-    writeAnnotations({ path: paths.annotationsFile, annotations })
-  }
+  const annotations = readAnnotations(paths.annotationsFile)
+  const fingerprints = new Set([...memory.guidance.map(({ fingerprint }) => fingerprint), ...Object.keys(annotations.records)])
+  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+  writeAnnotations({ path: paths.annotationsFile, annotations })
   writeWatermark({ paths, revision: memory.revision })
 }
 
@@ -1295,7 +1293,7 @@ const validateAnnotationRecord = (record) => {
   if (![record.confirmations, record.triggers, record.acknowledged].every(Array.isArray)) {
     fail('annotations record needs confirmations, triggers, and acknowledged arrays')
   }
-  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations', allowRetirements: true })
+  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations' })
   record.confirmations.forEach((entry) => validateAnnotationEntry({ entry, kind: 'confirmation' }))
   record.triggers.forEach((entry) => validateAnnotationEntry({ entry, kind: 'trigger' }))
   const ids = [...record.confirmations, ...record.triggers].map(({ id }) => id)
@@ -1378,9 +1376,14 @@ const acknowledgeEntries = ({ record, entries }) => {
 const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
 const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
 
-// A record's revocations, plus the retirement IDs that memory keeps and sync carries for shared
-// records, so a retirement or undo by a plugin without annotations also revokes.
-const revocationIds = ({ record, guidance }) => sortedUnion(record.revocations, retirementSetsOf(guidance).retirements)
+// A retirement ID enters annotations in annotation format, which the first annotation release accepts.
+const retirementRevocationId = (id) => hashIdentity({ prefix: 'annotation', values: ['retirement', id] })
+
+// A record's revocations, plus one for each retirement ID that memory keeps and sync carries for
+// shared records, so a retirement or undo by a plugin without annotations also revokes.
+const revocationIds = ({ record, guidance }) => (
+  sortedUnion(record.revocations, retirementSetsOf(guidance).retirements.map(retirementRevocationId))
+)
 
 // A confirmation counts while it is outstanding and has seen every revocation of its record.
 // Its time is metadata only, so machine clocks never decide authority.
@@ -1913,7 +1916,7 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
   const annotations = mergeAnnotations(readAnnotations(paths.annotationsFile), incoming ?? emptyAnnotations())
   for (const { fingerprint, retirements } of input.retired) {
     const record = annotationRecordFor({ annotations, fingerprint })
-    record.revocations = sortedUnion(record.revocations, retirements)
+    record.revocations = sortedUnion(record.revocations, retirements.map(retirementRevocationId))
   }
   writeAnnotations({ path: paths.annotationsFile, annotations })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
@@ -1923,9 +1926,10 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
 }
 
 // Export reconciles under the lock first, so revocations it mints reach other machines.
-const exportSharedGuidance = ({ paths, outputPath, annotationsPath }) => (
-  withMemoryLock({ paths, action: () => exportSharedGuidanceUnlocked({ paths, outputPath, annotationsPath }) })
-)
+const exportSharedGuidance = ({ paths, outputPath, annotationsPath }) => {
+  requireInitialized(paths)
+  return withMemoryLock({ paths, action: () => exportSharedGuidanceUnlocked({ paths, outputPath, annotationsPath }) })
+}
 
 const importSharedGuidance = ({ paths, inputPath, annotationsPath }) => (
   withMemoryLock({ paths, action: () => importSharedGuidanceUnlocked({ paths, inputPath, annotationsPath }) })

@@ -166,15 +166,19 @@ again. These actions add a revocation:
   An independent capture of the same text on another machine revokes too.
 
 Import mints none. It unions entries, acknowledgments, and revocations, and
-adds each exported retirement ID to its fingerprint's revocations, even without
-a local record, so machines converge in any delivery order.
+adds an ID derived from each exported retirement ID to its fingerprint's
+revocations, even without a local record, so machines converge in any delivery
+order.
 
 A plugin that predates this rule can retire, restore, delete, or recapture
 guidance without touching annotations. `annotations-watermark.json` holds the
 memory revision of the last annotation-aware write, and stays local. While
 memory has another revision, no confirmation counts. The next write by a
-current plugin, including export, first adds a revocation to every record with
-a confirmation and then records the revision, so the user confirms again. A
+current plugin, including export, first adds a revocation to every fingerprint
+in memory or annotations, which covers confirmations still in transit, and then
+records the revision, so the user confirms again. A record that an older plugin
+deleted and did not recapture renders nothing, and a later recapture by a
+current plugin adds a revocation anyway. A
 store without the watermark, such as one from the first annotation release, is
 treated the same way: confirmations do not yet grant authority, so voiding them
 costs one confirm prompt each.
