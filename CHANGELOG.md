@@ -1,3 +1,17 @@
+# [6.11.0](https://github.com/filipgutica/filip-stack/compare/v6.10.1...v6.11.0) (2026-11-17)
+
+
+### Bug Fixes
+
+* **field-guide:** inject only after a provable merge or creation ([6e7e507](https://github.com/filipgutica/filip-stack/commit/6e7e5074cb80cbf859905bc21161b33d3e2f6197)), closes [host/owner/repo#number](https://github.com/host/owner/repo/issues/number)
+* **field-guide:** read substitutions exactly and skip background commands ([1701a04](https://github.com/filipgutica/filip-stack/commit/1701a04cd564e956e0c6e013e2570debcec08ea4))
+* **field-guide:** reject option spellings and wrappers the hook cannot read ([dcdf83c](https://github.com/filipgutica/filip-stack/commit/dcdf83c72b81f67de110f2f3ac50bd0a7d775ab5))
+
+
+### Features
+
+* **field-guide:** inject guidance at merge, handoff, and compaction ([977381e](https://github.com/filipgutica/filip-stack/commit/977381e7c537bec293eaead6a13792d7d7e8b2a8))
+
 ## [6.10.1](https://github.com/filipgutica/filip-stack/compare/v6.10.0...v6.10.1) (2026-11-17)
 
 
