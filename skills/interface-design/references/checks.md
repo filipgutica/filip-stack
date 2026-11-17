@@ -33,9 +33,9 @@ For each URL, width, and theme it loads a fresh page and:
   project's own, else `language/tokens.css` in the design-system plugin when
   it is installed and you can locate it. With neither, omit `--tokens` and
   report token checking as skipped.
-- with `--count`, waits 600ms for scripts that render after load, then
-  counts what is visible on the first screen (the top 900px of the page, even when the URL scrolls it) and
-  on the whole page:
+- with `--count`, waits 600ms for scripts that render after load, scrolls
+  to the top even when the URL scrolled the page, then counts what is
+  visible on the first screen (the top 900px) and on the whole page:
   - **words**: words in visible text, including SVG text. Text that only
     screen readers get, such as an `sr-only` label, is left out, so cutting
     visible words never means cutting accessible names.

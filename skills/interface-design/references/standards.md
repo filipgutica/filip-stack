@@ -73,8 +73,7 @@ user impact.
    (craft.md)
 5. Does each word, box, and control on the screen earn its place? When you
    change a screen, compare counts from `ui-check.mjs --count` before and
-   after, and judge
-   them against the owning design system's rules for minimal screens.
+   after, and judge them against the owning design system's rules for minimal screens.
    (Nielsen 8, owning design system)
 
 ### Flow and control

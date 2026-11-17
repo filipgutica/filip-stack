@@ -105,8 +105,8 @@ const offTokenScan = (tokens) => {
   return [...found.values()]
 }
 
-// Runs in the page. Counts visible words, boxes, and controls on the first screen (elements that overlap
-// the top `screenHeight` of the page) and on the whole page. Words leave out text that only screen readers
+// Runs in the page, scrolled to the top. Counts visible words, boxes, and controls on the first screen
+// (elements that start above `screenHeight`) and on the whole page. Words leave out text that only screen readers
 // get, so cutting visible words never means cutting accessible names. Counts are evidence, not checks.
 export const countUi = (screenHeight) => {
   const wordsIn = (text) => (text.match(/[\p{L}\p{N}$%+−-]+/gu) ?? []).length
@@ -117,11 +117,9 @@ export const countUi = (screenHeight) => {
     }
     return false
   }
-  // Measured from the top of the page, so a page that scrolls on load, such as a deep link, counts the same.
   const visible = (el, bottom) => {
     const r = el.getBoundingClientRect()
-    const top = r.top + scrollY
-    return r.width > 0 && r.height > 0 && top < bottom && top + r.height > 0 && !inClosedDetails(el) && !el.closest('[hidden]') &&
+    return r.width > 0 && r.height > 0 && r.top < bottom && r.bottom > 0 && !inClosedDetails(el) && !el.closest('[hidden]') &&
       getComputedStyle(el).visibility !== 'hidden'
   }
   // The usual screen-reader-only patterns: clipped to nothing, or a box of 1px or less that hides its overflow.
@@ -163,9 +161,11 @@ export const countUi = (screenHeight) => {
   return { firstScreen: count(screenHeight), wholePage: count(Infinity) }
 }
 
-// Waits for scripts that render after load, then counts.
+// Waits for scripts that render after load, then counts from the top of the page, so a URL that scrolls
+// on load, such as a deep link, counts the same, fixed and sticky elements included.
 const countPage = async (page) => {
   await page.waitForTimeout(600)
+  await page.evaluate(() => new Promise((done) => { scrollTo({ top: 0, behavior: 'instant' }); requestAnimationFrame(() => requestAnimationFrame(done)) }))
   return page.evaluate(countUi, VIEWPORT_HEIGHT)
 }
 
