@@ -7,12 +7,13 @@ import {
   readFileSync,
   readdirSync,
   readlinkSync,
+  rmSync,
   unlinkSync,
   utimesSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { join } from 'node:path'
+import { dirname, join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
@@ -47,10 +48,10 @@ const createRepo = ({ parent, name, remote }) => {
 }
 
 // T3CODE_THREAD_ID is unset unless a test sets it, so the CLI sees a main thread.
-const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false, env = {} }) => {
+const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false, env = {}, cli = script }) => {
   const result = spawnSync(
     process.execPath,
-    [script, command, '--repo-root', repoRoot, '--guide-root', guideRoot, ...args],
+    [cli, command, '--repo-root', repoRoot, '--guide-root', guideRoot, ...args],
     { encoding: 'utf8', env: { ...process.env, T3CODE_THREAD_ID: undefined, ...env } },
   )
 
@@ -63,7 +64,7 @@ const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false, e
   return JSON.parse(result.stdout)
 }
 
-const submit = ({ repoRoot, guideRoot, input, expectFailure = false }) => {
+const submit = ({ repoRoot, guideRoot, input, expectFailure = false, cli }) => {
   const inputFile = join(guideRoot, `submission-${Math.random().toString(16).slice(2)}.json`)
   writeFileSync(inputFile, `${JSON.stringify(input)}\n`)
   return run({
@@ -72,13 +73,14 @@ const submit = ({ repoRoot, guideRoot, input, expectFailure = false }) => {
     guideRoot,
     args: ['--input', inputFile],
     expectFailure,
+    cli,
   })
 }
 
-const runInputCommand = ({ command, repoRoot, guideRoot, input, expectFailure = false }) => {
+const runInputCommand = ({ command, repoRoot, guideRoot, input, expectFailure = false, cli }) => {
   const inputFile = join(guideRoot, `${command}-${Math.random().toString(16).slice(2)}.json`)
   writeFileSync(inputFile, `${JSON.stringify(input)}\n`)
-  return run({ command, repoRoot, guideRoot, args: ['--input', inputFile], expectFailure })
+  return run({ command, repoRoot, guideRoot, args: ['--input', inputFile], expectFailure, cli })
 }
 
 const initializeMemory = ({ repoRoot, guideRoot }) => {
@@ -2261,6 +2263,7 @@ const machinePair = (name) => {
       },
       exportFiles: () => run({ command: 'export', repoRoot, guideRoot, args: ['--output', files.dotfile, '--annotations', files.annotations] }),
       importFrom: (other) => run({ command: 'import', repoRoot, guideRoot, args: ['--input', other.files.dotfile, '--annotations', other.files.annotations] }),
+      importFiles: ({ dotfile, annotations }) => run({ command: 'import', repoRoot, guideRoot, args: ['--input', dotfile, ...(annotations ? ['--annotations', annotations] : [])] }),
       transition,
       retire: (action, guidanceId) => (action === 'archive'
         ? previewed('maintain', { schemaVersion: 1, action: 'archive', targetIds: [guidanceId], reason: 'Archive.' })
@@ -2275,7 +2278,7 @@ const machinePair = (name) => {
   const guidanceId = first.learn()
   first.exportFiles()
   second.importFrom(first)
-  return { first, second, guidanceId }
+  return { first, second, guidanceId, machine, repoRoot }
 }
 
 for (const action of ['withdraw', 'archive']) {
@@ -2345,6 +2348,102 @@ test('a supersession and undo by a plugin without annotations revoke a confirmat
   second.exportFiles()
   first.importFrom(second)
   assert.equal(first.confirmed(), false)
+})
+
+// The dd51bb9 CLI predates annotations. CI checks out full history, so the commit is present.
+let olderCli
+const olderScript = () => {
+  if (olderCli) return olderCli
+  const directory = mkdtempSync(join(tmpdir(), 'field-guide-older-cli-'))
+  for (const name of ['field-guide.mjs', 'field-guide-analytics.mjs']) {
+    const source = execFileSync('git', ['show', `dd51bb9:plugins/field-guide/skills/field-guide/scripts/${name}`], { cwd: dirname(script) })
+    writeFileSync(join(directory, name), source)
+  }
+  olderCli = join(directory, 'field-guide.mjs')
+  return olderCli
+}
+
+// A guide with one confirmed record, and a learn helper that can run either CLI.
+const confirmedGuide = (name, scope) => {
+  const root = mkdtempSync(join(tmpdir(), `field-guide-older-${name}-`))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: `git@github.com:example/${name}.git` })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const learn = (learning, turnId, { cli, ...fields } = {}) => (
+    submit({ repoRoot, guideRoot, cli, input: { ...conversationSubmission({ learning, turnId, scope, explicitPreference: true }), ...fields } }).result.targetId
+  )
+  const guidanceId = learn(cleanupLearning, 'turn-1')
+  confirmByHook({ guideRoot, guidanceId })
+  const confirmed = () => renderedConfirmed({ repoRoot, guideRoot, learning: cleanupLearning })
+  assert.equal(confirmed(), true)
+  const older = (command, input) => runInputCommand({ command, repoRoot, guideRoot, cli: olderScript(), input: { schemaVersion: 1, ...input } }).result
+  return { guideRoot, guidanceId, learn, confirmed, older }
+}
+
+test('an older plugin that supersedes and undoes a confirmed project record voids the confirmation', () => {
+  const { guideRoot, guidanceId, learn, confirmed, older } = confirmedGuide('project', 'project')
+  const replacement = learn('After a merge, remove its clean worktrees without asking.', 'turn-2', { cli: olderScript(), relationship: { kind: 'refines', targetId: guidanceId } })
+  older('transition', { action: 'supersede', targetId: guidanceId, replacementId: replacement, confirmed: true, reason: 'Refined.', source: 'user' })
+  older('transition', { action: 'undo', targetId: replacement, reason: 'Undo.', source: 'user' })
+  assert.equal(confirmed(), false)
+  // The next current write revokes the old confirmation, and the user confirms again.
+  learn('Name tests after behavior.', 'turn-3')
+  assert.equal(confirmed(), false)
+  confirmByHook({ guideRoot, guidanceId })
+  assert.equal(confirmed(), true)
+})
+
+test('an older plugin that withdraws, deletes, and recaptures a confirmed shared record voids the confirmation', () => {
+  const { guidanceId, learn, confirmed, older } = confirmedGuide('shared', 'shared')
+  older('transition', { action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' })
+  const { previewToken } = older('delete', { targetId: guidanceId })
+  older('delete', { targetId: guidanceId, apply: true, previewToken })
+  assert.equal(learn(cleanupLearning, 'turn-2', { cli: olderScript() }), guidanceId)
+  assert.equal(confirmed(), false)
+})
+
+for (const retirementFirst of [true, false]) {
+  test(`an older plugin's retirement revokes a confirmation when its export arrives ${retirementFirst ? 'first' : 'last'}`, () => {
+    const { first, second, guidanceId, machine, repoRoot } = machinePair(`older-retirement-${retirementFirst}`)
+    confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+    first.exportFiles()
+    // The second machine runs the older plugin: it withdraws the record and exports no annotations.
+    runInputCommand({ command: 'transition', repoRoot, guideRoot: second.guideRoot, cli: olderScript(), input: { schemaVersion: 1, action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' } })
+    run({ command: 'export', repoRoot, guideRoot: second.guideRoot, cli: olderScript(), args: ['--output', second.files.dotfile] })
+    const fresh = machine('fresh')
+    const exports = [{ dotfile: second.files.dotfile }, first.files]
+    for (const files of retirementFirst ? exports : exports.reverse()) fresh.importFiles(files)
+    assert.equal(fresh.confirmed(), false)
+  })
+}
+
+test('a store from before the watermark voids its confirmations until the user confirms again', () => {
+  const { first, guidanceId } = machinePair('watermark-upgrade')
+  const watermark = join(first.guideRoot, 'annotations-watermark.json')
+  confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  rmSync(watermark)
+  assert.equal(first.confirmed(), false)
+  first.learn({ learning: 'Name tests after behavior.' })
+  assert.equal(first.confirmed(), false)
+  confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  assert.equal(first.confirmed(), true)
+  // Without annotations there is nothing to void, so the first confirmation counts.
+  rmSync(watermark)
+  rmSync(join(first.guideRoot, 'annotations.json'))
+  confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  assert.equal(first.confirmed(), true)
+})
+
+test('current plugins never void a confirmation through capture, export, and import', () => {
+  const { first, second, guidanceId } = machinePair('current-only')
+  confirmByHook({ guideRoot: first.guideRoot, guidanceId })
+  first.learn({ learning: 'Name tests after behavior.' })
+  first.exportFiles()
+  second.importFrom(first)
+  second.exportFiles()
+  first.importFrom(second)
+  assert.equal(first.confirmed(), true)
+  assert.equal(second.confirmed(), true)
 })
 
 test('a supersession that is undone keeps a delayed confirmation revoked', () => {

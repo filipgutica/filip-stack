@@ -162,8 +162,7 @@
       },
       "accept": [
         "unconfirm"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "no-unconfirm-for-unrelated-preference",

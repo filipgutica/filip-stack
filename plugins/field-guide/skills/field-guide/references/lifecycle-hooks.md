@@ -134,8 +134,9 @@ variable. It runs Git in `cwd` to identify the repository and reads the
 local guidance store. It does not access source files or files referenced by
 the event. It uses the prompt only as an in-memory retrieval query and to
 recognize a confirmation prompt, and never emits or persists it. A
-confirmation stores an entry ID, the time, the host, and the revocation IDs
-seen, keyed by the record's fingerprint. Hook output contains static text and stored guidance only.
+confirmation stores an entry ID, the time, the host, and the revocation and
+retirement IDs it saw, keyed by the record's fingerprint. Hook output contains
+static text and stored guidance only.
 
 Session state lives in `~/.field-guide/sessions/`, one file per SHA-256 hash of
 the session ID. It holds only injected guidance IDs and whether the next prompt

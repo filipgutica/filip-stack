@@ -169,6 +169,7 @@ const guideFilesFor = (guideRoot) => ({
   memoryIndexFile: join(guideRoot, 'memory.md'),
   memoryLockFile: join(guideRoot, 'memory.lock'),
   annotationsFile: join(guideRoot, 'annotations.json'),
+  annotationsWatermarkFile: join(guideRoot, 'annotations-watermark.json'),
 })
 
 const readIdentity = (projectIndex) => {
@@ -959,6 +960,40 @@ const writeMemoryViews = ({ paths, memory }) => {
   })
   writeTextAtomically({ path: paths.memoryIndexFile, content: renderMemoryIndex(memory) })
   writeMemoryAtomically({ paths, memory })
+  // Last, so a crash between the writes leaves a mismatch, which voids confirmations.
+  writeWatermark({ paths, revision: memory.revision })
+}
+
+// The memory revision written by the last annotation-aware writer. It stays local and never syncs.
+// Any other revision means an older plugin wrote memory since then.
+const readWatermark = (paths) => {
+  try {
+    return JSON.parse(readFileSync(paths.annotationsWatermarkFile, 'utf8')).memoryRevision
+  } catch {
+    return undefined
+  }
+}
+
+const writeWatermark = ({ paths, revision }) => (
+  writeTextAtomically({ path: paths.annotationsWatermarkFile, content: `${JSON.stringify({ memoryRevision: revision })}\n` })
+)
+
+const watermarkCurrent = ({ paths, memory }) => readWatermark(paths) === memory.revision
+
+// An older plugin may have retired, restored, deleted, or recaptured guidance since the last
+// annotation-aware write. Revoke every outstanding confirmation once, then record the revision.
+// A store without a watermark, such as one from the first annotation release, is treated the same.
+const reconcileAnnotations = (paths) => {
+  const memory = readMarkdownMemory(paths)
+  if (!memory || watermarkCurrent({ paths, memory })) return
+  if (existsSync(paths.annotationsFile)) {
+    const annotations = readAnnotations(paths.annotationsFile)
+    for (const record of Object.values(annotations.records)) {
+      if (outstandingEntries({ record, entries: record.confirmations }).length > 0) revokeRecord(record)
+    }
+    writeAnnotations({ path: paths.annotationsFile, annotations })
+  }
+  writeWatermark({ paths, revision: memory.revision })
 }
 
 // A writer waits briefly for the lock, inside the hook's five-second timeout. It removes a lock
@@ -1040,10 +1075,12 @@ const acquireLock = (lockFile) => {
   }
 }
 
-// Serializes writes to memory and annotations in one guide.
-const withMemoryLock = ({ lockFile, action }) => {
+// Serializes writes to memory and annotations in one guide, and reconciles annotations first.
+const withMemoryLock = ({ paths, action }) => {
+  const lockFile = paths.memoryLockFile
   const owner = acquireLock(lockFile)
   try {
+    reconcileAnnotations(paths)
     return action()
   } finally {
     // A lock that stale recovery handed to another writer is no longer this writer's to remove.
@@ -1151,7 +1188,7 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
 }
 
 const submitObservation = ({ paths, inputPath, inputJson }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
+  withMemoryLock({ paths, action: () => submitObservationUnlocked({ paths, inputPath, inputJson }) })
 )
 
 // Shared sync orders retirements and restores with two grow-only sets of IDs on each shared
@@ -1258,7 +1295,7 @@ const validateAnnotationRecord = (record) => {
   if (![record.confirmations, record.triggers, record.acknowledged].every(Array.isArray)) {
     fail('annotations record needs confirmations, triggers, and acknowledged arrays')
   }
-  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations' })
+  requireAnnotationIds({ ids: record.revocations, label: 'annotations record revocations', allowRetirements: true })
   record.confirmations.forEach((entry) => validateAnnotationEntry({ entry, kind: 'confirmation' }))
   record.triggers.forEach((entry) => validateAnnotationEntry({ entry, kind: 'trigger' }))
   const ids = [...record.confirmations, ...record.triggers].map(({ id }) => id)
@@ -1343,7 +1380,7 @@ const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().
 
 // A record's revocations, plus the retirement IDs that memory keeps and sync carries for shared
 // records, so a retirement or undo by a plugin without annotations also revokes.
-const revocationIds = ({ record, guidance }) => [...record.revocations, ...retirementSetsOf(guidance).retirements]
+const revocationIds = ({ record, guidance }) => sortedUnion(record.revocations, retirementSetsOf(guidance).retirements)
 
 // A confirmation counts while it is outstanding and has seen every revocation of its record.
 // Its time is metadata only, so machine clocks never decide authority.
@@ -1415,7 +1452,7 @@ const unconfirmUnlocked = ({ paths, reference }) => {
 
 /** Removes the user's confirmation of a record. It needs no approval because it only removes authority. */
 const unconfirm = ({ paths, reference }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => unconfirmUnlocked({ paths, reference }) })
+  withMemoryLock({ paths, action: () => unconfirmUnlocked({ paths, reference }) })
 )
 
 const annotateUnlocked = ({ paths, reference, triggers, removeTrigger }) => {
@@ -1439,7 +1476,7 @@ const annotateUnlocked = ({ paths, reference, triggers, removeTrigger }) => {
 
 /** Adds or removes event triggers. Triggers choose when guidance is retrieved; they grant no authority. */
 const annotate = ({ paths, reference, triggers, removeTrigger }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => annotateUnlocked({ paths, reference, triggers, removeTrigger }) })
+  withMemoryLock({ paths, action: () => annotateUnlocked({ paths, reference, triggers, removeTrigger }) })
 )
 
 const delegateThreadPrefixes = ['thread:delegated-task:', 'mcp:launch:']
@@ -1485,7 +1522,7 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:<id>`, in a main thread, confirms one active record; the result reports why
  * anything else confirms nothing. Returns null for a prompt that does not mention
  * `confirm fg:`, and for a near miss outside a main thread. Stores only an entry ID, the time,
- * the host, and the revocation IDs seen, never prompt text.
+ * the host, and the revocation and retirement IDs it saw, never prompt text.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
@@ -1496,7 +1533,7 @@ export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   if (!mainThread) return notConfirmed('only a prompt the user types in a main thread can confirm guidance')
   const files = guideFilesFor(guideRootFor(guideRoot))
   if (!existsSync(files.memoryIndexFile)) return notConfirmed('no Field Guide memory exists')
-  return withMemoryLock({ lockFile: files.memoryLockFile, action: () => confirmUnlocked({ files, reference, host }) })
+  return withMemoryLock({ paths: files, action: () => confirmUnlocked({ files, reference, host }) })
 }
 
 /** Returns one line when the store's memory or annotations are newer than this plugin reads. */
@@ -1621,7 +1658,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
 }
 
 const transitionGuidance = ({ paths, inputPath }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => transitionGuidanceUnlocked({ paths, inputPath }) })
+  withMemoryLock({ paths, action: () => transitionGuidanceUnlocked({ paths, inputPath }) })
 )
 
 const deletionPreviewToken = ({ memory, targetId }) => (
@@ -1701,7 +1738,7 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
 }
 
 const deleteGuidance = ({ paths, inputPath }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
+  withMemoryLock({ paths, action: () => deleteGuidanceUnlocked({ paths, inputPath }) })
 )
 
 const retiredStatuses = new Set(['superseded', 'withdrawn', 'archived'])
@@ -1710,7 +1747,7 @@ const portableGuidanceFields = ['subjectKey', 'linkedSubjects', 'learning', 'con
 // Shared guidance travels between machines without evidence, repository identities, or
 // relationships. Retired records travel as fingerprints with their retirement sets only, so
 // their text stays local.
-const exportSharedGuidance = ({ paths, outputPath, annotationsPath }) => {
+const exportSharedGuidanceUnlocked = ({ paths, outputPath, annotationsPath }) => {
   requireInitialized(paths)
   const memory = readMemory(paths)
   if (!memory) fail('Field-guide memory is not initialized; run init first')
@@ -1871,15 +1908,27 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
   const setsChanged = mergeRetirementSets({ entries: input.retired, local })
   addActiveRecords({ memory, input, local, now, result })
   reconcileSharedStatus({ memory, now, result })
-  if (incoming) writeAnnotations({ path: paths.annotationsFile, annotations: mergeAnnotations(readAnnotations(paths.annotationsFile), incoming) })
+  // Exported retirement IDs revoke too, even for a fingerprint without a local record, so the
+  // result does not depend on which export arrives first.
+  const annotations = mergeAnnotations(readAnnotations(paths.annotationsFile), incoming ?? emptyAnnotations())
+  for (const { fingerprint, retirements } of input.retired) {
+    const record = annotationRecordFor({ annotations, fingerprint })
+    record.revocations = sortedUnion(record.revocations, retirements)
+  }
+  writeAnnotations({ path: paths.annotationsFile, annotations })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
   return result
 }
 
+// Export reconciles under the lock first, so revocations it mints reach other machines.
+const exportSharedGuidance = ({ paths, outputPath, annotationsPath }) => (
+  withMemoryLock({ paths, action: () => exportSharedGuidanceUnlocked({ paths, outputPath, annotationsPath }) })
+)
+
 const importSharedGuidance = ({ paths, inputPath, annotationsPath }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => importSharedGuidanceUnlocked({ paths, inputPath, annotationsPath }) })
+  withMemoryLock({ paths, action: () => importSharedGuidanceUnlocked({ paths, inputPath, annotationsPath }) })
 )
 
 const fitWholeRecords = ({ records, maxRecords, maxBytes }) => {
@@ -2118,7 +2167,12 @@ const readInjectionMemory = ({ repoRoot, guideRoot, mainThread }) => {
   const memory = readMemory(paths)
   if (!memory) return null
   const annotations = readAnnotationsForDisplay(paths.annotationsFile)
-  const lineFor = (guidance) => injectionLine({ guidance, markers: displayMarkers({ annotations, guidance, mainThread }) })
+  // After an older plugin wrote memory, no confirmation counts until a current write reconciles.
+  const current = watermarkCurrent({ paths, memory })
+  const lineFor = (guidance) => {
+    const markers = displayMarkers({ annotations, guidance, mainThread })
+    return injectionLine({ guidance, markers: { ...markers, confirmed: markers.confirmed && current } })
+  }
   return { paths, applicable: applicableGuidance({ memory, paths }), lineFor }
 }
 
@@ -2447,7 +2501,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
 }
 
 const maintain = ({ paths, inputPath }) => (
-  withMemoryLock({ lockFile: paths.memoryLockFile, action: () => maintainUnlocked({ paths, inputPath }) })
+  withMemoryLock({ paths, action: () => maintainUnlocked({ paths, inputPath }) })
 )
 
 const initialize = (paths) => {
