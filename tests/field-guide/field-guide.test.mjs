@@ -2269,6 +2269,11 @@ const machinePair = (name) => {
         ? previewed('maintain', { schemaVersion: 1, action: 'archive', targetIds: [guidanceId], reason: 'Archive.' })
         : transition({ action, targetId: guidanceId })),
       remove: (guidanceId) => previewed('delete', { schemaVersion: 1, targetId: guidanceId }),
+      olderRemove: (guidanceId) => {
+        const older = (command, input) => runInputCommand({ command, repoRoot, guideRoot, cli: olderScript(), input: { schemaVersion: 1, ...input } }).result
+        older('transition', { action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' })
+        older('delete', { targetId: guidanceId, apply: true, previewToken: older('delete', { targetId: guidanceId }).previewToken })
+      },
       unconfirm: (guidanceId) => run({ command: 'unconfirm', repoRoot, guideRoot, args: ['--id', guidanceId] }),
       confirmed: () => renderedConfirmed({ repoRoot, guideRoot, learning: cleanupLearning }),
     }
@@ -2397,15 +2402,6 @@ test('an older plugin that supersedes and undoes a confirmed project record void
   assert.equal(confirmed(), true)
 })
 
-test('an older plugin that withdraws, deletes, and recaptures a confirmed shared record voids the confirmation', () => {
-  const { guidanceId, learn, confirmed, older } = confirmedGuide('shared', 'shared')
-  older('transition', { action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' })
-  const { previewToken } = older('delete', { targetId: guidanceId })
-  older('delete', { targetId: guidanceId, apply: true, previewToken })
-  assert.equal(learn(cleanupLearning, 'turn-2', { cli: olderScript() }), guidanceId)
-  assert.equal(confirmed(), false)
-})
-
 for (const retirementFirst of [true, false]) {
   test(`an older plugin's retirement revokes a confirmation when its export arrives ${retirementFirst ? 'first' : 'last'}`, () => {
     const { first, second, guidanceId, machine, repoRoot } = machinePair(`older-retirement-${retirementFirst}`)
@@ -2421,17 +2417,30 @@ for (const retirementFirst of [true, false]) {
   })
 }
 
-test('a reconcile revokes a confirmation that arrives after an older plugin recaptured the record', () => {
-  const { first, second, guidanceId, repoRoot } = machinePair('older-in-transit')
-  confirmByHook({ guideRoot: second.guideRoot, guidanceId })
+test('an older plugin that withdraws, deletes, and recaptures a confirmed shared record revokes it everywhere', () => {
+  const { first, second, guidanceId } = machinePair('older-in-transit')
+  for (const { guideRoot } of [first, second]) confirmByHook({ guideRoot, guidanceId })
   second.exportFiles()
-  const older = (command, input) => runInputCommand({ command, repoRoot, guideRoot: first.guideRoot, cli: olderScript(), input: { schemaVersion: 1, ...input } }).result
-  older('transition', { action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' })
-  older('delete', { targetId: guidanceId, apply: true, previewToken: older('delete', { targetId: guidanceId }).previewToken })
+  first.olderRemove(guidanceId)
   first.learn({}, olderScript())
+  assert.equal(first.confirmed(), false)
   first.exportFiles()
+  second.importFrom(first)
+  assert.equal(second.confirmed(), false)
   first.importFrom(second)
   assert.equal(first.confirmed(), false)
+})
+
+test('an import after an older plugin deleted a record revokes the confirmation it brings back', () => {
+  const { first, second, guidanceId, machine } = machinePair('older-delete-import')
+  confirmByHook({ guideRoot: second.guideRoot, guidanceId })
+  second.exportFiles()
+  const third = machine('third')
+  third.importFiles({ dotfile: first.files.dotfile })
+  third.olderRemove(guidanceId)
+  third.exportFiles()
+  third.importFrom(second)
+  assert.equal(third.confirmed(), false)
 })
 
 test('a sidecar that imported a retirement stays valid for the first annotation release', () => {

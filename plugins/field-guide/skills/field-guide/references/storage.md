@@ -171,17 +171,18 @@ revocations, even without a local record, so machines converge in any delivery
 order.
 
 A plugin that predates this rule can retire, restore, delete, or recapture
-guidance without touching annotations. `annotations-watermark.json` holds the
-memory revision of the last annotation-aware write, and stays local. While
-memory has another revision, no confirmation counts. The next write by a
-current plugin, including export, first adds a revocation to every fingerprint
-in memory or annotations, which covers confirmations still in transit, and then
-records the revision, so the user confirms again. A record that an older plugin
-deleted and did not recapture renders nothing, and a later recapture by a
-current plugin adds a revocation anyway. A
-store without the watermark, such as one from the first annotation release, is
-treated the same way: confirmations do not yet grant authority, so voiding them
-costs one confirm prompt each.
+guidance without touching annotations. `annotations-watermark.json` stays
+local and holds the memory revision of the last annotation-aware write; a crash
+between the memory and watermark writes leaves a mismatch. While memory has
+another revision, no confirmation counts. The next locked command of a current
+plugin, including export and a delete or archive preview, first revokes every
+fingerprint in memory or annotations, which covers confirmations in transit,
+then records the revision and marks an import pending. The next import revokes
+every fingerprint again after it merges, so a record that an older plugin
+deleted returns unconfirmed, and a current plugin's recapture revokes anyway.
+The user confirms again. A store without the watermark, such as one from the
+first annotation release, is treated the same way: confirmations do not yet
+grant authority, so voiding them costs one confirm prompt each.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a

@@ -965,20 +965,26 @@ const writeMemoryViews = ({ paths, memory }) => {
 }
 
 // The memory revision written by the last annotation-aware writer. It stays local and never syncs.
-// Any other revision means an older plugin wrote memory since then.
+// Any other revision means an older plugin wrote memory since then. pendingImport stays set until
+// an import revokes what it brings back, since an older delete leaves no fingerprint to revoke.
 const readWatermark = (paths) => {
   try {
-    return JSON.parse(readFileSync(paths.annotationsWatermarkFile, 'utf8')).memoryRevision
+    return JSON.parse(readFileSync(paths.annotationsWatermarkFile, 'utf8'))
   } catch {
-    return undefined
+    return {}
   }
 }
 
-const writeWatermark = ({ paths, revision }) => (
-  writeTextAtomically({ path: paths.annotationsWatermarkFile, content: `${JSON.stringify({ memoryRevision: revision })}\n` })
+const writeWatermark = ({ paths, revision, pendingImport = readWatermark(paths).pendingImport }) => (
+  writeTextAtomically({ path: paths.annotationsWatermarkFile, content: `${JSON.stringify({ memoryRevision: revision, ...(pendingImport ? { pendingImport } : {}) })}\n` })
 )
 
-const watermarkCurrent = ({ paths, memory }) => readWatermark(paths) === memory.revision
+const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevision === memory.revision
+
+const revokeEveryFingerprint = ({ memory, annotations }) => {
+  const fingerprints = new Set([...memory.guidance.map(({ fingerprint }) => fingerprint), ...Object.keys(annotations.records)])
+  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+}
 
 // An older plugin may have retired, restored, deleted, or recaptured guidance since the last
 // annotation-aware write. Revoke every fingerprint in memory or annotations once, which also covers
@@ -988,10 +994,9 @@ const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
   const annotations = readAnnotations(paths.annotationsFile)
-  const fingerprints = new Set([...memory.guidance.map(({ fingerprint }) => fingerprint), ...Object.keys(annotations.records)])
-  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+  revokeEveryFingerprint({ memory, annotations })
   writeAnnotations({ path: paths.annotationsFile, annotations })
-  writeWatermark({ paths, revision: memory.revision })
+  writeWatermark({ paths, revision: memory.revision, pendingImport: true })
 }
 
 // A writer waits briefly for the lock, inside the hook's five-second timeout. It removes a lock
@@ -1525,7 +1530,7 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:<id>`, in a main thread, confirms one active record; the result reports why
  * anything else confirms nothing. Returns null for a prompt that does not mention
  * `confirm fg:`, and for a near miss outside a main thread. Stores only an entry ID, the time,
- * the host, and the revocation and retirement IDs it saw, never prompt text.
+ * the host, and the revocation IDs it saw, some derived from retirement IDs, never prompt text.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
@@ -1918,7 +1923,10 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
     const record = annotationRecordFor({ annotations, fingerprint })
     record.revocations = sortedUnion(record.revocations, retirements.map(retirementRevocationId))
   }
-  writeAnnotations({ path: paths.annotationsFile, annotations })
+  const { pendingImport } = readWatermark(paths)
+  if (pendingImport) revokeEveryFingerprint({ memory, annotations })
+  if (Object.keys(annotations.records).length > 0) writeAnnotations({ path: paths.annotationsFile, annotations })
+  if (pendingImport) writeWatermark({ paths, revision: memory.revision, pendingImport: false })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
