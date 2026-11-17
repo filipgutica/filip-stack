@@ -77,7 +77,9 @@ Then a **Decided for you** list: one line per open decision settled without me s
 
 Then a **Waiting on you** list: each decision, approval, or manual step I owe, numbered, with your recommendation. Give a command I can paste when a step needs one. Write "Nothing" when the work is complete and the list is empty.
 
-End with a **Ready to close** line that tells me whether I can close this thread. Write `**Ready to close:** Yes` when **Waiting on you** is "Nothing" and no table row has a next step left. Otherwise write `**Ready to close:** No, <what still holds it open>`. A row that closing the thread handles by itself, such as removing this thread's own worktree, does not hold it open.
+End with a **Ready to close** line that tells me whether I can close this thread. Write `**Ready to close:** Yes` only when **Waiting on you** is "Nothing", the requested outcome is complete, and closing the thread safely handles any remaining table steps. If the goal is to ship a PR, confirm it merged.
+
+Otherwise write `**Ready to close:** No, <what still holds it open>`. If the only copy of requested changes is uncommitted or on a local branch, write `No` and name that state, even when local checks passed and **Waiting on you** is "Nothing". Count removal of a clean worktree as automatic cleanup only if the host handles it on close and removal preserves all work.
 
 ## Skills and delegation
 
