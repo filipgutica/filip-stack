@@ -160,7 +160,12 @@ When `XDG_CONFIG_HOME` is set and non-empty, the path is
 `XDG_CONFIG_HOME` unset or empty, the path is
 `<dir>/.config/filip-stack/field-guide.json`.
 
-`field-guide-sync` creates the file's directory when it exports, and it leaves
+User confirmations and event triggers live in `field-guide-annotations.json` in
+the same directory. `apply` imports it when it exists, and `field-guide-sync`
+imports it and exports to it beside `field-guide.json`. Both imports are
+validated before they change the guide.
+
+`field-guide-sync` creates the files' directory when it exports, and it leaves
 the repository unchanged.
 
 To migrate existing preferences, run these commands on a machine that already
@@ -168,14 +173,14 @@ has them in `~/.field-guide`:
 
 ```sh
 filip-stack field-guide-sync
-chezmoi add ~/.config/filip-stack/field-guide.json
+chezmoi add ~/.config/filip-stack/field-guide.json ~/.config/filip-stack/field-guide-annotations.json
 ```
 
-If you set `XDG_CONFIG_HOME`, use the path printed by `field-guide-sync` in the
+If you set `XDG_CONFIG_HOME`, use the paths printed by `field-guide-sync` in the
 `chezmoi add` command. Review the export before syncing it: it carries every
 active shared learning.
 
-chezmoi keeps its own copy of the file, so run `chezmoi re-add` after each
+chezmoi keeps its own copy of each file, so run `chezmoi re-add` after each
 update or sync. Run `chezmoi update` first: the sync then merges the other
 machines' guidance, and chezmoi has no conflict to report.
 

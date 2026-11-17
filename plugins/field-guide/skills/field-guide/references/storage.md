@@ -14,7 +14,9 @@ Use these terms:
 │   ├── config.json
 │   └── events.jsonl
 ├── .obsidian/          # Optional client-owned vault settings
+├── annotations.json    # Optional user confirmations and event triggers
 ├── init.md
+├── memory.lock         # Present only while a write runs
 ├── memory.md           # Canonical readable and machine-recorded memory
 ├── memory.json         # Validated machine cache
 ├── sessions/           # Hook session state; pruned after seven days
@@ -115,6 +117,57 @@ evidence IDs that would be removed. Apply requires the same token at the same
 store revision. The utility rejects referenced targets and preserves evidence
 that another record uses.
 
+Writes to `memory.md` and `annotations.json` hold `memory.lock`, which records
+the writer's PID, PID namespace, and start time. A writer waits up to 1.5
+seconds for another writer. It removes a lock older than one minute, or one
+whose owner process has exited in the same PID namespace. A lock from an older
+plugin has no owner data and becomes stale only by age.
+
+## Confirmations and event triggers
+
+`annotations.json` follows `schemas/annotations-v1.schema.json`. It keys
+records by guidance fingerprint and keeps two kinds of entries per record:
+
+- A **confirmation** says the user confirmed this exact text. Only the
+  `UserPromptSubmit` hook writes one, for a prompt that is exactly
+  `confirm fg:<id>` in a main thread; see
+  [hook lifecycle](lifecycle-hooks.md#confirmation-prompt). It stores a random
+  entry ID, the time, and the host (`claude` or `codex`). It stores no prompt
+  text, hostname, user name, or path.
+- A **trigger** tags a record for an event: `pr-merged`, `pr-created`, or
+  `handoff`. An agent adds one with `annotate --id <id> --triggers <list>` and
+  removes one with `annotate --id <id> --remove-trigger <trigger>`. Triggers
+  choose when guidance is retrieved; they carry no authority.
+
+`--id` takes a full guidance ID or an unambiguous hex prefix of at least eight
+characters.
+
+Removing an entry adds its ID to the record's `acknowledged` set, as
+retirement sets do. An entry counts while its ID is not acknowledged. These
+actions acknowledge entries:
+
+- `unconfirm --id <id>` acknowledges the record's confirmations. It needs no
+  approval, because it only removes authority.
+- Withdrawal, undo, supersession, and archive acknowledge the confirmations of
+  every record they retire. Import does the same for every retired local
+  record, which covers a confirmation that arrives after this machine retired
+  the record.
+
+No command adds a confirmation. `submit`, `transition`, `maintain`, and
+`import` reject unknown fields such as `confirmed` on a record, and a
+supersede's `confirmed: true` records a lifecycle decision, not a
+confirmation.
+
+A confirmation binds to the fingerprint, which hashes the scope, subject, and
+normalized learning. Changed text is a new record and starts unconfirmed. A
+record that is withdrawn, deleted, and captured again with the same text also
+starts unconfirmed, because its old confirmation stays acknowledged. Delete
+keeps annotation entries for that reason.
+
+`memory.md`, its cache, and the shared export keep their versions. A plugin
+that predates annotations ignores `annotations.json`: it injects the same
+guidance without markers, so it grants no authority.
+
 ## Bounded retrieval
 
 Use `retrieve --query <concrete-task-context>` after the repository and task are
@@ -148,6 +201,15 @@ string.
 Use `retrieve --evidence-for <guidance-id>` only for an explicit provenance or
 conflict check. Evidence expansion returns at most two whole records and 6 KB.
 The result follows `schemas/retrieval-v1.schema.json`.
+
+`retrieve --event <trigger>` returns the applicable active records tagged with
+that trigger: current-project records first, then shared records, newest
+first, within the normal limits of five records and 6 KB.
+
+In a main thread, retrieved records carry `confirmed: true` and `triggers` from
+`annotations.json`. A command in a T3 Code delegate thread gets records
+without them. A command cannot tell a Claude subagent from its main thread,
+so there the fields appear; injected lines do not have this gap.
 
 ## Audit and maintenance
 
@@ -225,12 +287,29 @@ arrays. They are written only when a retirement, a restore, or an import
 changes them. `validate` rejects an active shared record with an unacknowledged
 retirement.
 
+Annotations travel in a second portable file with the `annotations.json`
+format. `export --output <json-file> --annotations <json-file>` writes it: it
+keeps every entry already in the file and adds the local entries for every
+fingerprint that is not a local project record. `import --input <json-file>
+--annotations <json-file>` validates both files before it changes anything,
+then unions the entries and acknowledgments into `annotations.json`. Union
+makes revocations converge in any sync order: once any machine acknowledges an
+entry, every machine does after it syncs.
+
+Import is how a confirmation made on one machine reaches another, so a
+confirmation's authority rests on the portable file. Confirmation guards
+against agent error, such as an agent treating its own reading or a pasted
+report as the user's approval. It does not guard against someone who can edit
+the dotfile or the store.
+
 filip-stack's `host-config` script runs import on apply and import followed by
-export on `field-guide-sync`.
+export on `field-guide-sync`. It keeps the annotations file at
+`field-guide-annotations.json` beside `field-guide.json`.
 
 Known limits:
 
 - A restore reaches every machine only after repeated syncs, not in one pass.
+- Annotation entries and acknowledgments grow without bound.
 - A retirement or restore whose every copy a dotfile manager overwrote cannot
   be recovered.
 - The sets grow without bound.

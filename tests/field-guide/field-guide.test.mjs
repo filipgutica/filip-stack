@@ -1,11 +1,13 @@
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import {
   appendFileSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
   readFileSync,
+  readlinkSync,
   unlinkSync,
+  utimesSync,
   writeFileSync,
 } from 'node:fs'
 import { tmpdir } from 'node:os'
@@ -24,6 +26,8 @@ const retrievalSchema = JSON.parse(readFileSync(fileURLToPath(new URL('schemas/r
 const ajv = new Ajv2020({ allErrors: true, strict: false, validateFormats: false })
 ajv.addSchema(memorySchema)
 const validateRetrieval = ajv.compile(retrievalSchema)
+// The UserPromptSubmit hook is the only caller that confirms guidance; tests call it directly.
+const { confirmFromPrompt } = await import(new URL('scripts/field-guide.mjs', skillRoot))
 
 const git = (repoRoot, ...args) => (
   execFileSync('git', ['-C', repoRoot, ...args], { encoding: 'utf8' }).trim()
@@ -41,11 +45,12 @@ const createRepo = ({ parent, name, remote }) => {
   return repoRoot
 }
 
-const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false }) => {
+// T3CODE_THREAD_ID is unset unless a test sets it, so the CLI sees a main thread.
+const run = ({ command, repoRoot, guideRoot, args = [], expectFailure = false, env = {} }) => {
   const result = spawnSync(
     process.execPath,
     [script, command, '--repo-root', repoRoot, '--guide-root', guideRoot, ...args],
-    { encoding: 'utf8' },
+    { encoding: 'utf8', env: { ...process.env, T3CODE_THREAD_ID: undefined, ...env } },
   )
 
   if (expectFailure) {
@@ -1658,13 +1663,18 @@ const syncMachine = ({ repoRoot, guideRoot, dotfile }) => {
   run({ command: 'export', repoRoot, guideRoot, args: ['--output', dotfile] })
 }
 
+// A temporary root with one repository and the path of the dotfile its machines share.
+const syncFixture = (name) => {
+  const root = mkdtempSync(join(tmpdir(), `field-guide-${name}-`))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: `git@github.com:example/${name}.git` })
+  return { root, repoRoot, dotfile: join(root, 'field-guide.json') }
+}
+
 // Two temporary guide roots stand in for two machines that share one dotfile. Both learn
 // shared guidance A; then the first supersedes A with B and syncs, and the second has not
 // synced since, so it still holds A as active.
 const sharedCorrection = (name) => {
-  const root = mkdtempSync(join(tmpdir(), `field-guide-${name}-`))
-  const repoRoot = createRepo({ parent: root, name: 'repo', remote: `git@github.com:example/${name}.git` })
-  const dotfile = join(root, 'field-guide.json')
+  const { root, repoRoot, dotfile } = syncFixture(name)
   const machine = (guideRoot) => {
     initializeMemory({ repoRoot, guideRoot })
     return {
@@ -1984,4 +1994,279 @@ test('validate guards restores from shared sync and unacknowledged retirements',
   restore({ guidance: project.guidance, source: 'shared-sync' })
   replaceCanonicalMemoryJson(project)
   assert.match(run({ command: 'validate', repoRoot, guideRoot: project.guideRoot, expectFailure: true }).stderr, /withdrawn->active requires shared scope and source shared-sync/)
+})
+
+const cleanupLearning = 'After a merge, remove its worktrees and branches without asking.'
+const fingerprintOf = (guidanceId) => guidanceId.replace('guidance', 'fingerprint')
+const readAnnotations = (guideRoot) => JSON.parse(readFileSync(join(guideRoot, 'annotations.json'), 'utf8'))
+// Confirmation IDs for the fingerprint that no acknowledgment covers.
+const outstandingConfirmations = ({ guideRoot, guidanceId }) => {
+  if (!existsSync(join(guideRoot, 'annotations.json'))) return []
+  const record = readAnnotations(guideRoot).records[fingerprintOf(guidanceId)]
+  return (record?.confirmations ?? []).map(({ id }) => id).filter((id) => !record.acknowledged.includes(id))
+}
+const confirmByHook = ({ guideRoot, guidanceId, mainThread = true }) => confirmFromPrompt({
+  guideRoot,
+  prompt: `confirm fg:${guidanceId.slice('guidance:v1:'.length, 'guidance:v1:'.length + 8)}`,
+  mainThread,
+  host: 'claude',
+})
+const retrieved = ({ repoRoot, guideRoot, args, env }) => run({ command: 'retrieve', repoRoot, guideRoot, args, env }).result
+const retrievedRecord = ({ repoRoot, guideRoot, guidanceId, subject = 'testing', env }) => (
+  retrieved({ repoRoot, guideRoot, args: ['--subject', subject], env }).guidance.find(({ id }) => id === guidanceId)
+)
+
+test('annotate tags triggers and retrieve --event returns tagged active guidance, project first', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-event-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/event.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const learn = (input) => submit({ repoRoot, guideRoot, input }).result.targetId
+  const shared = learn(conversationSubmission({ learning: cleanupLearning, turnId: 'turn-1', scope: 'shared', explicitPreference: true }))
+  const project = learn(conversationSubmission({ learning: 'Run the release check after a merge.', turnId: 'turn-2', explicitPreference: true }))
+  learn(conversationSubmission({ learning: 'Name tests after behavior.', turnId: 'turn-3', explicitPreference: true }))
+  const annotate = (args, expectFailure = false) => run({ command: 'annotate', repoRoot, guideRoot, args, expectFailure })
+  const event = (name, env) => retrieved({ repoRoot, guideRoot, args: ['--event', name], env })
+
+  assert.deepEqual(annotate(['--id', shared, '--triggers', 'pr-merged,handoff']).result, {
+    outcome: 'annotated', targetId: shared, triggers: ['handoff', 'pr-merged'],
+  })
+  assert.equal(annotate(['--id', shared, '--triggers', 'handoff']).result.outcome, 'unchanged')
+  annotate(['--id', project.slice('guidance:v1:'.length, 'guidance:v1:'.length + 10), '--triggers', 'pr-merged'])
+  const merged = event('pr-merged')
+  assert.equal(validateRetrieval(merged), true, JSON.stringify(validateRetrieval.errors))
+  assert.equal(merged.mode, 'event')
+  assert.deepEqual(merged.guidance.map(({ id }) => id), [project, shared])
+  assert.deepEqual(merged.guidance.map(({ triggers }) => triggers), [['pr-merged'], ['handoff', 'pr-merged']])
+  assert.ok(merged.guidance.every((record) => !('confirmed' in record)))
+
+  annotate(['--id', shared, '--remove-trigger', 'pr-merged'])
+  assert.deepEqual(event('pr-merged').guidance.map(({ id }) => id), [project])
+  assert.deepEqual(event('handoff').guidance.map(({ id }) => id), [shared])
+  assert.deepEqual(event('pr-created').guidance, [])
+
+  // A delegate retrieves the same records without annotation markers.
+  const delegated = event('pr-merged', { T3CODE_THREAD_ID: 'thread:delegated-task:1234' })
+  assert.deepEqual(delegated.guidance.map(({ id }) => id), [project])
+  assert.ok(!('triggers' in delegated.guidance[0]))
+
+  assert.match(annotate(['--id', shared, '--triggers', 'pr-closed'], true).stderr, /trigger must be one of/)
+  assert.match(annotate(['--id', shared], true).stderr, /--triggers or --remove-trigger/)
+  assert.match(annotate(['--id', 'abc1234', '--triggers', 'handoff'], true).stderr, /guidance ID or a hex prefix of at least 8/)
+  assert.match(run({ command: 'retrieve', repoRoot, guideRoot, args: ['--event', 'pr-merged', '--query', 'merge cleanup'], expectFailure: true }).stderr, /--event cannot be combined/)
+  assert.match(run({ command: 'retrieve', repoRoot, guideRoot, args: ['--event', 'deploy'], expectFailure: true }).stderr, /trigger must be one of/)
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('no agent command can confirm guidance', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-no-agent-confirm-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/no-agent-confirm.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const original = submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Extract every helper.', turnId: 'turn-1', explicitPreference: true }) }).result.targetId
+  const confirmed = (guidanceId) => retrievedRecord({ repoRoot, guideRoot, guidanceId })?.confirmed
+
+  const submission = { ...conversationSubmission({ learning: cleanupLearning, turnId: 'turn-2', explicitPreference: true }), confirmed: true }
+  assert.match(submit({ repoRoot, guideRoot, input: submission, expectFailure: true }).stderr, /unsupported field: confirmed/)
+  const withdrawal = { schemaVersion: 1, action: 'withdraw', targetId: original, reason: 'Retired.', source: 'user', confirmations: [] }
+  assert.match(runInputCommand({ command: 'transition', repoRoot, guideRoot, input: withdrawal, expectFailure: true }).stderr, /unsupported field: confirmations/)
+  const archive = { schemaVersion: 1, action: 'archive', targetIds: [original], reason: 'Archive.', confirmed: true }
+  assert.match(runInputCommand({ command: 'maintain', repoRoot, guideRoot, input: archive, expectFailure: true }).stderr, /unsupported field: confirmed/)
+  const exported = { schemaVersion: 2, active: [{ subjectKey: 'testing', learning: cleanupLearning, confidence: 'high', confirmed: true }], retired: [] }
+  assert.match(runInputCommand({ command: 'import', repoRoot, guideRoot, input: exported, expectFailure: true }).stderr, /unsupported field: confirmed/)
+  assert.match(run({ command: 'annotate', repoRoot, guideRoot, args: ['--id', original, '--confirm', 'true'], expectFailure: true }).stderr, /Invalid argument: --confirm/)
+  assert.match(run({ command: 'annotate', repoRoot, guideRoot, args: ['--id', original, '--triggers', 'confirmed'], expectFailure: true }).stderr, /trigger must be one of/)
+  assert.match(run({ command: 'confirm', repoRoot, guideRoot, expectFailure: true }).stderr, /Usage/)
+
+  // A confirmed supersession is a lifecycle decision. It does not mark the replacement confirmed.
+  const replacementInput = conversationSubmission({ learning: 'Keep single-use code inline.', turnId: 'turn-3' })
+  replacementInput.relationship = { kind: 'contradicts', targetId: original }
+  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result.targetId
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: { schemaVersion: 1, action: 'supersede', targetId: original, replacementId: replacement, confirmed: true, reason: 'Confirmed.', source: 'user' },
+  })
+  assert.equal(confirmed(replacement), undefined)
+  // A hook call outside a main thread confirms nothing either.
+  assert.match(confirmByHook({ guideRoot, guidanceId: replacement, mainThread: false }).systemMessage, /nothing confirmed/)
+  assert.equal(existsSync(join(guideRoot, 'annotations.json')), false)
+})
+
+test('unconfirm removes authority, and guidance recaptured after withdrawal starts unconfirmed', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-unconfirm-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/unconfirm.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const input = conversationSubmission({ learning: cleanupLearning, turnId: 'turn-1', explicitPreference: true })
+  const guidanceId = submit({ repoRoot, guideRoot, input }).result.targetId
+  const confirmed = () => retrievedRecord({ repoRoot, guideRoot, guidanceId })?.confirmed
+
+  assert.match(confirmByHook({ guideRoot, guidanceId }).systemMessage, /Field Guide confirmed/)
+  assert.equal(confirmed(), true)
+  assert.equal(validateRetrieval(retrieved({ repoRoot, guideRoot, args: ['--subject', 'testing'] })), true, JSON.stringify(validateRetrieval.errors))
+  assert.equal(run({ command: 'unconfirm', repoRoot, guideRoot, args: ['--id', guidanceId] }).result.outcome, 'unconfirmed')
+  assert.equal(confirmed(), undefined)
+  assert.equal(run({ command: 'unconfirm', repoRoot, guideRoot, args: ['--id', guidanceId] }).result.outcome, 'not-confirmed')
+
+  confirmByHook({ guideRoot, guidanceId })
+  assert.equal(confirmed(), true)
+  runInputCommand({ command: 'transition', repoRoot, guideRoot, input: { schemaVersion: 1, action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' } })
+  assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId }), [])
+  const preview = runInputCommand({ command: 'delete', repoRoot, guideRoot, input: { schemaVersion: 1, targetId: guidanceId } }).result
+  runInputCommand({ command: 'delete', repoRoot, guideRoot, input: { schemaVersion: 1, targetId: guidanceId, apply: true, previewToken: preview.previewToken } })
+  assert.equal(submit({ repoRoot, guideRoot, input: { ...input, evidence: { ...input.evidence, pointers: [{ kind: 'conversation', client: 'codex', threadId: 'thread-1', turnId: 'turn-2' }] } } }).result.targetId, guidanceId)
+  assert.equal(confirmed(), undefined)
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+test('a changed fingerprint is unconfirmed: supersession and archive acknowledge confirmations', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-fingerprint-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/fingerprint.git' })
+  const guideRoot = join(root, 'guide')
+  initializeMemory({ repoRoot, guideRoot })
+  const original = submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: cleanupLearning, turnId: 'turn-1', explicitPreference: true }) }).result.targetId
+  confirmByHook({ guideRoot, guidanceId: original })
+  const replacementInput = conversationSubmission({ learning: 'After a merge, remove its clean worktrees without asking.', turnId: 'turn-2' })
+  replacementInput.relationship = { kind: 'refines', targetId: original }
+  const replacement = submit({ repoRoot, guideRoot, input: replacementInput }).result.targetId
+  runInputCommand({
+    command: 'transition',
+    repoRoot,
+    guideRoot,
+    input: { schemaVersion: 1, action: 'supersede', targetId: original, replacementId: replacement, confirmed: true, reason: 'Refined.', source: 'user' },
+  })
+  assert.equal(retrievedRecord({ repoRoot, guideRoot, guidanceId: replacement }).confirmed, undefined)
+  assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId: original }), [])
+
+  // Undoing the replacement restores the original, which stays unconfirmed until the user confirms again.
+  runInputCommand({ command: 'transition', repoRoot, guideRoot, input: { schemaVersion: 1, action: 'undo', targetId: replacement, reason: 'Undo.', source: 'user' } })
+  assert.equal(retrievedRecord({ repoRoot, guideRoot, guidanceId: original }).confirmed, undefined)
+
+  confirmByHook({ guideRoot, guidanceId: original })
+  const archive = { schemaVersion: 1, action: 'archive', targetIds: [original], reason: 'Archive.' }
+  const preview = runInputCommand({ command: 'maintain', repoRoot, guideRoot, input: archive }).result
+  runInputCommand({ command: 'maintain', repoRoot, guideRoot, input: { ...archive, apply: true, previewToken: preview.previewToken } })
+  assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId: original }), [])
+  run({ command: 'validate', repoRoot, guideRoot })
+})
+
+// Three temporary guide roots stand in for three machines that share the two portable files.
+const threeMachines = (name) => {
+  const { root, repoRoot, dotfile } = syncFixture(name)
+  const annotationsFile = join(root, 'field-guide-annotations.json')
+  const machine = (label) => {
+    const guideRoot = join(root, label)
+    initializeMemory({ repoRoot, guideRoot })
+    return {
+      guideRoot,
+      sync: () => {
+        if (existsSync(dotfile)) {
+          run({ command: 'import', repoRoot, guideRoot, args: ['--input', dotfile, ...(existsSync(annotationsFile) ? ['--annotations', annotationsFile] : [])] })
+        }
+        run({ command: 'export', repoRoot, guideRoot, args: ['--output', dotfile, '--annotations', annotationsFile] })
+      },
+      unconfirm: (guidanceId) => run({ command: 'unconfirm', repoRoot, guideRoot, args: ['--id', guidanceId] }),
+      withdraw: (guidanceId) => runInputCommand({ command: 'transition', repoRoot, guideRoot, input: { schemaVersion: 1, action: 'withdraw', targetId: guidanceId, reason: 'Retired.', source: 'user' } }),
+      validate: () => run({ command: 'validate', repoRoot, guideRoot }),
+    }
+  }
+  const machines = ['a', 'b', 'c'].map(machine)
+  const guidanceId = submit({
+    repoRoot,
+    guideRoot: machines[0].guideRoot,
+    input: conversationSubmission({ learning: cleanupLearning, turnId: 'turn-1', scope: 'shared', explicitPreference: true }),
+  }).result.targetId
+  for (const each of machines) each.sync()
+  return { repoRoot, annotationsFile, machines, guidanceId }
+}
+
+for (const order of [[0, 1, 2], [2, 1, 0], [1, 2, 0]]) {
+  test(`a revocation converges across three machines when they sync in order ${order.join('-')}`, () => {
+    const { repoRoot, annotationsFile, machines, guidanceId } = threeMachines(`revoke-${order.join('')}`)
+    confirmByHook({ guideRoot: machines[0].guideRoot, guidanceId })
+    for (const each of machines) each.sync()
+    for (const { guideRoot } of machines) assert.equal(outstandingConfirmations({ guideRoot, guidanceId }).length, 1)
+    assert.doesNotMatch(readFileSync(annotationsFile, 'utf8'), /worktrees|repositoryIdentity|\/home\//)
+
+    machines[1].unconfirm(guidanceId)
+    for (const index of [...order, ...order]) machines[index].sync()
+    for (const { guideRoot } of machines) {
+      assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId }), [])
+      assert.equal(retrievedRecord({ repoRoot, guideRoot, guidanceId }).confirmed, undefined)
+    }
+    const exported = readFileSync(annotationsFile, 'utf8')
+    for (const each of machines) each.sync()
+    assert.equal(readFileSync(annotationsFile, 'utf8'), exported)
+    for (const each of machines) each.validate()
+  })
+}
+
+test('a confirmation that reaches a machine after it withdrew the record stays revoked', () => {
+  const { machines, guidanceId } = threeMachines('confirm-after-withdraw')
+  const [first, second, third] = machines
+  // The second machine confirms, and the first withdraws before it sees that confirmation.
+  confirmByHook({ guideRoot: second.guideRoot, guidanceId })
+  first.withdraw(guidanceId)
+  for (const each of [second, first, third, second, first, third]) each.sync()
+  for (const { guideRoot } of machines) assert.deepEqual(outstandingConfirmations({ guideRoot, guidanceId }), [])
+  for (const each of machines) each.validate()
+})
+
+test('validate accepts a version 1 store with an annotations file and rejects a malformed one', () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-annotations-validate-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/annotations-validate.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const guidanceId = submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: cleanupLearning, turnId: 'turn-1', explicitPreference: true }) }).result.targetId
+  const memoryBefore = readFileSync(paths.memoryIndexFile, 'utf8')
+  confirmByHook({ guideRoot, guidanceId })
+  run({ command: 'annotate', repoRoot, guideRoot, args: ['--id', guidanceId, '--triggers', 'pr-merged'] })
+  assert.equal(readFileSync(paths.memoryIndexFile, 'utf8'), memoryBefore)
+  assert.equal(JSON.parse(readFileSync(paths.memoryFile, 'utf8')).schemaVersion, 1)
+  const annotationsSchema = JSON.parse(readFileSync(fileURLToPath(new URL('schemas/annotations-v1.schema.json', skillRoot)), 'utf8'))
+  const validateAnnotationsSchema = ajv.compile(annotationsSchema)
+  assert.equal(validateAnnotationsSchema(readAnnotations(guideRoot)), true, JSON.stringify(validateAnnotationsSchema.errors))
+  run({ command: 'validate', repoRoot, guideRoot })
+
+  writeFileSync(join(guideRoot, 'annotations.json'), JSON.stringify({ schemaVersion: 1, records: { 'not-a-fingerprint': {} } }))
+  assert.equal(validateAnnotationsSchema(JSON.parse(readFileSync(join(guideRoot, 'annotations.json'), 'utf8'))), false)
+  assert.match(run({ command: 'validate', repoRoot, guideRoot, expectFailure: true }).stderr, /annotations/)
+})
+
+test('a writer waits for a live lock and recovers a lock whose owner died or that is stale', { skip: process.platform !== 'linux' }, async () => {
+  const root = mkdtempSync(join(tmpdir(), 'field-guide-lock-recovery-'))
+  const repoRoot = createRepo({ parent: root, name: 'repo', remote: 'git@github.com:example/lock-recovery.git' })
+  const guideRoot = join(root, 'guide')
+  const paths = initializeMemory({ repoRoot, guideRoot })
+  const pidNamespace = readlinkSync('/proc/self/ns/pid')
+  const lockedBy = (owner) => writeFileSync(paths.memoryLockFile, JSON.stringify({ createdAt: Date.now(), ...owner }))
+  const learn = (turnId) => submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: `Lock case ${turnId}.`, turnId }) })
+
+  const exitedPid = spawnSync(process.execPath, ['-e', '']).pid
+  lockedBy({ pid: exitedPid, pidNamespace })
+  learn('turn-1')
+  assert.equal(existsSync(paths.memoryLockFile), false)
+
+  writeFileSync(paths.memoryLockFile, 'held\n')
+  const old = new Date(Date.now() - 10 * 60 * 1000)
+  utimesSync(paths.memoryLockFile, old, old)
+  learn('turn-2')
+
+  // A dead PID in another PID namespace proves nothing, so a fresh lock still blocks.
+  lockedBy({ pid: exitedPid, pidNamespace: 'pid:[1]' })
+  const blocked = submit({ repoRoot, guideRoot, input: conversationSubmission({ learning: 'Lock case blocked.', turnId: 'turn-4' }), expectFailure: true })
+  assert.match(blocked.stderr, /locked by another writer/)
+  unlinkSync(paths.memoryLockFile)
+
+  // A live owner that releases the lock during the wait lets the writer continue.
+  lockedBy({ pid: process.pid, pidNamespace })
+  const inputFile = join(guideRoot, 'waiting-submission.json')
+  writeFileSync(inputFile, JSON.stringify(conversationSubmission({ learning: 'Lock case waited.', turnId: 'turn-5' })))
+  const child = spawn(process.execPath, [script, 'submit', '--repo-root', repoRoot, '--guide-root', guideRoot, '--input', inputFile])
+  setTimeout(() => unlinkSync(paths.memoryLockFile), 300)
+  const status = await new Promise((resolve) => child.on('exit', resolve))
+  assert.equal(status, 0)
+  run({ command: 'validate', repoRoot, guideRoot })
 })

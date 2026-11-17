@@ -5,10 +5,18 @@ import { existsSync, lstatSync, mkdirSync, readFileSync, readdirSync, renameSync
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 import { appendAnalyticsEvent } from '../skills/field-guide/scripts/field-guide-analytics.mjs'
-import { promptInjection, sessionStartInjection } from '../skills/field-guide/scripts/field-guide.mjs'
+import {
+  confirmFromPrompt,
+  isMainThread,
+  promptInjection,
+  sessionStartInjection,
+  storeVersionNotice,
+} from '../skills/field-guide/scripts/field-guide.mjs'
 
 const isSupportedHost = () => Boolean(process.env.PLUGIN_ROOT || process.env.CLAUDE_PLUGIN_ROOT)
+const hostName = () => (process.env.PLUGIN_ROOT ? 'codex' : 'claude')
 const guideRoot = () => join(homedir(), '.field-guide')
+const mainThreadFor = (input) => isMainThread({ agentId: input.agent_id, env: process.env })
 
 const promptContext = 'Before your final response, privately choose capture, ask, or skip for durable learning. Capture a clear, durable user preference, correction, or independently repeated miss, as a short paraphrase in your own words. Ask when the intended behavior, durability, scope, or relationship to stored guidance is unclear. Skip temporary or task-specific details, rules already in current instructions, and sensitive content such as credentials, personal data, or proprietary code, even when asked to remember it. Preserve the normal task response for every decision. Skip uses no tools, writes nothing, and adds nothing. If capture is warranted, follow $field-guide:field-guide and append only its concise change notice. If ask is warranted, append one focused learning question and write no memory while awaiting the answer. Learning must not delay or replace the task result. Add no other lifecycle or storage text.'
 
@@ -75,7 +83,7 @@ const sessionStartContext = (input) => {
   try {
     let injection = null
     try {
-      injection = sessionStartInjection({ repoRoot: input.cwd })
+      injection = sessionStartInjection({ repoRoot: input.cwd, mainThread: mainThreadFor(input) })
     } catch {
       // Failed retrieval still starts the session and permits state pruning.
     }
@@ -100,7 +108,7 @@ const promptGuidanceContext = (input) => {
     if (!state.promptPending) return null
     let injection = null
     try {
-      injection = promptInjection({ repoRoot: input.cwd, prompt: input.prompt, excludeIds: state.injectedIds })
+      injection = promptInjection({ repoRoot: input.cwd, prompt: input.prompt, excludeIds: state.injectedIds, mainThread: mainThreadFor(input) })
     } catch {
       // Failed retrieval consumes this attempt so later prompts do not retry.
     }
@@ -117,27 +125,48 @@ const promptGuidanceContext = (input) => {
   }
 }
 
+/**
+ * Handles a prompt that mentions `confirm fg:`. Returns null for any other prompt. An exact
+ * confirm prompt gets only this result, so it neither receives nor consumes prompt-matched
+ * guidance; a near miss keeps the normal flow and adds the note.
+ */
+const confirmation = (input) => {
+  if (typeof input.prompt !== 'string') return null
+  try {
+    return confirmFromPrompt({ guideRoot: guideRoot(), prompt: input.prompt, mainThread: mainThreadFor(input), host: hostName() })
+  } catch {
+    // A locked or unreadable guide confirms nothing; say so instead of failing silently.
+    const text = 'Field Guide: nothing confirmed; the guide could not be updated, so try again.'
+    return { exact: true, systemMessage: text, context: text }
+  }
+}
+
+const promptOutput = (input) => {
+  appendAnalyticsEvent({ guideRoot: guideRoot(), event: { type: 'hook_invoked', host: hostName() } })
+  const confirmed = confirmation(input)
+  const systemMessage = confirmed ? { systemMessage: confirmed.systemMessage } : {}
+  const parts = confirmed?.exact ? [confirmed.context] : [promptGuidanceContext(input), confirmed?.context, promptContext]
+  return {
+    ...systemMessage,
+    hookSpecificOutput: { hookEventName: 'UserPromptSubmit', additionalContext: parts.filter(Boolean).join('\n\n') },
+  }
+}
+
+const sessionStartOutput = (input) => {
+  const additionalContext = sessionStartContext(input)
+  const notice = storeVersionNotice({ guideRoot: guideRoot() })
+  return {
+    ...(notice ? { systemMessage: notice } : {}),
+    ...(additionalContext ? { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext } } : {}),
+  }
+}
+
 const outputFor = (input) => {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return {}
   if (input.hook_event_name === 'Stop') return {}
   if (!isSupportedHost()) return {}
-  if (input.hook_event_name === 'SessionStart') {
-    const additionalContext = sessionStartContext(input)
-    return additionalContext ? { hookSpecificOutput: { hookEventName: 'SessionStart', additionalContext } } : {}
-  }
-  if (input.hook_event_name === 'UserPromptSubmit') {
-    appendAnalyticsEvent({
-      guideRoot: guideRoot(),
-      event: { type: 'hook_invoked', host: process.env.PLUGIN_ROOT ? 'codex' : 'claude' },
-    })
-    const guidance = promptGuidanceContext(input)
-    return {
-      hookSpecificOutput: {
-        hookEventName: 'UserPromptSubmit',
-        additionalContext: guidance ? `${guidance}\n\n${promptContext}` : promptContext,
-      },
-    }
-  }
+  if (input.hook_event_name === 'SessionStart') return sessionStartOutput(input)
+  if (input.hook_event_name === 'UserPromptSubmit') return promptOutput(input)
   return {}
 }
 

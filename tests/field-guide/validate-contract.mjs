@@ -115,6 +115,13 @@ assert.match(lifecycleHooks, /`CLAUDE_PLUGIN_ROOT`/)
 assert.match(lifecycleHooks, /Claude and Codex register the `SessionStart` and `UserPromptSubmit` hooks/)
 assert.match(lifecycleHooks, /never emits or persists it/)
 assert.match(lifecycleHooks, /returns an empty object for direct Stop input/)
+assert.match(lifecycleHooks, /exactly `confirm fg:<id>` in a\s+main thread/)
+assert.match(lifecycleHooks, /`agent_id` fields, and the `T3CODE_THREAD_ID` environment/)
+assert.match(skill, /Only that prompt creates a confirmation; no command does/)
+assert.match(skill, /Never send, run, or simulate it/)
+assert.match(policy, /Offer confirmation only for a record that names an action that global or project instructions would otherwise gate/)
+assert.match(storage, /Confirmation guards\s+against agent error/)
+assert.match(hookAdapter, /input\.agent_id/)
 
 assert.equal(scenarios.schemaVersion, 1)
 assert.deepEqual(
@@ -205,6 +212,7 @@ const validateSubmissionSchema = ajv.compile(submissionSchema)
 const validateMaintenanceSchema = ajv.compile(maintenanceSchema)
 const validateLifecycleSchema = ajv.compile(lifecycleSchema)
 ajv.compile(retrievalSchema)
+ajv.compile(JSON.parse(await readFile(new URL('schemas/annotations-v1.schema.json', skillRoot), 'utf8')))
 const validateAnalyticsEvent = ajv.compile(analyticsSchema)
 const validHookEvent = {
   schemaVersion: 1,

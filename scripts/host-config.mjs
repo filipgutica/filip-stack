@@ -11,6 +11,8 @@ const scriptPath = fileURLToPath(import.meta.url)
 const repoRoot = join(dirname(scriptPath), '..')
 const sourceRoot = join(repoRoot, 'host-config')
 const sharedGuidancePath = (home) => join(process.env.XDG_CONFIG_HOME || join(home, '.config'), 'filip-stack', 'field-guide.json')
+// Confirmations and event triggers travel in a second file beside the shared guidance.
+const sharedAnnotationsPath = (home) => join(dirname(sharedGuidancePath(home)), 'field-guide-annotations.json')
 // Folders where host config once installed the design system, which now ships as the design-system plugin.
 // Kept only to retire old installs.
 const retiredDesignFolders = ['design-system', 'design-language']
@@ -263,8 +265,13 @@ const runFieldGuide = ({ home, args }) => {
   return JSON.parse(result.stdout).result
 }
 
+// Import validates both files before it changes the guide.
 const importSharedGuidance = ({ home }) => {
-  const result = runFieldGuide({ home, args: ['import', '--input', sharedGuidancePath(home)] })
+  const annotations = sharedAnnotationsPath(home)
+  const result = runFieldGuide({
+    home,
+    args: ['import', '--input', sharedGuidancePath(home), ...(existsSync(annotations) ? ['--annotations', annotations] : [])],
+  })
   process.stdout.write(`field-guide: created ${result.created.length}, promoted ${result.promoted.length}, `
     + `retired ${result.retired.length}, restored ${result.restored.length}\n`)
 }
@@ -350,8 +357,8 @@ const fieldGuideSync = ({ home }) => {
   runFieldGuide({ home, args: ['init'] })
   if (existsSync(path)) importSharedGuidance({ home })
   mkdirSync(dirname(path), { recursive: true })
-  runFieldGuide({ home, args: ['export', '--output', path] })
-  process.stdout.write(`exported shared guidance to ${path}; add it to your dotfile manager\n`)
+  runFieldGuide({ home, args: ['export', '--output', path, '--annotations', sharedAnnotationsPath(home)] })
+  process.stdout.write(`exported shared guidance to ${path} and ${sharedAnnotationsPath(home)}; add both to your dotfile manager\n`)
 }
 
 const { command, options } = parseArgs(process.argv.slice(2))
