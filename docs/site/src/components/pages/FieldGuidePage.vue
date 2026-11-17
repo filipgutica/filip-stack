@@ -204,6 +204,10 @@ const management = [
           each machine syncs.
         </li>
         <li>
+          When an older Field Guide plugin changes your guidance, every
+          confirmation in that store stops counting until you confirm again.
+        </li>
+        <li>
           An undo reaches other machines after they sync. It reverses only the
           replacement it undoes: a withdrawal, or another replacement of the
           same guidance, still wins.

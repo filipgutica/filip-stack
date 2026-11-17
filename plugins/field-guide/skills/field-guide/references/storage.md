@@ -15,6 +15,7 @@ Use these terms:
 │   └── events.jsonl
 ├── .obsidian/          # Optional client-owned vault settings
 ├── annotations.json    # Optional user confirmations and event triggers
+├── annotations-watermark.json  # Memory revision and fingerprints of the last annotation-aware write
 ├── init.md
 ├── memory.lock         # Present only while a write runs
 ├── memory.md           # Canonical readable and machine-recorded memory
@@ -164,8 +165,28 @@ again. These actions add a revocation:
 - `submit`, when it creates a record, so recaptured text starts unconfirmed.
   An independent capture of the same text on another machine revokes too.
 
-Import adds none: it unions entries, acknowledgments, and revocations, so
-machines converge in any delivery order.
+Import mints none. It unions entries, acknowledgments, and revocations, and
+adds an ID derived from each exported retirement ID to its fingerprint's
+revocations, even without a local record, so machines converge in any delivery
+order.
+
+A plugin that predates this rule can retire, restore, delete, or recapture
+guidance without touching annotations. `annotations-watermark.json` stays
+local and holds the memory revision and record fingerprints of the last
+annotation-aware write; a crash between the memory and watermark writes leaves
+a mismatch. While memory has another revision, no confirmation counts. The next
+locked command of a current plugin, including export and a delete or archive
+preview, first revokes every fingerprint in memory, annotations, or the
+watermark, then records the revision. That covers confirmations in transit and
+records an older plugin deleted, so a deleted record that a later import brings
+back stays unconfirmed in any delivery order. The user confirms again, and that
+confirmation survives later syncs. A store without the watermark, such as one
+from the first annotation release, is treated the same way: confirmations do
+not yet grant authority, so voiding them costs one confirm prompt each. Each
+machine voids once when it upgrades, and its revocations reach the others when
+they sync. A record that an older plugin both imports and deletes between two
+current writes leaves no fingerprint, so a confirmation in transit for it can
+still count.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
@@ -341,6 +362,13 @@ Known limits:
   plugin cannot read a store that has the new fields and silently stops
   injecting guidance. A retirement made on an older machine can lose to a
   restore made in the same window.
+- Any older plugin that writes memory, including the first annotation
+  release, voids every confirmation in that store until the user confirms
+  again. Other machines see the revocation only after a current plugin writes
+  or exports that store and they sync.
+- A retirement export that reaches a fresh store before the active record
+  leaves the record active there, though unconfirmed, because retirement sets
+  apply only to local records.
 - Update each machine in this order: refresh the Field Guide plugin, restart
   the host, then run `filip-stack update` (`host-config update`).
 
