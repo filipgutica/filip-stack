@@ -31,9 +31,10 @@ the project. The accessibility script also needs `@axe-core/playwright`.
 Each review finding names a real element and the rule it fails. Safety and
 accessibility come first: missing focus or low contrast outranks taste.
 
-Before it builds a new page or screen, the agent sketches it in the design
-system's tokens and checks the sketch against what it would build for any
-similar brief. It keeps what the design system prescribes and revises the
+Before it builds or reshapes a page or screen, the agent sketches it, in the
+design system's tokens when there is one. It checks the sketch against what
+it would build for any similar brief and against the signs of a templated
+interface. It keeps what the design system prescribes and revises the
 generic parts. Reviews flag signs of a templated interface, such as all-caps
 labels or a big-number hero, unless they serve the content or the design
 system or brief chooses them.

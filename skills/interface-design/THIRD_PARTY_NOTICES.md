@@ -1,7 +1,7 @@
 # Third-party notices
 
 `interface-design` adapts parts of Anthropic's `frontend-design` skill in
-`references/craft.md`: the first screen and the sketch check before building,
+`references/craft.md`: the first screen and the sketch check before building or reshaping,
 emphasis, structure, motion, interface copy, signs of a templated interface,
 and build notes. The local adaptation drops the upstream direction to invent
 a distinct palette, typefaces, and layout for each brief, because the owning

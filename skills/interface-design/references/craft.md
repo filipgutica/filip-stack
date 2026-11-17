@@ -4,7 +4,7 @@ Rules for making an interface read clearly, adapted from Anthropic's
 `frontend-design` skill (see `THIRD_PARTY_NOTICES.md`). The owning design
 system wins wherever it sets a rule; these fill the gaps it leaves.
 
-## Before you build a new page or screen
+## Before you build or reshape a page or screen
 
 - Open with the subject. On a product or landing page, the first screen
   leads with the most characteristic thing in the product's world, such as a
@@ -17,16 +17,16 @@ system wins wherever it sets a rule; these fill the gaps it leaves.
   out.
 - Check the sketch against the generic default. Keep what the owning design
   system prescribes. Revise each part it leaves free that matches what you
-  would produce for any similar brief, say what you changed and why, and then
-  build. Without a design system, palette and type stay plain; the check
-  covers layout and content.
+  would produce for any similar brief or shows one of the
+  [signs of a templated interface](#signs-of-a-templated-interface). Say what
+  you changed and why, and then build. Without a design system, palette and
+  type stay plain; the check covers layout and content.
 
 ## Emphasis
 
 - Spend emphasis in one place. The primary action on a screen is its most
   prominent control. On a product page, one memorable element, such as the
-  product image, may lead the page while the primary action stays the most
-  prominent control. Everything around them stays quiet.
+  product image, may lead the page. Everything around them stays quiet.
 - Before you finish, remove one decoration that does not serve the task.
 - Typography carries hierarchy. Use the design system's type scale, keep
   reading lines under about 80 characters, and let weight and size, not

@@ -112,6 +112,35 @@
       ]
     },
     {
+      "id": "reshape-sketch",
+      "task": "You are asked to redesign the existing settings page of an app, because users find it hard to navigate. The repository uses the design-system plugin's design language, and you have read its tokens and components.",
+      "options": {
+        "sketch": "sketch the new layout in the design system's tokens and components, check it against what you would build for any similar settings page, revise the parts that match it, and then rebuild",
+        "direct": "rebuild the page with the design system's components, then review screenshots at 375px and desktop width, in light and dark, and refine"
+      },
+      "accept": [
+        "sketch"
+      ],
+      "needsNewGuidance": true,
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
+      "id": "sketch-uses-signs",
+      "task": "You have sketched a new usage dashboard in the design system's tokens and components. The sketch puts a small all-caps label above each section heading and cuts every section into identical cards with the same radius and shadow. The design system does not prescribe either treatment.",
+      "options": {
+        "revise": "revise the section labels and the identical cards in the sketch, say what changed and why, and then build",
+        "build": "build the sketch as planned, since the design system allows both treatments, and review screenshots afterwards"
+      },
+      "accept": [
+        "revise"
+      ],
+      "files": [
+        "skills/interface-design/references/craft.md"
+      ]
+    },
+    {
       "id": "sketch-small-change",
       "task": "You are asked to rename the Submit button on an existing settings screen to Save changes. The repository uses the design-system plugin's design language.",
       "options": {
