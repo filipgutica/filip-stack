@@ -151,7 +151,9 @@ export const countUi = (screenHeight) => {
       words += wordsIn(walker.currentNode.textContent)
     }
     // The walk above skips svg; its <text> labels count here.
-    for (const text of document.querySelectorAll('svg text')) if (visible(text, bottom)) words += wordsIn(text.textContent)
+    for (const text of document.querySelectorAll('svg text')) {
+      if (!text.closest('[hidden],dialog:not([open])') && !srOnly(text) && visible(text, bottom)) words += wordsIn(text.textContent)
+    }
     const shown = [...document.querySelectorAll('body *')].filter((el) => !el.closest('svg,dialog:not([open])') && visible(el, bottom))
     const controls = shown.filter((el) => el.matches('button,select,input:not([type=hidden]),a[href],[role=button],summary'))
     return { words, boxes: shown.filter(isBox).length, controls: controls.length }

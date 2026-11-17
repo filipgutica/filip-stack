@@ -95,5 +95,7 @@ prints the passed count as its last line and exits 1 on any failure. Without
   minimal-by-default rules. Run `--count` before and after a UI change at
   the same widths and themes, and give a reason for any count that rises.
   There is no budget: counts never fail a run or change the last line.
+  With `--count`, the script waits 600ms after load before it counts, so a
+  page that renders late can give different axe results than without it.
 - For a hill climb, use the exit code as a gate and the last output line as a
   score: lower is better for `ui-check.mjs`, higher for `ui-modes.mjs`.
