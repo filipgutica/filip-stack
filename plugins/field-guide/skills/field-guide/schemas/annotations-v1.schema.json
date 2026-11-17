@@ -28,6 +28,11 @@
           "type": "array",
           "uniqueItems": true,
           "items": { "$ref": "#/$defs/entryId" }
+        },
+        "revokedAt": {
+          "description": "Revocation barrier. A confirmation counts only when its time is later. Merges by maximum.",
+          "type": "string",
+          "format": "date-time"
         }
       }
     },

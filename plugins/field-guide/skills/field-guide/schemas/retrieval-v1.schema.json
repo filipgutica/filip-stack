@@ -110,7 +110,6 @@
         "examples": { "type": "array", "items": { "$ref": "memory-v1.schema.json#/$defs/example" } },
         "updatedAt": { "type": "string", "format": "date-time" },
         "match": { "enum": ["project-subject", "shared-subject", "linked-subject", "applicability", "event"] },
-        "confirmed": { "const": true },
         "triggers": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "$ref": "#/$defs/trigger" } }
       }
     },

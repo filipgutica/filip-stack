@@ -51,10 +51,11 @@ In a main thread, a line starts with markers from `annotations.json`:
 `[confirmed]` for a user confirmation, then one `[<trigger>]` per event trigger,
 then the subject, as in
 `- [confirmed] [pr-merged] [git-cleanup] After a merge, remove its worktrees.`
-Stored text cannot imitate a marker. A subject named `confirmed` or like a
-trigger renders as `\[confirmed]`, and a learning that starts with `[` renders
-with a leading backslash. Delegates and subagents receive the same lines
-without markers.
+Only these lines show confirmation; `retrieve` never reports it. Stored text
+cannot imitate a marker. A subject named `confirmed` or like a trigger renders
+as `\[confirmed]`, a marker word anywhere in the learning renders with a
+backslash, and a learning that starts with `[` renders with a leading
+backslash. Delegates and subagents receive the same lines without markers.
 
 [Codex supports plugin-bundled hooks and `UserPromptSubmit` additional
 context](https://learn.chatgpt.com/docs/hooks#plugin-bundled-hooks). Codex parses
@@ -108,12 +109,21 @@ and gains one line that says nothing was confirmed. A confirm prompt gets no
 lifecycle instruction and neither receives nor consumes the first-prompt
 guidance match, so the next prompt still gets it.
 
+The hook cannot tell who sent a prompt. An agent that sends the exact prompt
+to a main thread through a host tool is barred by guidance, not by the hook.
+No Field Guide command creates a confirmation; import copies them from the
+synced file, which the user trusts like the store.
+
 ## Version line
 
 When `memory.md` or `annotations.json` has a schema version newer than the
 plugin reads, `SessionStart` returns one `systemMessage` line that asks the user
 to update the Field Guide plugin. Guidance from a newer `memory.md` is not
 injected; with newer annotations, guidance is injected without markers.
+Commands that write annotations, including a capture that creates a record,
+retirement, and delete, stop with an error until the plugin is updated. A
+malformed `annotations.json` stops them the same way, and `validate` reports
+it.
 
 ## Privacy boundary
 

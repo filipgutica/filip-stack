@@ -11,6 +11,7 @@ import {
   readlinkSync,
   realpathSync,
   renameSync,
+  rmSync,
   statSync,
   unlinkSync,
   writeFileSync,
@@ -243,8 +244,8 @@ const assertClosedFields = ({ value, fields, label }) => {
 const byteLength = (value) => Buffer.byteLength(value, 'utf8')
 const hasControlCharacters = ({ value, allowNewlines }) => (
   allowNewlines
-    ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f]/u.test(value)
-    : /[\u0000-\u001f\u007f]/u.test(value)
+    ? /[\u0000-\u0008\u000b\u000c\u000e-\u001f\u007f\u0085\u2028\u2029]/u.test(value)
+    : /[\u0000-\u001f\u007f\u0085\u2028\u2029]/u.test(value)
 )
 const portableKey = /^[a-z0-9]+(?:-[a-z0-9]+)*$/
 const sourceKeyPattern = /^source:v1:[0-9a-f]{64}$/
@@ -1013,7 +1014,7 @@ const removeStaleLock = (lockFile) => {
 // stale-lock recovery cannot mistake a lock that was just taken for an empty old one.
 const acquireLock = (lockFile) => {
   const deadline = Date.now() + lockWaitMs
-  const ownerFile = `${lockFile}.${process.pid}.tmp`
+  const ownerFile = `${lockFile}.${randomUUID()}.tmp`
   writeFileSync(ownerFile, JSON.stringify({ pid: process.pid, pidNamespace: pidNamespace(), createdAt: Date.now() }))
   try {
     for (;;) {
@@ -1028,7 +1029,7 @@ const acquireLock = (lockFile) => {
       Atomics.wait(new Int32Array(new SharedArrayBuffer(4)), 0, 0, lockRetryMs)
     }
   } finally {
-    unlinkSync(ownerFile)
+    rmSync(ownerFile, { force: true })
   }
 }
 
@@ -1116,6 +1117,8 @@ const submitObservationUnlocked = ({ paths, inputPath, inputJson }) => {
   }
   guidance.status = promotion.status
   const nextMemory = { ...memory, revision: memory.revision + 1 }
+  // A new record starts unconfirmed, even when an earlier record with the same text was confirmed.
+  if (!reinforcementTarget) revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [fingerprint] })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: previousStatus === 'candidate' && guidance.status === 'active'
@@ -1200,6 +1203,8 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId, re
 // memory.md and its export keep their formats. Each confirmation and each trigger is an entry
 // with a random ID. Removing one acknowledges its ID, as retirement sets do. A merge is the union
 // of entries and acknowledgments, so a removal reaches every machine in any sync order.
+// A record's revokedAt is a barrier that merges by maximum: a confirmation made before it does
+// not count, so a revocation also covers confirmations that this machine has not seen yet.
 // Only the UserPromptSubmit hook adds a confirmation; agent commands can only remove one.
 const annotationTriggers = ['handoff', 'pr-created', 'pr-merged']
 const annotationIdPattern = /^annotation:v1:[0-9a-f]{64}$/
@@ -1225,10 +1230,11 @@ const validateAnnotationEntry = ({ entry, kind }) => {
 
 const validateAnnotationRecord = (record) => {
   assertObject({ value: record, label: 'annotations record' })
-  assertClosedFields({ value: record, fields: ['confirmations', 'triggers', 'acknowledged'], label: 'annotations record' })
+  assertClosedFields({ value: record, fields: ['confirmations', 'triggers', 'acknowledged', 'revokedAt'], label: 'annotations record' })
   if (![record.confirmations, record.triggers, record.acknowledged].every(Array.isArray)) {
     fail('annotations record needs confirmations, triggers, and acknowledged arrays')
   }
+  if (record.revokedAt !== undefined) requireTimestamp({ value: record.revokedAt, label: 'annotations record revokedAt' })
   record.confirmations.forEach((entry) => validateAnnotationEntry({ entry, kind: 'confirmation' }))
   record.triggers.forEach((entry) => validateAnnotationEntry({ entry, kind: 'trigger' }))
   const ids = [...record.confirmations, ...record.triggers].map(({ id }) => id)
@@ -1269,16 +1275,22 @@ const readAnnotationsForDisplay = (annotationsFile) => {
 const uniqueEntries = (entries) => [...new Map(entries.map((entry) => [entry.id, entry])).values()]
   .sort((left, right) => left.id.localeCompare(right.id))
 
-// Unions entries and acknowledgments per fingerprint, in a stable order.
+// Validated timestamps are canonical ISO strings, so string order is time order.
+const laterTime = (left, right) => (left === undefined || (right !== undefined && right > left) ? right : left)
+
+// Unions entries and acknowledgments per fingerprint, in a stable order, and keeps the latest
+// revocation barrier.
 const mergeAnnotations = (...sources) => {
   const records = {}
   for (const source of sources) {
     for (const [fingerprint, record] of Object.entries(source.records)) {
       const current = records[fingerprint] ?? emptyAnnotationRecord()
+      const revokedAt = laterTime(current.revokedAt, record.revokedAt)
       records[fingerprint] = {
         confirmations: uniqueEntries([...current.confirmations, ...record.confirmations]),
         triggers: uniqueEntries([...current.triggers, ...record.triggers]),
         acknowledged: sortedUnion(current.acknowledged, record.acknowledged),
+        ...(revokedAt === undefined ? {} : { revokedAt }),
       }
     }
   }
@@ -1309,10 +1321,21 @@ const acknowledgeEntries = ({ record, entries }) => {
 
 const newAnnotationEntry = (fields) => ({ id: `annotation:v1:${randomBytes(32).toString('hex')}`, at: new Date().toISOString(), ...fields })
 
+// A confirmation counts while it is outstanding and was made after the revocation barrier.
+const countingConfirmations = (record) => outstandingEntries({ record, entries: record.confirmations })
+  .filter(({ at }) => record.revokedAt === undefined || at > record.revokedAt)
+
+// Raises the barrier to now and acknowledges the known confirmations, so a plugin that ignores
+// the barrier also sees them removed.
+const revokeRecord = (record) => {
+  record.revokedAt = laterTime(record.revokedAt, new Date().toISOString())
+  acknowledgeEntries({ record, entries: record.confirmations })
+}
+
 const annotationMarkers = ({ annotations, guidance }) => {
   const record = annotations.records[guidance.fingerprint] ?? emptyAnnotationRecord()
   return {
-    confirmed: outstandingEntries({ record, entries: record.confirmations }).length > 0,
+    confirmed: countingConfirmations(record).length > 0,
     triggers: [...new Set(outstandingEntries({ record, entries: record.triggers }).map(({ trigger }) => trigger))].sort(),
   }
 }
@@ -1322,18 +1345,14 @@ const displayMarkers = ({ annotations, guidance, mainThread }) => (
   mainThread ? annotationMarkers({ annotations, guidance }) : { confirmed: false, triggers: [] }
 )
 
-// Retiring a record removes its authority, so the same text recaptured later starts unconfirmed.
-// This also covers a confirmation that arrives by sync after this machine retired the record.
+// Retiring, deleting, or capturing a record revokes earlier confirmations of its fingerprint, so
+// the same text never inherits authority, even from a confirmation that arrives by sync later.
 // Call it before the memory write: a failed write then leaves authority removed, not lingering.
-const acknowledgeRetiredConfirmations = ({ annotationsFile, memory }) => {
-  if (!existsSync(annotationsFile)) return
+const revokeConfirmations = ({ annotationsFile, fingerprints }) => {
+  if (fingerprints.length === 0) return
   const annotations = readAnnotations(annotationsFile)
-  let changed = false
-  for (const guidance of memory.guidance.filter(({ status }) => retiredStatuses.has(status))) {
-    const record = annotations.records[guidance.fingerprint]
-    if (record && acknowledgeEntries({ record, entries: record.confirmations })) changed = true
-  }
-  if (changed) writeAnnotations({ path: annotationsFile, annotations })
+  fingerprints.forEach((fingerprint) => revokeRecord(annotationRecordFor({ annotations, fingerprint })))
+  writeAnnotations({ path: annotationsFile, annotations })
 }
 
 const guidanceReferencePattern = /^(?:guidance:v1:[0-9a-f]{64}|[0-9a-f]{8,64})$/
@@ -1364,10 +1383,12 @@ const readInitializedMemory = (paths) => {
 const unconfirmUnlocked = ({ paths, reference }) => {
   const guidance = requireGuidance({ memory: readInitializedMemory(paths), reference })
   const annotations = readAnnotations(paths.annotationsFile)
-  const record = annotations.records[guidance.fingerprint]
-  if (!record || !acknowledgeEntries({ record, entries: record.confirmations })) return { outcome: 'not-confirmed', targetId: guidance.id }
+  const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
+  const confirmed = countingConfirmations(record).length > 0
+  // The barrier also covers a confirmation made on another machine that has not synced yet.
+  revokeRecord(record)
   writeAnnotations({ path: paths.annotationsFile, annotations })
-  return { outcome: 'unconfirmed', targetId: guidance.id }
+  return { outcome: confirmed ? 'unconfirmed' : 'not-confirmed', targetId: guidance.id }
 }
 
 /** Removes the user's confirmation of a record. It needs no approval because it only removes authority. */
@@ -1424,10 +1445,16 @@ const confirmUnlocked = ({ files, reference, host }) => {
   if (guidance.status !== 'active') return notConfirmed(`that guidance is ${guidance.status}, not active`)
   const annotations = readAnnotations(files.annotationsFile)
   const record = annotationRecordFor({ annotations, fingerprint: guidance.fingerprint })
-  if (outstandingEntries({ record, entries: record.confirmations }).length > 0) {
+  if (countingConfirmations(record).length > 0) {
     return confirmationMessage({ exact: true, text: `Field Guide: already confirmed: "${guidance.learning}"` })
   }
-  record.confirmations.push(newAnnotationEntry(host ? { host } : {}))
+  // A barrier stamped by a clock that runs ahead would revoke this confirmation at once.
+  // Stamping past it would let it outlast an unsynced revocation, so confirm nothing instead.
+  const entry = newAnnotationEntry(host ? { host } : {})
+  if (record.revokedAt !== undefined && entry.at <= record.revokedAt) {
+    return notConfirmed(`a revocation of this guidance is stamped ${record.revokedAt}, later than this machine's clock; confirm again after that time`)
+  }
+  record.confirmations.push(entry)
   writeAnnotations({ path: files.annotationsFile, annotations })
   const line = injectionLine({ guidance, markers: annotationMarkers({ annotations, guidance }) })
   return {
@@ -1563,7 +1590,7 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
   }
 
   const nextMemory = { ...memory, revision: memory.revision + 1 }
-  acknowledgeRetiredConfirmations({ annotationsFile: paths.annotationsFile, memory: nextMemory })
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: retiredStatuses.has(target.status) ? [target.fingerprint] : [] })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: input.action,
@@ -1630,6 +1657,7 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
     }
   }
   if (input.previewToken !== previewToken) fail('delete apply requires the current dry-run previewToken')
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [target.fingerprint] })
   const nextMemory = {
     ...memory,
     revision: memory.revision + 1,
@@ -1812,12 +1840,14 @@ const importSharedGuidanceUnlocked = ({ paths, inputPath, annotationsPath }) => 
   const incoming = annotationsPath ? validateAnnotations(readJsonInput(annotationsPath)) : null
   const now = new Date().toISOString()
   const result = { created: [], promoted: [], retired: [], restored: [] }
+  const activeBefore = new Set(memory.guidance.filter(({ status }) => !retiredStatuses.has(status)).map(({ id }) => id))
   const local = new Map(memory.guidance.filter(({ scope }) => scope.kind === 'shared').map((guidance) => [guidance.fingerprint, guidance]))
   const setsChanged = mergeRetirementSets({ entries: input.retired, local })
   addActiveRecords({ memory, input, local, now, result })
   reconcileSharedStatus({ memory, now, result })
   if (incoming) writeAnnotations({ path: paths.annotationsFile, annotations: mergeAnnotations(readAnnotations(paths.annotationsFile), incoming) })
-  acknowledgeRetiredConfirmations({ annotationsFile: paths.annotationsFile, memory })
+  const retiredHere = memory.guidance.filter(({ id, status }) => activeBefore.has(id) && retiredStatuses.has(status))
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: retiredHere.map(({ fingerprint }) => fingerprint) })
   if (setsChanged || Object.values(result).some((ids) => ids.length > 0)) {
     writeMemoryViews({ paths, memory: { ...memory, revision: memory.revision + 1 } })
   }
@@ -1852,7 +1882,7 @@ const retrievalRecord = ({ guidance, match, markers }) => ({
   examples: guidance.examples ?? [],
   updatedAt: guidance.updatedAt,
   match,
-  ...(markers.confirmed ? { confirmed: true } : {}),
+  // Confirmation renders only in hook lines, so the CLI never reports it.
   ...(markers.triggers.length > 0 ? { triggers: markers.triggers } : {}),
 })
 
@@ -2043,15 +2073,18 @@ const retrieve = ({ paths, subjectKey, query, evidenceFor, event, mainThread }) 
 
 const markerWords = new Set(['confirmed', ...annotationTriggers])
 
+const markerWordPattern = new RegExp(`\\[(${[...markerWords].join('|')})\\]`, 'giu')
+
 /**
  * Renders one guidance line. Markers come only from annotations, before the subject. A subject
- * named like a marker and a learning that starts with "[" get a backslash, so stored text never
- * reads as a marker.
+ * named like a marker, a marker word anywhere in the learning, and a learning that starts with
+ * "[" get a backslash, so stored text never reads as a marker.
  */
 const injectionLine = ({ guidance, markers }) => {
   const prefix = [...(markers.confirmed ? ['confirmed'] : []), ...markers.triggers].map((marker) => `[${marker}] `).join('')
   const subject = `${markerWords.has(guidance.subjectKey) ? '\\' : ''}[${guidance.subjectKey}]`
-  return `- ${prefix}${subject} ${guidance.learning.replace(/^\s*\[/u, '\\[')}`
+  const learning = guidance.learning.replace(markerWordPattern, '\\[$1]').replace(/^\s*\[/u, '\\[')
+  return `- ${prefix}${subject} ${learning}`
 }
 
 const readInjectionMemory = ({ repoRoot, guideRoot, mainThread }) => {
@@ -2379,7 +2412,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     })
   }
   const nextMemory = { ...memory, revision: memory.revision + 1 }
-  acknowledgeRetiredConfirmations({ annotationsFile: paths.annotationsFile, memory: nextMemory })
+  revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: targets.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
   return {
     outcome: 'maintained',

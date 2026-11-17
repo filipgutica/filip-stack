@@ -143,15 +143,27 @@ records by guidance fingerprint and keeps two kinds of entries per record:
 characters.
 
 Removing an entry adds its ID to the record's `acknowledged` set, as
-retirement sets do. An entry counts while its ID is not acknowledged. These
-actions acknowledge entries:
+retirement sets do. An entry counts while its ID is not acknowledged. A
+confirmation also counts only when its time is later than the record's
+`revokedAt` barrier. A merge keeps the latest barrier, so a revocation also
+covers a confirmation made on a machine that has not synced yet.
 
-- `unconfirm --id <id>` acknowledges the record's confirmations. It needs no
-  approval, because it only removes authority.
-- Withdrawal, undo, supersession, and archive acknowledge the confirmations of
-  every record they retire. Import does the same for every retired local
-  record, which covers a confirmation that arrives after this machine retired
-  the record.
+These actions raise the barrier to the current time and acknowledge the
+record's known confirmations:
+
+- `unconfirm --id <id>`. It needs no approval, because it only removes
+  authority.
+- Withdrawal, undo, supersession, and archive, for every record they retire,
+  and import, for every local record it retires.
+- `delete`, for the deleted record.
+- `submit`, when it creates a record, so recaptured text starts unconfirmed.
+
+Restoring a record does not lower its barrier; the user confirms it again.
+The barrier compares clocks of different machines. A confirmation that the
+revoking machine has not seen, stamped by a clock that runs ahead, outlasts
+the revocation by up to that clock difference. A clock that runs behind can
+revoke a later confirmation. While a known barrier is later than the
+machine's clock, a confirm prompt confirms nothing and says why.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
@@ -161,8 +173,8 @@ confirmation.
 A confirmation binds to the fingerprint, which hashes the scope, subject, and
 normalized learning. Changed text is a new record and starts unconfirmed. A
 record that is withdrawn, deleted, and captured again with the same text also
-starts unconfirmed, because its old confirmation stays acknowledged. Delete
-keeps annotation entries for that reason.
+starts unconfirmed, because each of those steps raises the barrier. Delete
+keeps the annotation record for that reason.
 
 `memory.md`, its cache, and the shared export keep their versions. A plugin
 that predates annotations ignores `annotations.json`: it injects the same
@@ -206,10 +218,10 @@ The result follows `schemas/retrieval-v1.schema.json`.
 that trigger: current-project records first, then shared records, newest
 first, within the normal limits of five records and 6 KB.
 
-In a main thread, retrieved records carry `confirmed: true` and `triggers` from
+Retrieved records never report confirmation; only hook-injected lines carry
+`[confirmed]`. In a main thread, retrieved records carry `triggers` from
 `annotations.json`. A command in a T3 Code delegate thread gets records
-without them. A command cannot tell a Claude subagent from its main thread,
-so there the fields appear; injected lines do not have this gap.
+without them.
 
 ## Audit and maintenance
 
@@ -296,11 +308,13 @@ then unions the entries and acknowledgments into `annotations.json`. Union
 makes revocations converge in any sync order: once any machine acknowledges an
 entry, every machine does after it syncs.
 
-Import is how a confirmation made on one machine reaches another, so a
-confirmation's authority rests on the portable file. Confirmation guards
+No command creates a confirmation, but import copies confirmations from the
+synced file, so their authority rests on that file. Confirmation guards
 against agent error, such as an agent treating its own reading or a pasted
 report as the user's approval. It does not guard against someone who can edit
-the dotfile or the store.
+the dotfile or the store. The hook cannot tell who sent a confirm prompt in a
+main thread, so only guidance bars an agent from sending one through a host
+tool.
 
 filip-stack's `host-config` script runs import on apply and import followed by
 export on `field-guide-sync`. It keeps the annotations file at
@@ -309,7 +323,8 @@ export on `field-guide-sync`. It keeps the annotations file at
 Known limits:
 
 - A restore reaches every machine only after repeated syncs, not in one pass.
-- Annotation entries and acknowledgments grow without bound.
+- Annotation entries and acknowledgments grow without bound, and every
+  captured fingerprint keeps a record for its barrier.
 - A retirement or restore whose every copy a dotfile manager overwrote cannot
   be recovered.
 - The sets grow without bound.

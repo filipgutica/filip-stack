@@ -147,7 +147,10 @@ Installing it opts into its `SessionStart` and `UserPromptSubmit` lifecycle
 hooks. Workflow does not invoke or depend on Field Guide. Your current
 instructions, the live code, and repository contracts always outrank what it
 remembers. To confirm a stored record yourself, send a prompt that is exactly
-`confirm fg:<id>`; no agent command can confirm one.
+`confirm fg:<id>` in a main thread. No Field Guide command creates a
+confirmation; import copies them from your synced file, which you trust. The
+hook cannot tell who sent the prompt, so only guidance stops an agent from
+sending it through a host tool.
 
 ## Guardrails
 

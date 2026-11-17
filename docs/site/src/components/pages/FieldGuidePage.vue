@@ -101,9 +101,12 @@ const management = [
       </p>
       <p>
         Only that prompt confirms. Extra text, a quoted ID, a pasted report, or
-        a prompt in a delegate or subagent confirms nothing. The agent can
-        remove a confirmation but never add one, and changing or withdrawing
-        the guidance removes it.
+        a prompt in a delegate or subagent confirms nothing. No Field Guide
+        command adds a confirmation; import copies them from your synced file,
+        which you trust.
+        The hook cannot tell who sent the prompt, so the agent's guidance
+        forbids it from sending one. Changing, withdrawing, or deleting the
+        guidance removes the confirmation.
       </p>
     </div>
   </section>
