@@ -2899,6 +2899,9 @@ const findOperation = ({ operations, reference }) => {
 // because Claude Code and Codex keep separate copies over one store. A copy that ships the
 // version 2 schema reads it, whatever its version label says.
 const v2ReaderFile = join('skills', 'field-guide', 'schemas', 'memory-v2.schema.json')
+// Likewise, nightly run entries are journaled only when every copy reads them: an older copy
+// rejects the whole journal. A copy that reads run entries also reads memory version 2.
+const dreamRunReaderFile = join('skills', 'field-guide', 'schemas', 'dream-apply-v1.schema.json')
 const directoriesIn = (path) => (existsSync(path)
   ? readdirSync(path, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map(({ name }) => name)
   : [])
@@ -2966,11 +2969,11 @@ export const installedPluginCopies = ({ plugin } = {}) => {
 
 const displayPath = (path) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path)
 
-const requireCurrentReaders = () => {
+const requireCurrentReaders = ({ readerFile = v2ReaderFile, reads = 'memory version 2' } = {}) => {
   for (const { host, path, problem } of installedPluginCopies({ plugin: 'field-guide' })) {
     if (problem) fail(`a ${host} plugin copy may be older: ${problem}; refresh the Field Guide plugin on both hosts first`)
-    if (typeof path !== 'string' || !existsSync(join(path, v2ReaderFile))) {
-      fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read memory version 2; refresh the Field Guide plugin on both hosts first`)
+    if (typeof path !== 'string' || !existsSync(join(path, readerFile))) {
+      fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read ${reads}; refresh the Field Guide plugin on both hosts first`)
     }
   }
 }
@@ -4031,7 +4034,8 @@ const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) 
   if (run.entries.length > maxDreamOperations) fail(`a dream run applies at most ${maxDreamOperations} changes; the run applied nothing`)
   if (previewToken === undefined) return { mode: 'dream-apply', outcome: 'preview', runId, previewToken: token, ...dreamReport({ run, applied: false }) }
   if (previewToken !== token) fail('dream apply requires the current dry-run previewToken')
-  if (run.entries.length > 0) requireCurrentReaders()
+  // Every applied run journals its run entries, even one that only flags or queues.
+  requireCurrentReaders({ readerFile: dreamRunReaderFile, reads: 'nightly run entries' })
   const stored = storeProposals({ paths, plans: run.proposals, now: run.now })
   const report = dreamReport({ run, applied: true, stored })
   const entry = runEntry({ input, liveDigests, run, stored, report })

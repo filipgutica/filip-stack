@@ -666,9 +666,11 @@ test('dream plan writes nothing and its output and the journal hold no home path
 test('the consolidation writer refuses while another host\'s installed plugin cannot read memory version 2', () => {
   const { guide } = setup('writer-gate')
   const [first, second] = cleanupTexts.map((learning) => guide.learn(learning))
+  // A current copy ships the version 2 schema and the run-entry schema.
   const installCopy = (path, { v2 }) => {
     mkdirSync(join(path, 'skills', 'field-guide', 'schemas'), { recursive: true })
-    if (v2) writeFileSync(join(path, 'skills', 'field-guide', 'schemas', 'memory-v2.schema.json'), '{}\n')
+    if (!v2) return
+    for (const schema of ['memory-v2.schema.json', 'dream-apply-v1.schema.json']) writeFileSync(join(path, 'skills', 'field-guide', 'schemas', schema), '{}\n')
   }
   const claudeCopy = join(guide.home, '.claude', 'plugins', 'cache', 'filip-stack', 'field-guide', '6.12.0')
   const codexCopy = join(guide.home, '.codex', 'plugins', 'cache', 'filip-stack', 'field-guide', '6.12.0')
@@ -710,6 +712,24 @@ const installCodexCopy = ({ guide, marketplace, version, v2 }) => {
   mkdirSync(path, { recursive: true })
   if (v2) writeFileSync(join(path, 'memory-v2.schema.json'), '{}\n')
 }
+
+test('dream apply refuses even a flag-only run while an installed copy cannot read run entries', () => {
+  const { guide } = setup('run-reader-gate')
+  const [first] = cleanupTexts.map((learning) => guide.learn(learning))
+  // A 6.15.0 copy reads memory version 2 but rejects run entries, and with them the whole journal.
+  installCodexCopy({ guide, marketplace: 'filip-stack', version: '6.15.0', v2: true })
+  writeFileSync(join(guide.home, '.codex', 'config.toml'), '[plugins."field-guide@filip-stack"]\nenabled = true\n')
+  const run = dreamInput(guide.plan(), [{ action: 'flag', kind: 'conflict', targetIds: [first], reason: 'Conflicts.' }])
+  const journalFile = join(guide.guideRoot, 'operations.jsonl')
+  const journalBefore = existsSync(journalFile) ? readFileSync(journalFile, 'utf8') : null
+  const preview = guide.dreamApply(run)
+  assert.match(guide.dreamApply(run, { previewToken: preview.previewToken, expectFailure: true }).stderr, /Codex .*older and cannot read nightly run entries/)
+  assert.equal(existsSync(journalFile) ? readFileSync(journalFile, 'utf8') : null, journalBefore)
+
+  const schemas = join(guide.home, '.codex', 'plugins', 'cache', 'filip-stack', 'field-guide', '6.15.0', 'skills', 'field-guide', 'schemas')
+  writeFileSync(join(schemas, 'dream-apply-v1.schema.json'), '{}\n')
+  assert.equal(guide.dreamApply(run, { previewToken: preview.previewToken }).outcome, 'applied')
+})
 
 test('the writer gate checks only the Codex copy that loads', () => {
   const { guide } = setup('writer-gate-newest')

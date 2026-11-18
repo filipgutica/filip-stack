@@ -125,7 +125,9 @@ replacement and `operationId` on a transition. A plugin that reads only version
 line that the store is newer. The commands that write version 2, `consolidate`,
 `undo-operation`, and `field-guide-dream.mjs apply`, refuse to run while a
 plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
-They check each Claude Code copy that `installed_plugins.json` names and the
+`apply` also journals run entries, which an older copy rejects with the whole
+journal, so every applied run, even one that changes no record, also refuses
+while a copy lacks `schemas/dream-apply-v1.schema.json`. They check each Claude Code copy that `installed_plugins.json` names and the
 Codex copy that loads: the newest version directory in the plugin cache, for
 each marketplace that Codex's `config.toml` lists `field-guide` from, or for
 every cached marketplace when it lists none. Codex writes `field-guide@` only
