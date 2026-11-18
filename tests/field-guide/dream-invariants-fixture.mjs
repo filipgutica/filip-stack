@@ -112,6 +112,14 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
     return ['--input', path]
   }
   const snapshot = () => files(store)
+  // A copy of a snapshot in its own folder, for a reader that must not touch the store.
+  const copyOf = (saved) => {
+    const at = join(root, 'snapshot-store')
+    rmSync(at, { recursive: true, force: true })
+    for (const [file, contents] of Object.entries(saved)) write(join(at, file), contents)
+    for (const folder of initializedDirs) mkdirSync(join(at, folder), { recursive: true })
+    return at
+  }
   const restore = (saved) => {
     rmSync(store, { recursive: true, force: true })
     for (const [file, contents] of Object.entries(saved)) write(join(store, file), contents)
@@ -135,7 +143,7 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
     .filter((entry) => entry.isDirectory())
     .map(({ name, parentPath }) => join(parentPath, name).slice(store.length + 1))
   return {
-    root, home, store, run, input, snapshot, restore, checkUndo,
+    root, home, store, run, input, snapshot, copyOf, restore, checkUndo,
     outside: () => Object.fromEntries(Object.keys(liveFiles).map((path) => [path, readFileSync(path)])),
     install: (options) => install({ home, ...options }),
     clearReaders: () => {

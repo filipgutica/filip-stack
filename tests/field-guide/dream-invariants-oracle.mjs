@@ -140,7 +140,7 @@ export const changedFiles = (before, after) => [...new Set([...Object.keys(durab
 
 const guidanceContent = ({ transitions, retirements, updatedAt, status, ...record }) => record
 
-const undoCheck = ({ machine, id, restored, old, check, gate, clock }) => {
+const undoCheck = ({ machine, id, action, restored, old, check, gate, clock }) => {
   const { result, before, after, reader } = machine.checkUndo(id, { old, gate, clock })
   privacy({ before, after, check })
   if (result.status && /older.*cannot read/iu.test(result.error)) {
@@ -158,7 +158,9 @@ const undoCheck = ({ machine, id, restored, old, check, gate, clock }) => {
     check(4, status === undefined ? actual !== 'active' : actual === status, `undo left record ${actual ?? 'missing'}, expected ${status ?? 'retired replacement'}`)
     if (original && record) check(4, same(guidanceContent(original), guidanceContent(record)), 'undo changed the restored guidance content')
   }
-  readerCheck({ result: reader, check })
+  // Restoring an archive writes an edge that 6.15.0 rejects, so the writer gate refuses it while a
+  // 6.15.0 copy is installed (the gate run above). Here none is, so no 6.15.0 copy reads the store.
+  if (action !== 'archive') readerCheck({ result: reader, check })
 }
 
 const journaledChanges = ({ before, after, check, entries }) => {
@@ -195,7 +197,7 @@ export const reversible = ({ before, after, report, machine, old, check, gate, c
   const grouped = journaledChanges({ before, after, check, entries })
   for (const [id, restored] of grouped) {
     const entry = entries.find(({ type, operationId }) => type === 'pending' && operationId === id)
-    if (gate) undoCheck({ machine, id, restored, old, check, gate })
-    undoCheck({ machine, id, restored, old, check, clock: checkDeadline ? Date.parse(entry.at) + 90 * DAY - 1 : undefined })
+    if (gate) undoCheck({ machine, id, action: entry.action, restored, old, check, gate })
+    undoCheck({ machine, id, action: entry.action, restored, old, check, clock: checkDeadline ? Date.parse(entry.at) + 90 * DAY - 1 : undefined })
   }
 }

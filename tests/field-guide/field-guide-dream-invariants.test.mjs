@@ -102,7 +102,12 @@ const tracker = ({ machine, events, check, tally, undoGate, deadline }) => {
     if (storeWrite && !user) checkNightlyWrite({
       machine, events, before, after, result, check: scoped, old, undoGate, deadline: deadline && name === 'apply',
     })
-    if (storeWrite && !sameFiles(before, after) && (!result?.status || crash)) readerCheck({ result: old(), check: scoped })
+    if (storeWrite && !sameFiles(before, after) && (!result?.status || crash)) {
+      const read = old()
+      // The contract asks that 6.15.0 still read the store. One it could not read before this step,
+      // such as after the user undid an archive with no 6.15.0 copy installed, is not this step's doing.
+      if (read.status === 0 || old({ at: machine.copyOf(before) }).status === 0) readerCheck({ result: read, check: scoped })
+    }
     return result
   }
 }
@@ -123,7 +128,7 @@ const checkTreatment = ({ result, current, check, fault }) => {
     `expected ${expected}, got ${actual}${result.status ? ` (${describe(result)})` : ''}`)
 }
 
-const replay = ({ machine, step, review, token, check, finished, clock, label = 'replay' }) => {
+const replay = ({ machine, step, review, token, check, finished, rerun, clock, label = 'replay' }) => {
   for (const [order, candidate] of [['same', review], ['reordered', reverseKeys(review)]]) {
     const name = `${label}-${order}`
     const before = machine.snapshot()
@@ -138,6 +143,10 @@ const replay = ({ machine, step, review, token, check, finished, clock, label = 
       }
     } else if (result.status !== 0) {
       changed({ before, after: machine.snapshot(), result, invariant: 6, check: (...args) => check(name, ...args) })
+    } else if (rerun) {
+      const files = changedFiles(before, machine.snapshot()).split(', ').filter((file) => file && file !== 'operations.jsonl')
+      check(name, 3, files.length === 0 && classify(result.json) === classify(rerun),
+        `replay after the journal was lost ran ${classify(result.json)} and changed ${files.join(', ') || 'only the journal'}`)
     }
   }
 }
@@ -298,7 +307,9 @@ const attempt = ({ machine, current, fault, step, check, review, original, token
     for (const proposal of preview.json?.proposals ?? []) {
       const prior = proposalsOf(machine.snapshot()).some(({ id }) => id === proposal.proposalId)
       check('apply', 8, !prior, 'failed run published an approvable proposal')
-      const confirmed = step('approve-failed-run', () => machine.confirm(proposal.confirmPrompt), { readOnly: true })
+      // A preview names a proposal by ID alone; this is the prompt a stored proposal would get.
+      const prompt = `confirm fg:proposal:${proposal.proposalId.replace('proposal:v1:', '').slice(0, 12)}`
+      const confirmed = step('approve-failed-run', () => machine.confirm(prompt), { readOnly: true })
       check('approve-failed-run', 8, !/approved/iu.test(confirmed.json?.systemMessage ?? ''), 'failed run proposal could be approved')
     }
   }
@@ -309,10 +320,16 @@ const attempt = ({ machine, current, fault, step, check, review, original, token
 
 const checkAfterApply = ({ machine, step, current, check, fault, applied, preview, baseline, review }) => {
   const finished = applied.json?.outcome === 'applied'
-  const publishedFile = fault.file && !baseline[fault.file] && machine.snapshot()[fault.file]
+  const afterApply = machine.snapshot()
+  const publishedFile = fault.file && !baseline[fault.file] && afterApply[fault.file]
   if (publishedFile) step('fault-after-apply', () => removeOrTruncate({ machine, file: fault.file, mode: fault.mode }), { user: true })
+  // When the fault removed or cut the journal this run created, and the run changed no other file
+  // but proposals.json, which a direct consolidate also writes, no file shows that the run happened.
+  // Refusing then would need a new record of runs, so a replay may run again as a first run.
+  const traceless = finished && publishedFile && fault.file === 'operations.jsonl'
+    && changedFiles(baseline, afterApply).split(', ').every((file) => ['operations.jsonl', 'proposals.json'].includes(file))
   if (finished || fault.crash) {
-    replay({ machine, step, review, check, finished, token: preview?.previewToken,
+    replay({ machine, step, review, check, finished: finished && !traceless, rerun: traceless && applied.json, token: preview?.previewToken,
       clock: fault.post && elapsed(applied.json, 15) })
   }
   if (fault.post && finished) {
