@@ -102,7 +102,7 @@ promptfoo scores each answer alone. Comparing two prompts takes a step after the
 
 | Variable | Use |
 | --- | --- |
-| `CLIPROXY_API_KEY` | Key for the CLIProxyAPI. `--api-key-file` sets it from a file. |
+| `CLIPROXY_API_KEY` | Key for the CLIProxyAPI. Prefer the file: without this variable the runner reads `~/.config/secrets/cliproxy-client-key`, and `--api-key-file` names another file. |
 | `CLIPROXY_BASE_URL` | Overrides the default `http://127.0.0.1:8317/v1`. The stub test uses it. |
 | `EVAL_BASE_REF` | The base ref, `origin/main` when unset. `run.mjs` sets it from `--base`; set it yourself to compare another ref in a direct run. |
 | `EVAL_NO_BASE`, `EVAL_SKILL` | Set by `run.mjs` from `--no-base` and `--skill`, so promptfoo's test generators select the same tests. |
