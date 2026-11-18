@@ -1,3 +1,10 @@
+# [6.17.0](https://github.com/filipgutica/filip-stack/compare/v6.16.0...v6.17.0) (2026-11-18)
+
+
+### Features
+
+* read the CLIProxyAPI key from ~/.config/secrets and add a secrets exposure check ([#269](https://github.com/filipgutica/filip-stack/issues/269)) ([ef963c4](https://github.com/filipgutica/filip-stack/commit/ef963c4c16050c8ef76af50d54e3dc160e7efa0e))
+
 # [6.16.0](https://github.com/filipgutica/filip-stack/compare/v6.15.0...v6.16.0) (2026-11-18)
 
 
