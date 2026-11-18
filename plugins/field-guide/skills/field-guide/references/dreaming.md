@@ -31,9 +31,11 @@ nothing, not even journal recovery. The script never edits
   only when there is a subject to review, up to 32 KiB per source and within
   the room the subjects leave; a source cut short has `truncated: true`.
 - `subjects`: every subject with live records. A subject lists its live
-  records with their confirmation as the hook shows it, triggers, and linked
-  subjects, its `digest`, which covers every record field the packet shows,
-  and its `overlapGroups` without groups the user declined. When
+  records with their confirmation, triggers, and linked subjects, its
+  `digest`, which covers every record field the packet shows, and its
+  `overlapGroups` without groups the user declined. A confirmation shows only
+  while the hook's watermark matches memory, and, as in `consolidate`, a
+  confirmation that only a crashed operation revoked still shows. When
   `annotations.json` cannot be read, records show no confirmation or triggers,
   and the audit reports the error.
 - `pendingOperations`, within 8 KiB. The packet leaves it out when

@@ -2479,7 +2479,7 @@ const pointerProblem = ({ pointer, paths }) => {
 }
 
 // The journal's operations for a read-only report, or null and the error when it cannot be read.
-// Commands that write fail on that journal; the nightly plan reports the error.
+// consolidate and undo-operation fail on that journal; the nightly plan reports the error.
 const journalForDisplay = (paths) => {
   try {
     return { operations: operationsIn(readJournal(paths)) }
@@ -3437,7 +3437,8 @@ export const dreamState = ({ paths }) => {
   const { operations, error } = journalForDisplay(paths)
   const declined = operations ? declinedSets(operations) : new Set()
   const excused = operations ? unlandedRevocations({ operations, memory }) : []
-  // Confirmations show as the hook shows them; it reads the watermark before annotations too.
+  // Confirmations apply the hook's watermark check, read before annotations as the hook does. Like
+  // consolidate, the plan still counts a confirmation that only a crashed operation revoked.
   const confirmationsCurrent = watermarkCurrent({ paths, memory })
   const states = subjectStates({ memory, annotations: readAnnotationsForDisplay(paths.annotationsFile), excused, confirmationsCurrent })
   const subjects = [...states.values()].map((subject) => ({

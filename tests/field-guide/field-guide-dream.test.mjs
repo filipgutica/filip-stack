@@ -1139,7 +1139,7 @@ test('dream plan prints its packet without confirmations when annotations.json c
     guide.confirm(short(first))
     writeFileSync(join(guide.guideRoot, 'annotations.json'), content)
     const plan = guide.plan()
-    assert.ok(plan.audit.validationErrors.length > 0, name)
+    assert.ok(plan.audit.validationErrors.some((line) => /annotations/.test(line)), name)
     assert.ok(subjectFor(plan).records.every(({ confirmed }) => confirmed === false), name)
   }
 })
