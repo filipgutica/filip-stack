@@ -3,6 +3,7 @@
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes, randomUUID } from 'node:crypto'
 import {
+  appendFileSync,
   existsSync,
   linkSync,
   mkdirSync,
@@ -43,10 +44,6 @@ const git = ({ repoRoot, args, optional = false }) => {
   fail(detail.length > 0 ? detail : `git ${args.join(' ')} failed in ${repoRoot}`)
 }
 
-const commands = new Set([
-  'analytics-disable', 'analytics-enable', 'analytics-impact', 'analytics-report', 'analytics-review',
-  'annotate', 'audit', 'candidates', 'delete', 'export', 'import', 'init', 'maintain', 'paths', 'retrieve', 'submit', 'transition', 'unconfirm', 'validate',
-])
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
@@ -63,14 +60,16 @@ const optionNames = new Map([
   ['--id', 'id'],
   ['--triggers', 'triggers'],
   ['--remove-trigger', 'remove-trigger'],
+  ['--approval', 'approval'],
 ])
 // Options that only some commands accept.
 const commandOptions = {
   event: ['retrieve'],
   annotations: ['export', 'import'],
-  id: ['annotate', 'unconfirm'],
+  id: ['annotate', 'unconfirm', 'undo-operation'],
   triggers: ['annotate'],
   'remove-trigger': ['annotate'],
+  approval: ['consolidate'],
 }
 const parseOptions = (args) => {
   const options = {}
@@ -95,12 +94,15 @@ const validateCommandOptions = ({ command, options }) => {
   if (command === 'annotate' && Boolean(options.triggers) === Boolean(options['remove-trigger'])) {
     fail('annotate requires exactly one of --triggers or --remove-trigger')
   }
+  if (command === 'consolidate' && Boolean(options.input) === Boolean(options.approval)) {
+    fail('consolidate requires exactly one of --input or --approval')
+  }
 }
 
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
-  if (!commands.has(command)) {
-    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|annotate|audit|candidates|delete|export|import|init|maintain|paths|retrieve|submit|transition|unconfirm|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--event <trigger>] [--since <YYYY-MM-DD>] [--output <json-file>] [--annotations <json-file>] [--id <guidance-id>] [--triggers <list> | --remove-trigger <trigger>]')
+  if (!Object.hasOwn(commandHandlers, command ?? '')) {
+    fail('Usage: field-guide.mjs <analytics-disable|analytics-enable|analytics-impact|analytics-report|analytics-review|annotate|audit|candidates|consolidate|delete|export|import|init|maintain|paths|retrieve|submit|transition|unconfirm|undo-operation|validate> --repo-root <path> [--guide-root <path>] [--input <json-file> | --input-json <json>] [--subject <key>] [--scope <project|shared>] [--query <text>] [--evidence-for <guidance-id>] [--event <trigger>] [--since <YYYY-MM-DD>] [--output <json-file>] [--annotations <json-file>] [--id <guidance-id|operation-id>] [--triggers <list> | --remove-trigger <trigger>] [--approval <proposal-id>]')
   }
   const options = parseOptions(rest)
   if (!options['repo-root']) fail('--repo-root is required')
@@ -170,6 +172,8 @@ const guideFilesFor = (guideRoot) => ({
   memoryLockFile: join(guideRoot, 'memory.lock'),
   annotationsFile: join(guideRoot, 'annotations.json'),
   annotationsWatermarkFile: join(guideRoot, 'annotations-watermark.json'),
+  operationsFile: join(guideRoot, 'operations.jsonl'),
+  proposalsFile: join(guideRoot, 'proposals.json'),
 })
 
 const readIdentity = (projectIndex) => {
@@ -190,7 +194,7 @@ const projectKeyFor = ({ guideRoot, repositoryName, identity }) => {
   return `${baseKey}-${suffix}`
 }
 
-const resolvePaths = ({ repoRoot: inputRoot, guideRoot: inputGuideRoot }) => {
+export const resolvePaths = ({ repoRoot: inputRoot, guideRoot: inputGuideRoot }) => {
   const requestedRoot = resolve(inputRoot)
   const gitRoot = realpathSync(git({ repoRoot: requestedRoot, args: ['rev-parse', '--show-toplevel'] }))
   const remote = git({ repoRoot: gitRoot, args: ['remote', 'get-url', 'origin'], optional: true })
@@ -257,6 +261,7 @@ const fingerprintPattern = /^fingerprint:v1:[0-9a-f]{64}$/
 const evidenceIdPattern = /^evidence:v1:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 const guidanceIdPattern = /^guidance:v1:[0-9a-f]{64}$/
 const retirementIdPattern = /^retirement:v1:[0-9a-f]{64}$/
+const operationIdPattern = /^operation:v1:[0-9a-f]{64}$/
 
 const requireString = ({ value, label, maxBytes, nonEmpty = true, noWhitespace = false, allowNewlines = false }) => {
   if (typeof value !== 'string' || (nonEmpty && value.trim().length === 0)) {
@@ -281,8 +286,69 @@ const unsafePersistedTextPatterns = [
   { pattern: /<(?:user|assistant|system)>|BEGIN (?:RAW )?PROMPT/iu, reason: 'raw prompt marker' },
 ]
 
-const assertSafePersistedText = ({ value, label }) => {
-  for (const { pattern, reason } of unsafePersistedTextPatterns) {
+// Text that this version writes for the first time, such as a consolidation's replacement, an
+// operation's reason, or a proposal, also refuses a query string or user information in a URL of
+// any scheme, and a home directory without a trailing separator. A query is a `?` and more text
+// in a token that starts with a scheme and a colon, with or without `//`, as in `mailto:a?b`.
+// Windows ignores the case of Users, so a drive-rooted home, such as C:\users\<name>, WSL's
+// /mnt/c/USERS/<name>, or /mnt/c/home/<name>, matches in any case. Stored records keep the
+// patterns above, which released versions wrote, so their stores stay valid.
+const unsafeNewTextPatterns = [
+  ...unsafePersistedTextPatterns,
+  { pattern: /[a-z][a-z0-9+.-]*:[^\s?]*\?\S/iu, reason: 'URL query string' },
+  { pattern: /[a-z][a-z0-9+.-]*:\/\/[^\s/?#@]*@/iu, reason: 'URL user information' },
+  { pattern: /(?<![\w.-])\/(?:Users|home)\/[^/\s]+/u, reason: 'absolute home-directory path' },
+  { pattern: /(?:\/mnt\/[a-z]\/(?:users|home)|[a-z]:[\\/]users)[\\/][^\\/\s]+/iu, reason: 'absolute home-directory path' },
+]
+
+// Output that reaches a model but is never stored. Home paths are left to the caller, which
+// shortens them to ~.
+const unsafeOutputTextPatterns = unsafeNewTextPatterns.filter(({ reason }) => reason !== 'absolute home-directory path')
+
+// Every marker that opens a raw prompt block or closes a tag block.
+const rawBlockMarker = /<(\/?)(user|assistant|system)>|BEGIN (?:RAW )?PROMPT/giu
+const rawBlockEvent = ([, slash, tag]) => {
+  if (tag) return slash ? { closes: tag.toLowerCase() } : { opens: tag.toLowerCase() }
+  return { opens: 'prompt' }
+}
+// A prompt block closes only at a line of its own that holds END, in capitals.
+const promptBlockEnd = /^END(?: (?:RAW )?PROMPT)?$/u
+
+// Drops each line that starts inside a raw prompt block. The markers are read in order across
+// lines, and a block closes only at the closing marker of the innermost open block, so a block
+// that never closes runs to the end of the text. A line where a block opens stays, and the line
+// redaction replaces it.
+const withoutRawBlockBodies = (lines) => {
+  const open = []
+  return lines.filter((line) => {
+    const outside = open.length === 0
+    // The END line starts inside the block, so it is dropped too.
+    if (open.at(-1) === 'prompt' && promptBlockEnd.test(line.trim())) {
+      open.pop()
+      return false
+    }
+    for (const match of line.matchAll(rawBlockMarker)) {
+      const { opens, closes } = rawBlockEvent(match)
+      if (opens) open.push(opens)
+      else if (closes && open.at(-1) === closes) open.pop()
+    }
+    return outside
+  })
+}
+
+// Removes each private key block and each raw prompt block whole, and replaces each other line
+// that holds unsafe text, for output that reaches a model but is never stored.
+export const redactUnsafeText = (text) => withoutRawBlockBodies(text
+  .replace(/-----BEGIN (?:[A-Z ]+ )?PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z ]+ )?PRIVATE KEY-----|$)/gu, '[redacted private key]')
+  .split('\n'))
+  .map((line) => {
+    const unsafe = unsafeOutputTextPatterns.find(({ pattern }) => pattern.test(line))
+    return unsafe ? `[redacted ${unsafe.reason}]` : line
+  })
+  .join('\n')
+
+const assertSafePersistedText = ({ value, label, patterns = unsafePersistedTextPatterns }) => {
+  for (const { pattern, reason } of patterns) {
     if (pattern.test(value)) fail(`${label} contains a forbidden ${reason}`)
   }
 }
@@ -291,6 +357,16 @@ const requireSafePersistedString = (options) => {
   const value = requireString(options)
   assertSafePersistedText({ value, label: options.label })
   return value
+}
+
+// Checks every string in a value that this version writes for the first time, however deeply it
+// is nested, so a field added later needs no wiring of its own.
+const assertSafeNewValue = ({ value, label }) => {
+  if (typeof value === 'string') assertSafePersistedText({ value, label, patterns: unsafeNewTextPatterns })
+  else if (Array.isArray(value)) value.forEach((item, index) => assertSafeNewValue({ value: item, label: `${label}[${index}]` }))
+  else if (value !== null && typeof value === 'object') {
+    for (const [key, child] of Object.entries(value)) assertSafeNewValue({ value: child, label: `${label}.${key}` })
+  }
 }
 
 const requireTimestamp = ({ value, label }) => {
@@ -450,7 +526,9 @@ const validateEvidenceRecord = (evidence) => {
 }
 
 // A shared supersede records the retirement ID it added, so an undo can acknowledge only that ID.
-const validateTransitionRetirementId = ({ guidance, transition }) => {
+// A journaled transition names the operation that made it, so recovery and undo can find it.
+const validateTransitionIds = ({ guidance, transition }) => {
+  if (transition.operationId !== undefined && !operationIdPattern.test(transition.operationId)) fail('invalid transition operationId')
   if (transition.retirementId === undefined) return
   if (transition.to !== 'superseded' || !retirementIdPattern.test(transition.retirementId)) fail('retirementId is valid only on a superseded transition')
   if (!guidance.retirements?.includes(transition.retirementId)) fail('a superseded transition names an unknown retirement')
@@ -460,7 +538,7 @@ const validateGuidanceRecord = (guidance) => {
   assertObject({ value: guidance, label: 'guidance record' })
   assertClosedFields({
     value: guidance,
-    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'status', 'confidence', 'generic', 'relationship', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'retirements', 'acknowledged', 'createdAt', 'updatedAt'],
+    fields: ['id', 'fingerprint', 'scope', 'subjectKey', 'linkedSubjects', 'learning', 'status', 'confidence', 'generic', 'relationship', 'consolidates', 'examples', 'evidenceIds', 'independentEvidenceCount', 'transitions', 'retirements', 'acknowledged', 'createdAt', 'updatedAt'],
     label: 'guidance record',
   })
   if (!guidanceIdPattern.test(guidance.id)) fail('guidance record has invalid id')
@@ -488,6 +566,7 @@ const validateGuidanceRecord = (guidance) => {
     if (!['reinforces', 'refines', 'contradicts'].includes(guidance.relationship.kind)) fail('invalid relationship kind')
     if (!guidanceIdPattern.test(guidance.relationship.targetId)) fail('invalid relationship targetId')
   }
+  if (guidance.consolidates !== undefined) requireTargetIds({ value: guidance.consolidates, label: 'guidance consolidates' })
   validateExamples(guidance.examples)
   if (!Array.isArray(guidance.evidenceIds) || new Set(guidance.evidenceIds).size !== guidance.evidenceIds.length) {
     fail('guidance evidenceIds must be a unique array')
@@ -501,7 +580,7 @@ const validateGuidanceRecord = (guidance) => {
   }
   for (const transition of guidance.transitions) {
     assertObject({ value: transition, label: 'guidance transition' })
-    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId', 'retirementId'], label: 'guidance transition' })
+    assertClosedFields({ value: transition, fields: ['from', 'to', 'reason', 'source', 'at', 'replacementId', 'retirementId', 'operationId'], label: 'guidance transition' })
     if (transition.from !== null && !['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.from)) fail('invalid transition from status')
     if (!['candidate', 'active', 'superseded', 'withdrawn', 'archived'].includes(transition.to)) fail('invalid transition to status')
     requireString({ value: transition.reason, label: 'transition reason', maxBytes: 512 })
@@ -513,7 +592,7 @@ const validateGuidanceRecord = (guidance) => {
     if ((transition.to === 'superseded') !== Boolean(transition.replacementId)) {
       fail('replacementId is required only for a superseded transition')
     }
-    validateTransitionRetirementId({ guidance, transition })
+    validateTransitionIds({ guidance, transition })
   }
   if (guidance.retirements !== undefined || guidance.acknowledged !== undefined) {
     if (guidance.scope.kind !== 'shared') fail('only shared guidance has retirement sets')
@@ -526,12 +605,13 @@ const validateGuidanceRecord = (guidance) => {
 const validateMemory = (memory) => {
   assertObject({ value: memory, label: 'memory store' })
   assertClosedFields({ value: memory, fields: ['schemaVersion', 'revision', 'guidance', 'evidence'], label: 'memory store' })
-  if (memory.schemaVersion !== 1) fail(`memory store has unsupported schema version: ${memory.schemaVersion}`)
+  if (!memorySchemaVersions.includes(memory.schemaVersion)) fail(`memory store has unsupported schema version: ${memory.schemaVersion}`)
   if (!Number.isSafeInteger(memory.revision) || memory.revision < 0) fail('memory store revision must be a non-negative integer')
   if (!Array.isArray(memory.guidance)) fail('memory store guidance must be an array')
   if (!Array.isArray(memory.evidence)) fail('memory store evidence must be an array')
   memory.guidance.forEach(validateGuidanceRecord)
   memory.evidence.forEach(validateEvidenceRecord)
+  if (memory.schemaVersion < requiredSchemaVersion(memory)) fail(`memory store schema version ${memory.schemaVersion} does not match its content`)
   if (new Set(memory.guidance.map(({ id }) => id)).size !== memory.guidance.length) fail('memory store has duplicate guidance IDs')
   if (new Set(memory.guidance.map(({ fingerprint }) => fingerprint)).size !== memory.guidance.length) fail('memory store has duplicate guidance fingerprints')
   if (new Set(memory.evidence.map(({ id }) => id)).size !== memory.evidence.length) fail('memory store has duplicate evidence IDs')
@@ -613,10 +693,8 @@ const validateMemory = (memory) => {
       if (!replacement
         || !sameScope(guidance.scope, replacement.scope)
         || guidance.subjectKey !== replacement.subjectKey
-        || !replacement.relationship
-        || !['refines', 'contradicts'].includes(replacement.relationship.kind)
-        || replacement.relationship.targetId !== guidance.id) {
-        fail(`${guidance.id} superseded transition requires a linked refinement or contradiction`)
+        || !replacesRecord({ replacement, guidance })) {
+        fail(`${guidance.id} superseded transition requires a linked refinement or contradiction, or a consolidation`)
       }
     }
     if (guidance.status === 'superseded') {
@@ -636,9 +714,32 @@ const validateMemory = (memory) => {
         fail(`${guidance.id} relationship target has a different scope or subject`)
       }
     }
+    for (const id of guidance.consolidates ?? []) {
+      const predecessor = memory.guidance.find((each) => each.id === id)
+      if (!predecessor || !sameScope(guidance.scope, predecessor.scope) || guidance.subjectKey !== predecessor.subjectKey) {
+        fail(`${guidance.id} consolidates a missing record or one with a different scope or subject`)
+      }
+    }
   }
   return memory
 }
+
+// A replacement names what it replaces through its relationship, or, after a consolidation,
+// through its consolidates list.
+const replacesRecord = ({ replacement, guidance }) => (
+  (['refines', 'contradicts'].includes(replacement.relationship?.kind) && replacement.relationship.targetId === guidance.id)
+    || Boolean(replacement.consolidates?.includes(guidance.id))
+)
+
+// Version 2 adds consolidation links and journaled transitions. A store is first written as
+// version 2 when it holds one, so plugins that read only version 1 keep working until then. It
+// stays version 2 after that, even when no such record remains, so it never moves back to a
+// version that an older plugin would write over the journal.
+const memorySchemaVersions = [1, 2]
+const requiredSchemaVersion = (memory) => (
+  memory.guidance.some(({ consolidates, transitions }) => consolidates || transitions.some(({ operationId }) => operationId)) ? 2 : 1
+)
+const schemaVersionFor = (memory) => Math.max(memory.schemaVersion ?? 1, requiredSchemaVersion(memory))
 
 const readJsonMemory = (paths) => {
   if (!existsSync(paths.memoryFile)) return null
@@ -948,7 +1049,8 @@ const writeTextAtomically = ({ path, content }) => {
   renameSync(temporaryPath, path)
 }
 
-const writeMemoryViews = ({ paths, memory }) => {
+const writeMemoryViews = ({ paths, memory: content }) => {
+  const memory = { ...content, schemaVersion: schemaVersionFor(content) }
   validateMemory(memory)
   const current = readMemory(paths) ?? emptyMemory()
   if (!existsSync(paths.memoryIndexFile)) {
@@ -1244,7 +1346,7 @@ const acknowledgeOwnSupersession = (superseded) => {
   if (retirements.includes(own)) setRetirementSets({ guidance: superseded, retirements, acknowledged: [...acknowledged, own] })
 }
 
-const appendTransition = ({ guidance, to, reason, source, now, replacementId, retirementId }) => {
+const appendTransition = ({ guidance, to, reason, source, now, replacementId, retirementId, operationId }) => {
   guidance.transitions.push({
     from: guidance.status,
     to,
@@ -1253,6 +1355,7 @@ const appendTransition = ({ guidance, to, reason, source, now, replacementId, re
     at: now,
     ...(replacementId ? { replacementId } : {}),
     ...(retirementId ? { retirementId } : {}),
+    ...(operationId ? { operationId } : {}),
   })
   guidance.status = to
   guidance.updatedAt = now
@@ -1393,19 +1496,26 @@ const revocationIds = ({ record, guidance }) => (
   sortedUnion(record.revocations, retirementSetsOf(guidance).retirements.map(retirementRevocationId))
 )
 
-// A confirmation counts while it is outstanding and has seen every revocation of its record.
-// Its time is metadata only, so machine clocks never decide authority.
-const countingConfirmations = ({ record, guidance }) => outstandingEntries({ record, entries: record.confirmations })
-  .filter(({ seen }) => revocationIds({ record, guidance }).every((id) => seen.includes(id)))
-
-const revokeRecord = (record) => {
-  record.revocations.push(newAnnotationId())
+// A confirmation counts while it is outstanding and has seen every revocation of its record,
+// apart from any the caller excuses. Its time is metadata only, so machine clocks never decide authority.
+const countingConfirmations = ({ record, guidance, excused = [] }) => {
+  const revocations = revocationIds({ record, guidance }).filter((id) => !excused.includes(id))
+  return outstandingEntries({ record, entries: record.confirmations }).filter(({ seen }) => revocations.every((id) => seen.includes(id)))
 }
 
-const annotationMarkers = ({ annotations, guidance }) => {
+// Returns the new revocation's ID.
+const revokeRecord = (record) => {
+  const id = newAnnotationId()
+  record.revocations.push(id)
+  return id
+}
+
+// Automation passes excused revocations so a crashed operation's revocations do not expose a record
+// the user confirmed; injected markers excuse none, so the crash still fails closed for authority.
+const annotationMarkers = ({ annotations, guidance, excused = [] }) => {
   const record = annotations.records[guidance.fingerprint] ?? emptyAnnotationRecord()
   return {
-    confirmed: countingConfirmations({ record, guidance }).length > 0,
+    confirmed: countingConfirmations({ record, guidance, excused }).length > 0,
     triggers: [...new Set(outstandingEntries({ record, entries: record.triggers }).map(({ trigger }) => trigger))].sort(),
   }
 }
@@ -1530,7 +1640,8 @@ const confirmUnlocked = ({ files, reference, host }) => {
 
 /**
  * Handles a prompt that names a confirmation. A trimmed prompt that is exactly
- * `confirm fg:<id>`, in a main thread, confirms one active record; the result reports why
+ * `confirm fg:<id>`, in a main thread, confirms one active record, and one that is exactly
+ * `confirm fg:proposal:<id>` approves one stored proposal; the result reports why
  * anything else confirms nothing. Returns null for a prompt that does not mention
  * `confirm fg:`, and for a near miss outside a main thread. A near miss, such as a pasted report
  * that mentions a confirm prompt, only tells the agent: it has no message for the user. Stores only an entry ID, the time,
@@ -1545,7 +1656,8 @@ export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   if (!mainThread) return notConfirmed('only a prompt the user types in a main thread can confirm guidance')
   const files = guideFilesFor(guideRootFor(guideRoot))
   if (!existsSync(files.memoryIndexFile)) return notConfirmed('no Field Guide memory exists')
-  return withMemoryLock({ paths: files, action: () => confirmUnlocked({ files, reference, host }) })
+  const confirm = reference.startsWith('proposal:') ? approveProposalUnlocked : confirmUnlocked
+  return withMemoryLock({ paths: files, action: () => confirm({ files, reference, host }) })
 }
 
 /** Returns one line when the store's memory or annotations are newer than this plugin reads. */
@@ -1559,11 +1671,9 @@ export const storeVersionNotice = ({ guideRoot }) => {
       return undefined
     }
   }
-  const versions = [
-    versionOf(() => readMemoryBlock(files)),
-    versionOf(() => (existsSync(files.annotationsFile) ? readJsonInput(files.annotationsFile) : null)),
-  ]
-  return versions.some((version) => Number.isSafeInteger(version) && version > supportedSchemaVersion)
+  const newer = (version, supported) => Number.isSafeInteger(version) && version > supported
+  return newer(versionOf(() => readMemoryBlock(files)), memorySchemaVersions.at(-1))
+    || newer(versionOf(() => (existsSync(files.annotationsFile) ? readJsonInput(files.annotationsFile) : null)), supportedSchemaVersion)
     ? 'Field Guide: the guide uses a newer format than this plugin reads, so some stored guidance is not applied. Update the Field Guide plugin.'
     : null
 }
@@ -1594,21 +1704,23 @@ const validateTransitionInput = (input) => {
 }
 
 // A superseded record needs an active replacement, so withdrawing the replacement also moves
-// the record it superseded, and returns that record. Only a user's withdrawal adds a retirement
-// ID and acknowledges the supersession. The record returns to active only when none of its
-// retirements is outstanding; otherwise it moves to withdrawn.
+// each record it superseded, one or, after a consolidation, several, and returns them. Only a
+// user's withdrawal adds a retirement ID and acknowledges the supersession. A record returns to
+// active only when none of its retirements is outstanding; otherwise it moves to withdrawn.
 const withdrawGuidance = ({ memory, target, input, now, byUser }) => {
   if (!['candidate', 'active'].includes(target.status)) fail(`${input.action} requires a candidate or active target`)
-  if (byUser) addRetirement(target)
-  appendTransition({ guidance: target, to: 'withdrawn', reason: input.reason, source: input.source, now })
-  const superseded = memory.guidance.find((guidance) => (
+  const transition = { reason: input.reason, source: input.source, now, operationId: input.operationId }
+  const retirementId = byUser ? addRetirement(target) : undefined
+  appendTransition({ guidance: target, to: 'withdrawn', ...transition })
+  const superseded = memory.guidance.filter((guidance) => (
     guidance.status === 'superseded' && guidance.transitions.at(-1).replacementId === target.id
   ))
-  if (!superseded) return null
-  if (byUser) acknowledgeOwnSupersession(superseded)
-  const to = hasUnacknowledgedRetirement(retirementSetsOf(superseded)) ? 'withdrawn' : 'active'
-  appendTransition({ guidance: superseded, to, reason: input.reason, source: input.source, now })
-  return superseded
+  for (const guidance of superseded) {
+    if (byUser) acknowledgeOwnSupersession(guidance)
+    const to = hasUnacknowledgedRetirement(retirementSetsOf(guidance)) ? 'withdrawn' : 'active'
+    appendTransition({ guidance, to, ...transition })
+  }
+  return { superseded, retirementId }
 }
 
 const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
@@ -1625,7 +1737,11 @@ const transitionGuidanceUnlocked = ({ paths, inputPath }) => {
     appendTransition({ guidance: target, to: 'active', reason: input.reason, source: input.source, now })
   }
 
-  if (input.action === 'withdraw' || input.action === 'undo') withdrawGuidance({ memory, target, input, now, byUser: true })
+  if (input.action === 'withdraw' || input.action === 'undo') {
+    // A consolidation is undone as one journaled operation, so its declined set is recorded.
+    if (target.consolidates) fail(`${input.action} cannot retire a consolidated replacement; run undo-operation --id ${target.transitions[0].operationId}`)
+    withdrawGuidance({ memory, target, input, now, byUser: true })
+  }
 
   if (input.action === 'supersede') {
     if (target.status !== 'active') fail('supersede requires an active target')
@@ -1708,6 +1824,7 @@ const deleteGuidanceUnlocked = ({ paths, inputPath }) => {
   }
   if (memory.guidance.some((guidance) => (
     guidance.relationship?.targetId === target.id
+      || guidance.consolidates?.includes(target.id)
       || guidance.transitions.some(({ replacementId }) => replacementId === target.id)
   ))) {
     fail('permanent deletion target is referenced by another guidance record')
@@ -1803,12 +1920,26 @@ const exportSharedGuidanceUnlocked = ({ paths, outputPath, annotationsPath }) =>
 
 // The portable annotations file has the local format. It keeps every entry already in the file,
 // so a machine never drops another machine's entries, and adds the local entries for every
-// fingerprint that is not a local project record, as the shared guidance export does.
+// fingerprint that is not a local project record, as the shared guidance export does. A
+// journaled project operation names project fingerprints too, including a replacement that a
+// crash kept out of memory. A fingerprint hashes its scope, so none of them is shared.
 const portableAnnotations = ({ paths, memory, annotationsPath }) => {
   const existing = existsSync(resolve(annotationsPath)) ? validateAnnotations(readJsonInput(annotationsPath)) : emptyAnnotations()
-  const projectFingerprints = new Set(memory.guidance.filter(({ scope }) => scope.kind === 'project').map(({ fingerprint }) => fingerprint))
+  const fingerprintsOf = (kind) => memory.guidance.filter(({ scope }) => scope.kind === kind).map(({ fingerprint }) => fingerprint)
+  const { operations } = journalForDisplay(paths)
+  const projectFingerprints = new Set([
+    ...fingerprintsOf('project'),
+    ...[...(operations?.values() ?? [])].filter(({ scope }) => scope === 'project')
+      .flatMap(({ fingerprints, replacementFingerprint }) => [...fingerprints, ...(replacementFingerprint ? [replacementFingerprint] : [])]),
+  ])
+  // Without the journal, a fingerprint that memory does not hold may be project data, so only
+  // records that memory shows are shared are exported. The rest, such as a revocation of a deleted
+  // shared record, wait for an export after the journal is repaired; retirements still travel in
+  // the guidance export.
+  const sharedFingerprints = new Set(fingerprintsOf('shared'))
+  const exported = operations ? (fingerprint) => !projectFingerprints.has(fingerprint) : (fingerprint) => sharedFingerprints.has(fingerprint)
   const local = readAnnotations(paths.annotationsFile)
-  const records = Object.entries(local.records).filter(([fingerprint]) => !projectFingerprints.has(fingerprint))
+  const records = Object.entries(local.records).filter(([fingerprint]) => exported(fingerprint))
   return mergeAnnotations(existing, { records: Object.fromEntries(records) })
 }
 
@@ -1897,9 +2028,9 @@ const reconcileSharedStatus = ({ memory, now, result }) => {
       result.restored.push(guidance.id)
     }
     if (!retired || !['candidate', 'active'].includes(guidance.status)) continue
-    const superseded = withdrawGuidance({ memory, target: guidance, input, now, byUser: false })
+    const { superseded } = withdrawGuidance({ memory, target: guidance, input, now, byUser: false })
     result.retired.push(guidance.id)
-    if (superseded) result[superseded.status === 'active' ? 'restored' : 'retired'].push(superseded.id)
+    for (const each of superseded) result[each.status === 'active' ? 'restored' : 'retired'].push(each.id)
   }
 }
 
@@ -2349,12 +2480,61 @@ const pointerProblem = ({ pointer, paths }) => {
   return null
 }
 
-const audit = (paths) => {
-  const validationErrors = []
+const isString = (value) => typeof value === 'string'
+const isStringArray = (value) => Array.isArray(value) && value.every(isString)
+
+// The fields of a pending entry that the read-only readers use, with their checks. An optional
+// field is checked only when present.
+const pendingEntryFields = {
+  required: { action: isString, scope: (value) => value === 'project' || value === 'shared', fingerprints: isStringArray },
+  optional: { replacementFingerprint: isString, revocationIds: isStringArray, declined: isStringArray },
+}
+
+// Fails on an entry whose fields the read-only readers could misread.
+const requireReadableJournalEntry = ({ entry, index }) => {
+  const problem = (text) => fail(`operations.jsonl entry ${index + 1} ${text}`)
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) problem('is not an object')
+  if (!['pending', 'commit', 'abort'].includes(entry.type)) problem('has an unknown type')
+  if (!isString(entry.operationId) || !operationIdPattern.test(entry.operationId)) problem('has an invalid operationId')
+  if (entry.type !== 'pending') return
+  const invalid = [
+    ...Object.entries(pendingEntryFields.required).filter(([field, valid]) => !valid(entry[field])),
+    ...Object.entries(pendingEntryFields.optional).filter(([field, valid]) => entry[field] !== undefined && !valid(entry[field])),
+  ].map(([field]) => field)
+  if (invalid.length > 0) problem(`has an invalid ${invalid.join(', ')}`)
+}
+
+// The journal's operations for a read-only report, or null and the error when it cannot be read
+// or holds an entry whose fields those reports could misread. consolidate and undo-operation fail
+// on a line that is not JSON; the nightly plan reports either error, and the annotation export
+// falls back to records that memory shows are shared.
+const journalForDisplay = (paths) => {
   try {
-    validate(paths)
+    const journal = readJournal(paths)
+    journal.forEach((entry, index) => requireReadableJournalEntry({ entry, index }))
+    return { operations: operationsIn(journal) }
   } catch (error) {
-    validationErrors.push(error.message)
+    return { operations: null, error: error.message }
+  }
+}
+
+// Overlapping live records of each subject, for review. A journal that cannot be read hides no
+// group: declined groups are listed again, and nothing is applied from an audit.
+const duplicateGroups = ({ paths, memory }) => {
+  const { operations } = journalForDisplay(paths)
+  const declined = operations ? declinedSets(operations) : new Set()
+  const subjects = subjectStates({ memory, annotations: readAnnotationsForDisplay(paths.annotationsFile) })
+  return [...subjects.values()].flatMap(({ scope, subjectKey, records }) => (
+    overlapGroups({ records: records.map(({ guidance }) => guidance), declined }).map((ids) => ({ scope: scope.kind, subjectKey, ids }))
+  ))
+}
+
+export const audit = (paths) => {
+  let validationErrors
+  try {
+    validationErrors = validationErrorsFor(paths)
+  } catch (error) {
+    validationErrors = [error.message]
   }
   let memory
   try {
@@ -2393,7 +2573,7 @@ const audit = (paths) => {
       return problem ? [{ evidenceId: evidence.id, pointerIndex, problem }] : []
     })
   ))
-  const duplicateCandidates = []
+  const duplicateCandidates = duplicateGroups({ paths, memory })
   const referencedEvidence = new Set(memory.guidance.flatMap(({ evidenceIds }) => evidenceIds))
   const orphanEvidence = memory.evidence
     .filter(({ id }) => !referencedEvidence.has(id))
@@ -2413,6 +2593,7 @@ const audit = (paths) => {
   if (brokenPointers.length > 0) recommendations.push('Review broken local or commit pointers. Do not fetch stored URLs automatically.')
   if (orphanEvidence.length > 0) recommendations.push('Remove orphan evidence only through an approved maintenance apply.')
   if (oversizedRecords.length > 0) recommendations.push('Reduce oversized records without truncating them during retrieval.')
+  if (duplicateCandidates.length > 0) recommendations.push('Review overlapping guidance; consolidate a group only through the consolidate preview-and-apply flow.')
   return {
     mode: 'audit',
     validationErrors,
@@ -2496,6 +2677,24 @@ const repairCache = ({ paths, input }) => {
   }
 }
 
+// Applies a change to a copy of memory and validates the result as the store write would, so an
+// invalid change fails before any preview, proposal, journal entry, or annotation write.
+const requireValidChange = ({ memory, change, label }) => {
+  const trial = structuredClone(memory)
+  change(trial)
+  try {
+    validateMemory({ ...trial, schemaVersion: schemaVersionFor(trial) })
+  } catch (error) {
+    fail(`the ${label} result would be invalid: ${error.message}`)
+  }
+}
+
+// Archives one record. A shared record gets a retirement ID, so the archive reaches other machines.
+const archiveRecord = ({ guidance, reason, source, now }) => {
+  addRetirement(guidance)
+  appendTransition({ guidance, to: 'archived', reason, source, now })
+}
+
 const maintainUnlocked = ({ paths, inputPath }) => {
   const input = validateMaintenanceInput(readJsonInput(inputPath))
   if (input.action === 'repair-cache') return repairCache({ paths, input })
@@ -2510,6 +2709,11 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     }
     return target
   })
+  const now = new Date().toISOString()
+  const archive = (store) => input.targetIds.forEach((id) => (
+    archiveRecord({ guidance: store.guidance.find((guidance) => guidance.id === id), reason: input.reason, source: 'maintenance', now })
+  ))
+  requireValidChange({ memory, change: archive, label: 'archived' })
   const previewToken = maintenancePreviewToken({ memory, input })
   if (input.apply !== true) {
     return {
@@ -2521,17 +2725,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     }
   }
   if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
-  const now = new Date().toISOString()
-  for (const target of targets) {
-    addRetirement(target)
-    appendTransition({
-      guidance: target,
-      to: 'archived',
-      reason: input.reason,
-      source: 'maintenance',
-      now,
-    })
-  }
+  archive(memory)
   const nextMemory = { ...memory, revision: memory.revision + 1 }
   revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: targets.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
@@ -2546,6 +2740,762 @@ const maintainUnlocked = ({ paths, inputPath }) => {
 const maintain = ({ paths, inputPath }) => (
   withMemoryLock({ paths, action: () => maintainUnlocked({ paths, inputPath }) })
 )
+
+// Reversible operations. consolidate and undo-operation each run as one
+// operation in the write-ahead journal operations.jsonl: a pending entry, then the store change,
+// then a commit entry. Each transition an operation makes carries its operation ID, so recovery
+// tells a change that reached memory from one that did not by that ID, whatever other writers
+// did in between. The journal holds IDs, fingerprints, revisions, and a sanitized reason, never
+// guidance text. It stays local, never syncs, and no hook reads it.
+const maxConsolidationTargets = 8
+const undoWindowDays = 90
+const proposalLifetimeDays = 14
+const dayMs = 24 * 60 * 60 * 1000
+
+const newOperationId = () => `operation:v1:${randomBytes(32).toString('hex')}`
+const contentDigest = (value) => createHash('sha256').update(JSON.stringify(value)).digest('hex')
+const shortId = (id) => id.replace(/^[a-z]+:v1:/u, '').slice(0, 12)
+
+const readJournal = (paths) => {
+  if (!existsSync(paths.operationsFile)) return []
+  // A crash during an append can leave an unterminated last line; it never took effect.
+  const lines = readFileSync(paths.operationsFile, 'utf8').split('\n').slice(0, -1)
+  return lines.flatMap((line, index) => {
+    if (line.length === 0) return []
+    try {
+      return [JSON.parse(line)]
+    } catch {
+      fail(`operations.jsonl line ${index + 1} is not valid JSON`)
+    }
+  })
+}
+
+const appendJournal = ({ paths, entries }) => {
+  if (entries.length === 0) return
+  const lines = entries.map((entry) => `${JSON.stringify(entry)}\n`).join('')
+  const existing = existsSync(paths.operationsFile) ? readFileSync(paths.operationsFile, 'utf8') : ''
+  if (existing.endsWith('\n') || existing.length === 0) {
+    appendFileSync(paths.operationsFile, lines)
+    return
+  }
+  writeTextAtomically({ path: paths.operationsFile, content: `${existing.slice(0, existing.lastIndexOf('\n') + 1)}${lines}` })
+}
+
+// Each operation's pending entry, with its state: pending, committed, or aborted.
+const operationsIn = (journal) => {
+  const operations = new Map()
+  for (const entry of journal) {
+    if (entry.type === 'pending') operations.set(entry.operationId, { ...entry, state: 'pending' })
+    const operation = operations.get(entry.operationId)
+    if (operation && entry.type === 'commit') operation.state = 'committed'
+    if (operation && entry.type === 'abort') operation.state = 'aborted'
+  }
+  return operations
+}
+
+const operationLanded = ({ memory, operationId }) => memory.guidance.some(({ transitions }) => (
+  transitions.some((transition) => transition.operationId === operationId)
+))
+
+// A consolidation annotates its replacement before the memory write: an approval confirms it, and
+// it takes its targets' triggers. When the operation aborts, acknowledge exactly those trigger
+// entries, even when a later capture put the same text in memory, so that capture inherits none;
+// a trigger the user added under another ID stays. Only entries that reached annotations are
+// acknowledged; a crash can stop before that write. While the record is absent, also revoke its
+// confirmation. A capture already revoked it, and a later confirmation is the user's own.
+const cancelUnlandedReplacement = ({ paths, memory, replacementFingerprint, triggerIds = [] }) => {
+  if (!replacementFingerprint) return
+  const annotations = readAnnotations(paths.annotationsFile)
+  const record = annotationRecordFor({ annotations, fingerprint: replacementFingerprint })
+  if (!memory.guidance.some(({ fingerprint }) => fingerprint === replacementFingerprint)) revokeRecord(record)
+  acknowledgeEntries({ record, entries: record.triggers.filter(({ id }) => triggerIds.includes(id)) })
+  writeAnnotations({ path: paths.annotationsFile, annotations })
+}
+
+// Commits each pending operation whose transitions reached memory and aborts the rest. Returns
+// the journal with the entries it added.
+const recoverOperations = ({ paths, memory }) => {
+  const journal = readJournal(paths)
+  const at = new Date().toISOString()
+  const entries = []
+  for (const { operationId, state, replacementFingerprint, triggerIds } of operationsIn(journal).values()) {
+    if (state !== 'pending') continue
+    if (operationLanded({ memory, operationId })) {
+      entries.push({ type: 'commit', operationId, at, revision: memory.revision, recovered: true })
+      continue
+    }
+    entries.push({ type: 'abort', operationId, at, revision: memory.revision })
+    cancelUnlandedReplacement({ paths, memory, replacementFingerprint, triggerIds })
+  }
+  // A crash after the canonical write can leave memory.json behind it. The memory lock already
+  // reconciled the watermark, so only the cache is rebuilt, the way repair-cache does it.
+  if (entries.some(({ type }) => type === 'commit')) writeMemoryAtomically({ paths, memory })
+  appendJournal({ paths, entries })
+  return [...journal, ...entries]
+}
+
+// The predecessor sets of undone consolidations. They are not proposed again.
+// Revocations journaled by operations that never reached memory: aborted, or pending and not landed.
+const unlandedRevocations = ({ operations, memory }) => [...operations.values()]
+  .filter(({ state, operationId }) => state === 'aborted' || (state === 'pending' && !operationLanded({ memory, operationId })))
+  .flatMap(({ revocationIds }) => revocationIds ?? [])
+
+const declinedSets = (operations) => new Set([...operations.values()]
+  .filter(({ action, state, declined }) => action === 'undo-operation' && state === 'committed' && declined)
+  .map(({ declined }) => declined.join(',')))
+
+const requireNotDeclined = ({ declined, fingerprints }) => {
+  if (declined.has([...fingerprints].sort().join(','))) fail('the user declined that consolidation by undoing it; it is not proposed again')
+}
+
+const pendingEntry = ({ memory, operationId, action, scope, subjectKey, fingerprints, reason, now, fields }) => ({
+  type: 'pending',
+  operationId,
+  action,
+  at: now,
+  revision: memory.revision,
+  scope: scope.kind,
+  subjectKey,
+  fingerprints: [...fingerprints].sort(),
+  reason,
+  ...fields,
+})
+
+// Journals each operation, writes annotations, then writes memory once, then commits. A crash
+// before the memory write leaves pending entries that recovery aborts; a crash after it leaves
+// entries that recovery commits.
+const commitOperations = ({ paths, memory, annotations, entries }) => {
+  appendJournal({ paths, entries })
+  writeAnnotations({ path: paths.annotationsFile, annotations })
+  const revision = memory.revision + 1
+  writeMemoryViews({ paths, memory: { ...memory, revision } })
+  const at = new Date().toISOString()
+  appendJournal({ paths, entries: entries.map(({ operationId }) => ({ type: 'commit', operationId, at, revision })) })
+}
+
+const findOperation = ({ operations, reference }) => {
+  const hex = reference.match(/^(?:operation:v1:)?([0-9a-f]{8,64})$/u)?.[1]
+  if (!hex) fail('use a full operation ID or a hex prefix of at least 8 characters')
+  const matches = [...operations.values()].filter(({ operationId }) => operationId.startsWith(`operation:v1:${hex}`))
+  if (matches.length !== 1) fail(matches.length === 0 ? 'no journaled operation matches that ID' : 'that prefix matches more than one operation')
+  return matches[0]
+}
+
+// Memory version 2 is written only when every plugin copy installed on this machine reads it,
+// because Claude Code and Codex keep separate copies over one store. A copy that ships the
+// version 2 schema reads it, whatever its version label says.
+const v2ReaderFile = join('skills', 'field-guide', 'schemas', 'memory-v2.schema.json')
+const directoriesIn = (path) => (existsSync(path)
+  ? readdirSync(path, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map(({ name }) => name)
+  : [])
+
+// The table header line that the Codex plugin installer writes for each installed plugin.
+const codexPluginHeader = /^\[plugins\."([^"@\\]+)@([^"@\\]+)"\]$/u
+// The table header line where Codex records that the user trusted one of a plugin's hooks.
+const codexHookStateHeader = /^\[hooks\.state\."[^"@\\]+@[^"@\\:]+:hooks\/hooks\.json:[a-z_]+:\d+:\d+"\]$/u
+// A TOML escape can spell a plugin name without its plain text.
+const tomlUnicodeEscape = /\\(?:u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|x[0-9A-Fa-f]{2})/u
+
+// Codex writes `<plugin>@` only in the two header lines above. Any other line that holds it, such
+// as an inline key, a subtable, other quoting, or a comment, may name a copy this check cannot
+// locate, so the copy is unknown. A comment is refused too, because the check reads no TOML.
+const unknownCodexEntries = ({ lines, plugin }) => {
+  if (plugin === undefined) return []
+  const unknown = (problem) => ({ host: 'Codex', plugin, path: null, problem })
+  const unread = lines.filter((line) => line.includes(`${plugin}@`) && !codexPluginHeader.test(line) && !codexHookStateHeader.test(line))
+  return [
+    ...unread.map(() => unknown('config.toml names it in a form this check does not read')),
+    ...(lines.some((line) => tomlUnicodeEscape.test(line)) ? [unknown('config.toml holds an escape that can spell its name')] : []),
+  ]
+}
+
+// Codex keeps a plugin at plugins/cache/<marketplace>/<plugin>/<version> and loads its newest
+// version; an older version directory is a leftover. config.toml names the installed plugins, so
+// only their marketplaces count; without such an entry, every cached marketplace does.
+const codexCopies = ({ codexRoot, plugin }) => {
+  const configFile = join(codexRoot, 'config.toml')
+  const cache = join(codexRoot, 'plugins', 'cache')
+  const wanted = (name) => plugin === undefined || name === plugin
+  const lines = existsSync(configFile) ? readFileSync(configFile, 'utf8').split(/\r?\n/u) : []
+  const named = lines.flatMap((line) => {
+    const [, name, marketplace] = line.match(codexPluginHeader) ?? []
+    return name && wanted(name) ? [{ name, marketplace }] : []
+  })
+  const cached = directoriesIn(cache).flatMap((marketplace) => directoriesIn(join(cache, marketplace)).filter(wanted).map((name) => ({ name, marketplace })))
+  const located = (named.length > 0 ? named : cached).flatMap(({ name, marketplace }) => {
+    const versions = join(cache, marketplace, name)
+    const newest = directoriesIn(versions).filter((version) => !version.startsWith('.')).sort((left, right) => left.localeCompare(right, 'en', { numeric: true })).at(-1)
+    return newest ? [{ host: 'Codex', plugin: name, path: join(versions, newest) }] : []
+  })
+  return [...located, ...unknownCodexEntries({ lines, plugin })]
+}
+
+/**
+ * Returns the plugin copies that Claude Code and Codex load on this machine: every plugin, or
+ * only the one named. Each copy names its host, its plugin, and its absolute path. A copy that
+ * cannot be located has no string path, and a Codex copy has a problem that says why.
+ */
+export const installedPluginCopies = ({ plugin } = {}) => {
+  const claudeRoot = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude')
+  const codexRoot = process.env.CODEX_HOME || join(homedir(), '.codex')
+  const copies = []
+  const installedFile = join(claudeRoot, 'plugins', 'installed_plugins.json')
+  if (existsSync(installedFile)) {
+    for (const [key, entries] of Object.entries(readJsonInput(installedFile).plugins ?? {})) {
+      const name = key.split('@')[0]
+      if ((plugin !== undefined && name !== plugin) || !Array.isArray(entries)) continue
+      copies.push(...entries.map(({ installPath }) => ({ host: 'Claude Code', plugin: name, path: installPath })))
+    }
+  }
+  return [...copies, ...codexCopies({ codexRoot, plugin })]
+}
+
+const displayPath = (path) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path)
+
+const requireCurrentReaders = () => {
+  for (const { host, path, problem } of installedPluginCopies({ plugin: 'field-guide' })) {
+    if (problem) fail(`a ${host} plugin copy may be older: ${problem}; refresh the Field Guide plugin on both hosts first`)
+    if (typeof path !== 'string' || !existsSync(join(path, v2ReaderFile))) {
+      fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read memory version 2; refresh the Field Guide plugin on both hosts first`)
+    }
+  }
+}
+
+// Only the user's exact confirm prompt creates a confirmation or an approval, so automated input
+// that names one is refused, not ignored.
+const confirmationFields = new Set(['approval', 'approved', 'confirmation', 'confirmations', 'confirmed', 'explicitPreference'])
+const rejectConfirmationFields = ({ value, label }) => {
+  if (!value || typeof value !== 'object') return
+  for (const [key, each] of Object.entries(value)) {
+    if (!Array.isArray(value) && confirmationFields.has(key)) fail(`${label} must not carry a confirmation field: ${key}`)
+    rejectConfirmationFields({ value: each, label })
+  }
+}
+
+const requireTargetIds = ({ value, label, min = 2 }) => {
+  if (!Array.isArray(value) || value.length < min || value.length > maxConsolidationTargets
+    || new Set(value).size !== value.length || value.some((id) => !guidanceIdPattern.test(id))) {
+    fail(`${label} must list ${min} to ${maxConsolidationTargets} unique guidance IDs`)
+  }
+  return value
+}
+
+// Stored records accept any opaque language label; a new example names a language.
+const exampleLanguagePattern = /^[A-Za-z0-9+#._-]{1,32}$/u
+
+// The caller has already applied the new-text guard to the object that holds the replacement.
+const validateReplacement = (replacement) => {
+  assertObject({ value: replacement, label: 'replacement' })
+  assertClosedFields({ value: replacement, fields: ['learning', 'confidence', 'examples'], label: 'replacement' })
+  requireString({ value: replacement.learning, label: 'replacement learning', maxBytes: 4096 })
+  if (/[\u0085\u2028\u2029]/u.test(replacement.learning) || !normalizeLearning(replacement.learning)) {
+    fail('replacement learning must be meaningful text without line separators')
+  }
+  if (!['low', 'medium', 'high'].includes(replacement.confidence)) fail('replacement confidence is invalid')
+  validateExamples(replacement.examples)
+  if ((replacement.examples ?? []).some(({ language }) => !exampleLanguagePattern.test(language))) {
+    fail('replacement example language must be a language name, such as sh or typescript')
+  }
+  return replacement
+}
+
+const requireReason = (value) => requireString({ value, label: 'reason', maxBytes: 512 })
+
+const validateConsolidationInput = (input) => {
+  rejectConfirmationFields({ value: input, label: 'consolidate input' })
+  assertObject({ value: input, label: 'consolidate input' })
+  assertSafeNewValue({ value: input, label: 'consolidate input' })
+  assertClosedFields({ value: input, fields: ['schemaVersion', 'targetIds', 'replacement', 'reason', 'source', 'apply', 'previewToken'], label: 'consolidate input' })
+  if (input.schemaVersion !== 1) fail('consolidate schemaVersion must be 1')
+  requireTargetIds({ value: input.targetIds, label: 'consolidate targetIds' })
+  validateReplacement(input.replacement)
+  requireReason(input.reason)
+  requireString({ value: input.source, label: 'consolidate source', maxBytes: 128, noWhitespace: true })
+  if (input.apply !== undefined && typeof input.apply !== 'boolean') fail('consolidate apply must be boolean')
+  if (input.previewToken !== undefined) requireString({ value: input.previewToken, label: 'consolidate previewToken', maxBytes: 128, noWhitespace: true })
+  return input
+}
+
+// The IDs of records that still replace superseded guidance. A superseded record needs an active
+// replacement, so these records are not replaced.
+const supersedingIds = (memory) => new Set(memory.guidance
+  .filter(({ status }) => status === 'superseded')
+  .map(({ transitions }) => transitions.at(-1).replacementId))
+
+const requireValidResult = ({ memory, targetIds, plan }) => requireValidChange({
+  memory,
+  label: 'consolidated',
+  change: (trial) => {
+    const targets = targetIds.map((id) => trial.guidance.find((guidance) => guidance.id === id))
+    applyConsolidation({ memory: trial, plan: { ...plan, targets }, operationId: newOperationId(), reason: 'Trial consolidation.', source: 'trial', now: new Date().toISOString() })
+  },
+})
+
+// Checks that the targets are active and share one scope and subject, and that the replacement
+// is new text. The replacement is confirmed only when a target was confirmed: a stored proposal
+// passes the value it recorded, and otherwise the targets' current confirmations decide. The
+// proposal ID hashes the target fingerprints, the replacement, whose fingerprint covers its
+// text, and that value.
+const planConsolidation = ({ memory, annotations, excused = [], targetIds, replacement, confirmedFingerprints: storedConfirmed }) => {
+  const targets = targetIds.map((id) => {
+    const target = memory.guidance.find((guidance) => guidance.id === id)
+    if (!target) fail(`consolidate target does not exist: ${id}`)
+    // Undoing a shared consolidation needs operation data that sync does not carry yet.
+    if (target.scope.kind === 'shared') fail(`consolidation of shared guidance is not supported yet: ${shortId(id)} is shared`)
+    if (target.status !== 'active') fail(`consolidate requires active targets: ${id} is ${target.status}`)
+    return target
+  })
+  const [{ scope, subjectKey }] = targets
+  if (targets.some((target) => !sameScope(target.scope, scope) || target.subjectKey !== subjectKey)) {
+    fail('consolidate targets must share one scope and subjectKey')
+  }
+  const superseding = supersedingIds(memory)
+  const replacing = targets.find(({ id }) => superseding.has(id))
+  if (replacing) fail(`${shortId(replacing.id)} still replaces superseded guidance; undo that change before consolidating it`)
+  const fingerprint = fingerprintFor({ scope, subjectKey, learning: replacement.learning })
+  if (memory.guidance.some((guidance) => guidance.fingerprint === fingerprint)) fail('consolidate replacement must be new text; that guidance is already stored')
+  const targetFingerprints = targets.map((target) => target.fingerprint).sort()
+  const confirmedFingerprints = storedConfirmed
+    ?? targets.filter((guidance) => annotationMarkers({ annotations, guidance, excused }).confirmed).map(({ fingerprint }) => fingerprint).sort()
+  const confirms = confirmedFingerprints.length > 0
+  requireValidResult({ memory, targetIds, plan: { scope, subjectKey, replacement, fingerprint, targetFingerprints } })
+  return {
+    targets,
+    scope,
+    subjectKey,
+    replacement,
+    fingerprint,
+    targetFingerprints,
+    confirmsReplacement: confirms,
+    confirmedFingerprints,
+    // The whole replacement is hashed, so an approval binds its confidence and examples too.
+    proposalId: hashIdentity({ prefix: 'proposal', values: [1, targetFingerprints, fingerprint, replacement.learning, replacement.confidence, replacement.examples ?? [], confirmedFingerprints] }),
+  }
+}
+
+// Adds the replacement and supersedes each target in place. Evidence links carry over without
+// new evidence. Targets are project guidance, so they get no retirement IDs for now.
+const applyConsolidation = ({ memory, plan, operationId, reason, source, now }) => {
+  const { targets } = plan
+  const replacement = {
+    id: plan.fingerprint.replace('fingerprint', 'guidance'),
+    fingerprint: plan.fingerprint,
+    scope: plan.scope,
+    subjectKey: plan.subjectKey,
+    linkedSubjects: sortedUnion(...targets.map(({ linkedSubjects }) => linkedSubjects ?? [])),
+    learning: plan.replacement.learning,
+    status: 'active',
+    confidence: plan.replacement.confidence,
+    ...(targets.every(({ generic }) => generic === true) ? { generic: true } : {}),
+    consolidates: targets.map(({ id }) => id).sort(),
+    examples: plan.replacement.examples ?? [],
+    evidenceIds: [...new Set(targets.flatMap(({ evidenceIds }) => evidenceIds))],
+    independentEvidenceCount: 0,
+    transitions: [{ from: null, to: 'active', reason, source, at: now, operationId }],
+    createdAt: now,
+    updatedAt: now,
+  }
+  replacement.independentEvidenceCount = evidenceCountFor({ guidance: replacement, memory })
+  memory.guidance.push(replacement)
+  const retirementIds = targets.flatMap((target) => {
+    const retirementId = addRetirement(target)
+    appendTransition({ guidance: target, to: 'superseded', reason, source, now, replacementId: replacement.id, retirementId, operationId })
+    return retirementId ? [retirementId] : []
+  })
+  return { replacement, retirementIds }
+}
+
+// Revokes the targets and the new record, which starts unconfirmed, and moves the targets'
+// triggers to it. An approved consolidation of confirmed records then confirms it, after that
+// revocation. Returns the target revocation IDs and the new trigger entry IDs.
+const annotateConsolidation = ({ annotations, plan, replacement, approval }) => {
+  const triggers = sortedUnion(...plan.targets.map((guidance) => annotationMarkers({ annotations, guidance }).triggers))
+  const targetRevocationIds = plan.targets.map((target) => revokeRecord(annotationRecordFor({ annotations, fingerprint: target.fingerprint })))
+  const record = annotationRecordFor({ annotations, fingerprint: replacement.fingerprint })
+  revokeRecord(record)
+  const current = annotationMarkers({ annotations, guidance: replacement }).triggers
+  const added = triggers.filter((trigger) => !current.includes(trigger)).map((trigger) => newAnnotationEntry({ trigger }))
+  record.triggers.push(...added)
+  if (approval) {
+    record.confirmations.push(newAnnotationEntry({ ...(approval.host ? { host: approval.host } : {}), seen: revocationIds({ record, guidance: replacement }) }))
+  }
+  return { revocationIds: targetRevocationIds, triggerIds: added.map(({ id }) => id) }
+}
+
+// Applies one consolidation to memory and annotations in place and returns its journal entry.
+const consolidateInPlace = ({ memory, annotations, plan, reason, source, now, fields = {}, approval }) => {
+  const operationId = newOperationId()
+  const revision = memory.revision
+  const { replacement, retirementIds } = applyConsolidation({ memory, plan, operationId, reason, source, now })
+  const { revocationIds, triggerIds } = annotateConsolidation({ annotations, plan, replacement, approval })
+  return pendingEntry({
+    memory: { revision },
+    operationId,
+    action: 'consolidate',
+    scope: plan.scope,
+    subjectKey: plan.subjectKey,
+    fingerprints: plan.targetFingerprints,
+    reason,
+    now,
+    fields: { replacementFingerprint: plan.fingerprint, retirementIds, revocationIds, triggerIds, inverse: `undo-operation --id ${operationId}`, ...fields },
+  })
+}
+
+const appliedResult = (entry) => ({
+  operationId: entry.operationId,
+  action: entry.action,
+  undoUntil: new Date(Date.parse(entry.at) + undoWindowDays * dayMs).toISOString(),
+  undo: entry.inverse,
+})
+
+// Proposals wait in proposals.json for the user's exact `confirm fg:proposal:<id>` prompt.
+// The file stays local and never syncs.
+const emptyProposals = () => ({ schemaVersion: 1, proposals: [] })
+const proposalIdPattern = /^proposal:v1:[0-9a-f]{64}$/
+
+const validateProposal = (proposal) => {
+  assertObject({ value: proposal, label: 'proposal' })
+  assertSafeNewValue({ value: proposal, label: 'proposal' })
+  assertClosedFields({ value: proposal, fields: ['id', 'kind', 'scopeDigest', 'subjectKey', 'targetFingerprints', 'replacement', 'confirmsReplacement', 'confirmedFingerprints', 'reason', 'createdAt', 'expiresAt', 'approval', 'appliedOperationId'], label: 'proposal' })
+  if (!proposalIdPattern.test(proposal.id) || proposal.kind !== 'consolidate') fail('proposal has an invalid id or kind')
+  if (typeof proposal.confirmsReplacement !== 'boolean') fail('proposal confirmsReplacement must be boolean')
+  if (!Array.isArray(proposal.confirmedFingerprints) || proposal.confirmedFingerprints.some((each) => !proposal.targetFingerprints?.includes(each))
+    || proposal.confirmsReplacement !== (proposal.confirmedFingerprints.length > 0)) {
+    fail('proposal confirmedFingerprints must list the confirmed targets')
+  }
+  if (!/^[0-9a-f]{64}$/u.test(proposal.scopeDigest)) fail('proposal scopeDigest is invalid')
+  if (!portableKey.test(proposal.subjectKey)) fail('proposal subjectKey must be a portable slug')
+  if (!Array.isArray(proposal.targetFingerprints) || proposal.targetFingerprints.some((each) => !fingerprintPattern.test(each))) fail('proposal targetFingerprints are invalid')
+  validateReplacement(proposal.replacement)
+  requireReason(proposal.reason)
+  requireTimestamp({ value: proposal.createdAt, label: 'proposal createdAt' })
+  requireTimestamp({ value: proposal.expiresAt, label: 'proposal expiresAt' })
+  if (proposal.approval !== undefined) {
+    assertObject({ value: proposal.approval, label: 'proposal approval' })
+    assertClosedFields({ value: proposal.approval, fields: ['at', 'host'], label: 'proposal approval' })
+    requireTimestamp({ value: proposal.approval.at, label: 'proposal approval at' })
+  }
+  if (proposal.appliedOperationId !== undefined && !operationIdPattern.test(proposal.appliedOperationId)) fail('proposal appliedOperationId is invalid')
+}
+
+const readProposals = (paths) => {
+  if (!existsSync(paths.proposalsFile)) return emptyProposals()
+  const store = readJsonInput(paths.proposalsFile)
+  assertObject({ value: store, label: 'proposals' })
+  assertClosedFields({ value: store, fields: ['schemaVersion', 'proposals'], label: 'proposals' })
+  if (store.schemaVersion !== 1 || !Array.isArray(store.proposals)) fail('proposals.json has an unsupported format')
+  store.proposals.forEach(validateProposal)
+  return store
+}
+
+const writeProposals = ({ paths, store }) => writeTextAtomically({ path: paths.proposalsFile, content: `${JSON.stringify(store, null, 2)}\n` })
+const expired = (proposal) => Date.parse(proposal.expiresAt) <= Date.now()
+const confirmPromptFor = (proposal) => `confirm fg:proposal:${shortId(proposal.id)}`
+// A project scope's repository identity can be a local path, such as the Git directory of a
+// repository without a remote, so a proposal stores only a digest of its scope.
+const scopeDigest = (scope) => contentDigest(scopeIdentity(scope))
+
+// Stores a consolidation proposal once; a stored proposal keeps its approval and expiry.
+const storeProposals = ({ paths, plans, now }) => {
+  if (plans.length === 0) return []
+  const store = readProposals(paths)
+  store.proposals = store.proposals.filter((proposal) => !expired(proposal))
+  const stored = plans.map(({ plan, reason }) => {
+    const existing = store.proposals.find(({ id }) => id === plan.proposalId)
+    if (existing) return existing
+    const proposal = {
+      id: plan.proposalId,
+      kind: 'consolidate',
+      scopeDigest: scopeDigest(plan.scope),
+      subjectKey: plan.subjectKey,
+      targetFingerprints: plan.targetFingerprints,
+      replacement: plan.replacement,
+      confirmsReplacement: plan.confirmsReplacement,
+      confirmedFingerprints: plan.confirmedFingerprints,
+      reason,
+      createdAt: now,
+      expiresAt: new Date(Date.parse(now) + proposalLifetimeDays * dayMs).toISOString(),
+    }
+    store.proposals.push(proposal)
+    return proposal
+  })
+  writeProposals({ paths, store })
+  return stored
+}
+
+const proposalResult = ({ proposal, plan }) => ({
+  proposalId: proposal?.id ?? plan.proposalId,
+  confirmPrompt: confirmPromptFor(proposal ?? { id: plan.proposalId }),
+  targetIds: plan.targets.map(({ id }) => id),
+  confirmsReplacement: plan.confirmsReplacement,
+  ...(proposal ? { expiresAt: proposal.expiresAt } : {}),
+})
+
+const findProposal = ({ store, reference }) => {
+  const hex = reference.match(/^proposal:(?:v1:)?([0-9a-f]{8,64})$/u)?.[1]
+  if (!hex) return { problem: 'use a proposal ID as proposal:<hex prefix of at least 8 characters>' }
+  const matches = store.proposals.filter(({ id }) => id.startsWith(`proposal:v1:${hex}`))
+  if (matches.length !== 1) return { problem: matches.length === 0 ? 'no stored proposal matches that ID' : 'that prefix matches more than one proposal' }
+  return { proposal: matches[0] }
+}
+
+// Records the user's approval of one stored proposal. Only the UserPromptSubmit hook calls it.
+const approveProposalUnlocked = ({ files, reference, host }) => {
+  const store = readProposals(files)
+  const { proposal, problem } = findProposal({ store, reference })
+  if (problem) return notConfirmed(problem)
+  if (proposal.appliedOperationId) return notConfirmed('that proposal was already applied')
+  if (expired(proposal)) return notConfirmed('that proposal expired; ask for a new one')
+  if (!proposal.approval) {
+    proposal.approval = { at: new Date().toISOString(), ...(host ? { host } : {}) }
+    writeProposals({ paths: files, store })
+  }
+  const confirmation = proposal.confirmsReplacement ? 'the replacement will be confirmed' : 'the replacement will start unconfirmed'
+  const text = `Field Guide approved proposal ${shortId(proposal.id)}: consolidate ${proposal.targetFingerprints.length} records into "${proposal.replacement.learning}"; ${confirmation}`
+  return {
+    exact: true,
+    systemMessage: text,
+    context: `${text}. Apply it with consolidate --approval proposal:${shortId(proposal.id)}. Acknowledge the approval in one line. The prompt asks for nothing else.`,
+  }
+}
+
+const consolidatePreviewToken = ({ memory, annotations, input }) => hashIdentity({
+  prefix: 'consolidate-preview',
+  values: [1, input.targetIds, input.replacement, input.reason, input.source, contentDigest(memory), contentDigest(annotations)],
+})
+
+const consolidateUnlocked = ({ paths, inputPath }) => {
+  const input = validateConsolidationInput(readJsonInput(inputPath))
+  const memory = readInitializedMemory(paths)
+  const operations = operationsIn(recoverOperations({ paths, memory }))
+  const annotations = readAnnotations(paths.annotationsFile)
+  const plan = planConsolidation({ memory, annotations, excused: unlandedRevocations({ operations, memory }), targetIds: input.targetIds, replacement: input.replacement })
+  requireNotDeclined({ declined: declinedSets(operations), fingerprints: plan.targetFingerprints })
+  // A confirmed record is never rewritten without the user's approval of this exact change.
+  if (plan.confirmsReplacement) {
+    const [proposal] = storeProposals({ paths, plans: [{ plan, reason: input.reason }], now: new Date().toISOString() })
+    return { outcome: 'approval-required', ...proposalResult({ proposal, plan }), applied: false }
+  }
+  const previewToken = consolidatePreviewToken({ memory, annotations, input })
+  const replacementId = plan.fingerprint.replace('fingerprint', 'guidance')
+  if (input.apply !== true) return { outcome: 'consolidate-preview', targetIds: input.targetIds, replacementId, previewToken, applied: false }
+  if (input.previewToken !== previewToken) fail('consolidate apply requires the current dry-run previewToken')
+  requireCurrentReaders()
+  const entry = consolidateInPlace({ memory, annotations, plan, reason: input.reason, source: input.source, now: new Date().toISOString() })
+  commitOperations({ paths, memory, annotations, entries: [entry] })
+  return { outcome: 'consolidated', targetIds: input.targetIds, replacementId, ...appliedResult(entry), applied: true }
+}
+
+// Applies a stored proposal that the user approved. It recomputes the proposal ID from current
+// memory, so an approval covers only the exact records and text it was given for. When a
+// target was confirmed as the proposal was stored, it confirms the replacement in the same commit.
+const consolidateApprovedUnlocked = ({ paths, reference }) => {
+  const memory = readInitializedMemory(paths)
+  const operations = operationsIn(recoverOperations({ paths, memory }))
+  const store = readProposals(paths)
+  const { proposal, problem } = findProposal({ store, reference })
+  if (problem) fail(problem)
+  const applied = proposal.appliedOperationId
+    ?? [...operations.values()].find(({ proposalId, state }) => proposalId === proposal.id && state === 'committed')?.operationId
+  if (applied) fail(`proposal ${shortId(proposal.id)} was already applied as ${applied}`)
+  if (expired(proposal)) fail(`proposal ${shortId(proposal.id)} expired; propose it again`)
+  if (!proposal.approval) fail(`proposal ${shortId(proposal.id)} has no approval from the user; offer \`${confirmPromptFor(proposal)}\``)
+  // An undo after the approval declines the set, and the later undo wins.
+  requireNotDeclined({ declined: declinedSets(operations), fingerprints: proposal.targetFingerprints })
+  const targetIds = proposal.targetFingerprints.map((fingerprint) => (
+    memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)?.id ?? fail(`a record in proposal ${shortId(proposal.id)} no longer exists`)
+  ))
+  const plan = planConsolidation({ memory, targetIds, replacement: proposal.replacement, confirmedFingerprints: proposal.confirmedFingerprints })
+  if (plan.proposalId !== proposal.id || scopeDigest(plan.scope) !== proposal.scopeDigest || plan.subjectKey !== proposal.subjectKey) {
+    fail(`proposal ${shortId(proposal.id)} does not match its approved content`)
+  }
+  // The approval covered the records as they were confirmed then. A crashed attempt revoked their
+  // confirmations itself, so the revocations it journaled are excused; any later revocation, such
+  // as an unconfirm, still counts as a change.
+  const annotations = readAnnotations(paths.annotationsFile)
+  const excused = unlandedRevocations({ operations, memory })
+  const confirmedNow = plan.targets.filter((guidance) => annotationMarkers({ annotations, guidance, excused }).confirmed)
+    .map(({ fingerprint }) => fingerprint).sort()
+  if (JSON.stringify(confirmedNow) !== JSON.stringify(proposal.confirmedFingerprints)) {
+    fail(`confirmation of a record in proposal ${shortId(proposal.id)} changed since it was stored; propose it again`)
+  }
+  requireCurrentReaders()
+  const entry = consolidateInPlace({
+    memory,
+    annotations,
+    plan,
+    reason: proposal.reason,
+    source: 'user-approval',
+    now: new Date().toISOString(),
+    fields: { proposalId: proposal.id },
+    ...(proposal.confirmsReplacement ? { approval: proposal.approval } : {}),
+  })
+  commitOperations({ paths, memory, annotations, entries: [entry] })
+  proposal.appliedOperationId = entry.operationId
+  writeProposals({ paths, store })
+  return { outcome: 'consolidated', targetIds, replacementId: plan.fingerprint.replace('fingerprint', 'guidance'), confirmed: proposal.confirmsReplacement, ...appliedResult(entry), applied: true }
+}
+
+const consolidate = ({ paths, inputPath, approval }) => (
+  withMemoryLock({ paths, action: () => (approval ? consolidateApprovedUnlocked({ paths, reference: approval }) : consolidateUnlocked({ paths, inputPath })) })
+)
+
+const conflict = (message) => fail(`conflict: ${message}`)
+
+// Withdraws the replacement the way a user's undo does, which restores each record it still
+// supersedes. A record that something else retired stays retired.
+const undoConsolidation = ({ memory, operation, operationId, now }) => {
+  const replacement = memory.guidance.find(({ fingerprint }) => fingerprint === operation.replacementFingerprint)
+  if (!replacement) conflict(`the replacement of operation ${shortId(operation.operationId)} no longer exists`)
+  if (!['candidate', 'active'].includes(replacement.status)) {
+    const later = replacement.transitions.at(-1).operationId
+    conflict(`replacement ${shortId(replacement.id)} is ${replacement.status}${later ? ` by operation ${later}; undo that operation first` : ''}`)
+  }
+  const predecessors = memory.guidance.filter(({ fingerprint }) => operation.fingerprints.includes(fingerprint))
+  for (const predecessor of predecessors.filter(({ status }) => status === 'superseded')) {
+    const own = predecessor.transitions.at(-1)
+    if (own.operationId !== operation.operationId || (own.retirementId && !operation.retirementIds.includes(own.retirementId))) {
+      conflict(`${shortId(predecessor.id)} is superseded by something other than operation ${shortId(operation.operationId)}`)
+    }
+  }
+  const input = { action: 'undo-operation', reason: 'The user undid this consolidation.', source: 'undo-operation', operationId }
+  const { retirementId } = withdrawGuidance({ memory, target: replacement, input, now, byUser: true })
+  return {
+    replacementId: replacement.id,
+    restoredIds: predecessors.filter(({ status }) => status === 'active').map(({ id }) => id),
+    keptRetiredIds: predecessors.filter(({ status }) => status !== 'active').map(({ id }) => id),
+    retirementIds: retirementId ? [retirementId] : [],
+    declined: operation.fingerprints,
+  }
+}
+
+const undoOperationUnlocked = ({ paths, reference }) => {
+  const memory = readInitializedMemory(paths)
+  const operations = operationsIn(recoverOperations({ paths, memory }))
+  const operation = findOperation({ operations, reference })
+  // Earlier builds of this release journaled shared consolidations; reversing one needs operation
+  // data that sync does not carry yet.
+  if (operation.scope === 'shared') fail(`operation ${shortId(operation.operationId)} changed shared guidance, which undo-operation does not reverse yet`)
+  if (operation.state === 'aborted') fail(`operation ${shortId(operation.operationId)} never applied; there is nothing to undo`)
+  if (operation.action === 'undo-operation') fail('undo-operation cannot undo an undo; the undone set is declined, so its records stay separate')
+  // Earlier builds of this release journaled automated archives; this release reverses only consolidations.
+  if (operation.action !== 'consolidate') fail(`operation ${shortId(operation.operationId)} (${operation.action}) is not a consolidation; undo-operation reverses only consolidations in this release`)
+  const undo = [...operations.values()].find(({ undoes, state }) => undoes === operation.operationId && state === 'committed')
+  if (undo) return { outcome: 'already-undone', undoes: operation.operationId, operationId: undo.operationId }
+  if (Date.now() - Date.parse(operation.at) > undoWindowDays * dayMs) fail(`operation ${shortId(operation.operationId)} is older than the ${undoWindowDays}-day undo window`)
+  const annotations = readAnnotations(paths.annotationsFile)
+  const statusBefore = new Map(memory.guidance.map(({ id, status }) => [id, status]))
+  const now = new Date().toISOString()
+  const operationId = newOperationId()
+  const revision = memory.revision
+  const { declined, retirementIds, ...undone } = undoConsolidation({ memory, operation, operationId, now })
+  requireCurrentReaders()
+  // Retirement and restore both change authority, so each record whose status changed is revoked.
+  const revocationIds = memory.guidance.filter(({ id, status }) => statusBefore.get(id) !== status)
+    .map(({ fingerprint }) => revokeRecord(annotationRecordFor({ annotations, fingerprint })))
+  const entry = pendingEntry({
+    memory: { revision },
+    operationId,
+    action: 'undo-operation',
+    scope: { kind: operation.scope },
+    subjectKey: operation.subjectKey,
+    fingerprints: operation.fingerprints,
+    reason: 'The user undid this operation.',
+    now,
+    fields: { undoes: operation.operationId, retirementIds, revocationIds, ...(declined ? { declined: [...declined].sort() } : {}) },
+  })
+  commitOperations({ paths, memory, annotations, entries: [entry] })
+  return { outcome: 'undone', operationId, undoes: operation.operationId, ...undone }
+}
+
+/** Undoes one journaled operation by its ID. Repeating it changes nothing. */
+const undoOperation = ({ paths, reference }) => (
+  withMemoryLock({ paths, action: () => undoOperationUnlocked({ paths, reference }) })
+)
+
+// Subjects group live records by scope and subject key. A subject's digest covers every field of
+// each record that a nightly plan shows its reviewer, including a confirmation or a reinforcement,
+// so it changes whenever what the reviewer sees changes.
+const subjectIdFor = ({ scope, subjectKey }) => hashIdentity({ prefix: 'subject', values: [1, scopeIdentity(scope), subjectKey] })
+
+/** Returns the fields of a live record that a nightly plan shows its reviewer, with the learning unredacted. */
+export const reviewedRecord = ({ guidance, confirmed, triggers }) => ({
+  id: guidance.id,
+  status: guidance.status,
+  confirmed,
+  triggers,
+  learning: guidance.learning,
+  ...(guidance.linkedSubjects?.length ? { linkedSubjects: guidance.linkedSubjects } : {}),
+  updatedAt: guidance.updatedAt,
+})
+
+// confirmationsCurrent false shows every record unconfirmed, as the hook does while the watermark
+// lags memory.
+const subjectStates = ({ memory, annotations, excused = [], confirmationsCurrent = true }) => {
+  const subjects = new Map()
+  const live = memory.guidance.filter(({ status }) => ['candidate', 'active'].includes(status)).sort((left, right) => left.id.localeCompare(right.id))
+  for (const guidance of live) {
+    const subjectId = subjectIdFor(guidance)
+    const subject = subjects.get(subjectId) ?? { subjectId, scope: guidance.scope, subjectKey: guidance.subjectKey, records: [] }
+    const markers = annotationMarkers({ annotations, guidance, excused })
+    subject.records.push({ guidance, ...markers, confirmed: markers.confirmed && confirmationsCurrent })
+    subjects.set(subjectId, subject)
+  }
+  for (const subject of subjects.values()) {
+    subject.digest = hashIdentity({ prefix: 'subject-state', values: [1, subject.records.map(reviewedRecord)] })
+  }
+  return subjects
+}
+
+// Records of one subject whose terms overlap, linked transitively. A group that the user declined
+// by undoing its consolidation is left out.
+const overlapThreshold = 0.5
+const overlaps = (left, right) => {
+  const [a, b] = [relevanceTerms(left.learning), relevanceTerms(right.learning)]
+  const union = new Set([...a, ...b]).size
+  return union > 0 && [...a].filter((term) => b.has(term)).length / union >= overlapThreshold
+}
+
+const overlapGroups = ({ records, declined }) => {
+  const groupOf = new Map(records.map((record) => [record.id, new Set([record])]))
+  records.forEach((left, index) => records.slice(index + 1).forEach((right) => {
+    if (groupOf.get(left.id) === groupOf.get(right.id) || !overlaps(left, right)) return
+    const merged = new Set([...groupOf.get(left.id), ...groupOf.get(right.id)])
+    for (const record of merged) groupOf.set(record.id, merged)
+  }))
+  return [...new Set(groupOf.values())]
+    .filter((group) => group.size >= 2 && !declined.has([...group].map(({ fingerprint }) => fingerprint).sort().join(',')))
+    .map((group) => [...group].map(({ id }) => id).sort())
+}
+
+/**
+ * Returns the read-only state that a nightly plan reports: live subjects with their digests,
+ * records, and overlap groups, and any operation still pending. It writes nothing, not even
+ * journal recovery.
+ */
+export const dreamState = ({ paths }) => {
+  const memory = readInitializedMemory(paths)
+  // Without the journal, no group is declined and no revocation is excused, and the state names
+  // the error instead of pending operations. Unreadable annotations show no markers; audit reports them.
+  const { operations, error } = journalForDisplay(paths)
+  const declined = operations ? declinedSets(operations) : new Set()
+  const excused = operations ? unlandedRevocations({ operations, memory }) : []
+  // Confirmations apply the hook's watermark check, read before annotations as the hook does. Like
+  // consolidate, the plan still counts a confirmation that only a crashed operation revoked.
+  const confirmationsCurrent = watermarkCurrent({ paths, memory })
+  const states = subjectStates({ memory, annotations: readAnnotationsForDisplay(paths.annotationsFile), excused, confirmationsCurrent })
+  const subjects = [...states.values()].map((subject) => ({
+    ...subject,
+    overlapGroups: overlapGroups({ records: subject.records.map(({ guidance }) => guidance), declined }),
+  }))
+  return {
+    revision: memory.revision,
+    subjects,
+    ...(operations ? { pendingOperations: [...operations.values()].filter(({ state }) => state === 'pending').map(({ operationId }) => operationId) } : {}),
+    stateErrors: error ? [error] : [],
+    undoWindowDays,
+  }
+}
 
 const initialize = (paths) => {
   mkdirSync(paths.sharedRoot, { recursive: true })
@@ -2760,7 +3710,8 @@ const validateSharedPromotions = ({ sharedFiles, paths, errors }) => {
   }
 }
 
-const validate = (paths) => {
+// Every validation error, one per item, so a reader can redact each on its own.
+const validationErrorsFor = (paths) => {
   requireInitialized(paths)
   const errors = []
   const rootContent = validateLinks({ indexPath: paths.rootIndex, errors })
@@ -2809,7 +3760,11 @@ const validate = (paths) => {
   } catch (error) {
     errors.push(`${paths.annotationsFile} is invalid: ${error.message}`)
   }
+  return errors
+}
 
+const validate = (paths) => {
+  const errors = validationErrorsFor(paths)
   if (errors.length > 0) fail(`Field guide validation failed:\n- ${errors.join('\n- ')}`)
 }
 
@@ -2836,91 +3791,67 @@ const retrieveCommand = ({ paths, options }) => {
   return event ? { ...result, analyticsEventId: event.id } : result
 }
 
+// Records a lifecycle change in analytics when analytics is enabled.
+const withLifecycleEvent = ({ paths, type, result }) => {
+  appendAnalyticsEvent({
+    guideRoot: paths.guideRoot,
+    event: { type, projectKey: paths.projectKey, guidanceId: result.targetId, outcome: result.outcome },
+  })
+  return result
+}
+
+const analyticsInput = (options) => readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] })
+
+// Each command returns its result, or undefined when it reports only the resolved paths.
+const commandHandlers = {
+  'analytics-enable': ({ paths }) => configureAnalytics({ guideRoot: paths.guideRoot, enabled: true }),
+  'analytics-disable': ({ paths }) => configureAnalytics({ guideRoot: paths.guideRoot, enabled: false }),
+  'analytics-report': ({ paths, options }) => reportAnalytics({ guideRoot: paths.guideRoot, since: options.since }),
+  'analytics-impact': ({ paths, options }) => recordImpact({ guideRoot: paths.guideRoot, input: analyticsInput(options) }),
+  'analytics-review': ({ paths, options }) => recordReview({ guideRoot: paths.guideRoot, input: analyticsInput(options) }),
+  annotate: ({ paths, options }) => annotate({ paths, reference: options.id, triggers: options.triggers, removeTrigger: options['remove-trigger'] }),
+  audit: ({ paths }) => audit(paths),
+  candidates: ({ paths, options }) => candidateMatches({ paths, subjectKey: options.subject, scope: options.scope }),
+  consolidate: ({ paths, options }) => consolidate({ paths, inputPath: options.input, approval: options.approval }),
+  delete: ({ paths, options }) => deleteGuidance({ paths, inputPath: options.input }),
+  export: ({ paths, options }) => exportSharedGuidance({ paths, outputPath: options.output, annotationsPath: options.annotations }),
+  import: ({ paths, options }) => importSharedGuidance({ paths, inputPath: options.input, annotationsPath: options.annotations }),
+  init: ({ paths }) => initialize(paths),
+  maintain: ({ paths, options }) => maintain({ paths, inputPath: options.input }),
+  paths: () => undefined,
+  retrieve: ({ paths, options }) => retrieveCommand({ paths, options }),
+  submit: ({ paths, options }) => withLifecycleEvent({
+    paths,
+    type: 'submission',
+    result: submitObservation({ paths, inputPath: options.input, inputJson: options['input-json'] }),
+  }),
+  transition: ({ paths, options }) => withLifecycleEvent({ paths, type: 'transition', result: transitionGuidance({ paths, inputPath: options.input }) }),
+  unconfirm: ({ paths, options }) => unconfirm({ paths, reference: options.id }),
+  'undo-operation': ({ paths, options }) => undoOperation({ paths, reference: options.id }),
+  validate: ({ paths }) => validate(paths),
+}
+
 const main = () => {
   const { command, options } = parseArgs(process.argv.slice(2))
-  const paths = resolvePaths({
-    repoRoot: options['repo-root'],
-    guideRoot: options['guide-root'],
-  })
-
-  let result
-  if (command === 'analytics-enable') result = configureAnalytics({ guideRoot: paths.guideRoot, enabled: true })
-  if (command === 'analytics-disable') result = configureAnalytics({ guideRoot: paths.guideRoot, enabled: false })
-  if (command === 'analytics-report') result = reportAnalytics({ guideRoot: paths.guideRoot, since: options.since })
-  if (command === 'analytics-impact') result = recordImpact({
-    guideRoot: paths.guideRoot,
-    input: readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] }),
-  })
-  if (command === 'analytics-review') result = recordReview({
-    guideRoot: paths.guideRoot,
-    input: readSubmissionInput({ inputPath: options.input, inputJson: options['input-json'] }),
-  })
-  if (command === 'annotate') result = annotate({
-    paths,
-    reference: options.id,
-    triggers: options.triggers,
-    removeTrigger: options['remove-trigger'],
-  })
-  if (command === 'audit') result = audit(paths)
-  if (command === 'candidates') result = candidateMatches({
-    paths,
-    subjectKey: options.subject,
-    scope: options.scope,
-  })
-  if (command === 'delete') result = deleteGuidance({ paths, inputPath: options.input })
-  if (command === 'export') result = exportSharedGuidance({ paths, outputPath: options.output, annotationsPath: options.annotations })
-  if (command === 'import') result = importSharedGuidance({ paths, inputPath: options.input, annotationsPath: options.annotations })
-  if (command === 'init') initialize(paths)
-  if (command === 'maintain') result = maintain({ paths, inputPath: options.input })
-  if (command === 'retrieve') result = retrieveCommand({ paths, options })
-  if (command === 'submit') {
-    result = submitObservation({
-      paths,
-      inputPath: options.input,
-      inputJson: options['input-json'],
-    })
-    appendAnalyticsEvent({
-      guideRoot: paths.guideRoot,
-      event: {
-        type: 'submission',
-        projectKey: paths.projectKey,
-        guidanceId: result.targetId,
-        outcome: result.outcome,
-      },
-    })
-  }
-  if (command === 'transition') {
-    result = transitionGuidance({ paths, inputPath: options.input })
-    appendAnalyticsEvent({
-      guideRoot: paths.guideRoot,
-      event: {
-        type: 'transition',
-        projectKey: paths.projectKey,
-        guidanceId: result.targetId,
-        outcome: result.outcome,
-      },
-    })
-  }
-  if (command === 'unconfirm') result = unconfirm({ paths, reference: options.id })
-  if (command === 'validate') validate(paths)
-
+  const paths = resolvePaths({ repoRoot: options['repo-root'], guideRoot: options['guide-root'] })
+  const result = commandHandlers[command]({ paths, options })
   process.stdout.write(`${JSON.stringify({ ...paths, ...(result ? { result } : {}) }, null, 2)}\n`)
 }
 
-const isEntryPoint = () => {
+/** Runs a CLI's main when its file is the process entry point, and reports an error on stderr. */
+export const runIfEntryPoint = ({ path, main: run }) => {
   try {
-    return realpathSync(process.argv[1]) === scriptPath
+    if (realpathSync(process.argv[1]) !== path) return
   } catch {
     // The lifecycle hook imports this module; it has no command to run.
-    return false
+    return
   }
-}
-
-if (isEntryPoint()) {
   try {
-    main()
+    run()
   } catch (error) {
-    process.stderr.write(`${basename(scriptPath)}: ${error.message}\n`)
+    process.stderr.write(`${basename(path)}: ${error.message}\n`)
     process.exitCode = 1
   }
 }
+
+runIfEntryPoint({ path: scriptPath, main })

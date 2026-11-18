@@ -718,7 +718,7 @@ test('session start shows one visible line when the store is newer than the plug
   assert.match(refused.systemMessage, /nothing confirmed; .*annotations\.json is unreadable or newer/)
 
   const memoryPath = join(guideRoot, 'memory.md')
-  writeFileSync(memoryPath, readFileSync(memoryPath, 'utf8').replace('"schemaVersion": 1', '"schemaVersion": 2'))
+  writeFileSync(memoryPath, readFileSync(memoryPath, 'utf8').replace('"schemaVersion": 1', '"schemaVersion": 3'))
   const newerMemory = start('session-newer-memory')
   assert.match(newerMemory.systemMessage, /^Field Guide: .*newer/)
   assert.equal(newerMemory.hookSpecificOutput, undefined)

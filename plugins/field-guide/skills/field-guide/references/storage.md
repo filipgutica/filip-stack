@@ -20,6 +20,8 @@ Use these terms:
 ├── memory.lock         # Present only while a write runs
 ├── memory.md           # Canonical readable and machine-recorded memory
 ├── memory.json         # Validated machine cache
+├── operations.jsonl    # Local write-ahead journal of reversible operations
+├── proposals.json      # Local proposals that wait for the user's approval
 ├── sessions/           # Hook session state; pruned after seven days
 ├── shared/
 └── projects/
@@ -111,6 +113,120 @@ the superseded transition. `undo` and `withdraw` preserve evidence and move the
 target to `withdrawn`. When the target is the replacement of a superseded
 record, they also move that record back to `active`. Archive uses the maintenance dry-run path. Age never
 causes archive.
+
+### Memory versions
+
+`memory.md` holds version 1 (`schemas/memory-v1.schema.json`) until the store
+holds a consolidation link or a journaled transition: its first consolidation.
+From then on the store stays version 2, even after an undo. The utility writes version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
+replacement and `operationId` on a transition. A plugin that reads only version
+1 refuses a version 2 store and writes nothing to it, and its hook shows one
+line that the store is newer. The commands that write version 2, `consolidate`
+and `undo-operation`, refuse to run while a
+plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
+They check each Claude Code copy that `installed_plugins.json` names and the
+Codex copy that loads: the newest version directory in the plugin cache, for
+each marketplace that Codex's `config.toml` lists `field-guide` from, or for
+every cached marketplace when it lists none. Codex writes `field-guide@` only
+in two header lines: `[plugins."field-guide@<marketplace>"]` and the
+`[hooks.state."field-guide@<marketplace>:hooks/hooks.json:<event>:<n>:<n>"]`
+line that records a trusted hook. Any other line that holds `field-guide@`,
+such as an inline key, a subtable, other quoting, or a trailing comment, can
+name a copy the check cannot find, so the commands refuse. So does a TOML
+`\u`, `\U`, or `\x` escape anywhere in the file, which can spell the name
+without its plain text. The check reads no TOML, so a comment that mentions
+`field-guide@` or such an escape also refuses; remove it to proceed.
+
+### Consolidation and undo
+
+Use `consolidate --input <json-file>` to replace 2 to 8 active project records
+of one subject with one new record. The input follows
+`schemas/consolidation-v1.schema.json`. The default is a dry run; apply
+requires its preview token. The replacement keeps the predecessors' evidence
+links without adding evidence, takes their triggers, and lists them in
+`consolidates`. Each predecessor is superseded. A record that still replaces
+superseded records cannot be consolidated. Every string in the input, including
+each example's language and code, also refuses user information, as in
+`<scheme>://<user>@`, in a URL of any scheme, and a query string: a `?` with
+text after it in a token that starts with a scheme and a colon, with or without
+`//`, as in `mailto:<address>?subject=<text>`. A `?` in prose, as in
+`Ask: why?`, stays allowed. It also refuses a home directory without a trailing
+separator, such as `/home/<name>` or `/mnt/c/Users/<name>`. Windows ignores
+the case of `Users`, so a drive-rooted form, such as `C:\users\<name>` or
+`/mnt/c/USERS/<name>`, matches in any case. Each
+example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
+same checks cover every string in a stored proposal. A proposal stores a
+digest of its scope, not the repository identity, which can be a local path,
+such as the Git directory of a repository without a remote. Stored records keep
+the guard that released versions used, so their stores stay readable.
+
+Shared records are not consolidated until a later release.
+`consolidate` refuses a shared record in a preview, an apply, or an approval,
+because undoing a shared consolidation on every machine needs operation data
+that sync does not carry yet.
+
+When a predecessor is confirmed, `consolidate` changes nothing. It stores a
+proposal and returns `confirm fg:proposal:<id>` for the user to send. After the
+hook records that approval, `consolidate --approval proposal:<id>` recomputes the
+proposal ID from the current records and the stored proposal, and applies it.
+A proposal records `confirmedFingerprints`, the predecessors that were
+confirmed when the proposal was stored, and its ID covers that list. The
+approved replacement carries `[confirmed]`, set in the same commit. When any predecessor was
+confirmed or unconfirmed after the proposal was stored, `--approval` refuses,
+names the change, and writes nothing; propose the consolidation again. It also
+refuses a set that an undo declined, even when the approval came first. A
+proposal expires after 14 days. Every journaled operation writes annotations
+before memory. So a crash between the two writes of an approved consolidation
+leaves the predecessors' confirmations revoked and the predecessors in place: it
+fails closed. Run `consolidate --approval` again to finish it; the journal lists
+the revocations of the aborted attempt, so only that loss of confirmation is
+excused. An `unconfirm` after the crash still blocks the retry. Until then,
+`consolidate` still treats those predecessors as confirmed, while injected guidance shows them without `[confirmed]`.
+`export --annotations` leaves out the replacement that never landed, because it
+treats every fingerprint a journaled project operation names as project data. A
+released exporter does not read the journal, so after such a crash in the first
+approved consolidation, before memory becomes version 2, it exports that
+confirmation; the entry holds only IDs, and its project fingerprint can never
+match a shared record. Recovery also cancels the triggers that an aborted
+consolidation gave its replacement, by the entry IDs that the journal lists, so
+a later capture of the same text starts without them, even a capture made
+before recovery ran. A trigger that the user added under another entry ID
+stays. A crash
+after the `memory.md` write but before the watermark write also fails closed:
+the next command finds the watermark stale and revokes every confirmation, the
+retry reports the proposal as already applied, and the replacement stays
+unconfirmed until the user confirms it again.
+
+Use `undo-operation --id <operation-id>` to reverse a consolidation within 90
+days. Run it on the machine that made the
+operation, because the journal that holds the inverse stays local. It withdraws
+the replacement the way a user's undo does and restores each predecessor it
+still supersedes. A predecessor that something else retired stays retired, and
+the result lists it. Restored predecessors start
+unconfirmed, because a restore revokes confirmations; the user confirms them
+again if needed. The undone set is recorded as declined: `consolidate` refuses
+it, `dream plan` leaves it out of its overlap groups, and the undo cannot itself
+be undone. Repeating the undo changes nothing. When a later change blocks a clean inverse, the command names
+the conflict and changes nothing. `transition` refuses to withdraw or undo a
+consolidated replacement and names `undo-operation`.
+
+### Operation journal
+
+`operations.jsonl` is a local write-ahead journal. No hook reads it, and it never
+syncs. An operation appends a `pending` entry, then writes annotations and
+memory, then appends a `commit` entry. Every transition the operation makes
+carries its operation ID. Before the next journaled command, recovery commits
+a pending operation whose ID reached memory and aborts the rest. When it commits
+one, it rebuilds `memory.json` from `memory.md`, which a crash between those two
+writes left stale. Until that command runs, `validate` reports the stale cache;
+`maintain` with `repair-cache` also rebuilds it. An entry holds
+IDs, fingerprints, revisions, retirement IDs, a sanitized reason, and the undo
+command. It never holds guidance text, user prompts, or paths.
+
+`proposals.json` is local and never syncs. Each proposal holds a digest of its
+scope, the target fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
+expiry, and the user's approval once the hook records it. Read [nightly maintenance](dreaming.md) for
+the nightly plan.
 
 Use `delete --input <json-file>` for permanent deletion. The target must be
 `withdrawn` or `archived`. The first call returns a preview token and the orphan
@@ -249,13 +365,16 @@ without them.
 
 Use `audit` for a manual read-only inspection. It reports validation errors,
 candidates that already meet evidence thresholds, unresolved refinements and
-contradictions, broken local or commit pointers, orphan evidence, and oversized
-records. It does not fetch stored URLs. It does not use record age as an archive
+contradictions, broken local or commit pointers, orphan evidence, oversized
+records, and `duplicateCandidates`: groups of live records in one subject whose
+terms overlap, without groups the user declined by an undo. It does not fetch stored URLs. It does not use record age as an archive
 signal, and it does not change files.
 
 Use `maintain --input <json-file>` for explicit archive or cache-repair
 maintenance. The input follows `schemas/maintenance-v1.schema.json`. Archive
-accepts candidate, active, superseded, or withdrawn target IDs. `repair-cache`
+accepts candidate, active, superseded, or withdrawn target IDs. An archive whose
+result the store would reject, such as one of a replacement that still
+supersedes records, fails in its dry run and changes nothing. `repair-cache`
 rebuilds only `memory.json` from a valid canonical `memory.md`; it never changes
 malformed canonical data. The default is a dry run. Apply requires the preview
 token from the same canonical store and cache state.
@@ -324,7 +443,9 @@ retirement.
 Annotations travel in a second portable file with the `annotations.json`
 format. `export --output <json-file> --annotations <json-file>` writes it: it
 keeps every entry already in the file and adds the local entries for every
-fingerprint that is not a local project record. `import --input <json-file>
+fingerprint that is not a local project record. When `operations.jsonl` cannot
+be read, it adds only the entries of shared records in memory, because another
+fingerprint may belong to a project operation. `import --input <json-file>
 --annotations <json-file>` validates both files before it changes anything,
 then unions the entries, acknowledgments, and revocations into
 `annotations.json`. Union makes revocations converge in any sync order: once any machine acknowledges an
