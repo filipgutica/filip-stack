@@ -138,10 +138,8 @@ replacement carries `[confirmed]` after the user's approval. A merge becomes a
 `confirmed-overlap` flag instead when its replacement repeats the text of a
 confirmed live shared record, which retrieval would then leave out, or when the
 user once confirmed a target that is not confirmed now. It becomes an
-`unsafe-overlap` flag when the replacement would copy a scope, subject key, or
-linked subject that the new-text guard refuses, such as the repository identity
-of a repository without a remote, or with a `file:` remote, under a home
-directory. `apply` works out under the memory lock
+`unsafe-overlap` flag when the replacement would copy a subject key or linked
+subject that the new-text guard refuses. `apply` works out under the memory lock
 which subjects are due, as the plan does. A subject that is not due, such as
 one marked `context`, takes only a contradiction that names a record of a due
 subject that applies with it; any other action there stops the run. A subject

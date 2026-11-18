@@ -1427,11 +1427,11 @@ test('dream apply compares live guidance read under the memory lock', { timeout:
   assert.equal(guide.record(first).status, 'active')
 })
 
-// A guide in a repository without a remote, with two cleanup records, the first confirmed. The
-// repository identity is its Git directory, so under a home directory it holds the home path.
-const noRemoteSetup = (name, { underHome = false } = {}) => {
+// A guide in a repository without a remote under a home directory, with two cleanup records, the
+// first confirmed. The repository identity is its Git directory, so it holds the home path.
+const noRemoteSetup = (name) => {
   const root = mkdtempSync(join(tmpdir(), `field-guide-dream-${name}-`))
-  const parent = underHome ? join(root, 'home', 'review-fixture-user') : join(root, 'repositories')
+  const parent = join(root, 'home', 'review-fixture-user')
   mkdirSync(parent, { recursive: true })
   const repoRoot = createRepo({ parent, name: 'no-remote' })
   execFileSync('git', ['-C', repoRoot, 'remote', 'remove', 'origin'])
@@ -1441,17 +1441,20 @@ const noRemoteSetup = (name, { underHome = false } = {}) => {
   return { root, guide, first, second }
 }
 
-test('a project proposal round-trips in a repository without a remote', () => {
+test('a project proposal round-trips in a repository without a remote under a home directory', () => {
   const { root, guide, first, second } = noRemoteSetup('no-remote')
   const learning = 'After a merge, clean up.'
   const refused = guide.consolidate({ targetIds: [first, second], replacement: { learning, confidence: 'high' } }).result
   assert.equal(refused.outcome, 'approval-required')
   // The proposal binds the scope by a digest, so it stores no local path.
   const proposals = readFileSync(join(guide.guideRoot, 'proposals.json'), 'utf8')
-  assert.ok(!proposals.includes(root), proposals)
+  assert.ok(!proposals.includes('/home/') && !proposals.includes(root), proposals)
   const reference = refused.confirmPrompt.slice('confirm fg:'.length)
   assert.match(guide.confirm(reference).systemMessage, /approved .*the replacement will be confirmed/)
-  assert.equal(guide.exec({ command: 'consolidate', args: ['--approval', reference] }).result.outcome, 'consolidated')
+  const merged = guide.exec({ command: 'consolidate', args: ['--approval', reference] }).result
+  assert.equal(merged.outcome, 'consolidated')
+  // The replacement keeps the scope capture stored in its targets, local identity included.
+  assert.deepEqual(guide.record(merged.replacementId).scope, guide.record(first).scope)
   assert.equal(guide.confirmed(learning), true)
   guide.validate()
 })
@@ -1862,19 +1865,6 @@ test('dream apply refuses and writes nothing while the journal, annotations, or 
   }
 })
 
-test('a merge never copies a home path from a repository identity into a new record', () => {
-  const { guide, first, second } = noRemoteSetup('home-identity', { underHome: true })
-  const before = storeFiles(guide)
-  const learning = 'After a merge, clean up.'
-  assert.match(guide.consolidate({ targetIds: [first, second], replacement: { learning, confidence: 'high' } }, { expectFailure: true }).stderr, /absolute home-directory path/)
-  assert.deepEqual(storeFiles(guide), before)
-  // A nightly run leaves that merge to the user.
-  const input = dreamInput(guide.plan(), [consolidation([first, second])])
-  const applied = guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
-  assert.deepEqual([applied.operations.length, applied.proposals.length, applied.flags.map(({ kind }) => kind)], [0, 0, ['unsafe-overlap']])
-  assert.equal(guide.record(first).status, 'active')
-})
-
 test('a proposal that a dream run stores holds a scope digest and applies after approval', () => {
   const { root, guide, first, second } = noRemoteSetup('run-proposal')
   const plan = guide.plan()
@@ -1882,7 +1872,7 @@ test('a proposal that a dream run stores holds a scope digest and applies after 
   const applied = guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
   assert.equal(applied.proposals.length, 1)
   const stored = readFileSync(join(guide.guideRoot, 'proposals.json'), 'utf8')
-  assert.ok(!stored.includes(root), stored)
+  assert.ok(!stored.includes('/home/') && !stored.includes(root), stored)
   assert.deepEqual(Object.keys(JSON.parse(stored).proposals[0]).filter((key) => key.startsWith('scope')), ['scopeDigest'])
   const run = guide.journal().find(({ type }) => type === 'run')
   assert.deepEqual(run.proposals.map(({ subjectId }) => subjectId), [subjectFor(plan).subjectId])

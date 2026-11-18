@@ -165,11 +165,12 @@ proposal. They also cover each new proposal and new journal entry whole,
 including the subject key it copies from memory, with the checks its reader
 applies, so a legacy subject key that the guard refuses stops the command
 before it writes anything. A replacement copies its targets' scope, subject
-key, linked subjects, and evidence IDs, so `consolidate` refuses, in a preview,
-an apply, or an approval, targets whose copied fields the guard refuses, and
-nightly maintenance flags such a merge as `unsafe-overlap`. That includes the
-repository identity of a repository without a remote, or with a `file:` remote,
-under a home directory. A proposal stores a digest of its scope, not the repository identity,
+key, linked subjects, and evidence IDs. `consolidate` refuses, in a preview, an
+apply, or an approval, targets whose copied subject key, linked subjects, or
+evidence IDs the guard refuses, and nightly maintenance flags such a merge as
+`unsafe-overlap`. The scope is copied unchanged: capture already stores it in
+every target, including the local repository identity of a repository without
+a remote. A proposal stores a digest of its scope, not the repository identity,
 which can be a local path, such as the Git directory of a repository without a
 remote. Stored records keep the guard that released versions used, so their
 stores stay readable.

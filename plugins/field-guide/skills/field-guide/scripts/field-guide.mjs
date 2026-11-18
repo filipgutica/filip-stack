@@ -3112,9 +3112,10 @@ const requireValidResult = ({ memory, targetIds, plan }) => requireValidChange({
 // new-text guard. Fails on one that does not. The rest of the replacement is the reviewer's text,
 // which its input already passed through the guard, or IDs and times the writer issues.
 const inheritedLinkedSubjects = (targets) => sortedUnion(...targets.map(({ linkedSubjects }) => linkedSubjects ?? []))
+// The scope is copied too, but capture already stores it unchanged in every target, including a
+// local repository identity, so a merge adds nothing the store did not hold.
 const requireSafeInheritance = (targets) => assertSafeNewValue({
   value: {
-    scope: targets[0].scope,
     subjectKey: targets[0].subjectKey,
     linkedSubjects: inheritedLinkedSubjects(targets),
     evidenceIds: targets.flatMap(({ evidenceIds }) => evidenceIds),
