@@ -1,4 +1,3 @@
-// fallow-ignore-file unused-file -- loaded by the opt-in Field Guide invariant suite
 import fs from 'node:fs'
 import { syncBuiltinESMExports } from 'node:module'
 import { relative, resolve, sep } from 'node:path'

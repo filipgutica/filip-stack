@@ -1,4 +1,3 @@
-// fallow-ignore-file unused-file, unused-export -- loaded by the opt-in Field Guide invariant suite
 import assert from 'node:assert/strict'
 import { join } from 'node:path'
 import { memoryOf, requireResult, write } from './dream-invariants-fixture.mjs'

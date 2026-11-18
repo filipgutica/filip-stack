@@ -1,4 +1,3 @@
-// fallow-ignore-file unused-file, unused-export -- loaded by the opt-in Field Guide invariant suite
 import { isDeepStrictEqual } from 'node:util'
 import { durable, journalOf, memoryOf, proposalsOf } from './dream-invariants-fixture.mjs'
 

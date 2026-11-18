@@ -1,4 +1,3 @@
-// fallow-ignore-file unused-file, unused-export -- loaded by the opt-in Field Guide invariant suite
 import assert from 'node:assert/strict'
 import { execFileSync, spawnSync } from 'node:child_process'
 import { cpSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'

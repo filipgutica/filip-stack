@@ -1,6 +1,5 @@
-// Opt in with FIELD_GUIDE_INVARIANTS=1. pnpm check and CI do not set it.
-// This independent contract harness is expected to fail at b21711b.
-// fallow-ignore-file unused-file -- loaded by the opt-in Field Guide invariant suite
+// An independent contract harness for nightly maintenance. pnpm check and CI run every scenario
+// with each fault except a crash after each single write; FIELD_GUIDE_INVARIANTS=1 adds those.
 import assert from 'node:assert/strict'
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
@@ -12,6 +11,7 @@ import {
 } from './dream-invariants-oracle.mjs'
 import { alterMemory, archive, elapsed, inputFor, restoreFault, scenarios, watermark } from './dream-invariants-scenarios.mjs'
 
+const crashPrefixes = process.env.FIELD_GUIDE_INVARIANTS === '1'
 const storeFiles = ['annotations.json', 'operations.jsonl', 'proposals.json', 'annotations-watermark.json', 'memory.json']
 const fileFaults = storeFiles.flatMap((file) => ['lost', 'truncated'].map((mode) => ({ name: `${mode}-${file}`, file, mode })))
 const privacyProbes = [
@@ -384,7 +384,7 @@ const runCell = ({ t, machine, seed, current, fault, baseline, events: originalE
 const secondaryFaults = ({ current, input, baseline, control }) => {
   const mix = malformedFor({ input, current })
   const files = fileFaults.filter(({ file }) => baseline[file] || control.after[file])
-  const projected = control.applied.writes.map((_, index) => ({ name: `crash-${index + 1}`, crash: index + 1 }))
+  const projected = crashPrefixes ? control.applied.writes.map((_, index) => ({ name: `crash-${index + 1}`, crash: index + 1 })) : []
   const landed = control.applied.writes.indexOf('renameSync memory.md') + 1
   const reconciled = control.applied.writes.indexOf('renameSync annotations-watermark.json') + 1
   const neighbors = current.prior && landed ? ['export', 'lost', 'edited'].map((recover) => ({
@@ -435,7 +435,7 @@ const countWrites = ({ machine, review, baseline }) => {
 }
 
 for (const seed of scenarios) {
-  test(seed.name, { skip: process.env.FIELD_GUIDE_INVARIANTS !== '1' && 'set FIELD_GUIDE_INVARIANTS=1' }, async (t) => {
+  test(seed.name, async (t) => {
     const machine = fixture({ t, origin: seed.origin })
     const events = []
     const current = seed.seed({ machine, events, confirm: (id) => recordConfirmation({ machine, events, id }) })
