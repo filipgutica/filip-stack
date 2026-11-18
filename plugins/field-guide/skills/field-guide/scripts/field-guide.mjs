@@ -536,10 +536,12 @@ const validateTransitionIds = ({ guidance, transition }) => {
 }
 
 // Only undo-operation restores archived guidance, and only an archive that an operation made. The
-// restore names its own undo operation, which is how recovery finds it.
+// restore names its own undo operation, which is how recovery finds it. Memory alone checks only
+// the shape, two operation IDs as strings; the journal links the undo to that archive, and
+// undo-operation and validate check that link (unlinkedRestores).
 const requireJournaledRestore = ({ guidance, index }) => {
   const [archive, restore] = guidance.transitions.slice(index - 1, index + 1)
-  if (restore.source !== 'undo-operation' || !restore.operationId || !archive.operationId) {
+  if (restore.source !== 'undo-operation' || !isOperationId(restore.operationId) || !isOperationId(archive.operationId)) {
     fail(`${guidance.id} archived->active requires undo-operation of a journaled archive`)
   }
 }
@@ -1105,13 +1107,14 @@ const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevis
 // annotation-aware write. Revoke every fingerprint in memory, annotations, or the watermark once,
 // which covers deleted records and confirmations still in transit, then record the revision.
 // A store without a watermark, such as one from the first annotation release, is treated the same.
+// These revocations carry the reconcile prefix, so nightly maintenance can tell them apart.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
   const annotations = readAnnotations(paths.annotationsFile)
   const { fingerprints: known } = readWatermark(paths)
   const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
-  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }), newReconcileRevocationId())
   writeAnnotations({ path: paths.annotationsFile, annotations })
   writeWatermark({ paths, memory })
 }
@@ -1195,36 +1198,13 @@ const acquireLock = (lockFile) => {
   }
 }
 
-// A journaled write that stopped after its canonical memory write and before its watermark
-// leaves a lag that its pending operations explain exactly: each operation journaled at the
-// watermark's revision reached memory, memory is one revision later, and memory holds exactly the
-// watermark's records plus those operations' replacements. That write already updated annotations,
-// so finishing it, as journal recovery does, revokes nothing: it writes the cache, the watermark,
-// then the commit entries. Any other lag, or a journal that cannot be read, is left to reconcile.
-const finishInterruptedWrite = (paths) => {
-  const memory = readMarkdownMemory(paths)
-  if (!memory || watermarkCurrent({ paths, memory })) return
-  const { memoryRevision, fingerprints } = readWatermark(paths)
-  const { operations } = journalForDisplay(paths)
-  if (!operations || !Number.isInteger(memoryRevision) || !isStringArray(fingerprints) || memory.revision !== memoryRevision + 1) return
-  const interrupted = [...operations.values()].filter(({ state, revision }) => state === 'pending' && revision === memoryRevision)
-  if (interrupted.length === 0 || !interrupted.every(({ operationId }) => operationLanded({ memory, operationId }))) return
-  const expected = sortedUnion(fingerprints, interrupted.flatMap(({ replacementFingerprint }) => (replacementFingerprint ? [replacementFingerprint] : [])))
-  if (JSON.stringify(sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint))) !== JSON.stringify(expected)) return
-  writeMemoryAtomically({ paths, memory })
-  writeWatermark({ paths, memory })
-  const at = new Date().toISOString()
-  appendJournal({ paths, entries: interrupted.map(({ operationId }) => ({ type: 'commit', operationId, at, revision: memory.revision, recovered: true })) })
-}
-
-// Serializes writes to memory and annotations in one guide. It first finishes an interrupted
-// journaled write, then reconciles annotations. A caller that refuses a lagging watermark passes
-// reconcile false, because reconciling it voids every confirmation.
+// Serializes writes to memory and annotations in one guide, and reconciles annotations first.
+// A caller that refuses a lagging watermark passes reconcile false, because reconciling it voids
+// every confirmation.
 const withMemoryLock = ({ paths, action, reconcile = true }) => {
   const lockFile = paths.memoryLockFile
   const owner = acquireLock(lockFile)
   try {
-    finishInterruptedWrite(paths)
     if (reconcile) reconcileAnnotations(paths)
     return action()
   } finally {
@@ -1524,6 +1504,12 @@ const acknowledgeEntries = ({ record, entries }) => {
 const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
 const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
 
+// A reconcile's revocation is an annotation ID whose first 16 hex digits are fixed and whose rest
+// is random, so every released reader accepts it, each reconcile still adds a new revocation, and
+// nightly maintenance can tell a confirmation that a reconcile voided from one the user withdrew.
+const reconcileRevocationPrefix = hashIdentity({ prefix: 'annotation', values: ['reconcile'] }).slice(0, 'annotation:v1:'.length + 16)
+const newReconcileRevocationId = () => `${reconcileRevocationPrefix}${randomBytes(24).toString('hex')}`
+
 // A retirement ID enters annotations in annotation format, which the first annotation release accepts.
 const retirementRevocationId = (id) => hashIdentity({ prefix: 'annotation', values: ['retirement', id] })
 
@@ -1541,8 +1527,7 @@ const countingConfirmations = ({ record, guidance, excused = [] }) => {
 }
 
 // Returns the new revocation's ID.
-const revokeRecord = (record) => {
-  const id = newAnnotationId()
+const revokeRecord = (record, id = newAnnotationId()) => {
   record.revocations.push(id)
   return id
 }
@@ -1683,6 +1668,8 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:`, and for a near miss outside a main thread. A near miss, such as a pasted report
  * that mentions a confirm prompt, only tells the agent: it has no message for the user. Stores only an entry ID, the time,
  * the host, and the revocation IDs it saw, some derived from retirement IDs, never prompt text.
+ * Under the memory lock it reads memory.md, annotations.json, and the watermark, which reconcile
+ * may rewrite, and proposals.json for a proposal; it never reads operations.jsonl.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
@@ -2195,19 +2182,35 @@ const retrieveEvidence = ({ memory, guidanceId }) => {
   }
 }
 
+// The shared records among records that retrieval hides because project guidance of the
+// repository repeats their text, compared as normalized learnings.
+const hiddenSharedRecords = ({ records, projectLearnings }) => {
+  const repeated = new Set(projectLearnings.map(normalizeLearning))
+  return records.filter(({ scope, learning }) => scope.kind === 'shared' && repeated.has(normalizeLearning(learning)))
+}
+
 /** Returns active guidance for the repository, without shared records that a project record repeats. */
 const applicableGuidance = ({ memory, paths }) => {
   const relevantActive = memory.guidance.filter(({ status, scope }) => (
     status === 'active' && (scope.kind === 'shared' || scope.repositoryIdentity === paths.identity)
   ))
-  const projectLearning = new Set(
-    relevantActive
-      .filter(({ scope }) => scope.kind === 'project')
-      .map(({ learning }) => normalizeLearning(learning)),
-  )
-  return relevantActive.filter((guidance) => !(
-    guidance.scope.kind === 'shared' && projectLearning.has(normalizeLearning(guidance.learning))
-  ))
+  const hidden = new Set(hiddenSharedRecords({
+    records: relevantActive,
+    projectLearnings: relevantActive.filter(({ scope }) => scope.kind === 'project').map(({ learning }) => learning),
+  }))
+  return relevantActive.filter((guidance) => !hidden.has(guidance))
+}
+
+// The confirmed live shared records that a project consolidation's replacement would hide from
+// retrieval in its repository, by retrieval's own rule. isConfirmed decides confirmation.
+const hiddenConfirmedIds = ({ memory, learning, isConfirmed }) => hiddenSharedRecords({
+  records: memory.guidance.filter(({ status }) => ['candidate', 'active'].includes(status)),
+  projectLearnings: [learning],
+}).filter(isConfirmed).map(({ id }) => id)
+
+const requireNothingHidden = ({ memory, learning, isConfirmed }) => {
+  const [hidden] = hiddenConfirmedIds({ memory, learning, isConfirmed })
+  if (hidden) fail(`the replacement would hide confirmed shared guidance ${shortId(hidden)}, which retrieval leaves out when a project record repeats its text`)
 }
 
 const rankGuidance = ({ applicable, subjectKey, query }) => {
@@ -2906,6 +2909,16 @@ const pendingEntry = ({ memory, operationId, action, scope, subjectKey, fingerpr
   ...fields,
 })
 
+// The pending entry of a new consolidation or archive, checked as the journal readers check it,
+// with every string under the new-text guard, including the subject key it copies from memory.
+// undo-operation copies the fields of an entry already journaled, so it builds its own.
+const newPendingEntry = (fields) => {
+  const entry = pendingEntry(fields)
+  requireReadableJournalEntry({ entry, index: 0 })
+  assertSafeNewValue({ value: entry, label: 'pending entry' })
+  return entry
+}
+
 // Journals each operation, writes annotations, then writes memory once, then commits. A crash
 // before the memory write leaves pending entries that recovery aborts; a crash after it leaves
 // entries that recovery commits.
@@ -3176,7 +3189,7 @@ const consolidateInPlace = ({ memory, annotations, plan, reason, source, now, fi
   const revision = memory.revision
   const { replacement, retirementIds } = applyConsolidation({ memory, plan, operationId, reason, source, now })
   const { revocationIds, triggerIds } = annotateConsolidation({ annotations, plan, replacement, approval })
-  return pendingEntry({
+  return newPendingEntry({
     memory: { revision },
     operationId,
     action: 'consolidate',
@@ -3202,7 +3215,7 @@ const archiveInPlace = ({ memory, annotations, target, reason, now, fields = {} 
   const revision = memory.revision
   archiveRecord({ guidance: target, reason, source: 'dream', now, operationId })
   revokeRecord(annotationRecordFor({ annotations, fingerprint: target.fingerprint }))
-  return pendingEntry({
+  return newPendingEntry({
     memory: { revision },
     operationId,
     action: 'archive',
@@ -3269,6 +3282,26 @@ const confirmPromptFor = (proposal) => `confirm fg:proposal:${shortId(proposal.i
 // repository without a remote, so a proposal stores only a digest of its scope.
 const scopeDigest = (scope) => contentDigest(scopeIdentity(scope))
 
+// A new proposal for a consolidation plan, checked as readProposals checks it, so a field copied
+// from memory, such as a legacy subject key, cannot make proposals.json unreadable.
+const newProposal = ({ plan, reason, now }) => {
+  const proposal = {
+    id: plan.proposalId,
+    kind: 'consolidate',
+    scopeDigest: scopeDigest(plan.scope),
+    subjectKey: plan.subjectKey,
+    targetFingerprints: plan.targetFingerprints,
+    replacement: plan.replacement,
+    confirmsReplacement: plan.confirmsReplacement,
+    confirmedFingerprints: plan.confirmedFingerprints,
+    reason,
+    createdAt: now,
+    expiresAt: new Date(Date.parse(now) + proposalLifetimeDays * dayMs).toISOString(),
+  }
+  validateProposal(proposal)
+  return proposal
+}
+
 // The proposal store with each plan's consolidation proposal added once, and the proposal for
 // each plan. A stored proposal keeps its approval and expiry. It writes nothing.
 const preparedProposals = ({ paths, plans, now }) => {
@@ -3278,19 +3311,7 @@ const preparedProposals = ({ paths, plans, now }) => {
   const stored = plans.map(({ plan, reason }) => {
     const existing = store.proposals.find(({ id }) => id === plan.proposalId)
     if (existing) return existing
-    const proposal = {
-      id: plan.proposalId,
-      kind: 'consolidate',
-      scopeDigest: scopeDigest(plan.scope),
-      subjectKey: plan.subjectKey,
-      targetFingerprints: plan.targetFingerprints,
-      replacement: plan.replacement,
-      confirmsReplacement: plan.confirmsReplacement,
-      confirmedFingerprints: plan.confirmedFingerprints,
-      reason,
-      createdAt: now,
-      expiresAt: new Date(Date.parse(now) + proposalLifetimeDays * dayMs).toISOString(),
-    }
+    const proposal = newProposal({ plan, reason, now })
     store.proposals.push(proposal)
     return proposal
   })
@@ -3349,8 +3370,10 @@ const consolidateUnlocked = ({ paths, inputPath }) => {
   const memory = readInitializedMemory(paths)
   const operations = operationsIn(recoverOperations({ paths, memory }))
   const annotations = readAnnotations(paths.annotationsFile)
-  const plan = planConsolidation({ memory, annotations, excused: unlandedRevocations({ operations, memory }), targetIds: input.targetIds, replacement: input.replacement })
+  const excused = unlandedRevocations({ operations, memory })
+  const plan = planConsolidation({ memory, annotations, excused, targetIds: input.targetIds, replacement: input.replacement })
   requireNotDeclined({ declined: declinedSets(operations), fingerprints: plan.targetFingerprints })
+  requireNothingHidden({ memory, learning: input.replacement.learning, isConfirmed: (guidance) => annotationMarkers({ annotations, guidance, excused }).confirmed })
   // A confirmed record is never rewritten without the user's approval of this exact change.
   if (plan.confirmsReplacement) {
     const [proposal] = storeProposals({ paths, plans: [{ plan, reason: input.reason }], now: new Date().toISOString() })
@@ -3399,6 +3422,7 @@ const consolidateApprovedUnlocked = ({ paths, reference }) => {
   if (JSON.stringify(confirmedNow) !== JSON.stringify(proposal.confirmedFingerprints)) {
     fail(`confirmation of a record in proposal ${shortId(proposal.id)} changed since it was stored; propose it again`)
   }
+  requireNothingHidden({ memory, learning: proposal.replacement.learning, isConfirmed: (guidance) => annotationMarkers({ annotations, guidance, excused }).confirmed })
   requireCurrentReaders()
   const entry = consolidateInPlace({
     memory,
@@ -3460,9 +3484,21 @@ const undoArchive = ({ memory, operation, operationId, now }) => {
 
 const undoers = { consolidate: undoConsolidation, archive: undoArchive }
 
+// A problem for each restore of archived guidance that no journaled undo of that archive made:
+// the restore must name an undo-operation entry, not aborted, that undoes the archive's operation.
+const unlinkedRestores = ({ memory, operations }) => memory.guidance.flatMap(({ id, transitions }) => transitions.flatMap((restore, index) => {
+  if (restore.from !== 'archived' || restore.to !== 'active') return []
+  const archived = transitions[index - 1].operationId
+  const undo = operations.get(restore.operationId)
+  if (undo?.action === 'undo-operation' && undo.undoes === archived && undo.state !== 'aborted') return []
+  return [`${shortId(id)} was restored by no journaled undo of archive operation ${shortId(String(archived))}`]
+}))
+
 const undoOperationUnlocked = ({ paths, reference }) => {
   const memory = readInitializedMemory(paths)
   const operations = operationsIn(recoverOperations({ paths, memory }))
+  const [unlinked] = unlinkedRestores({ memory, operations })
+  if (unlinked) fail(`${unlinked}; repair memory before undo-operation`)
   const operation = findOperation({ operations, reference })
   // Earlier builds of this release journaled shared consolidations; reversing one needs operation
   // data that sync does not carry yet.
@@ -3527,16 +3563,19 @@ export const reviewedRecord = ({ guidance, confirmed, triggers }) => ({
 })
 
 // confirmationsCurrent false shows every record unconfirmed, as the hook does while the watermark
-// lags memory. lapsed maps a subject to the runs whose proposal of it lapsed. The digest covers
-// them, so the review after a lapse comes from a new plan and is a new run; a subject without a
-// lapse keeps the digest it had.
+// lags memory. Besides the excused revocations, a record's reconcile revocations are excused too:
+// a reconcile voids every confirmation because it cannot tell what changed, not because the user
+// withdrew one, so nightly maintenance still leaves that guidance to the user. lapsed maps a
+// subject to the runs whose proposal of it lapsed. The digest covers them, so the review after a
+// lapse comes from a new plan and is a new run; a subject without a lapse keeps the digest it had.
 const subjectStates = ({ memory, annotations, excused = [], confirmationsCurrent = true, lapsed = new Map() }) => {
   const subjects = new Map()
   const live = memory.guidance.filter(({ status }) => ['candidate', 'active'].includes(status)).sort((left, right) => left.id.localeCompare(right.id))
   for (const guidance of live) {
     const subjectId = subjectIdFor(guidance)
     const subject = subjects.get(subjectId) ?? { subjectId, scope: guidance.scope, subjectKey: guidance.subjectKey, records: [] }
-    const markers = annotationMarkers({ annotations, guidance, excused })
+    const voided = (annotations.records[guidance.fingerprint]?.revocations ?? []).filter((id) => id.startsWith(reconcileRevocationPrefix))
+    const markers = annotationMarkers({ annotations, guidance, excused: [...excused, ...voided] })
     subject.records.push({ guidance, ...markers, confirmed: markers.confirmed && confirmationsCurrent })
     subjects.set(subjectId, subject)
   }
@@ -3568,10 +3607,11 @@ const overlapGroups = ({ records, declined }) => {
     .map((group) => [...group].map(({ id }) => id).sort())
 }
 
-// The proposals a run stored that expired before the user applied them. A run records each
-// proposal's expiry, and nothing extends one, so the journal alone answers this.
-const lapsedProposals = ({ proposals, operations }) => proposals.filter(({ id, expiresAt }) => (
-  Date.parse(expiresAt) <= Date.now()
+// The proposals a run stored that the user never applied and can no longer approve: expired, or
+// missing from proposals.json because the run stopped before it published them. A run records
+// each proposal's expiry, and nothing extends one. published holds the IDs in proposals.json.
+const lapsedProposals = ({ proposals, operations, published }) => proposals.filter(({ id, expiresAt }) => (
+  (Date.parse(expiresAt) <= Date.now() || !published.has(id))
   && ![...operations.values()].some(({ proposalId, state }) => proposalId === id && state === 'committed')
 ))
 
@@ -3583,13 +3623,37 @@ const liveStateOf = (liveDigests) => hashIdentity({
 
 // For each subject, the runs whose proposal of it lapsed, sorted. A time-dependent answer: a plan
 // made before a proposal expires is stale after it.
-const lapsedRuns = ({ runs, operations }) => {
+const lapsedRuns = ({ runs, operations, published }) => {
   const lapsed = new Map()
   for (const { runId, proposals } of runs) {
-    for (const { subjectId } of lapsedProposals({ proposals, operations })) lapsed.set(subjectId, sortedUnion(lapsed.get(subjectId) ?? [], [runId]))
+    for (const { subjectId } of lapsedProposals({ proposals, operations, published })) lapsed.set(subjectId, sortedUnion(lapsed.get(subjectId) ?? [], [runId]))
   }
   return lapsed
 }
+
+// The IDs in proposals.json, or an empty set and the error when it cannot be read, so the plan
+// treats every proposal as lapsed and reviews its subject again; dream apply refuses instead.
+const publishedForDisplay = (paths) => {
+  try {
+    return { published: new Set(readProposals(paths).proposals.map(({ id }) => id)) }
+  } catch (error) {
+    return { published: new Set(), error: error.message }
+  }
+}
+
+// A subject is due while a contradiction that holds one of its records waits for the user, and
+// otherwise until a review saw this subject state against this live guidance.
+const isDue = ({ subject, reviewed, open, live }) => (
+  open.some(({ subjectIds }) => subjectIds.includes(subject.subjectId)) || !reviewed[subject.subjectId]?.has(`${subject.digest} ${live}`)
+)
+
+/**
+ * Whether two subjects apply together, so a contradiction may pair their records: the same subject
+ * key in two scopes, one of them shared.
+ */
+export const appliesWith = (left, right) => (
+  left.subjectId !== right.subjectId && left.subjectKey === right.subjectKey && [left, right].some(({ scope }) => scope.kind === 'shared')
+)
 
 // For each subject, the states it was reviewed in: each pairs the subject digest with the live
 // state of that review. A subject whose subject and live guidance return to a reviewed state, such
@@ -3622,7 +3686,8 @@ const openContradictions = ({ runs, subjects }) => {
  * records, and overlap groups, whether each is due for review against the given live digests, and
  * any operation still pending. It writes nothing, not even journal recovery; a run that recovery
  * would record counts as recorded. When the journal cannot be read, every subject is due, none
- * lists a queued contradiction, and stateErrors names the error.
+ * lists a queued contradiction, and stateErrors names the error. When proposals.json cannot be
+ * read, every stored proposal counts as lapsed, and stateErrors names that error too.
  */
 export const dreamState = ({ paths, liveDigests }) => {
   const memory = readInitializedMemory(paths)
@@ -3635,6 +3700,7 @@ export const dreamState = ({ paths, liveDigests }) => {
   const runs = journal ? [...journal, ...recoveredRuns({ journal, memory })].filter(({ type }) => type === 'run') : []
   const reviewed = reviewedStates(runs)
   const live = liveStateOf(liveDigests)
+  const { published, error: proposalsError } = publishedForDisplay(paths)
   // Confirmations apply the hook's watermark check, read before annotations as the hook does. Like
   // consolidate, the plan still counts a confirmation that only a crashed operation revoked.
   const confirmationsCurrent = watermarkCurrent({ paths, memory })
@@ -3643,25 +3709,20 @@ export const dreamState = ({ paths, liveDigests }) => {
     annotations: readAnnotationsForDisplay(paths.annotationsFile),
     excused,
     confirmationsCurrent,
-    lapsed: lapsedRuns({ runs, operations: operations ?? new Map() }),
+    lapsed: lapsedRuns({ runs, operations: operations ?? new Map(), published }),
   })
   const open = openContradictions({ runs, subjects: states })
-  const subjects = [...states.values()].map((subject) => {
-    const queuedContradictions = open.filter(({ subjectIds }) => subjectIds.includes(subject.subjectId)).map(({ targetId, conflictingId }) => ({ targetId, conflictingId }))
-    return {
-      ...subject,
-      overlapGroups: overlapGroups({ records: subject.records.map(({ guidance }) => guidance), declined }),
-      queuedContradictions,
-      // Due while a contradiction it holds waits for the user, and otherwise unless a review saw
-      // this subject state against this live guidance.
-      due: queuedContradictions.length > 0 || !reviewed[subject.subjectId]?.has(`${subject.digest} ${live}`),
-    }
-  })
+  const subjects = [...states.values()].map((subject) => ({
+    ...subject,
+    overlapGroups: overlapGroups({ records: subject.records.map(({ guidance }) => guidance), declined }),
+    queuedContradictions: open.filter(({ subjectIds }) => subjectIds.includes(subject.subjectId)).map(({ targetId, conflictingId }) => ({ targetId, conflictingId })),
+    due: isDue({ subject, reviewed, open, live }),
+  }))
   return {
     revision: memory.revision,
     subjects,
     ...(operations ? { pendingOperations: [...operations.values()].filter(({ state }) => state === 'pending').map(({ operationId }) => operationId) } : {}),
-    stateErrors: error ? [error] : [],
+    stateErrors: [error, proposalsError].filter(Boolean),
     undoWindowDays,
   }
 }
@@ -3767,9 +3828,8 @@ const validateDreamInput = ({ input, liveDigests }) => {
 // the user, in either subject, and both records of each contradiction an earlier run queued that
 // is still open. No action in the run archives or consolidates a kept record, even as a flag or a
 // proposal. The set is fixed before any action is decided, so the order of actions does not matter.
-const heldRecords = ({ input, subjects, open }) => {
+const heldRecords = ({ input, confirmed, open }) => {
   const held = new Map(open.flatMap(({ targetId, conflictingId }) => [targetId, conflictingId].map((id) => [id, 'a contradiction queued for the user names it'])))
-  const confirmed = new Set([...subjects.values()].flatMap(({ records }) => records.filter((record) => record.confirmed).map(({ guidance }) => guidance.id)))
   for (const { actions } of input.subjects) {
     for (const action of actions) {
       const pair = [action.targetId, action.conflictingId]
@@ -3807,7 +3867,7 @@ const applicableRecord = ({ id, subject, run }) => {
   const own = subject.records.find(({ guidance }) => guidance.id === id)
   if (own) return { record: own, subject }
   const other = [...run.subjects.values()].find(({ records }) => records.some(({ guidance }) => guidance.id === id))
-  if (!other || other.subjectKey !== subject.subjectKey || ![subject, other].some(({ scope }) => scope.kind === 'shared')) {
+  if (!other || !appliesWith(subject, other)) {
     fail(`${id} is not live guidance in subject ${subject.subjectKey} or in the subject that applies with it`)
   }
   if (!run.inputSubjectIds.has(other.subjectId)) fail(`${shortId(id)} is in subject ${other.subjectKey} (${other.scope.kind}); list its subject in the input with its digest`)
@@ -3856,11 +3916,37 @@ const decideConsolidation = ({ action, record, subject, run }) => {
   }
   claimTargets({ run, ids: action.targetIds })
   const plan = planConsolidation({ memory: run.memory, annotations: run.annotations, excused: run.excused, targetIds: action.targetIds, replacement: action.replacement })
+  if (consolidationLeftToUser({ action, targets, plan, run })) {
+    run.flags.push({ kind: 'confirmed-overlap', targetIds: action.targetIds, reason: action.reason })
+    return
+  }
   if (plan.confirmsReplacement) {
+    // Built here too, so a preview refuses a proposal that proposals.json would reject.
+    newProposal({ plan, reason: action.reason, now: run.now })
     run.proposals.push({ plan, reason: action.reason })
     return
   }
   run.entries.push(consolidateInPlace({ memory: run.memory, annotations: run.annotations, plan, reason: action.reason, source: 'dream', now: run.now, fields: { runId: run.runId } }))
+}
+
+// A merge that confirmed guidance forbids, which neither an automatic change nor a proposal can
+// carry: its replacement would hide a confirmed shared record from retrieval, or a target counts
+// as confirmed only because a reconcile voided its confirmation, which an approval cannot confirm.
+const consolidationLeftToUser = ({ action, targets, plan, run }) => (
+  hiddenConfirmedIds({ memory: run.memory, learning: action.replacement.learning, isConfirmed: ({ id }) => run.confirmed.has(id) }).length > 0
+  || (!plan.confirmsReplacement && targets.some(({ confirmed }) => confirmed))
+)
+
+// A subject that is not due comes to a run only as context for a due subject that applies with
+// it, so it takes only a contradiction that names a record of that due subject.
+const requireContextAction = ({ action, subject, run }) => {
+  if (run.due.has(subject.subjectId)) return
+  const ofDueSubject = (id) => [...run.subjects.values()].some((other) => (
+    run.due.has(other.subjectId) && appliesWith(subject, other) && other.records.some(({ guidance }) => guidance.id === id)
+  ))
+  if (action.action !== 'contradiction' || ![action.targetId, action.conflictingId].some(ofDueSubject)) {
+    fail(`subject ${subject.subjectKey} (${subject.scope.kind}) is context for this run: it takes only a contradiction with a record of a due subject that applies with it`)
+  }
 }
 
 // Decides one action by the lifecycle rules. Automation never changes a confirmed record or,
@@ -3868,6 +3954,7 @@ const decideConsolidation = ({ action, record, subject, run }) => {
 // proposal for a shared record. Every other change is applied to the working copies and journaled.
 const dreamDecisions = { flag: decideFlag, contradiction: decideContradiction, archive: decideArchive, consolidate: decideConsolidation }
 const decideDreamAction = ({ action, subject, run }) => {
+  requireContextAction({ action, subject, run })
   const record = (id) => subject.records.find(({ guidance }) => guidance.id === id)
     ?? fail(`${id} is not live guidance in subject ${subject.subjectKey}`)
   dreamDecisions[action.action]({ action, record, subject, run })
@@ -3969,7 +4056,8 @@ const isReportProposal = (value) => exactShape({
   proposalId: matching(proposalIdPattern),
   confirmPrompt: isString,
   targetIds: isTargetGroup,
-  confirmsReplacement: oneOf(true, false),
+  // A run proposes only a merge that confirms its replacement.
+  confirmsReplacement: oneOf(true),
   expiresAt: isTimestamp,
 })(value) && value.confirmPrompt === confirmPromptFor({ id: value.proposalId })
 const flagShape = ({ kind, targetIds, required = {}, optional = {} }) => exactShape({ kind: oneOf(kind), targetIds, ...required, reason: isReason }, optional)
@@ -3982,6 +4070,7 @@ const isReportFlag = shapeBy('kind', {
   'confirmed-duplicate': flagShape({ kind: 'confirmed-duplicate', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
   'shared-proposal': flagShape({ kind: 'shared-proposal', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
   'shared-overlap': flagShape({ kind: 'shared-overlap', targetIds: isTargetGroup }),
+  'confirmed-overlap': flagShape({ kind: 'confirmed-overlap', targetIds: isTargetGroup }),
 })
 const isQueuedContradiction = (value) => exactShape({ kind: oneOf('contradiction'), targetId: isGuidanceId, conflictingId: isGuidanceId, reason: isReason })(value)
   && value.targetId !== value.conflictingId
@@ -4004,13 +4093,26 @@ const runEntryFields = {
   }),
 }
 
+// Whether a well-formed entry's report names the entry's own operations, in order, each with the
+// undo deadline of the run's time, and its own proposals, in order, with their expiries.
+const reportMatchesEntry = ({ at, operationIds, proposals, report }) => {
+  const undoUntil = new Date(Date.parse(at) + undoWindowDays * dayMs).toISOString()
+  return report.operations.length === operationIds.length
+    && report.operations.every((operation, index) => operation.operationId === operationIds[index] && operation.undoUntil === undoUntil)
+    && report.proposals.length === proposals.length
+    && report.proposals.every(({ proposalId, expiresAt }, index) => proposalId === proposals[index].id && expiresAt === proposals[index].expiresAt)
+}
+
 // The fields of a run or run-intent entry that do not have the shape dream apply writes. Only
 // recovery marks a run entry recovered.
-const runEntryProblems = (entry) => shapeProblems({
-  value: entry,
-  required: runEntryFields,
-  optional: entry.type === 'run' ? { recovered: oneOf(true) } : {},
-})
+const runEntryProblems = (entry) => {
+  const problems = shapeProblems({
+    value: entry,
+    required: runEntryFields,
+    optional: entry.type === 'run' ? { recovered: oneOf(true) } : {},
+  })
+  return problems.length > 0 || reportMatchesEntry(entry) ? problems : ['report']
+}
 
 // A run journals its entry as an intent before it writes memory and as a run after. A crash in
 // between leaves an intent whose operations reached memory: the run happened, so it counts as
@@ -4034,53 +4136,62 @@ const recoverRuns = ({ paths, journal, memory }) => {
   return [...journal, ...entries]
 }
 
-// The plan shows confirmations through display readers, which show none when the journal or
-// annotations cannot be read or the watermark lags memory. A run decides by confirmation, so it
-// refuses in each of those cases before it writes anything, recovery included. The lock first
-// finishes an interrupted journaled write, which brings the watermark back to memory. Otherwise it reads
-// the same journal, annotations, and excused revocations as the plan, so both agree.
-const requireReadableDreamState = ({ paths, memory }) => {
-  const { error } = journalForDisplay(paths)
-  if (error) fail(`dream apply needs a readable journal: ${error}`)
+const readOrRefuse = ({ read, label }) => {
   try {
-    readAnnotations(paths.annotationsFile)
-  } catch (annotationsError) {
-    fail(`dream apply needs readable annotations: ${annotationsError.message}`)
-  }
-  // The memory lock has already finished an interrupted journaled write, so the lag that remains
-  // is one that no journaled operation explains, such as an older plugin's write.
-  if (!watermarkCurrent({ paths, memory })) {
-    fail('dream apply needs the annotation watermark to match memory, and no interrupted Field Guide write explains the lag: '
-      + 'an older plugin may have written memory. Any other Field Guide write reconciles it, which voids every confirmation '
-      + 'until the user confirms again; then plan again')
+    return read()
+  } catch (error) {
+    fail(`dream apply needs ${label}: ${error.message}`)
   }
 }
 
-const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) => {
-  // Read under the lock, so the live guidance compared with the plan is the state this run writes against.
-  const liveDigests = readLiveDigests()
-  const memory = readInitializedMemory(paths)
-  requireReadableDreamState({ paths, memory })
-  const journal = recoverRuns({ paths, journal: recoverOperations({ paths, memory }), memory })
-  const runId = hashIdentity({ prefix: 'run', values: [1, input] })
-  // Before any other check: a run with a run entry is final, whatever its proposals' expiry, so
-  // replaying it returns its report and writes nothing. Recovery has already recorded a run that
-  // a crash interrupted after its memory write. A review after a proposal lapsed comes from a new
-  // plan, whose subject digest names the lapse, so it is a new run.
-  const finished = journal.findLast((entry) => entry.type === 'run' && entry.runId === runId)
-  if (finished) return { mode: 'dream-apply', outcome: 'already-applied', runId, ...finished.report }
+// The plan shows confirmations through display readers, which show none when the journal or
+// annotations cannot be read or the watermark lags memory. A run decides by confirmation, so it
+// refuses in each of those cases before it writes anything, recovery included; it also refuses
+// when proposals.json cannot be read, which decides which proposals lapsed. Otherwise it reads the
+// same journal, annotations, excused revocations, and proposals as the plan, so both agree.
+// Returns the journal as read, before recovery, and the IDs in proposals.json.
+const requireReadableDreamState = ({ paths, memory }) => {
+  const { journal, error } = journalForDisplay(paths)
+  if (error) fail(`dream apply needs a readable journal: ${error}`)
+  readOrRefuse({ read: () => readAnnotations(paths.annotationsFile), label: 'readable annotations' })
+  const { proposals } = readOrRefuse({ read: () => readProposals(paths), label: 'a readable proposals.json' })
+  if (!watermarkCurrent({ paths, memory })) {
+    fail('dream apply needs the annotation watermark to match memory: an older plugin or an interrupted write left it behind. '
+      + 'The next Field Guide write that takes the memory lock reconciles it and voids confirmations; then plan again')
+  }
+  return { journal, published: new Set(proposals.map(({ id }) => id)) }
+}
+
+// A JSON value with the keys of every object sorted and arrays in their order, so an input whose
+// keys come in another order is the same run.
+const sortedKeys = (value) => {
+  if (Array.isArray(value)) return value.map(sortedKeys)
+  if (!isPlainObject(value)) return value
+  return Object.fromEntries(Object.keys(value).sort().map((key) => [key, sortedKeys(value[key])]))
+}
+
+// The run entry of a finished run, including one that recovery would record for an intent whose
+// operations reached memory. It reads the journal as it is and writes nothing.
+const finishedRun = ({ journal, memory, runId }) => [...journal, ...recoveredRuns({ journal, memory })]
+  .findLast((entry) => entry.type === 'run' && entry.runId === runId)
+
+const confirmedIdsOf = (subjects) => new Set([...subjects.values()].flatMap(({ records }) => records.filter(({ confirmed }) => confirmed).map(({ guidance }) => guidance.id)))
+
+// The state that one run decides against, from the recovered journal, as the plan computes it,
+// with working copies of memory and annotations: a preview and its apply run the same code, and
+// the preview writes nothing.
+const dreamRun = ({ paths, input, memory, journal, liveDigests, published, runId }) => {
   const annotations = readAnnotations(paths.annotationsFile)
   const operations = operationsIn(journal)
   const excused = unlandedRevocations({ operations, memory })
   const runs = journal.filter(({ type }) => type === 'run')
-  const lapsed = lapsedRuns({ runs, operations })
+  const lapsed = lapsedRuns({ runs, operations, published })
   const subjects = subjectStates({ memory, annotations, excused, lapsed })
-  validateDreamInput({ input, liveDigests })
-  const change = planChange({ input, liveDigests, subjects })
-  if (change) fail(change)
-  const token = hashIdentity({ prefix: 'dream-preview', values: [1, runId, contentDigest(memory), contentDigest(annotations)] })
-  // Decisions apply to copies, so a preview and its apply run the same code and the preview writes nothing.
-  const run = {
+  const open = openContradictions({ runs, subjects })
+  const reviewed = reviewedStates(runs)
+  const live = liveStateOf(liveDigests)
+  const confirmed = confirmedIdsOf(subjects)
+  return {
     runId,
     guideRoot: paths.guideRoot,
     now: new Date().toISOString(),
@@ -4090,8 +4201,10 @@ const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) 
     lapsed,
     declined: declinedSets(operations),
     subjects,
+    due: new Set([...subjects.values()].filter((subject) => isDue({ subject, reviewed, open, live })).map(({ subjectId }) => subjectId)),
+    confirmed,
     inputSubjectIds: new Set(input.subjects.map(({ subjectId }) => subjectId)),
-    held: heldRecords({ input, subjects, open: openContradictions({ runs, subjects }) }),
+    held: heldRecords({ input, confirmed, open }),
     superseding: supersedingIds(memory),
     targeted: new Set(),
     unresolved: new Set(),
@@ -4100,16 +4213,48 @@ const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) 
     queued: [],
     flags: [],
   }
+}
+
+// Decides each action of the input. A subject whose run leaves a flag or a queued decision is
+// reviewed again, because those live only in the report. So is a subject listed without each
+// subject that applies with it, such as one the packet budget left out: a contradiction may pair
+// their records, so the review is not complete.
+const decideRun = ({ input, run }) => {
   input.subjects.forEach((subject, subjectIndex) => {
     const reported = run.flags.length + run.queued.length
+    const state = run.subjects.get(subject.subjectId)
     subject.actions.forEach((action, actionIndex) => forAction({
       label: `subjects[${subjectIndex}].actions[${actionIndex}]`,
       action,
-      step: () => decideDreamAction({ action, subject: subjects.get(subject.subjectId), run }),
+      step: () => decideDreamAction({ action, subject: state, run }),
     }))
-    // A flag or a queued decision lives only in this report, so its subject is reviewed again.
-    if (run.flags.length + run.queued.length > reported) run.unresolved.add(subject.subjectId)
+    const counterpartMissing = [...run.subjects.values()].some((other) => appliesWith(state, other) && !run.inputSubjectIds.has(other.subjectId))
+    if (run.flags.length + run.queued.length > reported || counterpartMissing) run.unresolved.add(subject.subjectId)
   })
+}
+
+const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) => {
+  // Read under the lock, so the live guidance compared with the plan is the state this run writes against.
+  const liveDigests = readLiveDigests()
+  const memory = readInitializedMemory(paths)
+  const { journal: journaled, published } = requireReadableDreamState({ paths, memory })
+  const runId = hashIdentity({ prefix: 'run', values: [1, sortedKeys(input)] })
+  // Before any other check or any recovery: a run with a run entry is final, whatever its
+  // proposals' expiry, so replaying it returns its report and writes nothing. The report offers
+  // only the proposals still in proposals.json. A review after a proposal lapsed comes from a new
+  // plan, whose subject digest names the lapse, so it is a new run.
+  const finished = finishedRun({ journal: journaled, memory, runId })
+  if (finished) {
+    const proposals = finished.report.proposals.filter(({ proposalId }) => published.has(proposalId))
+    return { mode: 'dream-apply', outcome: 'already-applied', runId, ...finished.report, proposals }
+  }
+  const journal = recoverRuns({ paths, journal: recoverOperations({ paths, memory }), memory })
+  validateDreamInput({ input, liveDigests })
+  const run = dreamRun({ paths, input, memory, journal, liveDigests, published, runId })
+  const change = planChange({ input, liveDigests, subjects: run.subjects })
+  if (change) fail(change)
+  const token = hashIdentity({ prefix: 'dream-preview', values: [1, runId, contentDigest(memory), contentDigest(run.annotations)] })
+  decideRun({ input, run })
   if (run.entries.length > maxDreamOperations) fail(`a dream run applies at most ${maxDreamOperations} changes; the run applied nothing`)
   if (previewToken === undefined) return { mode: 'dream-apply', outcome: 'preview', runId, previewToken: token, ...dreamReport({ run, applied: false }) }
   if (previewToken !== token) fail('dream apply requires the current dry-run previewToken')
@@ -4128,8 +4273,8 @@ const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) 
   if (run.entries.length > 0) commitOperations({ paths, memory: run.memory, annotations: run.annotations, entries: run.entries })
   appendJournal({ paths, entries: [entry] })
   // Proposals are published only once the run entry makes the run final, so no proposal of a run
-  // that failed can be approved. A crash before this write loses them, and their subject is
-  // reviewed again once their recorded expiry passes.
+  // that failed can be approved. A crash before this write loses them: they count as lapsed, so
+  // the next plan reviews their subject again, and a replay does not offer them.
   if (store) writeProposals({ paths, store })
   return { mode: 'dream-apply', outcome: 'applied', runId, ...report }
 }
@@ -4360,6 +4505,14 @@ const validateSharedPromotions = ({ sharedFiles, paths, errors }) => {
 }
 
 // Every validation error, one per item, so a reader can redact each on its own.
+// Each restore of archived guidance must link, through the journal, to the archive it undoes. A
+// journal that cannot be read cannot show that link, so a store that holds a restore fails.
+const restoreLinkErrors = ({ paths, memory }) => {
+  const { operations, error } = journalForDisplay(paths)
+  if (operations) return unlinkedRestores({ memory, operations })
+  return unlinkedRestores({ memory, operations: new Map() }).length > 0 ? [`restored archives cannot be checked: ${error}`] : []
+}
+
 const validationErrorsFor = (paths) => {
   requireInitialized(paths)
   const errors = []
@@ -4403,6 +4556,7 @@ const validationErrorsFor = (paths) => {
     if (!cachedMemory || JSON.stringify(cachedMemory) !== JSON.stringify(memory)) {
       errors.push(`${paths.memoryFile} does not match canonical memory.md`)
     }
+    errors.push(...restoreLinkErrors({ paths, memory }))
   }
   try {
     readAnnotations(paths.annotationsFile)

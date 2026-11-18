@@ -2,11 +2,12 @@ import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { appendFileSync, chmodSync, cpSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { join } from 'node:path'
 import test from 'node:test'
 import assert from 'node:assert/strict'
 import { fileURLToPath } from 'node:url'
 import Ajv2020 from 'ajv/dist/2020.js'
+import { cliAt } from './older-cli.mjs'
 import { fieldGuideSkillRoot } from './plugin-paths.mjs'
 
 const script = fileURLToPath(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot))
@@ -19,22 +20,10 @@ const validateDreamInput = ajv.compile(readSchema('dream-apply-v1.schema.json'))
 // The UserPromptSubmit hook is the only caller that confirms guidance or approves a proposal.
 const { confirmFromPrompt, promptInjection } = await import(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot))
 
-// The last released CLI before memory version 2.
+// The last released CLI before memory version 2, and 6.15.0, the last release before dream apply.
 const releasedCommit = '347cdfd5a7b9f1d8c411964d406f638eb98c6514'
-const releasedCli = (() => {
-  let path
-  return () => {
-    if (path) return path
-    const directory = mkdtempSync(join(tmpdir(), 'field-guide-released-cli-'))
-    for (const name of ['field-guide.mjs', 'field-guide-analytics.mjs']) {
-      const shown = spawnSync('git', ['show', `${releasedCommit}:plugins/field-guide/skills/field-guide/scripts/${name}`], { cwd: dirname(script) })
-      assert.equal(shown.status, 0, `commit ${releasedCommit} is missing; run git fetch --unshallow`)
-      writeFileSync(join(directory, name), shown.stdout)
-    }
-    path = join(directory, 'field-guide.mjs')
-    return path
-  }
-})()
+const release615Commit = 'c067c9143cf388a7dae102d4871e7d846c51ba19'
+const releasedCli = (commit = releasedCommit) => cliAt(commit)
 
 const homePathPattern = /\/(?:Users|home)\/[^/\s]+\/|[A-Za-z]:\\Users\\/u
 
@@ -289,11 +278,16 @@ test('a crash between a dream run\'s memory commit and its run entry recovers th
   const journalPath = join(guide.guideRoot, 'operations.jsonl')
   const lines = readFileSync(journalPath, 'utf8').trim().split('\n')
 
-  // Memory committed and the run entry is missing: the retry records the run and returns its result.
+  // Memory committed and the run entry is missing: the retry returns the run's result and writes
+  // nothing; the next run records it.
   writeFileSync(journalPath, `${lines.filter((line) => JSON.parse(line).type !== 'run').join('\n')}\n`)
+  const crashed = readFileSync(journalPath, 'utf8')
   const retried = guide.dreamApply(input, { previewToken })
   assert.equal(retried.outcome, 'already-applied')
   assert.deepEqual(retried.operations, applied.operations)
+  assert.equal(readFileSync(journalPath, 'utf8'), crashed)
+  guide.learn(cleanupTexts[2], { subjectKey: 'branch-hygiene' })
+  reviewPlanned(guide, guide.plan())
   assert.ok(guide.journal().some(({ type, runId, recovered }) => type === 'run' && runId === applied.runId && recovered === true))
 
   // Memory never written: recovery aborts the operation and records no run, so a new preview applies it.
@@ -1282,7 +1276,8 @@ test('undo-operation refuses a shared operation that an earlier build journaled'
 test('a subject counts as reviewed only against the live guidance it was reviewed with', () => {
   const { guide } = setup('partial-live')
   guide.learn(cleanupTexts[0])
-  guide.learn(cleanupTexts[1], { scope: 'shared' })
+  // Another subject key, so the two subjects do not apply together.
+  guide.learn(cleanupTexts[1], { scope: 'shared', subjectKey: 'branch-hygiene' })
   guide.writeClaudeMd()
   reviewPlanned(guide, guide.plan())
   assert.equal(guide.plan().subjects.length, 0)
@@ -1293,8 +1288,7 @@ test('a subject counts as reviewed only against the live guidance it was reviewe
   const partial = dreamInput(changed, [])
   guide.dreamApply(partial, { previewToken: guide.dreamApply(partial).previewToken })
   const next = guide.plan()
-  assert.deepEqual(next.subjects.filter(({ context }) => !context).map(({ scope }) => scope), ['shared'], 'the shared subject is still due against the new live guidance')
-  assert.equal(subjectFor(next).context, true, 'the reviewed project subject comes as context')
+  assert.deepEqual(next.subjects.map(({ scope }) => scope), ['shared'], 'the shared subject is still due against the new live guidance')
 })
 
 test('a subject the plan omitted for its budget stays due after live guidance changes', () => {
@@ -1749,23 +1743,6 @@ test('dream plan shows an approved replacement unconfirmed while the watermark l
   assert.equal(shownConfirmed(), false)
 })
 
-test('the retried approval finishes an approved consolidation interrupted before its watermark', () => {
-  const { guide, learning, reference } = approvedSetup('approval-interrupted')
-  const keptLearning = 'Name tests after the behavior they check.'
-  guide.confirm(short(guide.learn(keptLearning, { subjectKey: 'naming' })))
-  const views = ['memory.json', 'annotations-watermark.json', 'proposals.json'].map((file) => [file, readFileSync(join(guide.guideRoot, file), 'utf8')])
-  guide.exec({ command: 'consolidate', args: ['--approval', reference] })
-  // The crash: memory.md and annotations hold the consolidation; the cache, the watermark, the
-  // commit entry, and the proposal's applied mark do not.
-  for (const [file, text] of views) writeFileSync(join(guide.guideRoot, file), text)
-  rewriteJournal(guide, guide.journal().filter(({ type }) => type !== 'commit'))
-  assert.equal(guide.confirmed(keptLearning), false)
-  assert.match(guide.exec({ command: 'consolidate', args: ['--approval', reference], expectFailure: true }).stderr, /was already applied/)
-  assert.equal(guide.confirmed(keptLearning), true, 'finishing the write revokes no confirmation')
-  assert.equal(guide.confirmed(learning), true, 'the approved replacement keeps its confirmation')
-  guide.validate()
-})
-
 test('dream plan prints its packet without confirmations when annotations.json cannot be read', () => {
   for (const [name, content] of [['malformed', '{not json\n'], ['newer', `${JSON.stringify({ schemaVersion: 2, records: {} })}\n`]]) {
     const { guide } = setup(`unreadable-annotations-${name}`)
@@ -1851,10 +1828,11 @@ test('without a readable journal, dream plan reviews every subject and lists no 
   assert.ok(unreadable.subjects.every((subject) => subject.queuedContradictions === undefined))
 })
 
-test('dream apply refuses and writes nothing while the journal or annotations cannot be read or the watermark lags memory', () => {
+test('dream apply refuses and writes nothing while the journal, annotations, or proposals cannot be read or the watermark lags memory', () => {
   for (const [name, damage, message] of [
     ['journal', (guide) => appendFileSync(join(guide.guideRoot, 'operations.jsonl'), '{not json\n'), /journal/],
     ['annotations', (guide) => writeFileSync(join(guide.guideRoot, 'annotations.json'), '{not json\n'), /annotations/],
+    ['proposals', (guide) => writeFileSync(join(guide.guideRoot, 'proposals.json'), '{not json\n'), /proposals\.json/],
     ['watermark', (guide) => {
       const path = join(guide.guideRoot, 'annotations-watermark.json')
       const watermark = JSON.parse(readFileSync(path, 'utf8'))
@@ -1867,7 +1845,9 @@ test('dream apply refuses and writes nothing while the journal or annotations ca
     guide.writeClaudeMd()
     damage(guide)
     // The plan may show the confirmed record unconfirmed; apply must not act on that view.
-    const input = dreamInput(guide.plan(), [{ action: 'archive', targetId: first, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
+    const plan = guide.plan()
+    if (name === 'proposals') assert.match(plan.audit.stateErrors.join('\n'), /JSON/, 'the plan names the unreadable proposals')
+    const input = dreamInput(plan, [{ action: 'archive', targetId: first, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
     const before = storeFiles(guide)
     assert.match(guide.dreamApply(input, { expectFailure: true }).stderr, message, name)
     assert.match(guide.dreamApply(input, { previewToken: 'unused', expectFailure: true }).stderr, message, name)
@@ -1970,35 +1950,26 @@ const interruptedArchive = (name) => {
   return { guide, kept, keptLearning, archived, input, previewToken }
 }
 
-test('finishing an interrupted nightly write keeps every confirmation, whichever locked command finishes it', () => {
-  for (const finish of ['export', 'apply']) {
-    const { guide, kept, keptLearning, archived, input, previewToken } = interruptedArchive(`interrupted-${finish}`)
-    assert.equal(guide.confirmed(keptLearning), false, 'the hook shows no confirmation while the watermark lags')
-    if (finish === 'export') guide.exec({ command: 'export', args: ['--output', join(guide.guideRoot, '..', 'interrupted-export.json')] })
-    assert.equal(guide.dreamApply(input, { previewToken }).outcome, 'already-applied', finish)
-    assert.equal(guide.confirmed(keptLearning), true, `${finish} keeps the confirmation of an unrelated record`)
-    assert.equal(guide.record(archived).status, 'archived')
-    assert.equal(guide.memory().revision, canonicalMemory(guide).revision, 'the cache is rebuilt')
-    const plan = guide.plan()
-    assert.deepEqual(plan.audit.stateErrors, [])
-    const archive = dreamInput(plan, [{ action: 'archive', targetId: kept, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }], 'naming')
-    assert.deepEqual(guide.dreamApply(archive).flags.map(({ kind }) => kind), ['confirmed-duplicate'], finish)
-    guide.validate()
-    const deletion = guide.exec({ command: 'delete', args: ['--input', guide.inputFile({ schemaVersion: 1, targetId: archived })] }).result
-    assert.equal(deletion.outcome, 'delete-preview')
-  }
-})
-
-test('a lagging watermark that no journaled operation explains still makes dream apply refuse', () => {
-  const { guide, kept, input, previewToken } = interruptedArchive('interrupted-unexplained')
-  // As if an older plugin had captured the confirmed record after the last annotation-aware write.
-  const path = join(guide.guideRoot, 'annotations-watermark.json')
-  const watermark = JSON.parse(readFileSync(path, 'utf8'))
-  const fingerprint = guide.record(kept).fingerprint
-  writeFileSync(path, `${JSON.stringify({ ...watermark, fingerprints: watermark.fingerprints.filter((each) => each !== fingerprint) })}\n`)
-  const before = storeFiles(guide)
+test('a crash right after a nightly archive\'s canonical write refuses until a reconcile, and the next run recovers it', () => {
+  const { guide, archived, input, previewToken } = interruptedArchive('archive-crash-cache')
+  // The watermark lags memory, so the retry refuses and writes nothing until a locked command that
+  // writes no memory, such as an export, reconciles it.
+  const crashed = storeFiles(guide)
   assert.match(guide.dreamApply(input, { previewToken, expectFailure: true }).stderr, /watermark to match memory/)
-  assert.deepEqual(storeFiles(guide), before)
+  assert.deepEqual(storeFiles(guide), crashed)
+  guide.exec({ command: 'export', args: ['--output', join(guide.guideRoot, '..', 'archive-crash-export.json')] })
+  // A replay returns the interrupted run's report and writes nothing.
+  const reconciled = storeFiles(guide)
+  assert.equal(guide.dreamApply(input, { previewToken }).outcome, 'already-applied')
+  assert.deepEqual(storeFiles(guide), reconciled)
+  // The next run commits the archive, records the interrupted run, and rebuilds the cache.
+  reviewPlanned(guide, guide.plan())
+  assert.equal(guide.memory().revision, canonicalMemory(guide).revision)
+  assert.ok(guide.journal().some(({ type, recovered }) => type === 'run' && recovered === true))
+  assert.equal(guide.record(archived).status, 'archived')
+  guide.validate()
+  const deletion = guide.exec({ command: 'delete', args: ['--input', guide.inputFile({ schemaVersion: 1, targetId: archived })] }).result
+  assert.equal(deletion.outcome, 'delete-preview')
 })
 
 test('dream apply refuses a discriminator, ID, or live source that is not a string, and writes nothing', () => {
@@ -2120,16 +2091,22 @@ test('the run-entry reader refuses report shapes that the writer never issues', 
     { action: 'archive', targetId: first, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' },
     { action: 'flag', kind: 'live-edit', targetIds: [second], source: 'claude-md', reason: 'Global guidance should say this.' },
   ])
-  const { previewToken } = guide.dreamApply(input)
-  guide.dreamApply(input, { previewToken })
-  const journal = guide.journal()
-  for (const [name, edit] of [
+  assertReportEditsUnreadable({ guide, input, edits: [
     ['an archive without targets', (report) => { report.operations[0].targetIds = [] }],
     ['an unknown live source', (report) => { report.flags[0].source = 'unknown-source' }],
     ['another undo window', (report) => { report.undoWindowDays = 30 }],
     ['a reason with URL user information', (report) => { report.flags[0].reason = 'See https://u@host/ for it.' }],
     ['a reason with a home path', (report) => { report.flags[0].reason = 'See /home/review-fixture-user/notes.' }],
-  ]) {
+  ] })
+})
+
+// Applies the input, then for each named edit of the stored run report checks that the plan
+// reports the journal unreadable and apply refuses; the unedited journal replays the run.
+const assertReportEditsUnreadable = ({ guide, input, edits }) => {
+  const { previewToken } = guide.dreamApply(input)
+  guide.dreamApply(input, { previewToken })
+  const journal = guide.journal()
+  for (const [name, edit] of edits) {
     rewriteJournal(guide, journal.map((entry) => {
       if (entry.type !== 'run') return entry
       const changed = structuredClone(entry)
@@ -2141,4 +2118,202 @@ test('the run-entry reader refuses report shapes that the writer never issues', 
   }
   rewriteJournal(guide, journal)
   assert.equal(guide.dreamApply(input, { previewToken }).outcome, 'already-applied')
+}
+
+const appliedRun = (guide, input) => guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
+
+test('a confirmation that a reconcile voided still keeps nightly maintenance from archiving its record', () => {
+  for (const lag of ['older-plugin', 'crash']) {
+    const { guide, kept, keptLearning } = interruptedArchive(`voided-${lag}`)
+    if (lag === 'older-plugin') {
+      // As if an older plugin had also captured the confirmed record after the last annotation-aware write.
+      const path = join(guide.guideRoot, 'annotations-watermark.json')
+      const watermark = JSON.parse(readFileSync(path, 'utf8'))
+      const fingerprint = guide.record(kept).fingerprint
+      writeFileSync(path, `${JSON.stringify({ ...watermark, fingerprints: watermark.fingerprints.filter((each) => each !== fingerprint) })}\n`)
+    }
+    // Any command that takes the memory lock reconciles the lag, which voids every confirmation.
+    guide.exec({ command: 'export', args: ['--output', join(guide.guideRoot, '..', `voided-${lag}.json`)] })
+    assert.equal(guide.confirmed(keptLearning), false, 'the hook shows the voided confirmation no longer')
+    const plan = guide.plan()
+    assert.equal(subjectFor(plan, 'naming').records[0].confirmed, true, `${lag}: the plan still counts it`)
+    const archive = dreamInput(plan, [{ action: 'archive', targetId: kept, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }], 'naming')
+    const applied = appliedRun(guide, archive)
+    assert.deepEqual([applied.operations, applied.flags.map(({ kind }) => kind)], [[], ['confirmed-duplicate']], lag)
+    // An approval cannot confirm a replacement again on a voided confirmation, so a merge is only flagged.
+    const other = guide.learn('Name each test after the behavior it checks.', { subjectKey: 'naming' })
+    const merge = dreamInput(guide.plan(), [{ action: 'consolidate', targetIds: [kept, other], replacement: { learning: 'Name tests after behavior.', confidence: 'high' }, reason: 'Same rule.' }], 'naming')
+    const merged = appliedRun(guide, merge)
+    assert.deepEqual([merged.operations, merged.proposals, merged.flags.map(({ kind }) => kind)], [[], [], ['confirmed-overlap']], lag)
+    assert.equal(guide.record(kept).status, 'active')
+    // 6.15.0 reads the reconcile's revocations.
+    guide.exec({ cli: releasedCli(release615Commit), command: 'validate' })
+  }
+})
+
+test('nightly maintenance may archive a record after the user withdrew its voided confirmation', () => {
+  const { guide, kept } = interruptedArchive('voided-then-unconfirmed')
+  guide.exec({ command: 'export', args: ['--output', join(guide.guideRoot, '..', 'voided-then-unconfirmed.json')] })
+  guide.exec({ command: 'unconfirm', args: ['--id', short(kept)] })
+  const plan = guide.plan()
+  assert.equal(subjectFor(plan, 'naming').records[0].confirmed, false)
+  const archive = dreamInput(plan, [{ action: 'archive', targetId: kept, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }], 'naming')
+  assert.equal(appliedRun(guide, archive).operations.length, 1)
+  assert.equal(guide.record(kept).status, 'archived')
+})
+
+test('a merge whose replacement would hide confirmed shared guidance is flagged at night and refused by consolidate', () => {
+  const { guide } = setup('hidden-shared')
+  const sharedLearning = 'After a merge, remove its clean worktree and branch.'
+  const shared = guide.learn(sharedLearning, { scope: 'shared', subjectKey: 'branch-hygiene' })
+  guide.confirm(short(shared))
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  const merge = { targetIds: [first, second], replacement: { learning: sharedLearning, confidence: 'high' } }
+  const before = storeFiles(guide)
+  assert.match(guide.consolidate(merge, { expectFailure: true }).stderr, /would hide confirmed shared guidance/)
+  assert.deepEqual(storeFiles(guide), before)
+
+  const applied = appliedRun(guide, dreamInput(guide.plan(), [consolidation([first, second])]))
+  assert.deepEqual([applied.operations, applied.proposals, applied.flags.map(({ kind }) => kind)], [[], [], ['confirmed-overlap']])
+  assert.equal(guide.confirmed(sharedLearning), true)
+
+  // An approval given while the shared record was unconfirmed does not apply once it is confirmed.
+  guide.exec({ command: 'unconfirm', args: ['--id', short(shared)] })
+  guide.confirm(short(first))
+  const reference = approvedProposal({ guide, targetIds: [first, second], learning: sharedLearning })
+  guide.confirm(short(shared))
+  assert.match(guide.exec({ command: 'consolidate', args: ['--approval', reference], expectFailure: true }).stderr, /would hide confirmed shared guidance/)
+  assert.equal(guide.confirmed(sharedLearning), true)
+})
+
+test('a run refuses to store a subject key that the new-text guard refuses, and writes nothing', () => {
+  const { guide } = setup('copied-subject-key')
+  const subjectKey = `sk-${'x'.repeat(20)}`
+  const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning, { subjectKey }))
+  guide.confirm(short(first))
+  guide.writeClaudeMd()
+  const before = storeFiles(guide)
+  assert.match(guide.consolidate({ targetIds: [first, second], replacement: { learning: 'After a merge, remove its clean worktree and branch.', confidence: 'high' } }, { expectFailure: true }).stderr, /subjectKey contains a forbidden credential token/)
+  for (const action of [consolidation([first, second]), { action: 'archive', targetId: third, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }]) {
+    const input = dreamInput(guide.plan(), [action], subjectKey)
+    assert.match(guide.dreamApply(input, { expectFailure: true }).stderr, /subjectKey contains a forbidden credential token/, action.action)
+    assert.deepEqual(storeFiles(guide), before)
+  }
+})
+
+test('a proposal lost before it was published makes its subject due, and a replay does not offer it', () => {
+  const { guide } = setup('lost-proposal')
+  const ids = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  guide.confirm(short(ids[0]))
+  const input = dreamInput(guide.plan(), [consolidation(ids)])
+  assert.equal(appliedRun(guide, input).proposals.length, 1)
+  // The crash: the run entry was written and proposals.json was not.
+  rmSync(join(guide.guideRoot, 'proposals.json'))
+  const files = storeFiles(guide)
+  const replay = guide.dreamApply(input)
+  assert.deepEqual([replay.outcome, replay.proposals], ['already-applied', []])
+  assert.deepEqual(storeFiles(guide), files)
+
+  const plan = guide.plan()
+  assert.ok(subjectFor(plan), 'the subject is due again')
+  const fresh = appliedRun(guide, dreamInput(plan, [consolidation(ids)]))
+  assert.equal(fresh.outcome, 'applied')
+  assert.match(guide.confirm(fresh.proposals[0].confirmPrompt.slice('confirm fg:'.length)).systemMessage, /approved/)
+})
+
+test('replaying a finished run writes nothing, whatever else the journal holds or how its keys are ordered', () => {
+  const { guide } = setup('replay-final')
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  guide.writeClaudeMd()
+  const flagRun = dreamInput(guide.plan(), [{ action: 'flag', kind: 'conflict', targetIds: [first], reason: 'Conflicts.' }])
+  const finished = appliedRun(guide, flagRun)
+  const reordered = { subjects: flagRun.subjects.map(({ actions, digest, subjectId }) => ({ actions, digest, subjectId })), live: flagRun.live, schemaVersion: 1 }
+  let files = storeFiles(guide)
+  const replay = guide.dreamApply(reordered)
+  assert.deepEqual([replay.outcome, replay.runId], ['already-applied', finished.runId])
+  assert.deepEqual(storeFiles(guide), files)
+
+  // Another run stopped after its memory write, before its commit and run entries.
+  const interrupted = appliedRun(guide, dreamInput(guide.plan(), [{ action: 'archive', targetId: second, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }]))
+  const [{ operationId }] = interrupted.operations
+  rewriteJournal(guide, guide.journal().filter((entry) => !(entry.type === 'commit' && entry.operationId === operationId) && !(entry.type === 'run' && entry.runId === interrupted.runId)))
+  files = storeFiles(guide)
+  assert.equal(guide.dreamApply(flagRun, { previewToken: 'unused' }).outcome, 'already-applied')
+  assert.deepEqual(storeFiles(guide), files)
+})
+
+test('a context subject accepts only the counterpart of a due subject\'s contradiction', () => {
+  const { guide } = setup('context-actions')
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  guide.writeClaudeMd()
+  reviewPlanned(guide, guide.plan())
+  const shared = guide.learn('After a merge, keep the worktree.', { scope: 'shared' })
+  const plan = guide.plan()
+  assert.equal(subjectFor(plan).context, true)
+  const withContext = (actions) => ({
+    schemaVersion: 1,
+    live: liveOf(plan),
+    subjects: [subjectFor(plan), subjectFor(plan, 'git-cleanup', 'shared')].map(({ subjectId, digest }, index) => ({ subjectId, digest, actions: index === 0 ? actions : [] })),
+  })
+  const archive = { action: 'archive', targetId: first, duplicateOf: second, reason: 'Keep one copy.' }
+  const before = storeFiles(guide)
+  for (const input of [dreamInput(plan, [archive]), withContext([archive])]) {
+    assert.match(guide.dreamApply(input, { expectFailure: true }).stderr, /is context for this run/)
+    assert.deepEqual(storeFiles(guide), before)
+  }
+  const contradiction = withContext([{ action: 'contradiction', targetId: first, conflictingId: shared, reason: 'One keeps the worktree, one removes it.' }])
+  assert.deepEqual(appliedRun(guide, contradiction).flags.map(({ kind }) => kind), ['conflict'])
+  assert.equal(guide.record(first).status, 'active')
+})
+
+test('a due subject stays due when the input leaves out a subject that applies with it', () => {
+  const { guide } = setup('missing-counterpart')
+  guide.learn('After a merge, keep the worktree.', { scope: 'shared' })
+  guide.writeClaudeMd()
+  reviewPlanned(guide, guide.plan())
+  guide.learn(cleanupTexts[0])
+  // As when the packet budget left out the shared subject that comes as context.
+  appliedRun(guide, dreamInput(guide.plan(), []))
+  const project = subjectFor(guide.plan())
+  assert.ok(project && !project.context, 'the project subject is still due')
+})
+
+test('the run-entry reader refuses a report whose proposals or operations do not match the run', () => {
+  const { guide } = setup('run-report-match')
+  const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning))
+  guide.confirm(short(first))
+  guide.writeClaudeMd()
+  const input = dreamInput(guide.plan(), [consolidation([first, second]), { action: 'archive', targetId: third, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
+  const [otherOperation, otherProposal] = ['operation', 'proposal'].map((kind) => `${kind}:v1:${'b'.repeat(64)}`)
+  assertReportEditsUnreadable({ guide, input, edits: [
+    ['a proposal that does not confirm its replacement', ({ proposals: [proposal] }) => { proposal.confirmsReplacement = false }],
+    ['a proposal the run did not store', ({ proposals: [proposal] }) => Object.assign(proposal, { proposalId: otherProposal, confirmPrompt: `confirm fg:proposal:${'b'.repeat(12)}` })],
+    ['another proposal expiry', ({ proposals: [proposal] }) => { proposal.expiresAt = '2030-01-01T00:00:00.000Z' }],
+    ['an operation the run did not journal', ({ operations: [operation] }) => Object.assign(operation, { operationId: otherOperation, undo: `undo-operation --id ${otherOperation}` })],
+    ['another undo deadline', ({ operations: [operation] }) => { operation.undoUntil = '2030-01-01T00:00:00.000Z' }],
+  ] })
+})
+
+test('validate and undo-operation refuse a restore that no journaled undo of the archive made', () => {
+  const { guide, first, operationId } = nightlyArchive('unlinked-restore')
+  const consolidated = guide.consolidateApplied(cleanupTexts.slice(1).map((learning) => guide.learn(learning)))
+  const memoryBefore = readFileSync(join(guide.guideRoot, 'memory.md'), 'utf8')
+  const restore = (own) => editCanonicalMemory(guide, (memory) => {
+    const record = memory.guidance.find(({ id }) => id === first)
+    record.transitions.push({ from: 'archived', to: 'active', reason: 'Restored by hand.', source: 'undo-operation', at: new Date().toISOString(), ...own })
+    record.status = 'active'
+  })
+  // The memory reader checks only the shape: both operation IDs are strings.
+  restore({ operationId: [consolidated.operationId] })
+  assert.match(guide.exec({ command: 'validate', expectFailure: true }).stderr, /archived->active requires undo-operation of a journaled archive/)
+  writeFileSync(join(guide.guideRoot, 'memory.md'), memoryBefore)
+  // The journal links a restore to its archive: an unrelated journaled operation does not.
+  restore({ operationId: consolidated.operationId })
+  assert.match(guide.exec({ command: 'validate', expectFailure: true }).stderr, /no journaled undo of archive operation/)
+  const before = storeFiles(guide)
+  assert.match(guide.undo(consolidated.operationId, { expectFailure: true }).stderr, /no journaled undo of archive operation/)
+  assert.deepEqual(storeFiles(guide), before)
+  writeFileSync(join(guide.guideRoot, 'memory.md'), memoryBefore)
+  assert.equal(guide.undo(operationId).result.outcome, 'undone')
+  guide.validate()
 })

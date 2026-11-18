@@ -12,7 +12,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { applyDreamRun, audit, dreamState, installedPluginCopies, liveSources, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
+import { appliesWith, applyDreamRun, audit, dreamState, installedPluginCopies, liveSources, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
 
 const scriptPath = fileURLToPath(import.meta.url)
 const fail = (message) => {
@@ -206,14 +206,11 @@ const addSubjects = ({ packet, review, liveCount }) => {
   }
 }
 
-// A contradiction may pair records of two subjects that apply together, as dream apply checks: the
-// same subject key in two scopes, one of them shared.
-const appliesWith = (left, right) => left !== right && left.subjectKey === right.subjectKey && [left, right].some(({ scope }) => scope.kind === 'shared')
-
 // A subject is reviewed when it changed since its last review or live guidance changed since
 // then; a source that was added or removed counts. A due subject brings each subject that applies
-// with it, marked as context when that subject is not due, so an action can name a record there
-// with its digest. skippedSubjects counts the rest. Live text is sent only when there is something
+// with it, marked as context when that subject is not due, so a contradiction can name a record
+// there with its digest; apply counts the due subject as reviewed only when the input lists them
+// all. skippedSubjects counts the rest. Live text is sent only when there is something
 // to review. Every text is scrubbed of paths before it is measured or cut. Subjects come first in
 // the packet's byte budget after the audit and pending operations, and live text fills what is left.
 const plan = (paths) => {

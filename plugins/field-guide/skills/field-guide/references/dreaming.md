@@ -44,9 +44,12 @@ entry counts as recorded. The packet holds:
   against the live guidance of the run that reviewed it, so a subject that a
   run's input left out, or that a plan omitted for its budget, stays due. A
   subject whose last review stored a proposal is skipped while the proposal
-  waits for the user. Once it expires unapplied, the subject is reviewed again
-  with a new `digest` that names the lapse, so that review is a new run; a plan
-  made before the expiry is stale after it.
+  waits for the user. Once it expires unapplied, or when it is missing from
+  `proposals.json` because the run stopped before it stored it, the subject is
+  reviewed again with a new `digest` that names the lapse, so that review is a
+  new run; a plan made before the expiry is stale after it. When
+  `proposals.json` cannot be read, `stateErrors` names the error and every
+  stored proposal counts as lapsed.
   A subject stays due while a contradiction queued for the user holds one of
   its records, and lists it in `queuedContradictions`. A subject lists its live
   records with their confirmation, triggers, and linked subjects, its
@@ -55,9 +58,16 @@ entry counts as recorded. The packet holds:
   the subjects that apply with it: the same subject key in the other scope,
   when one of the two is shared. One that is not due itself has
   `context: true`, so a contradiction can name its records with its digest.
+  List every subject the packet gives in the input: a due subject counts as
+  reviewed only when the input also lists each subject that applies with it,
+  so one whose counterpart the packet budget left out stays due.
   A confirmation shows only
   while the hook's watermark matches memory, and, as in `consolidate`, a
-  confirmation that only a crashed operation revoked still shows. When
+  confirmation that only a crashed operation revoked still shows. So does a
+  confirmation that only a reconcile voided (see
+  [storage](storage.md#confirmations-and-event-triggers)), because a reconcile
+  voids every confirmation when it cannot tell what changed; an `unconfirm`
+  hides it. When
   `annotations.json` cannot be read, records show no confirmation or triggers,
   and the audit reports the error.
 - `pendingOperations`, within 8 KiB. The packet leaves it out when
@@ -114,7 +124,14 @@ adds shared consolidation. A contradiction may pair a project record with a
 shared record of the same subject key; the input then lists both subjects with
 their digests. Nothing changes either record, and both subjects are reviewed
 again. A proposal always holds a confirmed record, so its
-replacement carries `[confirmed]` after the user's approval. An `unused` flag
+replacement carries `[confirmed]` after the user's approval. A merge becomes a
+`confirmed-overlap` flag instead when its replacement repeats the text of a
+confirmed live shared record, which retrieval would then leave out, or when a
+target counts as confirmed only because a reconcile voided its confirmation,
+which an approval cannot confirm again. `apply` works out under the memory lock
+which subjects are due, as the plan does. A subject that is not due, such as
+one marked `context`, takes only a contradiction that names a record of a due
+subject that applies with it; any other action there stops the run. An `unused` flag
 needs local analytics. A
 `live-edit` flag, and an archive of a duplicate of live guidance, name a live
 source that is present on this machine. The script never edits
@@ -134,23 +151,23 @@ replaces superseded guidance is never archived or consolidated.
 
 `apply` checks, in this order, and stops at the first failure:
 
-1. Refuses, before it writes anything, when `operations.jsonl` or
-   `annotations.json` cannot be read or the annotation watermark does not match
-   memory. The plan shows no confirmation then, so a run could otherwise change
-   guidance the user confirmed. A journaled write interrupted after its memory
-   write, such as a nightly run, leaves the watermark behind. Every command that
-   takes the memory lock, `apply` included, first finishes that write from its
-   journal entries and revokes no confirmation, so after a crash you run
-   `apply` again. A lag that no journaled operation explains, such as a write by
-   an older plugin, still stops `apply`. Any other Field Guide write then
-   reconciles it, which voids confirmations as it does after any older plugin's
-   write, and you plan again. Otherwise `apply` reads confirmations as the plan
-   does, including one that only a crashed operation revoked.
-2. Recovers the journal, including a run that a crash left without its `run`
-   entry. A run with a `run` entry is final: its input returns
-   `already-applied` with its report and changes nothing, even after a proposal
-   it stored expired. A review after that expiry comes from a new plan, so it
-   is a new run.
+1. Refuses, before it writes anything, when `operations.jsonl`,
+   `annotations.json`, or `proposals.json` cannot be read or the annotation
+   watermark does not match memory. The plan shows no confirmation then, so a
+   run could otherwise change guidance the user confirmed. An older plugin or
+   an interrupted write can leave the watermark behind; the next Field Guide
+   write that takes the memory lock reconciles it and voids confirmations, and
+   then you plan again. Otherwise `apply` reads confirmations as the plan does,
+   including one that only a crashed operation revoked or only a reconcile
+   voided.
+2. Returns `already-applied` with the stored report for a finished run and
+   writes nothing, not even journal recovery. A run is finished when it has a
+   `run` entry, or an intent whose operations reached memory. The same input
+   with its keys in another order is the same run. The report offers only the
+   proposals still in `proposals.json`. A run stays final even after a proposal
+   it stored expired; a review after that comes from a new plan, so it is a new
+   run. Otherwise `apply` recovers the journal, including a run that a crash
+   left without its `run` entry.
 3. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
    `approval`, `approved`, `explicitPreference`) anywhere in the input.
 4. Validates the schema, the privacy guard on every text, and the allowed
@@ -163,7 +180,9 @@ replaces superseded guidance is never archived or consolidated.
    example's language must be a name such as `sh`. A run reviews at most 50 actions and applies at most 10 changes.
    A consolidation must target 2 to 8 records, must not be longer than they
    are, and must not repeat a declined set. Each consolidation and archive must
-   leave a store that the store write accepts.
+   leave a store that the store write accepts, and each proposal and journal
+   entry it would store, including the subject key it copies from memory, must
+   pass its reader's checks and the new-text guard.
 5. Compares the live digests and each subject's digest with the current state.
    Any change since the plan, including a new confirmation, stops the run. The
    live guidance is read while the run holds the memory lock, so an edit made
@@ -180,7 +199,8 @@ entry, and only then stores its proposals, so no proposal of a run that failed
 can be approved. A crash after the run becomes recoverable and before its
 proposals are stored loses them: for a run that changes no record, that is any
 point after its `run-intent` entry; otherwise, any point after its memory
-write. Their subject is reviewed again once their recorded expiry passes. Its report lists each change with its undo command,
+write. A lost proposal counts as lapsed, so the next plan reviews its subject
+again, and a replay does not offer its prompt. Its report lists each change with its undo command,
 each proposal with the `confirm fg:proposal:<id>` prompt to offer, the queued
 decisions, and the flags.
 

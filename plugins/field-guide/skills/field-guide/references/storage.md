@@ -161,7 +161,10 @@ the case of `Users`, so a drive-rooted form, such as `C:\users\<name>` or
 `/mnt/c/USERS/<name>`, matches in any case. Each
 example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
 same checks cover every string in a nightly action, a run report, and a stored
-proposal. A proposal stores a digest of its scope, not the repository identity,
+proposal. They also cover each new proposal and new journal entry whole,
+including the subject key it copies from memory, with the checks its reader
+applies, so a legacy subject key that the guard refuses stops the command
+before it writes anything. A proposal stores a digest of its scope, not the repository identity,
 which can be a local path, such as the Git directory of a repository without a
 remote. Stored records keep the guard that released versions used, so their
 stores stay readable.
@@ -169,7 +172,10 @@ stores stay readable.
 Shared records are flagged, not consolidated, until a later release.
 `consolidate` refuses a shared record in a preview, an apply, or an approval,
 because undoing a shared consolidation on every machine needs operation data
-that sync does not carry yet.
+that sync does not carry yet. Retrieval leaves out a shared record whose
+normalized text a project record of the repository repeats, so `consolidate`
+also refuses, in a preview, an apply, or an approval, a replacement whose text
+repeats a confirmed live shared record.
 
 When a predecessor is confirmed, `consolidate` changes nothing. It stores a
 proposal and returns `confirm fg:proposal:<id>` for the user to send. After the
@@ -199,11 +205,10 @@ consolidation gave its replacement, by the entry IDs that the journal lists, so
 a later capture of the same text starts without them, even a capture made
 before recovery ran. A trigger that the user added under another entry ID
 stays. A crash
-after the `memory.md` write but before the watermark write leaves a lag that the
-operation's pending entry explains. The next command that takes the memory lock
-finishes the operation and revokes no confirmation: the retry reports the
-proposal as already applied, and the replacement keeps the approval's
-confirmation.
+after the `memory.md` write but before the watermark write also fails closed:
+the next command finds the watermark stale and revokes every confirmation, the
+retry reports the proposal as already applied, and the replacement stays
+unconfirmed until the user confirms it again.
 
 Use `undo-operation --id <operation-id>` to reverse a consolidation or an
 automated archive within 90 days. Run it on the machine that made the
@@ -218,20 +223,24 @@ itself be undone. Repeating the undo changes nothing. When a later change blocks
 the conflict and changes nothing. `transition` refuses to withdraw or undo a
 consolidated replacement and names `undo-operation`.
 
+The undo of an automated archive restores the record with an
+`archived->active` transition that names the undo's operation ID. Reading
+memory checks only that this transition and the archive before it carry
+operation IDs, as strings. `validate` and `undo-operation` also check the
+journal: the restore's operation must be an undo of that archive's operation.
+Any other restore fails `validate`, and `undo-operation` refuses to run until
+memory is repaired; with a journal that cannot be read, a store that holds a
+restore fails `validate`.
+
 ### Operation journal
 
-`operations.jsonl` is a local write-ahead journal. No hook reads it, and it never
-syncs. An operation appends a `pending` entry, then writes annotations and
+`operations.jsonl` is a local write-ahead journal, and it never syncs. No hook
+reads it: the hooks read `memory.md`, `annotations.json`, and
+`annotations-watermark.json`, and the confirm hook also reads `proposals.json`
+for a `confirm fg:proposal:<id>` prompt. An operation appends a `pending` entry, then writes annotations and
 memory, then appends a `commit` entry. Every transition the operation makes
 carries its operation ID. Before the next journaled command, recovery commits
-a pending operation whose ID reached memory and aborts the rest. A crash after
-the memory write and before the watermark write leaves the watermark one
-revision behind. Every command that takes the memory lock first checks whether
-the pending operations journaled at the watermark's revision explain that lag
-exactly: each reached memory, memory is one revision later, and memory holds
-the watermark's records plus their replacements. It then finishes them,
-writing the cache, the watermark, and their commit entries, and revokes
-nothing. It reconciles any other lag. When it commits
+a pending operation whose ID reached memory and aborts the rest. When it commits
 one, it rebuilds `memory.json` from `memory.md`, which a crash between those two
 writes left stale. Until that command runs, `validate` reports the stale cache;
 `maintain` with `repair-cache` also rebuilds it. An entry holds
@@ -244,11 +253,15 @@ stores with their expiry, and its report, which holds IDs, reasons, undo
 commands, and the `confirm fg:proposal:<id>` prompts to offer. Later runs read
 the contradictions queued for the user from these reports. `apply` checks both
 entries with the plan's reader before it writes either. When a crash leaves an intent whose
-operations reached memory, the next apply records the run and a replay returns its
-report; `dream plan` already counts that run without writing it. The plan and
+operations reached memory, the run counts as finished: a replay returns its
+report and writes nothing, the next apply of other input records the run, and
+`dream plan` already counts it without writing it. The plan and
 `apply` read a `run` or `run-intent` entry only in the exact shape that `apply`
 writes, with the writer's target counts, live sources, undo window, and
-new-text guard; any other field or value makes the journal unreadable.
+new-text guard. Its report must name the entry's own operations, in order, each
+with the run's time plus the undo window as its deadline, and the entry's own
+proposals, in order, with their expiries, each confirming its replacement. Any
+other field or value makes the journal unreadable.
 
 `proposals.json` is local and never syncs. Each proposal holds a digest of its
 scope, the target fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
@@ -319,8 +332,7 @@ local and holds the memory revision and record fingerprints of the last
 annotation-aware write; a crash between the memory and watermark writes leaves
 a mismatch. While memory has another revision, no confirmation counts. The next
 locked command of a current plugin, including export and a delete or archive
-preview, first finishes an interrupted journaled write that explains the lag
-(see [Operation journal](#operation-journal)). For any other lag it revokes every fingerprint in memory, annotations, or the
+preview, first revokes every fingerprint in memory, annotations, or the
 watermark, then records the revision. That covers confirmations in transit and
 records an older plugin deleted, so a deleted record that a later import brings
 back stays unconfirmed in any delivery order. The user confirms again, and that
@@ -330,7 +342,12 @@ not yet grant authority, so voiding them costs one confirm prompt each. Each
 machine voids once when it upgrades, and its revocations reach the others when
 they sync. A record that an older plugin both imports and deletes between two
 current writes leaves no fingerprint, so a confirmation in transit for it can
-still count.
+still count. Each revocation that a reconcile of this version adds is an
+annotation ID whose first 16 hex digits are a fixed prefix, which every
+released reader accepts. Nightly maintenance still counts a confirmation that
+only such revocations voided, so it never archives or merges that guidance on
+its own; the hook shows it without `[confirmed]` until the user confirms again.
+An `unconfirm` adds an ordinary revocation, which nightly maintenance counts.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
