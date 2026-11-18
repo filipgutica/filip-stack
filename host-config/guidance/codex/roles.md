@@ -1,6 +1,6 @@
 | Role | In T3 Code | Outside T3 Code |
 | --- | --- | --- |
-| Critic for consequential plans, specifications, architecture, high-risk diffs, worker output, and validation claims | `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high`; `critic` ({{model:codex.workhorse.label}} high) when a Claude model wrote the work | `critic` |
+| Critic for consequential or high-risk plans, specifications, architecture, diffs, worker output, and validation claims | `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high`, unless a Claude model wrote the work; then `critic` ({{model:codex.workhorse.label}} high) | `critic` |
 | Planner for consequential design, cross-cutting changes, big reworks, and long unattended runs | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `planner` ({{model:codex.frontier.label}} high) |
 | Advisor | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `advisor` ({{model:codex.frontier.label}} high) |
 | Reviewer, the default for diffs, worker output, validation claims, and routine plans or specifications | `reviewer` ({{model:codex.workhorse.label}} high) | `reviewer` |

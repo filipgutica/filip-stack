@@ -225,7 +225,7 @@
     },
     {
       "id": "browser-repro",
-      "task": "Reproduce the login redirect loop in the running app's browser and take a screenshot at each step. No code changes.",
+      "task": "Hand this to the browser and native-app operation role: reproduce the login redirect loop in the running app's browser and take a screenshot at each step. No code changes.",
       "accept": {
         "claude": [
           "self",
