@@ -110,6 +110,8 @@ const management = [
         command adds a confirmation on its own; import copies them from your
         synced file, which you trust, and applying a proposal you approved
         confirms its replacement only when a record it replaces was confirmed.
+        A prompt that only mentions the command, such as a pasted report, shows
+        you no notice.
         The hook cannot tell who sent the prompt, so the agent's guidance
         forbids it from sending one. Changing, withdrawing, or deleting the
         guidance removes the confirmation.

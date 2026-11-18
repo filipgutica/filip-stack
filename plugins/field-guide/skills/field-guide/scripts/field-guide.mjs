@@ -1644,14 +1644,15 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:<id>`, in a main thread, confirms one active record, and one that is exactly
  * `confirm fg:proposal:<id>` approves one stored proposal; the result reports why
  * anything else confirms nothing. Returns null for a prompt that does not mention
- * `confirm fg:`, and for a near miss outside a main thread. Stores only an entry ID, the time,
+ * `confirm fg:`, and for a near miss outside a main thread. A near miss, such as a pasted report
+ * that mentions a confirm prompt, only tells the agent: it has no message for the user. Stores only an entry ID, the time,
  * the host, and the revocation IDs it saw, some derived from retirement IDs, never prompt text.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
   if (reference === undefined) {
     if (!/confirm fg:/iu.test(prompt) || !mainThread) return null
-    return confirmationMessage({ exact: false, text: 'Field Guide: nothing confirmed; a confirmation is a prompt that is exactly `confirm fg:<id>`, typed by the user' })
+    return { exact: false, context: 'Field Guide: nothing confirmed; a confirmation is a prompt that is exactly `confirm fg:<id>`, typed by the user' }
   }
   if (!mainThread) return notConfirmed('only a prompt the user types in a main thread can confirm guidance')
   const files = guideFilesFor(guideRootFor(guideRoot))
