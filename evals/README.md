@@ -77,6 +77,7 @@ The base ref supplies only the guidance. Both versions use the working tree's sc
 - Delegation, autonomy, and the rules tests turn each scenario into one test, described by its `id`.
   - Accepted answers sit in `metadata`, not `vars`, because promptfoo expands an array var into one test per element.
   - `accept` is one list, or a list per host. The assertion picks the list for the provider label.
+- A retrieval scenario can supply `hookContext` for simulated Field Guide hook output. The runner puts that field in host context and keeps `task` in the user message.
 - Routing turns each scenario into zero, one, or two tests:
   - `<id> skill`, unless the scenario is `explicit`: it passes when the chosen skill equals `expectedSkill`, where `null` means no skill, or is listed in `alsoAccept`.
   - `<id> reference`, when the scenario has an `expectedReference`: it passes when the listed file names include it.
