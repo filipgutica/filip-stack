@@ -8,9 +8,12 @@
 // this process nor the login shell in $SHELL (started with -c, -lc, -ic and -lic) has a
 // secret value in its environment. --scan also lists agent log files that contain a secret.
 // Every message is redacted, so it never prints a secret value.
+//
+// It catches accidental exposure, not a startup file written to fool it. The log scan
+// matches each value as written and JSON-escaped, which covers token-style secrets.
 import { spawnSync } from 'node:child_process'
-import { lstatSync, readdirSync, readFileSync } from 'node:fs'
-import { homedir } from 'node:os'
+import { lstatSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { basename, join } from 'node:path'
 
 const home = homedir()
@@ -20,11 +23,21 @@ const logDirs = ['.claude/projects', '.claude/shell-snapshots', '.codex/sessions
 const minLength = 8
 const shellModes = ['-c', '-lc', '-ic', '-lic']
 // The shell runs this Node binary by absolute path, so a startup file cannot replace the
-// probe with a function, and a startup file that exits early leaves no report.
-const marker = 'check-secret-exposure-environment'
-const probe = `process.stdout.write(${JSON.stringify(marker)} + JSON.stringify(process.env))`
+// probe with a function. The probe writes its report to its own file, so startup output and
+// exit hooks cannot corrupt it, and a startup file that exits early leaves no report.
+const probe = 'require("node:fs").writeFileSync(process.argv[1], JSON.stringify(process.env))'
+const quote = (text) => `'${text.replaceAll("'", "'\\''")}'`
 const failures = []
 const octal = (mode) => (mode & 0o777).toString(8)
+// Returns undefined when the entry vanished between listing and this call.
+const entryStat = (path) => {
+  try {
+    return lstatSync(path)
+  } catch (error) {
+    if (error.code === 'ENOENT') return undefined
+    throw error
+  }
+}
 
 const readSecrets = () => {
   let names
@@ -34,13 +47,14 @@ const readSecrets = () => {
     failures.push(error.code === 'ENOENT' ? `${secretsDir} is missing` : `${secretsDir} is unreadable (${error.code})`)
     return []
   }
-  const folder = lstatSync(secretsDir)
-  if (!folder.isDirectory()) failures.push(`${secretsDir} is not a folder`)
+  const folder = entryStat(secretsDir)
+  if (!folder?.isDirectory()) failures.push(`${secretsDir} is not a folder`)
   else if ((folder.mode & 0o777) !== 0o700) failures.push(`${secretsDir} has mode ${octal(folder.mode)}, want 700`)
   const secrets = []
   for (const name of names) {
     const path = join(secretsDir, name)
-    const entry = lstatSync(path)
+    const entry = entryStat(path)
+    if (!entry) continue
     if (!entry.isFile()) {
       failures.push(`${path} is not a regular file; keep each secret as a file in the folder`)
       continue
@@ -72,24 +86,26 @@ const checkEnvironment = (environment, where, secrets) => {
 // not the caller's environment. ZDOTDIR is kept because it selects zsh's startup files.
 const checkShells = (secrets) => {
   const shell = process.env.SHELL || '/bin/sh'
-  const command = `${JSON.stringify(process.execPath)} -e ${JSON.stringify(probe)}`
   const env = { HOME: home, PATH: process.env.PATH ?? '/usr/bin:/bin', TERM: 'dumb' }
   if (process.env.ZDOTDIR) env.ZDOTDIR = process.env.ZDOTDIR
-  for (const flags of shellModes) {
-    const started = `${basename(shell)} ${flags}`
-    const result = spawnSync(shell, [flags, command], { encoding: 'utf8', env, stdio: ['ignore', 'pipe', 'ignore'], timeout: 30_000 })
-    const start = result.stdout?.lastIndexOf(marker) ?? -1
-    let environment
-    try {
-      environment = start >= 0 ? JSON.parse(result.stdout.slice(start + marker.length)) : undefined
-    } catch {
-      environment = undefined
+  const reports = mkdtempSync(join(tmpdir(), 'check-secret-exposure-'))
+  try {
+    for (const flags of shellModes) {
+      const started = `${basename(shell)} ${flags}`
+      const report = join(reports, flags.slice(1))
+      const command = [process.execPath, '-e', probe, report].map(quote).join(' ')
+      spawnSync(shell, [flags, command], { env, stdio: 'ignore', timeout: 30_000 })
+      let environment
+      try {
+        environment = JSON.parse(readFileSync(report, 'utf8'))
+      } catch {
+        failures.push(`${started} did not report its environment, so it is unchecked`)
+        continue
+      }
+      checkEnvironment(environment, started, secrets)
     }
-    if (!environment) {
-      failures.push(`${started} did not report its environment, so it is unchecked`)
-      continue
-    }
-    checkEnvironment(environment, started, secrets)
+  } finally {
+    rmSync(reports, { recursive: true, force: true })
   }
 }
 
@@ -133,10 +149,10 @@ checkEnvironment(process.env, 'this process', secrets)
 checkShells(secrets)
 if (scan) scanLogs(secrets)
 
-// A message built from a variable name or a path could still hold a value.
-const redact = (message) => secrets.reduce((text, { value }) => text.split(value).join('[redacted]'), message)
+// A line built from a variable name or a path could still hold a value.
+const print = (line) => console.log(secrets.reduce((text, { value }) => text.split(value).join('[redacted]'), line))
 if (failures.length > 0) {
-  for (const failure of failures) console.log(`FAIL: ${redact(failure)}`)
+  for (const failure of failures) print(`FAIL: ${failure}`)
   process.exit(1)
 }
-console.log(`OK: ${secrets.length} secret(s) in ${secretsDir}; no environment holds one${scan ? ' and no agent log contains one' : ''}.`)
+print(`OK: ${secrets.length} secret(s) in ${secretsDir}; no environment holds one${scan ? ' and no agent log contains one' : ''}.`)

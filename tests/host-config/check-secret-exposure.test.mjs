@@ -57,6 +57,8 @@ test('passes when the secret is only in its file', () => {
 
 test('fails for each shell start that exports the secret, naming the variable', () => {
   const home = makeHome()
+  // Startup output and an exit hook must not hide the report.
+  writeFileSync(join(home, '.startup-all'), "echo 'check-secret-exposure-environment{}'\ntrap 'echo bye' EXIT\n")
   writeFileSync(join(home, '.startup-interactive'), `export PROXY_KEY=${secret}\n`)
   const result = check(home)
   assertFails(result, /^FAIL: fixture-shell -ic exports PROXY_KEY, which holds proxy-key$/mu, /^FAIL: fixture-shell -lic exports PROXY_KEY, which holds proxy-key$/mu)
