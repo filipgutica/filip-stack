@@ -33,15 +33,15 @@ const matches = (bytes, patterns) => {
   return counts
 }
 
-const fileRole = (file) => file.replace(/\.tmp-\d+$/u, '')
 const showFile = (file) => file.replace(/(?:\.tmp-\d+|\.[a-f\d-]{36}\.tmp)$/u, '.tmp')
+// A step may copy a value the store already held, such as a repository identity that capture
+// stored in every record, from one file or record to another. It fails only when it adds a value
+// that no store file held before the step.
 export const privacy = ({ before, after, check }) => {
-  for (const [file, bytes] of Object.entries(after)) {
-    const baseline = before[file] ?? before[fileRole(file)]
-    for (const [category, patterns] of Object.entries(privacyPatterns)) {
-      const allowed = matches(baseline, patterns)
-      const added = [...matches(bytes, patterns)].some(([text, count]) => count > (allowed.get(text) ?? 0))
-      if (added) check(5, false, `${showFile(file)} gained ${category}`)
+  for (const [category, patterns] of Object.entries(privacyPatterns)) {
+    const held = new Set(Object.values(before).flatMap((bytes) => [...matches(bytes, patterns).keys()]))
+    for (const [file, bytes] of Object.entries(after)) {
+      if ([...matches(bytes, patterns).keys()].some((text) => !held.has(text))) check(5, false, `${showFile(file)} gained ${category}`)
     }
   }
 }
