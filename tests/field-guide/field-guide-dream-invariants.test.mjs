@@ -384,7 +384,10 @@ const runCell = ({ t, machine, seed, current, fault, baseline, events: originalE
 const secondaryFaults = ({ current, input, baseline, control }) => {
   const mix = malformedFor({ input, current })
   const files = fileFaults.filter(({ file }) => baseline[file] || control.after[file])
-  const projected = crashPrefixes ? control.applied.writes.map((_, index) => ({ name: `crash-${index + 1}`, crash: index + 1 })) : []
+  // By default, only crashes right after annotations and right after memory reach disk: the points
+  // where recovery aborts or commits an operation.
+  const landings = ['renameSync annotations.json', 'renameSync memory.md'].map((call) => control.applied.writes.indexOf(call) + 1).filter(Boolean)
+  const projected = (crashPrefixes ? control.applied.writes.map((_, index) => index + 1) : landings).map((crash) => ({ name: `crash-${crash}`, crash }))
   const landed = control.applied.writes.indexOf('renameSync memory.md') + 1
   const reconciled = control.applied.writes.indexOf('renameSync annotations-watermark.json') + 1
   const neighbors = current.prior && landed ? ['export', 'lost', 'edited'].map((recover) => ({

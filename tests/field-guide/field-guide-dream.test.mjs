@@ -2549,6 +2549,27 @@ test('6.15.0 approves and applies a proposal this version stored with unsorted e
   assert.equal(guide.exec({ cli, command: 'consolidate', args: ['--approval', reference] }).result.outcome, 'consolidated')
 })
 
+test('a run after a crashed nightly merge previews without writing and applies with its recovery', () => {
+  const { guide } = setup('crashed-merge')
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  guide.writeClaudeMd()
+  const views = ['memory.md', 'memory.json', 'annotations-watermark.json'].map((name) => [name, readFileSync(join(guide.guideRoot, name))])
+  appliedRun(guide, dreamInput(guide.plan(), [consolidation([first, second])]))
+  // A crash after the annotations write and before the memory write: the pending entry and the
+  // merge's annotations stay, and memory and the watermark are as before.
+  for (const [name, content] of views) writeFileSync(join(guide.guideRoot, name), content)
+  const crashed = guide.journal().slice(0, guide.journal().findIndex(({ type }) => type === 'pending') + 1)
+  rewriteJournal(guide, crashed)
+  const input = dreamInput(guide.plan(), [consolidation([first, second])])
+  const before = storeFiles(guide)
+  const [preview, again] = [guide.dreamApply(input), guide.dreamApply(input)]
+  assert.equal(again.previewToken, preview.previewToken)
+  assert.deepEqual(storeFiles(guide), before, 'a preview writes no recovery')
+  assert.deepEqual(guide.dreamApply(input, { previewToken: preview.previewToken }).operations.map(({ action }) => action), ['consolidate'])
+  assert.deepEqual(guide.journal().slice(crashed.length).map(({ type }) => type), ['abort', 'run-intent', 'pending', 'commit', 'run'])
+  guide.validate()
+})
+
 test('dream apply refuses a live digest that is not a digest before it recovers anything', () => {
   const { guide, operationId } = nightlyArchive('live-digest-type')
   const second = guide.learn(cleanupTexts[1])
