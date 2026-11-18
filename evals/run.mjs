@@ -5,9 +5,9 @@
 // base-versus-working-tree gate to promptfoo's results. With --no-base, it runs only
 // the working tree and every attempt must pass, which checks guidance on a new model.
 import { execFileSync, spawnSync } from 'node:child_process'
-import { mkdtempSync, readFileSync, rmSync } from 'node:fs'
+import { existsSync, mkdtempSync, readFileSync, rmSync } from 'node:fs'
 import { readFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
+import { homedir, tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { parseArgs } from 'node:util'
 import { formatTables, gate } from './gate.mjs'
@@ -116,8 +116,12 @@ if (tests.length === 0) {
 }
 if (options['dry-run']) process.exit(0)
 
-if (options['api-key-file']) env.CLIPROXY_API_KEY = (await readFile(options['api-key-file'], 'utf8')).trim()
-if (!env.CLIPROXY_API_KEY) throw new Error('Set CLIPROXY_API_KEY or pass --api-key-file with one of the client api-keys in the CLIProxyAPI config')
+// The key lives in a file rather than a shell environment, so agent logs and shell snapshots
+// never capture it.
+const defaultKeyFile = join(homedir(), '.config', 'secrets', 'cliproxy-client-key')
+const keyFile = options['api-key-file'] ?? (!env.CLIPROXY_API_KEY && existsSync(defaultKeyFile) ? defaultKeyFile : undefined)
+if (keyFile) env.CLIPROXY_API_KEY = (await readFile(keyFile, 'utf8')).trim()
+if (!env.CLIPROXY_API_KEY) throw new Error(`Put one of the CLIProxyAPI client api-keys in ${defaultKeyFile}, or pass --api-key-file`)
 
 const outputDir = mkdtempSync(join(tmpdir(), `eval-${name}-`))
 const output = join(outputDir, 'results.json')

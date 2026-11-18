@@ -364,7 +364,7 @@ pnpm eval:view                   # opens saved results in the promptfoo viewer
 
 `--base <ref>` changes the base, `--attempts <n>` sets promptfoo's `--repeat`
 (default 3), and `--model <id>` narrows the models in `evals/providers.yaml`.
-The runner needs `CLIPROXY_API_KEY` or `--api-key-file`; ask before a paid run.
+The runner reads the CLIProxyAPI key from `~/.config/secrets/cliproxy-client-key`, or from `--api-key-file` or `CLIPROXY_API_KEY`; ask before a paid run.
 
 In a comparison, routing runs only the steps a change can affect: skill steps
 when a routable skill's name or description changed, and a skill's reference
