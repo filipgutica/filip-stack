@@ -1,6 +1,6 @@
 name = "computer_use"
 description = "Browser and native-app operator for bounded UI tasks, reproductions, and visual verification."
-model = "{{model:codex.frontier.id}}"
+model = "{{model:codex.workhorse.id}}"
 model_reasoning_effort = "medium"
 developer_instructions = """
 Act as the Computer use role in {{HOME}}/.agents/roles.md. Read that section before starting.
