@@ -2474,6 +2474,26 @@ test('the run-entry reader refuses a report operation that does not match its jo
   ] })
 })
 
+test('a merge of a confirmed record with one the user confirmed before is flagged, not proposed', () => {
+  for (const revoke of ['reconcile', 'unconfirm']) {
+    const { guide } = setup(`mixed-confirmation-${revoke}`)
+    const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+    for (const id of [first, second]) guide.confirm(short(id))
+    if (revoke === 'reconcile') {
+      // A lagging watermark makes the next locked command void both confirmations; the user confirms one again.
+      const path = join(guide.guideRoot, 'annotations-watermark.json')
+      writeFileSync(path, `${JSON.stringify({ ...JSON.parse(readFileSync(path, 'utf8')), memoryRevision: 0 })}\n`)
+      guide.exec({ command: 'export', args: ['--output', join(guide.guideRoot, '..', 'mixed.json')] })
+      guide.confirm(short(first))
+    } else {
+      guide.exec({ command: 'unconfirm', args: ['--id', short(second)] })
+    }
+    const applied = appliedRun(guide, dreamInput(guide.plan(), [consolidation([first, second])]))
+    assert.deepEqual([applied.operations, applied.proposals, applied.flags.map(({ kind }) => kind)], [[], [], ['confirmed-overlap']], revoke)
+    assert.deepEqual(guide.activeIds(), [first, second].sort(), revoke)
+  }
+})
+
 const withExamples = (targetIds, examples) => ({ ...consolidation(targetIds), replacement: { ...consolidation(targetIds).replacement, examples } })
 const sortedExample = { code: 'git worktree remove ../done', kind: 'pattern', language: 'sh' }
 const unsortedExample = { kind: 'pattern', language: 'sh', code: 'git worktree remove ../done' }
