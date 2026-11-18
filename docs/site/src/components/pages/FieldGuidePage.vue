@@ -127,7 +127,7 @@ const management = [
         them into one record, and you can undo a merge for 90 days. If you
         undo a merge, it is not suggested again. A merge that would copy a
         home directory path into the new record, such as the identity of a
-        repository without a remote, is refused.
+        repository without a remote under your home directory, is refused.
       </p>
       <p>
         A merge never rewrites guidance you confirmed on its own. To accept
