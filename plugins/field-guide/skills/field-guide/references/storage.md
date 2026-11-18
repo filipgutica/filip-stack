@@ -235,9 +235,9 @@ restore fails `validate`.
 ### Operation journal
 
 `operations.jsonl` is a local write-ahead journal, and it never syncs. No hook
-reads it: the hooks read `memory.md`, `annotations.json`, and
-`annotations-watermark.json`, and the confirm hook also reads `proposals.json`
-for a `confirm fg:proposal:<id>` prompt. An operation appends a `pending` entry, then writes annotations and
+reads it. The confirm hook takes `memory.lock`, then reads `memory.md`,
+`annotations-watermark.json`, and `annotations.json`, and, for a
+`confirm fg:proposal:<id>` prompt, `proposals.json`. An operation appends a `pending` entry, then writes annotations and
 memory, then appends a `commit` entry. Every transition the operation makes
 carries its operation ID. Before the next journaled command, recovery commits
 a pending operation whose ID reached memory and aborts the rest. When it commits

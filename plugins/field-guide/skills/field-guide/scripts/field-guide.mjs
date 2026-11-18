@@ -1668,7 +1668,7 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:`, and for a near miss outside a main thread. A near miss, such as a pasted report
  * that mentions a confirm prompt, only tells the agent: it has no message for the user. Stores only an entry ID, the time,
  * the host, and the revocation IDs it saw, some derived from retirement IDs, never prompt text.
- * Under the memory lock it reads memory.md, annotations.json, and the watermark, which reconcile
+ * It takes memory.lock, then reads memory.md, the watermark, and annotations.json, which reconcile
  * may rewrite, and proposals.json for a proposal; it never reads operations.jsonl.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
