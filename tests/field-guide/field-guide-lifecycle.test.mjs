@@ -601,6 +601,10 @@ test('only an exact confirm prompt in a main thread confirms guidance', () => {
     }
     assert.doesNotMatch(JSON.stringify(output), /\[confirmed\]/, prompt)
   }
+  // Codex gets the same quiet near miss.
+  const codexNearMiss = send(notConfirming[0], { env: hostEnvironment.codex })
+  assert.equal(codexNearMiss.systemMessage, undefined)
+  assert.match(codexNearMiss.hookSpecificOutput.additionalContext, /nothing confirmed/)
 
   for (const options of delegateRuns) {
     const output = send(`confirm fg:${short}`, options)
