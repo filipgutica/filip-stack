@@ -150,10 +150,10 @@
     },
     {
       "id": "ready-to-close-local-only-changes",
-      "task": "The user asked you to update the repository's model guidance. You made the edits and local checks passed. A live Git check confirms the only copy of the edits is uncommitted in this thread's worktree. There is no PR, and the user has not authorized a commit or push. Waiting on you is Nothing, and the worktree row currently says to retain it for a future release. Choose the Ready to close line.",
+      "task": "The user asked you to update the repository's model guidance, and the checks passed. A live Git check shows the only copy of the update is uncommitted in this thread's worktree. The user has not authorized a commit or push. Closing this thread will remove the worktree automatically. The only table row with a remaining step is for that removal, and Waiting on you is Nothing. Choose the Ready to close line.",
       "options": {
-        "yes": "write \"Ready to close: Yes\" because the authorized local work is complete",
-        "no": "write \"Ready to close: No, the only copy of the update is uncommitted in this worktree\""
+        "yes": "write \"Ready to close: Yes\"",
+        "no": "write \"Ready to close: No\" and state what holds the thread open"
       },
       "accept": [
         "no"
@@ -162,10 +162,10 @@
     },
     {
       "id": "ready-to-close-clean-merged-worktree",
-      "task": "The user's fix has merged and CI passed. A live Git check confirms this thread's worktree is clean and contains no unmerged work. Closing this thread will remove the worktree automatically. The only table row with a remaining step is for that removal, and Waiting on you is Nothing. Choose the Ready to close line.",
+      "task": "The user asked you to update the repository's model guidance, and the checks passed. A live Git check shows the update has merged and this thread's worktree is clean, with no unmerged work. Closing this thread will remove the worktree automatically. The only table row with a remaining step is for that removal, and Waiting on you is Nothing. Choose the Ready to close line.",
       "options": {
-        "yes": "write \"Ready to close: Yes\" because closing will handle the remaining cleanup",
-        "no": "write \"Ready to close: No, this thread's worktree still exists\""
+        "yes": "write \"Ready to close: Yes\"",
+        "no": "write \"Ready to close: No\" and state what holds the thread open"
       },
       "accept": [
         "yes"
