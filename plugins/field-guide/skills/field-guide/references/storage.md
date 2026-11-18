@@ -127,9 +127,15 @@ plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
 They check each Claude Code copy that `installed_plugins.json` names and the
 Codex copy that loads: the newest version directory in the plugin cache, for
 each marketplace that Codex's `config.toml` lists `field-guide` from, or for
-every cached marketplace when it lists none. A `config.toml` table header that
-names `field-guide@` in any other form, such as a single-quoted or spaced key,
-names a copy the check cannot find, so the commands refuse.
+every cached marketplace when it lists none. Codex writes `field-guide@` only
+in two header lines: `[plugins."field-guide@<marketplace>"]` and the
+`[hooks.state."field-guide@<marketplace>:hooks/hooks.json:<event>:<n>:<n>"]`
+line that records a trusted hook. Any other line that holds `field-guide@`,
+such as an inline key, a subtable, other quoting, or a trailing comment, can
+name a copy the check cannot find, so the commands refuse. So does a TOML
+`\u`, `\U`, or `\x` escape anywhere in the file, which can spell the name
+without its plain text. The check reads no TOML, so a comment that mentions
+`field-guide@` or such an escape also refuses; remove it to proceed.
 
 ### Consolidation and undo
 
@@ -140,10 +146,14 @@ requires its preview token. The replacement keeps the predecessors' evidence
 links without adding evidence, takes their triggers, and lists them in
 `consolidates`. Each predecessor is superseded. A record that still replaces
 superseded records cannot be consolidated. Every string in the input, including
-each example's language and code, also refuses a query string or user
-information, as in `<scheme>://<user>@`, in a URL of any scheme, and a home
-directory without a trailing separator, such as `/home/<name>` or
-`/mnt/c/Users/<name>`. Each
+each example's language and code, also refuses user information, as in
+`<scheme>://<user>@`, in a URL of any scheme, and a query string: a `?` with
+text after it in a token that starts with a scheme and a colon, with or without
+`//`, as in `mailto:<address>?subject=<text>`. A `?` in prose, as in
+`Ask: why?`, stays allowed. It also refuses a home directory without a trailing
+separator, such as `/home/<name>` or `/mnt/c/Users/<name>`. Windows ignores
+the case of `Users`, so a drive-rooted form, such as `C:\users\<name>` or
+`/mnt/c/USERS/<name>`, matches in any case. Each
 example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
 same checks cover every string in a stored proposal. A proposal stores a
 digest of its scope, not the repository identity, which can be a local path,
@@ -178,8 +188,10 @@ released exporter does not read the journal, so after such a crash in the first
 approved consolidation, before memory becomes version 2, it exports that
 confirmation; the entry holds only IDs, and its project fingerprint can never
 match a shared record. Recovery also cancels the triggers that an aborted
-consolidation gave its replacement, so a later capture of the same text starts
-without them. A crash
+consolidation gave its replacement, by the entry IDs that the journal lists, so
+a later capture of the same text starts without them, even a capture made
+before recovery ran. A trigger that the user added under another entry ID
+stays. A crash
 after the `memory.md` write but before the watermark write also fails closed:
 the next command finds the watermark stale and revokes every confirmation, the
 retry reports the proposal as already applied, and the replacement stays

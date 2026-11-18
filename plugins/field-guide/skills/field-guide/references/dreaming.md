@@ -22,7 +22,8 @@ nothing, not even journal recovery. The script never edits
   broken pointers, orphan evidence, and oversized records, within 32 KiB
   together, with one validation error per line. A text item longer than 1 KiB
   is cut and ends with `…`. `stateErrors` lists what the plan itself could not
-  read, such as an `operations.jsonl` line that is not JSON.
+  read, such as an `operations.jsonl` line that is not JSON or an entry whose
+  type, operation ID, scope, or fingerprints are missing or malformed.
 - `live`: a digest of each live guidance source, `claude-md`, `agents-md`,
   `roles`, `coding-standards`, `skills` (one `name: description` line per
   skill in `~/.agents/skills`), and `plugin-skills` (one
@@ -51,7 +52,8 @@ The packet holds no evidence, prompts, or transcripts. Every home directory,
 with or without a separator after it, and the guide root are replaced with `~`
 and `<guide-root>` before any text is measured or cut. Live text, record text,
 and each audit item on its own are redacted before they are measured or cut;
-a validation error is redacted whole before it is split into lines:
+each validation error is redacted on its own and whole before it is split into
+lines, so a block left open in one error cannot hide the next:
 
 - A `<user>`, `<assistant>`, or `<system>` block runs to its closing tag, such
   as `</user>`. A `BEGIN PROMPT` or `BEGIN RAW PROMPT` block runs to a line
@@ -64,8 +66,9 @@ a validation error is redacted whole before it is split into lines:
   through its `-----END` marker.
 - A block that never closes is redacted to the end of the text. The tag and
   `BEGIN PROMPT` markers match in any case.
-- Each other line is replaced whole when it holds a query string or user
-  information in a URL of any scheme, percent-encoded text, a credential token or assignment, a
+- Each other line is replaced whole when it holds user information in a URL of
+  any scheme, a query string after a scheme and a colon, with or without `//`
+  (as in `mailto:<address>?subject=<text>`), percent-encoded text, a credential token or assignment, a
   private key marker, or a line-start `user:`, `assistant:`, or `system:`
   marker.
 

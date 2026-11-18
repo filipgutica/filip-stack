@@ -288,15 +288,17 @@ const unsafePersistedTextPatterns = [
 
 // Text that this version writes for the first time, such as a consolidation's replacement, an
 // operation's reason, or a proposal, also refuses a query string or user information in a URL of
-// any scheme, and a home directory without a trailing separator, including a WSL /mnt/<drive>
-// one. Stored records keep the patterns above, which released versions wrote, so their stores
-// stay valid.
+// any scheme, and a home directory without a trailing separator. A query is a `?` and more text
+// in a token that starts with a scheme and a colon, with or without `//`, as in `mailto:a?b`.
+// Windows ignores the case of Users, so a drive-rooted home, such as C:\users\<name>, WSL's
+// /mnt/c/USERS/<name>, or /mnt/c/home/<name>, matches in any case. Stored records keep the
+// patterns above, which released versions wrote, so their stores stay valid.
 const unsafeNewTextPatterns = [
   ...unsafePersistedTextPatterns,
-  { pattern: /[a-z][a-z0-9+.-]*:\/\/[^\s?]+\?[^\s]*/iu, reason: 'URL query string' },
+  { pattern: /[a-z][a-z0-9+.-]*:[^\s?]*\?\S/iu, reason: 'URL query string' },
   { pattern: /[a-z][a-z0-9+.-]*:\/\/[^\s/?#@]*@/iu, reason: 'URL user information' },
-  { pattern: /(?<![\w.-])(?:\/mnt\/[A-Za-z])?\/(?:Users|home)\/[^/\s]+/u, reason: 'absolute home-directory path' },
-  { pattern: /[A-Za-z]:\\Users\\[^\\\s]+/u, reason: 'absolute home-directory path' },
+  { pattern: /(?<![\w.-])\/(?:Users|home)\/[^/\s]+/u, reason: 'absolute home-directory path' },
+  { pattern: /(?:\/mnt\/[a-z]\/(?:users|home)|[a-z]:[\\/]users)[\\/][^\\/\s]+/iu, reason: 'absolute home-directory path' },
 ]
 
 // Output that reaches a model but is never stored. Home paths are left to the caller, which
@@ -2478,11 +2480,39 @@ const pointerProblem = ({ pointer, paths }) => {
   return null
 }
 
-// The journal's operations for a read-only report, or null and the error when it cannot be read.
-// consolidate and undo-operation fail on that journal; the nightly plan reports the error.
+const isString = (value) => typeof value === 'string'
+const isStringArray = (value) => Array.isArray(value) && value.every(isString)
+
+// The fields of a pending entry that the read-only readers use, with their checks. An optional
+// field is checked only when present.
+const pendingEntryFields = {
+  required: { action: isString, scope: (value) => value === 'project' || value === 'shared', fingerprints: isStringArray },
+  optional: { replacementFingerprint: isString, revocationIds: isStringArray, declined: isStringArray },
+}
+
+// Fails on an entry whose fields the read-only readers could misread.
+const requireReadableJournalEntry = ({ entry, index }) => {
+  const problem = (text) => fail(`operations.jsonl entry ${index + 1} ${text}`)
+  if (entry === null || typeof entry !== 'object' || Array.isArray(entry)) problem('is not an object')
+  if (!['pending', 'commit', 'abort'].includes(entry.type)) problem('has an unknown type')
+  if (!isString(entry.operationId) || !operationIdPattern.test(entry.operationId)) problem('has an invalid operationId')
+  if (entry.type !== 'pending') return
+  const invalid = [
+    ...Object.entries(pendingEntryFields.required).filter(([field, valid]) => !valid(entry[field])),
+    ...Object.entries(pendingEntryFields.optional).filter(([field, valid]) => entry[field] !== undefined && !valid(entry[field])),
+  ].map(([field]) => field)
+  if (invalid.length > 0) problem(`has an invalid ${invalid.join(', ')}`)
+}
+
+// The journal's operations for a read-only report, or null and the error when it cannot be read
+// or holds an entry whose fields those reports could misread. consolidate and undo-operation fail
+// on a line that is not JSON; the nightly plan reports either error, and the annotation export
+// falls back to records that memory shows are shared.
 const journalForDisplay = (paths) => {
   try {
-    return { operations: operationsIn(readJournal(paths)) }
+    const journal = readJournal(paths)
+    journal.forEach((entry, index) => requireReadableJournalEntry({ entry, index }))
+    return { operations: operationsIn(journal) }
   } catch (error) {
     return { operations: null, error: error.message }
   }
@@ -2500,11 +2530,11 @@ const duplicateGroups = ({ paths, memory }) => {
 }
 
 export const audit = (paths) => {
-  const validationErrors = []
+  let validationErrors
   try {
-    validate(paths)
+    validationErrors = validationErrorsFor(paths)
   } catch (error) {
-    validationErrors.push(error.message)
+    validationErrors = [error.message]
   }
   let memory
   try {
@@ -2768,14 +2798,16 @@ const operationLanded = ({ memory, operationId }) => memory.guidance.some(({ tra
 ))
 
 // A consolidation annotates its replacement before the memory write: an approval confirms it, and
-// it takes its targets' triggers. When the record never arrived, revoke that confirmation and
-// acknowledge those triggers, so a later capture of the same text inherits neither. Only trigger
-// entries that reached annotations are acknowledged; a crash can stop before that write.
+// it takes its targets' triggers. When the operation aborts, acknowledge exactly those trigger
+// entries, even when a later capture put the same text in memory, so that capture inherits none;
+// a trigger the user added under another ID stays. Only entries that reached annotations are
+// acknowledged; a crash can stop before that write. While the record is absent, also revoke its
+// confirmation. A capture already revoked it, and a later confirmation is the user's own.
 const cancelUnlandedReplacement = ({ paths, memory, replacementFingerprint, triggerIds = [] }) => {
-  if (!replacementFingerprint || memory.guidance.some(({ fingerprint }) => fingerprint === replacementFingerprint)) return
+  if (!replacementFingerprint) return
   const annotations = readAnnotations(paths.annotationsFile)
   const record = annotationRecordFor({ annotations, fingerprint: replacementFingerprint })
-  revokeRecord(record)
+  if (!memory.guidance.some(({ fingerprint }) => fingerprint === replacementFingerprint)) revokeRecord(record)
   acknowledgeEntries({ record, entries: record.triggers.filter(({ id }) => triggerIds.includes(id)) })
   writeAnnotations({ path: paths.annotationsFile, annotations })
 }
@@ -2857,14 +2889,25 @@ const directoriesIn = (path) => (existsSync(path)
   ? readdirSync(path, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map(({ name }) => name)
   : [])
 
-// The table header form that the Codex plugin installer writes.
-const codexPluginHeader = /^\[plugins\."([^"@]+)@([^"]+)"\]/u
+// The table header line that the Codex plugin installer writes for each installed plugin.
+const codexPluginHeader = /^\[plugins\."([^"@\\]+)@([^"@\\]+)"\]$/u
+// The table header line where Codex records that the user trusted one of a plugin's hooks.
+const codexHookStateHeader = /^\[hooks\.state\."[^"@\\]+@[^"@\\:]+:hooks\/hooks\.json:[a-z_]+:\d+:\d+"\]$/u
+// A TOML escape can spell a plugin name without its plain text.
+const tomlUnicodeEscape = /\\(?:u[0-9A-Fa-f]{4}|U[0-9A-Fa-f]{8}|x[0-9A-Fa-f]{2})/u
 
-// A table header line that mentions `<plugin>@` in a form other than the installer's, such as a
-// single-quoted or spaced key. It names a copy this check cannot locate, so the copy is unknown.
-const unknownCodexEntries = ({ lines, plugin }) => (plugin === undefined ? [] : lines
-  .filter((line) => line.trimStart().startsWith('[') && line.includes('plugins') && line.includes(`${plugin}@`) && !codexPluginHeader.test(line))
-  .map(() => ({ host: 'Codex', plugin, path: null, problem: 'config.toml names it in a form this check does not read' })))
+// Codex writes `<plugin>@` only in the two header lines above. Any other line that holds it, such
+// as an inline key, a subtable, other quoting, or a comment, may name a copy this check cannot
+// locate, so the copy is unknown. A comment is refused too, because the check reads no TOML.
+const unknownCodexEntries = ({ lines, plugin }) => {
+  if (plugin === undefined) return []
+  const unknown = (problem) => ({ host: 'Codex', plugin, path: null, problem })
+  const unread = lines.filter((line) => line.includes(`${plugin}@`) && !codexPluginHeader.test(line) && !codexHookStateHeader.test(line))
+  return [
+    ...unread.map(() => unknown('config.toml names it in a form this check does not read')),
+    ...(lines.some((line) => tomlUnicodeEscape.test(line)) ? [unknown('config.toml holds an escape that can spell its name')] : []),
+  ]
+}
 
 // Codex keeps a plugin at plugins/cache/<marketplace>/<plugin>/<version> and loads its newest
 // version; an older version directory is a leftover. config.toml names the installed plugins, so
@@ -2873,7 +2916,7 @@ const codexCopies = ({ codexRoot, plugin }) => {
   const configFile = join(codexRoot, 'config.toml')
   const cache = join(codexRoot, 'plugins', 'cache')
   const wanted = (name) => plugin === undefined || name === plugin
-  const lines = existsSync(configFile) ? readFileSync(configFile, 'utf8').split('\n') : []
+  const lines = existsSync(configFile) ? readFileSync(configFile, 'utf8').split(/\r?\n/u) : []
   const named = lines.flatMap((line) => {
     const [, name, marketplace] = line.match(codexPluginHeader) ?? []
     return name && wanted(name) ? [{ name, marketplace }] : []
@@ -3667,7 +3710,8 @@ const validateSharedPromotions = ({ sharedFiles, paths, errors }) => {
   }
 }
 
-const validate = (paths) => {
+// Every validation error, one per item, so a reader can redact each on its own.
+const validationErrorsFor = (paths) => {
   requireInitialized(paths)
   const errors = []
   const rootContent = validateLinks({ indexPath: paths.rootIndex, errors })
@@ -3716,7 +3760,11 @@ const validate = (paths) => {
   } catch (error) {
     errors.push(`${paths.annotationsFile} is invalid: ${error.message}`)
   }
+  return errors
+}
 
+const validate = (paths) => {
+  const errors = validationErrorsFor(paths)
   if (errors.length > 0) fail(`Field guide validation failed:\n- ${errors.join('\n- ')}`)
 }
 
