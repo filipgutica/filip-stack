@@ -17,6 +17,10 @@ const management = [
     command: "Say “undo that learning”",
     description: "Reverses the last saved learning.",
   },
+  {
+    command: "Ask the agent to consolidate overlapping guidance",
+    description: "Merges records that say the same thing into one, and gives you an undo command.",
+  },
 ];
 </script>
 
@@ -103,11 +107,33 @@ const management = [
       <p>
         Only that prompt confirms. Extra text, a quoted ID, a pasted report, or
         a prompt in a delegate or subagent confirms nothing. No Field Guide
-        command adds a confirmation; import copies them from your synced file,
-        which you trust.
+        command adds a confirmation on its own; import copies them from your
+        synced file, which you trust, and applying a proposal you approved
+        confirms its replacement only when a record it replaces was confirmed.
         The hook cannot tell who sent the prompt, so the agent's guidance
         forbids it from sending one. Changing, withdrawing, or deleting the
         guidance removes the confirmation.
+      </p>
+    </div>
+  </section>
+
+  <section aria-labelledby="maintain">
+    <h2 id="maintain">Keep the guide small</h2>
+    <div class="prose">
+      <p>
+        Over time, several records can say the same thing. The agent can merge
+        them into one record, and you can undo a merge for 90 days. If you
+        undo a merge, it is not suggested again.
+      </p>
+      <p>
+        A merge never rewrites guidance you confirmed on its own. To accept
+        one, send the exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt
+        the agent gives you. Shared guidance is not merged yet. Nightly
+        maintenance lists overlapping records for a review, and a later
+        release lets it apply changes. It never edits your instructions or
+        skills. The
+        <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
+        has the exact rules.
       </p>
     </div>
   </section>
