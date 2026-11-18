@@ -1,3 +1,11 @@
+## [6.14.1](https://github.com/filipgutica/filip-stack/compare/v6.14.0...v6.14.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **field-guide:** document and test the quiet near miss on both hosts ([53285d9](https://github.com/filipgutica/filip-stack/commit/53285d9df4b01cd1900ad926acc4cd5b0bf838dd))
+* **field-guide:** keep confirm near misses out of the user's chat ([d6c91bd](https://github.com/filipgutica/filip-stack/commit/d6c91bdd65ee994712d132b5ec0e220eec53d4c0))
+
 # [6.14.0](https://github.com/filipgutica/filip-stack/compare/v6.13.0...v6.14.0) (2026-11-18)
 
 
