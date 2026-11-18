@@ -33,7 +33,7 @@ Read the file and show the open items oldest first, numbered from 1, with their 
 
 A done item is deleted, not checked off, so the file stays short.
 
-1. Match the user's number or wording to one item. A number refers to the last list shown in this thread; when this thread has shown none, list first.
+1. Match the user's number or wording to one item. A number refers to the last list shown in this thread; when this thread has shown none, list the items and ask which one the user means.
 2. When the wording matches more than one item, show the candidates and ask which one.
 3. Read the file again right before the edit, and delete that exact line with an exact-text edit, such as the Edit tool. When the line has changed or is gone, list again and confirm.
 4. Report the removed line.

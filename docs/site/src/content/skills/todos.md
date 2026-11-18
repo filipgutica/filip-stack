@@ -31,8 +31,8 @@ Todos are items you owe. For the verified state of a task, use
 Each item is one dated line with the repository or thread it came from. The
 agent appends new items and deletes finished ones one exact line at a time,
 right after reading the file, so an item another agent adds meanwhile is
-rarely lost. When a list includes items
-older than 30 days, the agent marks them stale and asks whether to drop them.
+rarely lost. When a list includes items older than 30 days, the agent marks
+them stale and asks whether to drop them.
 Items name a credential or file, never a secret value.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/todos/SKILL.md)
