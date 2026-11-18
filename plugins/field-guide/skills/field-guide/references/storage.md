@@ -240,7 +240,7 @@ command. It never holds guidance text, user prompts, or paths. A nightly run app
 a `run-intent` entry before it writes memory and a `run` entry after. Both
 record, for each subject the run reviewed and left nothing unresolved, its
 digest and a digest of all live guidance it was reviewed against, the proposals it
-stored with their expiry, and its report, which holds IDs, reasons, undo
+stores with their expiry, and its report, which holds IDs, reasons, undo
 commands, and the `confirm fg:proposal:<id>` prompts to offer. Later runs read
 the contradictions queued for the user from these reports. `apply` checks both
 entries with the plan's reader before it writes either. When a crash leaves an intent whose

@@ -177,8 +177,10 @@ the run applied nothing; fix or drop that action and apply again.
 
 An applied run writes every change in one memory write and records a `run`
 entry, and only then stores its proposals, so no proposal of a run that failed
-can be approved. A crash between the two loses the proposals; their subject is
-reviewed again once their recorded expiry passes. Its report lists each change with its undo command,
+can be approved. A crash after the run becomes recoverable and before its
+proposals are stored loses them: for a run that changes no record, that is any
+point after its `run-intent` entry; otherwise, any point after its memory
+write. Their subject is reviewed again once their recorded expiry passes. Its report lists each change with its undo command,
 each proposal with the `confirm fg:proposal:<id>` prompt to offer, the queued
 decisions, and the flags.
 
