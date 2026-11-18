@@ -133,7 +133,7 @@ const management = [
         the agent gives you. Shared guidance is not merged yet. Nightly
         maintenance lists overlapping records for a review, and can also apply
         merges, archives, and flags within the lifecycle rules; you can undo
-        each change it applies for 90 days. It never edits your instructions
+        each merge and archive it applies for 90 days. It never edits your instructions
         or skills. The
         <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
         has the exact rules.

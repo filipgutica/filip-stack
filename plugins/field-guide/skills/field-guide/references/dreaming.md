@@ -3,8 +3,9 @@
 Nightly maintenance ("dreaming") keeps the store small and current. A script
 plans: it prints what a reviewer model needs to find
 overlaps, duplicates of live guidance, and contradictions. The script can also
-apply the reviewer's merges, archives, and flags within the lifecycle rules,
-journaled and reversible for 90 days. Act on any other finding
+apply the reviewer's merges, archives, and flags within the lifecycle rules.
+Each merge and archive it applies is journaled and reversible for 90 days; a
+flag changes nothing to undo. Act on any other finding
 with `consolidate`, `transition`, or `maintain`, as for any other change. Read [storage](storage.md#consolidation-and-undo) for
 `consolidate`, `undo-operation`, the journal, and proposals.
 
@@ -43,12 +44,18 @@ entry counts as recorded. The packet holds:
   against the live guidance of the run that reviewed it, so a subject that a
   run's input left out, or that a plan omitted for its budget, stays due. A
   subject whose last review stored a proposal is skipped while the proposal
-  waits for the user; once it expires unapplied, the subject is reviewed again.
+  waits for the user. Once it expires unapplied, the subject is reviewed again
+  with a new `digest` that names the lapse, so that review is a new run; a plan
+  made before the expiry is stale after it.
   A subject stays due while a contradiction queued for the user holds one of
   its records, and lists it in `queuedContradictions`. A subject lists its live
   records with their confirmation, triggers, and linked subjects, its
   `digest`, which covers every record field the packet shows, and its
-  `overlapGroups` without groups the user declined. A confirmation shows only
+  `overlapGroups` without groups the user declined. With each due subject come
+  the subjects that apply with it: the same subject key in the other scope,
+  when one of the two is shared. One that is not due itself has
+  `context: true`, so a contradiction can name its records with its digest.
+  A confirmation shows only
   while the hook's watermark matches memory, and, as in `consolidate`, a
   confirmation that only a crashed operation revoked still shows. When
   `annotations.json` cannot be read, records show no confirmation or triggers,
@@ -57,7 +64,8 @@ entry counts as recorded. The packet holds:
   `operations.jsonl` cannot be read; `stateErrors` names the error,
   `overlapGroups` may then list a declined group, every subject is due, and no
   subject lists `queuedContradictions`.
-- `skippedSubjects`: how many subjects are not due.
+- `skippedSubjects`: how many subjects the packet leaves out because they are
+  not due and do not apply with a due subject.
 - `omittedItems`: for each audit list and `pendingOperations` that lost items to
   its limit, how many it lost.
 - `omittedSubjects`: the subjects that the 192 KiB limit on the printed packet
@@ -129,19 +137,25 @@ replaces superseded guidance is never archived or consolidated.
 1. Refuses, before it writes anything, when `operations.jsonl` or
    `annotations.json` cannot be read or the annotation watermark does not match
    memory. The plan shows no confirmation then, so a run could otherwise change
-   guidance the user confirmed. An older plugin or an interrupted write can
-   leave the watermark behind; the next Field Guide write that takes the memory
-   lock reconciles it and voids confirmations, and then you plan again.
-   Otherwise `apply` reads confirmations as the plan does, including one that
-   only a crashed operation revoked.
+   guidance the user confirmed. A journaled write interrupted after its memory
+   write, such as a nightly run, leaves the watermark behind. Every command that
+   takes the memory lock, `apply` included, first finishes that write from its
+   journal entries and revokes no confirmation, so after a crash you run
+   `apply` again. A lag that no journaled operation explains, such as a write by
+   an older plugin, still stops `apply`. Any other Field Guide write then
+   reconciles it, which voids confirmations as it does after any older plugin's
+   write, and you plan again. Otherwise `apply` reads confirmations as the plan
+   does, including one that only a crashed operation revoked.
 2. Recovers the journal, including a run that a crash left without its `run`
-   entry. A run already applied returns `already-applied` with its report and
-   changes nothing. Only when a proposal it stored expired unapplied and its
-   subjects are unchanged does the same input propose it again.
+   entry. A run with a `run` entry is final: its input returns
+   `already-applied` with its report and changes nothing, even after a proposal
+   it stored expired. A review after that expiry comes from a new plan, so it
+   is a new run.
 3. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
    `approval`, `approved`, `explicitPreference`) anywhere in the input.
 4. Validates the schema, the privacy guard on every text, and the allowed
-   actions. Every string in an action, including a replacement example's
+   actions. Every action name, flag kind, ID, and live source must be a string.
+   Every string in an action, including a replacement example's
    language and code, also passes the new-text guard in
    [storage](storage.md#consolidation-and-undo): no user information or query
    string in a URL of any scheme, and no home directory without a trailing
@@ -161,8 +175,10 @@ A run applies all of its actions or none. When one action is invalid or breaks
 a rule, the error names it as `subjects[<i>].actions[<j>] (<action>)` and says
 the run applied nothing; fix or drop that action and apply again.
 
-An applied run writes every change in one memory write, stores its proposals,
-and records a `run` entry. Its report lists each change with its undo command,
+An applied run writes every change in one memory write and records a `run`
+entry, and only then stores its proposals, so no proposal of a run that failed
+can be approved. A crash between the two loses the proposals; their subject is
+reviewed again once their recorded expiry passes. Its report lists each change with its undo command,
 each proposal with the `confirm fg:proposal:<id>` prompt to offer, the queued
 decisions, and the flags.
 

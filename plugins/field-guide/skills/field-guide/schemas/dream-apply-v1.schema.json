@@ -10,6 +10,7 @@
     "schemaVersion": { "const": 1 },
     "live": {
       "type": "object",
+      "propertyNames": { "$ref": "#/$defs/liveSource" },
       "additionalProperties": { "type": "string", "pattern": "^sha256:[0-9a-f]{64}$" }
     },
     "subjects": {
@@ -29,6 +30,7 @@
   },
   "$defs": {
     "guidanceId": { "type": "string", "pattern": "^guidance:v1:[0-9a-f]{64}$" },
+    "liveSource": { "type": "string", "enum": ["claude-md", "agents-md", "roles", "coding-standards", "skills", "plugin-skills"] },
     "reason": { "type": "string", "minLength": 1, "maxLength": 512 },
     "action": {
       "oneOf": [
@@ -53,7 +55,7 @@
             "duplicateOf": {
               "anyOf": [
                 { "$ref": "#/$defs/guidanceId" },
-                { "type": "string", "pattern": "^live:[a-z0-9-]+$" }
+                { "type": "string", "enum": ["live:claude-md", "live:agents-md", "live:roles", "live:coding-standards", "live:skills", "live:plugin-skills"] }
               ]
             },
             "reason": { "$ref": "#/$defs/reason" }
@@ -76,9 +78,9 @@
           "required": ["action", "kind", "targetIds", "reason"],
           "properties": {
             "action": { "const": "flag" },
-            "kind": { "enum": ["conflict", "unused", "live-edit"] },
+            "kind": { "type": "string", "enum": ["conflict", "unused", "live-edit"] },
             "targetIds": { "type": "array", "minItems": 1, "maxItems": 8, "uniqueItems": true, "items": { "$ref": "#/$defs/guidanceId" } },
-            "source": { "type": "string", "pattern": "^[a-z0-9-]+$" },
+            "source": { "$ref": "#/$defs/liveSource" },
             "reason": { "$ref": "#/$defs/reason" }
           }
         }

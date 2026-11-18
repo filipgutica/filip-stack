@@ -12,7 +12,7 @@ import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { applyDreamRun, audit, dreamState, installedPluginCopies, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
+import { applyDreamRun, audit, dreamState, installedPluginCopies, liveSources, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
 
 const scriptPath = fileURLToPath(import.meta.url)
 const fail = (message) => {
@@ -77,10 +77,13 @@ const readLive = () => [
   ...skillContracts(),
 ].filter(Boolean)
 
-// Digests keyed by every known source, null for one that is missing on this machine.
+// Digests keyed by every known source, null for one that is missing on this machine. The run
+// entry's reader accepts only these sources.
 const digestsOf = (live) => {
   const present = Object.fromEntries(live.map(({ source, digest }) => [source, digest]))
-  return Object.fromEntries([...liveDocuments().map(({ source }) => source), ...contractSources].map((source) => [source, present[source] ?? null]))
+  const read = [...liveDocuments().map(({ source }) => source), ...contractSources]
+  if (JSON.stringify(read) !== JSON.stringify(liveSources)) fail('the live sources read differ from the ones a run entry may name')
+  return Object.fromEntries(liveSources.map((source) => [source, present[source] ?? null]))
 }
 
 // Replaces the guide root and any home directory with placeholders, so no output names a local
@@ -193,6 +196,7 @@ const addSubjects = ({ packet, review, liveCount }) => {
       records: subject.records.map(planRecord),
       overlapGroups: subject.overlapGroups,
       ...(subject.queuedContradictions.length > 0 ? { queuedContradictions: subject.queuedContradictions } : {}),
+      ...(subject.due ? {} : { context: true }),
     }
     if (packetBytes({ ...packet, subjects: [...packet.subjects, entry] }) > maxPacketBytes - liveFieldBytes * liveCount) {
       packet.omittedSubjects += 1
@@ -202,15 +206,21 @@ const addSubjects = ({ packet, review, liveCount }) => {
   }
 }
 
+// A contradiction may pair records of two subjects that apply together, as dream apply checks: the
+// same subject key in two scopes, one of them shared.
+const appliesWith = (left, right) => left !== right && left.subjectKey === right.subjectKey && [left, right].some(({ scope }) => scope.kind === 'shared')
+
 // A subject is reviewed when it changed since its last review or live guidance changed since
-// then; a source that was added or removed counts. Live text is sent only when there is something
+// then; a source that was added or removed counts. A due subject brings each subject that applies
+// with it, marked as context when that subject is not due, so an action can name a record there
+// with its digest. skippedSubjects counts the rest. Live text is sent only when there is something
 // to review. Every text is scrubbed of paths before it is measured or cut. Subjects come first in
 // the packet's byte budget after the audit and pending operations, and live text fills what is left.
 const plan = (paths) => {
   const { guideRoot } = paths
   const live = readLive()
   const state = dreamState({ paths, liveDigests: digestsOf(live) })
-  const review = state.subjects.filter(({ due }) => due)
+  const review = state.subjects.filter((subject) => subject.due || state.subjects.some((other) => other.due && appliesWith(subject, other)))
   const { validationErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords } = audit(paths)
   // audit lists each validation error on its own, so a block left open in one cannot hide the
   // next. An error can span lines; it is redacted whole, so a block that spans lines hides all of
