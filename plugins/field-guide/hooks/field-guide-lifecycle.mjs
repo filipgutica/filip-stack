@@ -153,7 +153,7 @@ const promptGuidanceContext = (input) => {
 /**
  * Handles a prompt that mentions `confirm fg:`. Returns null for any other prompt. An exact
  * confirm prompt gets only this result, so it neither receives nor consumes prompt-matched
- * guidance; a near miss keeps the normal flow and adds the note.
+ * guidance; a near miss keeps the normal flow and adds the note for the agent only.
  */
 const confirmation = (input) => {
   if (typeof input.prompt !== 'string') return null
@@ -171,7 +171,7 @@ const confirmation = (input) => {
 const promptOutput = (input) => {
   fieldGuide.appendAnalyticsEvent({ guideRoot: guideRoot(), event: { type: 'hook_invoked', host: hostName() } })
   const confirmed = confirmation(input)
-  const systemMessage = confirmed ? { systemMessage: confirmed.systemMessage } : {}
+  const systemMessage = confirmed?.systemMessage ? { systemMessage: confirmed.systemMessage } : {}
   const parts = confirmed?.exact ? [confirmed.context] : [promptGuidanceContext(input), confirmed?.context, promptContext]
   return {
     ...systemMessage,
