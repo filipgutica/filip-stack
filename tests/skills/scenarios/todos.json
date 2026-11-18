@@ -35,6 +35,11 @@
       "id": "todos-near-preference",
       "prompt": "Remember that I prefer pnpm over npm in every repository.",
       "expectedSkill": "field-guide"
+    },
+    {
+      "id": "todos-near-code-todo",
+      "prompt": "List the TODO comments in src/ and tell me which look stale.",
+      "expectedSkill": null
     }
   ],
   "rules": [
@@ -117,6 +122,44 @@
         "drop": "delete the item because it is old"
       },
       "accept": ["plain"]
+    },
+    {
+      "id": "todos-number-list-changed",
+      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is gone: another agent removed it, and item 3 is now a different item.",
+      "options": {
+        "delete": "delete the line that is item 3 in the file now",
+        "relist": "list the current items again and confirm which one the user means"
+      },
+      "accept": ["relist"]
+    },
+    {
+      "id": "todos-number-list-current",
+      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is still there, unchanged.",
+      "options": {
+        "delete": "delete the line that is item 3 in the file now",
+        "relist": "list the current items again and confirm which one the user means"
+      },
+      "accept": ["delete"]
+    },
+    {
+      "id": "todos-add-appends",
+      "task": "The user says \"add renaming the release workflow to my todos\". The todo file already holds four items.",
+      "options": {
+        "append": "append one line to the file with a shell append",
+        "rewrite": "write the whole file again with the four items and the new line",
+        "check-off": "add the line already checked off as [x]"
+      },
+      "accept": ["append"]
+    },
+    {
+      "id": "todos-handoff-offer",
+      "task": "You are writing the handoff. Its Waiting on you list holds one item: approve the paid eval run. Earlier the user said that approval can wait until next week.",
+      "options": {
+        "offer": "offer once to move that item into todos",
+        "add": "add the item to todos without asking",
+        "skip": "leave todos out of the handoff"
+      },
+      "accept": ["offer"]
     }
   ]
 }

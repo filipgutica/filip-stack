@@ -5,8 +5,7 @@ related: [checkpoint, catch-up]
 ## What it does
 
 Todos keeps one plain Markdown file per machine, at
-`~/.config/filip-stack/todos.md`. Every agent in every thread and repository
-reads and edits the same file, so an item you defer in one thread shows up
+`~/.config/filip-stack/todos.md`, so an item you defer in one thread shows up
 when you ask in another. The file stays outside any repository and is not
 synced between machines.
 
@@ -30,8 +29,9 @@ Todos are items you owe. For the verified state of a task, use
 ## How it works
 
 Each item is one dated line with the repository or thread it came from. The
-agent appends new items and deletes finished ones by their exact text, so two
-agents writing at once do not overwrite each other. When a list includes items
+agent appends new items and deletes finished ones one exact line at a time,
+right after reading the file, so an item another agent adds meanwhile is
+rarely lost. When a list includes items
 older than 30 days, the agent marks them stale and asks whether to drop them.
 Items name a credential or file, never a secret value.
 

@@ -9,7 +9,7 @@ A todo is an open item the user owes, kept in one file across threads and reposi
 
 ## The file
 
-The list lives at `$XDG_CONFIG_HOME/filip-stack/todos.md`, or `~/.config/filip-stack/todos.md` when that variable is unset or empty. There is one file per machine, outside any repository. A missing file means an empty list; create the file and its directory on the first add.
+The list lives at `~/.config/filip-stack/todos.md`, one file per machine, outside any repository. A missing file means an empty list; create the file and its directory on the first add.
 
 Each item is one line:
 
@@ -35,7 +35,7 @@ A done item is deleted, not checked off, so the file stays short.
 
 1. Match the user's number or wording to one item. A number refers to the last list shown in this thread; when this thread has shown none, list first.
 2. When the wording matches more than one item, show the candidates and ask which one.
-3. Read the file again and delete that exact line with an exact-text edit, such as the Edit tool. When the line has changed or is gone, list again and confirm.
+3. Read the file again right before the edit, and delete that exact line with an exact-text edit, such as the Edit tool. When the line has changed or is gone, list again and confirm.
 4. Report the removed line.
 
-Edit one line at a time. Rewriting the whole file can drop items that another agent added meanwhile.
+Edit one line at a time, right after reading the file. Rewriting the whole file from an older read drops items that another agent added meanwhile.
