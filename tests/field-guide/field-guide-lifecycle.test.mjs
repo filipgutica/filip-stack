@@ -592,7 +592,13 @@ test('only an exact confirm prompt in a main thread confirms guidance', () => {
   for (const prompt of notConfirming) {
     const output = send(prompt)
     assert.equal(sidecarText(guideRoot), captured, prompt)
-    assert.match(output.systemMessage, /nothing confirmed/, prompt)
+    // A prompt shaped like a confirm command gets a visible answer. A prompt that only mentions
+    // one, such as a pasted report, tells the agent and shows the user nothing.
+    if (/^confirm fg:\S+$/u.test(prompt.trim())) assert.match(output.systemMessage, /nothing confirmed/, prompt)
+    else {
+      assert.equal(output.systemMessage, undefined, prompt)
+      assert.match(output.hookSpecificOutput.additionalContext, /nothing confirmed/, prompt)
+    }
     assert.doesNotMatch(JSON.stringify(output), /\[confirmed\]/, prompt)
   }
 
