@@ -26,6 +26,11 @@
       "expectedSkill": "todos"
     },
     {
+      "id": "todos-defer-ordinary",
+      "prompt": "Fine, ship it as is. I'll write the migration notes later.",
+      "expectedSkill": "todos"
+    },
+    {
       "id": "todos-near-pr-left",
       "prompt": "What's left on this PR before it can merge?",
       "expectedSkill": null,
@@ -127,19 +132,21 @@
       "id": "todos-number-list-changed",
       "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is gone: another agent removed it, and item 3 is now a different item.",
       "options": {
-        "delete": "delete the line that is item 3 in the file now",
+        "delete-listed": "delete the \"Rename the release workflow\" line",
+        "delete-position": "delete whatever line is item 3 in the file now",
         "relist": "list the current items again and confirm which one the user means"
       },
       "accept": ["relist"]
     },
     {
       "id": "todos-number-list-current",
-      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is still there, unchanged.",
+      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is still there, unchanged, but another agent removed an earlier item, so it is now item 2.",
       "options": {
-        "delete": "delete the line that is item 3 in the file now",
+        "delete-listed": "delete the \"Rename the release workflow\" line",
+        "delete-position": "delete whatever line is item 3 in the file now",
         "relist": "list the current items again and confirm which one the user means"
       },
-      "accept": ["delete"]
+      "accept": ["delete-listed"]
     },
     {
       "id": "todos-add-appends",
