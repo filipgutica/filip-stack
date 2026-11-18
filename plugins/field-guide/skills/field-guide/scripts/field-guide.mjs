@@ -1107,14 +1107,13 @@ const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevis
 // annotation-aware write. Revoke every fingerprint in memory, annotations, or the watermark once,
 // which covers deleted records and confirmations still in transit, then record the revision.
 // A store without a watermark, such as one from the first annotation release, is treated the same.
-// These revocations carry the reconcile prefix, so nightly maintenance can tell them apart.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
   const annotations = readAnnotations(paths.annotationsFile)
   const { fingerprints: known } = readWatermark(paths)
   const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
-  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }), newReconcileRevocationId())
+  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
   writeAnnotations({ path: paths.annotationsFile, annotations })
   writeWatermark({ paths, memory })
 }
@@ -1504,12 +1503,6 @@ const acknowledgeEntries = ({ record, entries }) => {
 const newAnnotationId = () => `annotation:v1:${randomBytes(32).toString('hex')}`
 const newAnnotationEntry = (fields) => ({ id: newAnnotationId(), at: new Date().toISOString(), ...fields })
 
-// A reconcile's revocation is an annotation ID whose first 16 hex digits are fixed and whose rest
-// is random, so every released reader accepts it, each reconcile still adds a new revocation, and
-// nightly maintenance can tell a confirmation that a reconcile voided from one the user withdrew.
-const reconcileRevocationPrefix = hashIdentity({ prefix: 'annotation', values: ['reconcile'] }).slice(0, 'annotation:v1:'.length + 16)
-const newReconcileRevocationId = () => `${reconcileRevocationPrefix}${randomBytes(24).toString('hex')}`
-
 // A retirement ID enters annotations in annotation format, which the first annotation release accepts.
 const retirementRevocationId = (id) => hashIdentity({ prefix: 'annotation', values: ['retirement', id] })
 
@@ -1668,8 +1661,10 @@ const confirmUnlocked = ({ files, reference, host }) => {
  * `confirm fg:`, and for a near miss outside a main thread. A near miss, such as a pasted report
  * that mentions a confirm prompt, only tells the agent: it has no message for the user. Stores only an entry ID, the time,
  * the host, and the revocation IDs it saw, some derived from retirement IDs, never prompt text.
- * It takes memory.lock, then reads memory.md, the watermark, and annotations.json, which reconcile
- * may rewrite, and proposals.json for a proposal; it never reads operations.jsonl.
+ * It takes memory.lock, then reads memory.md and the watermark. When the watermark lags memory, the
+ * lock's reconcile reads and rewrites annotations.json and the watermark. A record prompt then
+ * reads memory.md and, for an active record, reads and may write annotations.json; a proposal
+ * prompt reads and may write only proposals.json. It never reads operations.jsonl.
  */
 export const confirmFromPrompt = ({ guideRoot, prompt, mainThread, host }) => {
   const reference = prompt.trim().match(confirmPromptPattern)?.[1]
@@ -2560,7 +2555,9 @@ const journalForDisplay = (paths) => {
   try {
     const journal = readJournal(paths)
     journal.forEach((entry, index) => requireReadableJournalEntry({ entry, index }))
-    return { journal, operations: operationsIn(journal) }
+    const operations = operationsIn(journal)
+    requireRunReportsMatchOperations({ journal, operations })
+    return { journal, operations }
   } catch (error) {
     return { journal: null, operations: null, error: error.message }
   }
@@ -3092,11 +3089,28 @@ const requireValidResult = ({ memory, targetIds, plan }) => requireValidChange({
   },
 })
 
-// Checks that the targets are active and share one scope and subject, and that the replacement
-// is new text. The replacement is confirmed only when a target was confirmed: a stored proposal
-// passes the value it recorded, and otherwise the targets' current confirmations decide. The
-// proposal ID hashes the target fingerprints, the replacement, whose fingerprint covers its
-// text, and that value.
+// The fields that a replacement copies from its targets as they are stored. A released memory
+// reader accepted them under older rules, so a merge writes them only when they pass the new-text
+// guard. Fails on one that does not.
+const inheritedLinkedSubjects = (targets) => sortedUnion(...targets.map(({ linkedSubjects }) => linkedSubjects ?? []))
+const requireSafeInheritance = (targets) => assertSafeNewValue({
+  value: { subjectKey: targets[0].subjectKey, linkedSubjects: inheritedLinkedSubjects(targets) },
+  label: 'consolidation',
+})
+
+// A proposal ID covers the target fingerprints, the replacement, whose fingerprint covers its
+// text, and the confirmed targets. Example keys are sorted, as in a run ID, so a preview and its
+// apply name the same proposal. 6.15.0 hashed the examples as given; that ID is kept too, so a
+// proposal it stored stays approvable.
+const proposalIdsFor = ({ targetFingerprints, fingerprint, replacement, confirmedFingerprints }) => {
+  const idFor = (examples) => hashIdentity({ prefix: 'proposal', values: [1, targetFingerprints, fingerprint, replacement.learning, replacement.confidence, examples, confirmedFingerprints] })
+  return { proposalId: idFor(sortedKeys(replacement.examples ?? [])), releasedProposalId: idFor(replacement.examples ?? []) }
+}
+
+// Checks that the targets are active and share one scope and subject, that the fields the
+// replacement copies from them are safe new text, and that the replacement is new text. The
+// replacement is confirmed only when a target was confirmed: a stored proposal passes the value it
+// recorded, and otherwise the targets' current confirmations decide.
 const planConsolidation = ({ memory, annotations, excused = [], targetIds, replacement, confirmedFingerprints: storedConfirmed }) => {
   const targets = targetIds.map((id) => {
     const target = memory.guidance.find((guidance) => guidance.id === id)
@@ -3110,6 +3124,7 @@ const planConsolidation = ({ memory, annotations, excused = [], targetIds, repla
   if (targets.some((target) => !sameScope(target.scope, scope) || target.subjectKey !== subjectKey)) {
     fail('consolidate targets must share one scope and subjectKey')
   }
+  requireSafeInheritance(targets)
   const superseding = supersedingIds(memory)
   const replacing = targets.find(({ id }) => superseding.has(id))
   if (replacing) fail(`${shortId(replacing.id)} still replaces superseded guidance; undo that change before consolidating it`)
@@ -3130,7 +3145,7 @@ const planConsolidation = ({ memory, annotations, excused = [], targetIds, repla
     confirmsReplacement: confirms,
     confirmedFingerprints,
     // The whole replacement is hashed, so an approval binds its confidence and examples too.
-    proposalId: hashIdentity({ prefix: 'proposal', values: [1, targetFingerprints, fingerprint, replacement.learning, replacement.confidence, replacement.examples ?? [], confirmedFingerprints] }),
+    ...proposalIdsFor({ targetFingerprints, fingerprint, replacement, confirmedFingerprints }),
   }
 }
 
@@ -3143,7 +3158,7 @@ const applyConsolidation = ({ memory, plan, operationId, reason, source, now }) 
     fingerprint: plan.fingerprint,
     scope: plan.scope,
     subjectKey: plan.subjectKey,
-    linkedSubjects: sortedUnion(...targets.map(({ linkedSubjects }) => linkedSubjects ?? [])),
+    linkedSubjects: inheritedLinkedSubjects(targets),
     learning: plan.replacement.learning,
     status: 'active',
     confidence: plan.replacement.confidence,
@@ -3409,7 +3424,7 @@ const consolidateApprovedUnlocked = ({ paths, reference }) => {
     memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)?.id ?? fail(`a record in proposal ${shortId(proposal.id)} no longer exists`)
   ))
   const plan = planConsolidation({ memory, targetIds, replacement: proposal.replacement, confirmedFingerprints: proposal.confirmedFingerprints })
-  if (plan.proposalId !== proposal.id || scopeDigest(plan.scope) !== proposal.scopeDigest || plan.subjectKey !== proposal.subjectKey) {
+  if (![plan.proposalId, plan.releasedProposalId].includes(proposal.id) || scopeDigest(plan.scope) !== proposal.scopeDigest || plan.subjectKey !== proposal.subjectKey) {
     fail(`proposal ${shortId(proposal.id)} does not match its approved content`)
   }
   // The approval covered the records as they were confirmed then. A crashed attempt revoked their
@@ -3484,13 +3499,19 @@ const undoArchive = ({ memory, operation, operationId, now }) => {
 
 const undoers = { consolidate: undoConsolidation, archive: undoArchive }
 
+// Whether a journaled operation, not aborted, has the action and names exactly this one record.
+const journaledFor = ({ operation, action, fingerprint }) => operation?.action === action && operation.state !== 'aborted'
+  && Array.isArray(operation.fingerprints) && operation.fingerprints.length === 1 && operation.fingerprints[0] === fingerprint
+
 // A problem for each restore of archived guidance that no journaled undo of that archive made:
-// the restore must name an undo-operation entry, not aborted, that undoes the archive's operation.
-const unlinkedRestores = ({ memory, operations }) => memory.guidance.flatMap(({ id, transitions }) => transitions.flatMap((restore, index) => {
+// the archive transition must name a journaled archive of this record, and the restore an
+// undo-operation entry that undoes that archive and names this record too.
+const unlinkedRestores = ({ memory, operations }) => memory.guidance.flatMap(({ id, fingerprint, transitions }) => transitions.flatMap((restore, index) => {
   if (restore.from !== 'archived' || restore.to !== 'active') return []
   const archived = transitions[index - 1].operationId
   const undo = operations.get(restore.operationId)
-  if (undo?.action === 'undo-operation' && undo.undoes === archived && undo.state !== 'aborted') return []
+  if (journaledFor({ operation: operations.get(archived), action: 'archive', fingerprint })
+    && journaledFor({ operation: undo, action: 'undo-operation', fingerprint }) && undo.undoes === archived) return []
   return [`${shortId(id)} was restored by no journaled undo of archive operation ${shortId(String(archived))}`]
 }))
 
@@ -3551,6 +3572,10 @@ const undoOperation = ({ paths, reference }) => (
 // including a confirmation or a reinforcement, makes the apply stale.
 const subjectIdFor = ({ scope, subjectKey }) => hashIdentity({ prefix: 'subject', values: [1, scopeIdentity(scope), subjectKey] })
 
+// The memory reader requires each record ID to name its fingerprint, so the fingerprint of a
+// record that memory no longer holds, such as a consolidated predecessor, follows from its ID.
+const fingerprintOfId = (id) => id.replace('guidance', 'fingerprint')
+
 /** Returns the fields of a live record that a nightly plan shows its reviewer, with the learning unredacted. */
 export const reviewedRecord = ({ guidance, confirmed, triggers }) => ({
   id: guidance.id,
@@ -3562,21 +3587,36 @@ export const reviewedRecord = ({ guidance, confirmed, triggers }) => ({
   updatedAt: guidance.updatedAt,
 })
 
-// confirmationsCurrent false shows every record unconfirmed, as the hook does while the watermark
-// lags memory. Besides the excused revocations, a record's reconcile revocations are excused too:
-// a reconcile voids every confirmation because it cannot tell what changed, not because the user
-// withdrew one, so nightly maintenance still leaves that guidance to the user. lapsed maps a
-// subject to the runs whose proposal of it lapsed. The digest covers them, so the review after a
-// lapse comes from a new plan and is a new run; a subject without a lapse keeps the digest it had.
-const subjectStates = ({ memory, annotations, excused = [], confirmationsCurrent = true, lapsed = new Map() }) => {
+// The IDs of records the user ever confirmed: any confirmation entry for the record's fingerprint,
+// or for that of a record it consolidates, directly or through an earlier consolidation, counts,
+// whatever revoked or acknowledged it later. An unconfirm, a reconcile of any version, and a
+// crashed operation all leave the entry in place.
+const everConfirmedIds = ({ memory, annotations }) => {
+  const byId = new Map(memory.guidance.map((guidance) => [guidance.id, guidance]))
+  const confirmedOnce = (id, seen) => {
+    if (seen.has(id)) return false
+    seen.add(id)
+    return (annotations.records[fingerprintOfId(id)]?.confirmations.length ?? 0) > 0
+      || (byId.get(id)?.consolidates ?? []).some((predecessor) => confirmedOnce(predecessor, seen))
+  }
+  return new Set(memory.guidance.map(({ id }) => id).filter((id) => confirmedOnce(id, new Set())))
+}
+
+// A record's confirmed is true when the user ever confirmed it, so nightly maintenance leaves that
+// guidance to the user even after the hook stops showing [confirmed]. confirmationsCurrent false
+// shows every record unconfirmed, as the hook does while the watermark lags memory; a run refuses
+// then. lapsed maps a subject to the runs whose proposal of it lapsed. The digest covers them, so
+// the review after a lapse comes from a new plan and is a new run; a subject without a lapse keeps
+// the digest it had.
+const subjectStates = ({ memory, annotations, confirmationsCurrent = true, lapsed = new Map() }) => {
   const subjects = new Map()
+  const everConfirmed = everConfirmedIds({ memory, annotations })
   const live = memory.guidance.filter(({ status }) => ['candidate', 'active'].includes(status)).sort((left, right) => left.id.localeCompare(right.id))
   for (const guidance of live) {
     const subjectId = subjectIdFor(guidance)
     const subject = subjects.get(subjectId) ?? { subjectId, scope: guidance.scope, subjectKey: guidance.subjectKey, records: [] }
-    const voided = (annotations.records[guidance.fingerprint]?.revocations ?? []).filter((id) => id.startsWith(reconcileRevocationPrefix))
-    const markers = annotationMarkers({ annotations, guidance, excused: [...excused, ...voided] })
-    subject.records.push({ guidance, ...markers, confirmed: markers.confirmed && confirmationsCurrent })
+    const { triggers } = annotationMarkers({ annotations, guidance })
+    subject.records.push({ guidance, confirmed: everConfirmed.has(guidance.id) && confirmationsCurrent, triggers })
     subjects.set(subjectId, subject)
   }
   for (const subject of subjects.values()) {
@@ -3667,18 +3707,45 @@ const reviewedStates = (runs) => {
   return states
 }
 
-// The contradictions that earlier runs queued for the user and that are still open: both records
-// are still live and at least one is confirmed. Each run's report lists what it queued, so the
-// journal alone answers this. Each pair names the subjects of its two records.
+// The contradictions that wait for the user: both records are still live and at least one is
+// confirmed. Earlier runs queued some, and each run's report lists what it queued. Memory records
+// others, as a live record whose relationship contradicts another live record of its subject;
+// those that no run queued yet are marked recorded, so the next run queues them once. Each pair
+// names the subjects of its two records.
 const openContradictions = ({ runs, subjects }) => {
-  const live = new Map([...subjects.values()].flatMap(({ subjectId, records }) => records.map(({ guidance, confirmed }) => [guidance.id, { subjectId, confirmed }])))
+  const live = new Map([...subjects.values()].flatMap(({ subjectId, records }) => records.map(({ guidance, confirmed }) => [guidance.id, { subjectId, confirmed, guidance }])))
+  const queued = runs.flatMap(({ report }) => report?.queued ?? []).filter(({ kind }) => kind === 'contradiction')
+  const recorded = [...live.values()].filter(({ guidance }) => guidance.relationship?.kind === 'contradicts')
+    .map(({ guidance }) => ({ targetId: guidance.id, conflictingId: guidance.relationship.targetId, recorded: true }))
   const open = new Map()
-  for (const { kind, targetId, conflictingId } of runs.flatMap(({ report }) => report?.queued ?? [])) {
+  for (const { targetId, conflictingId, recorded: fromMemory } of [...queued, ...recorded]) {
     const pair = [targetId, conflictingId].map((id) => live.get(id))
-    if (kind !== 'contradiction' || !pair.every(Boolean) || !pair.some(({ confirmed }) => confirmed)) continue
-    open.set([targetId, conflictingId].sort().join(','), { targetId, conflictingId, subjectIds: pair.map(({ subjectId }) => subjectId) })
+    const key = [targetId, conflictingId].sort().join(',')
+    if (!pair.every(Boolean) || !pair.some(({ confirmed }) => confirmed) || open.has(key)) continue
+    open.set(key, { targetId, conflictingId, subjectIds: pair.map(({ subjectId }) => subjectId), ...(fromMemory ? { recorded: true } : {}) })
   }
   return [...open.values()]
+}
+
+// Why annotations.json cannot show which records the user ever confirmed, or undefined when it
+// can. Each annotation-aware write that creates a record writes an annotation entry for it, and a
+// reconcile writes one for every record, so with a current watermark only a record that a shared
+// import created may lack one. A file that is missing, or that lacks such an entry, as after it was
+// moved aside or replaced by an older copy, could hide a confirmation. A store without records
+// needs no history. An unreadable file is left to its own error: audit reports it in the plan, and
+// dream apply has already refused.
+const confirmationHistoryProblem = ({ paths, memory }) => {
+  if (!existsSync(paths.annotationsFile)) return memory.guidance.length > 0 ? 'annotations.json is missing, though memory holds guidance' : undefined
+  let annotations
+  try {
+    annotations = readAnnotations(paths.annotationsFile)
+  } catch {
+    return undefined
+  }
+  const uncovered = memory.guidance.find(({ fingerprint, transitions }) => (
+    transitions[0]?.source !== 'shared-sync' && !Object.hasOwn(annotations.records, fingerprint)
+  ))
+  return uncovered ? `annotations.json has no entry for ${shortId(uncovered.id)}, which memory holds` : undefined
 }
 
 /**
@@ -3687,27 +3754,26 @@ const openContradictions = ({ runs, subjects }) => {
  * any operation still pending. It writes nothing, not even journal recovery; a run that recovery
  * would record counts as recorded. When the journal cannot be read, every subject is due, none
  * lists a queued contradiction, and stateErrors names the error. When proposals.json cannot be
- * read, every stored proposal counts as lapsed, and stateErrors names that error too.
+ * read, every stored proposal counts as lapsed, and stateErrors names that error too, as it names
+ * an annotations.json that cannot show which records the user ever confirmed.
  */
 export const dreamState = ({ paths, liveDigests }) => {
   const memory = readInitializedMemory(paths)
-  // Without the journal, no group is declined, no revocation is excused, and no review or queued
-  // contradiction is known, so every subject is due; the state names the error instead of pending
-  // operations. Unreadable annotations show no markers; audit reports them.
+  // Without the journal, no group is declined, and no review or queued contradiction is known, so
+  // every subject is due; the state names the error instead of pending operations. Unreadable
+  // annotations show no markers; audit reports them.
   const { journal, operations, error } = journalForDisplay(paths)
   const declined = operations ? declinedSets(operations) : new Set()
-  const excused = operations ? unlandedRevocations({ operations, memory }) : []
   const runs = journal ? [...journal, ...recoveredRuns({ journal, memory })].filter(({ type }) => type === 'run') : []
   const reviewed = reviewedStates(runs)
   const live = liveStateOf(liveDigests)
   const { published, error: proposalsError } = publishedForDisplay(paths)
-  // Confirmations apply the hook's watermark check, read before annotations as the hook does. Like
-  // consolidate, the plan still counts a confirmation that only a crashed operation revoked.
+  // Confirmations apply the hook's watermark check, read before annotations as the hook does.
   const confirmationsCurrent = watermarkCurrent({ paths, memory })
+  const historyError = confirmationsCurrent ? confirmationHistoryProblem({ paths, memory }) : undefined
   const states = subjectStates({
     memory,
     annotations: readAnnotationsForDisplay(paths.annotationsFile),
-    excused,
     confirmationsCurrent,
     lapsed: lapsedRuns({ runs, operations: operations ?? new Map(), published }),
   })
@@ -3722,7 +3788,7 @@ export const dreamState = ({ paths, liveDigests }) => {
     revision: memory.revision,
     subjects,
     ...(operations ? { pendingOperations: [...operations.values()].filter(({ state }) => state === 'pending').map(({ operationId }) => operationId) } : {}),
-    stateErrors: [error, proposalsError].filter(Boolean),
+    stateErrors: [error, proposalsError, historyError].filter(Boolean),
     undoWindowDays,
   }
 }
@@ -3736,6 +3802,7 @@ const maxDreamActions = 50
 const dreamFlagKinds = ['conflict', 'unused', 'live-edit']
 const subjectIdPattern = /^subject:v1:[0-9a-f]{64}$/
 const subjectDigestPattern = /^subject-state:v1:[0-9a-f]{64}$/
+const liveDigestPattern = /^sha256:[0-9a-f]{64}$/
 
 // liveDigests holds every known source, with null for one that is missing on this machine.
 const requireLiveSource = ({ source, liveDigests }) => {
@@ -3807,7 +3874,11 @@ const validateDreamInput = ({ input, liveDigests }) => {
   assertClosedFields({ value: input, fields: ['schemaVersion', 'live', 'subjects'], label: 'dream input' })
   if (input.schemaVersion !== 1) fail('dream input schemaVersion must be 1')
   assertObject({ value: input.live, label: 'dream input live digests' })
-  Object.keys(input.live).forEach((source) => requireLiveSource({ source, liveDigests }))
+  for (const [source, digest] of Object.entries(input.live)) {
+    requireLiveSource({ source, liveDigests })
+    // An absent source is left out, never null, so each input of one review has one run ID.
+    if (!isString(digest) || !liveDigestPattern.test(digest)) fail(`live digest of ${source} must be a sha256 digest`)
+  }
   if (!Array.isArray(input.subjects) || input.subjects.length === 0) fail('dream input needs at least one subject')
   input.subjects.forEach((subject, subjectIndex) => {
     assertObject({ value: subject, label: 'dream subject' })
@@ -3910,6 +3981,12 @@ const decideConsolidation = ({ action, record, subject, run }) => {
     run.flags.push({ kind: 'shared-overlap', targetIds: action.targetIds, reason: action.reason })
     return
   }
+  // A merge whose replacement would copy a subject key or linked subject that the new-text guard
+  // refuses is left to the user.
+  if (!passes(requireSafeInheritance)(targets.map(({ guidance }) => guidance))) {
+    run.flags.push({ kind: 'unsafe-overlap', targetIds: action.targetIds, reason: action.reason })
+    return
+  }
   requireNotDeclined({ declined: run.declined, fingerprints: targets.map(({ guidance }) => guidance.fingerprint) })
   if (byteLength(action.replacement.learning) > targets.reduce((total, { guidance }) => total + byteLength(guidance.learning), 0)) {
     fail('a consolidation must not be longer than the records it replaces')
@@ -3930,11 +4007,11 @@ const decideConsolidation = ({ action, record, subject, run }) => {
 }
 
 // A merge that confirmed guidance forbids, which neither an automatic change nor a proposal can
-// carry: its replacement would hide a confirmed shared record from retrieval, or a target counts
-// as confirmed only because a reconcile voided its confirmation, which an approval cannot confirm.
+// carry: its replacement would hide a confirmed shared record from retrieval, or the user once
+// confirmed a target that is not confirmed now, which a proposal would treat as unconfirmed.
 const consolidationLeftToUser = ({ action, targets, plan, run }) => (
   hiddenConfirmedIds({ memory: run.memory, learning: action.replacement.learning, isConfirmed: ({ id }) => run.confirmed.has(id) }).length > 0
-  || (!plan.confirmsReplacement && targets.some(({ confirmed }) => confirmed))
+  || targets.some(({ guidance, confirmed }) => confirmed && !plan.confirmedFingerprints.includes(guidance.fingerprint))
 )
 
 // A subject that is not due comes to a run only as context for a due subject that applies with
@@ -3952,9 +4029,24 @@ const requireContextAction = ({ action, subject, run }) => {
 // Decides one action by the lifecycle rules. Automation never changes a confirmed record or,
 // for now, a shared one: those changes become proposals, flags, or queued decisions, and never a
 // proposal for a shared record. Every other change is applied to the working copies and journaled.
+// A subject that applies with another, the same key in the other scope, when the input leaves that
+// one out, as when the packet budget omitted it. A contradiction may pair their records.
+const missingCounterpart = ({ subject, run }) => [...run.subjects.values()].find((other) => (
+  appliesWith(subject, other) && !run.inputSubjectIds.has(other.subjectId)
+))
+
+// Without its counterpart, a subject's review is not complete, so nothing in it is retired.
+const requireCounterpartForRetiring = ({ action, subject, run }) => {
+  const missing = ['archive', 'consolidate'].includes(action.action) && missingCounterpart({ subject, run })
+  if (missing) {
+    fail(`subject ${subject.subjectKey} (${subject.scope.kind}) is listed without the subject ${missing.subjectKey} (${missing.scope.kind}) that applies with it; list both to archive or merge here`)
+  }
+}
+
 const dreamDecisions = { flag: decideFlag, contradiction: decideContradiction, archive: decideArchive, consolidate: decideConsolidation }
 const decideDreamAction = ({ action, subject, run }) => {
   requireContextAction({ action, subject, run })
+  requireCounterpartForRetiring({ action, subject, run })
   const record = (id) => subject.records.find(({ guidance }) => guidance.id === id)
     ?? fail(`${id} is not live guidance in subject ${subject.subjectKey}`)
   dreamDecisions[action.action]({ action, record, subject, run })
@@ -3992,7 +4084,7 @@ const planChange = ({ input, liveDigests, subjects }) => {
 // both are unchanged. Its proposals' expiries let that plan review a subject again, with a new
 // digest, once a proposal lapses.
 const runEntry = ({ input, liveDigests, run, stored, report }) => {
-  const after = subjectStates({ memory: run.memory, annotations: run.annotations, excused: run.excused, lapsed: run.lapsed })
+  const after = subjectStates({ memory: run.memory, annotations: run.annotations, lapsed: run.lapsed })
   const resolved = input.subjects.filter(({ subjectId }) => after.has(subjectId) && !run.unresolved.has(subjectId))
   const live = liveStateOf(liveDigests)
   return {
@@ -4071,6 +4163,7 @@ const isReportFlag = shapeBy('kind', {
   'shared-proposal': flagShape({ kind: 'shared-proposal', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
   'shared-overlap': flagShape({ kind: 'shared-overlap', targetIds: isTargetGroup }),
   'confirmed-overlap': flagShape({ kind: 'confirmed-overlap', targetIds: isTargetGroup }),
+  'unsafe-overlap': flagShape({ kind: 'unsafe-overlap', targetIds: isTargetGroup }),
 })
 const isQueuedContradiction = (value) => exactShape({ kind: oneOf('contradiction'), targetId: isGuidanceId, conflictingId: isGuidanceId, reason: isReason })(value)
   && value.targetId !== value.conflictingId
@@ -4114,6 +4207,24 @@ const runEntryProblems = (entry) => {
   return problems.length > 0 || reportMatchesEntry(entry) ? problems : ['report']
 }
 
+// Whether a report operation names what its pending entry journaled: the action, the run, the
+// targets by fingerprint, and the replacement, which an archive has none of.
+const reportOperationMatches = ({ operation, pending, runId }) => pending.action === operation.action && pending.runId === runId
+  && JSON.stringify(operation.targetIds.map(fingerprintOfId).sort()) === JSON.stringify([...pending.fingerprints].sort())
+  && pending.replacementFingerprint === (operation.replacementId === undefined ? undefined : fingerprintOfId(operation.replacementId))
+
+// Fails on a run whose report names an operation other than the one it journaled. A run's pending
+// entries follow its run-intent, so an intent is checked only against those already journaled; a
+// run entry follows them, so each must be there.
+const requireRunReportsMatchOperations = ({ journal, operations }) => journal.forEach((entry, index) => {
+  if (entry.type !== 'run' && entry.type !== 'run-intent') return
+  const mismatched = entry.report.operations.some((operation, position) => {
+    const pending = operations.get(entry.operationIds[position])
+    return pending ? !reportOperationMatches({ operation, pending, runId: entry.runId }) : entry.type === 'run'
+  })
+  if (mismatched) fail(`operations.jsonl entry ${index + 1} has an invalid report`)
+})
+
 // A run journals its entry as an intent before it writes memory and as a run after. A crash in
 // between leaves an intent whose operations reached memory: the run happened, so it counts as
 // recorded. An intent whose operations never reached memory stays unrecorded. This computes the
@@ -4146,10 +4257,11 @@ const readOrRefuse = ({ read, label }) => {
 
 // The plan shows confirmations through display readers, which show none when the journal or
 // annotations cannot be read or the watermark lags memory. A run decides by confirmation, so it
-// refuses in each of those cases before it writes anything, recovery included; it also refuses
-// when proposals.json cannot be read, which decides which proposals lapsed. Otherwise it reads the
-// same journal, annotations, excused revocations, and proposals as the plan, so both agree.
-// Returns the journal as read, before recovery, and the IDs in proposals.json.
+// refuses in each of those cases before it writes anything, recovery included, and when
+// annotations.json cannot show which records the user ever confirmed; it also refuses when
+// proposals.json cannot be read, which decides which proposals lapsed. Otherwise it reads the same
+// journal, annotations, and proposals as the plan, so both agree. Returns the journal as read,
+// before recovery, and the IDs in proposals.json.
 const requireReadableDreamState = ({ paths, memory }) => {
   const { journal, error } = journalForDisplay(paths)
   if (error) fail(`dream apply needs a readable journal: ${error}`)
@@ -4158,6 +4270,11 @@ const requireReadableDreamState = ({ paths, memory }) => {
   if (!watermarkCurrent({ paths, memory })) {
     fail('dream apply needs the annotation watermark to match memory: an older plugin or an interrupted write left it behind. '
       + 'The next Field Guide write that takes the memory lock reconciles it and voids confirmations; then plan again')
+  }
+  const history = confirmationHistoryProblem({ paths, memory })
+  if (history) {
+    fail(`dream apply needs the confirmation history in annotations.json: ${history}. `
+      + 'Restore the file if it was moved or replaced; a store that never had one gets it with its next capture or confirmation')
   }
   return { journal, published: new Set(proposals.map(({ id }) => id)) }
 }
@@ -4186,7 +4303,7 @@ const dreamRun = ({ paths, input, memory, journal, liveDigests, published, runId
   const excused = unlandedRevocations({ operations, memory })
   const runs = journal.filter(({ type }) => type === 'run')
   const lapsed = lapsedRuns({ runs, operations, published })
-  const subjects = subjectStates({ memory, annotations, excused, lapsed })
+  const subjects = subjectStates({ memory, annotations, lapsed })
   const open = openContradictions({ runs, subjects })
   const reviewed = reviewedStates(runs)
   const live = liveStateOf(liveDigests)
@@ -4202,6 +4319,7 @@ const dreamRun = ({ paths, input, memory, journal, liveDigests, published, runId
     declined: declinedSets(operations),
     subjects,
     due: new Set([...subjects.values()].filter((subject) => isDue({ subject, reviewed, open, live })).map(({ subjectId }) => subjectId)),
+    open,
     confirmed,
     inputSubjectIds: new Set(input.subjects.map(({ subjectId }) => subjectId)),
     held: heldRecords({ input, confirmed, open }),
@@ -4212,6 +4330,18 @@ const dreamRun = ({ paths, input, memory, journal, liveDigests, published, runId
     proposals: [],
     queued: [],
     flags: [],
+  }
+}
+
+// Queues each contradiction that memory records for this subject and that no earlier run or
+// action of this run queued, as a contradiction action would.
+const recordedContradictionReason = 'Memory records that one of these records contradicts the other.'
+const queueRecordedContradictions = ({ subject, run }) => {
+  for (const { targetId, conflictingId, recorded } of run.open) {
+    const key = [targetId, conflictingId].sort().join(',')
+    if (!recorded || subject.records.every(({ guidance }) => guidance.id !== targetId)
+      || run.queued.some((each) => [each.targetId, each.conflictingId].sort().join(',') === key)) continue
+    run.queued.push({ kind: 'contradiction', targetId, conflictingId, reason: recordedContradictionReason })
   }
 }
 
@@ -4228,8 +4358,8 @@ const decideRun = ({ input, run }) => {
       action,
       step: () => decideDreamAction({ action, subject: state, run }),
     }))
-    const counterpartMissing = [...run.subjects.values()].some((other) => appliesWith(state, other) && !run.inputSubjectIds.has(other.subjectId))
-    if (run.flags.length + run.queued.length > reported || counterpartMissing) run.unresolved.add(subject.subjectId)
+    queueRecordedContradictions({ subject: state, run })
+    if (run.flags.length + run.queued.length > reported || missingCounterpart({ subject: state, run })) run.unresolved.add(subject.subjectId)
   })
 }
 
@@ -4248,8 +4378,9 @@ const applyDreamRunUnlocked = ({ paths, input, readLiveDigests, previewToken }) 
     const proposals = finished.report.proposals.filter(({ proposalId }) => published.has(proposalId))
     return { mode: 'dream-apply', outcome: 'already-applied', runId, ...finished.report, proposals }
   }
-  const journal = recoverRuns({ paths, journal: recoverOperations({ paths, memory }), memory })
+  // An invalid input is refused before recovery, which writes.
   validateDreamInput({ input, liveDigests })
+  const journal = recoverRuns({ paths, journal: recoverOperations({ paths, memory }), memory })
   const run = dreamRun({ paths, input, memory, journal, liveDigests, published, runId })
   const change = planChange({ input, liveDigests, subjects: run.subjects })
   if (change) fail(change)

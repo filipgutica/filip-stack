@@ -164,7 +164,10 @@ same checks cover every string in a nightly action, a run report, and a stored
 proposal. They also cover each new proposal and new journal entry whole,
 including the subject key it copies from memory, with the checks its reader
 applies, so a legacy subject key that the guard refuses stops the command
-before it writes anything. A proposal stores a digest of its scope, not the repository identity,
+before it writes anything. A replacement copies its targets' subject key and
+linked subjects, so `consolidate` refuses, in a preview, an apply, or an
+approval, targets whose subject key or linked subjects the guard refuses, and
+nightly maintenance flags such a merge as `unsafe-overlap`. A proposal stores a digest of its scope, not the repository identity,
 which can be a local path, such as the Git directory of a repository without a
 remote. Stored records keep the guard that released versions used, so their
 stores stay readable.
@@ -182,7 +185,10 @@ proposal and returns `confirm fg:proposal:<id>` for the user to send. After the
 hook records that approval, `consolidate --approval proposal:<id>` recomputes the
 proposal ID from the current records and the stored proposal, and applies it.
 A proposal records `confirmedFingerprints`, the predecessors that were
-confirmed when the proposal was stored, and its ID covers that list. The
+confirmed when the proposal was stored, and its ID covers that list and the
+whole replacement, with each example's keys sorted, so their order does not
+change it. `--approval` also accepts the ID that 6.15.0 computed from the keys
+in their stored order. The
 approved replacement carries `[confirmed]`, set in the same commit. When any predecessor was
 confirmed or unconfirmed after the proposal was stored, `--approval` refuses,
 names the change, and writes nothing; propose the consolidation again. It also
@@ -193,8 +199,9 @@ leaves the predecessors' confirmations revoked and the predecessors in place: it
 fails closed. Run `consolidate --approval` again to finish it; the journal lists
 the revocations of the aborted attempt, so only that loss of confirmation is
 excused. An `unconfirm` after the crash still blocks the retry. Until then,
-nightly maintenance and `consolidate` still treat those predecessors as
-confirmed, while injected guidance shows them without `[confirmed]`.
+`consolidate` still treats those predecessors as confirmed, and nightly
+maintenance treats every record the user ever confirmed as confirmed, while
+injected guidance shows them without `[confirmed]`.
 `export --annotations` leaves out the replacement that never landed, because it
 treats every fingerprint a journaled project operation names as project data. A
 released exporter does not read the journal, so after such a crash in the first
@@ -227,7 +234,8 @@ The undo of an automated archive restores the record with an
 `archived->active` transition that names the undo's operation ID. Reading
 memory checks only that this transition and the archive before it carry
 operation IDs, as strings. `validate` and `undo-operation` also check the
-journal: the restore's operation must be an undo of that archive's operation.
+journal: the archive's operation must be a journaled archive of that record,
+and the restore's operation an undo of that archive that names the same record.
 Any other restore fails `validate`, and `undo-operation` refuses to run until
 memory is repaired; with a journal that cannot be read, a store that holds a
 restore fails `validate`.
@@ -235,9 +243,12 @@ restore fails `validate`.
 ### Operation journal
 
 `operations.jsonl` is a local write-ahead journal, and it never syncs. No hook
-reads it. The confirm hook takes `memory.lock`, then reads `memory.md`,
-`annotations-watermark.json`, and `annotations.json`, and, for a
-`confirm fg:proposal:<id>` prompt, `proposals.json`. An operation appends a `pending` entry, then writes annotations and
+reads it. The confirm hook takes `memory.lock`, then reads `memory.md` and
+`annotations-watermark.json`. When the watermark lags memory, the lock's
+reconcile reads and rewrites `annotations.json` and the watermark. A
+`confirm fg:<id>` prompt for an active record then reads and may write
+`annotations.json`; a `confirm fg:proposal:<id>` prompt reads and may write
+only `proposals.json`. An operation appends a `pending` entry, then writes annotations and
 memory, then appends a `commit` entry. Every transition the operation makes
 carries its operation ID. Before the next journaled command, recovery commits
 a pending operation whose ID reached memory and aborts the rest. When it commits
@@ -342,12 +353,14 @@ not yet grant authority, so voiding them costs one confirm prompt each. Each
 machine voids once when it upgrades, and its revocations reach the others when
 they sync. A record that an older plugin both imports and deletes between two
 current writes leaves no fingerprint, so a confirmation in transit for it can
-still count. Each revocation that a reconcile of this version adds is an
-annotation ID whose first 16 hex digits are a fixed prefix, which every
-released reader accepts. Nightly maintenance still counts a confirmation that
-only such revocations voided, so it never archives or merges that guidance on
-its own; the hook shows it without `[confirmed]` until the user confirms again.
-An `unconfirm` adds an ordinary revocation, which nightly maintenance counts.
+still count. Nightly maintenance never archives or merges a record the user
+ever confirmed: any confirmation entry of its text, or of a record it
+consolidates, counts, whatever revoked it later, whether a reconcile of any
+version, an `unconfirm`, or a crashed operation. It only flags or proposes that
+guidance, and the hook shows it without `[confirmed]` until the user confirms
+again. Because the history lives in `annotations.json`, nightly `apply` refuses
+when that file is missing while memory holds guidance, or has no entry for a
+record that memory holds and a shared import did not create.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a

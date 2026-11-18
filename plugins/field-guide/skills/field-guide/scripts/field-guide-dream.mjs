@@ -140,10 +140,15 @@ const addLiveText = ({ packet, texts }) => {
   })
 }
 
-// The subject digest covers these same fields.
+// The subject digest covers these same fields, unredacted. A legacy subject key or linked subject
+// that the memory reader accepts can hold text the new-text guard refuses, so both are redacted too.
 const planRecord = (record) => {
   const shown = reviewedRecord(record)
-  return { ...shown, learning: redactUnsafeText(shown.learning) }
+  return {
+    ...shown,
+    learning: redactUnsafeText(shown.learning),
+    ...(shown.linkedSubjects ? { linkedSubjects: shown.linkedSubjects.map(redactUnsafeText) } : {}),
+  }
 }
 
 // Audit lists and pending operations get fixed shares of the packet, so they never crowd out the
@@ -191,7 +196,7 @@ const addSubjects = ({ packet, review, liveCount }) => {
     const entry = {
       subjectId: subject.subjectId,
       scope: subject.scope.kind,
-      subjectKey: subject.subjectKey,
+      subjectKey: redactUnsafeText(subject.subjectKey),
       digest: subject.digest,
       records: subject.records.map(planRecord),
       overlapGroups: subject.overlapGroups,
