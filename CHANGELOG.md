@@ -1,3 +1,16 @@
+# [6.14.0](https://github.com/filipgutica/filip-stack/compare/v6.13.0...v6.14.0) (2026-11-18)
+
+
+### Bug Fixes
+
+* **evals:** preserve decision context in guidance fixtures ([9eef9ef](https://github.com/filipgutica/filip-stack/commit/9eef9ef51d31518602ab32066bb53de7c8778aa2))
+* **host-config:** keep threads open for local-only changes ([043eda4](https://github.com/filipgutica/filip-stack/commit/043eda473a15ec586918d2cffb1e876e1201713c))
+
+
+### Features
+
+* **guidance:** update Astra and Sol to GPT-6.2 ([0b65789](https://github.com/filipgutica/filip-stack/commit/0b65789d442b3c880898b7adddf379a5c0626bf8))
+
 # [6.13.0](https://github.com/filipgutica/filip-stack/compare/v6.12.0...v6.13.0) (2026-11-17)
 
 
