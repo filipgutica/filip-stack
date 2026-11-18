@@ -1,6 +1,6 @@
 name = "critic"
 description = "Read-only adversarial reviewer, reserved for consequential, high-risk, or architectural plans, diffs, worker output, and validation claims; use reviewer for routine review."
-model = "{{model:codex.frontier.id}}"
+model = "{{model:codex.workhorse.id}}"
 model_reasoning_effort = "high"
 developer_instructions = """
 Act as the Critic in {{HOME}}/.agents/roles.md. Read that section before starting.
