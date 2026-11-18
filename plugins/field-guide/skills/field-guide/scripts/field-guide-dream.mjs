@@ -81,7 +81,7 @@ const scrubPaths = ({ text, guideRoot }) => text
   .replaceAll(homedir(), '~')
   .replace(/\/(?:Users|home)\/[^/\s"]+\//gu, '~/')
   .replace(/[A-Za-z]:\\\\Users\\\\[^\\\s"]+\\\\/gu, '~\\\\')
-  .replace(/(?<![\w.-])\/(?:Users|home)\/[^/\s"\\]+/gu, '~')
+  .replace(/(?<![\w.-])(?:\/mnt\/[A-Za-z])?\/(?:Users|home)\/[^/\s"\\]+/gu, '~')
   .replace(/[A-Za-z]:\\\\Users\\\\[^\\\s"]+/gu, '~')
 
 // Redacts each string in a value on its own, so a prompt block in one item cannot hide the next.
@@ -199,18 +199,20 @@ const plan = (paths) => {
   const live = readLive()
   const state = dreamState({ paths })
   const { validationErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords } = audit(paths)
-  // validate joins its errors into one message; one line per error lets the budget count what it drops.
-  const errorLines = validationErrors.flatMap((message) => message.split('\n'))
+  // validate joins its errors into one message; one line per error lets the budget count what it
+  // drops. Each message is redacted whole first, so a block that spans lines hides all of them.
+  const errorLines = validationErrors.flatMap((message) => redactUnsafeText(message).split('\n'))
   const audited = boundedLists({
-    lists: scrubbed({ value: redactStrings({ validationErrors: errorLines, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords }), guideRoot }),
+    lists: scrubbed({ value: redactStrings({ validationErrors: errorLines, stateErrors: state.stateErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords }), guideRoot }),
     maxBytes: maxAuditBytes,
   })
-  const pending = boundedLists({ lists: { pendingOperations: state.pendingOperations }, maxBytes: maxPendingBytes })
+  // A journal that cannot be read has no pending operations to show; stateErrors names it.
+  const pending = boundedLists({ lists: { pendingOperations: state.pendingOperations ?? [] }, maxBytes: maxPendingBytes })
   const packet = {
     schemaVersion: 1,
     mode: 'dream-plan',
     revision: state.revision,
-    pendingOperations: pending.kept.pendingOperations,
+    ...(state.pendingOperations ? { pendingOperations: pending.kept.pendingOperations } : {}),
     undoWindowDays: state.undoWindowDays,
     audit: audited.kept,
     omittedItems: { ...audited.omitted, ...pending.omitted },

@@ -127,7 +127,9 @@ plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
 They check each Claude Code copy that `installed_plugins.json` names and the
 Codex copy that loads: the newest version directory in the plugin cache, for
 each marketplace that Codex's `config.toml` lists `field-guide` from, or for
-every cached marketplace when it lists none.
+every cached marketplace when it lists none. A `config.toml` table header that
+names `field-guide@` in any other form, such as a single-quoted or spaced key,
+names a copy the check cannot find, so the commands refuse.
 
 ### Consolidation and undo
 
@@ -138,13 +140,15 @@ requires its preview token. The replacement keeps the predecessors' evidence
 links without adding evidence, takes their triggers, and lists them in
 `consolidates`. Each predecessor is superseded. A record that still replaces
 superseded records cannot be consolidated. Every string in the input, including
-each example's language and code, also refuses an `http` URL query string and a
-home directory without a trailing separator, such as `/home/<name>`. Each
+each example's language and code, also refuses a query string or user
+information, as in `<scheme>://<user>@`, in a URL of any scheme, and a home
+directory without a trailing separator, such as `/home/<name>` or
+`/mnt/c/Users/<name>`. Each
 example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
-same checks cover a stored proposal's replacement and reason. A proposal's scope comes from the repository, not from
-input, and can name a local path, such as the Git directory of a repository
-without a remote. Stored records keep the guard that released versions used, so
-their stores stay readable.
+same checks cover every string in a stored proposal. A proposal stores a
+digest of its scope, not the repository identity, which can be a local path,
+such as the Git directory of a repository without a remote. Stored records keep
+the guard that released versions used, so their stores stay readable.
 
 Shared records are not consolidated until a later release.
 `consolidate` refuses a shared record in a preview, an apply, or an approval,
@@ -159,7 +163,8 @@ A proposal records `confirmedFingerprints`, the predecessors that were
 confirmed when the proposal was stored, and its ID covers that list. The
 approved replacement carries `[confirmed]`, set in the same commit. When any predecessor was
 confirmed or unconfirmed after the proposal was stored, `--approval` refuses,
-names the change, and writes nothing; propose the consolidation again. A
+names the change, and writes nothing; propose the consolidation again. It also
+refuses a set that an undo declined, even when the approval came first. A
 proposal expires after 14 days. Every journaled operation writes annotations
 before memory. So a crash between the two writes of an approved consolidation
 leaves the predecessors' confirmations revoked and the predecessors in place: it
@@ -172,7 +177,9 @@ treats every fingerprint a journaled project operation names as project data. A
 released exporter does not read the journal, so after such a crash in the first
 approved consolidation, before memory becomes version 2, it exports that
 confirmation; the entry holds only IDs, and its project fingerprint can never
-match a shared record. A crash
+match a shared record. Recovery also cancels the triggers that an aborted
+consolidation gave its replacement, so a later capture of the same text starts
+without them. A crash
 after the `memory.md` write but before the watermark write also fails closed:
 the next command finds the watermark stale and revokes every confirmation, the
 retry reports the proposal as already applied, and the replacement stays
@@ -204,8 +211,8 @@ writes left stale. Until that command runs, `validate` reports the stale cache;
 IDs, fingerprints, revisions, retirement IDs, a sanitized reason, and the undo
 command. It never holds guidance text, user prompts, or paths.
 
-`proposals.json` is local and never syncs. Each proposal holds the target
-fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
+`proposals.json` is local and never syncs. Each proposal holds a digest of its
+scope, the target fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
 expiry, and the user's approval once the hook records it. Read [nightly maintenance](dreaming.md) for
 the nightly plan.
 
@@ -353,7 +360,9 @@ signal, and it does not change files.
 
 Use `maintain --input <json-file>` for explicit archive or cache-repair
 maintenance. The input follows `schemas/maintenance-v1.schema.json`. Archive
-accepts candidate, active, superseded, or withdrawn target IDs. `repair-cache`
+accepts candidate, active, superseded, or withdrawn target IDs. An archive whose
+result the store would reject, such as one of a replacement that still
+supersedes records, fails in its dry run and changes nothing. `repair-cache`
 rebuilds only `memory.json` from a valid canonical `memory.md`; it never changes
 malformed canonical data. The default is a dry run. Apply requires the preview
 token from the same canonical store and cache state.
@@ -422,7 +431,9 @@ retirement.
 Annotations travel in a second portable file with the `annotations.json`
 format. `export --output <json-file> --annotations <json-file>` writes it: it
 keeps every entry already in the file and adds the local entries for every
-fingerprint that is not a local project record. `import --input <json-file>
+fingerprint that is not a local project record. When `operations.jsonl` cannot
+be read, it adds only the entries of shared records in memory, because another
+fingerprint may belong to a project operation. `import --input <json-file>
 --annotations <json-file>` validates both files before it changes anything,
 then unions the entries, acknowledgments, and revocations into
 `annotations.json`. Union makes revocations converge in any sync order: once any machine acknowledges an

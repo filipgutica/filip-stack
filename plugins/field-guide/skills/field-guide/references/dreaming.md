@@ -1,11 +1,9 @@
 # Nightly maintenance
 
-Nightly maintenance ("dreaming") keeps the store small and current. In this
-release, a script plans: it prints what a reviewer model needs to find
-overlaps, duplicates of live guidance, and contradictions. A later release adds
-`apply`, which applies the reviewer's actions by the lifecycle rules. Until
-then, act on a finding with `consolidate`, `transition`, or `maintain`, as for
-any other change. Read [storage](storage.md#consolidation-and-undo) for
+Nightly maintenance ("dreaming") keeps the store small and current. A script
+plans: it prints what a reviewer model needs to find
+overlaps, duplicates of live guidance, and contradictions. Act on a finding
+with `consolidate`, `transition`, or `maintain`, as for any other change. Read [storage](storage.md#consolidation-and-undo) for
 `consolidate`, `undo-operation`, the journal, and proposals.
 
 Run the script with the same Node that runs the utility:
@@ -23,7 +21,8 @@ nothing, not even journal recovery. The script never edits
 - The audit: validation errors, stale candidates, unresolved relationships,
   broken pointers, orphan evidence, and oversized records, within 32 KiB
   together, with one validation error per line. A text item longer than 1 KiB
-  is cut and ends with `…`.
+  is cut and ends with `…`. `stateErrors` lists what the plan itself could not
+  read, such as an `operations.jsonl` line that is not JSON.
 - `live`: a digest of each live guidance source, `claude-md`, `agents-md`,
   `roles`, `coding-standards`, `skills` (one `name: description` line per
   skill in `~/.agents/skills`), and `plugin-skills` (one
@@ -32,10 +31,14 @@ nothing, not even journal recovery. The script never edits
   only when there is a subject to review, up to 32 KiB per source and within
   the room the subjects leave; a source cut short has `truncated: true`.
 - `subjects`: every subject with live records. A subject lists its live
-  records with their confirmation, triggers, and linked subjects, its
-  `digest`, which covers every record field the packet shows, and its
-  `overlapGroups` without groups the user declined.
-- `pendingOperations`, within 8 KiB.
+  records with their confirmation as the hook shows it, triggers, and linked
+  subjects, its `digest`, which covers every record field the packet shows,
+  and its `overlapGroups` without groups the user declined. When
+  `annotations.json` cannot be read, records show no confirmation or triggers,
+  and the audit reports the error.
+- `pendingOperations`, within 8 KiB. The packet leaves it out when
+  `operations.jsonl` cannot be read; `stateErrors` names the error, and
+  `overlapGroups` may then list a declined group.
 - `omittedItems`: for each audit list and `pendingOperations` that lost items to
   its limit, how many it lost.
 - `omittedSubjects`: the subjects that the 192 KiB limit on the printed packet
@@ -45,7 +48,8 @@ nothing, not even journal recovery. The script never edits
 The packet holds no evidence, prompts, or transcripts. Every home directory,
 with or without a separator after it, and the guide root are replaced with `~`
 and `<guide-root>` before any text is measured or cut. Live text, record text,
-and each audit item on its own are redacted before they are measured or cut:
+and each audit item on its own are redacted before they are measured or cut;
+a validation error is redacted whole before it is split into lines:
 
 - A `<user>`, `<assistant>`, or `<system>` block runs to its closing tag, such
   as `</user>`. A `BEGIN PROMPT` or `BEGIN RAW PROMPT` block runs to a line
@@ -58,8 +62,8 @@ and each audit item on its own are redacted before they are measured or cut:
   through its `-----END` marker.
 - A block that never closes is redacted to the end of the text. The tag and
   `BEGIN PROMPT` markers match in any case.
-- Each other line is replaced whole when it holds an `http` or `https` URL
-  query string, percent-encoded text, a credential token or assignment, a
+- Each other line is replaced whole when it holds a query string or user
+  information in a URL of any scheme, percent-encoded text, a credential token or assignment, a
   private key marker, or a line-start `user:`, `assistant:`, or `system:`
   marker.
 

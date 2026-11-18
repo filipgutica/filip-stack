@@ -287,13 +287,15 @@ const unsafePersistedTextPatterns = [
 ]
 
 // Text that this version writes for the first time, such as a consolidation's replacement, an
-// operation's reason, or a proposal, also refuses http query strings and a home directory without
-// a trailing separator. Stored records keep the patterns above, which released versions wrote, so
-// their stores stay valid.
+// operation's reason, or a proposal, also refuses a query string or user information in a URL of
+// any scheme, and a home directory without a trailing separator, including a WSL /mnt/<drive>
+// one. Stored records keep the patterns above, which released versions wrote, so their stores
+// stay valid.
 const unsafeNewTextPatterns = [
   ...unsafePersistedTextPatterns,
-  { pattern: /http:\/\/[^\s?]+\?[^\s]*/iu, reason: 'URL query string' },
-  { pattern: /(?<![\w.-])\/(?:Users|home)\/[^/\s]+/u, reason: 'absolute home-directory path' },
+  { pattern: /[a-z][a-z0-9+.-]*:\/\/[^\s?]+\?[^\s]*/iu, reason: 'URL query string' },
+  { pattern: /[a-z][a-z0-9+.-]*:\/\/[^\s/?#@]*@/iu, reason: 'URL user information' },
+  { pattern: /(?<![\w.-])(?:\/mnt\/[A-Za-z])?\/(?:Users|home)\/[^/\s]+/u, reason: 'absolute home-directory path' },
   { pattern: /[A-Za-z]:\\Users\\[^\\\s]+/u, reason: 'absolute home-directory path' },
 ]
 
@@ -663,13 +665,8 @@ const validateMemory = (memory) => {
         'superseded->archived',
         'withdrawn->active',
         'withdrawn->archived',
-        'archived->active',
       ])
       if (!allowedEdges.has(edge)) fail(`${guidance.id} has an illegal lifecycle transition: ${edge}`)
-      // Only undo-operation restores archived guidance, and only an archive that an operation made.
-      if (edge === 'archived->active' && (guidance.transitions[index].source !== 'undo-operation' || !guidance.transitions[index - 1].operationId)) {
-        fail(`${guidance.id} archived->active requires undo-operation of a journaled archive`)
-      }
       // Only shared sync restores withdrawn guidance, after another machine's undo acknowledged its retirements.
       if (edge === 'withdrawn->active' && (guidance.scope.kind !== 'shared' || guidance.transitions[index].source !== 'shared-sync')) {
         fail(`${guidance.id} withdrawn->active requires shared scope and source shared-sync`)
@@ -1926,13 +1923,21 @@ const exportSharedGuidanceUnlocked = ({ paths, outputPath, annotationsPath }) =>
 // crash kept out of memory. A fingerprint hashes its scope, so none of them is shared.
 const portableAnnotations = ({ paths, memory, annotationsPath }) => {
   const existing = existsSync(resolve(annotationsPath)) ? validateAnnotations(readJsonInput(annotationsPath)) : emptyAnnotations()
+  const fingerprintsOf = (kind) => memory.guidance.filter(({ scope }) => scope.kind === kind).map(({ fingerprint }) => fingerprint)
+  const { operations } = journalForDisplay(paths)
   const projectFingerprints = new Set([
-    ...memory.guidance.filter(({ scope }) => scope.kind === 'project').map(({ fingerprint }) => fingerprint),
-    ...[...operationsIn(readJournal(paths)).values()].filter(({ scope }) => scope === 'project')
+    ...fingerprintsOf('project'),
+    ...[...(operations?.values() ?? [])].filter(({ scope }) => scope === 'project')
       .flatMap(({ fingerprints, replacementFingerprint }) => [...fingerprints, ...(replacementFingerprint ? [replacementFingerprint] : [])]),
   ])
+  // Without the journal, a fingerprint that memory does not hold may be project data, so only
+  // records that memory shows are shared are exported. The rest, such as a revocation of a deleted
+  // shared record, wait for an export after the journal is repaired; retirements still travel in
+  // the guidance export.
+  const sharedFingerprints = new Set(fingerprintsOf('shared'))
+  const exported = operations ? (fingerprint) => !projectFingerprints.has(fingerprint) : (fingerprint) => sharedFingerprints.has(fingerprint)
   const local = readAnnotations(paths.annotationsFile)
-  const records = Object.entries(local.records).filter(([fingerprint]) => !projectFingerprints.has(fingerprint))
+  const records = Object.entries(local.records).filter(([fingerprint]) => exported(fingerprint))
   return mergeAnnotations(existing, { records: Object.fromEntries(records) })
 }
 
@@ -2473,15 +2478,21 @@ const pointerProblem = ({ pointer, paths }) => {
   return null
 }
 
-// Overlapping live records of each subject, for review. A journal that cannot be read hides no
-// group; validate reports it.
-const duplicateGroups = ({ paths, memory }) => {
-  let declined = new Set()
+// The journal's operations for a read-only report, or null and the error when it cannot be read.
+// Commands that write fail on that journal; the nightly plan reports the error.
+const journalForDisplay = (paths) => {
   try {
-    declined = declinedSets(operationsIn(readJournal(paths)))
-  } catch {
-    // Without the journal, declined groups are listed again; nothing is applied from an audit.
+    return { operations: operationsIn(readJournal(paths)) }
+  } catch (error) {
+    return { operations: null, error: error.message }
   }
+}
+
+// Overlapping live records of each subject, for review. A journal that cannot be read hides no
+// group: declined groups are listed again, and nothing is applied from an audit.
+const duplicateGroups = ({ paths, memory }) => {
+  const { operations } = journalForDisplay(paths)
+  const declined = operations ? declinedSets(operations) : new Set()
   const subjects = subjectStates({ memory, annotations: readAnnotationsForDisplay(paths.annotationsFile) })
   return [...subjects.values()].flatMap(({ scope, subjectKey, records }) => (
     overlapGroups({ records: records.map(({ guidance }) => guidance), declined }).map((ids) => ({ scope: scope.kind, subjectKey, ids }))
@@ -2636,6 +2647,18 @@ const repairCache = ({ paths, input }) => {
   }
 }
 
+// Applies a change to a copy of memory and validates the result as the store write would, so an
+// invalid change fails before any preview, proposal, journal entry, or annotation write.
+const requireValidChange = ({ memory, change, label }) => {
+  const trial = structuredClone(memory)
+  change(trial)
+  try {
+    validateMemory({ ...trial, schemaVersion: schemaVersionFor(trial) })
+  } catch (error) {
+    fail(`the ${label} result would be invalid: ${error.message}`)
+  }
+}
+
 // Archives one record. A shared record gets a retirement ID, so the archive reaches other machines.
 const archiveRecord = ({ guidance, reason, source, now }) => {
   addRetirement(guidance)
@@ -2656,6 +2679,11 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     }
     return target
   })
+  const now = new Date().toISOString()
+  const archive = (store) => input.targetIds.forEach((id) => (
+    archiveRecord({ guidance: store.guidance.find((guidance) => guidance.id === id), reason: input.reason, source: 'maintenance', now })
+  ))
+  requireValidChange({ memory, change: archive, label: 'archived' })
   const previewToken = maintenancePreviewToken({ memory, input })
   if (input.apply !== true) {
     return {
@@ -2667,8 +2695,7 @@ const maintainUnlocked = ({ paths, inputPath }) => {
     }
   }
   if (input.previewToken !== previewToken) fail('maintenance apply requires the current dry-run previewToken')
-  const now = new Date().toISOString()
-  for (const target of targets) archiveRecord({ guidance: target, reason: input.reason, source: 'maintenance', now })
+  archive(memory)
   const nextMemory = { ...memory, revision: memory.revision + 1 }
   revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: targets.map(({ fingerprint }) => fingerprint) })
   writeMemoryViews({ paths, memory: nextMemory })
@@ -2740,24 +2767,33 @@ const operationLanded = ({ memory, operationId }) => memory.guidance.some(({ tra
   transitions.some((transition) => transition.operationId === operationId)
 ))
 
+// A consolidation annotates its replacement before the memory write: an approval confirms it, and
+// it takes its targets' triggers. When the record never arrived, revoke that confirmation and
+// acknowledge those triggers, so a later capture of the same text inherits neither. Only trigger
+// entries that reached annotations are acknowledged; a crash can stop before that write.
+const cancelUnlandedReplacement = ({ paths, memory, replacementFingerprint, triggerIds = [] }) => {
+  if (!replacementFingerprint || memory.guidance.some(({ fingerprint }) => fingerprint === replacementFingerprint)) return
+  const annotations = readAnnotations(paths.annotationsFile)
+  const record = annotationRecordFor({ annotations, fingerprint: replacementFingerprint })
+  revokeRecord(record)
+  acknowledgeEntries({ record, entries: record.triggers.filter(({ id }) => triggerIds.includes(id)) })
+  writeAnnotations({ path: paths.annotationsFile, annotations })
+}
+
 // Commits each pending operation whose transitions reached memory and aborts the rest. Returns
 // the journal with the entries it added.
 const recoverOperations = ({ paths, memory }) => {
   const journal = readJournal(paths)
   const at = new Date().toISOString()
   const entries = []
-  for (const { operationId, state, replacementFingerprint } of operationsIn(journal).values()) {
+  for (const { operationId, state, replacementFingerprint, triggerIds } of operationsIn(journal).values()) {
     if (state !== 'pending') continue
     if (operationLanded({ memory, operationId })) {
       entries.push({ type: 'commit', operationId, at, revision: memory.revision, recovered: true })
       continue
     }
     entries.push({ type: 'abort', operationId, at, revision: memory.revision })
-    // An approved consolidation confirms its replacement before the memory write. Revoke that
-    // confirmation when the record never arrived.
-    if (replacementFingerprint && !memory.guidance.some(({ fingerprint }) => fingerprint === replacementFingerprint)) {
-      revokeConfirmations({ annotationsFile: paths.annotationsFile, fingerprints: [replacementFingerprint] })
-    }
+    cancelUnlandedReplacement({ paths, memory, replacementFingerprint, triggerIds })
   }
   // A crash after the canonical write can leave memory.json behind it. The memory lock already
   // reconciled the watermark, so only the cache is rebuilt, the way repair-cache does it.
@@ -2821,6 +2857,15 @@ const directoriesIn = (path) => (existsSync(path)
   ? readdirSync(path, { withFileTypes: true }).filter((entry) => entry.isDirectory()).map(({ name }) => name)
   : [])
 
+// The table header form that the Codex plugin installer writes.
+const codexPluginHeader = /^\[plugins\."([^"@]+)@([^"]+)"\]/u
+
+// A table header line that mentions `<plugin>@` in a form other than the installer's, such as a
+// single-quoted or spaced key. It names a copy this check cannot locate, so the copy is unknown.
+const unknownCodexEntries = ({ lines, plugin }) => (plugin === undefined ? [] : lines
+  .filter((line) => line.trimStart().startsWith('[') && line.includes('plugins') && line.includes(`${plugin}@`) && !codexPluginHeader.test(line))
+  .map(() => ({ host: 'Codex', plugin, path: null, problem: 'config.toml names it in a form this check does not read' })))
+
 // Codex keeps a plugin at plugins/cache/<marketplace>/<plugin>/<version> and loads its newest
 // version; an older version directory is a leftover. config.toml names the installed plugins, so
 // only their marketplaces count; without such an entry, every cached marketplace does.
@@ -2828,20 +2873,24 @@ const codexCopies = ({ codexRoot, plugin }) => {
   const configFile = join(codexRoot, 'config.toml')
   const cache = join(codexRoot, 'plugins', 'cache')
   const wanted = (name) => plugin === undefined || name === plugin
-  const named = existsSync(configFile)
-    ? [...readFileSync(configFile, 'utf8').matchAll(/^\[plugins\."([^"@]+)@([^"]+)"\]/gmu)].map(([, name, marketplace]) => ({ name, marketplace })).filter(({ name }) => wanted(name))
-    : []
+  const lines = existsSync(configFile) ? readFileSync(configFile, 'utf8').split('\n') : []
+  const named = lines.flatMap((line) => {
+    const [, name, marketplace] = line.match(codexPluginHeader) ?? []
+    return name && wanted(name) ? [{ name, marketplace }] : []
+  })
   const cached = directoriesIn(cache).flatMap((marketplace) => directoriesIn(join(cache, marketplace)).filter(wanted).map((name) => ({ name, marketplace })))
-  return (named.length > 0 ? named : cached).flatMap(({ name, marketplace }) => {
+  const located = (named.length > 0 ? named : cached).flatMap(({ name, marketplace }) => {
     const versions = join(cache, marketplace, name)
     const newest = directoriesIn(versions).filter((version) => !version.startsWith('.')).sort((left, right) => left.localeCompare(right, 'en', { numeric: true })).at(-1)
     return newest ? [{ host: 'Codex', plugin: name, path: join(versions, newest) }] : []
   })
+  return [...located, ...unknownCodexEntries({ lines, plugin })]
 }
 
 /**
  * Returns the plugin copies that Claude Code and Codex load on this machine: every plugin, or
- * only the one named. Each copy names its host, its plugin, and its absolute path.
+ * only the one named. Each copy names its host, its plugin, and its absolute path. A copy that
+ * cannot be located has no string path, and a Codex copy has a problem that says why.
  */
 export const installedPluginCopies = ({ plugin } = {}) => {
   const claudeRoot = process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.claude')
@@ -2861,7 +2910,8 @@ export const installedPluginCopies = ({ plugin } = {}) => {
 const displayPath = (path) => (path.startsWith(`${homedir()}/`) ? `~${path.slice(homedir().length)}` : path)
 
 const requireCurrentReaders = () => {
-  for (const { host, path } of installedPluginCopies({ plugin: 'field-guide' })) {
+  for (const { host, path, problem } of installedPluginCopies({ plugin: 'field-guide' })) {
+    if (problem) fail(`a ${host} plugin copy may be older: ${problem}; refresh the Field Guide plugin on both hosts first`)
     if (typeof path !== 'string' || !existsSync(join(path, v2ReaderFile))) {
       fail(`the ${host} plugin copy at ${displayPath(String(path))} is older and cannot read memory version 2; refresh the Field Guide plugin on both hosts first`)
     }
@@ -2929,18 +2979,14 @@ const supersedingIds = (memory) => new Set(memory.guidance
   .filter(({ status }) => status === 'superseded')
   .map(({ transitions }) => transitions.at(-1).replacementId))
 
-// Applies the consolidation to a copy and validates it as the store write would, so an invalid
-// result fails before any preview, proposal, journal entry, or annotation write.
-const requireValidResult = ({ memory, targetIds, plan }) => {
-  const trial = structuredClone(memory)
-  const targets = targetIds.map((id) => trial.guidance.find((guidance) => guidance.id === id))
-  applyConsolidation({ memory: trial, plan: { ...plan, targets }, operationId: newOperationId(), reason: 'Trial consolidation.', source: 'trial', now: new Date().toISOString() })
-  try {
-    validateMemory({ ...trial, schemaVersion: schemaVersionFor(trial) })
-  } catch (error) {
-    fail(`the consolidated result would be invalid: ${error.message}`)
-  }
-}
+const requireValidResult = ({ memory, targetIds, plan }) => requireValidChange({
+  memory,
+  label: 'consolidated',
+  change: (trial) => {
+    const targets = targetIds.map((id) => trial.guidance.find((guidance) => guidance.id === id))
+    applyConsolidation({ memory: trial, plan: { ...plan, targets }, operationId: newOperationId(), reason: 'Trial consolidation.', source: 'trial', now: new Date().toISOString() })
+  },
+})
 
 // Checks that the targets are active and share one scope and subject, and that the replacement
 // is new text. The replacement is confirmed only when a target was confirmed: a stored proposal
@@ -3018,18 +3064,19 @@ const applyConsolidation = ({ memory, plan, operationId, reason, source, now }) 
 
 // Revokes the targets and the new record, which starts unconfirmed, and moves the targets'
 // triggers to it. An approved consolidation of confirmed records then confirms it, after that
-// revocation.
+// revocation. Returns the target revocation IDs and the new trigger entry IDs.
 const annotateConsolidation = ({ annotations, plan, replacement, approval }) => {
   const triggers = sortedUnion(...plan.targets.map((guidance) => annotationMarkers({ annotations, guidance }).triggers))
   const targetRevocationIds = plan.targets.map((target) => revokeRecord(annotationRecordFor({ annotations, fingerprint: target.fingerprint })))
   const record = annotationRecordFor({ annotations, fingerprint: replacement.fingerprint })
   revokeRecord(record)
   const current = annotationMarkers({ annotations, guidance: replacement }).triggers
-  record.triggers.push(...triggers.filter((trigger) => !current.includes(trigger)).map((trigger) => newAnnotationEntry({ trigger })))
+  const added = triggers.filter((trigger) => !current.includes(trigger)).map((trigger) => newAnnotationEntry({ trigger }))
+  record.triggers.push(...added)
   if (approval) {
     record.confirmations.push(newAnnotationEntry({ ...(approval.host ? { host: approval.host } : {}), seen: revocationIds({ record, guidance: replacement }) }))
   }
-  return targetRevocationIds
+  return { revocationIds: targetRevocationIds, triggerIds: added.map(({ id }) => id) }
 }
 
 // Applies one consolidation to memory and annotations in place and returns its journal entry.
@@ -3037,7 +3084,7 @@ const consolidateInPlace = ({ memory, annotations, plan, reason, source, now, fi
   const operationId = newOperationId()
   const revision = memory.revision
   const { replacement, retirementIds } = applyConsolidation({ memory, plan, operationId, reason, source, now })
-  const revocationIds = annotateConsolidation({ annotations, plan, replacement, approval })
+  const { revocationIds, triggerIds } = annotateConsolidation({ annotations, plan, replacement, approval })
   return pendingEntry({
     memory: { revision },
     operationId,
@@ -3047,7 +3094,7 @@ const consolidateInPlace = ({ memory, annotations, plan, reason, source, now, fi
     fingerprints: plan.targetFingerprints,
     reason,
     now,
-    fields: { replacementFingerprint: plan.fingerprint, retirementIds, revocationIds, inverse: `undo-operation --id ${operationId}`, ...fields },
+    fields: { replacementFingerprint: plan.fingerprint, retirementIds, revocationIds, triggerIds, inverse: `undo-operation --id ${operationId}`, ...fields },
   })
 }
 
@@ -3065,17 +3112,15 @@ const proposalIdPattern = /^proposal:v1:[0-9a-f]{64}$/
 
 const validateProposal = (proposal) => {
   assertObject({ value: proposal, label: 'proposal' })
-  // Only the replacement and the reason come from input. The scope holds the repository identity,
-  // which can be a local path, such as the Git directory of a repository without a remote.
-  assertSafeNewValue({ value: { replacement: proposal.replacement, reason: proposal.reason }, label: 'proposal' })
-  assertClosedFields({ value: proposal, fields: ['id', 'kind', 'scope', 'subjectKey', 'targetFingerprints', 'replacement', 'confirmsReplacement', 'confirmedFingerprints', 'reason', 'createdAt', 'expiresAt', 'approval', 'appliedOperationId'], label: 'proposal' })
+  assertSafeNewValue({ value: proposal, label: 'proposal' })
+  assertClosedFields({ value: proposal, fields: ['id', 'kind', 'scopeDigest', 'subjectKey', 'targetFingerprints', 'replacement', 'confirmsReplacement', 'confirmedFingerprints', 'reason', 'createdAt', 'expiresAt', 'approval', 'appliedOperationId'], label: 'proposal' })
   if (!proposalIdPattern.test(proposal.id) || proposal.kind !== 'consolidate') fail('proposal has an invalid id or kind')
   if (typeof proposal.confirmsReplacement !== 'boolean') fail('proposal confirmsReplacement must be boolean')
   if (!Array.isArray(proposal.confirmedFingerprints) || proposal.confirmedFingerprints.some((each) => !proposal.targetFingerprints?.includes(each))
     || proposal.confirmsReplacement !== (proposal.confirmedFingerprints.length > 0)) {
     fail('proposal confirmedFingerprints must list the confirmed targets')
   }
-  validateScope(proposal.scope)
+  if (!/^[0-9a-f]{64}$/u.test(proposal.scopeDigest)) fail('proposal scopeDigest is invalid')
   if (!portableKey.test(proposal.subjectKey)) fail('proposal subjectKey must be a portable slug')
   if (!Array.isArray(proposal.targetFingerprints) || proposal.targetFingerprints.some((each) => !fingerprintPattern.test(each))) fail('proposal targetFingerprints are invalid')
   validateReplacement(proposal.replacement)
@@ -3103,6 +3148,9 @@ const readProposals = (paths) => {
 const writeProposals = ({ paths, store }) => writeTextAtomically({ path: paths.proposalsFile, content: `${JSON.stringify(store, null, 2)}\n` })
 const expired = (proposal) => Date.parse(proposal.expiresAt) <= Date.now()
 const confirmPromptFor = (proposal) => `confirm fg:proposal:${shortId(proposal.id)}`
+// A project scope's repository identity can be a local path, such as the Git directory of a
+// repository without a remote, so a proposal stores only a digest of its scope.
+const scopeDigest = (scope) => contentDigest(scopeIdentity(scope))
 
 // Stores a consolidation proposal once; a stored proposal keeps its approval and expiry.
 const storeProposals = ({ paths, plans, now }) => {
@@ -3115,7 +3163,7 @@ const storeProposals = ({ paths, plans, now }) => {
     const proposal = {
       id: plan.proposalId,
       kind: 'consolidate',
-      scope: plan.scope,
+      scopeDigest: scopeDigest(plan.scope),
       subjectKey: plan.subjectKey,
       targetFingerprints: plan.targetFingerprints,
       replacement: plan.replacement,
@@ -3209,11 +3257,13 @@ const consolidateApprovedUnlocked = ({ paths, reference }) => {
   if (applied) fail(`proposal ${shortId(proposal.id)} was already applied as ${applied}`)
   if (expired(proposal)) fail(`proposal ${shortId(proposal.id)} expired; propose it again`)
   if (!proposal.approval) fail(`proposal ${shortId(proposal.id)} has no approval from the user; offer \`${confirmPromptFor(proposal)}\``)
+  // An undo after the approval declines the set, and the later undo wins.
+  requireNotDeclined({ declined: declinedSets(operations), fingerprints: proposal.targetFingerprints })
   const targetIds = proposal.targetFingerprints.map((fingerprint) => (
     memory.guidance.find((guidance) => guidance.fingerprint === fingerprint)?.id ?? fail(`a record in proposal ${shortId(proposal.id)} no longer exists`)
   ))
   const plan = planConsolidation({ memory, targetIds, replacement: proposal.replacement, confirmedFingerprints: proposal.confirmedFingerprints })
-  if (plan.proposalId !== proposal.id || !sameScope(plan.scope, proposal.scope) || plan.subjectKey !== proposal.subjectKey) {
+  if (plan.proposalId !== proposal.id || scopeDigest(plan.scope) !== proposal.scopeDigest || plan.subjectKey !== proposal.subjectKey) {
     fail(`proposal ${shortId(proposal.id)} does not match its approved content`)
   }
   // The approval covered the records as they were confirmed then. A crashed attempt revoked their
@@ -3336,13 +3386,16 @@ export const reviewedRecord = ({ guidance, confirmed, triggers }) => ({
   updatedAt: guidance.updatedAt,
 })
 
-const subjectStates = ({ memory, annotations, excused = [] }) => {
+// confirmationsCurrent false shows every record unconfirmed, as the hook does while the watermark
+// lags memory.
+const subjectStates = ({ memory, annotations, excused = [], confirmationsCurrent = true }) => {
   const subjects = new Map()
   const live = memory.guidance.filter(({ status }) => ['candidate', 'active'].includes(status)).sort((left, right) => left.id.localeCompare(right.id))
   for (const guidance of live) {
     const subjectId = subjectIdFor(guidance)
     const subject = subjects.get(subjectId) ?? { subjectId, scope: guidance.scope, subjectKey: guidance.subjectKey, records: [] }
-    subject.records.push({ guidance, ...annotationMarkers({ annotations, guidance, excused }) })
+    const markers = annotationMarkers({ annotations, guidance, excused })
+    subject.records.push({ guidance, ...markers, confirmed: markers.confirmed && confirmationsCurrent })
     subjects.set(subjectId, subject)
   }
   for (const subject of subjects.values()) {
@@ -3379,10 +3432,14 @@ const overlapGroups = ({ records, declined }) => {
  */
 export const dreamState = ({ paths }) => {
   const memory = readInitializedMemory(paths)
-  const operations = operationsIn(readJournal(paths))
-  const declined = declinedSets(operations)
-  const excused = unlandedRevocations({ operations, memory })
-  const states = subjectStates({ memory, annotations: readAnnotations(paths.annotationsFile), excused })
+  // Without the journal, no group is declined and no revocation is excused, and the state names
+  // the error instead of pending operations. Unreadable annotations show no markers; audit reports them.
+  const { operations, error } = journalForDisplay(paths)
+  const declined = operations ? declinedSets(operations) : new Set()
+  const excused = operations ? unlandedRevocations({ operations, memory }) : []
+  // Confirmations show as the hook shows them; it reads the watermark before annotations too.
+  const confirmationsCurrent = watermarkCurrent({ paths, memory })
+  const states = subjectStates({ memory, annotations: readAnnotationsForDisplay(paths.annotationsFile), excused, confirmationsCurrent })
   const subjects = [...states.values()].map((subject) => ({
     ...subject,
     overlapGroups: overlapGroups({ records: subject.records.map(({ guidance }) => guidance), declined }),
@@ -3390,7 +3447,8 @@ export const dreamState = ({ paths }) => {
   return {
     revision: memory.revision,
     subjects,
-    pendingOperations: [...operations.values()].filter(({ state }) => state === 'pending').map(({ operationId }) => operationId),
+    ...(operations ? { pendingOperations: [...operations.values()].filter(({ state }) => state === 'pending').map(({ operationId }) => operationId) } : {}),
+    stateErrors: error ? [error] : [],
     undoWindowDays,
   }
 }
