@@ -203,8 +203,9 @@ as context, which the model sees. Both hosts support `systemMessage` on
 Anything else confirms nothing: extra text, a quoted ID, several IDs, a pasted
 report, an unknown or ambiguous ID, a record that is not active, and every
 prompt in a delegate or subagent. A prompt in that exact shape gets one short
-reason. Any other prompt that mentions `confirm fg:` keeps its normal output
-and gains one line that says nothing was confirmed. A confirm prompt gets no
+reason. Any other prompt in a main thread that mentions `confirm fg:` keeps
+its normal output and gains one context line, for the model only, that says nothing was
+confirmed; the user sees no message. A confirm prompt gets no
 lifecycle instruction and neither receives nor consumes the first-prompt
 guidance match, so the next prompt still gets it.
 

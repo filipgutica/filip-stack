@@ -85,14 +85,14 @@ const digestsOf = (live) => {
 
 // Replaces the guide root and any home directory with placeholders, so no output names a local
 // path. The text is JSON, so a bare home directory, the form the new-text guard also refuses, ends
-// at a quote or an escape.
+// at a quote or an escape, and a backslash appears escaped. As in the guard, a drive-rooted home,
+// such as C:\users\<name>, /mnt/c/USERS/<name>, or /mnt/c/home/<name>, matches in any case.
 const scrubPaths = ({ text, guideRoot }) => text
   .replaceAll(guideRoot, '<guide-root>')
   .replaceAll(homedir(), '~')
+  .replace(/(?:\/mnt\/[a-z]\/(?:users|home)|[a-z]:(?:\\\\|\/)users)(?:\\\\|\/)[^\\/\s"]+/giu, '~')
   .replace(/\/(?:Users|home)\/[^/\s"]+\//gu, '~/')
-  .replace(/[A-Za-z]:\\\\Users\\\\[^\\\s"]+\\\\/gu, '~\\\\')
   .replace(/(?<![\w.-])\/(?:Users|home)\/[^/\s"\\]+/gu, '~')
-  .replace(/[A-Za-z]:\\\\Users\\\\[^\\\s"]+/gu, '~')
 
 // Redacts each string in a value on its own, so a prompt block in one item cannot hide the next.
 const redactStrings = (value) => {
@@ -212,18 +212,21 @@ const plan = (paths) => {
   const state = dreamState({ paths, liveDigests: digestsOf(live) })
   const review = state.subjects.filter(({ due }) => due)
   const { validationErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords } = audit(paths)
-  // validate joins its errors into one message; one line per error lets the budget count what it drops.
-  const errorLines = validationErrors.flatMap((message) => message.split('\n'))
+  // audit lists each validation error on its own, so a block left open in one cannot hide the
+  // next. An error can span lines; it is redacted whole, so a block that spans lines hides all of
+  // them, then split so that the budget counts each line it drops.
+  const errorLines = validationErrors.flatMap((message) => redactUnsafeText(message).split('\n'))
   const audited = boundedLists({
-    lists: scrubbed({ value: redactStrings({ validationErrors: errorLines, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords }), guideRoot }),
+    lists: scrubbed({ value: redactStrings({ validationErrors: errorLines, stateErrors: state.stateErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords }), guideRoot }),
     maxBytes: maxAuditBytes,
   })
-  const pending = boundedLists({ lists: { pendingOperations: state.pendingOperations }, maxBytes: maxPendingBytes })
+  // A journal that cannot be read has no pending operations to show; stateErrors names it.
+  const pending = boundedLists({ lists: { pendingOperations: state.pendingOperations ?? [] }, maxBytes: maxPendingBytes })
   const packet = {
     schemaVersion: 1,
     mode: 'dream-plan',
     revision: state.revision,
-    pendingOperations: pending.kept.pendingOperations,
+    ...(state.pendingOperations ? { pendingOperations: pending.kept.pendingOperations } : {}),
     undoWindowDays: state.undoWindowDays,
     audit: audited.kept,
     omittedItems: { ...audited.omitted, ...pending.omitted },

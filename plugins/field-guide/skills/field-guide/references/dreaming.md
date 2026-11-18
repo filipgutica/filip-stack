@@ -1,10 +1,12 @@
 # Nightly maintenance
 
 Nightly maintenance ("dreaming") keeps the store small and current. A script
-plans, a reviewer model proposes actions, and the script applies only what the
-lifecycle rules allow. Every applied change is journaled and reversible for 90
-days. Read [storage](storage.md#consolidation-and-undo) for `consolidate`,
-`undo-operation`, the journal, and proposals.
+plans: it prints what a reviewer model needs to find
+overlaps, duplicates of live guidance, and contradictions. The script can also
+apply the reviewer's merges, archives, and flags within the lifecycle rules,
+journaled and reversible for 90 days. Act on any other finding
+with `consolidate`, `transition`, or `maintain`, as for any other change. Read [storage](storage.md#consolidation-and-undo) for
+`consolidate`, `undo-operation`, the journal, and proposals.
 
 Run the script with the same Node that runs the utility:
 
@@ -22,7 +24,11 @@ entry counts as recorded. The packet holds:
 - The audit: validation errors, stale candidates, unresolved relationships,
   broken pointers, orphan evidence, and oversized records, within 32 KiB
   together, with one validation error per line. A text item longer than 1 KiB
-  is cut and ends with `…`.
+  is cut and ends with `…`. `stateErrors` lists what the plan itself could not
+  read, such as an `operations.jsonl` line that is not JSON, an entry whose
+  type, operation ID, scope, or fingerprints are missing or malformed, or a
+  `run` or `run-intent` entry with any field or value that `apply` does not
+  write.
 - `live`: a digest of each live guidance source, `claude-md`, `agents-md`,
   `roles`, `coding-standards`, `skills` (one `name: description` line per
   skill in `~/.agents/skills`), and `plugin-skills` (one
@@ -42,8 +48,16 @@ entry counts as recorded. The packet holds:
   its records, and lists it in `queuedContradictions`. A subject lists its live
   records with their confirmation, triggers, and linked subjects, its
   `digest`, which covers every record field the packet shows, and its
-  `overlapGroups` without groups the user declined.
-- `pendingOperations`, within 8 KiB, and `skippedSubjects`.
+  `overlapGroups` without groups the user declined. A confirmation shows only
+  while the hook's watermark matches memory, and, as in `consolidate`, a
+  confirmation that only a crashed operation revoked still shows. When
+  `annotations.json` cannot be read, records show no confirmation or triggers,
+  and the audit reports the error.
+- `pendingOperations`, within 8 KiB. The packet leaves it out when
+  `operations.jsonl` cannot be read; `stateErrors` names the error,
+  `overlapGroups` may then list a declined group, every subject is due, and no
+  subject lists `queuedContradictions`.
+- `skippedSubjects`: how many subjects are not due.
 - `omittedItems`: for each audit list and `pendingOperations` that lost items to
   its limit, how many it lost.
 - `omittedSubjects`: the subjects that the 192 KiB limit on the printed packet
@@ -53,7 +67,9 @@ entry counts as recorded. The packet holds:
 The packet holds no evidence, prompts, or transcripts. Every home directory,
 with or without a separator after it, and the guide root are replaced with `~`
 and `<guide-root>` before any text is measured or cut. Live text, record text,
-and each audit item on its own are redacted before they are measured or cut:
+and each audit item on its own are redacted before they are measured or cut;
+each validation error is redacted on its own and whole before it is split into
+lines, so a block left open in one error cannot hide the next:
 
 - A `<user>`, `<assistant>`, or `<system>` block runs to its closing tag, such
   as `</user>`. A `BEGIN PROMPT` or `BEGIN RAW PROMPT` block runs to a line
@@ -66,8 +82,9 @@ and each audit item on its own are redacted before they are measured or cut:
   through its `-----END` marker.
 - A block that never closes is redacted to the end of the text. The tag and
   `BEGIN PROMPT` markers match in any case.
-- Each other line is replaced whole when it holds an `http` or `https` URL
-  query string, percent-encoded text, a credential token or assignment, a
+- Each other line is replaced whole when it holds user information in a URL of
+  any scheme, a query string after a scheme and a colon, with or without `//`
+  (as in `mailto:<address>?subject=<text>`), percent-encoded text, a credential token or assignment, a
   private key marker, or a line-start `user:`, `assistant:`, or `system:`
   marker.
 
@@ -109,25 +126,35 @@ replaces superseded guidance is never archived or consolidated.
 
 `apply` checks, in this order, and stops at the first failure:
 
-1. Recovers the journal, including a run that a crash left without its `run`
+1. Refuses, before it writes anything, when `operations.jsonl` or
+   `annotations.json` cannot be read or the annotation watermark does not match
+   memory. The plan shows no confirmation then, so a run could otherwise change
+   guidance the user confirmed. An older plugin or an interrupted write can
+   leave the watermark behind; the next Field Guide write that takes the memory
+   lock reconciles it and voids confirmations, and then you plan again.
+   Otherwise `apply` reads confirmations as the plan does, including one that
+   only a crashed operation revoked.
+2. Recovers the journal, including a run that a crash left without its `run`
    entry. A run already applied returns `already-applied` with its report and
    changes nothing. Only when a proposal it stored expired unapplied and its
    subjects are unchanged does the same input propose it again.
-2. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
+3. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
    `approval`, `approved`, `explicitPreference`) anywhere in the input.
-3. Validates the schema, the privacy guard on every text, and the allowed
+4. Validates the schema, the privacy guard on every text, and the allowed
    actions. Every string in an action, including a replacement example's
-   language, also refuses an `http` URL query string and a home directory
-   without a trailing separator, which stored records may still hold. An
+   language and code, also passes the new-text guard in
+   [storage](storage.md#consolidation-and-undo): no user information or query
+   string in a URL of any scheme, and no home directory without a trailing
+   separator; stored records may still hold these. An
    example's language must be a name such as `sh`. A run reviews at most 50 actions and applies at most 10 changes.
    A consolidation must target 2 to 8 records, must not be longer than they
-   are, must not repeat a declined set, and must produce a record the store
-   accepts.
-4. Compares the live digests and each subject's digest with the current state.
+   are, and must not repeat a declined set. Each consolidation and archive must
+   leave a store that the store write accepts.
+5. Compares the live digests and each subject's digest with the current state.
    Any change since the plan, including a new confirmation, stops the run. The
    live guidance is read while the run holds the memory lock, so an edit made
    while the run waited for the lock also stops it.
-5. Without `--preview-token`, returns a preview and its token. With a token,
+6. Without `--preview-token`, returns a preview and its token. With a token,
    requires the token of the current state.
 
 A run applies all of its actions or none. When one action is invalid or breaks

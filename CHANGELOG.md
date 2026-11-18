@@ -1,3 +1,24 @@
+# [6.15.0](https://github.com/filipgutica/filip-stack/compare/v6.14.1...v6.15.0) (2026-11-18)
+
+
+### Bug Fixes
+
+* **field-guide:** close round 10 review findings on guards, recovery, and the plan ([1370fe9](https://github.com/filipgutica/filip-stack/commit/1370fe9bac66c1a927780a0cda4a9b2b29b041b1))
+* **field-guide:** close round 9 review findings on consolidation and the nightly plan ([6d5ae05](https://github.com/filipgutica/filip-stack/commit/6d5ae0541f45981c60cb7769a1aa7949d01dd829))
+
+
+### Features
+
+* **field-guide:** reversible project consolidation and a read-only nightly plan ([ff343af](https://github.com/filipgutica/filip-stack/commit/ff343af6dcca5cdf520049b2e88bace4fa53ffe9))
+
+## [6.14.1](https://github.com/filipgutica/filip-stack/compare/v6.14.0...v6.14.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **field-guide:** document and test the quiet near miss on both hosts ([53285d9](https://github.com/filipgutica/filip-stack/commit/53285d9df4b01cd1900ad926acc4cd5b0bf838dd))
+* **field-guide:** keep confirm near misses out of the user's chat ([d6c91bd](https://github.com/filipgutica/filip-stack/commit/d6c91bdd65ee994712d132b5ec0e220eec53d4c0))
+
 # [6.14.0](https://github.com/filipgutica/filip-stack/compare/v6.13.0...v6.14.0) (2026-11-18)
 
 

@@ -155,11 +155,12 @@ a record it replaces was confirmed. The
 hook cannot tell who sent the prompt, so only guidance stops an agent from
 sending it through a host tool.
 
-Field Guide can merge records that say the same thing, and a nightly
-maintenance script can propose merges, archives, and flags. Every change it
-applies is journaled and can be undone for 90 days. It never rewrites
-confirmed guidance; you approve those changes with an exact
-`confirm fg:proposal:<id>` prompt. See
+Field Guide can merge records that say the same thing. Each merge is
+journaled and can be undone for 90 days. It never rewrites confirmed guidance
+on its own; you approve that merge with an exact `confirm fg:proposal:<id>`
+prompt. A nightly maintenance script lists overlaps and audit findings for a
+reviewer, and can also apply merges, archives, and flags within the lifecycle
+rules, journaled and reversible for 90 days. See
 [dreaming.md](plugins/field-guide/skills/field-guide/references/dreaming.md).
 
 ## Guardrails
