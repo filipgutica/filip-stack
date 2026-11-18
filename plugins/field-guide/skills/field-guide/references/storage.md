@@ -164,10 +164,12 @@ same checks cover every string in a nightly action, a run report, and a stored
 proposal. They also cover each new proposal and new journal entry whole,
 including the subject key it copies from memory, with the checks its reader
 applies, so a legacy subject key that the guard refuses stops the command
-before it writes anything. A replacement copies its targets' subject key and
-linked subjects, so `consolidate` refuses, in a preview, an apply, or an
-approval, targets whose subject key or linked subjects the guard refuses, and
-nightly maintenance flags such a merge as `unsafe-overlap`. A proposal stores a digest of its scope, not the repository identity,
+before it writes anything. A replacement copies its targets' scope, subject
+key, linked subjects, and evidence IDs, so `consolidate` refuses, in a preview,
+an apply, or an approval, targets whose copied fields the guard refuses, and
+nightly maintenance flags such a merge as `unsafe-overlap`. That includes the
+repository identity of a repository without a remote, or with a `file:` remote,
+under a home directory. A proposal stores a digest of its scope, not the repository identity,
 which can be a local path, such as the Git directory of a repository without a
 remote. Stored records keep the guard that released versions used, so their
 stores stay readable.
@@ -187,8 +189,9 @@ proposal ID from the current records and the stored proposal, and applies it.
 A proposal records `confirmedFingerprints`, the predecessors that were
 confirmed when the proposal was stored, and its ID covers that list and the
 whole replacement, with each example's keys sorted, so their order does not
-change it. `--approval` also accepts the ID that 6.15.0 computed from the keys
-in their stored order. The
+change it. A new proposal stores its examples with their keys sorted, so 6.15.0,
+which hashes them as stored, computes the same ID. `--approval` also accepts the
+ID that 6.15.0 computed from the keys in their stored order. The
 approved replacement carries `[confirmed]`, set in the same commit. When any predecessor was
 confirmed or unconfirmed after the proposal was stored, `--approval` refuses,
 names the change, and writes nothing; propose the consolidation again. It also
@@ -272,7 +275,8 @@ writes, with the writer's target counts, live sources, undo window, and
 new-text guard. Its report must name the entry's own operations, in order, each
 with the run's time plus the undo window as its deadline, and the entry's own
 proposals, in order, with their expiries, each confirming its replacement. Any
-other field or value makes the journal unreadable.
+other field or value makes the journal unreadable. These checks cannot tell a
+forged entry that has exactly the writer's shape from one the writer made.
 
 `proposals.json` is local and never syncs. Each proposal holds a digest of its
 scope, the target fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its

@@ -158,7 +158,8 @@ sending it through a host tool.
 Field Guide can merge records that say the same thing. Each merge is
 journaled and can be undone for 90 days. It never rewrites confirmed guidance
 on its own; you approve that merge with an exact `confirm fg:proposal:<id>`
-prompt. A nightly maintenance script lists overlaps and audit findings for a
+prompt. It refuses a merge that would copy a home directory path into the new
+record, such as the identity of a repository without a remote. A nightly maintenance script lists overlaps and audit findings for a
 reviewer, and can also apply merges, archives, and flags within the lifecycle
 rules. It never archives or merges guidance you ever confirmed, even after you
 unconfirm it; it only flags or proposes it. Each merge and archive it applies

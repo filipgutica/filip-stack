@@ -55,7 +55,8 @@ entry counts as recorded. The packet holds:
   a live record whose relationship `contradicts` another live record of its
   subject, while either of the two is confirmed. A subject lists its live
   records with their confirmation, triggers, and linked subjects, its
-  `digest`, which covers every record field the packet shows, and its
+  `digest`, which covers every record field the packet shows and which records
+  count as confirmed now, so a reconfirmation makes the subject due again, and its
   `overlapGroups` without groups the user declined. With each due subject come
   the subjects that apply with it: the same subject key in the other scope,
   when one of the two is shared. One that is not due itself has
@@ -71,11 +72,14 @@ entry counts as recorded. The packet holds:
   matches memory. When `annotations.json` cannot be read, records show no
   confirmation or triggers, and the audit reports the error. When it is
   missing while memory holds guidance, or has no entry for a record that
-  memory holds and a shared import did not create, `stateErrors` says so.
+  memory holds and a shared import did not create, `stateErrors` says so. It
+  also names a file that lost part of the store's history, which `apply`
+  refuses (step 1 under [Apply](#apply)).
 - `pendingOperations`, within 8 KiB. The packet leaves it out when
   `operations.jsonl` cannot be read; `stateErrors` names the error,
-  `overlapGroups` may then list a declined group, every subject is due, and no
-  subject lists `queuedContradictions`.
+  `overlapGroups` may then list a declined group, every subject is due, and
+  `queuedContradictions` lists only the contradictions that memory records;
+  those that only a run queued are unknown.
 - `skippedSubjects`: how many subjects the packet leaves out because they are
   not due and do not apply with a due subject.
 - `omittedItems`: for each audit list and `pendingOperations` that lost items to
@@ -134,8 +138,10 @@ replacement carries `[confirmed]` after the user's approval. A merge becomes a
 `confirmed-overlap` flag instead when its replacement repeats the text of a
 confirmed live shared record, which retrieval would then leave out, or when the
 user once confirmed a target that is not confirmed now. It becomes an
-`unsafe-overlap` flag when the replacement would copy a subject key or linked
-subject that the new-text guard refuses. `apply` works out under the memory lock
+`unsafe-overlap` flag when the replacement would copy a scope, subject key, or
+linked subject that the new-text guard refuses, such as the repository identity
+of a repository without a remote, or with a `file:` remote, under a home
+directory. `apply` works out under the memory lock
 which subjects are due, as the plan does. A subject that is not due, such as
 one marked `context`, takes only a contradiction that names a record of a due
 subject that applies with it; any other action there stops the run. A subject
@@ -172,18 +178,28 @@ replaces superseded guidance is never archived or consolidated.
    show which records the user ever confirmed: it is missing while memory holds
    guidance, or has no entry for a record that memory holds and a shared import
    did not create. Restore the file if it was moved or replaced; a store that
-   never had one gets it with its next capture or confirmation. Otherwise
-   `apply` reads confirmations as the plan does, counting every record the user
-   ever confirmed.
+   never had one gets it with its next capture or confirmation. `apply` also
+   refuses when a file lost part of the store's history: the watermark does not
+   list exactly the records memory holds; `annotations.json` shows no
+   confirmation of any record in a group that a finished run recorded as
+   confirmed (a `confirmed-duplicate` target, a queued contradiction, or a
+   proposal's targets), as after an older copy rebuilt it; or
+   `operations.jsonl` lacks an operation that memory records, or the undo that
+   a restore names. Restore the file that lost it. Otherwise `apply` reads
+   confirmations as the plan does, counting every record the user ever
+   confirmed.
 2. Returns `already-applied` with the stored report for a finished run and
    writes nothing, not even journal recovery. A run is finished when it has a
    `run` entry, or an intent whose operations reached memory. The same input
    with its keys in another order is the same run. The report offers only the
    proposals still in `proposals.json`. A run stays final even after a proposal
    it stored expired; a review after that comes from a new plan, so it is a new
-   run. Otherwise, once the input passes the checks in steps 3 and 4, `apply`
-   recovers the journal, including a run that a crash left without its `run`
-   entry.
+   run. A run that changed no record leaves no trace but its journal entries,
+   so after they are lost its replay is a new run. Otherwise `apply` decides
+   against the journal and annotations as recovery would leave them, including
+   a run that a crash left without its `run` entry, and writes that recovery
+   only with the run, once every check passed. A preview or a refused run
+   writes nothing.
 3. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
    `approval`, `approved`, `explicitPreference`) anywhere in the input.
 4. Validates the schema, the privacy guard on every text, and the allowed
@@ -205,8 +221,9 @@ replaces superseded guidance is never archived or consolidated.
    Any change since the plan, including a new confirmation, stops the run. The
    live guidance is read while the run holds the memory lock, so an edit made
    while the run waited for the lock also stops it.
-6. Without `--preview-token`, returns a preview and its token. With a token,
-   requires the token of the current state.
+6. Without `--preview-token`, returns a preview and its token. A preview names
+   each proposal by its ID and prints no confirm prompt, because nothing is
+   stored yet. With a token, requires the token of the current state.
 
 A run applies all of its actions or none. When one action is invalid or breaks
 a rule, the error names it as `subjects[<i>].actions[<j>] (<action>)` and says

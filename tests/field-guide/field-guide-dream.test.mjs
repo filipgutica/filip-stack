@@ -1427,11 +1427,11 @@ test('dream apply compares live guidance read under the memory lock', { timeout:
   assert.equal(guide.record(first).status, 'active')
 })
 
-// A guide in a repository without a remote under a home directory, with two cleanup records, the
-// first confirmed. The repository identity is its Git directory, so it holds the home path.
-const noRemoteSetup = (name) => {
+// A guide in a repository without a remote, with two cleanup records, the first confirmed. The
+// repository identity is its Git directory, so under a home directory it holds the home path.
+const noRemoteSetup = (name, { underHome = false } = {}) => {
   const root = mkdtempSync(join(tmpdir(), `field-guide-dream-${name}-`))
-  const parent = join(root, 'home', 'review-fixture-user')
+  const parent = underHome ? join(root, 'home', 'review-fixture-user') : join(root, 'repositories')
   mkdirSync(parent, { recursive: true })
   const repoRoot = createRepo({ parent, name: 'no-remote' })
   execFileSync('git', ['-C', repoRoot, 'remote', 'remove', 'origin'])
@@ -1441,14 +1441,14 @@ const noRemoteSetup = (name) => {
   return { root, guide, first, second }
 }
 
-test('a project proposal round-trips in a repository without a remote under a home directory', () => {
+test('a project proposal round-trips in a repository without a remote', () => {
   const { root, guide, first, second } = noRemoteSetup('no-remote')
   const learning = 'After a merge, clean up.'
   const refused = guide.consolidate({ targetIds: [first, second], replacement: { learning, confidence: 'high' } }).result
   assert.equal(refused.outcome, 'approval-required')
   // The proposal binds the scope by a digest, so it stores no local path.
   const proposals = readFileSync(join(guide.guideRoot, 'proposals.json'), 'utf8')
-  assert.ok(!proposals.includes('/home/') && !proposals.includes(root), proposals)
+  assert.ok(!proposals.includes(root), proposals)
   const reference = refused.confirmPrompt.slice('confirm fg:'.length)
   assert.match(guide.confirm(reference).systemMessage, /approved .*the replacement will be confirmed/)
   assert.equal(guide.exec({ command: 'consolidate', args: ['--approval', reference] }).result.outcome, 'consolidated')
@@ -1862,6 +1862,19 @@ test('dream apply refuses and writes nothing while the journal, annotations, or 
   }
 })
 
+test('a merge never copies a home path from a repository identity into a new record', () => {
+  const { guide, first, second } = noRemoteSetup('home-identity', { underHome: true })
+  const before = storeFiles(guide)
+  const learning = 'After a merge, clean up.'
+  assert.match(guide.consolidate({ targetIds: [first, second], replacement: { learning, confidence: 'high' } }, { expectFailure: true }).stderr, /absolute home-directory path/)
+  assert.deepEqual(storeFiles(guide), before)
+  // A nightly run leaves that merge to the user.
+  const input = dreamInput(guide.plan(), [consolidation([first, second])])
+  const applied = guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
+  assert.deepEqual([applied.operations.length, applied.proposals.length, applied.flags.map(({ kind }) => kind)], [0, 0, ['unsafe-overlap']])
+  assert.equal(guide.record(first).status, 'active')
+})
+
 test('a proposal that a dream run stores holds a scope digest and applies after approval', () => {
   const { root, guide, first, second } = noRemoteSetup('run-proposal')
   const plan = guide.plan()
@@ -1869,7 +1882,7 @@ test('a proposal that a dream run stores holds a scope digest and applies after 
   const applied = guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
   assert.equal(applied.proposals.length, 1)
   const stored = readFileSync(join(guide.guideRoot, 'proposals.json'), 'utf8')
-  assert.ok(!stored.includes('/home/') && !stored.includes(root), stored)
+  assert.ok(!stored.includes(root), stored)
   assert.deepEqual(Object.keys(JSON.parse(stored).proposals[0]).filter((key) => key.startsWith('scope')), ['scopeDigest'])
   const run = guide.journal().find(({ type }) => type === 'run')
   assert.deepEqual(run.proposals.map(({ subjectId }) => subjectId), [subjectFor(plan).subjectId])
@@ -2046,7 +2059,9 @@ test('a proposal from a run that failed before it finished cannot be approved', 
   const input = dreamInput(plan, [consolidation([first, second])])
   input.subjects.push({ subjectId: naming.subjectId, digest: naming.digest, actions: [{ action: 'archive', targetId: unrelated, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }] })
   const preview = guide.dreamApply(input)
-  const reference = preview.proposals[0].confirmPrompt.slice('confirm fg:'.length)
+  // A preview prints no confirm prompt; the prompt its proposal would get approves nothing either.
+  assert.equal(preview.proposals[0].confirmPrompt, undefined)
+  const reference = `proposal:${short(preview.proposals[0].proposalId)}`
   const journalPath = join(guide.guideRoot, 'operations.jsonl')
   writeFileSync(journalPath, '')
   chmodSync(journalPath, 0o444)
@@ -2506,7 +2521,7 @@ test('a proposal keeps its ID when the replacement examples list their keys in a
   const preview = guide.dreamApply(dreamInput(plan, [withExamples(ids, [unsortedExample])]))
   const applied = guide.dreamApply(dreamInput(plan, [withExamples(ids, [sortedExample])]), { previewToken: preview.previewToken })
   assert.equal(applied.proposals[0].proposalId, preview.proposals[0].proposalId)
-  assert.match(guide.confirm(preview.proposals[0].confirmPrompt.slice('confirm fg:'.length)).systemMessage, /approved/)
+  assert.match(guide.confirm(applied.proposals[0].confirmPrompt.slice('confirm fg:'.length)).systemMessage, /approved/)
 })
 
 test('a proposal that 6.15.0 stored with unsorted example keys still applies after approval', () => {
@@ -2519,6 +2534,19 @@ test('a proposal that 6.15.0 stored with unsorted example keys still applies aft
   const reference = guide.exec({ cli, command: 'consolidate', args: ['--input', input] }).result.confirmPrompt.slice('confirm fg:'.length)
   assert.match(guide.confirm(reference).systemMessage, /approved/)
   assert.equal(guide.exec({ command: 'consolidate', args: ['--approval', reference] }).result.outcome, 'consolidated')
+})
+
+test('6.15.0 approves and applies a proposal this version stored with unsorted example keys', async () => {
+  const { guide } = setup('stored-example-order')
+  const cli = releasedCli(release615Commit)
+  const released = await import(cli)
+  const ids = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  guide.confirm(short(ids[0]))
+  const proposal = guide.consolidate({ targetIds: ids, replacement: withExamples(ids, [unsortedExample]).replacement }).result
+  assert.deepEqual(Object.keys(JSON.parse(readFileSync(join(guide.guideRoot, 'proposals.json'), 'utf8')).proposals[0].replacement.examples[0]), ['code', 'kind', 'language'])
+  const reference = proposal.confirmPrompt.slice('confirm fg:'.length)
+  assert.match(released.confirmFromPrompt({ guideRoot: guide.guideRoot, prompt: `confirm fg:${reference}`, mainThread: true, host: 'claude' }).systemMessage, /approved/)
+  assert.equal(guide.exec({ cli, command: 'consolidate', args: ['--approval', reference] }).result.outcome, 'consolidated')
 })
 
 test('dream apply refuses a live digest that is not a digest before it recovers anything', () => {
