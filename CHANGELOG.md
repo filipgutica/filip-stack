@@ -1,3 +1,15 @@
+# [6.16.0](https://github.com/filipgutica/filip-stack/compare/v6.15.0...v6.16.0) (2026-11-18)
+
+
+### Bug Fixes
+
+* **host-config:** qualify the Critic row and name the browser role in its scenario ([64b66ad](https://github.com/filipgutica/filip-stack/commit/64b66ad39cd546e8888e4b0e3fcb60c3ca569c09))
+
+
+### Features
+
+* **host-config:** run the Critic on the other provider's workhorse model ([e7bf6c7](https://github.com/filipgutica/filip-stack/commit/e7bf6c78ef17a0618608cbb47eb2f2d27cbb95bd))
+
 # [6.15.0](https://github.com/filipgutica/filip-stack/compare/v6.14.1...v6.15.0) (2026-11-18)
 
 
