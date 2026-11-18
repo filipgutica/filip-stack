@@ -5,7 +5,7 @@ related: [full-stop, sol-loop, babysit-pr, council]
 ## What it does
 
 Sol (currently OpenAI's
-`gpt-6.1-sol`) reviews the code and PR description through
+`gpt-6.2-sol`) reviews the code and PR description through
 [sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
 bot findings, and makes routine decisions while you are away. Add a council
 threshold, such as `council 9.5`, and a [council](../council/) of models

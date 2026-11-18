@@ -6,8 +6,8 @@
     "fast": { "id": "claude-haiku-5-5", "label": "Haiku 5.5" }
   },
   "codex": {
-    "frontier": { "id": "gpt-6-astra", "label": "Astra" },
-    "workhorse": { "id": "gpt-6.1-sol", "label": "Sol" },
+    "frontier": { "id": "gpt-6.2-astra", "label": "Astra 6.2" },
+    "workhorse": { "id": "gpt-6.2-sol", "label": "Sol 6.2" },
     "balanced": { "id": "gpt-6.1-terra", "label": "Terra" },
     "fast": { "id": "gpt-6-luna", "label": "Luna" }
   }

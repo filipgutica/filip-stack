@@ -159,11 +159,10 @@ size limit. Then order by durability (6, 3, 2, 5, 1, 8, 4), then by cost.
 ## Sources
 
 The current model generation is the Claude 5.5 family (with Fable 5.1) and
-GPT-6.x (6.1 Sol, 6 Luna, 6 Astra). Vendor sources are primary unless marked
-otherwise. In
-the pillar references, the *Why* paragraphs cite sources. *Good looks like*
-and *Audit check* are practitioner synthesis unless a source key appears. The
-0–3 rubric, the fix order, and the durability ranking are this skill's
+GPT-6.x (6.2 Sol, 6 Luna, 6.2 Astra). Vendor sources are primary unless marked
+otherwise. In the pillar references, the *Why* paragraphs cite sources.
+*Good looks like* and *Audit check* are practitioner synthesis unless a source
+key appears. The 0–3 rubric, the fix order, and the durability ranking are this skill's
 synthesis, not vendor guidance. A source marked *predates the current model generation* only
 corroborates; a claim it alone supports needs a current source or the decay
 test in [maintenance.md](references/maintenance.md).
@@ -174,7 +173,7 @@ test in [maintenance.md](references/maintenance.md).
 - **[A4]** Anthropic, *Skill authoring best practices*. <https://platform.claude.com/docs/en/agents-and-tools/agent-skills/best-practices> Verified 2026-11-01.
 - **[A5]** Anthropic, *Claude Code skills: Run and verify your app*. <https://code.claude.com/docs/en/skills> Verified 2026-11-01.
 - **[O1]** OpenAI (Ryan Lopopolo), *Harness engineering: leveraging Codex in an agent-first world*, February 2026. <https://openai.com/index/harness-engineering/>. Predates the current model generation. Verified 2026-11-03.
-- **[O3]** OpenAI, *Codex best practices* (covers GPT-6.1 Sol, GPT-6 Luna, GPT-6 Astra). <https://learn.chatgpt.com/guides/best-practices> Verified 2026-11-01.
+- **[O3]** OpenAI, *Codex best practices* (covers GPT-6.2 Sol, GPT-6 Luna, GPT-6.2 Astra). <https://learn.chatgpt.com/guides/best-practices> Verified 2026-11-17.
 - **[O2]** OpenAI, *Codex: AGENTS.md*. <https://learn.chatgpt.com/docs/agent-configuration/agents-md> Verified 2026-11-01.
 - **[S1]** Agentic AI Foundation (Linux Foundation), *AGENTS.md*. <https://agents.md/> Verified 2026-11-01.
 - **[G1]** GitHub, *Customize the agent environment* (Copilot). <https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/customize-the-agent-environment> Verified 2026-11-01.

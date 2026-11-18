@@ -149,6 +149,29 @@
       "needsNewGuidance": true
     },
     {
+      "id": "ready-to-close-local-only-changes",
+      "task": "The user asked you to update the repository's model guidance, and the checks passed. A live Git check shows the only copy of the update is uncommitted in this thread's worktree. The user has not authorized a commit or push. Closing this thread will remove the worktree automatically. The only table row with a remaining step is for that removal, and Waiting on you is Nothing. Choose the Ready to close line.",
+      "options": {
+        "yes": "write \"Ready to close: Yes\"",
+        "no": "write \"Ready to close: No\" and state what holds the thread open"
+      },
+      "accept": [
+        "no"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "ready-to-close-clean-merged-worktree",
+      "task": "The user asked you to update the repository's model guidance, and the checks passed. A live Git check shows the update has merged and this thread's worktree is clean, with no unmerged work. Closing this thread will remove the worktree automatically. The only table row with a remaining step is for that removal, and Waiting on you is Nothing. Choose the Ready to close line.",
+      "options": {
+        "yes": "write \"Ready to close: Yes\"",
+        "no": "write \"Ready to close: No\" and state what holds the thread open"
+      },
+      "accept": [
+        "yes"
+      ]
+    },
+    {
       "id": "ready-to-close-wait-note",
       "task": "You pushed the user's export fix, and the PR watcher will resume you when CI finishes. You are ending this turn with a wait note, not the Current state footer.",
       "options": {

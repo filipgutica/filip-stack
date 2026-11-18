@@ -159,7 +159,7 @@
       "expectedSkill": "engineering",
       "activation": "implicit",
       "mode": "implementation",
-      "expectedReference": "testing-and-debugging.md"
+      "expectedReference": null
     },
     {
       "id": "engineering-near-miss",

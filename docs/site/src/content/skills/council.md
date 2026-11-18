@@ -51,8 +51,8 @@ run the models. A council needs at least two members.
 
 | Member | Model |
 | --- | --- |
-| Astra | OpenAI's `gpt-6-astra` |
-| Sol | OpenAI's `gpt-6.1-sol` |
+| Astra 6.2 | OpenAI's `gpt-6.2-astra` |
+| Sol 6.2 | OpenAI's `gpt-6.2-sol` |
 | Opus | Claude Opus 5.5 (`claude-opus-5-5`) |
 | Fable | Claude Fable 5.2 (`claude-fable-5-2`) |
 

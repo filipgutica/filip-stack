@@ -1,4 +1,4 @@
-# The main-thread model for each host's guidance, through the local CLIProxyAPI.
+# Models for each host's guidance, through the local CLIProxyAPI.
 # The label is the host whose guidance the prompt functions render.
 - id: openai:chat:claude-opus-5-5
   label: claude
@@ -6,6 +6,9 @@
     apiBaseUrl: "{{ env.CLIPROXY_BASE_URL | default('http://127.0.0.1:8317/v1') }}"
     apiKeyEnvar: CLIPROXY_API_KEY
     omitDefaults: true
-- id: openai:chat:gpt-6.1-sol
+- id: openai:chat:gpt-6.2-sol
+  label: codex
+  config: *cliproxy
+- id: openai:chat:gpt-6.2-astra
   label: codex
   config: *cliproxy

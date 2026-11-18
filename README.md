@@ -96,7 +96,7 @@ Install only the standalone skills you want, with the
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
 | `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |
 | `simplify-pass` | Simplifies selected code after three independent reviews, preserving its observable behavior. |
-| `sol-loop` | Has Sol (currently OpenAI's `gpt-6.1-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
+| `sol-loop` | Has Sol (currently OpenAI's `gpt-6.2-sol`) review a change in rounds and fixes the findings that are in scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `vue-best-practices` | Guides Vue component, composable, and test work with explicit state ownership and component contracts. |
 | `walkthrough` | Explains a change in parts and waits for your acceptance of each part. |
 

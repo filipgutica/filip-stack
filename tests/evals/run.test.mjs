@@ -49,26 +49,28 @@ const startStub = async (t, content) => {
 test('the autonomy eval compares both guidance versions and applies the gate', async (t) => {
   const { requests, env } = await startStub(t, '{"action": "ask user"}')
 
-  // --base HEAD makes both versions identical, so only needsNewGuidance scenarios that
-  // do not accept "ask user" can fail the gate.
+  // The stub always answers "ask user", so only needsNewGuidance scenarios
+  // that reject that answer can fail the gate, even when the guidance differs.
   const { status, output } = await runEval({
-    args: ['autonomy', '--base', 'HEAD', '--attempts', '1', '--model', 'gpt-6.1-sol'],
+    args: ['autonomy', '--base', 'HEAD', '--attempts', '1', '--model', 'gpt-6.2-sol', '--model', 'gpt-6.2-astra'],
     env,
   })
 
-  assert.equal(requests.length, 22, output)
+  assert.equal(requests.length, 44, output)
   assert.deepEqual(Object.keys(requests[0]).sort(), ['messages', 'model'])
-  assert.equal(requests[0].model, 'gpt-6.1-sol')
-  assert.match(output, /^## codex guidance, gpt-6\.1-sol$/mu)
+  assert.equal(requests.filter(({ model }) => model === 'gpt-6.2-sol').length, 22)
+  assert.equal(requests.filter(({ model }) => model === 'gpt-6.2-astra').length, 22)
+  assert.match(output, /^## codex guidance, gpt-6\.2-sol$/mu)
+  assert.match(output, /^## codex guidance, gpt-6\.2-astra$/mu)
   assert.match(output, /^\| archive-intent \| ask user \| 1\/1 \| 1\/1 \| ask user \|$/mu)
   assert.match(output, /^\| helper-name \| decide \| 0\/1 \| 0\/1 \| ask user \|$/mu)
-  assert.match(output, /^3 scenario result\(s\) regressed against HEAD/mu)
+  assert.match(output, /^6 scenario result\(s\) regressed against HEAD/mu)
   assert.equal(status, 1)
 })
 
 test('routing for one skill runs without a base and must pass every attempt', async (t) => {
   const { requests, env } = await startStub(t, '{"skill": "council"}')
-  const { status, output } = await runEval({ args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.1-sol'], env })
+  const { status, output } = await runEval({ args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.2-sol'], env })
 
   // Six scenarios name council, all in its own file.
   assert.equal(requests.length, 6, output)
