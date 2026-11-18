@@ -1,24 +1,23 @@
 # Nightly maintenance
 
-Nightly maintenance ("dreaming") keeps the store small and current. In this
-release, a script plans: it prints what a reviewer model needs to find
-overlaps, duplicates of live guidance, and contradictions. A later release adds
-`apply`, which applies the reviewer's actions by the lifecycle rules. Until
-then, act on a finding with `consolidate`, `transition`, or `maintain`, as for
-any other change. Read [storage](storage.md#consolidation-and-undo) for
-`consolidate`, `undo-operation`, the journal, and proposals.
+Nightly maintenance ("dreaming") keeps the store small and current. A script
+plans, a reviewer model proposes actions, and the script applies only what the
+lifecycle rules allow. Every applied change is journaled and reversible for 90
+days. Read [storage](storage.md#consolidation-and-undo) for `consolidate`,
+`undo-operation`, the journal, and proposals.
 
 Run the script with the same Node that runs the utility:
 
 ```text
 node <field-guide-skill-directory>/scripts/field-guide-dream.mjs plan --repo-root <git-root>
+node <field-guide-skill-directory>/scripts/field-guide-dream.mjs apply --repo-root <git-root> --input <actions.json> [--preview-token <token>]
 ```
 
 ## Plan
 
 `plan` prints one bounded JSON packet on stdout. It calls no model and writes
-nothing, not even journal recovery. The script never edits
-`CLAUDE.md`, `AGENTS.md`, roles, coding standards, or skills. The packet holds:
+nothing, not even journal recovery; a run that a crash left without its `run`
+entry counts as recorded. The packet holds:
 
 - The audit: validation errors, stale candidates, unresolved relationships,
   broken pointers, orphan evidence, and oversized records, within 32 KiB
@@ -31,11 +30,20 @@ nothing, not even journal recovery. The script never edits
   Code or Codex loads, the copies the writer gate checks). Text is included
   only when there is a subject to review, up to 32 KiB per source and within
   the room the subjects leave; a source cut short has `truncated: true`.
-- `subjects`: every subject with live records. A subject lists its live
+- `subjects`: each subject that no review saw in its current state against the
+  current live guidance, including a source that was added or removed. Live
+  guidance that is edited and then restored returns a subject to a state that
+  a review saw, so it is not due again. A subject counts as reviewed only
+  against the live guidance of the run that reviewed it, so a subject that a
+  run's input left out, or that a plan omitted for its budget, stays due. A
+  subject whose last review stored a proposal is skipped while the proposal
+  waits for the user; once it expires unapplied, the subject is reviewed again.
+  A subject stays due while a contradiction queued for the user holds one of
+  its records, and lists it in `queuedContradictions`. A subject lists its live
   records with their confirmation, triggers, and linked subjects, its
   `digest`, which covers every record field the packet shows, and its
   `overlapGroups` without groups the user declined.
-- `pendingOperations`, within 8 KiB.
+- `pendingOperations`, within 8 KiB, and `skippedSubjects`.
 - `omittedItems`: for each audit list and `pendingOperations` that lost items to
   its limit, how many it lost.
 - `omittedSubjects`: the subjects that the 192 KiB limit on the printed packet
@@ -63,11 +71,77 @@ and each audit item on its own are redacted before they are measured or cut:
   private key marker, or a line-start `user:`, `assistant:`, or `system:`
   marker.
 
+## Actions
+
+The reviewer returns input that follows `schemas/dream-apply-v1.schema.json`:
+the `live` digests and, for each reviewed subject, its `subjectId`, `digest`,
+and actions. The script decides each action by these rules:
+
+| Action | Unconfirmed project records | Confirmed records | Shared records |
+| --- | --- | --- | --- |
+| `consolidate` of overlapping records | Applied and journaled | Stored proposal | `shared-overlap` flag |
+| `archive` of a duplicate of live guidance or of another record | Applied and journaled | `confirmed-duplicate` flag | `shared-proposal` flag |
+| `contradiction` between two records | `conflict` flag | Queued for the user | Queued when either is confirmed |
+| `flag` (`conflict`, `unused`, `live-edit`) | Flag | Flag | Flag |
+
+Shared records are flagged, not consolidated or archived, until a later release
+adds shared consolidation. A contradiction may pair a project record with a
+shared record of the same subject key; the input then lists both subjects with
+their digests. Nothing changes either record, and both subjects are reviewed
+again. A proposal always holds a confirmed record, so its
+replacement carries `[confirmed]` after the user's approval. An `unused` flag
+needs local analytics. A
+`live-edit` flag, and an archive of a duplicate of live guidance, name a live
+source that is present on this machine. The script never edits
+`CLAUDE.md`, `AGENTS.md`, roles, coding standards, or skills.
+
+An archive names an active record, or a present live source as
+`live:<source>`, as its duplicate. A run keeps each record that an archive
+names as its duplicate, and both records of each contradiction it queues for
+the user. Later runs keep both records of a queued contradiction while both are
+live and either is confirmed. No action in the run may
+archive or consolidate a kept record, even as a flag or a proposal, whatever
+the order of actions. So two records cannot be archived as duplicates of each
+other, and no run settles a contradiction that waits for the user. A record that still
+replaces superseded guidance is never archived or consolidated.
+
+## Apply
+
+`apply` checks, in this order, and stops at the first failure:
+
+1. Recovers the journal, including a run that a crash left without its `run`
+   entry. A run already applied returns `already-applied` with its report and
+   changes nothing. Only when a proposal it stored expired unapplied and its
+   subjects are unchanged does the same input propose it again.
+2. Rejects any confirmation field (`confirmed`, `confirmation`, `confirmations`,
+   `approval`, `approved`, `explicitPreference`) anywhere in the input.
+3. Validates the schema, the privacy guard on every text, and the allowed
+   actions. Every string in an action, including a replacement example's
+   language, also refuses an `http` URL query string and a home directory
+   without a trailing separator, which stored records may still hold. An
+   example's language must be a name such as `sh`. A run reviews at most 50 actions and applies at most 10 changes.
+   A consolidation must target 2 to 8 records, must not be longer than they
+   are, must not repeat a declined set, and must produce a record the store
+   accepts.
+4. Compares the live digests and each subject's digest with the current state.
+   Any change since the plan, including a new confirmation, stops the run. The
+   live guidance is read while the run holds the memory lock, so an edit made
+   while the run waited for the lock also stops it.
+5. Without `--preview-token`, returns a preview and its token. With a token,
+   requires the token of the current state.
+
+A run applies all of its actions or none. When one action is invalid or breaks
+a rule, the error names it as `subjects[<i>].actions[<j>] (<action>)` and says
+the run applied nothing; fix or drop that action and apply again.
+
+An applied run writes every change in one memory write, stores its proposals,
+and records a `run` entry. Its report lists each change with its undo command,
+each proposal with the `confirm fg:proposal:<id>` prompt to offer, the queued
+decisions, and the flags.
+
 ## Undo and approval
 
-To reverse a consolidation, run `undo-operation --id <operation-id>` on the
+To reverse an applied change, run `undo-operation --id <operation-id>` on the
 machine that applied it; the journal stays local. An undone consolidation is
-declined and is not proposed again. When `consolidate` returns
-`approval-required`, it has stored a proposal. Offer a
-proposal's prompt to the user; never send it. After the
+declined and is not proposed again. Offer a proposal's prompt to the user; never send it. After the
 user sends it, run `consolidate --approval proposal:<id>`.

@@ -190,7 +190,7 @@
       "files": [
         "plugins/field-guide/skills/field-guide/references/dreaming.md"
       ],
-      "task": "The user asked you to merge two git-cleanup records. One of them is confirmed, so `consolidate` changed nothing and returned `approval-required` with the prompt `confirm fg:proposal:3a4b5c6d7e8f`. You are writing the reply to the user.",
+      "task": "You ran nightly maintenance with `field-guide-dream.mjs apply`. Its report lists one proposal: consolidate two confirmed git-cleanup records into one, with the prompt `confirm fg:proposal:3a4b5c6d7e8f`. No other change was applied. You are writing the report for the user.",
       "options": {
         "offer": "show the user the proposal and the exact `confirm fg:proposal:3a4b5c6d7e8f` prompt to send if they agree",
         "send": "send `confirm fg:proposal:3a4b5c6d7e8f` to the main thread yourself, then apply it",
@@ -216,6 +216,21 @@
       ]
     },
     {
+      "id": "undo-nightly-merge",
+      "files": [
+        "plugins/field-guide/skills/field-guide/references/dreaming.md"
+      ],
+      "task": "Last night's maintenance report says it consolidated three project git-cleanup records into one, as operation `operation:v1:9f8e7d6c...`, with the undo command `undo-operation --id operation:v1:9f8e7d6c...`. The user now says: \"Undo that merge from last night.\"",
+      "options": {
+        "undo-operation": "run `undo-operation --id` with that operation ID",
+        "transition-undo": "run `transition` with action `undo` on the merged replacement record",
+        "delete": "permanently delete the merged replacement record with `delete`"
+      },
+      "accept": [
+        "undo-operation"
+      ]
+    },
+    {
       "id": "undo-merge",
       "files": [
         "plugins/field-guide/skills/field-guide/references/dreaming.md"
@@ -235,7 +250,7 @@
       "files": [
         "plugins/field-guide/skills/field-guide/references/dreaming.md"
       ],
-      "task": "During this task you captured the user's preference as active project guidance whose ID starts with 4d5e6f7a, and appended the change notice. No consolidation touched it. The user now says: \"Undo that learning.\"",
+      "task": "During this task you captured the user's preference as active project guidance whose ID starts with 4d5e6f7a, and appended the change notice. No consolidation or nightly change touched it. The user now says: \"Undo that learning.\"",
       "options": {
         "undo-operation": "run `undo-operation --id` with that guidance ID",
         "transition-undo": "run `transition` with action `undo` on that guidance record",

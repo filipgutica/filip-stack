@@ -117,12 +117,13 @@ causes archive.
 ### Memory versions
 
 `memory.md` holds version 1 (`schemas/memory-v1.schema.json`) until the store
-holds a consolidation link or a journaled transition: its first consolidation.
-From then on the store stays version 2, even after an undo. The utility writes version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
+holds a consolidation link or a journaled transition: its first consolidation or
+automated nightly archive. From then on the store stays version 2, even after an
+undo or a `delete` leaves no such record. The utility writes version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
 replacement and `operationId` on a transition. A plugin that reads only version
 1 refuses a version 2 store and writes nothing to it, and its hook shows one
-line that the store is newer. The commands that write version 2, `consolidate`
-and `undo-operation`, refuse to run while a
+line that the store is newer. The commands that write version 2, `consolidate`,
+`undo-operation`, and `field-guide-dream.mjs apply`, refuse to run while a
 plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
 They check each Claude Code copy that `installed_plugins.json` names and the
 Codex copy that loads: the newest version directory in the plugin cache, for
@@ -141,12 +142,13 @@ superseded records cannot be consolidated. Every string in the input, including
 each example's language and code, also refuses an `http` URL query string and a
 home directory without a trailing separator, such as `/home/<name>`. Each
 example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
-same checks cover a stored proposal's replacement and reason. A proposal's scope comes from the repository, not from
+same checks cover every string in a nightly action and a stored proposal's
+replacement and reason. A proposal's scope comes from the repository, not from
 input, and can name a local path, such as the Git directory of a repository
 without a remote. Stored records keep the guard that released versions used, so
 their stores stay readable.
 
-Shared records are not consolidated until a later release.
+Shared records are flagged, not consolidated, until a later release.
 `consolidate` refuses a shared record in a preview, an apply, or an approval,
 because undoing a shared consolidation on every machine needs operation data
 that sync does not carry yet.
@@ -166,7 +168,8 @@ leaves the predecessors' confirmations revoked and the predecessors in place: it
 fails closed. Run `consolidate --approval` again to finish it; the journal lists
 the revocations of the aborted attempt, so only that loss of confirmation is
 excused. An `unconfirm` after the crash still blocks the retry. Until then,
-`consolidate` still treats those predecessors as confirmed, while injected guidance shows them without `[confirmed]`.
+nightly maintenance and `consolidate` still treat those predecessors as
+confirmed, while injected guidance shows them without `[confirmed]`.
 `export --annotations` leaves out the replacement that never landed, because it
 treats every fingerprint a journaled project operation names as project data. A
 released exporter does not read the journal, so after such a crash in the first
@@ -178,16 +181,16 @@ the next command finds the watermark stale and revokes every confirmation, the
 retry reports the proposal as already applied, and the replacement stays
 unconfirmed until the user confirms it again.
 
-Use `undo-operation --id <operation-id>` to reverse a consolidation within 90
-days. Run it on the machine that made the
+Use `undo-operation --id <operation-id>` to reverse a consolidation or an
+automated archive within 90 days. Run it on the machine that made the
 operation, because the journal that holds the inverse stays local. It withdraws
 the replacement the way a user's undo does and restores each predecessor it
 still supersedes. A predecessor that something else retired stays retired, and
 the result lists it. Restored predecessors start
 unconfirmed, because a restore revokes confirmations; the user confirms them
-again if needed. The undone set is recorded as declined: `consolidate` refuses
-it, `dream plan` leaves it out of its overlap groups, and the undo cannot itself
-be undone. Repeating the undo changes nothing. When a later change blocks a clean inverse, the command names
+again if needed. The undone set is recorded as declined: neither nightly
+maintenance nor `consolidate` applies or proposes it again, and the undo cannot
+itself be undone. Repeating the undo changes nothing. When a later change blocks a clean inverse, the command names
 the conflict and changes nothing. `transition` refuses to withdraw or undo a
 consolidated replacement and names `undo-operation`.
 
@@ -202,12 +205,20 @@ one, it rebuilds `memory.json` from `memory.md`, which a crash between those two
 writes left stale. Until that command runs, `validate` reports the stale cache;
 `maintain` with `repair-cache` also rebuilds it. An entry holds
 IDs, fingerprints, revisions, retirement IDs, a sanitized reason, and the undo
-command. It never holds guidance text, user prompts, or paths.
+command. It never holds guidance text, user prompts, or paths. A nightly run appends
+a `run-intent` entry before it writes memory and a `run` entry after. Both
+record, for each subject the run reviewed and left nothing unresolved, its
+digest and a digest of all live guidance it was reviewed against, the proposals it
+stored with their expiry, and its report, which holds IDs, reasons, undo
+commands, and the `confirm fg:proposal:<id>` prompts to offer. Later runs read
+the contradictions queued for the user from these reports. When a crash leaves an intent whose
+operations reached memory, the next apply records the run and a replay returns its
+report; `dream plan` already counts that run without writing it.
 
 `proposals.json` is local and never syncs. Each proposal holds the target
 fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
 expiry, and the user's approval once the hook records it. Read [nightly maintenance](dreaming.md) for
-the nightly plan.
+the nightly pass.
 
 Use `delete --input <json-file>` for permanent deletion. The target must be
 `withdrawn` or `archived`. The first call returns a preview token and the orphan

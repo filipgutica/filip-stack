@@ -122,16 +122,18 @@ const management = [
     <div class="prose">
       <p>
         Over time, several records can say the same thing. The agent can merge
-        them into one record, and you can undo a merge for 90 days. If you
-        undo a merge, it is not suggested again.
+        them into one record, and nightly maintenance can find overlaps,
+        duplicates of your global instructions, and contradictions for you.
+        Every change it applies can be undone for 90 days. If you undo a
+        merge, it is not suggested again.
       </p>
       <p>
-        A merge never rewrites guidance you confirmed on its own. To accept
-        one, send the exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt
-        the agent gives you. Shared guidance is not merged yet. Nightly
-        maintenance lists overlapping records for a review, and a later
-        release lets it apply changes. It never edits your instructions or
-        skills. The
+        Maintenance never rewrites guidance you confirmed, and for now it only
+        flags overlaps in shared guidance; a later release adds merging them.
+        To accept a proposal, send the
+        exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt it gives you.
+        It never edits your instructions or skills; it can only suggest an
+        edit. The
         <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
         has the exact rules.
       </p>
