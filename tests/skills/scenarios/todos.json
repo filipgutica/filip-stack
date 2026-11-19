@@ -44,7 +44,8 @@
     {
       "id": "todos-near-code-todo",
       "prompt": "List the TODO comments in src/ and tell me which look stale.",
-      "expectedSkill": null
+      "expectedSkill": null,
+      "alsoAccept": ["review"]
     }
   ],
   "rules": [
