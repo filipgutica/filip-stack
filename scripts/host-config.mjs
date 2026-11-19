@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { constants, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptPath = fileURLToPath(import.meta.url)
@@ -27,8 +27,15 @@ const blockEnd = '<!-- filip-stack:host-config:end -->'
 
 // Source directories copied file for file into the home directory.
 const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
-// Guidance files that receive a managed block. Text outside the block stays local.
-const guidanceTargets = [['claude', '.claude/CLAUDE.md'], ['codex', '.codex/AGENTS.md']]
+// The shared guidance installs as ~/.agents/AGENTS.md. Its source is not named AGENTS.md, so
+// agents working in this repository never load the unrendered template as a rule.
+// Each host's guidance file gets a managed block, and text outside the block stays local.
+// Claude imports the shared file; Codex has no imports, so its block holds the full text.
+const sharedGuidanceTarget = '.agents/AGENTS.md'
+const guidanceTargets = [
+  ['claude', '.claude/CLAUDE.md', ({ home }) => `@${join(home, sharedGuidanceTarget)}\n`],
+  ['codex', '.codex/AGENTS.md', ({ shared }) => shared],
+]
 
 const commands = ['status', 'apply', 'update', 'field-guide-sync']
 const usage = `Usage: host-config.mjs <${commands.join('|')}> [--home <dir>] [--force]`
@@ -44,7 +51,7 @@ const parseArgs = (argv) => {
   const options = { home: homedir(), force: false }
   for (let index = 0; index < rest.length; index += 1) {
     if (rest[index] === '--force' && ['apply', 'update'].includes(command)) options.force = true
-    else if (rest[index] === '--home' && rest[index + 1]) options.home = rest[(index += 1)]
+    else if (rest[index] === '--home' && rest[index + 1]) options.home = resolve(rest[(index += 1)])
     else fail(usage)
   }
   return { command, options }
@@ -69,14 +76,6 @@ const renderText = ({ text, home }) => text
   .replaceAll('{{HOME}}', home)
   .replace(/\{\{model:([a-z]+)\.([a-z]+)\.(id|label)\}\}/g, renderModel)
 
-const renderGuidance = ({ host, home }) => {
-  const core = read(join(sourceRoot, 'guidance', 'core.md'))
-  const assembled = core.replace(/\{\{include:([a-z-]+)\}\}/g, (_, name) => (
-    read(join(sourceRoot, 'guidance', host, `${name}.md`)).trimEnd()
-  ))
-  return renderText({ text: assembled, home })
-}
-
 const desiredTargets = ({ home }) => {
   const targets = new Map()
   for (const [source, target] of fileRoots) {
@@ -86,8 +85,10 @@ const desiredTargets = ({ home }) => {
       targets.set(relativePath, { kind: 'file', content: renderText({ text: read(file), home }) })
     }
   }
-  for (const [host, target] of guidanceTargets) {
-    const content = renderGuidance({ host, home })
+  const shared = renderText({ text: read(join(sourceRoot, 'guidance.md')), home })
+  targets.set(sharedGuidanceTarget, { kind: 'file', content: shared })
+  for (const [host, target, render] of guidanceTargets) {
+    const content = render({ home, shared })
     if (hasDelimiterLine(content)) fail(`${host} guidance must not contain a filip-stack delimiter line`)
     targets.set(target, { kind: 'block', content })
   }

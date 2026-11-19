@@ -234,8 +234,10 @@ another checkout location, running without Homebrew, and a shadowing symlink.
 `apply` copies the shared setup in `host-config/` into `~/.claude`,
 `~/.codex`, and `~/.agents`:
 
-- the global guidance, in a marked block in `~/.claude/CLAUDE.md` and
-  `~/.codex/AGENTS.md`
+- the global guidance in `~/.agents/AGENTS.md`, written for T3 Code with
+  fallbacks for plain Claude Code and Codex. A marked block in
+  `~/.claude/CLAUDE.md` imports it, and a marked block in `~/.codex/AGENTS.md`
+  holds a copy, because Codex has no imports
 - Claude agent templates (`critic`, `explorer`, `planner`, `reviewer`,
   `worker-high`) and output styles
 - Codex agent profiles and `~/.codex/rules/filip-stack.rules`: the 1Password

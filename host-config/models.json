@@ -10,5 +10,8 @@
     "workhorse": { "id": "gpt-6.2-sol", "label": "Sol 6.2" },
     "balanced": { "id": "gpt-6.1-terra", "label": "Terra" },
     "fast": { "id": "gpt-6-luna", "label": "Luna" }
+  },
+  "antigravity": {
+    "writer": { "id": "gemini-4-neon", "label": "Gemini 4 Neon" }
   }
 }

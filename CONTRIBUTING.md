@@ -132,20 +132,22 @@ is missing.
 `apply` copies `host-config/claude`, `codex`, and `agents` to the targets that
 [README.md](README.md#host-config) lists, and replaces `{{HOME}}` with the home
 directory and each `{{model:<provider>.<tier>.<id|label>}}` with its entry in
-`host-config/models.json`. It assembles the guidance block from `host-config/guidance/`. The
+`host-config/models.json`. The
 manifest in `~/.agents/.filip-stack-host-config.json` records the applied
 commit and a hash of each target.
 
 The design system lives in
 [filipgutica/design-system](https://github.com/filipgutica/design-system),
 which ships it as the `design-system` plugin. Host config does not install it;
-`core.md` names its skill. `scripts/host-config.mjs` still retires the files
+the guidance names its skill. `scripts/host-config.mjs` still retires the files
 that earlier versions installed in `~/design-system` and `~/design-language`;
 `tests/host-config/design-system-migration.test.mjs` covers that migration.
 
-Edit guidance in `host-config/guidance/core.md`. The `{{include:<name>}}` lines
-pull in `host-config/guidance/<host>/<name>.md` for the parts that differ between
-Claude and Codex.
+Edit guidance in `host-config/guidance.md`, the one file both hosts read.
+`apply` installs it as `~/.agents/AGENTS.md`. The managed block in
+`~/.claude/CLAUDE.md` imports it, and the block in `~/.codex/AGENTS.md` holds a
+copy, because Codex has no imports. Write host-specific rules in its Host notes
+section.
 
 When a model ships, update its tier in `host-config/models.json`. Host config
 names models only there, and a test enforces it. Standalone skills install

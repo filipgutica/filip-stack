@@ -36,13 +36,12 @@ test('apply renders both hosts into an empty home and is idempotent', () => {
   assert.ok(result.stdout.includes(`No shared Field Guide preferences were found; put them at ${join(home, '.config/filip-stack/field-guide.json')}\n`))
   assert.equal(existsSync(join(home, '.field-guide')), false)
 
-  const claude = read(join(home, '.claude/CLAUDE.md'))
-  const codex = read(join(home, '.codex/AGENTS.md'))
-  assert.ok(claude.startsWith(blockStart) && claude.endsWith(blockEnd))
-  assert.match(claude, /## Claude read guard/)
-  assert.doesNotMatch(claude, /\{\{/)
-  assert.match(codex, /## Communication/)
-  assert.doesNotMatch(codex, /## Claude read guard/)
+  // Claude imports the shared guidance; Codex has no imports, so its block holds the same text.
+  const shared = read(join(home, '.agents/AGENTS.md'))
+  assert.match(shared, /## Host notes/)
+  assert.doesNotMatch(shared, /\{\{/)
+  assert.equal(read(join(home, '.claude/CLAUDE.md')), `${blockStart} (managed by filip-stack; edit host-config/ there) -->\n@${join(home, '.agents/AGENTS.md')}\n${blockEnd}`)
+  assert.equal(read(join(home, '.codex/AGENTS.md')), `${blockStart} (managed by filip-stack; edit host-config/ there) -->\n${shared}${blockEnd}`)
   assert.match(read(join(home, '.claude/agents/critic.md')), new RegExp(`${home}/\\.agents/roles\\.md`))
   assert.ok(existsSync(join(home, '.codex/agents/critic.toml')))
   assert.ok(existsSync(join(home, '.agents/roles.md')))
@@ -221,7 +220,7 @@ test('apply writes a symlinked guidance file through its link', () => {
   symlinkSync(dotfile, join(home, '.claude/CLAUDE.md'))
   run({ home, command: 'apply', args: ['--force'] })
   assert.ok(lstatSync(join(home, '.claude/CLAUDE.md')).isSymbolicLink())
-  assert.match(read(dotfile), /## Claude read guard/)
+  assert.match(read(dotfile), /^@.*\/\.agents\/AGENTS\.md$/m)
 })
 
 test('apply treats only whole delimiter lines as block markers', () => {
@@ -257,6 +256,29 @@ test('apply refuses to replace a guidance file without a block unless forced', (
   run({ home, command: 'apply', args: ['--force'] })
   assert.equal(read(join(home, '.claude/CLAUDE.md.bak')), '# Existing guidance\n')
   assert.ok(read(join(home, '.claude/CLAUDE.md')).startsWith(blockStart))
+})
+
+// Installs from before the shared file held the full guidance in the Claude block.
+test('apply turns an unedited full Claude block into an import and keeps local text', () => {
+  const home = mkdtempSync(join(tmpdir(), 'host-config-upgrade-'))
+  run({ home, command: 'apply' })
+  const manifestPath = join(home, '.agents/.filip-stack-host-config.json')
+  const oldBody = '# Global Engineering Principles\n\nOld full guidance.\n'
+  writeFileSync(join(home, '.claude/CLAUDE.md'), `Local preface.\n\n${blockStart} (managed by filip-stack; edit host-config/ there) -->\n${oldBody}${blockEnd}Local note.\n`)
+  rmSync(join(home, '.agents/AGENTS.md'))
+  const manifest = JSON.parse(read(manifestPath))
+  manifest.files['.claude/CLAUDE.md'] = createHash('sha256').update(oldBody).digest('hex')
+  delete manifest.files['.agents/AGENTS.md']
+  writeFileSync(manifestPath, JSON.stringify(manifest))
+
+  run({ home, command: 'apply' })
+  const claude = read(join(home, '.claude/CLAUDE.md'))
+  assert.match(claude, /^Local preface\.\n\n<!-- filip-stack/)
+  assert.match(claude, new RegExp(`^@${join(home, '.agents/AGENTS.md')}$`, 'm'))
+  assert.match(claude, /Local note\.\n$/)
+  assert.doesNotMatch(claude, /Old full guidance/)
+  assert.match(read(join(home, '.agents/AGENTS.md')), /## Skills and delegation/)
+  assert.ok(states(home).every((line) => line.startsWith('current')))
 })
 
 test('apply removes files it applied earlier once the repository drops them', () => {
@@ -339,7 +361,7 @@ test('one models.json edit renames a model in the guidance and every agent profi
   run({ home, command: 'apply', scriptPath })
   assert.match(read(join(home, '.claude/agents/explorer.md')), /^model: claude-haiku-9-9$/m)
   assert.match(read(join(home, '.claude/agents/explorer.md')), /Runs on Haiku 9\.9 /)
-  assert.match(read(join(home, '.claude/CLAUDE.md')), /`claude-haiku-9-9`/)
+  assert.match(read(join(home, '.agents/AGENTS.md')), /`claude-haiku-9-9`/)
   assert.match(read(join(home, '.codex/AGENTS.md')), /`claude-haiku-9-9`/)
   for (const entry of readdirSync(home, { recursive: true, withFileTypes: true }).filter((item) => item.isFile())) {
     const text = read(join(entry.parentPath, entry.name))

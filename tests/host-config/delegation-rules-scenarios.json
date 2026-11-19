@@ -57,6 +57,29 @@
       "accept": [
         "tier"
       ]
+    },
+    {
+      "id": "antigravity-brief-inline",
+      "needsNewGuidance": true,
+      "task": "You are writing the brief that hands the Copy writer, Gemini 4 Neon on the Antigravity provider, the final text of a PR description. The facts, links, and test results are ready.",
+      "options": {
+        "paste": "paste the Copy writer section of roles.md, the PR format reference, and the user's PR-description preferences into the brief",
+        "point": "tell the child to read the Copy writer section of roles.md and the technical-writing PR reference from disk"
+      },
+      "accept": [
+        "paste"
+      ]
+    },
+    {
+      "id": "codex-brief-points",
+      "task": "You are writing the brief that hands the Reviewer, Sol 6.2 on the Codex provider, a 150-line diff to review.",
+      "options": {
+        "paste": "paste the Reviewer section of roles.md into the brief",
+        "point": "tell the child to read the Reviewer section of roles.md before starting"
+      },
+      "accept": [
+        "point"
+      ]
     }
   ]
 }

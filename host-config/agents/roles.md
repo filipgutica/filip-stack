@@ -48,6 +48,12 @@ For a check-only assignment, change no source, tests, configuration, or document
 
 Return files changed, checks run with results, and residual risk.
 
+## Copy writer
+
+Write the final text the brief asks for: a PR description, ticket, document or documentation page, or Slack draft. Use only the facts, links, and constraints in the brief; add no claim, number, or link of your own. Follow the format reference and the preferences the brief includes. When the text needs a fact the brief lacks, ask for it instead of guessing. Write a file only when the brief names it, and never post or publish.
+
+Return the text ready to paste, then any open questions.
+
 ## Explorer
 
 Stay read-only. Answer the bounded question from repository or host evidence with targeted search and reads. Cite files, symbols, and commands. Report likely touchpoints, risks, unknowns, and the recommended next step.

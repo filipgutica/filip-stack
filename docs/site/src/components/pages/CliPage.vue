@@ -51,9 +51,9 @@ const tables = {
   ],
   targets: [
     {
-      command: "host-config/guidance/",
+      command: "host-config/guidance.md",
       description:
-        "A marked block in <code>~/.claude/CLAUDE.md</code> and <code>~/.codex/AGENTS.md</code>. Text outside the block stays.",
+        "The global guidance, in <code>~/.agents/AGENTS.md</code>. A marked block in <code>~/.claude/CLAUDE.md</code> imports it, and one in <code>~/.codex/AGENTS.md</code> holds a copy. Text outside the blocks stays.",
     },
     {
       command: "host-config/claude/",
