@@ -242,11 +242,11 @@
     },
     {
       "id": "footer-pr-review-note",
-      "task": "You are writing the Current state footer. Your PR #12 is open at head abc1234 with 5 of 5 checks passed. You ran a sol-loop review on it: in round 1 Sol found a missing null check (fixed) and a naming nit (declined), in round 2 it found a stale test name (fixed), and in round 3 it approved. You are writing the State cell of the PR's row.",
+      "task": "You are writing the Current state footer. Your PR #12 is open at head abc1234 with 5 of 5 checks passed. You ran a sol-loop review on it: in round 1 Sol found a missing null check (fixed), in round 2 it found an off-by-one in pagination (fixed in abc1234), and in round 3 it approved abc1234. You are writing the State cell of the PR's row.",
       "options": {
         "verdict": "\"`abc1234`, 5 of 5 checks passed, approved\"",
         "note": "\"`abc1234`, 5 of 5 checks passed, sol-loop: approved in 3 rounds\"",
-        "detail": "\"`abc1234`, 5 of 5 checks passed; Sol round 1: null check fixed, naming nit declined; round 2: stale test name fixed; round 3: approved\""
+        "detail": "\"`abc1234`, 5 of 5 checks passed; Sol round 1: null check fixed; round 2: pagination off-by-one fixed; round 3: approved\""
       },
       "accept": [
         "note"

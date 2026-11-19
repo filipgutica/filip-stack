@@ -50,6 +50,8 @@ has the exact scope, round, and approval rules.
   both sides of each disagreement for you to decide.
 - The rounds, the model that ran, the diff size before and after, and fixed
   or declined findings with reasons.
+- When you authorized a PR update, a collapsed Sol review section at the end
+  of the PR description, with each round's findings.
 
 Running out of rounds is not approval. The agent never pushes during the
 loop, and afterwards pushes only if you authorized it. For CI and bot review,

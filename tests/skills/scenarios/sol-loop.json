@@ -19,25 +19,26 @@
   "rules": [
     {
       "id": "sol-pr-ledger-collapsed",
-      "task": "You ran a sol-loop on the user's open PR #12, and the user asked you to update the PR. Sol approved in round 2 after you fixed one should. You are updating the PR description.",
+      "task": "You ran a sol-loop on the user's open PR #12, and the user asked you to update the PR. Sol approved in round 2 after you fixed one should.",
       "options": {
-        "collapsed": "end the description with a collapsed details section titled \"Sol review: approved in 2 rounds\" that holds the round ledger",
-        "visible": "add a visible \"Review\" heading to the description with the round ledger under it",
-        "omit": "leave the review out of the description and give the ledger only in your report"
+        "collapsed": "end the PR description with a collapsed details section titled \"Sol review: approved in 2 rounds\" that holds the round ledger",
+        "visible": "add a visible \"Review\" heading to the PR description with the round ledger under it",
+        "omit": "leave the PR description unchanged and give the ledger only in your report"
       },
       "accept": [
         "collapsed"
       ]
     },
     {
-      "id": "sol-no-pr-update",
-      "task": "You ran a sol-loop on the user's local change. Sol approved in round 2. The user did not ask you to push, ship, or update a PR, and no PR exists.",
+      "id": "sol-pr-no-update",
+      "task": "You ran a sol-loop on the user's open PR #12. The user asked only for the review and did not ask you to push or update the PR. Sol approved in round 2 after you fixed one should.",
       "options": {
-        "collapsed": "open a PR whose description ends with a collapsed Sol review section",
-        "report": "give the rounds and ledger in your report and leave the change unpushed"
+        "collapsed": "end the PR description with a collapsed details section titled \"Sol review: approved in 2 rounds\" that holds the round ledger",
+        "visible": "add a visible \"Review\" heading to the PR description with the round ledger under it",
+        "omit": "leave the PR description unchanged and give the ledger only in your report"
       },
       "accept": [
-        "report"
+        "omit"
       ]
     }
   ]

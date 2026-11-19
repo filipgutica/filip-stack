@@ -113,8 +113,10 @@ to push, ship, or update the PR.
 Report: rounds, model, what Sol changed, diff size before/after, fixed and
 declined findings with reasons, usage if exposed (else say not), pushed or not.
 
-When you update the PR, end its description with the ledger in a collapsed
-section, and update it after each round:
+Keep the ledger local during the loop. When you are authorized to update the
+PR, end its description with this section, replacing any earlier one, and
+refresh it after each later round. It is review evidence, not part of the
+description Sol reviews:
 
 ```markdown
 <details>
@@ -122,9 +124,10 @@ section, and update it after each round:
 
 | Round | Verdict | Findings |
 | --- | --- | --- |
-| 1 (`<short sha>`) | CHANGES | S1 should, fixed: <one line> |
+| 1 | CHANGES | S1 should, fixed: <one line> |
 
 </details>
 ```
 
-Name the model and effort that actually ran.
+Add a round's short SHA when it reviewed a commit, and the model and effort
+when they are exposed.
