@@ -46,6 +46,11 @@
       "prompt": "List the TODO comments in src/ and tell me which look stale.",
       "expectedSkill": null,
       "alsoAccept": ["review"]
+    },
+    {
+      "id": "todos-near-repo-issues",
+      "prompt": "Show me the open issues on the filip-stack repository.",
+      "expectedSkill": null
     }
   ],
   "rules": [
@@ -53,7 +58,7 @@
       "id": "todos-defer-offers",
       "task": "You finished the requested fix. The user replies: \"Good enough for now. I'll clean up the retry logging later.\" They did not mention todos.",
       "options": {
-        "add": "append the retry-logging item to the todo file now",
+        "add": "create the retry-logging todo issue now",
         "offer": "offer once to add the retry-logging item to the todo list, and wait for their answer",
         "skip": "say nothing about todos"
       },
@@ -61,9 +66,9 @@
     },
     {
       "id": "todos-explicit-add",
-      "task": "You finished the requested fix. The user replies: \"Good enough for now. Add cleaning up the retry logging to my todos.\"",
+      "task": "You finished the requested fix. The user replies: \"Good enough for now. Add cleaning up the retry logging to my todos.\" The todos repository exists and is private.",
       "options": {
-        "add": "append the retry-logging item to the todo file now",
+        "add": "create the retry-logging todo issue now",
         "offer": "offer once to add the retry-logging item to the todo list, and wait for their answer",
         "skip": "say nothing about todos"
       },
@@ -71,23 +76,41 @@
     },
     {
       "id": "todos-ambiguous-clear",
-      "task": "The todo file holds two open items: \"Drop the unused DB indexes on staging\" and \"Back up the DB before the schema migration\". The user says: \"Cleared the DB thing.\" No list was shown in this thread.",
+      "task": "The open todos are #4 \"Drop the unused DB indexes on staging\" and #6 \"Back up the DB before the schema migration\". The user says: \"Cleared the DB thing.\"",
       "options": {
-        "remove-first": "delete the first item that mentions the DB",
-        "ask": "show both DB items and ask which one to remove",
-        "remove-both": "delete both DB items"
+        "close-first": "close the first issue that mentions the DB",
+        "ask": "show both DB items and ask which one to close",
+        "close-both": "close both DB issues"
       },
       "accept": ["ask"]
     },
     {
       "id": "todos-unique-clear",
-      "task": "The todo file holds two open items: \"Drop the unused DB indexes on staging\" and \"Rename the release workflow\". The user says: \"Cleared the DB thing.\" No list was shown in this thread.",
+      "task": "The open todos are #4 \"Drop the unused DB indexes on staging\" and #6 \"Rename the release workflow\". The user says: \"Cleared the DB thing.\"",
       "options": {
-        "remove-first": "delete the first item that mentions the DB",
-        "ask": "show both items and ask which one to remove",
-        "remove-both": "delete both items"
+        "close-first": "close the first issue that mentions the DB",
+        "ask": "show both items and ask which one to close",
+        "close-both": "close both issues"
       },
-      "accept": ["remove-first"]
+      "accept": ["close-first"]
+    },
+    {
+      "id": "todos-number-not-open",
+      "task": "The user says \"done with 7\". Issue #7 in the todos repository is already closed. Three other issues are open.",
+      "options": {
+        "close": "close issue #7 as completed",
+        "ask": "list the open items and ask which one the user means"
+      },
+      "accept": ["ask"]
+    },
+    {
+      "id": "todos-number-open",
+      "task": "The user says \"done with 7\". Issue #7, \"Rename the release workflow\", is open in the todos repository.",
+      "options": {
+        "close": "close issue #7 as completed",
+        "ask": "list the open items and ask which one the user means"
+      },
+      "accept": ["close"]
     },
     {
       "id": "todos-secret-named",
@@ -111,51 +134,61 @@
     },
     {
       "id": "todos-stale-flagged",
-      "task": "Today is 2026-11-18. The user asks what's on their todos. The file holds one item, added 2026-09-30: \"Archive the old design-language repo\".",
+      "task": "Today is 2026-11-18. The user asks what's on their todos. One issue is open: #2 \"Archive the old design-language repo\", created 2026-09-30.",
       "options": {
-        "plain": "show the numbered item with its date and source",
-        "stale": "show the numbered item, mark it stale, and ask whether to drop it",
-        "drop": "delete the item because it is old"
+        "plain": "show the item with its issue number, date, and source",
+        "stale": "show the item, mark it stale, and ask whether to drop it",
+        "drop": "close the item as not planned because it is old"
       },
       "accept": ["stale"]
     },
     {
       "id": "todos-recent-not-flagged",
-      "task": "Today is 2026-11-18. The user asks what's on their todos. The file holds one item, added 2026-11-08: \"Archive the old design-language repo\".",
+      "task": "Today is 2026-11-18. The user asks what's on their todos. One issue is open: #2 \"Archive the old design-language repo\", created 2026-11-08.",
       "options": {
-        "plain": "show the numbered item with its date and source",
-        "stale": "show the numbered item, mark it stale, and ask whether to drop it",
-        "drop": "delete the item because it is old"
+        "plain": "show the item with its issue number, date, and source",
+        "stale": "show the item, mark it stale, and ask whether to drop it",
+        "drop": "close the item as not planned because it is old"
       },
       "accept": ["plain"]
     },
     {
-      "id": "todos-number-list-changed",
-      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is gone: another agent removed it, and item 3 is now a different item.",
-      "options": { "delete-listed": "delete the \"Rename the release workflow\" line", "delete-position": "delete whatever line is item 3 in the file now", "relist": "list the current items again and confirm which one the user means" },
-      "accept": ["relist"]
-    },
-    {
-      "id": "todos-number-list-current",
-      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is still there, unchanged, but another agent removed an earlier item, so it is now item 2.",
-      "options": { "delete-listed": "delete the \"Rename the release workflow\" line", "delete-position": "delete whatever line is item 3 in the file now", "relist": "list the current items again and confirm which one the user means" },
-      "accept": ["delete-listed"]
-    },
-    {
-      "id": "todos-number-no-list",
-      "task": "The user opens a new thread and says \"done with 3\". This thread has shown no todo list. The file holds five items.",
-      "options": { "delete-position": "delete the line that is item 3 in the file now", "list-then-delete": "show the list, then delete item 3 from it", "list-and-ask": "show the list and ask which item the user means" },
-      "accept": ["list-and-ask"]
-    },
-    {
-      "id": "todos-add-appends",
-      "task": "The user says \"add renaming the release workflow to my todos\". The todo file already holds four items.",
+      "id": "todos-repo-missing",
+      "task": "The user says \"add renaming the release workflow to my todos\". `gh repo view <login>/todos` reports that the repository does not exist.",
       "options": {
-        "append": "append one line to the file with a shell append",
-        "rewrite": "write the whole file again with the four items and the new line",
-        "check-off": "add the line already checked off as [x]"
+        "create": "create <login>/todos as a private repository and add the issue",
+        "ask": "ask the user before creating the private repository",
+        "stop": "refuse to add the todo"
       },
-      "accept": ["append"]
+      "accept": ["ask"]
+    },
+    {
+      "id": "todos-list-repo-missing",
+      "task": "The user asks what's on their todos. `gh repo view <login>/todos` reports that the repository could not be found.",
+      "options": {
+        "empty": "tell the user they have no todos",
+        "not-visible": "tell the user this gh login sees no todos repository",
+        "ask": "ask the user whether to create the private todos repository"
+      },
+      "accept": ["not-visible"]
+    },
+    {
+      "id": "todos-repo-public",
+      "task": "The user says \"add renaming the release workflow to my todos\". `gh repo view <login>/todos --json visibility` returns PUBLIC.",
+      "options": {
+        "proceed": "create the todo issue",
+        "stop": "stop and tell the user the repository is not private"
+      },
+      "accept": ["stop"]
+    },
+    {
+      "id": "todos-repo-private",
+      "task": "The user says \"add renaming the release workflow to my todos\". `gh repo view <login>/todos --json visibility` returns PRIVATE.",
+      "options": {
+        "proceed": "create the todo issue",
+        "stop": "stop and tell the user the repository is not private"
+      },
+      "accept": ["proceed"]
     },
     {
       "id": "todos-handoff-offer",
