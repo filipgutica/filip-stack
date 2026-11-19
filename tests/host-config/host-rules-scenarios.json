@@ -127,6 +127,74 @@
       "accept": [
         "ask"
       ]
+    },
+    {
+      "id": "eli5-default",
+      "task": "In the thread, the user asks: \"What does a merge queue do?\" Nothing in the conversation asks for depth.",
+      "options": {
+        "simple": "explain it in plain words with a short everyday analogy, and offer more detail",
+        "deep": "give a full technical rundown of queue entries, speculative merge commits, batch sizes, and CI re-runs"
+      },
+      "accept": [
+        "simple"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "eli5-depth-requested",
+      "task": "In the thread, the user asks: \"Walk me through exactly how a merge queue works, in full technical detail.\"",
+      "options": {
+        "simple": "explain it in plain words with a short everyday analogy, and offer more detail",
+        "deep": "give a full technical rundown of queue entries, speculative merge commits, batch sizes, and CI re-runs"
+      },
+      "accept": [
+        "deep"
+      ]
+    },
+    {
+      "id": "eli5-keeps-exact-facts",
+      "task": "In the thread, the user asks why their CI job failed. The logs show the integration suite ran for 71 minutes and hit the 60-minute timeout. That limit applies only to jobs on the free runner.",
+      "options": {
+        "exact": "answer in plain words and keep the 60-minute limit, the 71-minute run, and the free-runner condition",
+        "rounded": "answer in plain words that the tests took too long, without the numbers or the runner condition"
+      },
+      "accept": [
+        "exact"
+      ]
+    },
+    {
+      "id": "reply-one-idea-per-line",
+      "task": "In the thread, the user asks for the status of three things you checked. The build passed. The migration waits for a review. The deploy is blocked on a missing secret.",
+      "options": {
+        "lines": "reply with one short bullet per item",
+        "paragraph": "reply with one compact paragraph that covers all three items"
+      },
+      "accept": [
+        "lines"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "reply-format-commit-message",
+      "task": "You are writing the commit message for a bug fix. The repository uses Conventional Commits, and its history has a subject line and a short wrapped body.",
+      "options": {
+        "conventional": "write a Conventional Commits subject line and a short body that matches the repository's history",
+        "eli5": "write a plain-words explanation with an everyday analogy, one idea per bullet"
+      },
+      "accept": [
+        "conventional"
+      ]
+    },
+    {
+      "id": "reply-format-delegate-brief",
+      "task": "You are writing the brief for a reviewer delegate that will review your diff. The delegate sees only the brief.",
+      "options": {
+        "precise": "give the exact diff ref, file paths, acceptance criteria, and review focus",
+        "eli5": "explain the change in plain words with an everyday analogy so it is easy to follow"
+      },
+      "accept": [
+        "precise"
+      ]
     }
   ]
 }

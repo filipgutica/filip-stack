@@ -146,11 +146,21 @@ Before investigating, planning, changing, or reviewing code, read `~/.agents/COD
 - In Claude Code, a Read hook limits each slice to 500 lines and 24 KiB; instruction files are exempt. Use bounded slices; an offset alone is not bounded. When full source is necessary for correctness, explain why and use one explicit shell read rather than shell dumps. For a session-wide exception, set `CLAUDE_READ_GUARD_BYPASS_REASON` before launching Claude.
 - In Codex, communicate this way:
   - Start with the answer, decision, or required action. State it directly without naming a rhetorical format or adding a stock summary heading.
-  - Use plain English and short paragraphs, with one main idea per paragraph. Keep names consistent and explain necessary technical terms.
+  - Keep names consistent and explain necessary technical terms.
   - Keep replies as short as a complete answer permits. Distinguish observed facts from inference. Retain exact quantities, conditions, uncertainty, and material risks beside the point they qualify.
   - Give focused answers in full. When the user asks for depth, provide the requested detail instead of an overview or an offer to explain later.
   - Be warm, direct, and calm. Omit filler openers, routine praise, repeated conclusions, and irrelevant improvements.
   - For implementation work, report the meaningful changes, verification results, and any remaining risk or blocked check.
+
+## Communication
+
+When you talk to me in a thread or conversation:
+
+- Explain it like I'm five by default. Use plain words, and a short example or analogy when it helps. Go deeper when I ask.
+- Keep it exact while you keep it simple. Keep every number, condition, uncertainty, and risk I need to act on.
+- Put one clear idea on each line. Use bullets for parallel points, steps, or options. Order the lines so the reply reads top to bottom without jumps.
+
+These rules do not apply to code, commit messages, delegate briefs and reports, the Current state footer, or a format that a skill or reference owns.
 
 ## Written deliverables
 
