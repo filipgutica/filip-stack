@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict'
+import { existsSync, rmSync } from 'node:fs'
 import { join } from 'node:path'
 import { memoryOf, requireResult, write } from './dream-invariants-fixture.mjs'
 import { classify, describe } from './dream-invariants-oracle.mjs'
@@ -242,11 +243,25 @@ const lineage = {
   },
 }
 
+// A store that 6.8.0 built has neither annotations.json nor the watermark. The next write by this
+// version gives it its confirmation history, so a run applies.
+const preAnnotation = {
+  name: 'pre-annotation-store',
+  seed({ machine }) {
+    rmSync(machine.store, { recursive: true })
+    requireResult(machine.run({ command: 'init', use: 'pre-annotation' }))
+    const ids = ['first', 'second'].map((name) => requireResult(machine.captureRun({ name, use: 'pre-annotation' })).result.targetId)
+    assert.deepEqual(['annotations.json', 'annotations-watermark.json'].filter((file) => existsSync(join(machine.store, file))), [])
+    machine.capture({ name: 'current', key: 'current' })
+    return { subjects: [row([archive(ids[0])])], expect: 'archive' }
+  },
+}
+
 export const scenarios = [
   ...Object.keys(outcome).flatMap((scope) => Object.keys(actions).map((action) => actionScenario({ scope, action }))),
   confirmedArchive, interruptedNeighbor, recorded, journalHeld, context, hiddenShared,
   unsafeMetadata('subject'), unsafeMetadata('link'), localOrigin, reconfirmed(false),
-  reconfirmed(true), alteredRestore, proposalWithArchive, lineage,
+  reconfirmed(true), alteredRestore, proposalWithArchive, lineage, preAnnotation,
 ]
 
 export const alterMemory = ({ machine, edit }) => {

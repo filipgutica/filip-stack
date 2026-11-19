@@ -196,9 +196,15 @@ const checkPlan = ({ machine, step, current, check, fault }) => {
 }
 
 // The next locked write after a lost annotations.json and a lagging watermark: a released 6.15.0
-// export by default, or a capture of an unrelated record by this version.
-const reconcile = ({ step, machine, lose, lag, capture }) => {
+// export by default, or a capture of an unrelated record by this version. A partial write between
+// the loss and the lag starts a new annotations.json without the lost entries: a capture of an
+// unrelated record, or a confirmation of a record captured before the loss.
+const reconcile = ({ step, machine, events, lose, lag, capture, partial }) => {
+  const other = partial === 'confirm'
+    && requireResult(step('capture-other', () => machine.captureRun({ name: 'other', key: 'partial-confirm' }), { storeWrite: true, user: true })).result.targetId
   if (lose) step('lose-annotations', () => rmSync(join(machine.store, 'annotations.json')), { user: true })
+  if (partial === 'capture') step('partial-capture', () => machine.captureRun({ name: 'partial', key: 'partial-capture' }), { storeWrite: true, user: true })
+  if (other) step('partial-confirm', () => recordConfirmation({ machine, events, id: other }), { user: true })
   if (lag) step('lag-watermark', () => watermark({ machine, change: (mark) => ({ memoryRevision: mark.memoryRevision - 1 }) }), { user: true })
   const result = capture
     ? step('unrelated-capture', () => machine.captureRun({ name: 'unrelated', key: 'unrelated-capture' }), { storeWrite: true, user: true })
@@ -299,14 +305,14 @@ const later = ({ machine, step, current, check, events, fault, result }) => {
   if (current.approval && fault.name === 'clean') approveProbe({ machine, step, check, result })
 }
 
-const beforeApply = ({ machine, current, step, fault, baseline, check }) => {
+const beforeApply = ({ machine, current, step, fault, baseline, check, events }) => {
   if (fault.host) step('install-mixed-readers', () => {
     machine.install({ host: fault.host, old: true })
     machine.install({ host: fault.host === 'codex' ? 'claude' : 'codex', old: false })
   }, { user: true })
   if (fault.oldExport) step('released-export', machine.oldExport, { storeWrite: true, user: true })
   if (['export', 'lost-export', 'lost-capture'].includes(fault.lag)) {
-    reconcile({ step, machine, lose: fault.lag.startsWith('lost-'), lag: true, capture: fault.lag === 'lost-capture' })
+    reconcile({ step, machine, events, lose: fault.lag.startsWith('lost-'), lag: true, capture: fault.lag === 'lost-capture', partial: fault.partial })
   } else if (fault.lag) {
     step('watermark', () => watermark({ machine, change: () => ({ fingerprints: [] }) }), { user: true })
   }
@@ -406,7 +412,7 @@ const runCell = ({ t, machine, seed, current, fault, baseline, events: originalE
   const step = tracker({ machine, events, check, tally, undoGate: current.undoGate && fault.name === 'clean', deadline: current.deadline && fault.name === 'clean' })
   machine.restore(baseline)
   machine.clearReaders()
-  const review = beforeApply({ machine, current, step, fault, baseline, check })
+  const review = beforeApply({ machine, current, step, fault, baseline, check, events })
   const { applied, preview } = attempt({ machine, current, fault, step, check, review, original: baseline[fault.file], token: current.controlToken })
   queue({ current, result: applied, check })
   checkUnrelatedReplay({ machine, step, current, check, fault })
@@ -475,13 +481,14 @@ const specialFaults = (current) => [
 
 // Losses of history that no file shows. For a scenario where the user confirmed guidance:
 // annotations.json lost and the watermark lagging, then the next locked write, either a released
-// 6.15.0 export (the documented limit) or a capture by this version. For a scenario that queues a
+// 6.15.0 export (the documented limit) or a capture by this version, which may follow a partial
+// write between the loss and the lag. For a scenario that queues a
 // contradiction: the journal lost or emptied after the run, then a run that retires the
 // unconfirmed side. 6.15.0 cannot export a store that holds an undone archive.
 const historyFaults = ({ current, events, baseline }) => [
   ...(events.some(({ type }) => type === 'confirm') ? [
     ...(current.lag || archiveUndone(baseline) ? [] : [{ name: 'lost-annotations-released-export', lag: 'lost-export', limit: true }]),
-    { name: 'lost-annotations-capture', lag: 'lost-capture' },
+    ...[undefined, 'capture', 'confirm'].map((partial) => ({ name: `lost-annotations-${partial ? `${partial}-then-` : ''}capture`, lag: 'lost-capture', partial })),
   ] : []),
   ...(current.retire ? ['lost', 'emptied'].map((forget) => ({ name: `queued-then-${forget}-journal`, forget })) : []),
 ]

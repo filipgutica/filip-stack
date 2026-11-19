@@ -11,6 +11,8 @@ const cli = fileURLToPath(new URL('scripts/field-guide.mjs', fieldGuideSkillRoot
 const dream = fileURLToPath(new URL('scripts/field-guide-dream.mjs', fieldGuideSkillRoot))
 const preload = new URL('./dream-fault-preload.mjs', import.meta.url).href
 const released = () => cliAt('c067c9143cf388a7dae102d4871e7d846c51ba19')
+// 6.8.0, a release before annotations: it writes neither annotations.json nor the watermark.
+const preAnnotation = () => cliAt('dd51bb955c4f748708961291cd26a2ab49673c77')
 const hook = `
 const [cli, guideRoot, prompt] = process.argv.slice(2)
 const { confirmFromPrompt } = await import(cli)
@@ -88,7 +90,7 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
   const env = { ...process.env, HOME: home, CODEX_HOME: join(home, '.codex'), CLAUDE_CONFIG_DIR: join(home, '.claude'), T3CODE_THREAD_ID: undefined }
   let inputCount = 0
   const run = ({ command, args = [], use = 'cli', at = store, fault } = {}) => {
-    const executable = use === 'dream' ? dream : use === 'released' ? released() : cli
+    const executable = use === 'dream' ? dream : use === 'released' ? released() : use === 'pre-annotation' ? preAnnotation() : cli
     const argv = use === 'hook' || use === 'released-hook'
       ? ['--input-type=module', '--eval', hook, 'field-guide-test-hook', use === 'released-hook' ? released() : cli, at, ...args]
       : [executable, command, '--repo-root', repo, '--guide-root', at, ...args]
@@ -110,8 +112,9 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
     write(path, JSON.stringify(value))
     return ['--input', path]
   }
-  const captureRun = ({ name, scope = 'project', key = 'worktrees', learning = `After a merge, clean up worktrees for ${name}.`, relationship, linkedSubjects }) => run({
+  const captureRun = ({ name, scope = 'project', key = 'worktrees', learning = `After a merge, clean up worktrees for ${name}.`, relationship, linkedSubjects, use }) => run({
     command: 'submit',
+    use,
     args: input({
       schemaVersion: 1, decision: 'capture', confidence: 'high', explicitPreference: true,
       scope, subjectKey: key, learning, relationship, linkedSubjects,
