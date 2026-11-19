@@ -1,7 +1,7 @@
 {
   "name": "guardrails",
   "displayName": "Guardrails",
-  "version": "6.19.0",
+  "version": "6.20.0",
   "description": "A hook that denies AI attribution in commits and pull requests, and asks before 1Password CLI calls.",
   "author": {
     "name": "Filip Gutica"

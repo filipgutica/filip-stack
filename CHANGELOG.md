@@ -1,3 +1,19 @@
+# [6.20.0](https://github.com/filipgutica/filip-stack/compare/v6.19.0...v6.20.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **field-guide:** expand only the shared guidance import when dreaming ([ef2d842](https://github.com/filipgutica/filip-stack/commit/ef2d8423cb0dc4702242ed1cc9cfb111e17c4843))
+* **field-guide:** read the guidance that CLAUDE.md imports when dreaming ([ea69249](https://github.com/filipgutica/filip-stack/commit/ea692492e4365a515769e7553a89e02d921eb45d))
+* **host-config:** keep the guidance template out of a file named AGENTS.md ([94f22c5](https://github.com/filipgutica/filip-stack/commit/94f22c54e5d556e0985dcbb3eda4564c4b5eeddd))
+
+
+### Features
+
+* **council:** add Gemini 4 Neon to every preset ([8b2f4f9](https://github.com/filipgutica/filip-stack/commit/8b2f4f9a0ff71037f767b8e1974387bfbebe12cb))
+* **host-config:** one shared guidance file and a Copy writer role ([c43876e](https://github.com/filipgutica/filip-stack/commit/c43876ee96875513a0428fca94d50530a92a49da))
+* **plugins:** install the plugins in Antigravity ([060db93](https://github.com/filipgutica/filip-stack/commit/060db93d807925b0614a86dd8a68fca0fbe38890))
+
 # [6.19.0](https://github.com/filipgutica/filip-stack/compare/v6.18.0...v6.19.0) (2026-11-19)
 
 
