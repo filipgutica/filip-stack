@@ -1,3 +1,24 @@
+# [6.18.0](https://github.com/filipgutica/filip-stack/compare/v6.17.0...v6.18.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **field-guide:** close round 1 review findings on dream apply ([b6e66c1](https://github.com/filipgutica/filip-stack/commit/b6e66c11c752421c3743066f5a63909961e2fd2e))
+* **field-guide:** close round 2 review findings on dream apply ([4c4b14c](https://github.com/filipgutica/filip-stack/commit/4c4b14cd4a72cb98192b5453110ada3a488624db))
+* **field-guide:** keep a lost annotations.json visible to nightly apply ([4adb1f9](https://github.com/filipgutica/filip-stack/commit/4adb1f9125cc2c45cdb8974479a89db88685304d))
+* **field-guide:** let a merge copy its targets' repository identity ([bd48332](https://github.com/filipgutica/filip-stack/commit/bd4833222a9a7d7c399b5eaefeb050eed053521f))
+* **field-guide:** let no reconcile hide a lost annotations.json ([13f1e5c](https://github.com/filipgutica/filip-stack/commit/13f1e5c5ccd373a9d03ba8b8b286daf7dbfb68fc))
+* **field-guide:** never let nightly apply retire guidance the user once confirmed ([4169ef5](https://github.com/filipgutica/filip-stack/commit/4169ef527344e574002b64464dc3690fc5feeb0e))
+* **field-guide:** refuse dream apply while a plugin copy cannot read run entries ([6501bc1](https://github.com/filipgutica/filip-stack/commit/6501bc1d14a76a363baa9d034a723d37e52ba16a))
+* **field-guide:** refuse lost history and write nothing before every check passes ([1089caf](https://github.com/filipgutica/filip-stack/commit/1089caf33c64ad3d060b6767e1fb8e026d2d39a2))
+* **field-guide:** retire nothing at night beside confirmed guidance ([448b3d7](https://github.com/filipgutica/filip-stack/commit/448b3d7e35d5d748ae41677a9c1806bad0980ec3))
+
+
+### Features
+
+* **field-guide:** apply nightly maintenance with dream apply ([81ccb8b](https://github.com/filipgutica/filip-stack/commit/81ccb8b2ae8f827cf108b395292d465c2f9b42dd))
+* **field-guide:** merge main and hold dream apply to its guards ([7aa035a](https://github.com/filipgutica/filip-stack/commit/7aa035ab1464246d3b6c2d94d97f4e6f4d38e1e4)), closes [#263](https://github.com/filipgutica/filip-stack/issues/263)
+
 # [6.17.0](https://github.com/filipgutica/filip-stack/compare/v6.16.0...v6.17.0) (2026-11-18)
 
 
