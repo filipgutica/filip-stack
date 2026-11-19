@@ -47,8 +47,10 @@ passing reproduction, repository CI, or the running app, with screenshots of
 changed UI and a recording of a changed flow when the host can record. Mocked
 tests alone do not prove the user experience.
 
-With a council threshold, the full council (Astra, Sol, Opus, and Fable)
-scores the PR's merge readiness once checks are green. The agent fixes their
+With a council threshold, the `full` council by default (Astra, Sol, Opus,
+Fable, and Neon) scores the PR's merge readiness once checks are green. If a
+member of the preset cannot run, such as Neon without the Antigravity
+provider, the agent asks you before it goes on without it. The agent fixes their
 findings and runs another round, for at most three rounds. It stops early
 when scores stop improving or the diff grows past its scope. Below the
 threshold, it never merges and asks you what to do. The scores go in a

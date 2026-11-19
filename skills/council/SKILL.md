@@ -1,6 +1,6 @@
 ---
 name: council
-description: Gather independent opinions when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent sizes the council from Astra 6.2, Sol 6.2, Opus 5.5, and Fable 5.2. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
+description: Gather independent opinions when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent sizes the council from Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
 ---
 
 # Council
@@ -20,8 +20,8 @@ A preset names the members. The user or a calling skill can name one, which need
 
 | Preset | Members |
 | --- | --- |
-| `pair` | Sol 6.2 and Opus 5.5 |
-| `frontier` | Astra 6.2 and Fable 5.2 |
+| `pair` | Sol 6.2, Opus 5.5, and Gemini 4 Neon |
+| `frontier` | Astra 6.2, Fable 5.2, and Gemini 4 Neon |
 | `full` | The default lineup below |
 
 For a council on your own question or work, the designer builds the lineup.
@@ -60,12 +60,13 @@ Default lineup, the `full` preset:
 | Sol 6.2 | `gpt-6.2-sol` | high |
 | Opus 5.5 | `claude-opus-5-5` | high |
 | Fable 5.2 | `claude-fable-5-2` | high |
+| Gemini 4 Neon | `gemini-4-neon` | high |
 
-In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`. These defaults use two models from each of two providers; more providers are not required.
+In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`, such as `thinking_level` for Gemini 4 Neon on the Antigravity provider. These defaults use three providers: Codex for Astra and Sol, Claude for Opus and Fable, and Antigravity for Neon.
 
 Elsewhere, use the host's subagent tools only when they can reach the requested models and effort.
 
-Never silently substitute a model. If a member the requester named is unavailable, ask whether to change the lineup or proceed with fewer members. If the designer chose the member, replace it with a comparable model from an available provider, such as Astra 6.2 for Fable 5.2 or Sol 6.2 for Opus 5.5, or drop it, and report the change. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
+Never silently substitute a model. If a member the requester named is unavailable, ask whether to change the lineup or proceed with fewer members. The members of a preset the requester named, or that a calling skill set, count as named. If the designer chose the member, replace it with a comparable model from an available provider, such as Astra 6.2 for Fable 5.2 or Sol 6.2 for Opus 5.5, or drop it, and report the change. Gemini 4 Neon has no comparable model on another provider, so drop it. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
 
 Launch the members in parallel with separate contexts and no access to each other's responses. Each brief includes:
 

@@ -44,10 +44,11 @@ the threshold as plain text. In Codex, you can write
 `$full-stop fix the flaky login test $council 9.5`. Both forms start the
 gate.
 
-The default members mix OpenAI and Claude models, all at high reasoning
-effort. The council works best when your agent can run both: in T3 Code, set
-up the Codex and Claude providers, and on another host, its subagents must
-run the models. A council needs at least two members.
+The default members mix OpenAI, Claude, and Gemini models, all at high
+reasoning effort. The council works best when your agent can run all three:
+in T3 Code, set up the Codex, Claude, and Antigravity providers, and on
+another host, its subagents must run the models. A council needs at least
+two members.
 
 | Member | Model |
 | --- | --- |
@@ -55,6 +56,7 @@ run the models. A council needs at least two members.
 | Sol 6.2 | OpenAI's `gpt-6.2-sol` |
 | Opus | Claude Opus 5.5 (`claude-opus-5-5`) |
 | Fable | Claude Fable 5.2 (`claude-fable-5-2`) |
+| Neon | Google's Gemini 4 Neon (`gemini-4-neon`) |
 
 You don't have to choose members. By default, a separate designer agent
 (Opus 5.5) sizes the council to the question, so your agent never picks the
@@ -62,9 +64,9 @@ judges for its own question:
 
 | Preset | Members | The designer picks it for |
 | --- | --- | --- |
-| `pair` | Sol and Opus | A contained question that is easy to reverse, such as a routine plan |
-| `frontier` | Astra and Fable | Hard reasoning in a contained scope, such as a subtle bug |
-| `full` | All four | A cross-cutting or hard-to-reverse decision, or one that touches security, data, or a public contract |
+| `pair` | Sol, Opus, and Neon | A contained question that is easy to reverse, such as a routine plan |
+| `frontier` | Astra, Fable, and Neon | Hard reasoning in a contained scope, such as a subtle bug |
+| `full` | All five | A cross-cutting or hard-to-reverse decision, or one that touches security, data, or a public contract |
 
 The designer can also plan up to three rounds, such as a `pair` council that
 reviews a plan, sees it revised, and reviews it again. To choose yourself,
@@ -81,9 +83,10 @@ On its own:
 1. The agent writes the question, context, and criteria. For a plan, it
    adds your plan or drafts one. For an open question, it leaves out its
    own answer.
-2. It states the lineup before launch. If a member you named is
-   unavailable, it asks you. If the designer chose that member, the agent
-   swaps in a comparable model or drops it, and says so.
+2. It states the lineup before launch. If a member you named, or a member
+   of a preset you named, is unavailable, it asks you. If the designer chose
+   that member, the agent swaps in a comparable model or drops it, and says
+   so. Neon has no comparable model, so the agent drops it.
 3. Each member answers separately with its reasons, its strongest
    objection, what it is unsure about, and a score from 0 to 10. For a plan,
    the score rates the plan. For an open question, it is the member's

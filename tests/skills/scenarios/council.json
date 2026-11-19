@@ -70,7 +70,8 @@
       "task": "The user asks you for a frontier council on whether to split the billing service. They name no members or criteria.",
       "options": {
         "designer": "start a designer agent to build the lineup",
-        "preset": "convene Astra and Fable 5.2 without a designer"
+        "preset": "convene Astra 6.2, Fable 5.2, and Gemini 4 Neon without a designer",
+        "old-lineup": "convene Astra 6.2 and Fable 5.2 without a designer"
       },
       "accept": [
         "preset"
@@ -78,7 +79,7 @@
     },
     {
       "id": "council-own-question-preset",
-      "task": "Partway through your own task, you want a quick council on whether your migration approach is sound. Nobody named a preset, members, or criteria. The pair preset of Sol 6.2 and Opus 5.5 looks like enough.",
+      "task": "Partway through your own task, you want a quick council on whether your migration approach is sound. Nobody named a preset, members, or criteria. The pair preset of Sol 6.2, Opus 5.5, and Gemini 4 Neon looks like enough.",
       "options": {
         "preset": "convene the pair preset yourself",
         "designer": "have a separate designer agent build the council"
@@ -114,9 +115,9 @@
       "id": "council-designer-pair",
       "task": "You are the designer this council skill starts. The question: should the `formatDate` helper in one module return null or throw on invalid input? Only that module calls it, and the choice is easy to change later.",
       "options": {
-        "pair": "the pair preset: Sol 6.2 and Opus 5.5",
-        "frontier": "the frontier preset: Astra 6.2 and Fable 5.2",
-        "full": "the full preset: all four default members"
+        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
+        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
+        "full": "the full preset: all five default members"
       },
       "accept": [
         "pair"
@@ -127,9 +128,9 @@
       "needsNewGuidance": true,
       "task": "You are the designer this council skill starts. The question: why does the pagination cursor algorithm in one module skip a row when two rows share a timestamp, and what is the correct fix? No API or stored data changes.",
       "options": {
-        "pair": "the pair preset: Sol 6.2 and Opus 5.5",
-        "frontier": "the frontier preset: Astra 6.2 and Fable 5.2",
-        "full": "the full preset: all four default members"
+        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
+        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
+        "full": "the full preset: all five default members"
       },
       "accept": [
         "frontier"
@@ -139,9 +140,9 @@
       "id": "council-designer-full",
       "task": "You are the designer this council skill starts. The question: should every service move session tokens to a new storage format? It changes stored user data and a public API that other teams call.",
       "options": {
-        "pair": "the pair preset: Sol 6.2 and Opus 5.5",
-        "frontier": "the frontier preset: Astra 6.2 and Fable 5.2",
-        "full": "the full preset: all four default members"
+        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
+        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
+        "full": "the full preset: all five default members"
       },
       "accept": [
         "full"
@@ -202,6 +203,41 @@
       },
       "accept": [
         "open"
+      ]
+    },
+    {
+      "id": "council-named-preset-neon-unavailable",
+      "task": "The user asks you for a pair council on whether to split the billing service. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
+      "options": {
+        "proceed": "convene Sol 6.2 and Opus 5.5 and report that Neon was dropped",
+        "ask": "ask the user whether to change the lineup or proceed without Neon"
+      },
+      "accept": [
+        "ask"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "council-designer-preset-neon-unavailable",
+      "task": "The user asks for a council and names no preset or members. The designer chose the pair preset. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
+      "options": {
+        "proceed": "convene Sol 6.2 and Opus 5.5 and report that Neon was dropped",
+        "ask": "ask the user whether to change the lineup or proceed without Neon"
+      },
+      "accept": [
+        "proceed"
+      ]
+    },
+    {
+      "id": "council-gate-preset-neon-unavailable",
+      "needsNewGuidance": true,
+      "task": "full-send's council gate set the full preset for a PR the user asked to gate with `council 9.5`. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. The other four members are available.",
+      "options": {
+        "proceed": "run the gate with the other four members and report that Neon was dropped",
+        "ask": "ask the user whether to change the lineup or proceed without Neon"
+      },
+      "accept": [
+        "ask"
       ]
     }
   ]
