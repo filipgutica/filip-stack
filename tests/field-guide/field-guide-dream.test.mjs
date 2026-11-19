@@ -162,6 +162,8 @@ const dreamInput = (plan, actions, subjectKey, scope) => {
     subjects: [{ subjectId: subject.subjectId, digest: subject.digest, actions }],
   }
 }
+// One input that lists the subjects of several inputs from the same plan.
+const combinedInput = (...inputs) => ({ ...inputs[0], subjects: inputs.flatMap(({ subjects }) => subjects) })
 
 test('consolidating three records into one and undoing it restores the prior active set', () => {
   const { guide } = setup('consolidate-undo')
@@ -958,13 +960,16 @@ test('consolidate refuses a declined set without confirmed records, and an undo 
 
 test('replaying a run that applied changes returns its result after its proposal lapses', () => {
   const { guide } = setup('replay-lapsed')
-  const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning))
+  const [second, third] = cleanupTexts.slice(1).map((learning) => guide.learn(learning))
+  // Nothing beside confirmed guidance is archived, so the archived record has its own subject.
+  const first = guide.learn('Name tests after the behavior they check.', { subjectKey: 'naming' })
   guide.confirm(short(second))
   guide.writeClaudeMd()
-  const input = dreamInput(guide.plan(), [
-    { action: 'archive', targetId: first, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' },
-    { action: 'consolidate', targetIds: [second, third], replacement: { learning: 'After a merge, remove its clean worktree and branch.', confidence: 'high' }, reason: 'Same rule.' },
-  ])
+  const plan = guide.plan()
+  const input = combinedInput(
+    dreamInput(plan, [{ action: 'consolidate', targetIds: [second, third], replacement: { learning: 'After a merge, remove its clean worktree and branch.', confidence: 'high' }, reason: 'Same rule.' }]),
+    dreamInput(plan, [{ action: 'archive', targetId: first, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }], 'naming'),
+  )
   const applied = guide.dreamApply(input, { previewToken: guide.dreamApply(input).previewToken })
   assert.deepEqual([applied.operations.length, applied.proposals.length], [1, 1])
 
@@ -2217,15 +2222,16 @@ test('a run refuses to store a subject key that the new-text guard refuses, and 
   const { guide } = setup('copied-subject-key')
   const subjectKey = `sk-${'x'.repeat(20)}`
   const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning, { subjectKey }))
-  guide.confirm(short(first))
   guide.writeClaudeMd()
-  assertConsolidateRefused({ guide, targetIds: [first, second], pattern: /subjectKey contains a forbidden credential token/ })
   const before = storeFiles(guide)
   // The plan redacts the key, so the only project subject is the one to review.
   const onlySubject = (plan) => ({ ...plan, subjects: plan.subjects.map((subject) => ({ ...subject, subjectKey: 'git-cleanup' })) })
+  // Before any confirmation, since nothing beside confirmed guidance is archived.
   const archive = dreamInput(onlySubject(guide.plan()), [{ action: 'archive', targetId: third, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
   assert.match(guide.dreamApply(archive, { expectFailure: true }).stderr, /subjectKey contains a forbidden credential token/)
   assert.deepEqual(storeFiles(guide), before)
+  guide.confirm(short(first))
+  assertConsolidateRefused({ guide, targetIds: [first, second], pattern: /subjectKey contains a forbidden credential token/ })
   const merged = appliedRun(guide, dreamInput(onlySubject(guide.plan()), [consolidation([first, second])]))
   assert.deepEqual([merged.operations, merged.proposals, merged.flags.map(({ kind }) => kind)], [[], [], ['unsafe-overlap']])
   assert.deepEqual(guide.activeIds(), [first, second, third].sort())
@@ -2310,10 +2316,12 @@ test('a due subject stays due when the input leaves out a subject that applies w
 
 test('the run-entry reader refuses a report whose proposals or operations do not match the run', () => {
   const { guide } = setup('run-report-match')
-  const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning))
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning))
+  const third = guide.learn('Name tests after the behavior they check.', { subjectKey: 'naming' })
   guide.confirm(short(first))
   guide.writeClaudeMd()
-  const input = dreamInput(guide.plan(), [consolidation([first, second]), { action: 'archive', targetId: third, duplicateOf: 'live:claude-md', reason: 'Global guidance says this.' }])
+  const plan = guide.plan()
+  const input = combinedInput(dreamInput(plan, [consolidation([first, second])]), archiveOf(plan, third, 'naming'))
   const [otherOperation, otherProposal] = ['operation', 'proposal'].map((kind) => `${kind}:v1:${'b'.repeat(64)}`)
   assertReportEditsUnreadable({ guide, input, edits: [
     ['a proposal that does not confirm its replacement', ({ proposals: [proposal] }) => { proposal.confirmsReplacement = false }],
@@ -2375,7 +2383,9 @@ test('a store that 6.15.0 built establishes its confirmation history', async () 
   const cli = releasedCli(release615Commit)
   const released = await import(cli)
   const confirm = (reference) => released.confirmFromPrompt({ guideRoot: guide.guideRoot, prompt: `confirm fg:${reference}`, mainThread: true, host: 'claude' })
-  const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning, { cli }))
+  const [first, second] = cleanupTexts.slice(0, 2).map((learning) => guide.learn(learning, { cli }))
+  // Its own subject, since nothing beside confirmed guidance is archived.
+  const third = guide.learn('Name tests after the behavior they check.', { cli, subjectKey: 'naming' })
   confirm(short(first))
   const input = guide.inputFile({ schemaVersion: 1, targetIds: [first, second], replacement: { learning: 'After a merge, remove its clean worktree and branch.', confidence: 'high' }, reason: 'Same rule.', source: 'agent' })
   const { result: proposal } = guide.exec({ cli, command: 'consolidate', args: ['--input', input] })
@@ -2392,7 +2402,7 @@ test('a store that 6.15.0 built establishes its confirmation history', async () 
   guide.writeClaudeMd()
   const plan = guide.plan()
   assert.deepEqual(plan.audit.stateErrors, [])
-  assert.equal(appliedRun(guide, archiveOf(plan, third)).operations.length, 1)
+  assert.equal(appliedRun(guide, archiveOf(plan, third, 'naming')).operations.length, 1)
 })
 
 test('a contradiction that memory records with confirmed guidance holds both records and is queued once', () => {
@@ -2570,5 +2580,30 @@ test('dream apply refuses a live digest that is not a digest before it recovers 
   for (const live of [{ ...input.live, roles: null }, { ...input.live, 'claude-md': 42 }]) {
     assert.match(guide.dreamApply({ ...input, live }, { expectFailure: true }).stderr, /live digest/)
     assert.deepEqual(storeFiles(guide), before)
+  }
+})
+
+test('a nightly run retires nothing beside confirmed guidance, so a lost journal cannot settle a queued contradiction', () => {
+  for (const loss of ['removed', 'emptied']) {
+    const { guide } = setup(`forgotten-contradiction-${loss}`)
+    const [first, second, third] = cleanupTexts.map((learning) => guide.learn(learning))
+    guide.confirm(short(first))
+    const other = guide.learn('Name tests after the behavior they check.', { subjectKey: 'naming' })
+    guide.writeClaudeMd()
+    // The queued contradiction changes no record, so only the journal shows it.
+    const contradiction = { action: 'contradiction', targetId: first, conflictingId: second, reason: 'One asks first, one does not.' }
+    assert.equal(appliedRun(guide, dreamInput(guide.plan(), [contradiction])).queued.length, 1)
+    const journal = join(guide.guideRoot, 'operations.jsonl')
+    if (loss === 'removed') rmSync(journal)
+    else writeFileSync(journal, '')
+    const plan = guide.plan()
+    const archived = appliedRun(guide, combinedInput(archiveOf(plan, second), archiveOf(plan, other, 'naming')))
+    assert.deepEqual(archived.flags.map(({ kind, targetIds }) => [kind, targetIds]), [['confirmed-subject', [second]]], loss)
+    // A subject without confirmed guidance still archives.
+    assert.deepEqual(archived.operations.map(({ action, targetIds }) => [action, targetIds]), [['archive', [other]]], loss)
+    const merge = { action: 'consolidate', targetIds: [second, third], replacement: { learning: 'After a merge, remove the worktree.', confidence: 'high' }, reason: 'Same rule.' }
+    const merged = appliedRun(guide, dreamInput(guide.plan(), [merge]))
+    assert.deepEqual([merged.operations, merged.proposals, merged.flags.map(({ kind }) => kind)], [[], [], ['confirmed-overlap']], loss)
+    assert.deepEqual(guide.activeIds(), [first, second, third].sort(), loss)
   }
 })

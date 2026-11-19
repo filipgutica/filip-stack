@@ -4041,6 +4041,21 @@ const decideContradiction = ({ action, subject, run }) => {
   else run.flags.push({ kind: 'conflict', targetIds: [action.targetId, action.conflictingId], reason: action.reason })
 }
 
+// Whether the subject, or a subject that applies with it, holds live guidance the user ever
+// confirmed. A contradiction that only the journal records was queued by a run, which pairs records
+// of one subject or of two that apply together, at least one ever confirmed. So a run that retires
+// nothing beside confirmed guidance settles no such contradiction, even after the journal lost it.
+const besideConfirmed = ({ subject, run }) => [...run.subjects.values()].some((other) => (
+  (other.subjectId === subject.subjectId || appliesWith(subject, other)) && other.records.some(({ confirmed }) => confirmed)
+))
+
+// The flag that leaves an archive to the user, or undefined when the run may apply it.
+const archiveFlagKind = ({ target, subject, run }) => {
+  if (target.confirmed) return 'confirmed-duplicate'
+  if (subject.scope.kind === 'shared') return 'shared-proposal'
+  return besideConfirmed({ subject, run }) ? 'confirmed-subject' : undefined
+}
+
 const decideArchive = ({ action, record, subject, run }) => {
   if (action.duplicateOf === action.targetId) fail('dream archive duplicateOf names its own target')
   if (isGuidanceId(action.duplicateOf)) {
@@ -4050,8 +4065,9 @@ const decideArchive = ({ action, record, subject, run }) => {
   }
   const target = record(action.targetId)
   requireNotHeld({ run, ids: [action.targetId] })
-  if (target.confirmed || subject.scope.kind === 'shared') {
-    run.flags.push({ kind: target.confirmed ? 'confirmed-duplicate' : 'shared-proposal', targetIds: [action.targetId], duplicateOf: action.duplicateOf, reason: action.reason })
+  const kind = archiveFlagKind({ target, subject, run })
+  if (kind) {
+    run.flags.push({ kind, targetIds: [action.targetId], duplicateOf: action.duplicateOf, reason: action.reason })
     return
   }
   claimTargets({ run, ids: [action.targetId] })
@@ -4089,6 +4105,10 @@ const decideConsolidation = ({ action, record, subject, run }) => {
     run.proposals.push({ plan, reason: action.reason })
     return
   }
+  if (besideConfirmed({ subject, run })) {
+    run.flags.push({ kind: 'confirmed-overlap', targetIds: action.targetIds, reason: action.reason })
+    return
+  }
   run.entries.push(consolidateInPlace({ memory: run.memory, annotations: run.annotations, plan, reason: action.reason, source: 'dream', now: run.now, fields: { runId: run.runId } }))
 }
 
@@ -4112,9 +4132,10 @@ const requireContextAction = ({ action, subject, run }) => {
   }
 }
 
-// Decides one action by the lifecycle rules. Automation never changes a confirmed record or,
-// for now, a shared one: those changes become proposals, flags, or queued decisions, and never a
-// proposal for a shared record. Every other change is applied to the working copies and journaled.
+// Decides one action by the lifecycle rules. Automation never changes a confirmed record, a record
+// beside confirmed guidance, or, for now, a shared one: those changes become proposals, flags, or
+// queued decisions, and never a proposal for a shared record. Every other change is applied to the
+// working copies and journaled.
 // A subject that applies with another, the same key in the other scope, when the input leaves that
 // one out, as when the packet budget omitted it. A contradiction may pair their records.
 const missingCounterpart = ({ subject, run }) => [...run.subjects.values()].find((other) => (
@@ -4246,6 +4267,7 @@ const isReportFlag = shapeBy('kind', {
   unused: flagShape({ kind: 'unused', targetIds: isFlaggedIds, optional: { source: isLiveSource } }),
   'live-edit': flagShape({ kind: 'live-edit', targetIds: isFlaggedIds, required: { source: isLiveSource } }),
   'confirmed-duplicate': flagShape({ kind: 'confirmed-duplicate', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
+  'confirmed-subject': flagShape({ kind: 'confirmed-subject', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
   'shared-proposal': flagShape({ kind: 'shared-proposal', targetIds: isGuidanceIds({ min: 1 }), required: duplicateOfField }),
   'shared-overlap': flagShape({ kind: 'shared-overlap', targetIds: isTargetGroup }),
   'confirmed-overlap': flagShape({ kind: 'confirmed-overlap', targetIds: isTargetGroup }),
