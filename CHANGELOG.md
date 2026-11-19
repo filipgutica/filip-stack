@@ -1,3 +1,10 @@
+# [6.23.0](https://github.com/filipgutica/filip-stack/compare/v6.22.0...v6.23.0) (2026-11-19)
+
+
+### Features
+
+* **council:** drop the unrubricked 0-10 member score ([adff7e4](https://github.com/filipgutica/filip-stack/commit/adff7e448d54a8ab85fdd622f3e7dd25f03dc809))
+
 # [6.22.0](https://github.com/filipgutica/filip-stack/compare/v6.21.0...v6.22.0) (2026-11-19)
 
 
