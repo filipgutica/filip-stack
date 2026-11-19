@@ -18,9 +18,12 @@ const privacyPatterns = {
   ],
   'URL query': [/\b[a-z][a-z0-9+.-]*:(?!:)\S*?\?[^\s"'<>]+/giu],
   'URL user information': [/\b[a-z][a-z0-9+.-]*:\/\/[^\s/?#@"'<>]+@/giu],
+  // The whole path token, so a new path under a held home directory is a new value. A token stops
+  // at whitespace, a quote, a backslash (Unix), or punctuation that ends a path in text, and leaves
+  // out trailing sentence dots.
   'absolute home path': [
-    /\/(?:mnt\/[a-z]\/users|home|users)\/[^/\s"'`\\:?,.;]+/giu,
-    /\b[a-z]:\\{1,2}users\\{1,2}[^\\/\s"',.;]+/giu,
+    /\/(?:mnt\/[a-z]\/users|home|users)\/[^\s"'`\\,;:?#()<>[\]{}]+?(?=\.*(?:[\s"'`\\,;:?#()<>[\]{}]|$))/giu,
+    /\b[a-z]:\\{1,2}users\\{1,2}[^\s"'`,;:?#()<>[\]{}]+?(?=\.*(?:[\s"'`,;:?#()<>[\]{}]|$))/giu,
   ],
 }
 
@@ -34,14 +37,20 @@ const matches = (bytes, patterns) => {
 }
 
 const showFile = (file) => file.replace(/(?:\.tmp-\d+|\.[a-f\d-]{36}\.tmp)$/u, '.tmp')
-// A step may copy a value the store already held, such as a repository identity that capture
-// stored in every record, from one file or record to another. It fails only when it adds a value
-// that no store file held before the step.
+const baseFile = (file) => showFile(file).replace(/\.tmp$/u, '')
+const memoryFiles = ['memory.md', 'memory.json']
+// The user's own input reaches the store through memory, so a value counts as held only when
+// memory.md or memory.json held it before the step. A step may copy a held value only into a
+// memory file or its temporary file, as a merge copies its targets' repository identity. Every
+// other file, proposals.json and operations.jsonl included, may keep only what it held itself.
 export const privacy = ({ before, after, check }) => {
   for (const [category, patterns] of Object.entries(privacyPatterns)) {
-    const held = new Set(Object.values(before).flatMap((bytes) => [...matches(bytes, patterns).keys()]))
+    const heldIn = (file) => new Set(matches(before[file], patterns).keys())
+    const inMemory = new Set(memoryFiles.flatMap((file) => [...heldIn(file)]))
     for (const [file, bytes] of Object.entries(after)) {
-      if ([...matches(bytes, patterns).keys()].some((text) => !held.has(text))) check(5, false, `${showFile(file)} gained ${category}`)
+      const own = heldIn(baseFile(file))
+      const allowed = (text) => own.has(text) || (memoryFiles.includes(baseFile(file)) && inMemory.has(text))
+      if ([...matches(bytes, patterns).keys()].some((text) => !allowed(text))) check(5, false, `${showFile(file)} gained ${category}`)
     }
   }
 }
@@ -100,7 +109,7 @@ export const contradictions = ({ after, events, check }) => {
   }
 }
 
-const decisions = (result) => ({
+export const decisions = (result) => ({
   operations: (result.operations ?? []).map(({ action, targetIds, replacementId }) => ({
     action, targetIds: sorted(targetIds), replacementId,
   })),

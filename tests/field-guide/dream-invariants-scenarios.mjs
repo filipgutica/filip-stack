@@ -65,6 +65,8 @@ const actionScenario = ({ scope, action }) => ({
       subjects: [row([actions[action](ids)], scope)],
       expect: outcome[scope][action],
       pair: action === 'contradiction' ? ids : undefined,
+      // Retires the unconfirmed side of the queued contradiction.
+      retire: action === 'contradiction' ? [row([archive(ids[1])], scope)] : undefined,
       undoGate: scope === 'project' && action === 'archive',
       deadline: scope === 'project' && (action === 'archive' || action === 'consolidate'),
       approval: action === 'proposal' && scope === 'project',
@@ -138,6 +140,7 @@ const context = {
     return {
       subjects: [row([contradiction(pair)]), row([], 'shared')],
       expect: 'queued', pair, counterpart: [row([archive(project)]), row([archive(shared)], 'shared')],
+      retire: [row([archive(project)]), row([], 'shared')],
     }
   },
 }

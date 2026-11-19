@@ -110,6 +110,14 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
     write(path, JSON.stringify(value))
     return ['--input', path]
   }
+  const captureRun = ({ name, scope = 'project', key = 'worktrees', learning = `After a merge, clean up worktrees for ${name}.`, relationship, linkedSubjects }) => run({
+    command: 'submit',
+    args: input({
+      schemaVersion: 1, decision: 'capture', confidence: 'high', explicitPreference: true,
+      scope, subjectKey: key, learning, relationship, linkedSubjects,
+      evidence: { summary: 'The user stated a fixture preference.', pointers: [{ kind: 'conversation', client: 'codex', threadId: 'fixture', turnId: name }] },
+    }),
+  })
   const snapshot = () => files(store)
   // A copy of a snapshot in its own folder, for a reader that must not touch the store.
   const copyOf = (saved) => {
@@ -150,14 +158,8 @@ export const fixture = ({ t, origin = 'git@github.com:example/guide-fixture.git'
       rmSync(join(home, '.claude/plugins'), { recursive: true, force: true })
     },
     changeLive: () => write(join(home, '.claude/CLAUDE.md'), '# Rules\n\nClean up after a merge. Keep this rule under review.\n'),
-    capture: ({ name, scope = 'project', key = 'worktrees', learning = `After a merge, clean up worktrees for ${name}.`, relationship, linkedSubjects }) => requireResult(run({
-      command: 'submit',
-      args: input({
-        schemaVersion: 1, decision: 'capture', confidence: 'high', explicitPreference: true,
-        scope, subjectKey: key, learning, relationship, linkedSubjects,
-        evidence: { summary: 'The user stated a fixture preference.', pointers: [{ kind: 'conversation', client: 'codex', threadId: 'fixture', turnId: name }] },
-      }),
-    })).result.targetId,
+    captureRun,
+    capture: (options) => requireResult(captureRun(options)).result.targetId,
     plan: (fault) => run({ command: 'plan', use: 'dream', fault }),
     apply: ({ review, token, fault = {} }) => run({
       use: 'dream', command: 'apply', args: [...input(review), ...(token ? ['--preview-token', token] : [])], fault,

@@ -1,12 +1,14 @@
 // An independent contract harness for nightly maintenance. pnpm check and CI run every scenario
 // with each fault except a crash after each single write; FIELD_GUIDE_INVARIANTS=1 adds those.
+// A row marked ALLOWED is the one documented limit (documentedLimit), not a passing check.
 import assert from 'node:assert/strict'
 import { rmSync } from 'node:fs'
 import { join } from 'node:path'
 import test from 'node:test'
+import { isDeepStrictEqual } from 'node:util'
 import { fixture, journalOf, memoryOf, proposalsOf, requireResult, write } from './dream-invariants-fixture.mjs'
 import {
-  changedFiles, classify, contradictions, describe, everConfirmed, parity,
+  changedFiles, classify, contradictions, decisions, describe, everConfirmed, parity,
   privacy, prompts, readerCheck, reversible, sameFiles,
 } from './dream-invariants-oracle.mjs'
 import { alterMemory, archive, elapsed, inputFor, restoreFault, scenarios, watermark } from './dream-invariants-scenarios.mjs'
@@ -84,6 +86,17 @@ const checkNightlyWrite = ({ machine, events, before, after, result, check, old,
   reversible({ before, after, report: result?.json, machine, old, check, gate: undoGate, checkDeadline: deadline })
 }
 
+// Whether memory holds a record that the user restored with undo-operation of a journaled archive:
+// the archived-to-active edge that the writer gate keeps from a store a 6.15.0 copy reads.
+const archiveUndone = (snapshot) => {
+  const pending = journalOf(snapshot).filter(({ type }) => type === 'pending')
+  const archives = new Set(pending.filter(({ action }) => action === 'archive').map(({ operationId }) => operationId))
+  const undos = new Set(pending.filter(({ action, undoes }) => action === 'undo-operation' && archives.has(undoes)).map(({ operationId }) => operationId))
+  return memoryOf(snapshot).guidance.some(({ transitions }) => transitions.some(({ from, to, operationId }) => (
+    from === 'archived' && to === 'active' && undos.has(operationId)
+  )))
+}
+
 const tracker = ({ machine, events, check, tally, undoGate, deadline }) => {
   const outside = machine.outside()
   const old = ({ at } = {}) => readGuide({ machine, at })
@@ -104,9 +117,11 @@ const tracker = ({ machine, events, check, tally, undoGate, deadline }) => {
     })
     if (storeWrite && !sameFiles(before, after) && (!result?.status || crash)) {
       const read = old()
-      // The contract asks that 6.15.0 still read the store. One it could not read before this step,
-      // such as after the user undid an archive with no 6.15.0 copy installed, is not this step's doing.
-      if (read.status === 0 || old({ at: machine.copyOf(before) }).status === 0) readerCheck({ result: read, check: scoped })
+      // The contract asks that 6.15.0 still read the store. The one state it may not read is the
+      // user's undo of a nightly archive with no 6.15.0 copy installed; a step after that is excused
+      // only while 6.15.0 could not read the store before it either.
+      const excused = archiveUndone(before) && old({ at: machine.copyOf(before) }).status !== 0
+      if (read.status === 0 || !excused) readerCheck({ result: read, check: scoped })
     }
     return result
   }
@@ -145,7 +160,7 @@ const replay = ({ machine, step, review, token, check, finished, rerun, clock, l
       changed({ before, after: machine.snapshot(), result, invariant: 6, check: (...args) => check(name, ...args) })
     } else if (rerun) {
       const files = changedFiles(before, machine.snapshot()).split(', ').filter((file) => file && file !== 'operations.jsonl')
-      check(name, 3, files.length === 0 && classify(result.json) === classify(rerun),
+      check(name, 3, files.length === 0 && isDeepStrictEqual(decisions(result.json), decisions(rerun)),
         `replay after the journal was lost ran ${classify(result.json)} and changed ${files.join(', ') || 'only the journal'}`)
     }
   }
@@ -158,12 +173,21 @@ const queue = ({ current, result, check }) => {
   check('apply', 2, actual, 'finished run did not queue the confirmed contradiction')
 }
 
+// The documented limit (storage.md, dreaming.md): a released 6.15.0 copy that rebuilds a lost
+// annotations.json leaves no trace, so no file shows a confirmation that only the lost file held.
+// Only under that fault, a change to an ever-confirmed record (invariant 1), or a contradiction
+// with one that no longer counts as open (invariant 2), is that limit, not a defect.
+const limitReason = 'documented limit: 6.15.0 rebuilt the lost annotations.json, which alone held the confirmation'
+const documentedLimit = ({ fault, failure }) => Boolean(fault.limit) && [1, 2].includes(failure.invariant)
+
 const checkPlan = ({ machine, step, current, check, fault }) => {
   const result = step('plan', () => machine.plan(), { readOnly: true })
   if (result.status && fault.restore) return undefined
   const plan = requireResult(result)
   if (current.redact) check('plan', 5, !JSON.stringify(plan).includes(current.redact), 'plan exposed a legacy credential-shaped slug')
-  if (current.recorded && (!fault.file || fault.file === 'operations.jsonl')) {
+  // A fault that loses annotations.json hides the confirmation that keeps a recorded contradiction
+  // open; apply must then refuse, which invariant 2 checks after every step.
+  if (current.recorded && (!fault.file || fault.file === 'operations.jsonl') && !fault.lag?.startsWith('lost-')) {
     const pairs = plan.subjects.flatMap((subject) => subject.queuedContradictions ?? [])
     check('plan', 2, pairs.some(({ targetId, conflictingId }) => targetId === current.recorded[0] && conflictingId === current.recorded[1]),
       'plan lost a contradiction still recorded in memory')
@@ -171,10 +195,14 @@ const checkPlan = ({ machine, step, current, check, fault }) => {
   return plan
 }
 
-const reconcile = ({ step, machine, lose, lag }) => {
+// The next locked write after a lost annotations.json and a lagging watermark: a released 6.15.0
+// export by default, or a capture of an unrelated record by this version.
+const reconcile = ({ step, machine, lose, lag, capture }) => {
   if (lose) step('lose-annotations', () => rmSync(join(machine.store, 'annotations.json')), { user: true })
   if (lag) step('lag-watermark', () => watermark({ machine, change: (mark) => ({ memoryRevision: mark.memoryRevision - 1 }) }), { user: true })
-  const result = step('released-export', machine.oldExport, { storeWrite: true, user: true })
+  const result = capture
+    ? step('unrelated-capture', () => machine.captureRun({ name: 'unrelated', key: 'unrelated-capture' }), { storeWrite: true, user: true })
+    : step('released-export', machine.oldExport, { storeWrite: true, user: true })
   assert.equal(result.status, 0, result.error)
 }
 
@@ -241,6 +269,18 @@ const invalidAfterCrash = ({ machine, step, current, check }) => {
   check('invalid-pending-apply', 6, result.status !== 0, 'accepted a null live digest while recovering an interrupted run')
 }
 
+// After a run queued a contradiction and changed no record, nothing but the journal shows the
+// queue. Loses or empties the journal, then retires the unconfirmed side; the tracker checks that
+// both sides stay live (invariant 2), unless apply refuses.
+const forgetProbe = ({ machine, step, current, fault }) => {
+  const path = join(machine.store, 'operations.jsonl')
+  step('forget-journal', () => (fault.forget === 'lost' ? rmSync(path) : write(path, '')), { user: true })
+  const packet = requireResult(step('forgotten-plan', () => machine.plan(), { readOnly: true }))
+  const review = inputFor(packet, current.retire)
+  const preview = step('forgotten-preview', () => machine.apply({ review }), { readOnly: true })
+  step('forgotten-apply', () => machine.apply({ review, token: preview.json?.previewToken ?? 'invalid-token' }), { storeWrite: true })
+}
+
 const later = ({ machine, step, current, check, events, fault, result }) => {
   if (fault.recover === 'invalid') {
     invalidAfterCrash({ machine, step, current, check })
@@ -254,6 +294,7 @@ const later = ({ machine, step, current, check, events, fault, result }) => {
     else reconcile({ step, machine, lose: fault.recover === 'lost' })
     historyProbe({ machine, step, current, check, mustRefuse: fault.recover === 'edited' })
   }
+  if (fault.forget && result.json?.outcome === 'applied') forgetProbe({ machine, step, current, fault })
   if (current.reconfirm && fault.name === 'clean' && result.json?.outcome === 'applied') reconfirmProbe({ machine, step, current, check, events })
   if (current.approval && fault.name === 'clean') approveProbe({ machine, step, check, result })
 }
@@ -264,8 +305,8 @@ const beforeApply = ({ machine, current, step, fault, baseline, check }) => {
     machine.install({ host: fault.host === 'codex' ? 'claude' : 'codex', old: false })
   }, { user: true })
   if (fault.oldExport) step('released-export', machine.oldExport, { storeWrite: true, user: true })
-  if (fault.lag === 'export' || fault.lag === 'lost-export') {
-    reconcile({ step, machine, lose: fault.lag === 'lost-export', lag: true })
+  if (['export', 'lost-export', 'lost-capture'].includes(fault.lag)) {
+    reconcile({ step, machine, lose: fault.lag.startsWith('lost-'), lag: true, capture: fault.lag === 'lost-capture' })
   } else if (fault.lag) {
     step('watermark', () => watermark({ machine, change: () => ({ fingerprints: [] }) }), { user: true })
   }
@@ -375,13 +416,17 @@ const runCell = ({ t, machine, seed, current, fault, baseline, events: originalE
     later({ machine, step, current, check, events, fault, result: applied })
   }
   if (fault.directApproval) directApproval({ machine, step, current, check, baseline })
-  for (const failure of new Set(failures.map((item) => JSON.stringify(item)))) t.diagnostic(`ROW ${failure}`)
+  const allowed = failures.filter((failure) => documentedLimit({ fault, failure }))
+  const failed = failures.filter((failure) => !allowed.includes(failure))
+  for (const failure of new Set(allowed.map((item) => JSON.stringify(item)))) t.diagnostic(`ALLOWED ${failure} (${limitReason})`)
+  for (const failure of new Set(failed.map((item) => JSON.stringify(item)))) t.diagnostic(`ROW ${failure}`)
   tally.cells += 1
-  if (failures.length) tally.failed += 1
-  assert.equal(failures.length, 0, `${seed.name}, ${fault.name}, ${failures[0]?.step}, invariant ${failures[0]?.invariant}: ${failures[0]?.observed}`)
+  tally.allowed += allowed.length
+  if (failed.length) tally.failed += 1
+  assert.equal(failed.length, 0, `${seed.name}, ${fault.name}, ${failed[0]?.step}, invariant ${failed[0]?.invariant}: ${failed[0]?.observed}`)
 }
 
-const secondaryFaults = ({ current, input, baseline, control }) => {
+const secondaryFaults = ({ current, input, baseline, control, events }) => {
   const mix = malformedFor({ input, current })
   const files = fileFaults.filter(({ file }) => baseline[file] || control.after[file])
   // By default, only crashes right after annotations and right after memory reach disk: the points
@@ -397,7 +442,7 @@ const secondaryFaults = ({ current, input, baseline, control }) => {
   return [
     { name: 'clean' }, { name: 'reordered-keys', reorder: true }, { name: 'released-export', oldExport: true },
     ...(current.expect === 'proposal' ? [{ name: 'direct-proposal-older-approval', directApproval: true }] : []),
-    ...files, ...mix, ...projected, ...neighbors, ...specialFaults(current),
+    ...files, ...mix, ...projected, ...neighbors, ...specialFaults(current), ...historyFaults({ current, events, baseline }),
     ...(control.applied.json?.outcome === 'applied' ? ['codex', 'claude'].map((host) => ({ name: `old-${host}-copy`, host })) : []),
   ]
 }
@@ -428,6 +473,19 @@ const specialFaults = (current) => [
   ...(current.badRestore ? ['borrowed', 'missing'].map((restore) => ({ name: `restore-${restore}`, restore, reject: true })) : []),
 ]
 
+// Losses of history that no file shows. For a scenario where the user confirmed guidance:
+// annotations.json lost and the watermark lagging, then the next locked write, either a released
+// 6.15.0 export (the documented limit) or a capture by this version. For a scenario that queues a
+// contradiction: the journal lost or emptied after the run, then a run that retires the
+// unconfirmed side. 6.15.0 cannot export a store that holds an undone archive.
+const historyFaults = ({ current, events, baseline }) => [
+  ...(events.some(({ type }) => type === 'confirm') ? [
+    ...(current.lag || archiveUndone(baseline) ? [] : [{ name: 'lost-annotations-released-export', lag: 'lost-export', limit: true }]),
+    { name: 'lost-annotations-capture', lag: 'lost-capture' },
+  ] : []),
+  ...(current.retire ? ['lost', 'emptied'].map((forget) => ({ name: `queued-then-${forget}-journal`, forget })) : []),
+]
+
 const countWrites = ({ machine, review, baseline }) => {
   const preview = machine.apply({ review })
   const token = preview.json?.previewToken
@@ -447,11 +505,31 @@ for (const seed of scenarios) {
     const control = countWrites({ machine, review: input, baseline })
     current.controlToken = control.token
     current.controlReview = input
-    const faults = secondaryFaults({ current, input, baseline, control })
-    const tally = { cells: 0, failed: 0, steps: 0 }
+    const faults = secondaryFaults({ current, input, baseline, control, events })
+    const tally = { cells: 0, failed: 0, allowed: 0, steps: 0 }
     for (const fault of faults) {
       await t.test(fault.name, (cell) => runCell({ t: cell, machine, seed, current, fault, baseline, events, tally }))
     }
     t.diagnostic(`MATRIX ${JSON.stringify({ scenario: seed.name, ...tally, writes: control.applied.writes.length })}`)
   })
 }
+
+test('the privacy oracle holds only what memory held and compares whole home paths', () => {
+  const gained = (before, after) => {
+    const found = []
+    privacy({ before, after, check: (_invariant, ok, message) => { if (!ok) found.push(message) } })
+    return found
+  }
+  const bytes = (text) => Buffer.from(text)
+  const identity = '"repositoryIdentity":"remote:/home/example/projects/demo"'
+  const memory = { 'memory.md': bytes(identity) }
+  assert.deepEqual(gained({ ...memory, 'proposals.json': bytes('{}') }, { ...memory, 'proposals.json': bytes(identity) }),
+    ['proposals.json gained absolute home path'], 'a value memory holds stays out of proposals.json')
+  assert.deepEqual(gained(memory, { 'memory.md': bytes(`${identity} "reason":"see /home/example/secret-project/notes."`) }),
+    ['memory.md gained absolute home path'], 'a new path under a held home directory is new')
+  assert.deepEqual(gained({ 'memory.md': bytes('{}'), 'sessions/x.json': bytes('/home/alice/work') }, { 'memory.md': bytes('/home/alice/work'), 'sessions/x.json': bytes('/home/alice/work') }),
+    ['memory.md gained absolute home path'], 'a value only another file holds is not held')
+  assert.deepEqual(gained({ ...memory, 'operations.jsonl': bytes(identity) }, {
+    'memory.md': bytes(`${identity}${identity}`), 'memory.json.tmp-12': bytes(identity), 'operations.jsonl': bytes(`${identity}\n`),
+  }), [], 'memory and its temporary files may copy a held value, and a file keeps what it held')
+})
