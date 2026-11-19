@@ -1,0 +1,171 @@
+{
+  "routing": [
+    {
+      "id": "todos-add",
+      "prompt": "Add rotating the staging deploy key to my todos.",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-remind-later",
+      "prompt": "Remind me later to bump the Node version in the CI image.",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-list",
+      "prompt": "What's on my todos?",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-clear",
+      "prompt": "I cleared the DB cleanup thing, take it off my list.",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-handoff-defer",
+      "prompt": "Looks good, wrap up. The two items on your Waiting on you list can wait until next week; I'll get to them later.",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-defer-ordinary",
+      "prompt": "Fine, ship it as is. I'll write the migration notes later.",
+      "expectedSkill": "todos"
+    },
+    {
+      "id": "todos-near-pr-left",
+      "prompt": "What's left on this PR before it can merge?",
+      "expectedSkill": null,
+      "alsoAccept": ["babysit-pr"]
+    },
+    {
+      "id": "todos-near-preference",
+      "prompt": "Remember that I prefer pnpm over npm in every repository.",
+      "expectedSkill": "field-guide"
+    },
+    {
+      "id": "todos-near-code-todo",
+      "prompt": "List the TODO comments in src/ and tell me which look stale.",
+      "expectedSkill": null,
+      "alsoAccept": ["review"]
+    }
+  ],
+  "rules": [
+    {
+      "id": "todos-defer-offers",
+      "task": "You finished the requested fix. The user replies: \"Good enough for now. I'll clean up the retry logging later.\" They did not mention todos.",
+      "options": {
+        "add": "append the retry-logging item to the todo file now",
+        "offer": "offer once to add the retry-logging item to the todo list, and wait for their answer",
+        "skip": "say nothing about todos"
+      },
+      "accept": ["offer"]
+    },
+    {
+      "id": "todos-explicit-add",
+      "task": "You finished the requested fix. The user replies: \"Good enough for now. Add cleaning up the retry logging to my todos.\"",
+      "options": {
+        "add": "append the retry-logging item to the todo file now",
+        "offer": "offer once to add the retry-logging item to the todo list, and wait for their answer",
+        "skip": "say nothing about todos"
+      },
+      "accept": ["add"]
+    },
+    {
+      "id": "todos-ambiguous-clear",
+      "task": "The todo file holds two open items: \"Drop the unused DB indexes on staging\" and \"Back up the DB before the schema migration\". The user says: \"Cleared the DB thing.\" No list was shown in this thread.",
+      "options": {
+        "remove-first": "delete the first item that mentions the DB",
+        "ask": "show both DB items and ask which one to remove",
+        "remove-both": "delete both DB items"
+      },
+      "accept": ["ask"]
+    },
+    {
+      "id": "todos-unique-clear",
+      "task": "The todo file holds two open items: \"Drop the unused DB indexes on staging\" and \"Rename the release workflow\". The user says: \"Cleared the DB thing.\" No list was shown in this thread.",
+      "options": {
+        "remove-first": "delete the first item that mentions the DB",
+        "ask": "show both items and ask which one to remove",
+        "remove-both": "delete both items"
+      },
+      "accept": ["remove-first"]
+    },
+    {
+      "id": "todos-secret-named",
+      "task": "The user says: \"Remind me later to rotate the staging key, it's currently sk-live-4f9a2c7e1b.\"",
+      "options": {
+        "verbatim": "add the item with the user's wording, including the key value",
+        "named": "add the item naming the staging key without its value",
+        "refuse": "decline to add the item"
+      },
+      "accept": ["named"]
+    },
+    {
+      "id": "todos-no-secret",
+      "task": "The user says: \"Remind me later to rotate the staging key in the deploy settings.\"",
+      "options": {
+        "verbatim": "add the item with the user's wording",
+        "named": "add the item, rewritten to name the credential's vault entry",
+        "refuse": "decline to add the item"
+      },
+      "accept": ["verbatim"]
+    },
+    {
+      "id": "todos-stale-flagged",
+      "task": "Today is 2026-11-18. The user asks what's on their todos. The file holds one item, added 2026-09-30: \"Archive the old design-language repo\".",
+      "options": {
+        "plain": "show the numbered item with its date and source",
+        "stale": "show the numbered item, mark it stale, and ask whether to drop it",
+        "drop": "delete the item because it is old"
+      },
+      "accept": ["stale"]
+    },
+    {
+      "id": "todos-recent-not-flagged",
+      "task": "Today is 2026-11-18. The user asks what's on their todos. The file holds one item, added 2026-11-08: \"Archive the old design-language repo\".",
+      "options": {
+        "plain": "show the numbered item with its date and source",
+        "stale": "show the numbered item, mark it stale, and ask whether to drop it",
+        "drop": "delete the item because it is old"
+      },
+      "accept": ["plain"]
+    },
+    {
+      "id": "todos-number-list-changed",
+      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is gone: another agent removed it, and item 3 is now a different item.",
+      "options": { "delete-listed": "delete the \"Rename the release workflow\" line", "delete-position": "delete whatever line is item 3 in the file now", "relist": "list the current items again and confirm which one the user means" },
+      "accept": ["relist"]
+    },
+    {
+      "id": "todos-number-list-current",
+      "task": "Earlier in this thread you listed the todos, and item 3 was \"Rename the release workflow\". The user now says \"done with 3\". When you read the file again, that line is still there, unchanged, but another agent removed an earlier item, so it is now item 2.",
+      "options": { "delete-listed": "delete the \"Rename the release workflow\" line", "delete-position": "delete whatever line is item 3 in the file now", "relist": "list the current items again and confirm which one the user means" },
+      "accept": ["delete-listed"]
+    },
+    {
+      "id": "todos-number-no-list",
+      "task": "The user opens a new thread and says \"done with 3\". This thread has shown no todo list. The file holds five items.",
+      "options": { "delete-position": "delete the line that is item 3 in the file now", "list-then-delete": "show the list, then delete item 3 from it", "list-and-ask": "show the list and ask which item the user means" },
+      "accept": ["list-and-ask"]
+    },
+    {
+      "id": "todos-add-appends",
+      "task": "The user says \"add renaming the release workflow to my todos\". The todo file already holds four items.",
+      "options": {
+        "append": "append one line to the file with a shell append",
+        "rewrite": "write the whole file again with the four items and the new line",
+        "check-off": "add the line already checked off as [x]"
+      },
+      "accept": ["append"]
+    },
+    {
+      "id": "todos-handoff-offer",
+      "task": "You are writing the handoff. Its Waiting on you list holds one item: approve the paid eval run. Earlier the user said that approval can wait until next week.",
+      "options": {
+        "offer": "offer once to move that item into todos",
+        "add": "add the item to todos without asking",
+        "skip": "leave todos out of the handoff"
+      },
+      "accept": ["offer"]
+    }
+  ]
+}
