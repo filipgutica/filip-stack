@@ -239,6 +239,43 @@
       "accept": [
         "row"
       ]
+    },
+    {
+      "id": "footer-pr-review-note",
+      "task": "You are writing the Current state footer. Your PR #12 is open at head abc1234 with 5 of 5 checks passed. You ran a sol-loop review on it: in round 1 Sol found a missing null check (fixed) and a naming nit (declined), in round 2 it found a stale test name (fixed), and in round 3 it approved. You are writing the State cell of the PR's row.",
+      "options": {
+        "verdict": "\"`abc1234`, 5 of 5 checks passed, approved\"",
+        "note": "\"`abc1234`, 5 of 5 checks passed, sol-loop: approved in 3 rounds\"",
+        "detail": "\"`abc1234`, 5 of 5 checks passed; Sol round 1: null check fixed, naming nit declined; round 2: stale test name fixed; round 3: approved\""
+      },
+      "accept": [
+        "note"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "footer-pr-no-review",
+      "task": "You are writing the Current state footer. Your PR #12 is open at head abc1234 with 5 of 5 checks passed. It is a one-line docs fix, and no reviewer or council looked at it. You are writing the State cell of the PR's row.",
+      "options": {
+        "none": "\"`abc1234`, 5 of 5 checks passed, no review\"",
+        "approved": "\"`abc1234`, 5 of 5 checks passed, approved\"",
+        "omit": "\"`abc1234`, 5 of 5 checks passed\""
+      },
+      "accept": [
+        "none"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "footer-worktree-no-review-note",
+      "task": "You are writing the Current state footer. Your PR #12 is open, and its branch t3/export-fix is checked out in a pushed, clean worktree that you will remove after the merge. Sol approved the PR in 3 rounds. You are writing the State cell of the worktree's row, not the PR's row.",
+      "options": {
+        "plain": "\"Pushed and clean\"",
+        "review": "\"Pushed and clean, sol-loop: approved in 3 rounds\""
+      },
+      "accept": [
+        "plain"
+      ]
     }
   ]
 }

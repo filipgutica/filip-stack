@@ -15,5 +15,30 @@
       "prompt": "Do a read-only review of the changes on this branch before I open the PR.",
       "expectedSkill": "review"
     }
+  ],
+  "rules": [
+    {
+      "id": "sol-pr-ledger-collapsed",
+      "task": "You ran a sol-loop on the user's open PR #12, and the user asked you to update the PR. Sol approved in round 2 after you fixed one should. You are updating the PR description.",
+      "options": {
+        "collapsed": "end the description with a collapsed details section titled \"Sol review: approved in 2 rounds\" that holds the round ledger",
+        "visible": "add a visible \"Review\" heading to the description with the round ledger under it",
+        "omit": "leave the review out of the description and give the ledger only in your report"
+      },
+      "accept": [
+        "collapsed"
+      ]
+    },
+    {
+      "id": "sol-no-pr-update",
+      "task": "You ran a sol-loop on the user's local change. Sol approved in round 2. The user did not ask you to push, ship, or update a PR, and no PR exists.",
+      "options": {
+        "collapsed": "open a PR whose description ends with a collapsed Sol review section",
+        "report": "give the rounds and ledger in your report and leave the change unpushed"
+      },
+      "accept": [
+        "report"
+      ]
+    }
   ]
 }

@@ -112,3 +112,19 @@ to push, ship, or update the PR.
 
 Report: rounds, model, what Sol changed, diff size before/after, fixed and
 declined findings with reasons, usage if exposed (else say not), pushed or not.
+
+When you update the PR, end its description with the ledger in a collapsed
+section, and update it after each round:
+
+```markdown
+<details>
+<summary>Sol review: <approved|stuck|in progress> in k rounds</summary>
+
+| Round | Verdict | Findings |
+| --- | --- | --- |
+| 1 (`<short sha>`) | CHANGES | S1 should, fixed: <one line> |
+
+</details>
+```
+
+Name the model and effort that actually ran.
