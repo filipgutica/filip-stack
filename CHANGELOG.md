@@ -1,3 +1,20 @@
+# [6.22.0](https://github.com/filipgutica/filip-stack/compare/v6.21.0...v6.22.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **council:** count a calling skill's default lineup as named ([5e003e6](https://github.com/filipgutica/filip-stack/commit/5e003e6e4b5ee171a9cda9adea345ef4b7bcd12e))
+* **council:** keep arbiter briefs to eligible findings and review-only reports ([cf69a20](https://github.com/filipgutica/filip-stack/commit/cf69a2060bab549f4ee889a02745b4783ea32d6f))
+* **council:** scope arbiter rulings and settle gate order ([baac4eb](https://github.com/filipgutica/filip-stack/commit/baac4eb1ba52863b80618e088f66277a28915a9d))
+* **todos:** check privacy before every operation and quote issue text ([0108509](https://github.com/filipgutica/filip-stack/commit/0108509e117a4d3846877670312a8650ec36145c))
+* **todos:** say when this gh login sees no todos repository ([3b75ff0](https://github.com/filipgutica/filip-stack/commit/3b75ff002334aaf512d658f72df9927cd62dc08e))
+
+
+### Features
+
+* **council:** default to Sol, Opus, and Neon, with Fable as arbiter ([0309fc1](https://github.com/filipgutica/filip-stack/commit/0309fc1bed5af4784636a6a6c2bb1b52cd444963))
+* **todos:** keep todos as issues in a private GitHub repository ([2af6eb1](https://github.com/filipgutica/filip-stack/commit/2af6eb19e2fd6842b58f067bf62e0c3e0fd42a9e))
+
 # [6.21.0](https://github.com/filipgutica/filip-stack/compare/v6.20.0...v6.21.0) (2026-11-19)
 
 
