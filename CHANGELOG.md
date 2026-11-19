@@ -1,3 +1,16 @@
+# [6.21.0](https://github.com/filipgutica/filip-stack/compare/v6.20.0...v6.21.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **sol-loop:** keep the ledger local until a PR update is authorized ([07d31cc](https://github.com/filipgutica/filip-stack/commit/07d31cc3472f0500dc3a51a844ce777ba478674e))
+* **sol-loop:** publish the ledger when the loop stops ([2342049](https://github.com/filipgutica/filip-stack/commit/2342049468217c7b68954411cbd0b8ec634dd914))
+
+
+### Features
+
+* **guidance:** note each PR's review in the footer and keep sol-loop rounds in the PR description ([deb765e](https://github.com/filipgutica/filip-stack/commit/deb765e23569e9ed039dff1badfd9727c2bec5b4))
+
 # [6.20.0](https://github.com/filipgutica/filip-stack/compare/v6.19.0...v6.20.0) (2026-11-19)
 
 
