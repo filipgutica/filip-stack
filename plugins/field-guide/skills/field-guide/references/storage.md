@@ -249,8 +249,7 @@ restore fails `validate`.
 `operations.jsonl` is a local write-ahead journal, and it never syncs. No hook
 reads it. The confirm hook takes `memory.lock`, then reads `memory.md` and
 `annotations-watermark.json`. When the watermark lags memory, the lock's
-reconcile reads and rewrites `annotations.json`, unless it is missing while
-memory holds guidance, and the watermark. A
+reconcile reads and rewrites `annotations.json` and the watermark. A
 `confirm fg:<id>` prompt for an active record then reads and may write
 `annotations.json`; a `confirm fg:proposal:<id>` prompt reads and may write
 only `proposals.json`. An operation appends a `pending` entry, then writes annotations and
@@ -366,11 +365,14 @@ version, an `unconfirm`, or a crashed operation. It only flags or proposes that
 guidance, and the hook shows it without `[confirmed]` until the user confirms
 again. Because the history lives in `annotations.json`, nightly `apply` refuses
 when that file is missing while memory holds guidance, or has no entry for a
-record that memory holds and a shared import did not create. While the file is
-missing, a reconcile writes no entries, so a later write cannot hide the loss.
-A released 6.15.0 copy that rebuilds a lost `annotations.json` leaves no trace,
-so nightly maintenance cannot protect a record whose only confirmation the lost
-file held; the planned single-document store removes this case.
+record that memory holds and a shared import did not create. A reconcile never
+creates an entry for a record that the watermark lists, so a lagging watermark
+does not hide a lost file. A store from before annotations has no watermark, so
+its next capture or confirmation gives every record an entry. An older plugin
+copy, 6.10.1 through 6.17.0, that reconciles after the loss writes entries for
+every record and leaves no trace, so nightly maintenance cannot protect a record
+whose only confirmation the lost file held; the planned single-document store
+removes this case.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a

@@ -181,12 +181,14 @@ replaces superseded guidance is never archived or consolidated.
    then you plan again. `apply` also refuses when `annotations.json` cannot
    show which records the user ever confirmed: it is missing while memory holds
    guidance, or has no entry for a record that memory holds and a shared import
-   did not create. Restore the file if it was moved or replaced. While it is
-   missing, the lock's reconcile writes the watermark but no entries, so a
-   later write cannot hide the loss. A released 6.15.0 copy that rebuilds a
-   lost `annotations.json` leaves no trace, so `apply` cannot protect a record
-   whose only confirmation the lost file held; the planned single-document
-   store removes this case. `apply` also
+   did not create. Restore the file if it was moved or replaced; a store that
+   never had one gets it with its next capture or confirmation. The lock's
+   reconcile never creates an entry for a record that the watermark lists, so
+   a lagging watermark does not hide a lost file. An older plugin copy, 6.10.1
+   through 6.17.0, that reconciles after the loss writes entries for every
+   record and leaves no trace, so `apply` cannot protect a record whose only
+   confirmation the lost file held; the planned single-document store removes
+   this case. `apply` also
    refuses when a file lost part of the store's history: the watermark does not
    list exactly the records memory holds; `annotations.json` shows no
    confirmation of any record in a group that a finished run recorded as
