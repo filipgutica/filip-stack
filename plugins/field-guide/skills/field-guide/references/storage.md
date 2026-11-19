@@ -368,8 +368,10 @@ when that file is missing while memory holds guidance, or has no entry for a
 record that memory holds and a shared import did not create. A reconcile never
 creates an entry for a record that the watermark lists, so a lagging watermark
 does not hide a lost file. A store from before annotations has no watermark, so
-its next capture or confirmation gives every record an entry. An older plugin
-copy, 6.10.1 through 6.17.0, that reconciles after the loss writes entries for
+its next capture or confirmation gives every record an entry. A store that
+lost `annotations.json` and whose watermark is also missing or unreadable looks
+the same, so that write hides the loss. An older plugin copy, 6.10.1 through
+6.17.0, that reconciles after the loss writes entries for
 every record and leaves no trace, so nightly maintenance cannot protect a record
 whose only confirmation the lost file held; the planned single-document store
 removes this case.

@@ -184,8 +184,11 @@ replaces superseded guidance is never archived or consolidated.
    did not create. Restore the file if it was moved or replaced; a store that
    never had one gets it with its next capture or confirmation. The lock's
    reconcile never creates an entry for a record that the watermark lists, so
-   a lagging watermark does not hide a lost file. An older plugin copy, 6.10.1
-   through 6.17.0, that reconciles after the loss writes entries for every
+   a lagging watermark does not hide a lost file. If the watermark is lost or
+   unreadable too, the store looks like one that never had annotations, and
+   its next write gives every record an entry, which hides the loss. An
+   older plugin copy, 6.10.1 through 6.17.0, that reconciles after the loss
+   writes entries for every
    record and leaves no trace, so `apply` cannot protect a record whose only
    confirmation the lost file held; the planned single-document store removes
    this case. `apply` also
