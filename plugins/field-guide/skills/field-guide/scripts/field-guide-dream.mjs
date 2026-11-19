@@ -34,6 +34,13 @@ const liveDocuments = () => [
   { source: 'coding-standards', path: join(homedir(), '.agents', 'CODING_STANDARDS.md') },
 ]
 
+// Inlines `@<path>` import lines, as Claude Code does: host config's CLAUDE.md block only imports
+// the shared guidance. A line whose file is missing stays as written.
+const expandImports = (text) => text.replace(/^@((?:\/|~\/).+)$/gmu, (line, path) => {
+  const resolved = path.startsWith('~/') ? join(homedir(), path.slice(2)) : path
+  return existsSync(resolved) ? readFileSync(resolved, 'utf8') : line
+})
+
 const sha256 = (text) => `sha256:${createHash('sha256').update(text).digest('hex')}`
 const frontmatterField = ({ text, field }) => text.match(new RegExp(`^${field}:\\s*"?(.*?)"?\\s*$`, 'mu'))?.[1] ?? ''
 
@@ -71,7 +78,8 @@ const skillContracts = () => [
 
 const readLive = () => [
   ...liveDocuments().filter(({ path }) => existsSync(path)).map(({ source, path }) => {
-    const text = readFileSync(path, 'utf8')
+    const raw = readFileSync(path, 'utf8')
+    const text = source === 'claude-md' ? expandImports(raw) : raw
     return { source, digest: sha256(text), text }
   }),
   ...skillContracts(),

@@ -130,6 +130,7 @@ const machine = ({ root, name = 'machine', repoRoot }) => {
     },
     validate: () => exec({ command: 'validate' }),
     // Live guidance that a dream action can name as `live:claude-md`.
+    home,
     writeClaudeMd: (text = '# Rules\n\nClean up after a merge.\n') => {
       mkdirSync(join(home, '.claude'), { recursive: true })
       writeFileSync(join(home, '.claude', 'CLAUDE.md'), text)
@@ -1079,6 +1080,18 @@ test('a dream run keeps the records that a queued contradiction names', () => {
   }
   assert.deepEqual(guide.activeIds(), [first, second, third].sort())
   assert.equal(guide.journal().length, 0)
+})
+
+// Host config's CLAUDE.md block only imports the shared guidance, so the plan must read through it.
+test('dream plan reads the guidance that CLAUDE.md imports', () => {
+  const { guide } = setup('claude-import')
+  guide.learn(cleanupTexts[0])
+  const shared = join(guide.home, '.agents', 'AGENTS.md')
+  mkdirSync(join(guide.home, '.agents'), { recursive: true })
+  writeFileSync(shared, '# Shared rules\n\nClean up after a merge.\n')
+  guide.writeClaudeMd(`Local note.\n@${shared}\n@/missing/AGENTS.md\n`)
+  const { text } = guide.plan().live.find(({ source }) => source === 'claude-md')
+  assert.equal(text, 'Local note.\n# Shared rules\n\nClean up after a merge.\n\n@/missing/AGENTS.md\n')
 })
 
 // Plans with these CLAUDE.md lines and checks that no payload line and every kept line reaches the packet.
