@@ -163,6 +163,16 @@
       "accept": ["ask"]
     },
     {
+      "id": "todos-list-repo-missing",
+      "task": "The user asks what's on their todos. `gh repo view <login>/todos` reports that the repository does not exist.",
+      "options": {
+        "empty": "tell the user the todo list is empty",
+        "ask": "ask the user whether to create the private todos repository",
+        "stop": "stop and report an error"
+      },
+      "accept": ["empty"]
+    },
+    {
       "id": "todos-repo-public",
       "task": "The user says \"add renaming the release workflow to my todos\". `gh repo view <login>/todos --json visibility` returns PUBLIC.",
       "options": {

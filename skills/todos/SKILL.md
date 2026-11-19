@@ -11,16 +11,16 @@ A todo is an open item the user owes, kept across threads, repositories, and mac
 
 Each todo is an open issue in the user's private `todos` repository: `<login>/todos`, where `<login>` is `gh api user --jq .login`. Pass `-R <login>/todos` to every `gh issue` command.
 
-Before the first read or write in a thread, run `gh repo view <login>/todos --json visibility`:
+Before each add, list, or clear, run `gh repo view <login>/todos --json visibility` and continue only when it returns `PRIVATE`:
 
-- When the repository does not exist, ask the user before creating it with `gh repo create <login>/todos --private`.
-- When its visibility is not `PRIVATE`, stop and tell the user. Never write a todo to a public repository.
+- When the repository does not exist, a list is empty. For an add, ask the user before creating it with `gh repo create <login>/todos --private`, then check its visibility again.
+- When the visibility is anything else, or the lookup fails, stop and tell the user. Never write a todo to a repository that is not private.
 
 An issue's title is the item, written so it makes sense a month later: what to do, and where. Its body is one line: `From: <repo or thread> · Host: <hostname -s>`. Name a credential, file, or setting instead of writing a secret value, token, or personal data.
 
 ## Add
 
-Run `gh issue create -R <login>/todos --title '<item>' --body '<body line>'`, then confirm the issue number and title.
+Run `gh issue create -R <login>/todos --title <item> --body <body line>`, quoting the title and body for the shell so apostrophes survive. Then confirm the issue number and title.
 
 When the user defers something without asking for a todo ("I'll do that later"), offer once to add it, and add it only when they agree. At a handoff, offer once to move the **Waiting on you** items the user is deferring into todos.
 
