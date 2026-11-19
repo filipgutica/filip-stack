@@ -2607,3 +2607,27 @@ test('a nightly run retires nothing beside confirmed guidance, so a lost journal
     assert.deepEqual(guide.activeIds(), [first, second, third].sort(), loss)
   }
 })
+
+test('a reconcile writes no annotation entries while annotations.json is missing, so dream apply refuses', () => {
+  const { guide, root } = setup('lost-annotations')
+  const kept = guide.learn(cleanupTexts[0])
+  guide.confirm(short(kept))
+  guide.writeClaudeMd()
+  // An interrupted write left the watermark behind; then annotations.json was lost.
+  const markFile = join(guide.guideRoot, 'annotations-watermark.json')
+  const mark = JSON.parse(readFileSync(markFile, 'utf8'))
+  writeFileSync(markFile, JSON.stringify({ ...mark, memoryRevision: mark.memoryRevision - 1 }))
+  const annotationsFile = join(guide.guideRoot, 'annotations.json')
+  rmSync(annotationsFile)
+  guide.exec({ command: 'export', args: ['--output', join(root, 'export.json')] })
+  assert.equal(existsSync(annotationsFile), false, 'the reconcile rebuilt annotations.json')
+  assert.match(guide.plan().audit.stateErrors.join('\n'), /annotations\.json is missing, though memory holds guidance/)
+  // The next capture writes only its own entry.
+  guide.learn('Name tests after the behavior they check.', { subjectKey: 'naming' })
+  const plan = guide.plan()
+  assert.match(plan.audit.stateErrors.join('\n'), new RegExp(`annotations\\.json has no entry for ${short(kept)}`))
+  const before = storeFiles(guide)
+  assert.match(guide.dreamApply(archiveOf(plan, kept), { expectFailure: true }).stderr, /confirmation history/)
+  assert.deepEqual(storeFiles(guide), before)
+  assert.equal(guide.record(kept).status, 'active')
+})

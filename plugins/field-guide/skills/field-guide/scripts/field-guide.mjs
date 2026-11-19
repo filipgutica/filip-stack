@@ -1107,14 +1107,19 @@ const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevis
 // annotation-aware write. Revoke every fingerprint in memory, annotations, or the watermark once,
 // which covers deleted records and confirmations still in transit, then record the revision.
 // A store without a watermark, such as one from the first annotation release, is treated the same.
+// While annotations.json is missing and memory holds guidance, it writes no entries: the lost file
+// may have held confirmations, and entries for every record would hide its loss from dream apply,
+// which refuses on the missing file instead.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
-  const annotations = readAnnotations(paths.annotationsFile)
-  const { fingerprints: known } = readWatermark(paths)
-  const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
-  for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
-  writeAnnotations({ path: paths.annotationsFile, annotations })
+  if (existsSync(paths.annotationsFile) || memory.guidance.length === 0) {
+    const annotations = readAnnotations(paths.annotationsFile)
+    const { fingerprints: known } = readWatermark(paths)
+    const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
+    for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+    writeAnnotations({ path: paths.annotationsFile, annotations })
+  }
   writeWatermark({ paths, memory })
 }
 
@@ -4377,7 +4382,7 @@ const requireReadableDreamState = ({ paths, memory }) => {
   const history = confirmationHistoryProblem({ paths, memory, runs: finishedRuns({ journal, memory }) })
   if (history) {
     fail(`dream apply needs the confirmation history in annotations.json: ${history}. `
-      + 'Restore the file if it was moved or replaced; a store that never had one gets it with its next capture or confirmation')
+      + 'Restore the file if it was moved or replaced')
   }
   const lost = watermarkListProblem({ paths, memory }) ?? journalHistoryProblem({ memory, operations })
   if (lost) fail(`dream apply needs the store's whole history: ${lost}. Restore the file if it was moved, replaced, or cut short`)
