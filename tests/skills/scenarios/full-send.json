@@ -101,7 +101,7 @@
       "files": [
         "skills/full-send/references/council-gate.md"
       ],
-      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 1 just finished on the current head. Astra scored 10, Opus 10, Fable 9.6, and Sol 8.5 with one should finding. Required checks are green and the branch is mergeable.",
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 1 just finished on the current head. Astra scored 10, Opus 10, Fable 9.6, Neon 9.5, and Sol 8.5 with one should finding. Required checks are green and the branch is mergeable.",
       "options": {
         "merge": "merge now: the average is above 9.5",
         "next-round": "fix Sol's should finding and run another council round"

@@ -47,7 +47,7 @@ passing reproduction, repository CI, or the running app, with screenshots of
 changed UI and a recording of a changed flow when the host can record. Mocked
 tests alone do not prove the user experience.
 
-With a council threshold, the full council (Astra, Sol, Opus, and Fable)
+With a council threshold, the full council (Astra, Sol, Opus, Fable, and Neon)
 scores the PR's merge readiness once checks are green. The agent fixes their
 findings and runs another round, for at most three rounds. It stops early
 when scores stop improving or the diff grows past its scope. Below the
