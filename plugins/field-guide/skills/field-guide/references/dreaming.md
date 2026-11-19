@@ -186,12 +186,14 @@ replaces superseded guidance is never archived or consolidated.
    reconcile never creates an entry for a record that the watermark lists, so
    a lagging watermark does not hide a lost file. If the watermark is lost or
    unreadable too, the store looks like one that never had annotations, and
-   its next write gives every record an entry, which hides the loss. An
-   older plugin copy, 6.10.1 through 6.17.0, that reconciles after the loss
-   writes entries for every
-   record and leaves no trace, so `apply` cannot protect a record whose only
-   confirmation the lost file held; the planned single-document store removes
-   this case. `apply` also
+   its next write gives every record an entry, which hides the loss. Other
+   writes hide it too: an older plugin copy, 6.10.1 through 6.17.0, that
+   reconciles after the loss, and an `unconfirm`, an `annotate`, or a restore
+   of a record whose entry the lost file held, each write that record's entry
+   and leave no trace. Detecting a lost `annotations.json` is therefore best
+   effort, and `apply` cannot protect a record whose only confirmation the
+   lost file held. Restore the file from a backup before any other write; the
+   planned single-document store removes this case. `apply` also
    refuses when a file lost part of the store's history: the watermark does not
    list exactly the records memory holds; `annotations.json` shows no
    confirmation of any record in a group that a finished run recorded as

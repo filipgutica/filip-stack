@@ -370,11 +370,14 @@ creates an entry for a record that the watermark lists, so a lagging watermark
 does not hide a lost file. A store from before annotations has no watermark, so
 its next capture or confirmation gives every record an entry. A store that
 lost `annotations.json` and whose watermark is also missing or unreadable looks
-the same, so that write hides the loss. An older plugin copy, 6.10.1 through
-6.17.0, that reconciles after the loss writes entries for
-every record and leaves no trace, so nightly maintenance cannot protect a record
-whose only confirmation the lost file held; the planned single-document store
-removes this case.
+the same, so that write hides the loss. Other writes hide it too: an older
+plugin copy, 6.10.1 through 6.17.0, that reconciles after the loss, and an
+`unconfirm`, an `annotate`, or a restore of a record whose entry the lost file
+held, each write that record's entry and leave no trace. Detecting a lost
+`annotations.json` is therefore best effort, and nightly maintenance cannot
+protect a record whose only confirmation the lost file held. Restore the file
+from a backup before any other write; the planned single-document store removes
+this case.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a
