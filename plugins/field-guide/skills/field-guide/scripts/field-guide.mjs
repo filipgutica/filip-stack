@@ -1103,23 +1103,29 @@ const writeWatermark = ({ paths, memory }) => {
 
 const watermarkCurrent = ({ paths, memory }) => readWatermark(paths).memoryRevision === memory.revision
 
+// Whether annotations.json must hold an entry for a record: each annotation-aware write that
+// creates a record writes one, but a shared import carries only the entries another machine exported.
+const needsHistoryEntry = ({ transitions }) => transitions[0]?.source !== 'shared-sync'
+
 // An older plugin may have retired, restored, deleted, or recaptured guidance since the last
 // annotation-aware write. Revoke every fingerprint in memory, annotations, or the watermark once,
 // which covers deleted records and confirmations still in transit, then record the revision.
 // A store without a watermark, such as one from the first annotation release, is treated the same.
-// While annotations.json is missing and memory holds guidance, it writes no entries: the lost file
-// may have held confirmations, and entries for every record would hide its loss from dream apply,
-// which refuses on the missing file instead.
+// It creates no entry for a record that the watermark lists and that needs one but has none: only
+// a lost or replaced annotations.json leaves such a record, and an entry would hide that loss from
+// dream apply. A record that an older plugin added is not listed, so it gets its entry.
 const reconcileAnnotations = (paths) => {
   const memory = readMarkdownMemory(paths)
   if (!memory || watermarkCurrent({ paths, memory })) return
-  if (existsSync(paths.annotationsFile) || memory.guidance.length === 0) {
-    const annotations = readAnnotations(paths.annotationsFile)
-    const { fingerprints: known } = readWatermark(paths)
-    const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), Array.isArray(known) ? known : [])
-    for (const fingerprint of fingerprints) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
-    writeAnnotations({ path: paths.annotationsFile, annotations })
-  }
+  const annotations = readAnnotations(paths.annotationsFile)
+  const { fingerprints: listed } = readWatermark(paths)
+  const known = Array.isArray(listed) ? listed : []
+  const lost = new Set(memory.guidance
+    .filter((guidance) => needsHistoryEntry(guidance) && known.includes(guidance.fingerprint) && !Object.hasOwn(annotations.records, guidance.fingerprint))
+    .map(({ fingerprint }) => fingerprint))
+  const fingerprints = sortedUnion(memory.guidance.map(({ fingerprint }) => fingerprint), Object.keys(annotations.records), known)
+  for (const fingerprint of fingerprints.filter((each) => !lost.has(each))) revokeRecord(annotationRecordFor({ annotations, fingerprint }))
+  writeAnnotations({ path: paths.annotationsFile, annotations })
   writeWatermark({ paths, memory })
 }
 
@@ -3770,9 +3776,9 @@ const openContradictions = ({ runs, subjects }) => {
 
 // Why annotations.json cannot show which records the user ever confirmed, or undefined when it
 // can. Each annotation-aware write that creates a record writes an annotation entry for it, and a
-// reconcile writes one for every record, so with a current watermark only a record that a shared
-// import created may lack one. A file that is missing, or that lacks such an entry, as after it was
-// moved aside or replaced by an older copy, could hide a confirmation. A store without records
+// reconcile writes one for every record the watermark does not list, so with a current watermark
+// only a record that a shared import created may lack one. A file that is missing, or that lacks
+// such an entry, as after it was moved aside or replaced by an older copy, could hide a confirmation. A store without records
 // needs no history. An unreadable file is left to its own error: audit reports it in the plan, and
 // dream apply has already refused. runs are the finished runs, whose reports also show
 // confirmations (lostConfirmation).
@@ -3784,9 +3790,7 @@ const confirmationHistoryProblem = ({ paths, memory, runs }) => {
   } catch {
     return undefined
   }
-  const uncovered = memory.guidance.find(({ fingerprint, transitions }) => (
-    transitions[0]?.source !== 'shared-sync' && !Object.hasOwn(annotations.records, fingerprint)
-  ))
+  const uncovered = memory.guidance.find((guidance) => needsHistoryEntry(guidance) && !Object.hasOwn(annotations.records, guidance.fingerprint))
   return uncovered ? `annotations.json has no entry for ${shortId(uncovered.id)}, which memory holds` : lostConfirmation({ memory, annotations, runs })
 }
 
