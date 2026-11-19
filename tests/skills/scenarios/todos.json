@@ -164,13 +164,13 @@
     },
     {
       "id": "todos-list-repo-missing",
-      "task": "The user asks what's on their todos. `gh repo view <login>/todos` reports that the repository does not exist.",
+      "task": "The user asks what's on their todos. `gh repo view <login>/todos` reports that the repository could not be found.",
       "options": {
-        "empty": "tell the user the todo list is empty",
-        "ask": "ask the user whether to create the private todos repository",
-        "stop": "stop and report an error"
+        "empty": "tell the user they have no todos",
+        "not-visible": "tell the user this gh login sees no todos repository",
+        "ask": "ask the user whether to create the private todos repository"
       },
-      "accept": ["empty"]
+      "accept": ["not-visible"]
     },
     {
       "id": "todos-repo-public",

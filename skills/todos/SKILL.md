@@ -13,7 +13,7 @@ Each todo is an open issue in the user's private `todos` repository: `<login>/to
 
 Before each add, list, or clear, run `gh repo view <login>/todos --json visibility` and continue only when it returns `PRIVATE`:
 
-- When the repository does not exist, a list is empty. For an add, ask the user before creating it with `gh repo create <login>/todos --private`, then check its visibility again.
+- When `gh` reports the repository as not found, it is missing or this login cannot see it. For a list or clear, say that this `gh` login sees no todos repository. For an add, ask the user before creating it with `gh repo create <login>/todos --private`, then check its visibility again.
 - When the visibility is anything else, or the lookup fails, stop and tell the user. Never write a todo to a repository that is not private.
 
 An issue's title is the item, written so it makes sense a month later: what to do, and where. Its body is one line: `From: <repo or thread> · Host: <hostname -s>`. Name a credential, file, or setting instead of writing a secret value, token, or personal data.
