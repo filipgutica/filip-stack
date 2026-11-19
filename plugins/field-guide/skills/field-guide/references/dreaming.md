@@ -118,14 +118,17 @@ lines, so a block left open in one error cannot hide the next:
 The reviewer returns input that follows `schemas/dream-apply-v1.schema.json`:
 the `live` digests and, for each reviewed subject, its `subjectId`, `digest`,
 and actions. Nightly maintenance never archives or merges a record that the
-user ever confirmed, even after an `unconfirm` or a reconcile; it only flags
-or proposes it. In the table, a confirmed record is one the user ever
-confirmed, as in the plan. The script decides each action by these rules:
+user ever confirmed, even after an `unconfirm` or a reconcile, as long as its
+confirmation history is intact; it only flags or proposes it. It also only
+flags an archive or merge of an unconfirmed record whose subject, or the
+subject that applies with it, holds a live record the user ever confirmed. In
+the table, a confirmed record is one the user ever confirmed, as in the plan.
+The script decides each action by these rules:
 
 | Action | Unconfirmed project records | Confirmed records | Shared records |
 | --- | --- | --- | --- |
-| `consolidate` of overlapping records | Applied and journaled | Stored proposal | `shared-overlap` flag |
-| `archive` of a duplicate of live guidance or of another record | Applied and journaled | `confirmed-duplicate` flag | `shared-proposal` flag |
+| `consolidate` of overlapping records | Applied and journaled; `confirmed-overlap` flag beside confirmed guidance | Stored proposal | `shared-overlap` flag |
+| `archive` of a duplicate of live guidance or of another record | Applied and journaled; `confirmed-subject` flag beside confirmed guidance | `confirmed-duplicate` flag | `shared-proposal` flag |
 | `contradiction` between two records | `conflict` flag | Queued for the user | Queued when either is confirmed |
 | `flag` (`conflict`, `unused`, `live-edit`) | Flag | Flag | Flag |
 
@@ -154,7 +157,10 @@ An archive names an active record, or a present live source as
 `live:<source>`, as its duplicate. A run keeps each record that an archive
 names as its duplicate, and both records of each contradiction it queues for
 the user. Later runs keep both records of a queued contradiction while both are
-live and either is confirmed. They keep both records of a contradiction that
+live and either is confirmed. Only `operations.jsonl` records a queued
+contradiction, but each one names a confirmed record of the subject or of the
+subject that applies with it, so after that file is lost a run still archives
+or merges neither record. They keep both records of a contradiction that
 memory records the same way, and the first run that lists its subject queues
 it. No action in the run may
 archive or consolidate a kept record, even as a flag or a proposal, whatever
@@ -175,8 +181,12 @@ replaces superseded guidance is never archived or consolidated.
    then you plan again. `apply` also refuses when `annotations.json` cannot
    show which records the user ever confirmed: it is missing while memory holds
    guidance, or has no entry for a record that memory holds and a shared import
-   did not create. Restore the file if it was moved or replaced; a store that
-   never had one gets it with its next capture or confirmation. `apply` also
+   did not create. Restore the file if it was moved or replaced. While it is
+   missing, the lock's reconcile writes the watermark but no entries, so a
+   later write cannot hide the loss. A released 6.15.0 copy that rebuilds a
+   lost `annotations.json` leaves no trace, so `apply` cannot protect a record
+   whose only confirmation the lost file held; the planned single-document
+   store removes this case. `apply` also
    refuses when a file lost part of the store's history: the watermark does not
    list exactly the records memory holds; `annotations.json` shows no
    confirmation of any record in a group that a finished run recorded as
