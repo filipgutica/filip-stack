@@ -1,6 +1,6 @@
 #!/usr/bin/env node
-// PreToolUse guardrails for shell commands. Denies AI attribution in commits and pull
-// requests, and asks before a 1Password CLI call.
+// PreToolUse guardrails for shell commands in Claude Code, Codex, and Antigravity. Denies AI
+// attribution in commits and pull requests, and asks before a 1Password CLI call.
 // Any internal error exits 0 with no decision, so a hook bug never blocks work.
 import { closeSync, constants, fstatSync, openSync, readFileSync } from 'node:fs'
 import { homedir } from 'node:os'
@@ -589,15 +589,24 @@ const evaluate = ({ command, cwd, codex }) => {
   return { permissionDecision: 'ask', permissionDecisionReason: ASK_ONE_PASSWORD }
 }
 
+// Antigravity sends a run_command call as toolCall.args, with CommandLine and an optional Cwd,
+// puts the agent's working directory in a top-level cwd, and reads a top-level decision. Its `ask` can reuse an earlier grant, so a 1Password call uses `force_ask`.
+const antigravityOutput = ({ permissionDecision, permissionDecisionReason }) => ({
+  decision: permissionDecision === 'ask' ? 'force_ask' : permissionDecision,
+  reason: permissionDecisionReason,
+})
+
 const main = () => {
   const input = JSON.parse(readFileSync(0, 'utf8'))
-  const command = input?.tool_input?.command
+  const antigravity = input?.toolCall?.args
+  const command = antigravity ? antigravity.CommandLine : input?.tool_input?.command
   if (typeof command !== 'string') return
-  const cwd = typeof input.cwd === 'string' ? input.cwd : process.cwd()
+  const cwd = [antigravity?.Cwd, input.cwd].find((value) => typeof value === 'string' && value !== '') ?? process.cwd()
   // Codex sets PLUGIN_ROOT; Claude Code sets only CLAUDE_PLUGIN_ROOT.
-  const decision = evaluate({ command, cwd, codex: Boolean(process.env.PLUGIN_ROOT) })
+  const decision = evaluate({ command, cwd, codex: !antigravity && Boolean(process.env.PLUGIN_ROOT) })
   if (decision === null) return
-  process.stdout.write(`${JSON.stringify({ hookSpecificOutput: { hookEventName: 'PreToolUse', ...decision } })}\n`)
+  const output = antigravity ? antigravityOutput(decision) : { hookSpecificOutput: { hookEventName: 'PreToolUse', ...decision } }
+  process.stdout.write(`${JSON.stringify(output)}\n`)
 }
 
 try {

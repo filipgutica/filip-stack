@@ -16,8 +16,9 @@ const claudeEnv = { CLAUDE_PLUGIN_ROOT: pluginRoot }
 const codexEnv = { CLAUDE_PLUGIN_ROOT: pluginRoot, PLUGIN_ROOT: pluginRoot }
 
 // Runs a command with the hook's environment. The timeout makes a blocking file read fail fast.
-const spawnHook = ({ file, args, stdin, env }) => {
+const spawnHook = ({ file, args, stdin, env, cwd }) => {
   const result = spawnSync(file, args, {
+    cwd,
     input: stdin,
     encoding: 'utf8',
     timeout: 3000,
@@ -340,6 +341,26 @@ test('the manifest hook command runs for Claude and Codex', () => {
     const stdout = spawnHook({ file: '/bin/sh', args: ['-c', hookCommand], stdin, env })
     assert.equal(JSON.parse(stdout).hookSpecificOutput.permissionDecision, 'deny')
   }
+})
+
+// Antigravity runs hooks from the plugin root and sends run_command arguments as toolCall.args.
+test('the Antigravity hook command denies attribution and forces a 1Password prompt', () => {
+  const groups = JSON.parse(readFileSync(join(pluginRoot, 'hooks.json'), 'utf8'))
+  const [{ matcher, hooks: [{ command }] }] = groups.guardrails.PreToolUse
+  assert.equal(matcher, 'run_command')
+  const decideIn = (CommandLine, { args = { Cwd: fixtures }, cwd } = {}) => {
+    const stdin = JSON.stringify({ toolCall: { name: 'run_command', args: { CommandLine, ...args } }, cwd })
+    const stdout = spawnHook({ file: '/bin/sh', args: ['-c', command], stdin, env: { PLUGIN_ROOT: pluginRoot }, cwd: pluginRoot })
+    return stdout === '' ? null : JSON.parse(stdout)
+  }
+  assert.equal(decideIn(heredocCommit(claudeTrailer)).decision, 'deny')
+  assert.equal(decideIn('git commit -F msg.txt').decision, 'deny')
+  // Without a Cwd argument, the agent's working directory comes from the top-level cwd.
+  assert.equal(decideIn('git commit -F msg.txt', { args: {}, cwd: fixtures }).decision, 'deny')
+  const op = decideIn('op item get Example --fields password')
+  assert.equal(op.decision, 'force_ask')
+  assert.match(op.reason, /1Password CLI access needs user approval/)
+  assert.equal(decideIn('git commit -m "feat: x"'), null)
 })
 
 test('both marketplaces list the plugin', () => {

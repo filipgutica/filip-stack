@@ -102,6 +102,14 @@ for (const pluginDir of pluginDirs) {
     await validateJson(codexManifest, (await pathExists(skillsDir)) ? ['name', 'skills'] : ['name'])
   }
 
+  // Antigravity loads its own manifest; without one, it converts the Claude plugin and skips Claude-only hooks.
+  const antigravityManifest = join(pluginRoot, '.antigravity-plugin/plugin.json')
+  if (!(await pathExists(antigravityManifest))) {
+    fail(`${pluginRoot} is missing an Antigravity plugin manifest`)
+  } else {
+    await validateJson(antigravityManifest, ['name', 'displayName', 'description', 'version', 'author'])
+  }
+
   const skills = (await readdir(skillsDir).catch(() => [])).filter((name) => !name.startsWith('.'))
   for (const skill of skills) {
     await validateSkillMd(join(skillsDir, skill, 'SKILL.md'))
