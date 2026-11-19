@@ -12,13 +12,18 @@ import { parseReply } from './reply.mjs'
 const repoRoot = new URL('../', import.meta.url).pathname
 const guidanceFiles = { claude: '.claude/CLAUDE.md', codex: '.codex/AGENTS.md' }
 
+// Inlines `@<path>` import lines, as Claude Code does, so the eval sees what Claude loads.
+// Guidance from before the shared file has no imports and passes through unchanged.
+// A missing file throws, so a broken import never scores an empty prompt.
+const expandImports = (text) => text.replace(/^@(\/.+)$/gm, (_, path) => readFileSync(path, 'utf8'))
+
 // Applies host config from `root` into a fresh home and returns each host's guidance.
 const applyHostConfig = (root) => {
   const home = mkdtempSync(join(tmpdir(), 'eval-guidance-home-'))
   const env = { ...process.env, XDG_CACHE_HOME: process.env.XDG_CACHE_HOME ?? join(homedir(), '.cache'), XDG_CONFIG_HOME: join(home, '.config') }
   const result = spawnSync(process.execPath, [join(root, 'scripts/host-config.mjs'), 'apply', '--home', home], { encoding: 'utf8', env })
   if (result.status !== 0) throw new Error(`host-config apply failed in ${root}: ${result.stderr}`)
-  return Object.fromEntries(Object.entries(guidanceFiles).map(([host, file]) => [host, readFileSync(join(home, file), 'utf8')]))
+  return Object.fromEntries(Object.entries(guidanceFiles).map(([host, file]) => [host, expandImports(readFileSync(join(home, file), 'utf8'))]))
 }
 
 // Renders lazily and once per version, so loading this module runs no git command.
@@ -37,8 +42,10 @@ export const renderGuidance = (version) => {
   return rendered.get(version)
 }
 
+// The shared guidance routes by the provider this thread runs on, so the prompt names it.
+const threadProviders = { claude: 'Claude', codex: 'Codex' }
 const messages = ({ version, vars, provider }) => [
-  { role: 'system', content: `${renderGuidance(version)[provider.label]}\n\n${vars.role}` },
+  { role: 'system', content: `${renderGuidance(version)[provider.label]}\n\n${vars.role} This thread runs on the ${threadProviders[provider.label]} provider.` },
   { role: 'user', content: vars.question },
 ]
 export const baseGuidance = ({ vars, provider }) => messages({ version: 'base', vars, provider })
@@ -84,13 +91,19 @@ export const delegationTests = () => scenarioTests({
   ].join('\n\n'),
 })
 
-// Maps a reply's model name to provider.tier through the first word of each roster label.
+// Maps a reply's model name to provider.tier: an exact model ID or label first, then, for
+// tiered models only, the first word of the label. Antigravity's untiered model matches only
+// exactly, so another Gemini model never passes as it.
 const roster = JSON.parse(readFileSync(join(repoRoot, 'host-config/models.json'), 'utf8'))
-const families = Object.entries(roster).flatMap(([provider, tiers]) => Object.entries(tiers).map(([tier, { label }]) => [label.split(' ')[0].toLowerCase(), `${provider}.${tier}`]))
+const tiers = new Set(['frontier', 'workhorse', 'balanced', 'fast'])
+const models = Object.entries(roster).flatMap(([provider, entries]) => Object.entries(entries).map(([tier, model]) => ({ ...model, tier, key: `${provider}.${tier}` })))
+const families = models.filter(({ tier }) => tiers.has(tier)).map(({ label, key }) => [label.split(' ')[0].toLowerCase(), key])
 const classifyDelegation = (reply) => {
   if (reply.invalid !== undefined) return `invalid reply "${reply.invalid}"`
   if (reply.where === 'this thread') return 'self'
   const name = String(reply.model ?? '').toLowerCase()
+  const exact = models.find(({ id, label }) => name === id || name === label.toLowerCase())
+  if (exact) return exact.key
   return families.find(([family]) => new RegExp(`\\b${family}\\b`).test(name))?.[1] ?? `unknown model ${JSON.stringify(reply.model)}`
 }
 export const scoreDelegation = (output, context) => scoreChoice({ choice: classifyDelegation(parseReply(output)), context })

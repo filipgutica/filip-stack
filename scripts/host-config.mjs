@@ -27,8 +27,14 @@ const blockEnd = '<!-- filip-stack:host-config:end -->'
 
 // Source directories copied file for file into the home directory.
 const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
-// Guidance files that receive a managed block. Text outside the block stays local.
-const guidanceTargets = [['claude', '.claude/CLAUDE.md'], ['codex', '.codex/AGENTS.md']]
+// The shared guidance installs as ~/.agents/AGENTS.md through the agents file root.
+// Each host's guidance file gets a managed block, and text outside the block stays local.
+// Claude imports the shared file; Codex has no imports, so its block holds the full text.
+const sharedGuidanceTarget = '.agents/AGENTS.md'
+const guidanceTargets = [
+  ['claude', '.claude/CLAUDE.md', ({ home }) => `@${join(home, sharedGuidanceTarget)}\n`],
+  ['codex', '.codex/AGENTS.md', ({ shared }) => shared],
+]
 
 const commands = ['status', 'apply', 'update', 'field-guide-sync']
 const usage = `Usage: host-config.mjs <${commands.join('|')}> [--home <dir>] [--force]`
@@ -69,14 +75,6 @@ const renderText = ({ text, home }) => text
   .replaceAll('{{HOME}}', home)
   .replace(/\{\{model:([a-z]+)\.([a-z]+)\.(id|label)\}\}/g, renderModel)
 
-const renderGuidance = ({ host, home }) => {
-  const core = read(join(sourceRoot, 'guidance', 'core.md'))
-  const assembled = core.replace(/\{\{include:([a-z-]+)\}\}/g, (_, name) => (
-    read(join(sourceRoot, 'guidance', host, `${name}.md`)).trimEnd()
-  ))
-  return renderText({ text: assembled, home })
-}
-
 const desiredTargets = ({ home }) => {
   const targets = new Map()
   for (const [source, target] of fileRoots) {
@@ -86,8 +84,9 @@ const desiredTargets = ({ home }) => {
       targets.set(relativePath, { kind: 'file', content: renderText({ text: read(file), home }) })
     }
   }
-  for (const [host, target] of guidanceTargets) {
-    const content = renderGuidance({ host, home })
+  const shared = targets.get(sharedGuidanceTarget).content
+  for (const [host, target, render] of guidanceTargets) {
+    const content = render({ home, shared })
     if (hasDelimiterLine(content)) fail(`${host} guidance must not contain a filip-stack delimiter line`)
     targets.set(target, { kind: 'block', content })
   }

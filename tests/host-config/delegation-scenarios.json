@@ -453,6 +453,44 @@
           "codex.workhorse"
         ]
       }
+    },
+    {
+      "id": "copy-writer-pr-description",
+      "task": "The CSV export change is done, verified, and pushed. Write the PR description for it. You have the diff, the test results, and the screenshots.",
+      "accept": {
+        "claude": [
+          "antigravity.writer"
+        ],
+        "codex": [
+          "antigravity.writer"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "copy-writer-slack-draft",
+      "task": "Draft a Slack message for the team channel saying the deploy freeze starts Friday at 5 pm and listing the three PRs that must merge before then. You have the PR links.",
+      "accept": {
+        "claude": [
+          "antigravity.writer"
+        ],
+        "codex": [
+          "antigravity.writer"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "copy-writer-commit-message",
+      "task": "The CSV export change is verified. Write its commit message and commit it.",
+      "accept": {
+        "claude": [
+          "self"
+        ],
+        "codex": [
+          "self"
+        ]
+      }
     }
   ]
 }
