@@ -4,7 +4,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash } from 'node:crypto'
 import { constants, copyFileSync, existsSync, lstatSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { homedir, tmpdir } from 'node:os'
-import { dirname, join, relative } from 'node:path'
+import { dirname, join, relative, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 
 const scriptPath = fileURLToPath(import.meta.url)
@@ -51,7 +51,7 @@ const parseArgs = (argv) => {
   const options = { home: homedir(), force: false }
   for (let index = 0; index < rest.length; index += 1) {
     if (rest[index] === '--force' && ['apply', 'update'].includes(command)) options.force = true
-    else if (rest[index] === '--home' && rest[index + 1]) options.home = rest[(index += 1)]
+    else if (rest[index] === '--home' && rest[index + 1]) options.home = resolve(rest[(index += 1)])
     else fail(usage)
   }
   return { command, options }

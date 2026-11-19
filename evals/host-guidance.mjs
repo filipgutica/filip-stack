@@ -23,7 +23,8 @@ const applyHostConfig = (root) => {
   const env = { ...process.env, XDG_CACHE_HOME: process.env.XDG_CACHE_HOME ?? join(homedir(), '.cache'), XDG_CONFIG_HOME: join(home, '.config') }
   const result = spawnSync(process.execPath, [join(root, 'scripts/host-config.mjs'), 'apply', '--home', home], { encoding: 'utf8', env })
   if (result.status !== 0) throw new Error(`host-config apply failed in ${root}: ${result.stderr}`)
-  return Object.fromEntries(Object.entries(guidanceFiles).map(([host, file]) => [host, expandImports(readFileSync(join(home, file), 'utf8'))]))
+  const guidance = Object.fromEntries(Object.entries(guidanceFiles).map(([host, file]) => [host, readFileSync(join(home, file), 'utf8')]))
+  return { ...guidance, claude: expandImports(guidance.claude) }
 }
 
 // Renders lazily and once per version, so loading this module runs no git command.

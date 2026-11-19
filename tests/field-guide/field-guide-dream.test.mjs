@@ -130,7 +130,6 @@ const machine = ({ root, name = 'machine', repoRoot }) => {
     },
     validate: () => exec({ command: 'validate' }),
     // Live guidance that a dream action can name as `live:claude-md`.
-    home,
     writeClaudeMd: (text = '# Rules\n\nClean up after a merge.\n') => {
       mkdirSync(join(home, '.claude'), { recursive: true })
       writeFileSync(join(home, '.claude', 'CLAUDE.md'), text)
@@ -1089,9 +1088,12 @@ test('dream plan reads the guidance that CLAUDE.md imports', () => {
   const shared = join(guide.home, '.agents', 'AGENTS.md')
   mkdirSync(join(guide.home, '.agents'), { recursive: true })
   writeFileSync(shared, '# Shared rules\n\nClean up after a merge.\n')
-  guide.writeClaudeMd(`Local note.\n@${shared}\n@/missing/AGENTS.md\n`)
+  // Other `@` lines stay as written, including a missing file and a directory with that name.
+  const directory = join(mkdtempSync(join(tmpdir(), 'field-guide-dream-import-')), '.agents', 'AGENTS.md')
+  mkdirSync(directory, { recursive: true })
+  guide.writeClaudeMd(`Local note.\n@${shared}\n@/missing/.agents/AGENTS.md\n@${directory}\n@/etc/hosts\n`)
   const { text } = guide.plan().live.find(({ source }) => source === 'claude-md')
-  assert.equal(text, 'Local note.\n# Shared rules\n\nClean up after a merge.\n\n@/missing/AGENTS.md\n')
+  assert.equal(text, `Local note.\n# Shared rules\n\nClean up after a merge.\n\n@/missing/.agents/AGENTS.md\n@${directory}\n@/etc/hosts\n`)
 })
 
 // Plans with these CLAUDE.md lines and checks that no payload line and every kept line reaches the packet.

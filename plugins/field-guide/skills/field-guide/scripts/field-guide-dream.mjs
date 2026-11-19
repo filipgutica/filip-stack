@@ -8,7 +8,7 @@
 //   the lifecycle rules, the journal, and the preview token.
 // Output never contains an absolute home or guide path.
 import { createHash } from 'node:crypto'
-import { existsSync, readFileSync, readdirSync } from 'node:fs'
+import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs'
 import { homedir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -34,11 +34,12 @@ const liveDocuments = () => [
   { source: 'coding-standards', path: join(homedir(), '.agents', 'CODING_STANDARDS.md') },
 ]
 
-// Inlines `@<path>` import lines, as Claude Code does: host config's CLAUDE.md block only imports
-// the shared guidance. A line whose file is missing stays as written.
-const expandImports = (text) => text.replace(/^@((?:\/|~\/).+)$/gmu, (line, path) => {
+// Inlines the shared guidance that host config's CLAUDE.md block imports, as Claude Code does.
+// Only an import of a .agents/AGENTS.md file expands, so other `@` lines, such as examples in
+// machine-local text, stay as written.
+const expandImports = (text) => text.replace(/^@((?:\/|~\/).*\/\.agents\/AGENTS\.md)$/gmu, (line, path) => {
   const resolved = path.startsWith('~/') ? join(homedir(), path.slice(2)) : path
-  return existsSync(resolved) ? readFileSync(resolved, 'utf8') : line
+  return statSync(resolved, { throwIfNoEntry: false })?.isFile() ? readFileSync(resolved, 'utf8') : line
 })
 
 const sha256 = (text) => `sha256:${createHash('sha256').update(text).digest('hex')}`
