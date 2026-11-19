@@ -82,8 +82,8 @@
       "needsNewGuidance": true,
       "task": "The user asks a council for thoughts on how to add rate limiting to the API. They supply no plan. The designer has returned the criteria, and the default lineup is set.",
       "options": {
-        "open": "send members the question and ask each for its own recommendation and confidence",
-        "proposal": "draft a proposal, or have a planner draft it, and ask members to score it and say what would raise the score"
+        "open": "send members the question and ask each for its own recommendation and uncertainties",
+        "proposal": "draft a proposal, or have a planner draft it, and ask members to review it"
       },
       "accept": [
         "proposal"
@@ -93,8 +93,8 @@
       "id": "council-user-proposal",
       "task": "The user asks a council for thoughts on their attached rate-limiting plan. The designer has returned the criteria, and the default lineup is set.",
       "options": {
-        "draft": "draft your own proposal and have members score it",
-        "theirs": "have members score the user's plan and say what would raise the score"
+        "draft": "draft your own proposal and have members review it",
+        "theirs": "have members review the user's plan"
       },
       "accept": [
         "theirs"
@@ -127,8 +127,8 @@
       "id": "council-later-round",
       "task": "You coordinate a two-round council on a plan you drafted. Round 1 just ended, and you accept two of Sol 6.2's findings. Round 2 is next.",
       "options": {
-        "revised": "revise the plan for the accepted findings, then send round 2 the revised plan and a ledger of round 1 findings, without round 1 scores",
-        "scores": "send round 2 the same plan with round 1's findings and scores"
+        "revised": "revise the plan for the accepted findings, then send round 2 the revised plan and a ledger of round 1 findings marked fixed, declined, or open",
+        "scores": "send round 2 the same plan with round 1's findings"
       },
       "accept": [
         "revised"
@@ -252,6 +252,29 @@
         "requester"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "council-plan-review-no-score",
+      "needsNewGuidance": true,
+      "task": "The user asks a council to review their attached plan for moving sessions to Redis. The designer has returned the criteria, and the default lineup is set. What does each member brief ask the member to return?",
+      "options": {
+        "severity": "a recommendation, findings ranked by severity with the change that resolves each, the strongest objection, and material uncertainties",
+        "score": "a recommendation, findings ranked by severity with the change that resolves each, the strongest objection, material uncertainties, and a score from 0 to 10 for the plan"
+      },
+      "accept": [
+        "severity"
+      ]
+    },
+    {
+      "id": "council-gate-keeps-score",
+      "task": "The user runs full-stop with council 9.5 on their open PR. Full-send's council gate runs the members. What does the gate ask each member to return?",
+      "options": {
+        "score": "findings and a score from 0 to 10 for merge readiness, using the gate's rubric",
+        "severity": "findings ranked by severity, with no score"
+      },
+      "accept": [
+        "score"
+      ]
     }
   ]
 }
