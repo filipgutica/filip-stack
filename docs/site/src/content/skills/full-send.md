@@ -9,8 +9,7 @@ Sol (currently OpenAI's
 [sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
 bot findings, and makes routine decisions while you are away. Add a council
 threshold, such as `council 9.5`, and a [council](../council/) of models
-reviews the PR in place of Sol until every member scores it at or above the
-threshold.
+reviews the PR in place of Sol until it passes that threshold.
 
 ## When to use it
 
@@ -47,15 +46,17 @@ passing reproduction, repository CI, or the running app, with screenshots of
 changed UI and a recording of a changed flow when the host can record. Mocked
 tests alone do not prove the user experience.
 
-With a council threshold, the `full` council by default (Astra, Sol, Opus,
-Fable, and Neon) scores the PR's merge readiness once checks are green. If a
-member of the preset cannot run, such as Neon without the Antigravity
-provider, the agent asks you before it goes on without it. The agent fixes their
-findings and runs another round, for at most three rounds. It stops early
-when scores stop improving or the diff grows past its scope. Below the
-threshold, it never merges and asks you what to do. The scores go in a
-collapsed section of the PR description. [Council](../council/) explains the
-gate and the Codex form of the threshold.
+With a council threshold, the default lineup (Sol, Opus, and Neon) scores
+the PR's merge readiness once checks are green. If a member cannot run, such
+as Neon without the Antigravity provider, the agent asks you before it goes
+on without it. The agent fixes their findings and runs another round, for at
+most three rounds. Fable 5.2 has the final say on findings the members
+cannot settle. The agent stops early when scores stop improving or the diff
+grows past its scope. Until the gate passes, it never merges and asks you
+what to do. The scores and any arbiter rulings go in a collapsed section of
+the PR description.
+[Council](../council/) explains the gate and the Codex form of the
+threshold.
 
 The agent fixes routine problems itself. It asks you about public contracts,
 migrations, data, security, dependencies, removing a test no other test is

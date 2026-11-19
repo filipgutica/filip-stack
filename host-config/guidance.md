@@ -39,7 +39,7 @@ Active Field Guide guidance marked `[confirmed]` in a line the Field Guide hook 
 
 1. Decide it yourself when my request, the repository, this guidance, a stored preference, or an established convention or authoritative source answers it, or when the remaining options are equally sound and cheap to change. This includes UX and visual choices that the design guidance covers.
 2. Otherwise, unless the choice is cross-cutting or costly to reverse, ask the advisor and adopt its answer. Where the host has no advisor tool, delegate the question to the Advisor role.
-3. For a cross-cutting or hard-to-reverse choice, convene `council` without a lineup, so its designer builds one. Brief it with the relevant Field Guide entries, these principles, and decisions already made in the task.
+3. For a cross-cutting or hard-to-reverse choice, convene `council` without naming members, so it runs its default lineup and its designer frames the question. Brief it with the relevant Field Guide entries, these principles, and decisions already made in the task.
 
 Ask me only when the decision needs authorization, crosses a one-way door, leaves the council in a material disagreement its synthesis cannot resolve, or depends on my intent for what to build. A one-way door changes existing data, something external consumers depend on, or security. An internal design that is only costly to change later goes to the council. Hold questions that do not block current work until the handoff. Before a long or multi-PR task with many open decisions, offer `$grill-me` to settle them up front.
 
@@ -94,8 +94,8 @@ Each brief names its role and tells the child to read that section of `{{HOME}}/
 | Role | Target in T3 Code | Native profile outside T3 Code |
 | --- | --- | --- |
 | Critic for consequential or high-risk plans, specifications, architecture, diffs, worker output, and validation claims | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high`, for work a Claude or Antigravity model wrote; `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high`, for work a Codex model wrote | `critic` |
-| Planner for consequential design, cross-cutting changes, big reworks, and long unattended runs | From a Claude or Antigravity thread, `codex` / `{{model:codex.frontier.id}}`, `reasoningEffort: high`; from a Codex thread, `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `planner` |
-| Advisor | The built-in advisor tool when this host has one; otherwise, from a Claude or Antigravity thread, `codex` / `{{model:codex.frontier.id}}`, `reasoningEffort: high`; from a Codex thread, `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | The built-in advisor tool in Claude Code, `advisor` in Codex |
+| Planner for consequential design, architecture, cross-cutting changes, big reworks, and long unattended runs | `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | `planner` |
+| Advisor | The built-in advisor tool when this host has one; otherwise `claudeAgent` / `{{model:claude.frontier.id}}`, `effort: high` | The built-in advisor tool in Claude Code, `advisor` in Codex |
 | Reviewer, the default for diffs, worker output, validation claims, and routine plans or specifications | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high` | `reviewer` |
 | Routine implementer | `codex` / `{{model:codex.workhorse.id}}`, `reasoningEffort: high` | `worker-high` in Claude Code, `default` in Codex |
 | Consequential implementer | `claudeAgent` / `{{model:claude.workhorse.id}}`, `effort: high` | `worker-high` in Claude Code, `default` in Codex |
@@ -110,11 +110,11 @@ Delegated review defaults to the Reviewer row on the workhorse tier. Reserve the
 
 Hand consequential design, cross-cutting changes, big reworks, and plans for long unattended runs to the Planner before implementation, then accept or change its plan in this thread. A Planner or Critic brief allows Explorer children for discovery. When a model falls short on a task, first give it a way to check its own work, such as a test, build, or script, then raise its effort one level, then move the task up one tier.
 
-Each Claude and Codex model belongs to a tier, and each tier has one model per provider. Antigravity's {{model:antigravity.writer.label}} has no tier: it serves only the Copy writer role and councils.
+Each Claude and Codex model belongs to a tier, and each tier has one model per provider. {{model:claude.frontier.label}} is the frontier model for every role; {{model:codex.frontier.label}} runs only when {{model:claude.frontier.label}} is short, as the usage rule below says, and as the Codex native profile outside T3 Code. Antigravity's {{model:antigravity.writer.label}} has no tier: it serves only the Copy writer role and councils.
 
 | Tier | Work | Claude (`claudeAgent`, option `effort`) | Codex (`codex`, options `reasoningEffort` and `serviceTier: default`) |
 | --- | --- | --- | --- |
-| Frontier | Advice, consequential or cross-cutting planning, hard reasoning a workhorse model fell short on, and `frontier` or `full` councils | `{{model:claude.frontier.id}}` ({{model:claude.frontier.label}}) | `{{model:codex.frontier.id}}` ({{model:codex.frontier.label}}) |
+| Frontier | Advice, consequential or cross-cutting planning and architecture, and hard reasoning a workhorse model fell short on | `{{model:claude.frontier.id}}` ({{model:claude.frontier.label}}) | `{{model:codex.frontier.id}}` ({{model:codex.frontier.label}}) |
 | Workhorse | Production code, tests, review, and critique | `{{model:claude.workhorse.id}}` ({{model:claude.workhorse.label}}) | `{{model:codex.workhorse.id}}` ({{model:codex.workhorse.label}}) |
 | Balanced | Mechanical edits and summaries | `{{model:claude.balanced.id}}` ({{model:claude.balanced.label}}) | `{{model:codex.balanced.id}}` ({{model:codex.balanced.label}}) |
 | Fast | Exploration, search, and classification | `{{model:claude.fast.id}}` ({{model:claude.fast.label}}) | `{{model:codex.fast.id}}` ({{model:codex.fast.label}}) |

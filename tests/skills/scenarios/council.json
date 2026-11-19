@@ -16,8 +16,8 @@
       "expectedSkill": "council"
     },
     {
-      "id": "council-preset",
-      "prompt": "Run a frontier council on whether we should adopt event sourcing for orders.",
+      "id": "council-named-members-route",
+      "prompt": "Run a council of Sol and Fable on whether we should adopt event sourcing for orders.",
       "expectedSkill": "council"
     },
     {
@@ -34,10 +34,10 @@
   "rules": [
     {
       "id": "council-nonblocking-pending",
-      "task": "You coordinate a council the user asked for. Three of four members have replied. The user marked the fourth member, Astra, as non-blocking, and it is still running.",
+      "task": "You coordinate a council the user asked for. Two of three members have replied. The user marked the third member, Neon, as non-blocking, and it is still running.",
       "options": {
-        "wait": "wait for Astra before synthesizing",
-        "synthesize": "synthesize now and name Astra as pending"
+        "wait": "wait for Neon before synthesizing",
+        "synthesize": "synthesize now and name Neon as pending"
       },
       "accept": [
         "synthesize"
@@ -45,10 +45,10 @@
     },
     {
       "id": "council-blocking-pending",
-      "task": "You coordinate a council the user asked for. Three of four members have replied. The fourth member, Astra, is still running, and nobody marked any member as non-blocking.",
+      "task": "You coordinate a council the user asked for. Two of three members have replied. The third member, Neon, is still running, and nobody marked any member as non-blocking.",
       "options": {
-        "wait": "wait for Astra before synthesizing",
-        "synthesize": "synthesize now and name Astra as pending"
+        "wait": "wait for Neon before synthesizing",
+        "synthesize": "synthesize now and name Neon as pending"
       },
       "accept": [
         "wait"
@@ -56,36 +56,25 @@
     },
     {
       "id": "council-own-question",
-      "task": "Partway through your own task, you want a council on whether your migration approach is sound. No member lineup or criteria were given to you.",
+      "task": "Partway through your own task, you want a council on whether your migration approach is sound. No members or criteria were given to you.",
       "options": {
-        "design": "choose the members and criteria yourself",
-        "designer": "have a separate designer agent build the council"
+        "design": "write the goal and criteria yourself",
+        "designer": "have a separate designer agent frame the council"
       },
       "accept": [
         "designer"
       ]
     },
     {
-      "id": "council-preset-named",
-      "task": "The user asks you for a frontier council on whether to split the billing service. They name no members or criteria.",
+      "id": "council-named-members",
+      "task": "The user asks you for a council of Sol 6.2 and Fable 5.2 on whether to split the billing service. They name no criteria.",
       "options": {
-        "designer": "start a designer agent to build the lineup",
-        "preset": "convene Astra 6.2, Fable 5.2, and Gemini 4 Neon without a designer",
-        "old-lineup": "convene Astra 6.2 and Fable 5.2 without a designer"
+        "designer": "start a designer agent to frame the council",
+        "named": "convene Sol 6.2 and Fable 5.2, framing the question from the request without a designer",
+        "default": "convene the default lineup of Sol 6.2, Opus 5.5, and Gemini 4 Neon"
       },
       "accept": [
-        "preset"
-      ]
-    },
-    {
-      "id": "council-own-question-preset",
-      "task": "Partway through your own task, you want a quick council on whether your migration approach is sound. Nobody named a preset, members, or criteria. The pair preset of Sol 6.2, Opus 5.5, and Gemini 4 Neon looks like enough.",
-      "options": {
-        "preset": "convene the pair preset yourself",
-        "designer": "have a separate designer agent build the council"
-      },
-      "accept": [
-        "designer"
+        "named"
       ]
     },
     {
@@ -112,46 +101,9 @@
       ]
     },
     {
-      "id": "council-designer-pair",
-      "task": "You are the designer this council skill starts. The question: should the `formatDate` helper in one module return null or throw on invalid input? Only that module calls it, and the choice is easy to change later.",
-      "options": {
-        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
-        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
-        "full": "the full preset: all five default members"
-      },
-      "accept": [
-        "pair"
-      ]
-    },
-    {
-      "id": "council-designer-frontier",
-      "needsNewGuidance": true,
-      "task": "You are the designer this council skill starts. The question: why does the pagination cursor algorithm in one module skip a row when two rows share a timestamp, and what is the correct fix? No API or stored data changes.",
-      "options": {
-        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
-        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
-        "full": "the full preset: all five default members"
-      },
-      "accept": [
-        "frontier"
-      ]
-    },
-    {
-      "id": "council-designer-full",
-      "task": "You are the designer this council skill starts. The question: should every service move session tokens to a new storage format? It changes stored user data and a public API that other teams call.",
-      "options": {
-        "pair": "the pair preset: Sol 6.2, Opus 5.5, and Gemini 4 Neon",
-        "frontier": "the frontier preset: Astra 6.2, Fable 5.2, and Gemini 4 Neon",
-        "full": "the full preset: all five default members"
-      },
-      "accept": [
-        "full"
-      ]
-    },
-    {
       "id": "council-designer-rounds",
       "needsNewGuidance": true,
-      "task": "You are the designer this council skill starts. The user asks a council for thoughts on adding pagination to one endpoint and gives no plan, so the coordinator will draft one. You have chosen the pair preset. Now set the number of rounds.",
+      "task": "You are the designer this council skill starts. The user asks a council for thoughts on adding pagination to one endpoint and gives no plan, so the coordinator will draft one. Now set the number of rounds.",
       "options": {
         "one": "one round",
         "several": "two or three rounds, with the drafted plan revised between them"
@@ -173,7 +125,7 @@
     },
     {
       "id": "council-later-round",
-      "task": "You coordinate a two-round pair council on a plan you drafted. Round 1 just ended, and you accept two of Sol 6.2's findings. Round 2 is next.",
+      "task": "You coordinate a two-round council on a plan you drafted. Round 1 just ended, and you accept two of Sol 6.2's findings. Round 2 is next.",
       "options": {
         "revised": "revise the plan for the accepted findings, then send round 2 the revised plan and a ledger of round 1 findings, without round 1 scores",
         "scores": "send round 2 the same plan with round 1's findings and scores"
@@ -185,7 +137,7 @@
     {
       "id": "council-designer-model",
       "needsNewGuidance": true,
-      "task": "The user asks for a council and names no preset, members, or criteria. You are about to start the designer, and every model is available.",
+      "task": "The user asks for a council and names no members or criteria. You are about to start the designer, and every model is available.",
       "options": {
         "opus": "Opus 5.5 at high effort",
         "fable": "Fable 5.2 at high effort"
@@ -196,7 +148,7 @@
     },
     {
       "id": "council-later-round-supplied",
-      "task": "You coordinate a two-round pair council on a plan the user supplied. Round 1 just ended: you accept two findings, and one question about the plan's rollout is still open. Round 2 is next.",
+      "task": "You coordinate a two-round council on a plan the user supplied. Round 1 just ended: you accept two findings, and one question about the plan's rollout is still open. Round 2 is next.",
       "options": {
         "revise": "revise the user's plan for the accepted findings and send round 2 the revised plan",
         "open": "leave the user's plan unchanged and send round 2 the round 1 findings ledger, focused on the open rollout question"
@@ -206,8 +158,8 @@
       ]
     },
     {
-      "id": "council-named-preset-neon-unavailable",
-      "task": "The user asks you for a pair council on whether to split the billing service. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
+      "id": "council-named-neon-unavailable",
+      "task": "The user asks you for a council of Sol 6.2, Opus 5.5, and Gemini 4 Neon on whether to split the billing service. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
       "options": {
         "proceed": "convene Sol 6.2 and Opus 5.5 and report that Neon was dropped",
         "ask": "ask the user whether to change the lineup or proceed without Neon"
@@ -218,26 +170,75 @@
       "needsNewGuidance": true
     },
     {
-      "id": "council-designer-preset-neon-unavailable",
-      "task": "The user asks for a council and names no preset or members. The designer chose the pair preset. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
+      "id": "council-default-neon-unavailable",
+      "task": "The user asks for a council and names no members. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
       "options": {
         "proceed": "convene Sol 6.2 and Opus 5.5 and report that Neon was dropped",
         "ask": "ask the user whether to change the lineup or proceed without Neon"
       },
       "accept": [
         "proceed"
-      ]
+      ],
+      "needsNewGuidance": true
     },
     {
-      "id": "council-gate-preset-neon-unavailable",
+      "id": "council-gate-neon-unavailable",
       "needsNewGuidance": true,
-      "task": "full-send's council gate set the full preset for a PR the user asked to gate with `council 9.5`. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. The other four members are available.",
+      "task": "full-send's council gate set council's default lineup for a PR the user asked to gate with `council 9.5`. The Antigravity provider is disabled, so Gemini 4 Neon cannot run. Sol 6.2 and Opus 5.5 are available.",
       "options": {
-        "proceed": "run the gate with the other four members and report that Neon was dropped",
+        "proceed": "run the gate with Sol 6.2 and Opus 5.5 and report that Neon was dropped",
         "ask": "ask the user whether to change the lineup or proceed without Neon"
       },
       "accept": [
         "ask"
+      ]
+    },
+    {
+      "id": "council-default-lineup",
+      "needsNewGuidance": true,
+      "task": "The user asks for a council on whether every service should move session tokens to a new storage format. It changes stored user data and a public API. They name no members, and every model is available. Which members answer?",
+      "options": {
+        "default": "Sol 6.2, Opus 5.5, and Gemini 4 Neon",
+        "five": "Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon",
+        "frontier": "Astra 6.2, Fable 5.2, and Gemini 4 Neon"
+      },
+      "accept": [
+        "default"
+      ]
+    },
+    {
+      "id": "council-arbiter-split",
+      "needsNewGuidance": true,
+      "task": "Your one-round council on whether to cache API responses in Redis or in the browser just ended. Sol 6.2 recommends Redis; Opus 5.5 and Gemini 4 Neon recommend browser caching. Each gives evidence. No calling skill set a verdict, and every model is available.",
+      "options": {
+        "majority": "synthesize the majority recommendation and keep Sol's dissent visible",
+        "arbiter": "send each position and its evidence, without scores, to Fable 5.2 to rule, and report its ruling as the recommendation",
+        "ask": "ask the user to pick one"
+      },
+      "accept": [
+        "arbiter"
+      ]
+    },
+    {
+      "id": "council-arbiter-agree",
+      "task": "Your one-round council on whether to cache API responses in Redis or in the browser just ended. All three members recommend browser caching; they differ only on the cache lifetime. No calling skill set a verdict.",
+      "options": {
+        "synthesize": "synthesize the shared recommendation and note the lifetime difference",
+        "arbiter": "send the positions to Fable 5.2 to rule"
+      },
+      "accept": [
+        "synthesize"
+      ]
+    },
+    {
+      "id": "council-arbiter-hill-climb",
+      "task": "You run hill-climb with blind council judges. In this round, two judges prefer the candidate and one prefers the incumbent, each with reasons.",
+      "options": {
+        "arbiter": "send the split to Fable 5.2 to rule",
+        "rule": "apply hill-climb's decision rule to the judges' votes"
+      },
+      "accept": [
+        "rule"
       ]
     }
   ]
