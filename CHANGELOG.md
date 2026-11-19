@@ -1,3 +1,16 @@
+# [6.24.0](https://github.com/filipgutica/filip-stack/compare/v6.23.0...v6.24.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **host-config:** let output styles set list markup; sharpen layout scenarios ([8bc3d4e](https://github.com/filipgutica/filip-stack/commit/8bc3d4e152235e422a4eb77f9f59e8ef433cdadc))
+* **host-config:** require a visible break between ideas ([6ffcea4](https://github.com/filipgutica/filip-stack/commit/6ffcea4a65a39178190596126e844ae80ebef89b))
+
+
+### Features
+
+* **host-config:** default to ELI5 replies with one idea per line ([c00921d](https://github.com/filipgutica/filip-stack/commit/c00921d3a0bf626351e00e2fce28913a0129b79c))
+
 # [6.23.0](https://github.com/filipgutica/filip-stack/compare/v6.22.0...v6.23.0) (2026-11-19)
 
 
