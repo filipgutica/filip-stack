@@ -117,14 +117,19 @@ causes archive.
 ### Memory versions
 
 `memory.md` holds version 1 (`schemas/memory-v1.schema.json`) until the store
-holds a consolidation link or a journaled transition: its first consolidation.
-From then on the store stays version 2, even after an undo. The utility writes version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
+holds a consolidation link or a journaled transition: its first consolidation or
+automated nightly archive. From then on the store stays version 2, even after an
+undo or a `delete` leaves no such record. The utility writes version 2 (`schemas/memory-v2.schema.json`), which adds `consolidates` on a
 replacement and `operationId` on a transition. A plugin that reads only version
 1 refuses a version 2 store and writes nothing to it, and its hook shows one
-line that the store is newer. The commands that write version 2, `consolidate`
-and `undo-operation`, refuse to run while a
+line that the store is newer. The commands that write version 2, `consolidate`,
+`undo-operation`, and `field-guide-dream.mjs apply`, refuse to run while a
 plugin copy installed on the machine lacks `schemas/memory-v2.schema.json`.
-They check each Claude Code copy that `installed_plugins.json` names and the
+`apply` also journals run entries, which an older copy rejects with the whole
+journal, so every applied run, even one that changes no record, also refuses
+while a copy lacks `schemas/dream-apply-v1.schema.json`. An undo of an
+automated archive restores the record through an edge that only such a copy
+reads, so it refuses in the same case. They check each Claude Code copy that `installed_plugins.json` names and the
 Codex copy that loads: the newest version directory in the plugin cache, for
 each marketplace that Codex's `config.toml` lists `field-guide` from, or for
 every cached marketplace when it lists none. Codex writes `field-guide@` only
@@ -155,22 +160,39 @@ separator, such as `/home/<name>` or `/mnt/c/Users/<name>`. Windows ignores
 the case of `Users`, so a drive-rooted form, such as `C:\users\<name>` or
 `/mnt/c/USERS/<name>`, matches in any case. Each
 example's language must be a name of 1 to 32 letters, digits, or `+#._-`. The
-same checks cover every string in a stored proposal. A proposal stores a
-digest of its scope, not the repository identity, which can be a local path,
-such as the Git directory of a repository without a remote. Stored records keep
-the guard that released versions used, so their stores stay readable.
+same checks cover every string in a nightly action, a run report, and a stored
+proposal. They also cover each new proposal and new journal entry whole,
+including the subject key it copies from memory, with the checks its reader
+applies, so a legacy subject key that the guard refuses stops the command
+before it writes anything. A replacement copies its targets' scope, subject
+key, linked subjects, and evidence IDs. `consolidate` refuses, in a preview, an
+apply, or an approval, targets whose copied subject key, linked subjects, or
+evidence IDs the guard refuses, and nightly maintenance flags such a merge as
+`unsafe-overlap`. The scope is copied unchanged: capture already stores it in
+every target, including the local repository identity of a repository without
+a remote. A proposal stores a digest of its scope, not the repository identity,
+which can be a local path, such as the Git directory of a repository without a
+remote. Stored records keep the guard that released versions used, so their
+stores stay readable.
 
-Shared records are not consolidated until a later release.
+Shared records are flagged, not consolidated, until a later release.
 `consolidate` refuses a shared record in a preview, an apply, or an approval,
 because undoing a shared consolidation on every machine needs operation data
-that sync does not carry yet.
+that sync does not carry yet. Retrieval leaves out a shared record whose
+normalized text a project record of the repository repeats, so `consolidate`
+also refuses, in a preview, an apply, or an approval, a replacement whose text
+repeats a confirmed live shared record.
 
 When a predecessor is confirmed, `consolidate` changes nothing. It stores a
 proposal and returns `confirm fg:proposal:<id>` for the user to send. After the
 hook records that approval, `consolidate --approval proposal:<id>` recomputes the
 proposal ID from the current records and the stored proposal, and applies it.
 A proposal records `confirmedFingerprints`, the predecessors that were
-confirmed when the proposal was stored, and its ID covers that list. The
+confirmed when the proposal was stored, and its ID covers that list and the
+whole replacement, with each example's keys sorted, so their order does not
+change it. A new proposal stores its examples with their keys sorted, so 6.15.0,
+which hashes them as stored, computes the same ID. `--approval` also accepts the
+ID that 6.15.0 computed from the keys in their stored order. The
 approved replacement carries `[confirmed]`, set in the same commit. When any predecessor was
 confirmed or unconfirmed after the proposal was stored, `--approval` refuses,
 names the change, and writes nothing; propose the consolidation again. It also
@@ -181,7 +203,9 @@ leaves the predecessors' confirmations revoked and the predecessors in place: it
 fails closed. Run `consolidate --approval` again to finish it; the journal lists
 the revocations of the aborted attempt, so only that loss of confirmation is
 excused. An `unconfirm` after the crash still blocks the retry. Until then,
-`consolidate` still treats those predecessors as confirmed, while injected guidance shows them without `[confirmed]`.
+`consolidate` still treats those predecessors as confirmed, and nightly
+maintenance treats every record the user ever confirmed as confirmed, while
+injected guidance shows them without `[confirmed]`.
 `export --annotations` leaves out the replacement that never landed, because it
 treats every fingerprint a journaled project operation names as project data. A
 released exporter does not read the journal, so after such a crash in the first
@@ -197,23 +221,38 @@ the next command finds the watermark stale and revokes every confirmation, the
 retry reports the proposal as already applied, and the replacement stays
 unconfirmed until the user confirms it again.
 
-Use `undo-operation --id <operation-id>` to reverse a consolidation within 90
-days. Run it on the machine that made the
+Use `undo-operation --id <operation-id>` to reverse a consolidation or an
+automated archive within 90 days. Run it on the machine that made the
 operation, because the journal that holds the inverse stays local. It withdraws
 the replacement the way a user's undo does and restores each predecessor it
 still supersedes. A predecessor that something else retired stays retired, and
 the result lists it. Restored predecessors start
 unconfirmed, because a restore revokes confirmations; the user confirms them
-again if needed. The undone set is recorded as declined: `consolidate` refuses
-it, `dream plan` leaves it out of its overlap groups, and the undo cannot itself
-be undone. Repeating the undo changes nothing. When a later change blocks a clean inverse, the command names
+again if needed. The undone set is recorded as declined: neither nightly
+maintenance nor `consolidate` applies or proposes it again, and the undo cannot
+itself be undone. Repeating the undo changes nothing. When a later change blocks a clean inverse, the command names
 the conflict and changes nothing. `transition` refuses to withdraw or undo a
 consolidated replacement and names `undo-operation`.
 
+The undo of an automated archive restores the record with an
+`archived->active` transition that names the undo's operation ID. Reading
+memory checks only that this transition and the archive before it carry
+operation IDs, as strings. `validate` and `undo-operation` also check the
+journal: the archive's operation must be a journaled archive of that record,
+and the restore's operation an undo of that archive that names the same record.
+Any other restore fails `validate`, and `undo-operation` refuses to run until
+memory is repaired; with a journal that cannot be read, a store that holds a
+restore fails `validate`.
+
 ### Operation journal
 
-`operations.jsonl` is a local write-ahead journal. No hook reads it, and it never
-syncs. An operation appends a `pending` entry, then writes annotations and
+`operations.jsonl` is a local write-ahead journal, and it never syncs. No hook
+reads it. The confirm hook takes `memory.lock`, then reads `memory.md` and
+`annotations-watermark.json`. When the watermark lags memory, the lock's
+reconcile reads and rewrites `annotations.json` and the watermark. A
+`confirm fg:<id>` prompt for an active record then reads and may write
+`annotations.json`; a `confirm fg:proposal:<id>` prompt reads and may write
+only `proposals.json`. An operation appends a `pending` entry, then writes annotations and
 memory, then appends a `commit` entry. Every transition the operation makes
 carries its operation ID. Before the next journaled command, recovery commits
 a pending operation whose ID reached memory and aborts the rest. When it commits
@@ -221,12 +260,29 @@ one, it rebuilds `memory.json` from `memory.md`, which a crash between those two
 writes left stale. Until that command runs, `validate` reports the stale cache;
 `maintain` with `repair-cache` also rebuilds it. An entry holds
 IDs, fingerprints, revisions, retirement IDs, a sanitized reason, and the undo
-command. It never holds guidance text, user prompts, or paths.
+command. It never holds guidance text, user prompts, or paths. A nightly run appends
+a `run-intent` entry before it writes memory and a `run` entry after. Both
+record, for each subject the run reviewed and left nothing unresolved, its
+digest and a digest of all live guidance it was reviewed against, the proposals it
+stores with their expiry, and its report, which holds IDs, reasons, undo
+commands, and the `confirm fg:proposal:<id>` prompts to offer. Later runs read
+the contradictions queued for the user from these reports. `apply` checks both
+entries with the plan's reader before it writes either. When a crash leaves an intent whose
+operations reached memory, the run counts as finished: a replay returns its
+report and writes nothing, the next apply of other input records the run, and
+`dream plan` already counts it without writing it. The plan and
+`apply` read a `run` or `run-intent` entry only in the exact shape that `apply`
+writes, with the writer's target counts, live sources, undo window, and
+new-text guard. Its report must name the entry's own operations, in order, each
+with the run's time plus the undo window as its deadline, and the entry's own
+proposals, in order, with their expiries, each confirming its replacement. Any
+other field or value makes the journal unreadable. These checks cannot tell a
+forged entry that has exactly the writer's shape from one the writer made.
 
 `proposals.json` is local and never syncs. Each proposal holds a digest of its
 scope, the target fingerprints, the replacement text, `confirmedFingerprints`, `confirmsReplacement`, the reason, its
 expiry, and the user's approval once the hook records it. Read [nightly maintenance](dreaming.md) for
-the nightly plan.
+the nightly pass.
 
 Use `delete --input <json-file>` for permanent deletion. The target must be
 `withdrawn` or `archived`. The first call returns a preview token and the orphan
@@ -302,7 +358,26 @@ not yet grant authority, so voiding them costs one confirm prompt each. Each
 machine voids once when it upgrades, and its revocations reach the others when
 they sync. A record that an older plugin both imports and deletes between two
 current writes leaves no fingerprint, so a confirmation in transit for it can
-still count.
+still count. Nightly maintenance never archives or merges a record the user
+ever confirmed: any confirmation entry of its text, or of a record it
+consolidates, counts, whatever revoked it later, whether a reconcile of any
+version, an `unconfirm`, or a crashed operation. It only flags or proposes that
+guidance, and the hook shows it without `[confirmed]` until the user confirms
+again. Because the history lives in `annotations.json`, nightly `apply` refuses
+when that file is missing while memory holds guidance, or has no entry for a
+record that memory holds and a shared import did not create. A reconcile never
+creates an entry for a record that the watermark lists, so a lagging watermark
+does not hide a lost file. A store from before annotations has no watermark, so
+its next capture or confirmation gives every record an entry. A store that
+lost `annotations.json` and whose watermark is also missing or unreadable looks
+the same, so that write hides the loss. Other writes hide it too: an older
+plugin copy, 6.10.1 through 6.17.0, that reconciles after the loss, and an
+`unconfirm`, an `annotate`, or a restore of a record whose entry the lost file
+held, each write that record's entry and leave no trace. Detecting a lost
+`annotations.json` is therefore best effort, and nightly maintenance cannot
+protect a record whose only confirmation the lost file held. Restore the file
+from a backup before any other write; the planned single-document store removes
+this case.
 
 No command adds a confirmation. `submit`, `transition`, `maintain`, and
 `import` reject unknown fields such as `confirmed` on a record, and a

@@ -131,8 +131,14 @@ const management = [
         A merge never rewrites guidance you confirmed on its own. To accept
         one, send the exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt
         the agent gives you. Shared guidance is not merged yet. Nightly
-        maintenance lists overlapping records for a review. It never edits
-        your instructions or skills. The
+        maintenance lists overlapping records for a review, and can also apply
+        merges, archives, and flags within the lifecycle rules; you can undo
+        each merge and archive it applies for 90 days. It never archives or
+        merges guidance you ever confirmed, even after you unconfirm it, as
+        long as its confirmation history is intact. It only flags or proposes
+        that guidance, and only flags other guidance on the same subject. It
+        never edits your instructions
+        or skills. The
         <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
         has the exact rules.
       </p>

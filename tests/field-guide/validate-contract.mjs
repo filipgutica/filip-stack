@@ -217,7 +217,12 @@ ajv.compile(retrievalSchema)
 ajv.compile(JSON.parse(await readFile(new URL('schemas/annotations-v1.schema.json', skillRoot), 'utf8')))
 const readSchema = async (name) => JSON.parse(await readFile(new URL(`schemas/${name}`, skillRoot), 'utf8'))
 ajv.compile(await readSchema('memory-v2.schema.json'))
-ajv.compile(await readSchema('consolidation-v1.schema.json'))
+ajv.addSchema(await readSchema('consolidation-v1.schema.json'))
+const validateDreamSchema = ajv.compile(await readSchema('dream-apply-v1.schema.json'))
+const dreamSubject = { subjectId: `subject:v1:${'a'.repeat(64)}`, digest: `subject-state:v1:${'b'.repeat(64)}` }
+const dreamConsolidation = { action: 'consolidate', targetIds: [`guidance:v1:${'c'.repeat(64)}`, `guidance:v1:${'d'.repeat(64)}`], replacement: { learning: 'Merged rule.', confidence: 'high' }, reason: 'Same rule.' }
+assert.equal(validateDreamSchema({ schemaVersion: 1, live: {}, subjects: [{ ...dreamSubject, actions: [dreamConsolidation] }] }), true, JSON.stringify(validateDreamSchema.errors))
+assert.equal(validateDreamSchema({ schemaVersion: 1, live: {}, subjects: [{ ...dreamSubject, actions: [{ ...dreamConsolidation, confirmed: true }] }] }), false)
 const dreaming = await readFile(new URL('references/dreaming.md', skillRoot), 'utf8')
 assert.match(skill, /\[references\/dreaming\.md\]\(references\/dreaming\.md\)/)
 assert.match(dreaming, /never edits\s+`CLAUDE\.md`, `AGENTS\.md`, roles, coding standards, or skills/)

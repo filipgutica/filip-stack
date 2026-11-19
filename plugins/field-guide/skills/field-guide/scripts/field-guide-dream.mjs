@@ -1,15 +1,18 @@
 #!/usr/bin/env node
 
-// Nightly maintenance ("dreaming") for the field guide. plan prints a bounded packet for a
-// reviewer model on stdout: the audit, live subjects with their records, digests, and overlap
-// groups, and the live guidance the records must not repeat. It makes no model call and writes
-// nothing. Output never contains an absolute home or guide path.
+// Nightly maintenance ("dreaming") for the field guide.
+// - plan prints a bounded packet for a reviewer model on stdout: the audit, live subjects with
+//   their records, digests, and overlap groups, and the live guidance the records must not
+//   repeat. It makes no model call and writes nothing.
+// - apply validates the reviewer's actions and applies them through field-guide.mjs, which owns
+//   the lifecycle rules, the journal, and the preview token.
+// Output never contains an absolute home or guide path.
 import { createHash } from 'node:crypto'
 import { existsSync, readFileSync, readdirSync } from 'node:fs'
 import { homedir } from 'node:os'
-import { join } from 'node:path'
+import { join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { audit, dreamState, installedPluginCopies, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
+import { appliesWith, applyDreamRun, audit, dreamState, installedPluginCopies, liveSources, redactUnsafeText, resolvePaths, reviewedRecord, runIfEntryPoint } from './field-guide.mjs'
 
 const scriptPath = fileURLToPath(import.meta.url)
 const fail = (message) => {
@@ -23,7 +26,7 @@ const claudeRoot = () => process.env.CLAUDE_CONFIG_DIR || join(homedir(), '.clau
 const codexRoot = () => process.env.CODEX_HOME || join(homedir(), '.codex')
 
 // The rendered global guidance and the contracts that stored guidance must not repeat. The
-// plan reads them and never edits them.
+// nightly job reads them and never edits them; it can only flag a proposed edit.
 const liveDocuments = () => [
   { source: 'claude-md', path: join(claudeRoot(), 'CLAUDE.md') },
   { source: 'agents-md', path: join(codexRoot(), 'AGENTS.md') },
@@ -54,6 +57,7 @@ const contractSource = ({ source, files }) => {
 
 // `skills` holds the repository skills in ~/.agents/skills. `plugin-skills` holds the skills of
 // each plugin copy that Claude Code or Codex loads, the same copies the writer gate checks.
+const contractSources = ['skills', 'plugin-skills']
 const skillContracts = () => [
   contractSource({ source: 'skills', files: skillFiles(join(homedir(), '.agents', 'skills')).map((path) => ({ prefix: '', path })) }),
   contractSource({
@@ -72,6 +76,15 @@ const readLive = () => [
   }),
   ...skillContracts(),
 ].filter(Boolean)
+
+// Digests keyed by every known source, null for one that is missing on this machine. The run
+// entry's reader accepts only these sources.
+const digestsOf = (live) => {
+  const present = Object.fromEntries(live.map(({ source, digest }) => [source, digest]))
+  const read = [...liveDocuments().map(({ source }) => source), ...contractSources]
+  if (JSON.stringify(read) !== JSON.stringify(liveSources)) fail('the live sources read differ from the ones a run entry may name')
+  return Object.fromEntries(liveSources.map((source) => [source, present[source] ?? null]))
+}
 
 // Replaces the guide root and any home directory with placeholders, so no output names a local
 // path. The text is JSON, so a bare home directory, the form the new-text guard also refuses, ends
@@ -127,10 +140,15 @@ const addLiveText = ({ packet, texts }) => {
   })
 }
 
-// The subject digest covers these same fields.
+// The subject digest covers these same fields, unredacted. A legacy subject key or linked subject
+// that the memory reader accepts can hold text the new-text guard refuses, so both are redacted too.
 const planRecord = (record) => {
   const shown = reviewedRecord(record)
-  return { ...shown, learning: redactUnsafeText(shown.learning) }
+  return {
+    ...shown,
+    learning: redactUnsafeText(shown.learning),
+    ...(shown.linkedSubjects ? { linkedSubjects: shown.linkedSubjects.map(redactUnsafeText) } : {}),
+  }
 }
 
 // Audit lists and pending operations get fixed shares of the packet, so they never crowd out the
@@ -171,17 +189,19 @@ const boundedLists = ({ lists, maxBytes }) => {
   }
 }
 
-// Adds each subject that fits, in order, and counts the rest as omitted. Live text is added
-// after the subjects, so its fields are reserved here.
-const addSubjects = ({ packet, subjects, liveCount }) => {
-  for (const subject of subjects) {
+// Adds each subject to review that fits, in order, and counts the rest as omitted. Live text
+// is added after the subjects, so its fields are reserved here.
+const addSubjects = ({ packet, review, liveCount }) => {
+  for (const subject of review) {
     const entry = {
       subjectId: subject.subjectId,
       scope: subject.scope.kind,
-      subjectKey: subject.subjectKey,
+      subjectKey: redactUnsafeText(subject.subjectKey),
       digest: subject.digest,
       records: subject.records.map(planRecord),
       overlapGroups: subject.overlapGroups,
+      ...(subject.queuedContradictions.length > 0 ? { queuedContradictions: subject.queuedContradictions } : {}),
+      ...(subject.due ? {} : { context: true }),
     }
     if (packetBytes({ ...packet, subjects: [...packet.subjects, entry] }) > maxPacketBytes - liveFieldBytes * liveCount) {
       packet.omittedSubjects += 1
@@ -191,13 +211,18 @@ const addSubjects = ({ packet, subjects, liveCount }) => {
   }
 }
 
-// Every live subject is reviewed. Live text is sent only when there is a subject to review. Every
-// text is scrubbed of paths before it is measured or cut. Subjects come first in the packet's byte
-// budget after the audit and pending operations, and live text fills what is left.
+// A subject is reviewed when it changed since its last review or live guidance changed since
+// then; a source that was added or removed counts. A due subject brings each subject that applies
+// with it, marked as context when that subject is not due, so a contradiction can name a record
+// there with its digest; apply counts the due subject as reviewed only when the input lists them
+// all. skippedSubjects counts the rest. Live text is sent only when there is something
+// to review. Every text is scrubbed of paths before it is measured or cut. Subjects come first in
+// the packet's byte budget after the audit and pending operations, and live text fills what is left.
 const plan = (paths) => {
   const { guideRoot } = paths
   const live = readLive()
-  const state = dreamState({ paths })
+  const state = dreamState({ paths, liveDigests: digestsOf(live) })
+  const review = state.subjects.filter((subject) => subject.due || state.subjects.some((other) => other.due && appliesWith(subject, other)))
   const { validationErrors, staleCandidates, unresolvedRelationships, brokenPointers, orphanEvidence, oversizedRecords } = audit(paths)
   // audit lists each validation error on its own, so a block left open in one cannot hide the
   // next. An error can span lines; it is redacted whole, so a block that spans lines hides all of
@@ -219,21 +244,34 @@ const plan = (paths) => {
     omittedItems: { ...audited.omitted, ...pending.omitted },
     live: live.map(({ source, digest }) => ({ source, digest })),
     subjects: [],
+    skippedSubjects: state.subjects.length - review.length,
     omittedSubjects: 0,
   }
-  addSubjects({ packet, subjects: state.subjects, liveCount: live.length })
-  if (state.subjects.length > 0) addLiveText({ packet, texts: live.map(({ text }) => scrubbed({ value: redactUnsafeText(text), guideRoot })) })
+  addSubjects({ packet, review, liveCount: live.length })
+  if (review.length > 0) addLiveText({ packet, texts: live.map(({ text }) => scrubbed({ value: redactUnsafeText(text), guideRoot })) })
   return packet
+}
+
+const readJson = (path) => {
+  try {
+    return JSON.parse(readFileSync(resolve(path), 'utf8'))
+  } catch (error) {
+    fail(`input is not valid JSON: ${error.message}`)
+  }
 }
 
 const optionNames = new Map([
   ['--repo-root', 'repo-root'],
   ['--guide-root', 'guide-root'],
+  ['--input', 'input'],
+  ['--preview-token', 'preview-token'],
 ])
 
 const parseArgs = (argv) => {
   const [command, ...rest] = argv
-  if (command !== 'plan') fail('Usage: field-guide-dream.mjs plan --repo-root <path> [--guide-root <path>]')
+  if (!['plan', 'apply'].includes(command)) {
+    fail('Usage: field-guide-dream.mjs <plan|apply> --repo-root <path> [--guide-root <path>] [--input <json-file> [--preview-token <token>]]')
+  }
   const options = {}
   for (let index = 0; index < rest.length; index += 2) {
     const name = optionNames.get(rest[index])
@@ -242,12 +280,16 @@ const parseArgs = (argv) => {
     options[name] = rest[index + 1]
   }
   if (!options['repo-root']) fail('--repo-root is required')
-  return resolvePaths({ repoRoot: options['repo-root'], guideRoot: options['guide-root'] })
+  if (command === 'apply' && !options.input) fail('apply requires --input')
+  if (command === 'plan' && (options.input || options['preview-token'])) fail('plan takes no input')
+  return { command, options, paths: resolvePaths({ repoRoot: options['repo-root'], guideRoot: options['guide-root'] }) }
 }
 
 const main = () => {
-  const paths = parseArgs(process.argv.slice(2))
-  const result = plan(paths)
+  const { command, options, paths } = parseArgs(process.argv.slice(2))
+  const result = command === 'plan'
+    ? plan(paths)
+    : applyDreamRun({ paths, input: readJson(options.input), readLiveDigests: () => digestsOf(readLive()), previewToken: options['preview-token'] })
   process.stdout.write(`${scrubPaths({ text: JSON.stringify(result, null, 2), guideRoot: paths.guideRoot })}\n`)
 }
 

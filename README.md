@@ -159,7 +159,11 @@ Field Guide can merge records that say the same thing. Each merge is
 journaled and can be undone for 90 days. It never rewrites confirmed guidance
 on its own; you approve that merge with an exact `confirm fg:proposal:<id>`
 prompt. A nightly maintenance script lists overlaps and audit findings for a
-reviewer. See
+reviewer, and can also apply merges, archives, and flags within the lifecycle
+rules. It never archives or merges guidance you ever confirmed, even after you
+unconfirm it, as long as its confirmation history is intact. It only flags or
+proposes that guidance, and only flags other guidance on the same subject. Each
+merge and archive it applies is journaled and can be undone for 90 days. See
 [dreaming.md](plugins/field-guide/skills/field-guide/references/dreaming.md).
 
 ## Guardrails
