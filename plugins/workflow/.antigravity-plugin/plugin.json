@@ -1,0 +1,10 @@
+{
+  "name": "workflow",
+  "displayName": "Engineering Workflow",
+  "version": "6.19.0",
+  "description": "A small engineering workflow for planning, implementation, review, test audits, and technical writing.",
+  "author": {
+    "name": "Filip Gutica"
+  },
+  "repository": "https://github.com/filipgutica/filip-stack"
+}

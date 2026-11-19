@@ -52,6 +52,14 @@ for (const pluginDir of pluginDirs) {
       version,
     }))
   }
+
+  const antigravityManifest = join(pluginsRoot, pluginDir, '.antigravity-plugin/plugin.json')
+  if (await pathExists(antigravityManifest)) {
+    await stampJson(antigravityManifest, (json) => ({
+      ...json,
+      version,
+    }))
+  }
 }
 
 await stampJson(join(repoRoot, '.claude-plugin/marketplace.json'), (json) => ({

@@ -74,6 +74,21 @@ claude plugin update guardrails@filip-stack
 codex plugin marketplace upgrade filip-stack
 ```
 
+### Antigravity
+
+Antigravity has no third-party marketplaces, so install the plugins straight
+from the repository. One command installs Workflow, Field Guide, and
+Guardrails; run it again to update them:
+
+```sh
+agy plugin install https://github.com/filipgutica/filip-stack
+```
+
+Remove a plugin you do not want with `agy plugin uninstall <name>`.
+Antigravity reads each plugin's `.antigravity-plugin/plugin.json`. Guardrails
+runs as a `run_command` hook there. Field Guide installs its skill only,
+because its lifecycle hooks need Claude Code or Codex.
+
 ## Standalone skills
 
 Install only the standalone skills you want, with the
@@ -191,7 +206,8 @@ review and trust them. Codex hooks cannot ask yet, so on Codex the 1Password
 prompt comes from `~/.codex/rules/filip-stack.rules`, which host config
 installs. That rule matches only a plain `op …` command. On Codex, the hook
 denies other forms, such as one inside a wrapper or a chain, and tells the
-agent to run the plain one.
+agent to run the plain one. In Antigravity, the hook prompts for every
+1Password call, even one you approved before.
 
 ## Host config
 
