@@ -9,8 +9,8 @@
 //   full     the hook text plus SKILL.md and capture-policy.md
 // Every arm gets the same reply format and case text. Raw replies go to --out (default: a new folder
 // under the temporary directory), never into the repository. The last line is the score over all attempts.
-import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { homedir, tmpdir } from 'node:os'
 import { join, resolve } from 'node:path'
 import { parseArgs } from 'node:util'
 
@@ -124,8 +124,10 @@ if (options['dry-run']) process.exit(0)
 
 if (options.model.length === 0) throw new Error(`Pass at least one --model\n${usage}`)
 const baseUrl = process.env.CLIPROXY_BASE_URL ?? 'http://127.0.0.1:8317/v1'
-const apiKey = options['api-key-file'] ? readFileSync(options['api-key-file'], 'utf8').trim() : process.env.CLIPROXY_API_KEY
-if (!apiKey) throw new Error('Set CLIPROXY_API_KEY or pass --api-key-file with one of the client api-keys in the CLIProxyAPI config')
+const defaultKeyFile = join(homedir(), '.config', 'secrets', 'cliproxy-client-key')
+const keyFile = options['api-key-file'] ?? (!process.env.CLIPROXY_API_KEY && existsSync(defaultKeyFile) ? defaultKeyFile : undefined)
+const apiKey = keyFile ? readFileSync(keyFile, 'utf8').trim() : process.env.CLIPROXY_API_KEY
+if (!apiKey) throw new Error(`Put one of the CLIProxyAPI client api-keys in ${defaultKeyFile}, or pass --api-key-file`)
 const outDir = options.out ? resolve(options.out) : mkdtempSync(join(tmpdir(), 'field-guide-decision-'))
 mkdirSync(outDir, { recursive: true })
 

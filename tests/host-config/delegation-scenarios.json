@@ -84,10 +84,10 @@
       "task": "I wrote an architecture plan for splitting the billing service. Get it critiqued before I share it.",
       "accept": {
         "claude": [
-          "claude.frontier"
+          "codex.workhorse"
         ],
         "codex": [
-          "codex.frontier"
+          "claude.workhorse"
         ]
       },
       "needsNewGuidance": true
@@ -187,14 +187,56 @@
       "task": "A worker finished a diff that migrates the users table to a new auth schema and rewrites session-token validation. Get an independent review before it ships.",
       "accept": {
         "claude": [
-          "claude.frontier",
-          "codex.frontier"
+          "claude.workhorse",
+          "codex.workhorse"
         ],
         "codex": [
-          "claude.frontier",
-          "codex.frontier"
+          "claude.workhorse",
+          "codex.workhorse"
         ]
-      }
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "critique-sol-author",
+      "task": "Sol 6.2, the routine implementer, finished a diff that migrates the users table to a new auth schema and rewrites session-token validation. Get an adversarial critique before it ships.",
+      "accept": {
+        "claude": [
+          "claude.workhorse"
+        ],
+        "codex": [
+          "claude.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "critique-opus-author",
+      "task": "Opus 5.5, the consequential implementer, finished a diff that migrates the users table to a new auth schema and rewrites session-token validation. Get an adversarial critique before it ships.",
+      "accept": {
+        "claude": [
+          "codex.workhorse"
+        ],
+        "codex": [
+          "codex.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
+    },
+    {
+      "id": "browser-repro",
+      "task": "Hand this to the browser and native-app operation role: reproduce the login redirect loop in the running app's browser and take a screenshot at each step. No code changes.",
+      "accept": {
+        "claude": [
+          "self",
+          "claude.workhorse",
+          "codex.workhorse"
+        ],
+        "codex": [
+          "codex.workhorse"
+        ]
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "implementer-codex-short",
@@ -281,8 +323,8 @@
       "needsNewGuidance": true
     },
     {
-      "id": "critique-fable-short",
-      "task": "I wrote an architecture plan for splitting the billing service. Get it critiqued before I share it.",
+      "id": "plan-fable-short",
+      "task": "Before anyone writes code, plan the rework that moves session handling out of 9 services into a shared auth gateway, including the migration order.",
       "usage": {
         "codex": {
           "status": "ok",
@@ -323,8 +365,7 @@
         "codex": [
           "codex.frontier"
         ]
-      },
-      "needsNewGuidance": true
+      }
     },
     {
       "id": "critique-codex-short",
@@ -363,12 +404,13 @@
       },
       "accept": {
         "claude": [
-          "claude.frontier"
+          "claude.workhorse"
         ],
         "codex": [
-          "claude.frontier"
+          "claude.workhorse"
         ]
-      }
+      },
+      "needsNewGuidance": true
     },
     {
       "id": "both-short-no-downgrade",

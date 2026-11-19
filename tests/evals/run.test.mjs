@@ -3,7 +3,7 @@
 // stub, so a promptfoo upgrade that changes its results shape fails here.
 import assert from 'node:assert/strict'
 import { spawn } from 'node:child_process'
-import { mkdtempSync } from 'node:fs'
+import { mkdirSync, mkdtempSync, writeFileSync } from 'node:fs'
 import { createServer } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -32,19 +32,52 @@ for (const name of ['routing', 'delegation', 'autonomy', 'handoff', 'host-rules'
 // Starts a local OpenAI-compatible stub that gives every request the same reply.
 const startStub = async (t, content) => {
   const requests = []
+  const authorizations = []
   const server = createServer((request, response) => {
     let body = ''
     request.on('data', (chunk) => { body += chunk })
     request.on('end', () => {
       requests.push(JSON.parse(body))
+      authorizations.push(request.headers.authorization)
       response.setHeader('content-type', 'application/json')
       response.end(JSON.stringify({ choices: [{ index: 0, finish_reason: 'stop', message: { role: 'assistant', content } }] }))
     })
   })
   await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve))
   t.after(() => server.close())
-  return { requests, env: { CLIPROXY_BASE_URL: `http://127.0.0.1:${server.address().port}/v1`, CLIPROXY_API_KEY: 'test-key' } }
+  return { requests, authorizations, env: { CLIPROXY_BASE_URL: `http://127.0.0.1:${server.address().port}/v1`, CLIPROXY_API_KEY: 'test-key' } }
 }
+
+// A home whose secrets folder holds the given CLIProxyAPI key, or none.
+const homeWithKey = (key) => {
+  const home = mkdtempSync(join(tmpdir(), 'eval-home-'))
+  if (key !== undefined) {
+    mkdirSync(join(home, '.config', 'secrets'), { recursive: true })
+    writeFileSync(join(home, '.config', 'secrets', 'cliproxy-client-key'), `${key}\n`)
+  }
+  return home
+}
+
+test('without CLIPROXY_API_KEY the runner reads the key from the secrets folder', async (t) => {
+  const { requests, authorizations, env } = await startStub(t, '{"skill": "council"}')
+  const { output } = await runEval({
+    args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.2-sol'],
+    env: { ...env, CLIPROXY_API_KEY: '', HOME: homeWithKey('file-key') },
+  })
+  assert.equal(requests.length, 6, output)
+  assert.ok(authorizations.every((value) => value === 'Bearer file-key'), output)
+})
+
+test('with no key anywhere the runner names the secrets file and calls nothing', async (t) => {
+  const { requests, env } = await startStub(t, '{"skill": "council"}')
+  const { status, output } = await runEval({
+    args: ['routing', '--skill', 'council', '--attempts', '1', '--model', 'gpt-6.2-sol'],
+    env: { ...env, CLIPROXY_API_KEY: '', HOME: homeWithKey() },
+  })
+  assert.notEqual(status, 0)
+  assert.equal(requests.length, 0)
+  assert.match(output, /Put one of the CLIProxyAPI client api-keys in .*\.config\/secrets\/cliproxy-client-key/u)
+})
 
 test('the autonomy eval compares both guidance versions and applies the gate', async (t) => {
   const { requests, env } = await startStub(t, '{"action": "ask user"}')

@@ -227,6 +227,7 @@ another checkout location, running without Homebrew, and a shadowing symlink.
 - the model tiers in `host-config/models.json`, which fill in every model name
   in the guidance and agent profiles
 - `~/.agents/scripts/model-usage.mjs`, the usage reader described below
+- `~/.agents/scripts/check-secret-exposure.mjs`, the secrets check described below
 
 Text outside the marked block stays, and wins where it conflicts with the
 shared guidance. Apply removes a file it applied earlier once the repository no longer has it.
@@ -262,6 +263,16 @@ sandbox. Host config allows that on Codex. On Claude Code, add this to
   "sandbox": { "excludedCommands": ["node /Users/you/.agents/scripts/model-usage.mjs"] }
 }
 ```
+
+Keep secrets out of shell environments. An exported secret ends up in every
+agent log that dumps the environment, and in Codex shell snapshots. Put each
+secret in its own file in `~/.config/secrets/`, with mode 700 on the folder and
+600 on each file. Have tools read the file when they need the value. For
+example, the eval runners read the CLIProxyAPI key from
+`~/.config/secrets/cliproxy-client-key`. `check-secret-exposure.mjs` fails when
+your shell exports one of those values, or when the folder or a file has the
+wrong mode. With `--scan`, it also lists the Claude, Codex and T3 logs that
+contain a value. It prints names only, never a value.
 
 ### Commands
 
