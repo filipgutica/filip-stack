@@ -113,10 +113,9 @@ to push, ship, or update the PR.
 Report: rounds, model, what Sol changed, diff size before/after, fixed and
 declined findings with reasons, usage if exposed (else say not), pushed or not.
 
-Keep the ledger local during the loop. When you are authorized to update the
-PR, end its description with this section, replacing any earlier one, and
-refresh it after each later round. It is review evidence, not part of the
-description Sol reviews:
+When the loop stops and you are authorized to update the PR, end its
+description with this section, replacing any earlier one. It is review
+evidence, not part of the description Sol reviews:
 
 ```markdown
 <details>
