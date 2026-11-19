@@ -1,46 +1,31 @@
 ---
 name: council
-description: Gather independent opinions when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria, or name a preset (pair, frontier, full); otherwise an independent designer agent sizes the council from Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
+description: Gather independent opinions when the user, guidance, or another skill asks for a council on a question, decision, plan, design, document, or code. The request can set members, goal, and criteria; otherwise Sol 6.2, Opus 5.5, and Gemini 4 Neon answer a question an independent designer agent frames, and Fable 5.2 makes the final call when they disagree. A score threshold such as `council 9.5` with full-send or full-stop runs full-send's council gate.
 ---
 
 # Council
 
-Use independent opinions from several models to help answer the request. You coordinate and synthesize in the current thread. You do not design a council for your own question or work: a separate designer does, so the lineup and criteria do not favor your preferred answer.
+Use independent opinions from several models to help answer the request. You coordinate and synthesize in the current thread. You do not frame a council on your own question or work: a separate designer does, so the criteria do not favor your preferred answer.
 
 ## Design the council
 
-The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request. When the request runs `full-send` or `full-stop` with a score threshold, such as `council 9.5`, or a bare `council`, full-send's council gate sets the lineup, score, rounds, and verdict, and replaces this skill's Synthesize step.
+The request may set any of these. A user, global guidance, or a calling skill such as `hill-climb` can make the request. When the request runs `full-send` or `full-stop` with a score threshold, such as `council 9.5`, or a bare `council`, full-send's council gate sets the score, rounds, and verdict, and replaces this skill's Arbitrate and Synthesize steps.
 
 - **Goal:** the question to decide or the output to produce.
 - **Criteria and constraints:** what makes an answer useful, and limits it must respect.
 - **Members:** a model and effort for each, and optionally a lens, such as security, user experience, or maintainability.
 - **Rounds:** one by default. A designer sets at most three.
 
-A preset names the members. The user or a calling skill can name one, which needs no designer, or the designer can choose one. Each preset runs every member at high effort:
+The members are the default lineup in Convene unless the request names others. Use the fields the request sets as given. When the request names the members, frame the remaining fields from the request without a designer.
 
-| Preset | Members |
-| --- | --- |
-| `pair` | Sol 6.2, Opus 5.5, and Gemini 4 Neon |
-| `frontier` | Astra 6.2, Fable 5.2, and Gemini 4 Neon |
-| `full` | The default lineup below |
-
-For a council on your own question or work, the designer builds the lineup.
-
-Use the fields the request sets as given. When the request names the lineup, frame the remaining fields from the request without a designer.
-
-When the request leaves the lineup open, start one designer before the members: Opus 5.5 at high effort, read-only, with no further delegation. If it is unavailable, use Sol 6.2. Send it the request in the requester's words, the context and artifacts, the fields already set, the default lineup below, and the models the host can reach. Do not send your preferred answer. Ask it to return:
+When the request names no members, start one designer before the members: Opus 5.5 at high effort, read-only, with no further delegation. If it is unavailable, use Sol 6.2. Send it the request in the requester's words, the context and artifacts, the fields already set, and the default lineup. Do not send your preferred answer. Ask it to return:
 
 - The goal, criteria, and constraints.
-- A preset sized to the question:
-  - `pair` for a contained question that is easy to reverse, such as a routine plan or a change to one area.
-  - `frontier` for hard reasoning within a contained scope, such as a subtle bug, an algorithm, or a close trade-off.
-  - `full` for a cross-cutting or hard-to-reverse decision, or one that touches security, data, or a public contract.
+- An optional lens for any member; a lens adds focus to the full shared brief and does not replace it.
+- The number of rounds. Plan two or three when a proposal or artifact gains from revision between rounds, such as a plan you revise. Keep one for an open question.
+- Any question about the requester's goal or intent that no source answers and whose answer would change the design. The designer settles lenses and other internal choices itself.
 
-  Name members instead only for a reason the question gives, with at least two providers when they are available. Give any member an optional lens; a lens adds focus to the full shared brief and does not replace it.
-- The number of rounds. Plan two or three when a proposal or artifact gains from revision between rounds, such as a `pair` council on a plan you revise. Keep one for an open question.
-- Any question about the requester's goal or intent that no source answers and whose answer would change the design. The designer settles the lineup, lenses, and other internal choices itself.
-
-Relay the designer's questions to the user and wait for answers. Then use its design unchanged, except for unavailable members as Convene describes. If no designer can run, use the default lineup and say so. State the design in one line when you launch.
+Relay the designer's questions to the user and wait for answers. Then use its design unchanged. If no designer can run, frame the fields from the request and say so. State the design in one line when you launch.
 
 ## Frame the question
 
@@ -52,21 +37,21 @@ Council members advise read-only. A council request alone does not authorize imp
 
 ## Convene
 
-Default lineup, the `full` preset:
+Default lineup:
 
 | Member | Model | Effort |
 | --- | --- | --- |
-| Astra 6.2 | `gpt-6.2-astra` | high |
 | Sol 6.2 | `gpt-6.2-sol` | high |
 | Opus 5.5 | `claude-opus-5-5` | high |
-| Fable 5.2 | `claude-fable-5-2` | high |
 | Gemini 4 Neon | `gemini-4-neon` | high |
 
-In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`, such as `thinking_level` for Gemini 4 Neon on the Antigravity provider. These defaults use three providers: Codex for Astra and Sol, Claude for Opus and Fable, and Antigravity for Neon.
+Fable 5.2 (`claude-fable-5-2`, high effort) is the arbiter, not a member: it runs only as Arbitrate describes.
+
+In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member and the arbiter. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`, such as `thinking_level` for Gemini 4 Neon on the Antigravity provider. The default lineup uses three providers: Codex for Sol, Claude for Opus, and Antigravity for Neon.
 
 Elsewhere, use the host's subagent tools only when they can reach the requested models and effort.
 
-Never silently substitute a model. If a member the requester named is unavailable, ask whether to change the lineup or proceed with fewer members. The members of a preset the requester named, or that a calling skill set, count as named. If the designer chose the member, replace it with a comparable model from an available provider, such as Astra 6.2 for Fable 5.2 or Sol 6.2 for Opus 5.5, or drop it, and report the change. Gemini 4 Neon has no comparable model on another provider, so drop it. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
+Never silently substitute a model. If a member the requester or a calling skill named is unavailable, ask whether to change the lineup or proceed with fewer members. A default lineup that a calling skill sets, such as full-send's council gate, counts as named. Otherwise, if a default member is unavailable, drop it and report the change. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
 
 Launch the members in parallel with separate contexts and no access to each other's responses. Each brief includes:
 
@@ -77,13 +62,21 @@ Launch the members in parallel with separate contexts and no access to each othe
 
 Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. Run the rounds the design sets. When the proposal is your draft, revise it before each later round for the findings you accept. Send each later round the current version, a ledger of earlier findings marked fixed, declined with a reason, or open, and no earlier scores. When you may not change the proposal or artifact, a later round takes up the questions the last one left open. Stop early when a round leaves no finding that would change the recommendation. Run more rounds than the design sets only when the user requests it or a specific unresolved question warrants it within the authorized task.
 
+## Arbitrate
+
+Skip this step when a calling skill sets its own verdict, such as full-send's council gate or `hill-climb`.
+
+After the last round, when members recommend conflicting actions, start Fable 5.2 at high effort in a fresh context, read-only, with no further delegation. Send it the shared question, criteria, and constraints, the version of any proposal or artifact the last round reviewed, and each member's recommendation, evidence, and strongest objection, attributed by member. Leave out the scores. Ask it to rule which recommendation stands, or to give its own, with the evidence that decides it. Its ruling is the council's recommendation. Agreement that differs only in detail needs no arbiter.
+
+If Fable 5.2 is unavailable, or the request names it as a member, synthesize without a ruling and leave the disagreement for the requester to decide.
+
 ## Synthesize
 
 Check consequential claims against available evidence. Weigh reasoning rather than counting votes; keep material dissent visible.
 
 Return a concise answer with:
 
-- The recommendation and its rationale.
+- The recommendation and its rationale, and the arbiter's ruling when one ran.
 - Each member's position, attributed to the model that actually ran.
 - Useful agreement, disagreements, and uncertainties that affect the decision.
 - The next action, including any decision the user must make.
@@ -98,6 +91,7 @@ The report contains:
 
 - The question, criteria, and reviewed version of any artifact.
 - The design: who set it (requester or designer), and each member's model as it actually ran, effort, and lens.
+- The arbiter's ruling and reason, when one ran.
 - One table per round, with one row per member: position, score, and strongest objection. Mark a missing or late member.
 - The outcome: the recommendation or the calling skill's verdict, material dissent, and the next action.
 

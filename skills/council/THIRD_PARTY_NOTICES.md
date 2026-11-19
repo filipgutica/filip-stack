@@ -1,12 +1,13 @@
 # Third-party notices
 
 `council` adapts the `council` skill from Theo Browne's tstack. The local
-adaptation uses Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon at high effort, with
-the current agent coordinating one round by default. The request sets members,
-lenses, goal, and criteria, or a separate designer agent does, never the
-coordinating agent. The designer sizes the council from the pair, frontier,
-and full presets and can plan up to three rounds, revising a drafted proposal
-between them. It retains independent advice and synthesis. Members
+adaptation uses Sol 6.2, Opus 5.5, and Gemini 4 Neon at high effort by
+default, with the current agent coordinating one round by default, and Fable
+5.2 as an arbiter that rules when members recommend conflicting actions. The
+request sets members, lenses, goal, and criteria, or a separate designer
+agent frames them, never the coordinating agent. The designer can plan up to
+three rounds, revising a drafted proposal between them. It retains
+independent advice and synthesis. Members
 score a proposal or artifact against the criteria, drafting a proposal first
 when the request has none, or give a confidence score on an open question,
 in a written report. PR updates, per-round score tables, and fix/review loops

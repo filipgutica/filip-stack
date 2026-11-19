@@ -97,7 +97,7 @@
       "task": "Before anyone writes code, plan the rework that moves session handling out of 9 services into a shared auth gateway, including the migration order.",
       "accept": {
         "claude": [
-          "codex.frontier"
+          "claude.frontier"
         ],
         "codex": [
           "claude.frontier"

@@ -15,7 +15,8 @@ By default this is the light review path: one Sol reviewer, routine fixes in
 the loop, and the user only for what needs them. When the request sets a
 council threshold, such as `council 9.5` or `$council 9.5`, or a bare
 `council`, read [council gate](references/council-gate.md): a council of models must score
-the PR at or above that threshold, and the gate replaces `sol-loop`.
+the PR at or above that threshold, Fable 5.2 rules on findings the members
+cannot settle, and the gate replaces `sol-loop`.
 
 Requires the `sol-loop` and `babysit-pr` skills, and `council` for a council
 gate. If one is missing, stop and say so.

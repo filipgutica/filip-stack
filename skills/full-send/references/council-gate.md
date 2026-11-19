@@ -6,7 +6,7 @@ review for this run, including the description review and follow-up rounds;
 its severities and step 3 still apply below. It needs the `council` skill; if it is missing,
 stop and say so. Council's Convene section launches the members. This file
 sets the lineup, the score, the rounds, and the verdict, and council's
-Synthesize step does not apply.
+Arbitrate and Synthesize steps do not apply.
 
 ## Set up
 
@@ -14,9 +14,10 @@ Synthesize step does not apply.
   about an out-of-range value before work starts. The gate always needs no
   open blocker or should, so treat any `N` at or below 9.5 as 9.5 everywhere
   below; say so at the start when `N` is lower. Above 9.5, it also needs nits fixed.
-- **Lineup:** council's `full` preset, unless the request names a preset or
-  members. No designer: the same panel scores every round, so scores stay
-  comparable. Never drop, swap, or re-run a member to change a score.
+- **Lineup:** council's default lineup, unless the request names members.
+  The gate sets it, so an unavailable member counts as named. No designer:
+  the same panel scores every round, so scores stay comparable. Never drop,
+  swap, or re-run a member to change a score.
 - **Bar:** merge readiness, below. The request can name another bar, such as
   "would the maintainer be happy with this"; members then score that bar
   with the same severity rubric.
@@ -30,7 +31,7 @@ diff, the branch is up to date with the default branch, required checks are
 green, and review bots have finished on the head, so the scored head is the
 head that merges. In review-only mode, run one round on the current head,
 even when the branch is behind, and report the scores and findings. The
-result is FAIL unless every member reaches `N`.
+result is FAIL unless it meets Stop's pass rule.
 
 ## Score
 
@@ -84,12 +85,9 @@ above 9.5, also fix in-scope nits that hold a member below `N`. Fixes stay
 within full send's routine fixes; anything else goes to the user. Prove each
 behavior fix before you push it.
 
-You may also decline a blocker or should, with evidence. The next round's
-brief asks every other member whether the declined finding is real:
-
-- If any other member agrees, it stands. Fix it.
-- If none agrees and it alone holds its author below `N`, it goes to the
-  user with both sides in two or three lines.
+You may also decline a blocker or should, with evidence. When you do, or
+the panel cannot settle a finding, read [arbiter](council-arbiter.md):
+Fable 5.2 can rule on it.
 
 Any new head voids every score, including a rebase: all members score the
 new head. A rescore that only a rebase after a pass requires does not count
@@ -98,17 +96,20 @@ toward the round cap.
 ## Stop
 
 The gate **passes** when every member scores at least `N` on the current
-head, no blocker or should is open, and the user has decided any changed
+head, or the [arbiter](council-arbiter.md) cleared each member below `N`;
+no blocker or should is open; and the user has decided any changed
 instruction file. Never average, round, or leave out a member. In merge
 mode, merge with `--match-head-commit <scored head SHA>`.
 
 The gate **fails** at any of these:
 
-- Three scored rounds end below `N`. Add rounds only when the user asks.
+- Three scored rounds end without a pass. Add rounds only when the user asks.
 - From round 2, while a member is below `N`, the lowest score did not rise
-  and open blockers and shoulds did not shrink. Skip this check in a round
-  where another member backs a declined finding: fix that finding first.
-- A fixed finding reopens, or two members want opposite remedies.
+  and open blockers and shoulds did not shrink, unless a finding awaits
+  the arbiter. Skip this check in a round where another member backs
+  a declined finding: fix that finding first.
+- A fixed finding reopens, or two members want opposite remedies that the
+  arbiter cannot settle.
 - Review-driven growth exceeds `max(50 lines, 25% of the round 1 changed
   lines)` over the round 1 `--shortstat`.
 - A member fails twice, or a round stalls.
@@ -133,7 +134,7 @@ mode, put it in the report only.
 
 | Member | Round 1 (`<short sha>`) | Round 2 (`<short sha>`) |
 | --- | --- | --- |
-| Astra (gpt-6.2-astra, high) | 8/10 | 9.5/10 |
+| Sol (gpt-6.2-sol, high) | 6/10 | 9.5/10 |
 
 </details>
 ```
