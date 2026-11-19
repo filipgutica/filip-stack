@@ -84,16 +84,17 @@
     {
       "id": "fs-council-lineup",
       "files": [
-        "skills/full-send/references/council-gate.md"
+        "skills/full-send/references/council-gate.md",
+        "skills/council/SKILL.md"
       ],
       "task": "You run full send with `$council 9.5` and are about to start the first council round. The request names no members.",
       "options": {
         "designer": "start a designer agent to pick the lineup",
-        "default": "convene council's default lineup, Sol 6.2, Opus 5.5, and Gemini 4 Neon, without a designer",
-        "full": "convene Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon without a designer"
+        "three": "convene Sol 6.2, Opus 5.5, and Gemini 4 Neon without a designer",
+        "five": "convene Astra 6.2, Sol 6.2, Opus 5.5, Fable 5.2, and Gemini 4 Neon without a designer"
       },
       "accept": [
-        "default"
+        "three"
       ],
       "needsNewGuidance": true
     },
@@ -476,10 +477,11 @@
       "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 2 just finished. Neon scored 9.6 in both rounds. Sol scored 7 in both rounds, and its one open should finding, S1, is still open after your fix. Opus also scores 8.9 and says S1 is real. One scored round remains.",
       "options": {
         "arbiter": "send S1 to Fable 5.2 to rule",
-        "fix": "S1 stands because Opus backs it; fix it properly and run round 3"
+        "round-3": "fix S1 again and run round 3",
+        "fail": "leave the PR unmerged, report FAIL with the scores, and ask the user"
       },
       "accept": [
-        "fix"
+        "fail"
       ],
       "needsNewGuidance": true
     },

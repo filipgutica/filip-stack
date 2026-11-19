@@ -43,8 +43,9 @@ Ask it to rule on each eligible ID, with `file:line` evidence:
   open.
 - **overruled:** the finding is not a blocker or should within the intent.
   Mark it `overruled by arbiter` in the ledger, and later round briefs show
-  it as overruled. It reopens only when a later commit changes the code it
-  cites; then it is a new finding.
+  it as overruled. It reopens as a new finding when a later commit changes
+  the code it cites or a fact the ruling relied on, such as a caller's
+  guard.
 
 ## After a ruling
 

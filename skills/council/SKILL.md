@@ -51,7 +51,7 @@ In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate
 
 Elsewhere, use the host's subagent tools only when they can reach the requested models and effort.
 
-Never silently substitute a model. If a member the requester or a calling skill named is unavailable, ask whether to change the lineup or proceed with fewer members. If a default member is unavailable, drop it and report the change. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
+Never silently substitute a model. If a member the requester or a calling skill named is unavailable, ask whether to change the lineup or proceed with fewer members. A default lineup that a calling skill sets, such as full-send's council gate, counts as named. Otherwise, if a default member is unavailable, drop it and report the change. A council needs at least two members. If a member fails after launch, retain the completed opinions and label the council incomplete.
 
 Launch the members in parallel with separate contexts and no access to each other's responses. Each brief includes:
 

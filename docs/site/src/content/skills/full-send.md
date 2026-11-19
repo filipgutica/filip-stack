@@ -53,8 +53,8 @@ on without it. The agent fixes their findings and runs another round, for at
 most three rounds. When one member reaches the threshold and another stays
 below it, Fable 5.2 has the final say on the findings they cannot settle; a
 finding it overrules no longer counts against the PR. The agent stops early
-when scores stop improving and no finding awaits Fable, or the diff grows
-past its scope. Until the gate passes, it never merges and asks you
+when the lowest score does not rise, open findings do not shrink, and no
+finding awaits Fable, or when the diff grows past its scope. Until the gate passes, it never merges and asks you
 what to do. The scores and any arbiter rulings go in a collapsed section of
 the PR description.
 [Council](../council/) explains the gate and the Codex form of the
