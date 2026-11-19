@@ -31,7 +31,7 @@ diff, the branch is up to date with the default branch, required checks are
 green, and review bots have finished on the head, so the scored head is the
 head that merges. In review-only mode, run one round on the current head,
 even when the branch is behind, and report the scores and findings. The
-result is FAIL unless every member reaches `N`.
+result is FAIL unless it meets Stop's pass rule.
 
 ## Score
 
@@ -96,7 +96,7 @@ toward the round cap.
 ## Stop
 
 The gate **passes** when every member scores at least `N` on the current
-head, or every member below `N` holds only findings the arbiter overruled;
+head, or the [arbiter](council-arbiter.md) cleared each member below `N`;
 no blocker or should is open; and the user has decided any changed
 instruction file. Never average, round, or leave out a member. In merge
 mode, merge with `--match-head-commit <scored head SHA>`.
@@ -105,9 +105,9 @@ The gate **fails** at any of these:
 
 - Three scored rounds end without a pass. Add rounds only when the user asks.
 - From round 2, while a member is below `N`, the lowest score did not rise
-  and open blockers and shoulds did not shrink, unless the arbiter can still
-  rule. Skip this check in a round
-  where another member backs a declined finding: fix that finding first.
+  and open blockers and shoulds did not shrink, unless a finding awaits
+  the arbiter. Skip this check in a round where another member backs
+  a declined finding: fix that finding first.
 - A fixed finding reopens, or two members want opposite remedies that the
   arbiter cannot settle.
 - Review-driven growth exceeds `max(50 lines, 25% of the round 1 changed

@@ -17,7 +17,7 @@
     },
     {
       "id": "council-named-members-route",
-      "prompt": "Run a council of Sol and Fable on whether we should adopt event sourcing for orders.",
+      "prompt": "Run a council of Sol and Opus on whether we should adopt event sourcing for orders.",
       "expectedSkill": "council"
     },
     {
@@ -67,10 +67,10 @@
     },
     {
       "id": "council-named-members",
-      "task": "The user asks you for a council of Sol 6.2 and Fable 5.2 on whether to split the billing service. They name no criteria.",
+      "task": "The user asks you for a council of Sol 6.2 and Opus 5.5 on whether to split the billing service. They name no criteria.",
       "options": {
         "designer": "start a designer agent to frame the council",
-        "named": "convene Sol 6.2 and Fable 5.2, framing the question from the request without a designer",
+        "named": "convene Sol 6.2 and Opus 5.5, framing the question from the request without a designer",
         "default": "convene the default lineup of Sol 6.2, Opus 5.5, and Gemini 4 Neon"
       },
       "accept": [
@@ -80,7 +80,7 @@
     {
       "id": "council-draft-proposal",
       "needsNewGuidance": true,
-      "task": "The user asks a council for thoughts on how to add rate limiting to the API. They supply no plan. The designer has returned the lineup and criteria.",
+      "task": "The user asks a council for thoughts on how to add rate limiting to the API. They supply no plan. The designer has returned the criteria, and the default lineup is set.",
       "options": {
         "open": "send members the question and ask each for its own recommendation and confidence",
         "proposal": "draft a proposal, or have a planner draft it, and ask members to score it and say what would raise the score"
@@ -91,7 +91,7 @@
     },
     {
       "id": "council-user-proposal",
-      "task": "The user asks a council for thoughts on their attached rate-limiting plan. The designer has returned the lineup and criteria.",
+      "task": "The user asks a council for thoughts on their attached rate-limiting plan. The designer has returned the criteria, and the default lineup is set.",
       "options": {
         "draft": "draft your own proposal and have members score it",
         "theirs": "have members score the user's plan and say what would raise the score"
@@ -240,6 +240,18 @@
       "accept": [
         "rule"
       ]
+    },
+    {
+      "id": "council-arbiter-fable-member",
+      "task": "The user asked for a council of Sol 6.2, Opus 5.5, and Fable 5.2 on whether to split the billing service. After the last round, Sol recommends splitting now and Fable recommends waiting. No calling skill set a verdict.",
+      "options": {
+        "arbiter": "send the positions to Fable 5.2 to rule",
+        "requester": "synthesize without a ruling and leave the disagreement for the user to decide"
+      },
+      "accept": [
+        "requester"
+      ],
+      "needsNewGuidance": true
     }
   ]
 }

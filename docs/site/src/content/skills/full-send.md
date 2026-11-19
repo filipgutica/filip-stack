@@ -50,9 +50,11 @@ With a council threshold, the default lineup (Sol, Opus, and Neon) scores
 the PR's merge readiness once checks are green. If a member cannot run, such
 as Neon without the Antigravity provider, the agent asks you before it goes
 on without it. The agent fixes their findings and runs another round, for at
-most three rounds. Fable 5.2 has the final say on findings the members
-cannot settle. The agent stops early when scores stop improving or the diff
-grows past its scope. Until the gate passes, it never merges and asks you
+most three rounds. When one member reaches the threshold and another stays
+below it, Fable 5.2 has the final say on the findings they cannot settle; a
+finding it overrules no longer counts against the PR. The agent stops early
+when scores stop improving and no finding awaits Fable, or the diff grows
+past its scope. Until the gate passes, it never merges and asks you
 what to do. The scores and any arbiter rulings go in a collapsed section of
 the PR description.
 [Council](../council/) explains the gate and the Codex form of the

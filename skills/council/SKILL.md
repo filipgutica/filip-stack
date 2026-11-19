@@ -68,7 +68,7 @@ Skip this step when a calling skill sets its own verdict, such as full-send's co
 
 After the last round, when members recommend conflicting actions, start Fable 5.2 at high effort in a fresh context, read-only, with no further delegation. Send it the shared question, criteria, and constraints, and each member's recommendation, evidence, and strongest objection, attributed by member. Leave out the scores. Ask it to rule which recommendation stands, or to give its own, with the evidence that decides it. Its ruling is the council's recommendation. Agreement that differs only in detail needs no arbiter.
 
-If Fable 5.2 is unavailable, synthesize without a ruling and leave the disagreement for the requester to decide.
+If Fable 5.2 is unavailable, or the request names it as a member, synthesize without a ruling and leave the disagreement for the requester to decide.
 
 ## Synthesize
 

@@ -402,6 +402,70 @@
       "accept": [
         "ask"
       ]
+    },
+    {
+      "id": "fs-council-arbiter-nit-holds",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 10`. The arbiter, Fable 5.2, overruled Sol's only should finding. On the current head, Opus and Neon score 10, and Sol scores 9.5 with one in-scope nit still open. No blocker or should is open, and every other merge gate condition holds.",
+      "options": {
+        "merge": "merge now: the arbiter overruled Sol's should finding",
+        "fix": "fix the nit and run another round"
+      },
+      "accept": [
+        "fix"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fs-council-arbiter-round3-upheld",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 3 just finished: Opus and Neon score 9.6, and Sol scores 6 with one should finding that no other member backs. You had declined it, so it went to the arbiter, and Fable 5.2 upheld it. The user has not allowed more rounds.",
+      "options": {
+        "round-4": "fix the finding and run a fourth round",
+        "ask": "leave the PR unmerged, report FAIL at the round cap, and ask the user"
+      },
+      "accept": [
+        "ask"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fs-council-arbiter-scope",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. After round 1, Neon scores 9.6. Sol and Opus want opposite remedies for finding S1. Sol also holds blocker S2, which you agree with and are fixing. You are about to brief the arbiter.",
+      "options": {
+        "only": "send Fable 5.2 only S1 and both remedies",
+        "all": "send Fable 5.2 S1, both remedies, and S2, since S2 also holds Sol below 9.5"
+      },
+      "accept": [
+        "only"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fs-council-review-only-overruled",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send with `$council 9.5` on another author's PR, so you are in review-only mode. In the one round, Opus and Neon score 9.6. Sol scores 8.5 for its only should finding, and Opus wants the opposite remedy for it. Fable 5.2 overruled that finding. No blocker or should is open, and checks are green.",
+      "options": {
+        "pass": "report PASS: the arbiter cleared Sol",
+        "fail": "report FAIL: Sol is below 9.5"
+      },
+      "accept": [
+        "pass"
+      ],
+      "needsNewGuidance": true
     }
   ]
 }

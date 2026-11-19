@@ -66,7 +66,7 @@ reviews it again), so your agent never frames its own question. To choose
 yourself, name the members, goal, criteria, rounds, or lenses such as
 security.
 
-> Council of Sol and Fable: should we split the billing service now or after
+> Council of Sol and Opus: should we split the billing service now or after
 > the migration?
 
 ## How it works
@@ -85,13 +85,11 @@ On its own:
    confidence.
 4. With more than one round, the agent revises its own draft between
    rounds, and members review it again.
-5. The agent checks the important claims and writes the synthesis. When
-   members recommend conflicting actions after the last round, Fable 5.2
-   acts as arbiter. It gets each position and its evidence, without scores,
-   and rules which recommendation stands or gives its own. Its ruling is
-   the council's recommendation, and dissent stays visible. Members that
-   agree except for details need no arbiter. If Fable cannot run, the
-   disagreement is left for you to decide.
+5. When members recommend conflicting actions after the last round,
+   Fable 5.2 reads their positions and evidence, without scores, and rules.
+   Its ruling becomes the recommendation, and dissent stays visible. If
+   Fable cannot run, the disagreement is yours to decide.
+6. The agent checks the important claims and writes the synthesis.
 
 A member that fails after launch makes the council incomplete, and the agent
 keeps the answers it has.
@@ -110,23 +108,14 @@ With full send or full stop:
    threshold below 9.5 runs as 9.5.
 3. The agent fixes the findings, pushes, and starts a new round. A new
    commit voids every score, so all members score the same commit.
-4. While at least one member scores at or above the threshold, Fable 5.2
-   rules on findings the panel cannot settle: a finding the agent declined
-   that no other member backs, two members wanting opposite remedies, or,
-   from round 2, a member stuck below the threshold with no progress (for
-   example, Opus at 9.6 and Sol at 6 for two rounds). Fable sees the
-   findings and both sides' evidence, not the scores or threshold, and rules
-   on findings, never on scores.
-
-   Fable upholds a finding, so the agent fixes it and runs another round,
-   or overrules it. An overruled finding cannot reopen and no longer holds
-   that member below the threshold, so the gate can pass with that member
-   below the threshold. When every member is below the threshold, no arbiter
-   runs. A changed instruction file, such as `AGENTS.md`, still goes to you.
-   If Fable cannot run, a declined finding goes to you and the other cases
-   fail the gate as before.
+4. When one member reaches the threshold and another stays below it,
+   Fable 5.2 rules on the findings the panel cannot settle, such as a
+   member stuck at 6 for two rounds while the others score 9.6. It sees
+   the findings and both sides' evidence, not the scores. It upholds a
+   finding, which the agent fixes, or overrules it, which stops it from
+   holding the PR back.
 5. The gate passes when every member reaches the threshold on that commit,
-   or every member below it holds only findings the arbiter overruled.
+   or Fable overruled every finding that holds a member below it.
 6. The gate fails after three rounds without a pass, or earlier, for
    example when a round makes no progress or the diff grows past its scope.
    The agent leaves the PR unmerged and asks you once: accept the scores,
