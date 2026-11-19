@@ -143,7 +143,7 @@ the guidance names its skill. `scripts/host-config.mjs` still retires the files
 that earlier versions installed in `~/design-system` and `~/design-language`;
 `tests/host-config/design-system-migration.test.mjs` covers that migration.
 
-Edit guidance in `host-config/agents/AGENTS.md`, the one file both hosts read.
+Edit guidance in `host-config/guidance.md`, the one file both hosts read.
 `apply` installs it as `~/.agents/AGENTS.md`. The managed block in
 `~/.claude/CLAUDE.md` imports it, and the block in `~/.codex/AGENTS.md` holds a
 copy, because Codex has no imports. Write host-specific rules in its Host notes

@@ -27,7 +27,8 @@ const blockEnd = '<!-- filip-stack:host-config:end -->'
 
 // Source directories copied file for file into the home directory.
 const fileRoots = [['claude', '.claude'], ['codex', '.codex'], ['agents', '.agents']]
-// The shared guidance installs as ~/.agents/AGENTS.md through the agents file root.
+// The shared guidance installs as ~/.agents/AGENTS.md. Its source is not named AGENTS.md, so
+// agents working in this repository never load the unrendered template as a rule.
 // Each host's guidance file gets a managed block, and text outside the block stays local.
 // Claude imports the shared file; Codex has no imports, so its block holds the full text.
 const sharedGuidanceTarget = '.agents/AGENTS.md'
@@ -84,7 +85,8 @@ const desiredTargets = ({ home }) => {
       targets.set(relativePath, { kind: 'file', content: renderText({ text: read(file), home }) })
     }
   }
-  const shared = targets.get(sharedGuidanceTarget).content
+  const shared = renderText({ text: read(join(sourceRoot, 'guidance.md')), home })
+  targets.set(sharedGuidanceTarget, { kind: 'file', content: shared })
   for (const [host, target, render] of guidanceTargets) {
     const content = render({ home, shared })
     if (hasDelimiterLine(content)) fail(`${host} guidance must not contain a filip-stack delimiter line`)
