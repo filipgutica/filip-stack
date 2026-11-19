@@ -1,3 +1,16 @@
+# [6.19.0](https://github.com/filipgutica/filip-stack/compare/v6.18.0...v6.19.0) (2026-11-19)
+
+
+### Bug Fixes
+
+* **todos:** ask which item a number means when no list was shown ([1f24e76](https://github.com/filipgutica/filip-stack/commit/1f24e76dd068a6e00c1bc9f010d637a461b0d4be))
+* **todos:** use one fixed path and cover numeric clears and appends ([8c1e33a](https://github.com/filipgutica/filip-stack/commit/8c1e33aad670b62d68ade450ba25476cdf4a03b6))
+
+
+### Features
+
+* add the todos skill for items deferred for later ([cd7c9c0](https://github.com/filipgutica/filip-stack/commit/cd7c9c00711d882025a92894f15e261a74e5da16))
+
 # [6.18.0](https://github.com/filipgutica/filip-stack/compare/v6.17.0...v6.18.0) (2026-11-19)
 
 
