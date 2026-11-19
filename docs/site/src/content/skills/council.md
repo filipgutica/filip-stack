@@ -19,14 +19,14 @@ To ask a question, start with "Council":
 
 > Council: should we cache these API responses in Redis or in the browser?
 
-Each member gives its own recommendation and how confident it is.
+Each member gives its own recommendation and what it is unsure about.
 
-To score a plan, give the council the plan, or ask for its thoughts on work
+To review a plan, give the council the plan, or ask for its thoughts on work
 to do. When you give no plan, your agent, or a planner agent, drafts one
-first. Members score the plan from 0 to 10 and say what would raise the
-score.
+first. Members rank their findings by severity and say what would fix each.
+They give no score, because a number without a rubric means little.
 
-> Council: score this plan for moving sessions to Redis. (Paste the plan or
+> Council: review this plan for moving sessions to Redis. (Paste the plan or
 > link it.)
 
 > Council thoughts: how should we add rate limiting to the public API?
@@ -80,13 +80,12 @@ On its own:
    it asks you. If a default member is unavailable, such as Neon without the
    Antigravity provider, the agent drops it and says so.
 3. Each member answers separately with its reasons, its strongest
-   objection, what it is unsure about, and a score from 0 to 10. For a plan,
-   the score rates the plan. For an open question, it is the member's
-   confidence.
+   objection, and what it is unsure about. For a plan, it also ranks its
+   findings by severity.
 4. With more than one round, the agent revises its own draft between
    rounds, and members review it again.
 5. When members recommend conflicting actions after the last round,
-   Fable 5.2 reads their positions and evidence, without scores, and rules.
+   Fable 5.2 reads their positions and evidence and rules.
    Its ruling becomes the recommendation, and dissent stays visible. If
    Fable cannot run, or you named it as a member, the disagreement is yours
    to decide.
@@ -137,7 +136,7 @@ On its own:
 - Each position, credited to the model that actually ran.
 - The agreements, disagreements, and doubts that affect the decision.
 - The next action, including any decision you must make.
-- A per-round report of each member's position, score, and strongest
+- A per-round report of each member's position, top findings, and strongest
   objection, plus any arbiter ruling, in a temporary folder unless you give
   a path.
 

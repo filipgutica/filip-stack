@@ -8,10 +8,11 @@ request sets members, lenses, goal, and criteria, or a separate designer
 agent frames them, never the coordinating agent. The designer can plan up to
 three rounds, revising a drafted proposal between them. It retains
 independent advice and synthesis. Members
-score a proposal or artifact against the criteria, drafting a proposal first
-when the request has none, or give a confidence score on an open question,
-in a written report. PR updates, per-round score tables, and fix/review loops
-live in full-send's council gate. It adds Codex metadata and
+review a proposal or artifact against the criteria and rank their findings by
+severity, drafting a proposal first when the request has none, or answer an
+open question with a recommendation and its uncertainties, in a written
+report. Members give no score by default; scores, PR updates, per-round score
+tables, and fix/review loops live in full-send's council gate. It adds Codex metadata and
 keeps implementation authority separate from advice.
 
 ## tstack

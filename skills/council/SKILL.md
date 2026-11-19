@@ -57,16 +57,16 @@ Launch the members in parallel with separate contexts and no access to each othe
 
 - The shared question, context, constraints, and criteria, plus the member's lens if it has one.
 - Read-only responsibility, permitted sources, and any relevant instruction files.
-- A request for a recommendation, a score from 0 to 10, supporting evidence or reasoning, the strongest objection or alternative, and material uncertainties. For a proposal or artifact, the score rates it against the criteria, and the recommendation lists the changes that would raise the score. For an open question, the score is confidence that the member's own recommendation is right. A calling skill may replace the score with its own, such as a judge's vote or scorecard.
+- A request for a recommendation, supporting evidence or reasoning, the strongest objection or alternative, and material uncertainties. For a proposal or artifact, also ask for findings ranked by severity, each with the change that resolves it. Ask for no score unless a calling skill defines one with its own rubric, such as full-send's council gate, or replaces it with a judge's vote or scorecard, as `hill-climb` does.
 - A direction to do the work themselves without further delegation.
 
-Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. Run the rounds the design sets. When the proposal is your draft, revise it before each later round for the findings you accept. Send each later round the current version, a ledger of earlier findings marked fixed, declined with a reason, or open, and no earlier scores. When you may not change the proposal or artifact, a later round takes up the questions the last one left open. Stop early when a round leaves no finding that would change the recommendation. Run more rounds than the design sets only when the user requests it or a specific unresolved question warrants it within the authorized task.
+Follow the host's completion mechanism and collect every member's response before synthesis. Check each response against the evidence as it arrives, and change nothing a running member still reviews. Do not wait for a member the requester marks non-blocking; synthesize without it and name it as pending in the answer and the report. Run the rounds the design sets. When the proposal is your draft, revise it before each later round for the findings you accept. Send each later round the current version and a ledger of earlier findings marked fixed, declined with a reason, or open. When you may not change the proposal or artifact, a later round takes up the questions the last one left open. Stop early when a round leaves no finding that would change the recommendation. Run more rounds than the design sets only when the user requests it or a specific unresolved question warrants it within the authorized task.
 
 ## Arbitrate
 
 Skip this step when a calling skill sets its own verdict, such as full-send's council gate or `hill-climb`.
 
-After the last round, when members recommend conflicting actions, start Fable 5.2 at high effort in a fresh context, read-only, with no further delegation. Send it the shared question, criteria, and constraints, the version of any proposal or artifact the last round reviewed, and each member's recommendation, evidence, and strongest objection, attributed by member. Leave out the scores. Ask it to rule which recommendation stands, or to give its own, with the evidence that decides it. Its ruling is the council's recommendation. Agreement that differs only in detail needs no arbiter.
+After the last round, when members recommend conflicting actions, start Fable 5.2 at high effort in a fresh context, read-only, with no further delegation. Send it the shared question, criteria, and constraints, the version of any proposal or artifact the last round reviewed, and each member's recommendation, evidence, and strongest objection, attributed by member. Ask it to rule which recommendation stands, or to give its own, with the evidence that decides it. Its ruling is the council's recommendation. Agreement that differs only in detail needs no arbiter.
 
 If Fable 5.2 is unavailable, or the request names it as a member, synthesize without a ruling and leave the disagreement for the requester to decide.
 
@@ -92,7 +92,7 @@ The report contains:
 - The question, criteria, and reviewed version of any artifact.
 - The design: who set it (requester or designer), and each member's model as it actually ran, effort, and lens.
 - The arbiter's ruling and reason, when one ran.
-- One table per round, with one row per member: position, score, and strongest objection. Mark a missing or late member.
+- One table per round, with one row per member: position, top findings by severity, and strongest objection, plus the calling skill's score or vote when it sets one. Mark a missing or late member.
 - The outcome: the recommendation or the calling skill's verdict, material dissent, and the next action.
 
 When a calling skill keeps its own record, such as a ledger, link it instead of copying its detail. Write summaries only: no transcripts, credentials, or full source.
