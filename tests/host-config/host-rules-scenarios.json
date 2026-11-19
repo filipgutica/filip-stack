@@ -132,7 +132,7 @@
       "id": "eli5-default",
       "task": "In the thread, the user asks: \"What does a merge queue do?\" Nothing in the conversation asks for depth.",
       "options": {
-        "simple": "explain it in plain words with a short everyday analogy, and offer more detail",
+        "simple": "explain it in plain words, without jargon",
         "deep": "give a full technical rundown of queue entries, speculative merge commits, batch sizes, and CI re-runs"
       },
       "accept": [
@@ -144,7 +144,7 @@
       "id": "eli5-depth-requested",
       "task": "In the thread, the user asks: \"Walk me through exactly how a merge queue works, in full technical detail.\"",
       "options": {
-        "simple": "explain it in plain words with a short everyday analogy, and offer more detail",
+        "simple": "explain it in plain words, without jargon",
         "deep": "give a full technical rundown of queue entries, speculative merge commits, batch sizes, and CI re-runs"
       },
       "accept": [
@@ -164,15 +164,28 @@
     },
     {
       "id": "reply-one-idea-per-line",
-      "task": "In the thread, the user asks for the status of three things you checked. The build passed. The migration waits for a review. The deploy is blocked on a missing secret.",
+      "task": "In the thread, the user asks for the status of three things you checked. The build passed. The migration waits for a review from the data team. The deploy is blocked because the payment secret is missing.",
       "options": {
-        "lines": "reply with one short bullet per item",
-        "paragraph": "reply with one compact paragraph that covers all three items"
+        "lines": "one line per item that states its status and key detail",
+        "paragraphs": "one short paragraph per item, two or three sentences each with background",
+        "single": "one paragraph that covers all three items"
       },
       "accept": [
         "lines"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "reply-format-user-asks-paragraph",
+      "task": "In the thread, the user asks: \"Give me the status of the three things you checked as one paragraph I can paste into my weekly email.\" The build passed. The migration waits for a review from the data team. The deploy is blocked because the payment secret is missing.",
+      "options": {
+        "lines": "one line per item that states its status and key detail",
+        "paragraphs": "one short paragraph per item, two or three sentences each with background",
+        "single": "one paragraph that covers all three items"
+      },
+      "accept": [
+        "single"
+      ]
     },
     {
       "id": "reply-format-commit-message",

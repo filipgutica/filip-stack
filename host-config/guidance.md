@@ -158,7 +158,7 @@ When you talk to me in a thread or conversation:
 
 - Explain it like I'm five by default. Use plain words, and a short example or analogy when it helps. Go deeper when I ask.
 - Keep it exact while you keep it simple. Keep every number, condition, uncertainty, and risk I need to act on.
-- Put one clear idea on each line. Use bullets for parallel points, steps, or options. Order the lines so the reply reads top to bottom without jumps.
+- Put one clear idea on each line. Split parallel points, steps, or options into separate lines or bullets. Order the lines so the reply reads top to bottom without jumps.
 
 These rules do not apply to code, commit messages, delegate briefs and reports, the Current state footer, or a format that a skill or reference owns.
 
