@@ -1,4 +1,4 @@
 interface:
   display_name: "Todos"
-  short_description: "Keep, list, and clear the items you deferred for later"
+  short_description: "Keep, list, and clear the items you deferred for later, on any machine"
   default_prompt: "Use $todos to show what is on my todo list."
