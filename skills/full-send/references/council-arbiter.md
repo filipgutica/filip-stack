@@ -21,7 +21,7 @@ trigger sets the findings it may rule on, and only those:
 | --- | --- |
 | A declined blocker or should that no other member backs | That finding |
 | Two members want opposite remedies for a finding | That finding and both remedies |
-| From round 2, while a member is below `N`, the lowest score did not rise and open blockers and shoulds did not shrink | The open blockers and shoulds of each member below `N` whose score did not rise |
+| From round 2, while a member is below `N`, the lowest score did not rise and open blockers and shoulds did not shrink | The open blockers and shoulds of each member below `N` whose score did not rise, except those another member backs |
 
 Send no other finding, even one that also holds a member below `N`. No
 arbiter runs when every member is below `N`, or when the request names
@@ -31,22 +31,25 @@ Fable 5.2 as a member.
 
 Start Fable 5.2 at high effort in a fresh context, read-only, with no further
 delegation. Send it the repository, head SHA and diff command, the frozen
-intent and out-of-scope, the findings ledger, and each eligible finding with
-its author's evidence and the opposing evidence. Leave out `N` and every
+intent and out-of-scope, and each eligible finding with its ledger entry,
+its author's evidence, and the opposing evidence. Leave out `N` and every
 score, so the ruling rests on the findings alone.
 
 Ask it to rule on each eligible ID, with `file:line` evidence:
 
 - **upheld:** the finding is real at its severity, or at the severity the
-  arbiter names, or this remedy is the one to apply. Fix it as the gate's
-  Answer findings describes.
+  arbiter names, or this remedy is the one to apply. In fix mode, fix it as
+  the gate's Answer findings describes. In review-only mode, report it as
+  open.
 - **overruled:** the finding is not a blocker or should within the intent.
-  Mark it `overruled by arbiter` in the ledger. It cannot reopen, and later
-  round briefs show it as overruled.
+  Mark it `overruled by arbiter` in the ledger, and later round briefs show
+  it as overruled. It reopens only when a later commit changes the code it
+  cites; then it is a new finding.
 
 ## After a ruling
 
-1. Apply the rulings: fix upheld findings and mark overruled ones.
+1. Apply the rulings: fix upheld findings in fix mode, and mark overruled
+   ones.
 2. When no fix changed the head, check the gate's pass rule on the current
    head. The arbiter clears a member below `N` only when that member names
    at least one finding and the arbiter overruled each one. A nit or a

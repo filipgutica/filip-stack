@@ -88,7 +88,8 @@ On its own:
 5. When members recommend conflicting actions after the last round,
    Fable 5.2 reads their positions and evidence, without scores, and rules.
    Its ruling becomes the recommendation, and dissent stays visible. If
-   Fable cannot run, the disagreement is yours to decide.
+   Fable cannot run, or you named it as a member, the disagreement is yours
+   to decide.
 6. The agent checks the important claims and writes the synthesis.
 
 A member that fails after launch makes the council incomplete, and the agent
@@ -117,7 +118,8 @@ With full send or full stop:
 5. The gate passes when every member reaches the threshold on that commit,
    or Fable overruled every finding that holds a member below it.
 6. The gate fails after three rounds without a pass, or earlier, for
-   example when a round makes no progress or the diff grows past its scope.
+   example when a round makes no progress and no finding awaits Fable, or
+   the diff grows past its scope.
    The agent leaves the PR unmerged and asks you once: accept the scores,
    allow more rounds, or rescope.
 

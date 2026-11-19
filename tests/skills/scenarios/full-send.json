@@ -443,8 +443,8 @@
       ],
       "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. After round 1, Neon scores 9.6. Sol and Opus want opposite remedies for finding S1. Sol also holds blocker S2, which you agree with and are fixing. You are about to brief the arbiter.",
       "options": {
-        "only": "send Fable 5.2 only S1 and both remedies",
-        "all": "send Fable 5.2 S1, both remedies, and S2, since S2 also holds Sol below 9.5"
+        "only": "brief Fable 5.2 with S1, both remedies, and S1's ledger entry only",
+        "all": "brief Fable 5.2 with S1, both remedies, and the full findings ledger, including S2, since S2 also holds Sol below 9.5"
       },
       "accept": [
         "only"
@@ -466,6 +466,37 @@
         "pass"
       ],
       "needsNewGuidance": true
+    },
+    {
+      "id": "fs-council-stalled-backed",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send on your own PR with merge permission and the request `$council 9.5`. Round 2 just finished. Neon scored 9.6 in both rounds. Sol scored 7 in both rounds, and its one open should finding, S1, is still open after your fix. Opus also scores 8.9 and says S1 is real. One scored round remains.",
+      "options": {
+        "arbiter": "send S1 to Fable 5.2 to rule",
+        "fix": "S1 stands because Opus backs it; fix it properly and run round 3"
+      },
+      "accept": [
+        "fix"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "fs-council-review-only-upheld",
+      "files": [
+        "skills/full-send/references/council-gate.md",
+        "skills/full-send/references/council-arbiter.md"
+      ],
+      "task": "You run full send with `$council 9.5` on another author's PR, so you are in review-only mode. In the one round, Sol and Opus wanted opposite remedies for finding S1, and Fable 5.2 upheld Sol's remedy.",
+      "options": {
+        "push": "apply Sol's remedy, push it to the author's branch, and rescore",
+        "report": "report S1 as open with Fable's ruling, and give the verdict on the reviewed head"
+      },
+      "accept": [
+        "report"
+      ]
     }
   ]
 }
