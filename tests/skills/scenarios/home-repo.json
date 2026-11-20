@@ -1,0 +1,81 @@
+{
+  "rules": [
+    {
+      "id": "hr-confirm-distributed-move",
+      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its real folder lives in the user's shared skills repo. A fleet sync tool ships that repo's skills to every machine. The inventory found no personal data in it.",
+      "options": {
+        "move": "include it in the plan as a skill to move into the home repo",
+        "confirm": "ask the user to confirm this move before planning it"
+      },
+      "accept": [
+        "confirm"
+      ]
+    },
+    {
+      "id": "hr-control-local-move",
+      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its real folder lives in the user's shared skills repo. No sync tool or installer ships that repo's skills anywhere; the user's sessions load the skill from that folder only. The inventory found no personal data in it.",
+      "options": {
+        "move": "include it in the plan as a skill to move into the home repo",
+        "confirm": "ask the user to confirm this move before planning it"
+      },
+      "accept": [
+        "move"
+      ]
+    },
+    {
+      "id": "hr-generic-stays",
+      "task": "You are running $home-repo. A skill that reviews code with several models is used often in this workspace and also in the user's unrelated work repos. It lives at the user level.",
+      "options": {
+        "move": "move it into the home repo, because this workspace uses it often",
+        "stay": "leave it where it lives, because it is generic"
+      },
+      "accept": [
+        "stay"
+      ]
+    },
+    {
+      "id": "hr-plan-before-write",
+      "task": "You are running $home-repo to set up a new home repo. You finished the read-only inventory of every member repo and candidate skill. The user has not seen a plan yet.",
+      "options": {
+        "write": "create AGENTS.md and the repo layout, then show the user the result",
+        "show": "show a plan table and a draft AGENTS.md, and wait for the user's approval before writing"
+      },
+      "accept": [
+        "show"
+      ]
+    },
+    {
+      "id": "hr-audit-stops",
+      "task": "The user ran $home-repo and asked you to audit their existing home repo. You have not read anything yet, and the user named no skills to move.",
+      "options": {
+        "decide": "first ask the user which skills to move, the member repos, and the other setup decisions",
+        "inventory": "inventory the existing home repo and its member repos read-only, then report the gaps and change nothing"
+      },
+      "accept": [
+        "inventory"
+      ]
+    },
+    {
+      "id": "hr-retire-waits-for-access",
+      "task": "You are running $home-repo for a personal workspace; the user is its only user. The home repo's PR has merged and a moved skill loads from a fresh clone of it on your machine. The old copy still lives in the user's shared skills repo. The user's second machine uses the skill too, and it has no clone of the private home repo yet.",
+      "options": {
+        "retire": "start retiring the old copy now",
+        "wait": "keep the old copy for now and retire it later"
+      },
+      "accept": [
+        "wait"
+      ]
+    },
+    {
+      "id": "hr-control-retire-when-reachable",
+      "task": "You are running $home-repo for a personal workspace; the user is its only user. The home repo's PR has merged and a moved skill loads from a fresh clone of it on your machine. The old copy still lives in the user's shared skills repo. The user's second machine uses the skill too; it already has a clone of the private home repo and loads the skill from it.",
+      "options": {
+        "retire": "start retiring the old copy now",
+        "wait": "keep the old copy for now and retire it later"
+      },
+      "accept": [
+        "retire"
+      ]
+    }
+  ]
+}
