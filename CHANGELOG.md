@@ -1,3 +1,17 @@
+# [6.25.0](https://github.com/filipgutica/filip-stack/compare/v6.24.0...v6.25.0) (2026-11-20)
+
+
+### Bug Fixes
+
+* **skills:** keep home-repo audits out of the plan approval step and test the retirement gate ([c6ee40a](https://github.com/filipgutica/filip-stack/commit/c6ee40a8b6ad60805cd4697f26da7f1f35e731c0))
+* **skills:** publish before retiring old copies and add a read-only audit route to home-repo ([ff495dc](https://github.com/filipgutica/filip-stack/commit/ff495dcf124aa32a5ca8a6f658cc9f98e8aba311))
+* **skills:** route home-repo audits before setup decisions and gate retirement on access ([0240e6f](https://github.com/filipgutica/filip-stack/commit/0240e6fcdae9ae3abc84c1a91024c59b2cf73273))
+
+
+### Features
+
+* **skills:** add home-repo skill ([8e1d8e8](https://github.com/filipgutica/filip-stack/commit/8e1d8e8265fc740e003b38a7c9c10134f55a829e))
+
 # [6.24.0](https://github.com/filipgutica/filip-stack/compare/v6.23.0...v6.24.0) (2026-11-19)
 
 
