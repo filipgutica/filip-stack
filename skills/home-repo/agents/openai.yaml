@@ -1,0 +1,7 @@
+interface:
+  display_name: "Home repo"
+  short_description: "Set up or audit a home repo for multi-repo work"
+  default_prompt: "Use $home-repo to set up a home repo for this body of work."
+
+policy:
+  allow_implicit_invocation: false

@@ -107,6 +107,7 @@ Install only the standalone skills you want, with the
 | `full-stop` | Takes a change or PR through review and CI and leaves the merge to you. Needs `full-send`, `sol-loop`, `babysit-pr`, and `council`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `grill-me` | Questions a proposal one decision at a time to expose assumptions and settle consequential choices. Adapted from [Matt Pocock's skills](https://github.com/mattpocock/skills). |
 | `hill-climb` | Improves a working change, or climbs toward a named goal, in small rounds, and keeps an edit only when it wins under the chosen rule: blind judges, a score, or both. Needs `council`. |
+| `home-repo` | Sets up a home repo where agent sessions start for work that spans several repos. |
 | `interface-design` | Designs, builds, reviews, or checks interfaces for task completion and accessibility. Adapted from [frontend-design](https://github.com/anthropics/skills). |
 | `jira-work-links` | Creates or checks Jira relationships and verifies the PRs and commits behind an issue. |
 | `pr-review-churn` | Finds review objections that recur across your GitHub PRs and proposes guidance to prevent them. |

@@ -1,0 +1,40 @@
+{
+  "rules": [
+    {
+      "id": "hr-confirm-distributed-move",
+      "task": "You are running $home-repo for a personal workspace. The inventory found a skill used only for this workspace. Its real folder lives in the user's shared skills repo, which a fleet sync tool ships to every machine. The user listed it as a candidate but has not said to move it.",
+      "options": {
+        "move": "move the skill into the home repo now, since it is used only for this workspace",
+        "confirm": "ask the user to confirm the move first, noting that the fleet sync stops shipping it"
+      },
+      "accept": ["confirm"]
+    },
+    {
+      "id": "hr-generic-stays",
+      "task": "You are running $home-repo. A skill that reviews code with several models is used often in this workspace and also in the user's unrelated work repos. It lives at the user level.",
+      "options": {
+        "move": "move it into the home repo, because this workspace uses it often",
+        "stay": "leave it where it lives, because it is generic"
+      },
+      "accept": ["stay"]
+    },
+    {
+      "id": "hr-control-local-move",
+      "task": "You are running $home-repo. The user asked you to move a skill that is used only for this workspace. Its only copy is a folder under ~/.agents/skills, and no repo or sync tool ships it. The inventory found no personal data in it.",
+      "options": {
+        "move": "include it in the plan as a skill to move into the home repo",
+        "stay": "leave it at the user level"
+      },
+      "accept": ["move"]
+    },
+    {
+      "id": "hr-plan-before-write",
+      "task": "You are running $home-repo. You finished the read-only inventory of every member repo and candidate skill. The user has not seen a plan yet.",
+      "options": {
+        "write": "create AGENTS.md and the repo layout, then show the user the result",
+        "show": "show a plan table and a draft AGENTS.md, and wait for the user's approval before writing"
+      },
+      "accept": ["show"]
+    }
+  ]
+}
