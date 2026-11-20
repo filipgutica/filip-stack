@@ -16,27 +16,17 @@ load the home repo's skills.
 
 ## When to use it
 
-Install the skill, then run `/home-repo` in Claude or `$home-repo` in Codex when
-you want one repo where sessions and threads start across several repos. It runs
-only when you call it.
+Install the skill, then run `/home-repo` in Claude or `$home-repo` in Codex. It
+runs only when you call it.
 
 > /home-repo set up a home repo for the repos in this workspace
 
+> /home-repo audit this home repo
+
 ## How it works
 
-The skill settles the repo name, owner, visibility, whether it is personal or
-team-shared, the member repos (defaulting to a Workbench workspace's repos in T3
-Code), and which skills move in. Generic skills stay where they live. Moving a
-skill out of a repo that another tool such as `fleet-sync` distributes stops
-that distribution, so the skill asks first.
-
-It runs a read-only inventory of each repo and candidate skill, searching for
-personal data such as absolute home paths, emails, and credential lookups. It
-shows a plan table and a draft `AGENTS.md` and waits for your approval before
-writing anything. It moves the skills, cleans personal data out of them, checks
-that each skill loads from a fresh clone in Claude Code and Codex, and retires
-the old copies so each skill has exactly one home. It confirms the repo name,
-owner, and visibility with you before creating the GitHub repo.
+The agent asks before anything leaves a shared repo, and before it writes or
+publishes. An audit reports gaps and changes nothing.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/home-repo/SKILL.md)
 has the layout and the exact steps.
