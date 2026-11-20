@@ -2,21 +2,25 @@
   "rules": [
     {
       "id": "hr-confirm-distributed-move",
-      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its real folder lives in the user's shared skills repo, which a fleet sync tool ships to every machine. The inventory found no personal data in it.",
+      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its real folder lives in the user's shared skills repo. A fleet sync tool ships that repo's skills to every machine. The inventory found no personal data in it.",
       "options": {
         "move": "include it in the plan as a skill to move into the home repo",
-        "confirm": "ask the user to confirm the move first, noting that the fleet sync stops shipping it"
+        "confirm": "ask the user to confirm this move before planning it"
       },
-      "accept": ["confirm"]
+      "accept": [
+        "confirm"
+      ]
     },
     {
       "id": "hr-control-local-move",
-      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its only copy is a folder under ~/.agents/skills, and no repo or sync tool ships it. The inventory found no personal data in it.",
+      "task": "You are running $home-repo for a personal workspace. The user's request lists one skill as a candidate to move into the home repo, and it is used only for this workspace. Its real folder lives in the user's shared skills repo. No sync tool or installer ships that repo's skills anywhere; the user's sessions load the skill from that folder only. The inventory found no personal data in it.",
       "options": {
         "move": "include it in the plan as a skill to move into the home repo",
-        "confirm": "ask the user to confirm the move first, noting that the fleet sync stops shipping it"
+        "confirm": "ask the user to confirm this move before planning it"
       },
-      "accept": ["move"]
+      "accept": [
+        "move"
+      ]
     },
     {
       "id": "hr-generic-stays",
@@ -25,7 +29,9 @@
         "move": "move it into the home repo, because this workspace uses it often",
         "stay": "leave it where it lives, because it is generic"
       },
-      "accept": ["stay"]
+      "accept": [
+        "stay"
+      ]
     },
     {
       "id": "hr-plan-before-write",
@@ -34,16 +40,20 @@
         "write": "create AGENTS.md and the repo layout, then show the user the result",
         "show": "show a plan table and a draft AGENTS.md, and wait for the user's approval before writing"
       },
-      "accept": ["show"]
+      "accept": [
+        "show"
+      ]
     },
     {
       "id": "hr-audit-stops",
-      "task": "The user ran $home-repo to audit their existing home repo. You finished the read-only inventory. Its AGENTS.md has no repo table, and one skill has no .claude/skills link.",
+      "task": "The user ran $home-repo and asked you to audit their existing home repo. You have not read anything yet, and the user named no skills to move.",
       "options": {
-        "plan": "show a plan table and a draft AGENTS.md that fix both gaps, and wait for approval to write them",
-        "report": "report both gaps against the skill's layout and checks, and change nothing"
+        "decide": "first ask the user which skills to move, the member repos, and the other setup decisions",
+        "inventory": "inventory the existing home repo and its member repos read-only, then report the gaps and change nothing"
       },
-      "accept": ["report"]
+      "accept": [
+        "inventory"
+      ]
     }
   ]
 }

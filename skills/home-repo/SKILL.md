@@ -8,6 +8,8 @@ disable-model-invocation: true
 
 A **home repo** is where agent sessions and threads start for a body of work that spans several repos ([pattern](https://www.aihero.dev/the-home-repo-pattern)). It holds the skills, `AGENTS.md`, and path pointers for that body of work. The agent works in each product repo through its pointer. Product repos keep their own `AGENTS.md`, build commands, and code.
 
+**Audit:** for an existing home repo, skip step 1. Run step 2's inventory on the home repo and its member repos, report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
+
 ## 1. Decide
 
 Settle these from the request, and ask only about what it leaves open:
@@ -29,9 +31,7 @@ Done when every field has a value.
   - every link that points to it (`~/.claude/skills`, `~/.agents/skills`, a shared skills repo, a sync tool)
   - **personal-data findings:** search for `/Users/`, usernames, personal emails, absolute paths, credential files, password-manager or secure-note lookups, token-file fallbacks, and logs that write response bodies. Report each as `file:line`, with the secret value redacted.
 
-For an audit, stop here: report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
-
-Otherwise, show a plan table (`item | action | reason`) and a draft `AGENTS.md`. Done when the user approves both.
+Show a plan table (`item | action | reason`) and a draft `AGENTS.md`. Done when the user approves both.
 
 ## 3. Lay out the repo
 
@@ -91,7 +91,7 @@ Done when the user has the PR and issue links.
 ## 7. Verify, then retire the old copies
 
 1. Clone the pushed branch into a temporary directory, start a session there, and confirm that every skill loads from the clone's path in Claude Code and in Codex. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
-2. Retire each old copy after the home repo's PR merges, so everyone who uses the skill can reach the new copy:
+2. Retire each old copy only when every person and machine that still needs the skill can load it from the merged home repo. For a private repo, that includes repo access and a clone on each machine.
    - Back it up outside every discovery root.
    - Remove its user-level links and its old source folder. When the old source lives in another repo, remove it there through that repo's own PR.
    - When a sync tool or a skills lock ships the old copy, remove it from that tool's policy and lock entries on every machine before its source goes away.
