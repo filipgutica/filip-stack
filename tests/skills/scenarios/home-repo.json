@@ -54,6 +54,28 @@
       "accept": [
         "inventory"
       ]
+    },
+    {
+      "id": "hr-retire-waits-for-access",
+      "task": "You are running $home-repo. The home repo's PR has merged and a moved skill loads from a fresh clone of it on your machine. The old copy still lives in the user's shared skills repo. A second machine that uses the skill has no clone of the private home repo yet.",
+      "options": {
+        "retire": "retire the old copy now",
+        "wait": "keep the old copy until everyone who needs the skill can load it from the home repo"
+      },
+      "accept": [
+        "wait"
+      ]
+    },
+    {
+      "id": "hr-control-retire-when-reachable",
+      "task": "You are running $home-repo. The home repo's PR has merged and a moved skill loads from a fresh clone of it on your machine. The old copy still lives in the user's shared skills repo. Every machine that uses the skill has a clone of the private home repo and loads the skill from it.",
+      "options": {
+        "retire": "retire the old copy now",
+        "wait": "keep the old copy until everyone who needs the skill can load it from the home repo"
+      },
+      "accept": [
+        "retire"
+      ]
     }
   ]
 }

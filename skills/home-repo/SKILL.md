@@ -31,7 +31,7 @@ Done when every field has a value.
   - every link that points to it (`~/.claude/skills`, `~/.agents/skills`, a shared skills repo, a sync tool)
   - **personal-data findings:** search for `/Users/`, usernames, personal emails, absolute paths, credential files, password-manager or secure-note lookups, token-file fallbacks, and logs that write response bodies. Report each as `file:line`, with the secret value redacted.
 
-Show a plan table (`item | action | reason`) and a draft `AGENTS.md`. Done when the user approves both.
+For an audit, report the gaps now and end the run. For setup, show a plan table (`item | action | reason`) and a draft `AGENTS.md`. Done when the user approves both.
 
 ## 3. Lay out the repo
 
