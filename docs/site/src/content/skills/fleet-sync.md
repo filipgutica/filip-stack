@@ -28,6 +28,8 @@ environment ID, then saves the policy, after backing up a different saved
 one.
 
 - Missing baseline skills and plugins are installed. Existing extras stay.
+- Published skills outside the baseline are listed as `unselected`, not
+  installed, until you add them to the baseline.
 - The `design-system` plugin installs from its own marketplace, and each
   marketplace reports its state separately.
 - Per-machine agent targets and exclusions keep each machine's exceptions.
