@@ -4,54 +4,48 @@ related: [agent-ready-environments]
 
 ## What it does
 
-Each machine runs the same local updater, `filip-stack sync`, against one
-shared policy that decides what each machine gets. T3 Code keeps the
-connection credentials and access grants.
+Give fleet-sync a shared **policy** file listing your machines, a **baseline**
+of skills and plugins, and per-machine exceptions, or name them on the first
+run. The agent runs the updater on enrolled machines to apply updates or
+inspect drift, expanding to every linked T3 Code machine only when you ask. T3
+Code keeps credentials and access grants. You get a per-machine report of
+commits, plugin versions, conflicts, and next actions.
 
 ## When to use it
 
-Install the skill, then ask:
+Install the skill, then ask to sync your fleet or inspect drift:
 
-> $fleet-sync
+> Sync the fleet and report any machines that are out of sync.
 
-The agent reads your machine list from `~/.config/filip-stack/fleet.json`, or
-`$XDG_CONFIG_HOME/filip-stack/fleet.json`. The first time, you pick the
-machines and the shared baseline. Later runs reuse the saved selection and
-access grants. The
+The agent reads `~/.config/filip-stack/fleet.json` (or under
+`$XDG_CONFIG_HOME`). Pick machines and a baseline on the first run. Later runs reuse them. The
 [README](https://github.com/filipgutica/filip-stack#sync-this-machine-or-the-fleet)
-shows an example policy.
+shows an example policy. Outside T3 Code, it uses only a configured remote
+method and never creates SSH access.
 
 ## How it works
 
-Each machine runs `filip-stack sync --json` with the shared policy and its
-environment ID, then saves the policy, after backing up a different saved
-one.
+1. **Match machines.** Checks linked T3 Code environments, requests missing or
+   expired links, and continues with reachable machines.
+2. **Use clean `main`.** Uses a clean clone when your checkout is busy.
+   Inspections use existing source without fetching.
+3. **Merge Field Guide preferences.** Before running the updater, if chezmoi
+   manages Field Guide files, a refresh pulls and merges them without touching
+   other dotfiles.
+4. **Sync safely.** Runs `filip-stack sync` (`--dry-run` for inspections).
+   Missing baseline items install, existing ones refresh, and `design-system`
+   updates from its own marketplace. Extras, exclusions, pins, and local
+   guidance stay intact.
+5. **Isolate conflicts.** Local edits, missing clients, and unmerged guidance
+   stay put without blocking other items.
 
-- Missing baseline skills and plugins are installed. Existing extras stay.
-- The `design-system` plugin installs from its own marketplace, and each
-  marketplace reports its state separately.
-- Per-machine agent targets and exclusions keep each machine's exceptions.
-- Scopes, enabled states, and explicit pins stay as they are.
-- Missing clients and local edits show up as incomplete components.
-
-When a development checkout is busy, the workflow uses a clean clone of
-`main`. Guidance applied from an unmerged revision stays until the source
-contains it. A custom Claude or Codex configuration folder blocks the
-guidance component until you migrate it.
-
-To preview one machine, run `filip-stack sync --dry-run --json`. A preview
-does not fetch upstream changes, so it does not prove versions are current.
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/fleet-sync/SKILL.md)
+defines the workflow.
 
 ## What you get
 
-A result for each enrolled machine, including offline and unlinked ones: the
-policy digest, source commits, plugin
-versions, selections, and any conflicts or access problems. Each machine
-saves its last result in `~/.local/state/filip-stack/last-sync.json`, or
-under `XDG_STATE_HOME`.
-
-If chezmoi carries your shared Field Guide preferences, the workflow pulls
-and merges them through Field Guide, without refreshing your other dotfiles.
-
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/fleet-sync/SKILL.md)
-defines the complete workflow.
+- One row per enrolled machine, including offline or denied ones, with policy
+  digest, commits, plugin versions, conflicts, and next actions.
+- After a refresh, each machine's last-run report at the returned path
+  (`--dry-run` returns JSON without saving a report).
+- A reminder to restart Claude and open a new Codex thread for updated plugins.

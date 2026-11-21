@@ -11,7 +11,8 @@ const commands = {
 const management = [
   {
     command: "/field-guide:field-guide audit",
-    description: "Lists stored guidance without changing it.",
+    description:
+      "Lists stored guidance without changing it (in Codex, use $field-guide:field-guide audit).",
   },
   {
     command: "Say “undo that learning”",
@@ -19,7 +20,8 @@ const management = [
   },
   {
     command: "Ask the agent to consolidate overlapping guidance",
-    description: "Merges records that say the same thing into one, and gives you an undo command.",
+    description:
+      "Merges overlapping project records into one and gives an undo command.",
   },
 ];
 </script>
@@ -31,8 +33,8 @@ const management = [
     />
     <h1 id="title">Field Guide</h1>
     <p class="lede">
-      Field Guide is an optional plugin that remembers your preferences and
-      corrections across sessions.
+      Field Guide is an optional plugin that saves your preferences and
+      corrections locally so you do not repeat them.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -53,22 +55,21 @@ const management = [
   <section aria-labelledby="install">
     <h2 id="install">Install</h2>
     <p class="section-intro">
-      After you add the marketplace, as the
-      <a href="/filip-stack/">overview</a> shows, run:
+      Add the marketplace first (see the
+      <a href="/filip-stack/">overview</a>), then install:
     </p>
     <HostCommands :claude="commands.claude" :codex="commands.codex" />
     <p class="hint">
-      The plugin adds hooks that run at session start, on each prompt, and
-      after each shell command.
-      Codex runs them after you review and trust them.
-      In Codex, restart so a new session loads the plugin.
+      Adds hooks that run at session start, on each prompt, and after shell
+      commands. In Codex, review and trust the hooks, then restart to load the
+      plugin.
     </p>
   </section>
 
   <section aria-labelledby="first-use">
     <h2 id="first-use">Save your first preference</h2>
     <div class="prose">
-      <p>Tell the agent what to keep:</p>
+      <p>Tell the agent what to remember:</p>
       <blockquote><p>Remember that I prefer pnpm over npm.</p></blockquote>
       <p>
         The agent creates <code>~/.field-guide</code> if needed, saves a short
@@ -79,7 +80,7 @@ const management = [
       </div>
     </div>
     <p class="hint">
-      Later sessions recall it when it matches the repository or your first
+      Future sessions load it when it matches the repository or your first
       prompt.
     </p>
   </section>
@@ -98,23 +99,17 @@ const management = [
     <h2 id="confirm">Confirm guidance for a gated action</h2>
     <div class="prose">
       <p>
-        Some guidance names an action that your instructions tell the agent to
-        ask about first, such as removing merged branches. For that guidance,
-        the agent offers an ID. Send a prompt that is exactly
-        <code>confirm fg:&lt;id&gt;</code>, and the hook marks the guidance
-        <code>[confirmed]</code> and shows you the text you confirmed.
+        Some guidance covers a gated action your instructions normally ask about
+        first, such as removing merged branches. For those records, the agent
+        gives you an ID. Send a main-thread prompt containing only
+        <code>confirm fg:&lt;id&gt;</code> to mark it <code>[confirmed]</code>.
       </p>
       <p>
-        Only that prompt confirms. Extra text, a quoted ID, a pasted report, or
-        a prompt in a delegate or subagent confirms nothing. No Field Guide
-        command adds a confirmation on its own; import copies them from your
-        synced file, which you trust, and applying a proposal you approved
-        confirms its replacement only when a record it replaces was confirmed.
-        A prompt that only mentions the command, such as a pasted report, shows
-        you no notice.
-        The hook cannot tell who sent the prompt, so the agent's guidance
-        forbids it from sending one. Changing, withdrawing, or deleting the
-        guidance removes the confirmation.
+        Only that exact prompt in a main thread confirms a record. Extra text,
+        quoted IDs, pasted reports, and subagent or delegate prompts confirm
+        nothing. No command creates a confirmation on its own, and agent
+        guidance forbids the agent from sending one. Editing, withdrawing, or
+        deleting the record removes its confirmation.
       </p>
     </div>
   </section>
@@ -123,24 +118,23 @@ const management = [
     <h2 id="maintain">Keep the guide small</h2>
     <div class="prose">
       <p>
-        Over time, several records can say the same thing. The agent can merge
-        them into one record, and you can undo a merge for 90 days. If you
-        undo a merge, it is not suggested again.
+        Over time, several project records can overlap. Ask the agent to merge
+        them into one record. You can undo any merge within 90 days, and undone
+        merges are not suggested again.
       </p>
       <p>
-        A merge never rewrites guidance you confirmed on its own. To accept
-        one, send the exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt
-        the agent gives you. Shared guidance is not merged yet. Nightly
-        maintenance lists overlapping records for a review, and can also apply
-        merges, archives, and flags within the lifecycle rules; you can undo
-        each merge and archive it applies for 90 days. It never archives or
-        merges guidance you ever confirmed, even after you unconfirm it, as
-        long as its confirmation history is intact. It only flags or proposes
-        that guidance, and only flags other guidance on the same subject. It
-        never edits your instructions
-        or skills. The
+        Merges never rewrite confirmed guidance automatically, and shared
+        records are not merged yet. To approve a merge of confirmed records,
+        send the exact <code>confirm fg:proposal:&lt;id&gt;</code> prompt the
+        agent gives you. Nightly maintenance reviews overlaps and can apply
+        reversible project merges and archives (90-day undo) without editing
+        your instructions or skills. While confirmation history is intact, it
+        never archives or merges any record you ever confirmed (even after
+        unconfirming). It only flags or proposes changes for those protected
+        records, and only flags other records when their subject holds a
+        protected record. See the
         <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/references/dreaming.md">maintenance reference</a>
-        has the exact rules.
+        for exact rules.
       </p>
     </div>
   </section>
@@ -148,29 +142,28 @@ const management = [
   <section aria-labelledby="decide">
     <h2 id="decide">What it keeps</h2>
     <p class="section-intro">
-      Before each final reply, the agent makes one of three choices.
+      Before each final reply, the agent chooses one of three actions:
     </p>
     <dl class="fg-site-definitions">
       <dt>Capture</dt>
       <dd>
-        It saves a clear, lasting preference or correction, including when to
-        use a manual-only skill, and tells you in one line.
+        Saves a clear, lasting preference or correction (including when to use a
+        manual-only skill) and shows a one-line notice.
       </dd>
       <dt>Ask</dt>
       <dd>
-        If the scope or wording is unclear, it asks one question and waits to
-        save.
+        If scope or wording is unclear, asks one question and waits to save.
       </dd>
       <dt>Skip</dt>
       <dd>
-        It saves nothing that is specific to one task, tentative, sensitive,
-        or already covered by your instructions, the code, or a skill.
+        Saves nothing that is task-specific, tentative, sensitive, or already in
+        your instructions, code, or an automatic skill.
       </dd>
     </dl>
     <UiAlert tone="info"
-      >It stores short paraphrases, never transcripts, prompts, credentials, or
-      code dumps. Your current request and the live code outrank what it
-      remembers.</UiAlert
+      >Stores short paraphrases only, never transcripts, prompts, credentials,
+      or code dumps. Your current request and live code always outrank stored
+      guidance.</UiAlert
     >
   </section>
 
@@ -180,47 +173,45 @@ const management = [
       <li>
         <div>
           <p>
-            <strong>Session start.</strong> The hook adds up to eight stored
-            records for the current repository, and a one-line list of other
-            subjects the agent can look up.
+            <strong>Session start.</strong> Injects up to eight active records
+            for this repository, plus a one-line list of other subjects to look
+            up.
           </p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            <strong>First prompt.</strong> The hook searches with your prompt
-            and adds up to three new matching records.
+            <strong>First prompt.</strong> Searches with your prompt and injects
+            up to three new matching records.
           </p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            <strong>Every prompt.</strong> The hook reminds the agent to
-            choose capture, ask, or skip before its final reply. Nothing enforces it.
+            <strong>Every prompt.</strong> Reminds the agent to choose capture,
+            ask, or skip before replying. Nothing enforces it.
           </p>
         </div>
       </li>
     </ol>
     <p class="hint">
-      After the first prompt, only the reminder repeats, until the next session
-      start, <code>/clear</code>, or compaction. Compaction also brings back
-      the shared records the session had received. When the agent looks guidance up
-      itself, the
-      <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>
-      has the rules.
+      Only the reminder repeats until the next session start,
+      <code>/clear</code>, or compaction (which restores earlier shared
+      records). For manual lookups, see the
+      <a href="https://github.com/filipgutica/filip-stack/blob/main/plugins/field-guide/skills/field-guide/SKILL.md#retrieve-guidance">skill</a>.
     </p>
     <p class="hint">
-      The agent can tag guidance for a merge, a new pull request, or a handoff.
-      After a <code>gh pr merge</code> or <code>gh pr create</code> in the main
-      thread, the hook adds up to three tagged records, once per named pull request.
-      At a handoff, the agent looks the tagged guidance up. Tags only choose
-      when guidance appears.
+      Guidance can also be tagged for a merge, new pull request, or handoff.
+      After a successful, recognized main-thread <code>gh pr merge</code> (once
+      per named PR per session) or <code>gh pr create</code>, the hook injects
+      up to three tagged records. Before handoff, the agent looks them up. Tags
+      grant no extra authority.
     </p>
     <p class="hint">
-      Local analytics are off by default and record metadata only, never
-      prompts or guidance text.
+      Local analytics are off by default and log metadata only, never prompts or
+      guidance text.
     </p>
   </section>
 
@@ -229,30 +220,30 @@ const management = [
     <div class="prose">
       <p>
         Sync <code>~/.config/filip-stack/field-guide.json</code> and
-        <code>field-guide-annotations.json</code> beside it between machines
-        with your dotfile manager. The second file carries confirmations and
-        tags. <code>filip-stack field-guide-sync</code> imports both, then
-        exports this machine's shared guidance to them. The
-        <a href="/filip-stack/cli/#sync">CLI page</a> has the setup.
+        <code>field-guide-annotations.json</code> with your dotfile manager. The
+        second file carries confirmations and event tags.
+        <code>filip-stack field-guide-sync</code> imports both, then exports
+        shared guidance back. See the
+        <a href="/filip-stack/cli/#sync">CLI page</a> for setup.
       </p>
       <ul>
         <li>
-          A confirmation you remove on one machine is removed everywhere after
+          Removing a confirmation on one machine revokes it everywhere after
           each machine syncs.
         </li>
         <li>
-          When an older Field Guide plugin changes your guidance, every
-          confirmation in that store stops counting until you confirm again.
+          If an older plugin modifies the store, its confirmations stop counting
+          until you confirm again.
         </li>
         <li>
-          An undo reaches other machines after they sync. It reverses only the
-          replacement it undoes: a withdrawal, or another replacement of the
-          same guidance, still wins.
+          Undoing a replacement reaches other machines after repeated syncs. It
+          reverses only its own replacement, while withdrawals, archives, or
+          other replacements of the same record still win.
         </li>
         <li>
-          Refresh the Field Guide plugin and restart your agent before you run
-          <code>filip-stack update</code>. An older plugin cannot read the
-          newer store.
+          Update the Field Guide plugin and restart your agent before running
+          <code>filip-stack update</code>, because older plugins cannot read
+          newer stores.
         </li>
       </ul>
     </div>

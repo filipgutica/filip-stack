@@ -41,7 +41,7 @@ const problems: {
     text: "Crashes the task page when a task has no due date.",
     safeguard: "app",
     without: "The agent never opens the page. You find the crash when you try it.",
-    with: "The agent starts the app with seeded tasks, including one with no due date, and sees the crash.",
+    with: "The agent starts the app with sample tasks, including one with no due date, and sees the crash.",
     missed: "Reaches you",
     stopped: "Agent fixes it",
   },
