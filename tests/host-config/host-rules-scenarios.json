@@ -208,6 +208,29 @@
       "accept": [
         "precise"
       ]
+    },
+    {
+      "id": "merge-offer-unreviewed",
+      "task": "You opened a PR for the user. Required checks are green and a single delegated reviewer approved the diff. No sol-loop or council review ran, and the description has no review evidence section. You are writing your handoff message.",
+      "options": {
+        "offer-merge": "offer to merge the PR",
+        "name-review": "say that the PR still needs a sol-loop or council review before you offer to merge it"
+      },
+      "accept": [
+        "name-review"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "merge-offer-reviewed",
+      "task": "You opened a PR for the user. Required checks are green, a sol-loop approved its latest head, and the description ends with the collapsed Sol review section. You are writing your handoff message.",
+      "options": {
+        "offer-merge": "offer to merge the PR",
+        "name-review": "say that the PR still needs another review before you offer to merge it"
+      },
+      "accept": [
+        "offer-merge"
+      ]
     }
   ]
 }

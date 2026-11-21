@@ -49,4 +49,5 @@ repository's, takes precedence.
 
 The result stays in the conversation unless you ask for a file. Planning
 creates or changes Jira or GitHub issues only when you ask, writes no local
-ticket files, and marks each unverified ticket fact as `TBD`.
+ticket files, and marks each unverified ticket fact as `TBD`. A simple bug
+ticket stays a few plain sentences and its acceptance criteria.

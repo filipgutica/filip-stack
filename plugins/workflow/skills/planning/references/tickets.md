@@ -38,6 +38,8 @@ Use the tracker's or the repository's template when one exists. Otherwise use th
 <Optional: environment, root-cause evidence with suspected causes labeled, and links.>
 ```
 
+Fit the bug ticket to the bug. When a few plain sentences or bullets explain it, write those and the acceptance criteria. Add the sections above only for the parts that need them, such as reproduction steps for an intermittent failure.
+
 ### Epic or parent
 
 ```md

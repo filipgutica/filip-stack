@@ -27,7 +27,8 @@ sentences, consistent terms, and one topic per paragraph. Facts,
 assumptions, and open questions stay separate. Last, the agent reads the text
 as a newcomer would: could someone act on it without your conversation?
 
-A PR description states the problem before the new behavior. Each
+A PR description states the problem before the new behavior and stays
+short: one line per change, and only the file names a reviewer needs. Each
 verification step gives an action and its expected result, and any real gap
 in verification is stated.
 

@@ -45,7 +45,7 @@ Ask me only when the decision needs authorization, crosses a one-way door, leave
 
 When I change or add to the request during a task, restate the current ask in one line before you continue: what changed and what is still pending. Keep a correction to the work in progress in this thread. Hand a new ask to a fresh background agent when it is substantial and independent of the current work: it needs no result from that work and changes none of its files. Otherwise, queue it after the current work.
 
-After opening a pull request, babysit its latest head until all applicable CI checks pass and actionable automated review findings are resolved, using the host's PR watcher when available. Merge only with explicit authorization.
+After opening a pull request, babysit its latest head until all applicable CI checks pass and actionable automated review findings are resolved, using the host's PR watcher when available. Merge only with explicit authorization. Offer to merge a pull request only when a `sol-loop` approved its latest head or a council gate passed on it, and the PR description ends with that review's collapsed evidence section. Otherwise, name the missing review in place of the offer.
 
 ## Current state footer
 

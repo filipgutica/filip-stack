@@ -309,6 +309,51 @@
       "accept": [
         "supersede"
       ]
+    },
+    {
+      "id": "bug-ticket-simple",
+      "task": "The user asks you to file a bug ticket. Viewers cannot export reports even though their role grants export; the permission check reads the wrong role field. The fix is a one-line change, and the user already confirmed the cause.",
+      "options": {
+        "plain": "write a few plain sentences on what is wrong, who it affects, and the fix, then the acceptance criteria",
+        "sections": "write separate Observed behavior, Root cause, Impact, and Proposed fix sections, then the acceptance criteria"
+      },
+      "accept": [
+        "plain"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "bug-ticket-intermittent",
+      "task": "The user asks you to file a bug ticket. About one nightly import in twenty drops rows, only when two workers claim the same batch. Reproducing it takes a seeded fixture and a specific sequence of five steps.",
+      "options": {
+        "plain": "write a few plain sentences on what is wrong and who it affects, then the acceptance criteria",
+        "reproduction": "add a reproduction-steps section with the fixture and the five steps, beside the acceptance criteria"
+      },
+      "accept": [
+        "reproduction"
+      ]
+    },
+    {
+      "id": "pr-description-file-list",
+      "task": "You are writing the Changes section of a PR description. The PR renames one config flag, which touches 14 files across 3 packages. Reviewers only need to know the flag's old and new names and that the old name still works for one release.",
+      "options": {
+        "behavior": "write one-line bullets for the rename and the fallback, naming only the flag",
+        "files": "write one bullet per changed file, each with its path in inline code and a note on what changed"
+      },
+      "accept": [
+        "behavior"
+      ]
+    },
+    {
+      "id": "pr-description-commands",
+      "task": "You are writing the How to verify section of a PR description for a CLI change. The reviewer must run two commands: one seeds a fixture, and one runs the export with four flags.",
+      "options": {
+        "blocks": "put each command in its own fenced code block",
+        "inline": "put both commands as inline code inside one prose bullet"
+      },
+      "accept": [
+        "blocks"
+      ]
     }
   ]
 }
