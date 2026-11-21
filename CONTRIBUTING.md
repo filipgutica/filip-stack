@@ -1,297 +1,248 @@
 # Contributing to Filip Stack
 
-This guide is for changing the repository. [README.md](README.md) covers what
-each part is and how to install it. [AGENTS.md](AGENTS.md) holds the rules that
-agents follow here, including how to choose where a new skill lives.
+This guide covers setup, checks, layout, releases, and guidance tests. See
+[README.md](README.md) for installation and usage, and [AGENTS.md](AGENTS.md)
+for repository rules and skill tiers.
 
 ## Set up and check
 
-Install dependencies and run the complete deterministic check. The check needs
-Node 22.22 or later for promptfoo, and Python 3.9+ for the collector tests; no
-Python packages are needed.
+Requirements: Node.js `^22.22.2 || ^24.15.0 || >=26.0.0` (required by locked
+promptfoo dependencies; `package.json` declares `>=22.12.0`), pnpm (`10.34.7`),
+and Python 3.9+ for `tests/skills/pr_review_churn_collector_test.py` (no Python
+packages needed).
 
 ```sh
 pnpm install --frozen-lockfile
 pnpm check
 ```
 
-The check enforces the five-skill Workflow inventory, declared activation
-policy, context budgets, conditional-reference integrity, the separation of
-Field Guide hooks and state, all three plugins' runtime payloads, plugin manifest
-validity, and standalone skill contracts. Prompt routing scenarios are
-evaluation inputs; static contracts do not prove model behavior.
+Run a single test file or validator while iterating:
+
+```sh
+node --test tests/host-config/host-config.test.mjs
+node tests/workflow/validate-contracts.mjs
+```
+
+`pnpm check` runs the root repository's deterministic checks (site checks run in
+`docs/site/`):
+
+| Suite | Covers |
+| --- | --- |
+| `test:workflow-contracts`, `test:skills` | Skill inventories, activation policy, budgets, links, and skill script tests |
+| `test:field-guide*`, `test:guardrails` | Field Guide boundary, schemas, hooks, storage, dreaming, and Guardrails rules |
+| `test:plugin-payload`, `validate-plugins` | Runtime payload exclusions and Claude, Codex, and Antigravity manifests |
+| `test:host-config` | Host config apply, helper scripts, design-system migration, CLI, and sync |
+| `test:evals` | Guidance test dry runs, gate logic, and a stubbed end-to-end run |
+| `test:static` | Fallow dead-code, complexity health, and duplicate checks |
+
+Static contracts do not prove model behavior; use
+[Guidance tests](#guidance-tests) for behavior changes.
 
 ## Repository layout
 
 ```text
 .claude-plugin/marketplace.json   Claude marketplace
 .agents/plugins/marketplace.json  Codex marketplace
-plugins/workflow/          Runtime plugin shared by Claude and Codex
-  .claude-plugin/          Claude manifest
-  .codex-plugin/           Codex manifest
-  skills/                  The five Workflow skills and conditional references
-  THIRD_PARTY_NOTICES.md   Notices for adapted upstream guidance
-plugins/field-guide/       Optional local-learning plugin
-  hooks/                   Guidance injection and capture, ask, or skip lifecycle guidance
-  scripts/                 Cross-host Node launcher
-  skills/field-guide/      Skill, storage utility, schemas, and references
-plugins/guardrails/        Optional rule-enforcement plugin
-  hooks/                   PreToolUse hook for attribution and 1Password rules
-  scripts/                 Cross-host Node launcher
-skills/                    Standalone skills installed with the skills CLI
-host-config/               General Claude and Codex guidance, agents, and styles
-.agents/skills/            Repository development skills (linked from .claude/skills)
-tests/workflow/            Repository-only contract and payload tests
-tests/skills/              Standalone skill contracts
-tests/field-guide/         Field Guide contracts and utility tests
-tests/guardrails/          Guardrails hook tests
-tests/host-config/         Host config apply tests
-tests/evals/               Guidance test gate and runner tests
-evals/                     promptfoo guidance tests run by pnpm eval:<name>
-scripts/                   Version, plugin validation, and host-config scripts
-docs/                      Evaluation lab notebook and evidence
-docs/site/                 GitHub Pages site
+cli/                              Dependency-free filip-stack CLI launcher
+plugins/workflow/                 Workflow plugin (.antigravity-plugin, .claude-plugin, .codex-plugin, skills/, THIRD_PARTY_NOTICES.md)
+plugins/field-guide/              Local-learning plugin (hooks/, scripts/, skills/field-guide/)
+plugins/guardrails/               Rule-enforcement plugin (hooks/, scripts/)
+skills/                           Standalone skills installed with the skills CLI
+host-config/                      Global guidance, models.json, agents, rules, and styles
+.agents/skills/                   Repository development skills (linked from .claude/skills)
+tests/                            Unit, contract, hook, CLI, and scenario tests by component
+evals/                            promptfoo guidance tests run by pnpm eval:<name>
+scripts/                          Version, validation, host-config, and sync scripts
+docs/                             Evaluation lab notebook, evidence, and GitHub Pages site (docs/site/)
 ```
 
-Each marketplace entry installs its plugin directory directly, and the skills
-CLI copies one `skills/<name>/` directory. Tests and evaluation fixtures stay
+Each marketplace installs its plugin directory directly, and the skills CLI
+copies one `skills/<name>/` directory. Tests and evaluation fixtures stay
 outside both payloads.
 
 ## How Workflow stays small
 
-The plugin uses three levels of progressive disclosure:
+Workflow uses three levels of progressive disclosure:
 
-1. The host sees only each skill's name and description while choosing a route.
-2. The selected `SKILL.md` supplies the operating contract.
-3. A short reference file is opened only when the selected mode needs it.
+1. The host sees only each skill's name and description while routing.
+2. The selected `SKILL.md` gives the operating contract.
+3. A short reference file loads only when the chosen mode needs it.
 
-Engineering and Review check routine test value directly. They invoke
-`test-audit` for requested audits, substantial coverage changes, or uncertainty
-about test value or preservation. Other routes select internal modes without
-chaining public Workflow skills:
-
-- `engineering` selects implementation, debugging, refactoring, or review
-  correction guidance.
-- `planning` selects exploration, specification, plan, or tickets.
-- `review` selects read-only review or final verification of an exact range or
-  artifact.
-
-The engineering loop is evidence-driven: define the boundary, establish a test
-or reproduction, make the smallest correct change, run focused checks, inspect
-the complete diff, and review consequential decisions. Repository tools such as
-tests, types, linters, ESLint, and Fallow supply deterministic evidence where
-available.
-
-Failed evidence returns only to the affected step, and explicit stop conditions
-prevent unbounded retries. Complex work can form a small task graph through
-dependencies and independent owners. Workflow is not a scheduler or unattended
-loop runner, and it adds no graph schema, state engine, or orchestration
-runtime for linear work.
-
-### Where artifact formats live
-
-Default specification, plan, and ticket formats live in Planning's mode
-references; the PR description format lives in Technical-writing's references.
-Technical-writing owns prose quality; planning owns scope, decisions, and
-implementation readiness.
-
-Grill and walkthrough log formats stay beside their skills. The notes folders
-in `~/.engineering-workflow/` have no registry or task tracking. When work
-resumes from a checkpoint, the agent rechecks current evidence.
+Public Workflow skills do not chain each other, except that `engineering` and
+`review` call `test-audit` when a test audit is requested, coverage changes are
+substantial, or test value is uncertain. Internal modes live inside
+`engineering`, `planning`, and `review` (see `plugins/workflow/skills/` for each
+contract). Default spec, plan, and ticket formats live in `planning` references;
+PR description format lives in `technical-writing` references. Workflow installs
+no hooks, scheduler, or state engine.
 
 ## Skill budgets
 
-The Workflow skill entrypoints share a 3,500-word limit. Each skill entrypoint
-remains limited to 900 words.
+Contract validators enforce these limits:
 
-Standalone skills load independently, so Workflow's combined budgets do not
-apply to them. Each needs a matching name, a description of at most 80 words, a
-`SKILL.md` of at most 500 lines (a size guardrail, not a token budget),
-one-level references of at most 1,200 words, and relative links that stay
-inside its directory. It must not call a plugin skill or share a name with one.
+| Rule | Workflow skills | Standalone skills |
+| --- | --- | --- |
+| Combined entrypoints | 3,500 words max across all five `SKILL.md` files | No combined limit |
+| Single `SKILL.md` | 900 words max | 500 lines max (size guardrail, not a token budget) |
+| Description | 80 words max | 80 words max |
+| References | One level deep, 1,200 words max per file | One level deep, 1,200 words max per file |
+| Links and naming | References resolve inside the skill | Relative links stay inside the skill; name matches directory; cannot call or shadow a plugin skill |
 
 ## Skill packaging
 
-Workflow, Field Guide, and repository development skills set
-`metadata.internal: true`, so the skills CLI does not offer them. They depend on
-their plugin or this checkout and must not install on their own.
-
-An adapted skill carries `THIRD_PARTY_NOTICES.md` in its own directory with the
-upstream source and the baseline commit. The repository's `upstream-sync` skill
-compares it with upstream.
-
-The site credits each `## <upstream>` section on the skill's page. It links the
-`Tracked path` when there is one, and otherwise the `Source`. It names the
-holder from the `Copyright (c)` line, or an `Author:` line when the license has
-none. In `plugins/workflow/THIRD_PARTY_NOTICES.md`, each section lists the
-skills it credits in an `Adapted in:` line. The site build fails when a field
-is missing.
+- **Internal skills:** Workflow, Field Guide, and `.agents/skills/` set
+  `metadata.internal: true` so the skills CLI hides them.
+- **Adapted skills:** Carry `THIRD_PARTY_NOTICES.md` with `Source:` and
+  `Baseline:` (commit SHA). The `upstream-sync` skill compares against upstream.
+- **Site upstream credits:** The site reads each `## <upstream>` section in
+  `THIRD_PARTY_NOTICES.md`, linking `Tracked path` if present (else `Source`),
+  reading the holder from `Copyright (c)` or `Author:`, and reading `Adapted in:`
+  in `plugins/workflow/THIRD_PARTY_NOTICES.md`. Missing fields fail the site
+  build.
 
 ## Host config
 
-`apply` copies `host-config/claude`, `codex`, and `agents` to the targets that
-[README.md](README.md#host-config) lists, and replaces `{{HOME}}` with the home
-directory and each `{{model:<provider>.<tier>.<id|label>}}` with its entry in
-`host-config/models.json`. The
-manifest in `~/.agents/.filip-stack-host-config.json` records the applied
-commit and a hash of each target.
+`scripts/host-config.mjs` copies `host-config/claude`, `host-config/codex`, and
+`host-config/agents` to the targets in [README.md](README.md#host-config),
+substituting `{{HOME}}` and `{{model:<provider>.<tier>.<id|label>}}` from
+`host-config/models.json`, and writes a manifest to
+`~/.agents/.filip-stack-host-config.json`.
 
-The design system lives in
-[filipgutica/design-system](https://github.com/filipgutica/design-system),
-which ships it as the `design-system` plugin. Host config does not install it;
-the guidance names its skill. `scripts/host-config.mjs` still retires the files
-that earlier versions installed in `~/design-system` and `~/design-language`;
-`tests/host-config/design-system-migration.test.mjs` covers that migration.
-
-Edit guidance in `host-config/guidance.md`, the one file both hosts read.
-`apply` installs it as `~/.agents/AGENTS.md`. The managed block in
-`~/.claude/CLAUDE.md` imports it, and the block in `~/.codex/AGENTS.md` holds a
-copy, because Codex has no imports. Write host-specific rules in its Host notes
-section.
-
-When a model ships, update its tier in `host-config/models.json`. Host config
-names models only there, and a test enforces it. Standalone skills install
-without host config, so they keep their own model names: run
-`git grep -n <old model id>` and update `skills/` and `docs/site/` by hand.
+- **Global guidance:** Edit `host-config/guidance.md` (installed to
+  `~/.agents/AGENTS.md`, imported by `~/.claude/CLAUDE.md`, copied into
+  `~/.codex/AGENTS.md`). Put host-specific rules in its Host notes section.
+- **Model updates:** Update `host-config/models.json` for host config (enforced
+  by test). For standalone skills and site docs, run
+  `git grep -n <old model id>` and update `skills/` and `docs/site/` directly.
+- **Design system:** Ships from
+  [filipgutica/design-system](https://github.com/filipgutica/design-system).
+  `scripts/host-config.mjs` retires older `~/design-system` and
+  `~/design-language` installs (`tests/host-config/design-system-migration.test.mjs`).
 
 ### Share Field Guide preferences
 
-Shared Field Guide preferences live in `~/.config/filip-stack/field-guide.json`.
-When `XDG_CONFIG_HOME` is set and non-empty, the path is
-`$XDG_CONFIG_HOME/filip-stack/field-guide.json` instead. With `--home <dir>` and
-`XDG_CONFIG_HOME` unset or empty, the path is
-`<dir>/.config/filip-stack/field-guide.json`.
+Shared preferences live in `field-guide.json`, with confirmations and event
+triggers in `field-guide-annotations.json` beside it:
 
-User confirmations and event triggers live in `field-guide-annotations.json` in
-the same directory. `apply` imports it when it exists, and `field-guide-sync`
-imports it and exports to it beside `field-guide.json`. Both imports are
-validated before they change the guide.
+| Condition | Directory |
+| --- | --- |
+| Default | `~/.config/filip-stack/` |
+| `XDG_CONFIG_HOME` set and non-empty | `$XDG_CONFIG_HOME/filip-stack/` |
+| `--home <dir>` with `XDG_CONFIG_HOME` unset or empty | `<dir>/.config/filip-stack/` |
 
-`field-guide-sync` creates the files' directory when it exports, and it leaves
-the repository unchanged.
+`apply` imports `field-guide-annotations.json` when present. `field-guide-sync`
+imports and exports both files, creates their directory if needed, and leaves
+this repository unchanged. Both imports validate before writing.
 
-To migrate existing preferences, run these commands on a machine that already
-has them in `~/.field-guide`:
+Migrate existing preferences from `~/.field-guide`:
 
 ```sh
 filip-stack field-guide-sync
 chezmoi add ~/.config/filip-stack/field-guide.json ~/.config/filip-stack/field-guide-annotations.json
 ```
 
-If you set `XDG_CONFIG_HOME`, use the paths printed by `field-guide-sync` in the
-`chezmoi add` command. Review the export before syncing it: it carries every
-active shared learning.
-
-chezmoi keeps its own copy of each file, so run `chezmoi re-add` after each
-update or sync. Run `chezmoi update` first: the sync then merges the other
-machines' guidance, and chezmoi has no conflict to report.
+If `XDG_CONFIG_HOME` is set, pass the paths printed by `field-guide-sync` to
+`chezmoi add`. Review the exported files before syncing, because they carry
+every active shared learning. When using chezmoi, run `chezmoi update`, then
+sync or update, then `chezmoi re-add` to avoid conflicts.
 
 ## Site
 
-The site in `docs/site/` is a separate pnpm package. When it builds, it takes
-the skill list and summaries from the README skill tables and each skill's
-references from its directory. Each page's text in
-`docs/site/src/content/skills/` is written by hand, so update it when the
-skill's behavior changes.
-The README row's "Needs `a` and `b`." sentence builds the skill page's install command.
+`docs/site/` is a separate pnpm package. Its build reads skill names, summaries,
+and "Needs `a` and `b`." install lists from the `README.md` skill tables,
+references and notices from each skill directory, and hand-written prose from
+`docs/site/src/content/skills/`. Update a skill's page when its behavior
+changes.
 
 ```sh
-cd docs/site
-pnpm install
-pnpm dev
+pnpm --dir docs/site install --frozen-lockfile
+pnpm --dir docs/site check                                         # Astro and vue-tsc check
+pnpm --dir docs/site build                                         # build and validate catalog
+pnpm --dir docs/site exec playwright install --with-deps chromium  # once per fresh checkout
+pnpm --dir docs/site test:e2e                                      # Playwright tests
+```
+
+Run a local preview server in the foreground:
+
+```sh
+pnpm --dir docs/site dev
 ```
 
 ## Releases and versioning
 
-CI runs semantic-release after pushes to `main`. Commit messages follow
+CI runs `semantic-release` on pushes to `main` using
 [Conventional Commits](https://www.conventionalcommits.org/):
 
 | In the commit message | Version bump |
 | --- | --- |
 | `fix:` | patch |
 | `feat:` | minor |
-| A `BREAKING CHANGE:` footer | major |
+| `BREAKING CHANGE:` footer | major |
 
-With the default commit analyzer, a `!` after the type, as in `feat!:`, does
-not trigger a major release on its own. Add the `BREAKING CHANGE:` footer.
+With the default commit analyzer, `!` after a type (like `feat!:`) does not
+trigger a major bump; include a `BREAKING CHANGE:` footer. On release, CI stamps
+`package.json`, all Claude, Codex, and Antigravity plugin manifests, and both
+marketplaces, then tags `vX.Y.Z`.
 
-When a release is due, CI stamps `package.json`, every plugin manifest, and both
-marketplace registries before creating the GitHub release.
+- **Standalone skills** have no version and ship on merge to `main` (a releasing
+  commit touching only `skills/` still bumps plugin manifests).
+- **Host config** ships from `main` without a version.
+- **The site** deploys on pushes to `main` touching `docs/site/**`, `README.md`,
+  `SKILL.md`, `references/**`, or `THIRD_PARTY_NOTICES.md`.
 
 ### CLI releases
 
-The dependency-free Node launcher in `cli/` uses release-please independently
-of the plugins. `cli/package.json` and `.release-please-manifest.json` own its
-version. The **Release** workflow collects changes under `cli/` into a release
-PR; merging that PR publishes `cli-vX.Y.Z`. Plugin tags remain `vX.Y.Z` and
-semantic-release continues to own their versions.
+The zero-dependency launcher in `cli/` releases separately via `release-please`:
 
-The launcher runs `scripts/host-config.mjs` from `~/code/filip-stack`, or the
-checkout selected with `--repo <dir>`. Host config still ships from `main`.
-Homebrew installs the launcher directly; it has no dependencies to install or
-build step, so the repository keeps its existing pnpm tooling.
-
-The CLI starts at `0.0.0` until its first release PR. The bootstrap SHA in
-`release-please-config.json` excludes older plugin history. Enable GitHub's
-**Allow GitHub Actions to create and approve pull requests** setting before
-running release-please. Bot release PRs do not trigger PR workflows; dispatch
-`ci.yml` and `cli.yml` on that PR's branch and verify its exact head before merging.
-
-The `filipgutica/homebrew-tap` updater selects stable `cli-v` releases and
-creates the first formula from its template when one exists. Later runs update
-that formula. It hashes the tagged source archive and opens a formula PR;
-Homebrew installation becomes available after that PR merges. The tap tests
-the formula on macOS and Linux.
-
-Standalone skills have no version of their own. The skills CLI installs them
-from `main`, so they ship when they merge. A releasing commit that changes only
-`skills/` still bumps the plugin manifests. Host config also ships from `main`
-without a version. The site deploys from `main` when the site, the README, or
-a skill's `SKILL.md` or references change.
+- `cli/package.json` and `.release-please-manifest.json` own the version;
+  merging the **Release** workflow's PR tags `cli-vX.Y.Z` (the bootstrap SHA in
+  `release-please-config.json` excludes older plugin history).
+- The launcher runs `scripts/host-config.mjs` (or `scripts/sync.mjs` for `sync`)
+  from `~/code/filip-stack` or `--repo <dir>`, with no build step.
+- Enable GitHub's **Allow GitHub Actions to create and approve pull requests**
+  setting. Bot release PRs do not trigger PR workflows, so dispatch `ci.yml` and
+  `cli.yml` on the PR branch and verify its exact head before merging.
+- `filipgutica/homebrew-tap` picks up stable `cli-v` tags, hashes the source
+  archive, opens a formula PR, and tests on macOS and Linux. Users can install
+  the new version only after that formula PR merges.
 
 ## Guidance tests
 
-[promptfoo](https://www.promptfoo.dev/) is the test framework for guidance.
-A guidance test gives a model a fixed scenario with the guidance in its
-prompt, and checks the choice it states. By default a test compares two
-prompts, the guidance at a base ref and the guidance in the working tree, to
-catch a regression from a change. With `--no-base` it checks only the working
-tree, which is how you check the guidance on a new model.
-[evals/README.md](evals/README.md) explains how a run, the rendering, and the
-gate work.
+Guidance tests use [promptfoo](https://www.promptfoo.dev/) to send a fixed
+scenario with guidance in the prompt and check the model's stated choice. By
+default each test compares a base ref against the working tree; `--no-base`
+checks only the working tree (used for new models). See
+[evals/README.md](evals/README.md) for rendering, scoring, and gate internals.
 
 | Command | Guidance under test | Scenarios |
 | --- | --- | --- |
-| `pnpm eval:routing` | Every routable skill's description, and Workflow reference pointers | `tests/workflow/contract-scenarios.json`, `tests/skills/scenarios/<skill>.json` |
+| `pnpm eval:routing` | Routable skill descriptions and Workflow reference pointers | `tests/workflow/contract-scenarios.json`, `tests/skills/scenarios/<skill>.json` |
 | `pnpm eval:delegation` | Delegation guidance, role tables, `host-config/models.json` | `tests/host-config/delegation-scenarios.json` |
-| `pnpm eval:delegation-rules` | What a delegated brief allows, and how a failing task escalates | `tests/host-config/delegation-rules-scenarios.json` |
+| `pnpm eval:delegation-rules` | Delegated brief rules and escalation | `tests/host-config/delegation-rules-scenarios.json` |
 | `pnpm eval:autonomy` | Who settles an open decision | `tests/host-config/autonomy-scenarios.json` |
-| `pnpm eval:handoff` | The footer's goal line, where the Decided for you list goes, the Ready to close line, and when to rename the thread | `tests/host-config/handoff-scenarios.json` |
-| `pnpm eval:host-rules` | Host guidance rules no other test covers | `tests/host-config/host-rules-scenarios.json` |
-| `pnpm eval:workflow-rules` | Workflow rules no other test covers | `tests/workflow/workflow-rules-scenarios.json` |
-| `pnpm eval:coding-standards` | `host-config/agents/CODING_STANDARDS.md`, read with the Engineering skill, the Reviewer role, and full send's council gate | `tests/host-config/coding-standards-scenarios.json` |
-| `pnpm eval:skill-rules` | The choices a standalone skill states at its decision points | `tests/skills/scenarios/<skill>.json` |
-| `pnpm eval:hill-climb` | `hill-climb` rules: score checks, locked files, holdout | `tests/skills/hill-climb-scenarios.json` |
-| `pnpm eval:retrieval` | Retrieval queries and rereading sources after compaction, in host guidance and Field Guide | `tests/host-config/retrieval-scenarios.json` |
+| `pnpm eval:handoff` | Current state footer and thread renaming | `tests/host-config/handoff-scenarios.json` |
+| `pnpm eval:host-rules` | Other host guidance rules | `tests/host-config/host-rules-scenarios.json` |
+| `pnpm eval:workflow-rules` | Other Workflow rules | `tests/workflow/workflow-rules-scenarios.json` |
+| `pnpm eval:coding-standards` | `CODING_STANDARDS.md` with Engineering, Reviewer, and council gate | `tests/host-config/coding-standards-scenarios.json` |
+| `pnpm eval:skill-rules` | Standalone skill decision points | `tests/skills/scenarios/<skill>.json` |
+| `pnpm eval:hill-climb` | `hill-climb` score checks, locked files, and holdout | `tests/skills/hill-climb-scenarios.json` |
+| `pnpm eval:retrieval` | Retrieval queries and post-compaction rereads | `tests/host-config/retrieval-scenarios.json` |
 
 ### Add a scenario
 
-Add an object to the scenario file. For the delegation and autonomy tests,
-give it an `id`, a `task`, and `accept`: the passing choices, as one list or
-a list per host (`claude`, `codex`). Set `needsNewGuidance: true` when the
-change under test is meant to fix the scenario. A Workflow rules scenario also
-lists its `options` as `{ key: description }`; `accept` names keys. Pair each
-new rule with a control scenario where the rule should not apply.
+- **Delegation and autonomy:** Add `{ id, task, accept }` (`accept` is a list,
+  or a `{ claude, codex }` map).
+- **Rules tests:** Also add `options` as `{ key: description }`; `accept` lists
+  passing keys.
+- **New fixes and controls:** Set `needsNewGuidance: true` on the scenario a
+  change fixes, and pair it with a control scenario where the rule should not
+  apply.
 
 ### Write a regression and its control
 
-Start with the decision the old guidance got wrong. Give the model the facts
-it had at that point and offer plausible choices. Keep the same choices in the
-control. Change only the condition that determines whether the new rule applies.
-
-Suppose a review skill now requires automated approval to cover the current
-PR head. The two cases differ only in the commit the approval covers. For a
-standalone skill, put both objects in its `rules` array.
+Give the model the exact facts from the failure and plausible choices. Keep the
+same choices in the control and change only the condition that triggers the new
+rule. For a standalone skill, add both objects to its `rules` array:
 
 ```json
 [
@@ -317,97 +268,71 @@ standalone skill, put both objects in its `rules` array.
 ]
 ```
 
-Compare both cases against the base. To show the change fixes the regression,
-look for a base miss followed by a pass on the working tree. The control should
-pass on both versions. A regression case that passes on both versions can
-still guard the intended behavior. When you need evidence of a fix, use a
-case that more closely reproduces the original decision.
+A strong fix misses on the base and passes in the working tree, while the
+control passes on both.
 
 ### Test a standalone skill
 
-Each routable standalone skill, and Field Guide, has a test file at
-`tests/skills/scenarios/<skill>.json`. `node tests/skills/validate-skills.mjs`
-fails when one is missing.
+Each routable standalone skill, plus Field Guide, needs
+`tests/skills/scenarios/<skill>.json` (`node tests/skills/validate-skills.mjs`
+enforces this):
 
-- `routing`: `{ id, prompt, expectedSkill, alsoAccept?, expectedReference? }`.
-  Give at least one prompt that should load the skill and one near miss that
-  should load another skill or none (`expectedSkill: null`). Use `alsoAccept`
-  only when a second skill is also a correct choice. `expectedReference` names
-  the reference file the skill's body should send the request to.
-- A manual-only skill needs no file. Its routing scenarios, if any, set
-  `activation: "explicit"` and name the skill in the prompt as `$<skill>`, so
-  they test only `expectedReference`. Add a near miss for a similar request
-  that should load no skill or another one.
-- `rules`: optional. Each scenario has an `id`, a `task`, `options` as
-  `{ key: description }`, and an `accept` list of keys. The prompt holds
-  that skill's `SKILL.md`, plus the repository paths a scenario lists in an
-  optional `files` array, such as a reference the scenario's route loads.
+- **`routing`:** `{ id, prompt, expectedSkill, alsoAccept?, expectedReference? }`
+  with at least one positive prompt and one near miss (`expectedSkill: null` or
+  another skill).
+- **Manual-only skills:** Optional file. Any routing scenarios set
+  `activation: "explicit"` and name `$<skill>` to test `expectedReference`,
+  paired with a near miss.
+- **`rules` (optional):** `{ id, task, options, accept, files? }`. `files` adds
+  extra repo files (such as a reference) alongside `SKILL.md`.
 
-Run one skill's tests with `pnpm eval:routing --skill <name>` or
-`pnpm eval:skill-rules --skill <name>`. They run without a base, and every
-attempt must pass.
+Run one skill's tests (no base; every attempt must pass):
+
+```sh
+pnpm eval:routing --skill <name>
+pnpm eval:skill-rules --skill <name>
+```
 
 ### Assert a choice
 
-Each `evals/<name>.yaml` names two prompt functions, a test generator, and one
-`javascript` assertion. The assertion parses the JSON reply, classifies it
-into a choice, and passes when `accept` includes that choice. Its reason is
-the choice, which the result tables print. For a new decision, add these to
-`evals/host-guidance.mjs` or a new module, a config beside the others, an
-entry in `evals/run.mjs`, and an `eval:<name>` package script.
+To add a new decision test, add the prompt, test generator, and `javascript`
+assertion to `evals/host-guidance.mjs` (or a new module), add
+`evals/<name>.yaml`, register it in `evals/run.mjs`, and add `eval:<name>` to
+`package.json`. See [evals/README.md](evals/README.md#files).
 
 ### Compare against `main`
 
 ```sh
-pnpm eval:delegation --dry-run   # free: validates the config, renders both versions, counts calls
-pnpm eval:delegation             # paid: compares with origin/main through the local CLIProxyAPI
+pnpm eval:delegation --dry-run   # free: validates config, renders both versions, counts calls
+pnpm eval:delegation             # paid: compares with origin/main through local CLIProxyAPI
 pnpm eval:view                   # opens saved results in the promptfoo viewer
 ```
 
-`--base <ref>` changes the base, `--attempts <n>` sets promptfoo's `--repeat`
-(default 3), and `--model <id>` narrows the models in `evals/providers.yaml`.
-The runner reads the CLIProxyAPI key from `~/.config/secrets/cliproxy-client-key`, or from `--api-key-file` or `CLIPROXY_API_KEY`; ask before a paid run.
+Flags: `--base <ref>` (default `origin/main`), `--attempts <n>` (default `3`),
+`--model <id>` (from `evals/providers.yaml`), and `--api-key-file <path>`. The
+CLIProxyAPI key comes from `--api-key-file` first, then `CLIPROXY_API_KEY`, then
+`~/.config/secrets/cliproxy-client-key`. Ask before a paid run. `eval:routing`
+runs only affected steps and exits `0` when nothing routable changed.
 
-In a comparison, routing runs only the steps a change can affect: skill steps
-when a routable skill's name or description changed, and a skill's reference
-steps when its body changed. With no such change it exits 0 without a call.
-
-promptfoo scores each answer alone, so the runner applies the gate after the
-run. It fails when a scenario passes fewer attempts in the working tree than
-at the base, or when a `needsNewGuidance` scenario does not gain and the
-working tree misses an attempt. Without a base, it fails when the working
-tree misses any attempt. A provider error stops the run; it never counts as a
-failed attempt.
+After promptfoo finishes, the gate in `evals/run.mjs` fails on any regression
+against base, any `needsNewGuidance` case that fails to improve and misses an
+attempt, any missed attempt under `--no-base`, or any provider error.
 
 ### Check a new model
 
 1. Add the model to `evals/providers.yaml`.
-2. Run each test with `--no-base --model <id>`, starting with a dry run.
-3. A failing row shows guidance the model reads differently. Change the
-   guidance, then confirm with a normal comparison that the change does not
-   regress the current models.
+2. Run each test with `--no-base --model <id>`, starting with `--dry-run`.
+3. Fix failing guidance, then run normal base comparisons to confirm no
+   regressions on existing models.
 
-### Results
+### Results, CI, and PluginBench
 
-Every run is saved in promptfoo's local results store, which `pnpm eval:view`
-opens. Runs are not written to `docs/evidence/`: each saved result holds the
-full rendered guidance and reply for every call, which is raw per-call data.
-For a study, put the printed tables in `docs/evidence/<study>/` and record the
-study in the lab notebook.
-
-### CI
-
-CI cannot reach the CLIProxyAPI, so it never makes model calls. `pnpm check`
-runs each test's dry run, the gate tests, and an autonomy run against a local
-stub that checks the request body and the results tables.
-
-### PluginBench
-
-A guidance test checks a stated choice. [PluginBench](https://github.com/filipgutica/pluginbench)
-is a separate research project. It measures what an agent does over a whole
-task and compares guidance with vanilla or with other guidance packages. It is
-optional: no change here needs a PluginBench run.
-[The lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) and
-[the evidence directory](docs/evidence/workflow-skill-evaluation/) keep its
-past studies.
-
+- **Results:** Promptfoo stores raw runs locally (`pnpm eval:view`). Do not
+  commit raw runs to `docs/evidence/`; save only printed summary tables for a
+  study in `docs/evidence/<study>/`.
+- **CI:** Never calls live models. `pnpm check` runs every test's `--dry-run`,
+  gate tests, and a stubbed autonomy run.
+- **PluginBench:** [PluginBench](https://github.com/filipgutica/pluginbench) is
+  a separate whole-task benchmark; no change here requires it. Past studies live
+  in [the lab notebook](docs/workflow-skill-evaluation-lab-notebook.md) and
+  [the evidence directory](docs/evidence/workflow-skill-evaluation/).

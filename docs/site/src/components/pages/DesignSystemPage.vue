@@ -13,35 +13,36 @@ const tables = {
     {
       command: "DESIGN.md",
       description:
-        "Rules for choosing a format, styling the work, and checking the result.",
+        "Rules for choosing a format, styling UI, and checking the result.",
     },
     {
       command: "tokens.css",
-      description: "Theme values to import or inline. The project hue and fonts sit in one block at the top.",
+      description:
+        "CSS theme variables to import or inline, with hue and fonts at the top.",
     },
     {
       command: "components.md",
-      description: "One spec for each component, marked core or identity.",
+      description: "Spec for each component, marked core or identity.",
     },
     {
       command: "components.html",
-      description: "Every component in each state, in plain HTML and CSS.",
+      description: "Every component in every state, in plain HTML and CSS.",
     },
     {
       command: "decisions.md",
-      description: "Why each component looks the way it does, and the options it replaced.",
+      description: "Why each component looks this way and what it replaced.",
     },
     {
       command: "docs.html",
-      description: "Example documentation shell with a compact setup command.",
+      description: "Example docs layout with a compact setup command.",
     },
     {
       command: "product.html",
-      description: "Example product page hierarchy.",
+      description: "Example product page layout.",
     },
     {
       command: "reference.html",
-      description: "Example application and the foundations catalogue.",
+      description: "Example app layout and foundations catalogue.",
     },
   ],
   formats: [
@@ -51,15 +52,15 @@ const tables = {
     },
     {
       command: "Docs or CLI tool",
-      description: "The setup command or the information the task needs.",
+      description: "The setup command or key task information.",
     },
     {
       command: "Application",
-      description: "Working content and its actions.",
+      description: "Working content and main actions.",
     },
     {
       command: "Inline visual",
-      description: "The comparison or explanation itself, in the host's theme.",
+      description: "The visual itself, styled in the host's theme.",
     },
   ],
 };
@@ -72,14 +73,14 @@ const tables = {
     />
     <h1 id="title">Design system</h1>
     <p class="lede">
-      The visual rules behind every interface Filip builds, written as plain
-      HTML and CSS. Agents follow them for visual work, the Vue UI library
-      implements them, and new apps start from them.
+      Shared visual rules for Filip's interfaces, written in plain HTML and CSS.
+      Agents follow them for visual work, the Vue UI library implements them,
+      and new projects reuse them.
     </p>
     <UiAlert tone="info">
       <p>
-        Agents use <code>filipgutica/design-system</code> by default, through its
-        <code>design-system</code> plugin. Browse it on the
+        Agents use <code>filipgutica/design-system</code> by default through its
+        <code>design-system</code> plugin. Browse components on the
         <a href="https://filipgutica.github.io/design-system/components.html">design system site</a>.
       </p>
     </UiAlert>
@@ -108,22 +109,23 @@ const tables = {
   <section aria-labelledby="install">
     <h2 id="install">Install the plugin</h2>
     <p class="section-intro">
-      filip-stack does not install the design system. Add the plugin on each
-      machine where agents do visual work.
+      Host config does not install this plugin. Add it on machines that do
+      visual work, or list design-system in your fleet plugin baseline before
+      running filip-stack sync.
     </p>
     <HostCommands :claude="commands.claude" :codex="commands.codex" />
-    <p class="hint">In Codex, restart so a new session loads the plugin.</p>
+    <p class="hint">In Codex, restart to load the plugin.</p>
   </section>
 
   <section aria-labelledby="catalogue">
     <h2 id="catalogue">Component catalogue</h2>
     <div class="prose">
       <p>
-        The catalogue shows every component in each state, using only
-        <code>tokens.css</code>. Its markup sets the roles and states that
-        every implementation copies:
-        <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>
-        in Vue, a React library, or a new app.
+        The catalogue renders every component and state using only plain HTML
+        and <code>tokens.css</code>. Every implementation follows its markup and
+        states:
+        <a href="https://filipgutica.github.io/ui/"><code>@filipgutica/ui</code></a>,
+        React, or a new app.
       </p>
       <ul>
         <li>
@@ -156,12 +158,11 @@ const tables = {
     <h2 id="how">How agents use it</h2>
     <div class="prose">
       <p>
-        Agents follow the plugin's <code>$design-system:design-system</code>
-        skill before UX or visual work. It reads the plugin's
-        <code>DESIGN.md</code> and owns the look. For behavior, such as flows,
-        states, copy, and accessibility, they also use the
-        <a href="/filip-stack/skills/interface-design/">interface-design</a>
-        skill.
+        Before visual work, agents load <code>$design-system:design-system</code>,
+        which reads <code>DESIGN.md</code> for appearance. For flows, states,
+        copy, and accessibility, they pair it with
+        <a href="/filip-stack/skills/interface-design/">interface-design</a>.
+        Rules apply in this order:
       </p>
     </div>
     <ol class="fg-site-steps" aria-label="Which rules win">
@@ -173,16 +174,16 @@ const tables = {
       <li>
         <div>
           <p>
-            <strong>A repository's own design system</strong> owns its tokens
-            and components.
+            <strong>A repository's own design system</strong> controls its
+            tokens and components.
           </p>
         </div>
       </li>
       <li>
         <div>
           <p>
-            <strong><code>filipgutica/design-system</code></strong>, through
-            its plugin, covers all other UX and visual work.
+            <strong><code>filipgutica/design-system</code></strong> covers all
+            other UX and visual work.
           </p>
         </div>
       </li>
@@ -190,7 +191,7 @@ const tables = {
         <div>
           <p>
             <strong>Without the plugin</strong>, agents use no house style and
-            say once that the plugin is missing.
+            note once that it is missing.
           </p>
         </div>
       </li>
@@ -200,7 +201,7 @@ const tables = {
   <section aria-labelledby="formats">
     <h2 id="formats">Pick the format first</h2>
     <p class="section-intro">
-      The format sets the density and what the reader sees first.
+      The skill picks one of four formats first to set density and lead content.
     </p>
     <UiCommandList
       :items="tables.formats"
@@ -218,16 +219,15 @@ const tables = {
     <h2 id="reuse">Reuse it in a new project</h2>
     <div class="prose">
       <p>
-        The design system has two layers. A new project keeps the core as is:
-        tokens, quiet depth, controls and their states, focus, motion, and
-        accessibility. It replaces the identity layer: the personal sites'
-        terminal look, with the <code>~/name</code> header, mono headings, and
-        command plates.
+        The system has two layers. Keep the core layer unchanged (tokens, quiet
+        depth, control states, focus, motion, and accessibility). Replace the
+        identity layer, which gives Filip's personal sites their terminal look
+        (<code>~/name</code> header, monospace headings, and command plates).
       </p>
       <p>
-        Keep <code>tokens.css</code> unchanged, and set your own hue and fonts
-        on <code>:root</code> in a stylesheet loaded after it. Build
-        components from the catalogue and specs.
+        Leave <code>tokens.css</code> unchanged. Override hue and fonts on
+        <code>:root</code> in a stylesheet loaded after it, then build from the
+        catalogue.
       </p>
     </div>
   </section>
@@ -235,9 +235,9 @@ const tables = {
   <section aria-labelledby="theme">
     <h2 id="theme">Theme and token names</h2>
     <p class="section-intro">
-      Graphite surfaces separate regions. Indigo marks primary actions; blue marks links.
-      Focus is one indigo ring with a 3px gap. Use the header's appearance switch
-      to compare light and dark.
+      Graphite surfaces separate regions. Indigo marks primary actions and blue
+      marks links. Focus uses one indigo ring with a 3px gap. Toggle light and
+      dark in the header.
     </p>
     <UiCard title="Graphite Indigo tokens">
       <template #actions>From <code>@filipgutica/ui</code></template>
@@ -285,13 +285,10 @@ const tables = {
       </div>
     </UiCard>
     <p class="hint">
-      Labels are token names shared by standalone HTML and library sites.
-      Values come from <code>tokens.css</code> in
-      <code>@filipgutica/design-system</code>. <code>@filipgutica/ui</code>
-      builds its themes from that package.
-      <a href="https://filipgutica.github.io/ui/"
-        >See the components in the UI library</a
-      >.
+      Standalone HTML and library sites share these CSS variable names from
+      <code>tokens.css</code> in <code>@filipgutica/design-system</code>, which
+      <code>@filipgutica/ui</code> builds its themes from.
+      <a href="https://filipgutica.github.io/ui/">See the UI library</a>.
     </p>
   </section>
 
@@ -313,13 +310,14 @@ const tables = {
     <h2 id="change">Where to make changes</h2>
     <div class="prose">
       <p>
-        Edit the rules, examples, and tokens in
+        Edit rules, examples, and tokens in
         <a href="https://github.com/filipgutica/design-system">filipgutica/design-system</a>,
-        which publishes them as <code>@filipgutica/design-system</code> and as
-        the <code>design-system</code> plugin. After a release, update the plugin
-        on each machine with
-        <code>claude plugin update design-system@design-system</code> or
-        <code>codex plugin marketplace upgrade design-system</code>.
+        which publishes <code>@filipgutica/design-system</code> and the
+        <code>design-system</code> plugin. After a release, update with
+        <code>claude plugin update design-system@design-system</code> (then
+        start a new session or run /reload-plugins) or
+        <code>codex plugin marketplace upgrade design-system</code> (then
+        restart Codex).
       </p>
     </div>
   </section>

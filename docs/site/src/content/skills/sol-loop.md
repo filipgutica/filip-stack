@@ -4,55 +4,57 @@ related: [full-send, babysit-pr]
 
 ## What it does
 
-Your agent checks each finding
-against the code, fixes real problems with a small change, and answers
-disagreements with evidence. Findings outside the change's purpose become
-follow-ups instead of growing the diff. It uses the latest Sol unless you
-name a version.
+Give sol loop local changes or a PR and state what the change should do. Your
+agent runs checks, sends the diff to one read-only Sol reviewer, and checks
+each reported issue (**finding**) against the code. It fixes real in-scope bugs
+with the smallest edit, answers disputes with evidence, and repeats for a few
+**rounds** (review passes). You get an approved diff, or both sides of any
+dispute, and the agent pushes only after agreement when you explicitly asked to
+push, ship, or update the PR.
 
 ## When to use it
 
-Your agent must be able to run Sol: through the Codex provider in T3 Code,
-directly in Codex, or in Claude Code through a custom subagent that runs Sol.
-If it cannot, the skill says so instead of using another model.
+Use sol loop before opening a PR, or for another bug-hunting pass.
+[Full-send](../full-send/) and [full-stop](../full-stop/) use it to review code
+and PR text. For CI and bots, use [babysit-pr](../babysit-pr/).
 
-Install the skill, then say "sol loop" and describe the change and its
-purpose:
+Your host must run Sol via Codex in T3 Code, directly in Codex, or a custom Sol
+subagent in Claude Code. Otherwise it reports the blocker.
+
+Say "sol loop" and describe the change's purpose:
 
 > sol loop on this branch; it only fixes the retry backoff.
 
-Use it before you open a PR, or when a change needs another review.
-[Full-send](../full-send/) uses it to review the code and PR description.
-
 ## How it works
 
-The agent runs the relevant checks, then one Sol reviewer reads the diff:
+One read-only Sol reviewer (latest Sol unless you name a version) grades each
+finding:
 
 | Severity | Meaning |
 | --- | --- |
-| blocker | The intended case is wrong |
-| should | A real bug callers will hit within the change's intent |
-| nit | Other issues, such as rare cases or small speedups |
+| `blocker` | Intended case is wrong |
+| `should` | Real bug callers will hit within intent |
+| `nit` | Rare cases, other paths, or small speedups |
 
-The agent fixes agreed findings with the smallest change and answers
-disputed ones with evidence. Nits and out-of-scope items become follow-ups.
-
-The default is three rounds. Security, permissions, authentication, data
-loss, and concurrency work can extend to five while a blocker or should
-remains, or when you ask. A round with only nits ends the loop.
+1. **Check and review.** Your agent runs checks, excludes unrelated edits, and
+   sends the diff to Sol.
+2. **Fix or reply.** It fixes agreed blockers and shoulds with the smallest
+   edit, answers disputes with evidence, and declines nits and out-of-scope
+   items as follow-ups.
+3. **Repeat up to the cap.** Default is three rounds, extending to five for
+   security, permissions, auth, data loss, or state/concurrency while a blocker
+   or should stays open, or when you ask. A nit-only round ends the loop.
+   Running out of rounds is not approval.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/sol-loop/SKILL.md)
 has the exact scope, round, and approval rules.
 
 ## What you get
 
-- Agreement, when Sol approves and no blocker or should remains. Otherwise,
-  both sides of each disagreement for you to decide.
-- The rounds, the model that ran, the diff size before and after, and fixed
-  or declined findings with reasons.
-- When you authorized a PR update, a collapsed Sol review section at the end
-  of the PR description, with each round's findings.
-
-Running out of rounds is not approval. The agent never pushes during the
-loop, and afterwards pushes only if you authorized it. For CI and bot review,
-use [babysit-pr](../babysit-pr/).
+- Approval when Sol approves the current behavior diff with no open blocker,
+  should, or remaining concern from your agent, or both sides of any unresolved
+  dispute.
+- Round count, model, diff size before and after, fixed and declined findings
+  with reasons, and push status.
+- When authorized to update the PR, a collapsed Sol review table in its
+  description.

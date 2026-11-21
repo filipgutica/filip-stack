@@ -4,42 +4,44 @@ related: [review]
 
 ## What it does
 
-Files are grouped by the behavior they serve. For each part, you see the
-decision, the evidence, how it was verified, and the remaining risk, with a
-concrete example. You accept each part before the walkthrough moves on.
+Run `/walkthrough` (or `$walkthrough` in Codex) and name a change: your last
+edit, the working tree, a branch, or a pull request. The agent groups changed
+files by behavior and presents one **slice** (a coherent part of the change) at
+a time. Each slice shows the decision, evidence, verification, risk, and an
+example, then pauses for acceptance. You get a summary of covered files,
+decisions, corrections, and open risks, plus an optional log.
 
 ## When to use it
 
-Install the skill, then run `/walkthrough` in Claude or `$walkthrough` in
-Codex and name the change:
+Use this manual-only skill to inspect your last change, working tree, branch, or
+pull request before approving it.
 
 > /walkthrough this branch
 
-Use it to understand the last change, the working tree, a branch, or a PR
-before you approve it. For a written list of findings, use
-[review](../review/).
+Skip it for an ordinary summary or written findings. Use [review](../review/)
+for code review.
 
 ## How it works
 
-The agent maps every changed file into an ordered list of parts and presents
-one at a time. For the main behavior, it offers a small exercise, such as
-running a command, and asks what you expect to see. Each part ends with an
-acceptance question.
-
-It records corrections but does not make them without your separate
-approval, and revisits affected parts after a fix. The walkthrough ends when
-every changed file is covered and every correction is resolved or deferred.
-You can ask for a separate read-only presenter agent, whose evidence your
-agent checks.
+1. **Confirm the range.** The agent locks onto one source and flags edits
+   outside it.
+2. **Walk slice by slice.** Files are grouped by behavior. For the main
+   behavior, it offers a runnable exercise when useful and available, or walks
+   through an example, asks what you expect, and then asks for acceptance on
+   each slice.
+3. **Record corrections.** It logs corrections without editing code, rebuilds
+   slices after an approved fix, and supports a read-only presenter agent.
+4. **Finish.** Walkthrough ends after every file is covered and every correction
+   is resolved or deferred.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/walkthrough/SKILL.md)
-links the presentation patterns and the optional log format.
+links the presentation patterns and optional log format.
 
 ## What you get
 
-- The behavior and files covered, with your decisions and corrections.
-- Verification evidence, its limits, and open risks or questions.
-- A walkthrough log, if you ask for one.
+- Covered behavior, files, decisions, and corrections.
+- Verification evidence, its limits, and open risks.
+- An optional Markdown log.
 
-Silence, a passing test, or a finished exercise does not count as approval.
-Apart from a log you ask for, walkthrough changes no files.
+Silence, a passing test, or a finished exercise never counts as approval. Apart
+from an authorized log, walkthrough changes no files.

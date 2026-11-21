@@ -4,57 +4,57 @@ related: [full-send, sol-loop, babysit-pr, council]
 
 ## What it does
 
-Full stop runs [full-send](../full-send/)'s process: Sol (currently OpenAI's
-`gpt-6.2-sol`) reviews the code and PR description, and the agent handles CI
-and bot findings. At the end, it checks that the PR is ready for your merge
-decision instead of merging.
+Give full stop a local change, a goal, or a PR link, and it runs
+[full-send](../full-send/)'s review and CI loop without ever merging. Unlike
+full send, full stop stops before merging and, in fix mode, turns off
+auto-merge and leaves any merge queue. Your agent proves the change, runs
+[sol-loop](../sol-loop/) or [council](../council/) review, and handles CI and
+bots via [babysit-pr](../babysit-pr/). You get a verdict saying whether the PR
+is ready to merge, waiting on human approval, or blocked (`FAIL`), while the PR
+stays open.
 
 ## When to use it
 
-Use it to finish a change or PR while you are away and leave the merge to
-you.
+Use full stop to prepare a PR while you are away and merge it yourself. To let
+the agent merge, use [full-send](../full-send/).
 
-Your agent must be able to run Sol; see [sol-loop](../sol-loop/). A council
-threshold also needs every model in the [council](../council/). The install
-command above also installs `full-send`, `sol-loop`, `babysit-pr`, and
-`council`, and full stop stops if one it needs is missing.
+It needs `full-send`, `sol-loop`, `babysit-pr`, and `council` (for a score
+check), all installed above, plus a host that runs Sol or the
+[council](../council/) lineup.
 
-Run `/full-stop` in Claude or `$full-stop` in Codex, with a goal or PR link:
+Run `/full-stop` in Claude or `$full-stop` in Codex with a goal or PR link:
 
-> /full-stop https://github.com/acme/app/pull/42
+> /full-stop `<PR URL>`
 
-Add a council threshold to hold the handoff until the PR passes the
-council gate. [Council](../council/) explains how the gate
-works:
+Add a **threshold** (minimum 0 to 10 score, defaulting to 9.5) for a
+[council](../council/) **gate** pass:
 
-> /full-stop https://github.com/acme/app/pull/42 council 9.5
+> /full-stop `<PR URL>` council 9.5
 
-This authorizes commits and pushes to the PR's own branch in fix mode. It
-never authorizes merging, auto-merge, a merge queue, or a push to the default
-branch.
+This grants full send's commit, push, rebase, and testing permissions, never
+merging, auto-merge, merge queues, or pushes to the default branch.
 
 ## How it works
 
-It uses full send's modes, proof rules, and rules for asking you, and always
-returns a verdict.
+Full stop follows [full-send](../full-send/)'s rules, with three overrides:
 
-In fix mode, it turns off auto-merge and takes the PR out of any merge queue
-before work begins, and checks again before each push. In review-only mode,
-it reports those settings without changing them.
-If it cannot prevent a merge on its own, it asks you first.
-
-Full send's merge gate becomes a readiness check on the final diff. Before
-handoff, the agent checks that the live PR is open, not a draft, and not set
-to merge automatically.
+1. **Always return a verdict.** It stays in verdict mode even when you can
+   merge, never merging, enabling auto-merge, or queuing a merge.
+2. **Block automatic merges.** In fix mode, it turns off auto-merge and removes
+   the PR from any merge queue before starting and before each push. In
+   review-only mode, it reports those settings unchanged. Whenever it cannot
+   stop the PR from merging without you, it asks before continuing.
+3. **Check readiness at handoff.** Before stopping, it checks full send's gate
+   on the final diff and confirms the live PR is open, not a draft, and not
+   set to merge automatically (including via auto-merge or a merge queue).
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/full-stop/SKILL.md)
-lists exactly how it differs from full send.
+lists every override over full send.
 
 ## What you get
 
-- `PASS: ready to merge` when the gate passes.
-- `PASS: ready for human review` when only required human approval remains.
-- `FAIL: <main reason>` otherwise.
-
-The report includes full send's evidence and findings, the final head commit,
-and confirmation that the PR is still open, or that someone else merged it.
+- `PASS: ready to merge`, `PASS: ready for human review` (only human approval
+  remains), or `FAIL: <main reason>`.
+- Full send's evidence, review rounds or scores, and decisions, plus the final
+  head commit and confirmation the PR is still open (or merged by someone
+  else).

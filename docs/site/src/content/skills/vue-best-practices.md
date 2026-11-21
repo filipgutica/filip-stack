@@ -4,46 +4,45 @@ related: [review, test-audit]
 
 ## What it does
 
-The guidance helps the agent decide who owns each piece of reactive state,
-and what a component promises through its props, events, slots, and models.
-Your project's rules and existing public APIs win over its defaults.
+Ask your agent to build, refactor, or review `.vue` files or supporting
+TypeScript. It checks your installed Vue version and nearby patterns, then loads
+only the guides your task needs. It keeps state ownership clear and types each
+component's props, events, slots, and models, while your project's rules and
+public APIs win over defaults. You get code changes or review notes, backed by
+applicable project checks.
 
 ## When to use it
 
-Install the skill, then ask for Vue work in plain words. The agent picks it
-for `.vue` files and the TypeScript that supports them:
+Use this skill for Vue components, **composables** (reusable functions using Vue
+reactivity or lifecycle hooks), data flow, templates, and tests, including Vue
+Router, Pinia, VueUse, and Nuxt.
 
 > Refactor `UserTable.vue` so the sorting logic moves out of the template.
 
-Use it to build, refactor, or [review](../review/) components, composables,
-reactivity, data flow, and tests, including Vue Router, Pinia, VueUse, and
-Nuxt.
+Existing rules and public APIs win over defaults. Public API changes need your
+approval.
 
 ## How it works
 
-The agent reads the component, nearby patterns, and the installed Vue version
-before it picks features. For example, `defineModel` is stable from Vue 3.4.
-Unless your code uses another style, it defaults to Vue 3, the Composition
-API, and `<script setup lang="ts">`. Other defaults:
-
-- Keep source state small. Derive values with `computed`, and use `watch` for
-  side effects.
-- Use a composable only for reactivity, side effects, injection, or
-  lifecycle hooks, not pure parsing or formatting.
-- State composables return read-only state and named actions, such as
-  `refresh`, not setters like `setLoading`.
-- Type props, events, slots, and models. Use `defineModel` only for true
-  two-way bindings.
-- Keep templates declarative.
+1. **Match your project and Vue version.** The agent checks nearby code and the
+   installed Vue version before picking features like `defineModel` (3.4+) or
+   `useTemplateRef` (3.5+). Unless nearby code uses another style, it defaults
+   to Vue 3, the Composition API, and `<script setup lang="ts">`.
+2. **Apply ownership and contract defaults.** It keeps source state small,
+   derives values with `computed`, and reserves `watch` for side effects. It
+   puts pure logic in plain helpers, defaults reactive-state composables to
+   read-only state and named actions (`refresh`) except for owned UI models,
+   types component contracts, and keeps templates declarative.
+3. **Run applicable checks.** For code changes, it runs the project's applicable
+   `typecheck`, `lint`, `stylelint`, unit, and component tests without weakening
+   existing tests.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/vue-best-practices/SKILL.md)
-links the detailed conventions and version notes.
+links the detailed guides and version notes.
 
 ## What you get
 
-- Vue changes or review notes that match the surrounding code.
-- Focused type, lint, and component checks for the affected behavior.
+- Vue changes or review notes matching nearby conventions.
+- Applicable type, lint, and component test results for affected behavior.
 
-User-visible changes and slot, event, or model contracts favor component tests.
-Public API changes need your approval. For a closer look at test value, use
-[test-audit](../test-audit/).
+For test quality, use [test-audit](../test-audit/).

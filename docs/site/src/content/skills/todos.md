@@ -4,41 +4,44 @@ related: [checkpoint, catch-up]
 
 ## What it does
 
-Todos keeps each item as an open issue in your private `todos` repository on
-GitHub, so an item you defer on one machine shows up when you ask on another.
-Agents use the `gh` CLI, which needs to be signed in on each machine.
+Tell your agent in plain words to add, list, or close tasks you plan to do
+later. It saves each item as an open issue in your private `<login>/todos`
+GitHub repository via the signed-in `gh` CLI. Each issue records its source and
+machine, never secret values. You get one cross-machine list with stable issue
+numbers and closed history on GitHub.
 
 ## When to use it
 
-Install the skill, then talk to the agent as you normally would:
+Use this skill for open items you owe across threads and machines. Sign in to
+`gh` with the same GitHub login on each machine so they share one list.
 
-- "Add rotating the deploy key to my todos" or "remind me later to…" adds an
+- "Add rotating the deploy key to my todos" or "remind me later to..." adds an
   item.
-- "What's on my todos?" lists the open items, oldest first, by issue number.
+- "What's on my todos?" lists open items oldest first with their issue numbers.
 - "Done with 3" or "cleared the DB thing" closes an item.
 
-When you say you will do something later without asking for a todo, the agent
-offers once to add it. At a handoff, it offers to move the items you are
-deferring from **Waiting on you**.
+When you defer something casually, the agent offers once to add it. At a
+handoff, it offers once to move deferred **Waiting on you** items into todos.
 
-Todos are items you owe. For the verified state of a task, use
-[checkpoint](../checkpoint/); for a recap of a thread, use
+For task state, use [checkpoint](../checkpoint/). For a thread recap, use
 [catch-up](../catch-up/).
 
 ## How it works
 
-The repository is `<your GitHub login>/todos`. On first use, the agent asks
-before creating it as a private repository, and it stops if the repository is
-public. Each issue records the repository or thread it came from and the
-machine it was added on, so a list shows which items belong to another
-machine. When a list includes items older than 30 days, the agent marks them
-stale and asks whether to drop them. Items name a credential or file, never a
-secret value.
+1. **Verify privacy.** Before every action, the agent checks `<login>/todos` and
+   stops unless it confirms `PRIVATE`. On an add when the repo is missing, it
+   asks before creating it as private and rechecks visibility.
+2. **Add safely.** Each issue gets a clear title, source, and machine name,
+   naming credentials or files instead of secret values.
+3. **List and close.** Lists sort oldest first, show the source machine when it
+   differs from the current machine, and flag items over 30 days as stale.
+   Ambiguous close requests ask which item.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/todos/SKILL.md)
 has the exact commands.
 
 ## What you get
 
-One list shared by every machine and agent. Finished items are closed as
-completed, and dropped ones as not planned, so GitHub keeps their history.
+- Issue-number confirmation when you add an item.
+- One shared oldest-first list across machines and agents.
+- GitHub history (`completed` for done items, `not planned` for dropped ones).

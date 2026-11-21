@@ -4,44 +4,45 @@ related: [review, walkthrough]
 
 ## What it does
 
-A checkpoint separates what was intended, attempted, built, and verified, so
-whoever resumes can see what still needs proof.
+Run checkpoint on the work to record, and ask to save it for a file. Unlike
+[catch-up](../catch-up/), which reads only chat, checkpoint inspects your live
+repo, branch, commit, uncommitted changes, or tracker. It separates intended,
+attempted, implemented, and verified work from current evidence. You get a
+handoff summary in chat or a saved Markdown file.
 
 ## When to use it
 
-Install the skill, then run `/checkpoint` in Claude or `$checkpoint` in Codex
-before you pause, hand off work, or record what your checks prove. It runs
-only when you call it.
+Run `/checkpoint` in Claude or `$checkpoint` in Codex before pausing, handing
+off work, or recording check evidence. It runs only when invoked.
 
-The result stays in the conversation unless you ask to save it:
+To save a file instead of keeping it in chat:
 
 > /checkpoint save it, I'll resume tomorrow
 
-Without a destination, it saves a new Markdown snapshot under
-`~/.engineering-workflow/<project-or-subject>/checkpoints/`.
+If you ask to save without giving a path, it writes to
+`~/.engineering-workflow/<project-or-subject>/checkpoints/`. For a four-line
+chat reminder, use [catch-up](../catch-up/).
 
 ## How it works
 
-The agent checks the repository, branch, commit, and uncommitted changes.
-Plans and earlier claims do not count as proof.
-
-Each verification result names the command, its result, and the state it
-covered. The agent reuses existing evidence and flags results that later
-changes made stale. A check that never ran is
-reported as not run.
+1. **Inspect live state.** Checks repo, branch, `HEAD`, and uncommitted
+   changes, keeping unrelated edits intact.
+2. **Verify claims.** Compares earlier claims against live evidence, since
+   plans are not proof.
+3. **Audit checks.** Reuses check results, flags stale ones, and marks unrun
+   checks as not run.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/checkpoint/SKILL.md)
-has the snapshot format and saving rules.
+has the format and saving rules.
 
 ## What you get
 
-A checkpoint with the parts that apply:
+- **Source:** work item or document, plus repo, branch, commit, and dirty state
+  when code is involved.
+- **Completed and Remaining:** confirmed outcomes and open work.
+- **Blockers and decisions:** items needed to resume.
+- **Verification:** commands, results, covered state, and gaps.
+- **Next action:** concrete starting point.
 
-- Source: work item, repository, branch, commit, and uncommitted state.
-- Completed outcomes with evidence, and remaining work.
-- Blockers and decisions needed to resume.
-- Verification: what passed, what it covered, and what is unverified.
-- Next action: a concrete place to start.
-
-On resume, the agent rechecks live sources first, because the checkpoint is
-history. Apart from a snapshot you ask for, checkpoint changes no files.
+On resume, recheck live sources first. Except for a requested snapshot,
+checkpoint changes no files.

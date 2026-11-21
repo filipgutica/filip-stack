@@ -4,79 +4,75 @@ related: [full-stop, sol-loop, babysit-pr, council]
 
 ## What it does
 
-Sol (currently OpenAI's
-`gpt-6.2-sol`) reviews the code and PR description through
-[sol-loop](../sol-loop/). The agent opens or updates the PR, handles CI and
-bot findings, and makes routine decisions while you are away. Add a council
-threshold, such as `council 9.5`, and a [council](../council/) of models
-reviews the PR in place of Sol until it passes that threshold.
+Give full send a local change, a goal, or a PR link, and it works unattended to
+merge that PR. Unlike [full-stop](../full-stop/), which stops before merging,
+full send merges once checks and permissions allow. Your agent proves the
+change, runs review via [sol-loop](../sol-loop/) (or a [council](../council/)
+score check), and handles CI and bots via [babysit-pr](../babysit-pr/). You get
+a merged commit, or a `PASS` or `FAIL` verdict, with proof and the decisions
+made while you were away.
 
 ## When to use it
 
-Use it to finish a local change or an existing PR, including the merge when
-the checks allow it. To keep the merge decision yourself, use
-[full-stop](../full-stop/).
+Use full send to finish a change or PR and merge it unattended. To keep the
+merge decision yourself, use [full-stop](../full-stop/).
 
-Your agent must be able to run Sol; see [sol-loop](../sol-loop/). A council
-threshold also needs every model in the [council](../council/). The install
-command above also installs `sol-loop`, `babysit-pr`, and `council`, and
-full send stops if one it needs is missing.
+It needs `sol-loop` and `babysit-pr` (plus `council` for a score check), all
+included above, and a host that can run Sol (see [sol-loop](../sol-loop/)) or
+every [council](../council/) model.
 
-Run `/full-send` in Claude or `$full-send` in Codex, with a goal or PR link:
+Run `/full-send` in Claude or `$full-send` in Codex with a goal or PR link:
 
 > /full-send fix the flaky login test
 
+Add a **threshold** (minimum 0 to 10 score, defaulting to 9.5) to replace
+`sol-loop` with a [council](../council/) merge **gate** (a required score pass):
+
 > /full-send fix the flaky login test council 9.5
 
-This authorizes commits and pushes to the PR's branch, `--force-with-lease`
-after a rebase of that branch, and the merge, each only when its mode below
-applies.
+In fix mode, this authorizes commits, pushes, and `--force-with-lease` after a
+rebase on the PR's own branch. It also authorizes proof tests without asking
+first, and merging only in merge mode after the merge gate passes.
 
 ## How it works
 
-At the start and before it finishes, the agent picks two modes:
+At the start and before finishing, your agent checks two modes:
 
 | Mode | Applies when | Otherwise |
 | --- | --- | --- |
-| Fix | You authored the PR, or it does not exist yet, and you can push to its head repository | Review only: reports findings without pushing |
-| Merge | Fix mode applies, you can push to the base repository, and the review decision permits it | Verdict: returns PASS or FAIL without merging |
+| Fix | You authored the PR, or none exists, and you can push to its head repo | Review only: reports issues without pushing |
+| Merge | Fix mode applies, you can push to the base repo, and review status permits merging | Verdict mode: returns `PASS` or `FAIL` without merging |
 
-Proof must come from what the agent observes in the session: a failing then
-passing reproduction, repository CI, or the running app, with screenshots of
-changed UI and a recording of a changed flow when the host can record. Mocked
-tests alone do not prove the user experience.
+1. **Prove and review.** Your agent completes the goal (or starts from an
+   existing PR) and gathers direct proof in the session (a reproduction, CI
+   checks, or the running app with screenshots). Mocked tests alone do not
+   prove UI. [Sol-loop](../sol-loop/) reviews code and PR text, or the
+   [council](../council/) gate runs once checks turn green.
+2. **Open and watch the PR.** In fix mode, it opens a non-draft PR or updates
+   an existing one and fixes real CI and bot issues via
+   [babysit-pr](../babysit-pr/). In review-only mode, it reports needed edits
+   and findings without pushing.
+3. **Ask on risky choices.** In fix mode, routine fixes happen in the loop.
+   Your agent asks before touching public contracts, migrations, data,
+   security, dependencies, uncovered test removals, missing proof, failed
+   gates, or steps outside the grant, leaving the PR unmerged if unanswered.
+4. **Merge only when green.** Merging requires merge mode, proof for the whole
+   diff, Sol approval or a passed council gate, green required checks,
+   finished bot reviews with each finding fixed or dismissed with a written
+   reason, no human change request, and an up-to-date, mergeable branch, never
+   using `--admin`.
 
-With a council threshold, the default lineup (Sol, Opus, and Neon) scores
-the PR's merge readiness once checks are green. If a member cannot run, such
-as Neon without the Antigravity provider, the agent asks you before it goes
-on without it. The agent fixes their findings and runs another round, for at
-most three rounds. When one member reaches the threshold and another stays
-below it, Fable 5.2 has the final say on the findings they cannot settle; a
-finding it overrules no longer counts against the PR. The agent stops early
-when the lowest score does not rise, open findings do not shrink, and no
-finding awaits Fable, or when the diff grows past its scope. Until the gate passes, it never merges and asks you
-what to do. The scores and any arbiter rulings go in a collapsed section of
-the PR description.
-[Council](../council/) explains the gate and the Codex form of the
-threshold.
-
-The agent fixes routine problems itself. It asks you about public contracts,
-migrations, data, security, dependencies, removing a test no other test is
-proven to cover, missing proof, an unclear goal, or a step beyond your grant.
-Without an answer, it leaves the PR open and unmerged.
-
-The merge needs proof for the whole diff, Sol approval or a passed council
-gate, green required checks, finished bot reviews, no human
-change request, and an up-to-date, mergeable branch. It never bypasses these
-with `--admin` or another override.
-
+Read
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/SKILL.md)
-defines the grant, the modes, proof, and the full merge gate.
+for the exact contract, plus
+[council gate](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/references/council-gate.md)
+and
+[council arbiter](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/references/council-arbiter.md).
 
 ## What you get
 
-- `Merged: <merge commit>`, `PASS: ready for human review`, or `FAIL: <main
-  reason>`.
-- The PR link, proof, Sol rounds or council scores, and fixed and declined
-  findings with reasons.
-- Decisions made for you, and anything you still need to do.
+- `Merged: <merge commit>`, `PASS: ready for human review`, or
+  `FAIL: <main reason>`.
+- The PR link, proof, Sol rounds or council scores, and fixed or declined
+  issues with reasons.
+- Decisions made while you were away, and anything left for you to do.

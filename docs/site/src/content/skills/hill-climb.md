@@ -4,64 +4,67 @@ related: [council, sol-loop, full-send]
 
 ## What it does
 
-[Council](../council/) members suggest improvements, and judges compare two
-versions without knowing which is newer. A failed or losing edit is undone
-from a saved copy.
+Give hill climb a working change to polish, or an open-ended goal and paths.
+Your agent freezes criteria, pass/fail checks (**gates**), and a budget, then
+runs small rounds. Each round tests one edit from [council](../council/) models
+and keeps it only if gates pass and blind judges, a score rule, or both pick it
+over the saved copy. You get final edits in your working tree, a start-to-final
+check, and a run record.
 
 ## When to use it
 
-Use it after a change already works and you want tighter copy, spacing, or
-code. You can also start from an open-ended goal across named paths, such
-as improving the settings pages. Check correctness first, for example with
-[sol-loop](../sol-loop/):
-judges' preferences do not prove the work is correct.
+Use hill climb after a change works for tighter copy, cleaner code, UI polish,
+or leaner guidance, or for an open-ended goal on named paths.
 
-It needs `council`, which the install command above includes, and at least
-two council members that can run. The [council page](../council/) lists the
+Do not use it on broken code or new features. Check correctness first, such as
+with [sol-loop](../sol-loop/): judge preferences do not prove code works.
+
+It needs `council` (included above) and at least two [council](../council/)
 models.
 
 Run `/hill-climb` in Claude or `$hill-climb` in Codex with a goal and paths:
 
 > /hill-climb tighter spacing on the settings page
 
-You can also set a line limit, such as
-`/hill-climb up to 60 lines, tighten the copy`, or cap the model calls.
+You can also set a line limit (`/hill-climb up to 60 lines, tighten the copy`)
+or cap model calls.
 
 ## How it works
 
-Before any edit, the agent writes a *climb card* with the goal, three to five
-criteria, scope, checks, how a winner is decided, and the budget. The card
-then stays fixed. If the goal or limits are unclear, it asks up to four
-questions first.
+1. **Freeze the climb card.** Your agent writes a **climb card** (goal, three
+   to five criteria, scope, gates, winning rule, and budget), asks up to four
+   questions if unclear, and verifies all gates pass.
+2. **Edit and gate each round.** Council models propose edits read-only. Each
+   round applies a small edit within the line limit and runs all gates, keeping
+   behavior unchanged unless allowed on the card.
+3. **Keep winners, restore losers.** An edit stays if it wins under blind
+   `judges` (strict majority of at least two, without seeing which is newer), a
+   `score` beating the kept version by the card's minimum gain (a frozen
+   command, or an answer-key tally for guidance), or `both` (majority and
+   minimum gain). Guidance climbs also accept shorter no-worse edits and check
+   holdout tasks. Losers restore from a saved copy (never Git stash or `git
+   clean`) only after checking nothing else changed scoped or locked files.
+   Otherwise the climb stops without restoring.
+4. **Stop and check start vs. final.** Climbs run three rounds by default (ten
+   max). The default cumulative limit for the climb is the larger of 20 lines
+   or 30% of the original change, with exceptions for user limits, rewrites, or
+   fresh starts. At the end, start and final are compared (recommending you
+   drop the climb if start wins), and guidance climbs compare final against no
+   guidance.
 
-Each round makes one small edit and runs the checks. The edit stays only if
-it wins under the card's rule: judges, a score from a command you name, or
-both. For guidance such as a
-skill, judges compare work done under each version with a no-guidance
-baseline, and holdout tasks check that the gain carries over.
-
-- Three rounds by default, ten at most.
-- At most 20 lines or 30% of the original change, whichever is larger,
-  unless you set another limit. Behavior stays the same, except interactions
-  you allow on the card.
-- A ten-round climb with four members can make up to 48 council calls, plus
-  retries. A guidance climb adds more.
-- It restores from its own saved copy, never Git stash or `git clean`, and
-  stops if other work changes the same files.
-
-At the end, judges or the score compare the starting and final versions. If
-the start wins, the report recommends dropping the climb. Blind comparison
-reduces judge noise but does not remove it.
-
-[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/SKILL.md)
-has the full procedure.
+Read
+[SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/SKILL.md),
+[scores](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/references/score.md),
+and
+[guidance climbs](https://github.com/filipgutica/filip-stack/blob/main/skills/hill-climb/references/guidance.md)
+for full rules.
 
 ## What you get
 
-- The final version in your working tree. Commits need your prior approval.
-- The climb card, each round's edit, checks, votes or scores, and the
-  start-to-final comparison.
-- For UI and guidance, a 0–10 before-and-after score per screen or task, with
-  paired screenshots for UI.
-- Diff statistics, skipped follow-ups, and a run record under
+- Final edits in your working tree (commits need prior approval).
+- The climb card, round edits, gate results, votes or scores, and
+  start-to-final check.
+- For UI and guidance, a 0 to 10 scorecard per screen or task, with paired UI
+  screenshots.
+- Diff stats, declined follow-ups, and a run record in
   `~/.hill-climb/runs/<id>/`.

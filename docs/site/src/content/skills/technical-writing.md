@@ -4,41 +4,44 @@ related: [planning, review]
 
 ## What it does
 
-The agent keeps facts, decisions, links, commands, and required structure
-exactly, adds no unsupported claims, and says where evidence is missing.
+Give your agent a draft, source files, or branch and name the document or
+section. It writes or revises in plain, active prose while keeping facts,
+decisions, links, commands, and required headings intact. Before finishing, it
+runs a **first-reader review** so a newcomer can follow it without your thread.
+You get copy in your format, with missing facts marked.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install), then name the document or
-section and the format you need:
+Install [Workflow](../../#install), then name the document and format:
 
 > Write the PR description for this branch.
 
-Use it for documentation, READMEs, reports, procedures, release notes, error
-text, code comments, and PR descriptions. It also checks whether a
-specification, plan, or ticket makes sense to a first-time reader.
-[Planning](../planning/) still owns their decisions.
+Use it for docs, Confluence pages, reports, READMEs, procedures, release notes,
+error text, comments, and PR descriptions. It clarifies [planning](../planning/)
+prose while leaving decisions to Planning. For a read-only audit, use
+[review](../review/).
 
 ## How it works
 
-The agent identifies the audience, purpose, format, and sources, and edits
-only the part you named. The writing rules favor familiar words, active
-sentences, consistent terms, and one topic per paragraph. Facts,
-assumptions, and open questions stay separate. Last, the agent reads the text
-as a newcomer would: could someone act on it without your conversation?
-
-A PR description states the problem before the new behavior and stays
-short: one line per change, and only the file names a reviewer needs. Each
-verification step gives an action and its expected result, and any real gap
-in verification is stated.
+1. It confirms audience, purpose, format, and sources, editing only the named
+   part.
+2. It uses plain words, active sentences, consistent terms, and one topic per
+   paragraph.
+3. For PR descriptions, it states the problem before the new behavior and
+   stays short: one line per change, and only the file names a reviewer needs.
+   It adds fitting verification (runnable commands or requests for backend,
+   API, or CLI changes) and notes real gaps.
+4. It rereads as a newcomer, separating facts from open questions.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/technical-writing/SKILL.md)
-links the writing rules and PR guidance.
+links
+[prose rules](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/technical-writing/references/technical-prose.md)
+and
+[PR guidance](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/technical-writing/references/pull-requests.md).
 
 ## What you get
 
-- Finished text in the requested format, true to its sources.
-- The evidence, limits, and open questions the reader still needs.
+- Finished text in your format, true to sources.
+- Limits and open questions where evidence is missing.
 
-Drafting does not authorize publishing. For a read-only check of a document, use
-[review](../review/).
+Drafting does not authorize publishing.
