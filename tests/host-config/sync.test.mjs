@@ -369,6 +369,25 @@ test('machine exceptions exclude selected skills, plugins and agent installation
   assert.equal(actions.some(({ tool }) => tool === 'claude'), false)
 })
 
+test('published skills outside the baseline are reported as unselected and not installed', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  put(join(context.seed, 'skills', 'skipped', 'SKILL.md'), 'An excluded skill.\n')
+  success(execute('git', ['-C', context.seed, 'add', '.']))
+  success(execute('git', ['-C', context.seed, '-c', 'user.name=Fixture', '-c', 'user.email=fixture@example.invalid', '-c', 'commit.gpgsign=false', 'commit', '-qm', 'publish skipped']))
+  success(execute('git', ['-C', context.seed, 'push', '-q', context.origin, 'main']))
+  fleetBaseline(context, { baseline: { skills: ['example'], plugins: ['example', 'second'] }, exclude: { skills: ['skipped'] } })
+  const report = JSON.parse(success(context.sync('--environment-id', 'this-machine')))
+  const skills = report.components.find(({ name }) => name === 'skills')
+  assert.deepEqual(skills.unselected, ['extra'])
+  assert.equal(skills.state, 'current')
+  assert.equal(existsSync(join(context.home, '.agents/skills/extra')), false)
+  // Only committed skills count as published: an uncommitted draft is not listed.
+  put(join(context.repo, 'skills', 'draft', 'SKILL.md'), 'An uncommitted draft.\n')
+  const preview = JSON.parse(success(context.sync('--dry-run', '--environment-id', 'this-machine')))
+  assert.deepEqual(preview.components.find(({ name }) => name === 'skills').unselected, ['extra'])
+})
+
 for (const kind of ['foreign-owned', 'unmanaged']) {
   test(`a baseline preserves ${kind === 'unmanaged' ? 'an' : 'a'} ${kind} skill with the same name`, (t) => {
     const context = fixture(t)

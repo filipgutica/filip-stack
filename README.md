@@ -316,7 +316,10 @@ existing ones, including an installed design-system plugin. It needs a clean
 checkout that tracks published `main`. It keeps local guidance, plugin
 states, pins, and host assignments. A component it cannot update, such as one
 with a local edit, does not block the others, but the command then exits
-nonzero. Its report goes to
+nonzero. When a machine has skill agents, the JSON skills component can
+include `unselected`: published standalone skills that are not installed,
+not in the baseline, and not excluded, so a new skill shows up before you
+add it to the baseline. Its report goes to
 `~/.local/state/filip-stack/last-sync.json` (under `$XDG_STATE_HOME` when
 set). Guidance goes only to `~/.claude` and `~/.codex`; a custom `CODEX_HOME`
 or `CLAUDE_CONFIG_DIR` blocks the guidance step.
