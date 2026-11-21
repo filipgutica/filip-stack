@@ -314,8 +314,8 @@
       "id": "bug-ticket-simple",
       "task": "The user asks you to file a bug ticket. Viewers cannot export reports even though their role grants export; the permission check reads the wrong role field. The fix is a one-line change, and the user already confirmed the cause. No tracker or repository template exists.",
       "options": {
-        "plain": "write these facts as a few plain sentences, then the acceptance criteria",
-        "template": "write these facts under the Observed behavior, Acceptance criteria, and Notes headings, with the cause in Notes"
+        "plain": "write the facts, including any reproduction steps, as a few plain sentences, then the acceptance criteria",
+        "sections": "write the facts under an Observed behavior heading, with any reproduction steps there, then an Acceptance criteria heading"
       },
       "accept": [
         "plain"
@@ -326,11 +326,11 @@
       "id": "bug-ticket-intermittent",
       "task": "The user asks you to file a bug ticket. About one nightly import in twenty drops rows, only when two workers claim the same batch. Reproducing it takes a seeded fixture and five ordered steps. No tracker or repository template exists.",
       "options": {
-        "plain": "write these facts, including the fixture and the five steps, as a few plain sentences, then the acceptance criteria",
-        "template": "write these facts, including the fixture and the five steps, under the Observed behavior, Acceptance criteria, and Notes headings"
+        "plain": "write the facts, including any reproduction steps, as a few plain sentences, then the acceptance criteria",
+        "sections": "write the facts under an Observed behavior heading, with any reproduction steps there, then an Acceptance criteria heading"
       },
       "accept": [
-        "template"
+        "sections"
       ]
     },
     {
@@ -348,8 +348,8 @@
       "id": "pr-description-commands",
       "task": "You are writing the How to verify section of a PR description for a CLI change. The reviewer must run two commands: one seeds a fixture, and one runs the export with four flags. The repository has no PR template.",
       "options": {
-        "separate": "put each command in its own fenced code block, each in its own step",
-        "shared": "put both commands together in one fenced code block in a single step"
+        "separate": "put each command in its own fenced code block",
+        "shared": "put both commands together in one fenced code block"
       },
       "accept": [
         "separate"
@@ -360,8 +360,8 @@
       "id": "pr-description-commands-template",
       "task": "You are writing the How to verify section of a PR description for a CLI change. The reviewer must run two commands: one seeds a fixture, and one runs the export with four flags. The repository's required PR template says to list all verification commands in one shell block under its Testing heading.",
       "options": {
-        "separate": "put each command in its own fenced code block, each in its own step",
-        "shared": "put both commands together in one shell block under the template's Testing heading"
+        "separate": "put each command in its own fenced code block",
+        "shared": "put both commands together in one fenced code block"
       },
       "accept": [
         "shared"
