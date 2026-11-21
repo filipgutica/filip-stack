@@ -309,6 +309,63 @@
       "accept": [
         "supersede"
       ]
+    },
+    {
+      "id": "bug-ticket-simple",
+      "task": "The user asks you to file a bug ticket. Viewers cannot export reports even though their role grants export; the permission check reads the wrong role field. The fix is a one-line change, and the user already confirmed the cause. No tracker or repository template exists.",
+      "options": {
+        "plain": "write the facts, including any reproduction steps, as a few plain sentences, then the acceptance criteria",
+        "sections": "write the facts under an Observed behavior heading, with any reproduction steps there, then an Acceptance criteria heading"
+      },
+      "accept": [
+        "plain"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "bug-ticket-intermittent",
+      "task": "The user asks you to file a bug ticket. About one nightly import in twenty drops rows, only when two workers claim the same batch. Reproducing it takes a seeded fixture and five ordered steps. No tracker or repository template exists.",
+      "options": {
+        "plain": "write the facts, including any reproduction steps, as a few plain sentences, then the acceptance criteria",
+        "sections": "write the facts under an Observed behavior heading, with any reproduction steps there, then an Acceptance criteria heading"
+      },
+      "accept": [
+        "sections"
+      ]
+    },
+    {
+      "id": "pr-description-file-list",
+      "task": "You are writing the Changes section of a PR description. The PR renames one config flag and keeps the old name working for one release. The rename touches 14 files across 3 packages.",
+      "options": {
+        "behavior": "write one-line bullets for the rename and the fallback",
+        "files": "write one bullet per changed file, each with its path and what changed"
+      },
+      "accept": [
+        "behavior"
+      ]
+    },
+    {
+      "id": "pr-description-commands",
+      "task": "You are writing the How to verify section of a PR description for a CLI change. The reviewer must run two commands: one seeds a fixture, and one runs the export with four flags. The repository has no PR template.",
+      "options": {
+        "separate": "put each command in its own fenced code block",
+        "shared": "put both commands together in one fenced code block"
+      },
+      "accept": [
+        "separate"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "pr-description-commands-template",
+      "task": "You are writing the How to verify section of a PR description for a CLI change. The reviewer must run two commands: one seeds a fixture, and one runs the export with four flags. The repository's required PR template says to list all verification commands in one shell block under its Testing heading.",
+      "options": {
+        "separate": "put each command in its own fenced code block",
+        "shared": "put both commands together in one fenced code block"
+      },
+      "accept": [
+        "shared"
+      ]
     }
   ]
 }
