@@ -1,5 +1,5 @@
 ---
-related: [fleet-sync, cli-tool-template]
+related: [fleet-sync]
 ---
 
 ## What it does

@@ -100,7 +100,6 @@ Install only the standalone skills you want, with the
 | `babysit-pr` | Watches a PR through CI and automated review and fixes verified problems within its scope. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `catch-up` | Recaps a thread's goal, progress, and next step in four lines when you return to it. |
 | `checkpoint` | Records current work, evidence, and next actions for a pause or handoff. |
-| `cli-tool-template` | Creates or aligns Filip's CLI tools with shared repository, release, site, and Homebrew conventions. |
 | `council` | Asks several models separately to answer a question, review a plan, or gate a PR. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
 | `fleet-sync` | Keeps the same filip-stack skills, plugins, and guidance on every machine linked in T3 Code, with per-machine exceptions. |
 | `full-send` | Takes a change or PR through review and CI, then merges it or returns a verdict. Needs `sol-loop`, `babysit-pr`, and `council`. Adapted from [tstack](https://github.com/t3dotgg/tstack). |
