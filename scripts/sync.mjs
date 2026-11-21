@@ -245,8 +245,10 @@ const refreshSkills = () => {
     catch (error) { return { name, state: 'blocked', message: error.message } }
   })
   // Published standalone skills this machine neither installs nor excludes, so a new skill reaches the report before the baseline adopts it.
-  const unselected = readdirSync(join(repository, 'skills'))
-    .filter((name) => existsSync(join(repository, 'skills', name, 'SKILL.md')) && !desired.includes(name) && !policy.excluded.skills.includes(name))
+  // Read committed skills from HEAD, so a sparse checkout or an uncommitted draft does not change the list.
+  const unselected = git('ls-tree', '-r', '--name-only', 'HEAD', '--', 'skills').split('\n')
+    .map((path) => path.match(/^skills\/([^/]+)\/SKILL\.md$/u)?.[1])
+    .filter((name) => name && !desired.includes(name) && !policy.excluded.skills.includes(name))
     .sort()
   const blocked = skills.filter(({ state }) => state === 'blocked')
   return {

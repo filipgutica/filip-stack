@@ -382,6 +382,10 @@ test('published skills outside the baseline are reported as unselected and not i
   assert.deepEqual(skills.unselected, ['extra'])
   assert.equal(skills.state, 'current')
   assert.equal(existsSync(join(context.home, '.agents/skills/extra')), false)
+  // Only committed skills count as published: an uncommitted draft is not listed.
+  put(join(context.repo, 'skills', 'draft', 'SKILL.md'), 'An uncommitted draft.\n')
+  const preview = JSON.parse(success(context.sync('--dry-run', '--environment-id', 'this-machine')))
+  assert.deepEqual(preview.components.find(({ name }) => name === 'skills').unselected, ['extra'])
 })
 
 for (const kind of ['foreign-owned', 'unmanaged']) {
