@@ -244,8 +244,16 @@ const refreshSkills = () => {
     try { return refreshSkill({ name, entry, lockPath }) }
     catch (error) { return { name, state: 'blocked', message: error.message } }
   })
+  // Published standalone skills this machine neither installs nor excludes, so a new skill reaches the report before the baseline adopts it.
+  const unselected = readdirSync(join(repository, 'skills'))
+    .filter((name) => existsSync(join(repository, 'skills', name, 'SKILL.md')) && !desired.includes(name) && !policy.excluded.skills.includes(name))
+    .sort()
   const blocked = skills.filter(({ state }) => state === 'blocked')
-  return { skills, ...(blocked.length ? { state: 'blocked', message: blocked.map(({ message }) => message).join('; ') } : {}) }
+  return {
+    skills,
+    ...(unselected.length ? { unselected } : {}),
+    ...(blocked.length ? { state: 'blocked', message: blocked.map(({ message }) => message).join('; ') } : {}),
+  }
 }
 
 // filip-stack plugins come from this repository's marketplace, and each

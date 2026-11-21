@@ -35,7 +35,9 @@ method and never creates SSH access.
 4. **Sync safely.** Runs `filip-stack sync` (`--dry-run` for inspections).
    Missing baseline items install, existing ones refresh, and `design-system`
    updates from its own marketplace. Extras, exclusions, pins, and local
-   guidance stay intact.
+   guidance stay intact. A published skill that a machine has not installed,
+   that is not in the baseline, and that it does not exclude is listed as
+   `unselected` in the JSON report, not installed.
 5. **Isolate conflicts.** Local edits, missing clients, and unmerged guidance
    stay put without blocking other items.
 

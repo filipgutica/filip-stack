@@ -292,7 +292,10 @@ published `main`, preserves local guidance, pins, and plugin states, and writes
 its report to `~/.local/state/filip-stack/last-sync.json` (or under
 `$XDG_STATE_HOME`). A blocked source or configuration stops the refresh before
 any installation changes; once those pass, one blocked component does not stop
-the others, though `sync` exits nonzero. Guidance writes to
+the others, though `sync` exits nonzero. When a machine has skill agents,
+the JSON skills component can include `unselected`: published standalone
+skills that are not installed, not in the baseline, and not excluded, so a
+new skill shows up before you add it to the baseline. Guidance writes to
 `~/.agents/AGENTS.md`, `~/.claude`, and `~/.codex`; custom `CODEX_HOME` or
 `CLAUDE_CONFIG_DIR` blocks that step.
 
