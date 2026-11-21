@@ -18,7 +18,7 @@
     {
       "id": "fleet-near-cli",
       "prompt": "Create a new CLI tool and publish it through my homebrew tap.",
-      "expectedSkill": null
+      "expectedSkill": "engineering"
     }
   ],
   "rules": [
