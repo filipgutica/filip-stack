@@ -1,3 +1,10 @@
+# [6.26.0](https://github.com/filipgutica/filip-stack/compare/v6.25.0...v6.26.0) (2026-11-21)
+
+
+### Features
+
+* promote bug-ticket, PR-description, and merge-offer rules into guidance ([624f2cd](https://github.com/filipgutica/filip-stack/commit/624f2cdf8b00b9765058682ab6e69bdd0178320e))
+
 # [6.25.0](https://github.com/filipgutica/filip-stack/compare/v6.24.0...v6.25.0) (2026-11-20)
 
 

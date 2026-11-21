@@ -1,6 +1,6 @@
 {
   "name": "workflow",
-  "version": "6.25.0",
+  "version": "6.26.0",
   "description": "A small engineering workflow for planning, implementation, review, test audits, and technical writing.",
   "author": {
     "name": "Filip Gutica"
