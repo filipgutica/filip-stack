@@ -40,7 +40,7 @@ SOFTWARE.
 ## Ponytail
 
 Source: https://github.com/DietrichGebert/ponytail
-Baseline: `96608e078b2d` (default branch, reviewed 2026-11-16)
+Baseline: `ebd8654c2c62` (default branch, reviewed 2026-11-22)
 Adapted in: `engineering`
 
 Workflow adapts Ponytail's decision order: avoid an unnecessary change, reuse
