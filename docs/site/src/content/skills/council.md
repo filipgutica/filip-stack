@@ -4,146 +4,139 @@ related: [full-send, full-stop, hill-climb]
 
 ## What it does
 
-Your agent sends the same question to each member in a separate context,
-so no member sees another's answer. It then checks the important claims,
-weighs the reasoning, and keeps disagreement visible instead of averaging it
-away.
+Give a council a question, a plan, or a request for a proposal. Several
+different AI models each answer it separately. Your agent checks their
+important claims, compares their reasoning, and gives you one recommendation
+that shows where the models disagree. With [full-send](../full-send/) or
+[full-stop](../full-stop/), the council scores a PR instead and returns a pass
+or fail verdict. Other skills, such as [hill-climb](../hill-climb/), can also
+call a council and decide the outcome themselves. Every run saves a report of
+each model's view.
 
 ## When to use it
 
-Use a council when one model's view is not enough: a choice that is costly to
-reverse, a plan you want tested before work starts, or a PR you want several
-models to approve. You can use it in three ways.
+Use a council for a hard-to-reverse choice, a plan to test before coding, or a
+PR to gate before merge. It needs at least two available models.
 
-To ask a question, start with "Council":
+**Ask a question.** Start with "Council":
 
 > Council: should we cache these API responses in Redis or in the browser?
 
-Each member gives its own recommendation and what it is unsure about.
-
-To review a plan, give the council the plan, or ask for its thoughts on work
-to do. When you give no plan, your agent, or a planner agent, drafts one
-first. Members rank their findings by severity and say what would fix each.
-They give no score, because a number without a rubric means little.
+**Review a plan.** Paste or link a plan, or ask for thoughts so your agent or
+a planner drafts one first. Members list issues (**findings**) ranked by
+severity with fixes, without scores.
 
 > Council: review this plan for moving sessions to Redis. (Paste the plan or
 > link it.)
 
 > Council thoughts: how should we add rate limiting to the public API?
 
-To gate a PR, add a score threshold to [full-send](../full-send/) or
-[full-stop](../full-stop/). The agent keeps working on the PR until every
-council member reaches the threshold, or every member below it holds only
-findings the arbiter overruled. Full send merges only then. Full stop
-reports the PR as ready only then, and leaves the merge to you.
+**Gate a PR.** Add a score **threshold** (0 to 10) to
+[full-send](../full-send/) or [full-stop](../full-stop/) to run a merge
+**gate**. Full send merges only on a pass. Full stop leaves the merge to you.
 
 > /full-stop fix the flaky login test council 9.5
 
 In Claude, a skill command works only at the start of a message, so write
-the threshold as plain text. In Codex, you can write
-`$full-stop fix the flaky login test $council 9.5`. Both forms start the
-gate.
+`council 9.5` as plain text. In Codex, you can write
+`$full-stop fix the flaky login test $council 9.5`. A bare `council` defaults
+to 9.5.
 
-The default members mix OpenAI, Claude, and Gemini models, all at high
-effort. The council works best when your agent can run all three: in T3
-Code, set up the Codex, Claude, and Antigravity providers, and on another
-host, its subagents must run the models. A council needs at least two
-members.
+## How it works
 
-| Member | Model |
-| --- | --- |
-| Sol 6.2 | OpenAI's `gpt-6.2-sol` |
-| Opus | Claude Opus 5.5 (`claude-opus-5-5`) |
-| Neon | Google's Gemini 4 Neon (`gemini-4-neon`) |
+**Who takes part.** Each AI model on the panel is a **member**. The default
+lineup runs three models at high effort:
 
-Claude Fable 5.2 (`claude-fable-5-2`), also at high effort, is the arbiter
-rather than a default member.
+| Member | Model | Provider (T3 Code) |
+| --- | --- | --- |
+| Sol 6.2 | `gpt-6.2-sol` | Codex |
+| Opus 5.5 | `claude-opus-5-5` | Claude |
+| Gemini 4 Neon | `gemini-4-neon` | Antigravity |
 
-You don't have to choose members. When you name no members, a separate
-designer agent (Opus 5.5) frames the goal, criteria, lenses, and rounds (up
-to three, such as a council that reviews a plan, sees it revised, and
-reviews it again), so your agent never frames its own question. To choose
-yourself, name the members, goal, criteria, rounds, or lenses such as
-security.
+On other hosts, subagent tools must reach the models and effort for the chosen
+lineup. A standalone council can drop an unavailable default member if at
+least two remain. Fable 5.2 (`claude-fable-5-2`, high effort) is the
+**arbiter**, a tie-breaking model that rules when members disagree. It is not
+a default member.
+
+When you name no members, a read-only **designer** agent (Opus 5.5 at high
+effort, or Sol 6.2) frames the council so your agent cannot slant its
+question. If neither can run, your agent frames it from your request and says
+so. The designer sets the goal, criteria, optional **lenses** (focus areas
+such as security), and **rounds** (passes, at most three when designer-set).
+To set any yourself, name them:
 
 > Council of Sol and Opus: should we split the billing service now or after
 > the migration?
 
-## How it works
+**On its own:**
 
-On its own:
+1. **Frame and confirm.** The designer frames criteria and rounds if you named
+   no members, asking when intent is unclear. Your agent omits its own answer
+   on open questions and states the lineup. It asks if a named member is
+   unavailable, or drops an unavailable default member and says so.
+2. **Collect independent answers.** Members run in parallel in separate
+   read-only contexts. Each returns a recommendation, evidence, its strongest
+   objection, and doubts, plus ranked findings for a plan.
+3. **Revise across rounds.** A council runs one round by default. With
+   multiple rounds on your agent's draft, your agent revises between rounds
+   and sends earlier findings marked fixed, declined, or open.
+4. **Arbitrate and synthesize.** On conflicting recommendations, Fable 5.2
+   rules from positions and evidence. Your agent checks key claims and
+   summarizes with dissent visible. If Fable 5.2 cannot run or sits on the
+   panel, you decide.
 
-1. The agent writes the question, context, and criteria. For a plan, it
-   adds your plan or drafts one. For an open question, it leaves out its
-   own answer.
-2. It states the lineup before launch. If a member you named is unavailable,
-   it asks you. If a default member is unavailable, such as Neon without the
-   Antigravity provider, the agent drops it and says so.
-3. Each member answers separately with its reasons, its strongest
-   objection, and what it is unsure about. For a plan, it also ranks its
-   findings by severity.
-4. With more than one round, the agent revises its own draft between
-   rounds, and members review it again.
-5. When members recommend conflicting actions after the last round,
-   Fable 5.2 reads their positions and evidence and rules.
-   Its ruling becomes the recommendation, and dissent stays visible. If
-   Fable cannot run, or you named it as a member, the disagreement is yours
-   to decide.
-6. The agent checks the important claims and writes the synthesis.
+If a member fails after launch, your agent keeps completed answers and marks
+the council incomplete.
 
-A member that fails after launch makes the council incomplete, and the agent
-keeps the answers it has.
+**With full-send or full-stop:**
 
-With full send or full stop:
-
-1. The agent makes the change, opens the PR, proves the change, and waits
-   for green checks.
-2. The default lineup (Sol, Opus, and Neon) reviews the PR. There is no
-   designer, so the same panel scores every round. Because the gate sets
-   the lineup, if a member cannot run, such as Neon without the Antigravity
-   provider, the agent asks you before going on without it. Each member
-   scores merge readiness from 0 to 10 and does not see the threshold or
-   earlier scores. A blocking finding caps the score at 6 and a should-fix
-   finding at 8.9, so only a PR with nothing above a nit can reach 9.5. A
-   threshold below 9.5 runs as 9.5.
-3. The agent fixes the findings, pushes, and starts a new round. A new
-   commit voids every score, so all members score the same commit.
-4. When one member reaches the threshold and another stays below it,
-   Fable 5.2 rules on the findings the panel cannot settle, such as a
-   member stuck at 6 for two rounds while the others score 9.6. It sees
-   the findings and both sides' evidence, not the scores. It upholds a
-   finding, which the agent fixes, or overrules it, which stops it from
-   holding the PR back.
-5. The gate passes when every member reaches the threshold on that commit,
-   or Fable overruled every finding that holds a member below it.
-6. The gate fails after three rounds without a pass, or earlier, for
-   example when a round makes no progress and no finding awaits Fable, or
-   the diff grows past its scope.
-   The agent leaves the PR unmerged and asks you once: accept the scores,
-   allow more rounds, or rescope.
+1. **Score the PR.** In fix mode, scoring starts once proof covers the diff,
+   the branch is up to date, required checks pass, and review bots finish on
+   that head. In review-only mode, the panel scores the current head once,
+   even if behind, and reports findings without pushing or editing the PR
+   description. Members score 0 to 10 without seeing the threshold or past
+   scores. No designer runs, and your agent asks before dropping an
+   unavailable member.
+2. **Apply caps and fix findings.** A blocker caps a score at 6, and a
+   should-fix finding caps it at 8.9. Thresholds at or below 9.5 run as 9.5,
+   and thresholds above 9.5 also require fixing in-scope nits. In fix mode,
+   your agent fixes agreed findings, pushes, and starts a new round, voiding
+   earlier scores.
+3. **Arbitrate disputes.** Fable 5.2 rules on
+   [eligible disputes](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/references/council-arbiter.md)
+   from the evidence alone when at least one member meets the threshold on the
+   current head. It cannot arbitrate if it sits on the panel.
+4. **Pass or fail.** The gate passes when every member meets the threshold or
+   is cleared by Fable 5.2, with no open blocker, should-fix finding, or
+   undecided instruction-file change. A below-threshold member is cleared only
+   if it reported at least one finding and Fable 5.2 overruled all of them (a
+   nit or unruled finding still counts). The gate fails after three scored
+   rounds without a pass, or earlier if progress stalls or fixes exceed the
+   diff limit. On failure, your agent leaves the PR unmerged and asks once to
+   accept the scores, allow more rounds, or rescope.
 
 Council's
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/council/SKILL.md)
 has the exact model-selection and synthesis rules. Full send's
 [council gate](https://github.com/filipgutica/filip-stack/blob/main/skills/full-send/references/council-gate.md)
-has the exact gate rules.
+has the exact scoring and stop rules.
 
 ## What you get
 
-On its own:
+**On its own:**
 
-- A recommendation and why, including the arbiter's ruling when one ran.
-- Each position, credited to the model that actually ran.
-- The agreements, disagreements, and doubts that affect the decision.
+- A recommendation and rationale, including Fable 5.2's ruling if it ran.
+- Each member's position, credited to the model that actually ran.
+- Agreements, disagreements, and doubts that affect the decision.
 - The next action, including any decision you must make.
-- A per-round report of each member's position, top findings, and strongest
-  objection, plus any arbiter ruling, in a temporary folder unless you give
-  a path.
+- A linked report of each round's positions, findings, objections, and arbiter
+  rulings, in a temporary folder unless you give a path.
 
-With full send or full stop:
+**With full-send or full-stop:**
 
 - A pass or `FAIL: council <lowest>/<threshold> after <rounds> rounds`.
-- Each member's score per round and any arbiter rulings, in a collapsed
-  section at the end of the PR description.
+- Each member's score per round and any arbiter rulings in the council report,
+  plus a collapsed section at the end of the PR description in fix mode.
 
 Council advice does not authorize edits, publishing, or merging.

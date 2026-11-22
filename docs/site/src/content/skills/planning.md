@@ -4,50 +4,53 @@ related: [technical-writing, jira-work-links]
 
 ## What it does
 
-You get the one output you ask for. A request for a specification ends with
-the specification, not a plan or tickets. The agent grounds it in the
-repository's code, tests, and tracker.
+Describe a problem, idea, or approved design and name the one output you want.
+The agent reads code, tests, schemas, config, docs, and tracker items to ground
+claims in evidence. It separates facts from decisions, assumptions, and open
+questions, stopping after that one output. You get a direction, document, plan,
+or ticket draft in conversation. Planning makes no code edits and updates
+tracker issues only when you ask.
 
 ## When to use it
 
-Install the [Workflow plugin](../../#install), then ask for the output you
-need:
+Install [Workflow](../../#install), then ask for the output you need:
 
 | Output | Ask for it when you need to |
 | --- | --- |
-| Direction | Compare approaches and settle decisions in conversation |
-| Specification, PRD, or ADR | Define behavior, product requirements, or one architecture decision |
-| Implementation plan | Turn an approved direction into file-specific, checkable changes |
-| Tickets | Draft Jira or GitHub issues for owned outcomes with dependencies |
+| Direction | Compare options and settle decisions in conversation |
+| Specification | Define behavior, a product requirements document (PRD), or an architecture decision record (ADR) |
+| Plan | Turn an approved direction into file-specific, checkable steps |
+| Tickets | Draft Jira or GitHub issues for owned outcomes |
 
 > Write an implementation plan for adding CSV export to the reports page.
 
-Planning changes no code. To build the result, ask for
-[engineering](../engineering/). To improve a finished document's wording,
-use [technical-writing](../technical-writing/).
+Planning changes no code. Build the result with [engineering](../engineering/).
+Tighten finished wording with [technical-writing](../technical-writing/).
 
 ## How it works
 
-The agent settles the outcome, users, constraints, and exclusions, and asks
-you one question if an ambiguity would change the work. It reads the code,
-tests, schemas, configuration, documentation, and issues the proposal
-touches. It keeps facts apart from decisions, assumptions, and open
-questions, and brings real tradeoffs to you. Each deliverable has a
-completion signal you can observe.
-
-When the work spans several repositories or changes a public contract, a
-separate reviewer critiques it, for up to three rounds.
+1. It picks one mode, confirms goals and exclusions, and asks one focused
+   question if an unclear output request changes the work.
+2. It reads the code, tests, docs, and tracker items involved and surfaces real
+   tradeoffs.
+3. It drafts only the requested output using your format or repository template
+   first, with observable checks.
+4. For multi-repo or public-contract work, a separate reviewer critiques the
+   draft for up to three rounds.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/SKILL.md)
-defines the four modes and their default formats. Your format, or your
-repository's, takes precedence.
+defines the four modes and links
+[spec](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/references/spec.md),
+[plan](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/references/plan.md),
+and
+[ticket](https://github.com/filipgutica/filip-stack/blob/main/plugins/workflow/skills/planning/references/tickets.md)
+templates.
 
 ## What you get
 
-- The direction, specification, plan, or tickets you asked for.
-- The evidence behind it, open questions, and decisions that block the work.
+- The requested output, with evidence, open questions, and blocking decisions.
+- Unverified ticket facts marked `TBD`.
+- A simple bug ticket kept to a few plain sentences and its acceptance criteria.
 
-The result stays in the conversation unless you ask for a file. Planning
-creates or changes Jira or GitHub issues only when you ask, writes no local
-ticket files, and marks each unverified ticket fact as `TBD`. A simple bug
-ticket stays a few plain sentences and its acceptance criteria.
+Output stays in conversation unless you ask for a file. Planning writes no local
+ticket files and edits trackers only on request.

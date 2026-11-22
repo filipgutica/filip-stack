@@ -4,44 +4,42 @@ related: [review, test-audit]
 
 ## What it does
 
-Three reviews look for duplicate logic, redundant state and branches,
-unneeded layers, and behavior a refactor must keep. The agent applies a
-proposal only when its benefit is clear and the checks pass.
+Run `/simplify-pass` (or `$simplify-pass` in Codex) on a file, function, or
+change range, or let it target your current edits. Before editing, the agent
+maps behavior to keep and runs three independent read-only reviews for
+duplication, complexity, and refactor risks. It applies only clear,
+behavior-preserving simplifications and runs focused checks. You get simpler
+code, check results, and a list of skipped proposals.
 
 ## When to use it
 
-Install the skill, then run `/simplify-pass` in Claude or `$simplify-pass` in
-Codex with a file, function, or change range:
+Use this manual-only skill after code works to remove duplication, nesting, or
+unneeded layers without changing behavior. Your host must support subagents.
 
 > /simplify-pass src/cart/totals.ts
 
-Without a target, it uses the current task's changes, then uncommitted
-changes, and otherwise asks you. Your host must support helper agents.
+Without a target, it uses current task changes, then uncommitted changes, and
+asks if none are clear.
 
 ## How it works
 
-The agent reads the target, its callers, the project guidance, and the
-nearest tests, writes down the behavior to keep, and runs an existing check
-as a baseline. Three read-only reviewers then look at the same target, and
-all must finish before any edit:
-
-| Review | Purpose |
-| --- | --- |
-| Reuse and ownership | Find existing helpers and abstractions with no current need |
-| Direct simplification | Find redundant state, branches, nesting, and indirection |
-| Behavior contract | Identify invariants and tests the refactor must preserve |
-
-The agent checks each proposal against the code and skips uncertain ones.
-Useful tests and error handling stay. A new abstraction or dependency needs a
-reason beyond fewer lines. A large final diff gets an independent
-[review](../review/).
+1. **Set a baseline.** The agent reads the target, callers, project guidance,
+   and nearest tests, records behavior to keep, and runs an existing check when
+   it gives a useful baseline.
+2. **Run three read-only reviews.** Independent reviewers check reuse and
+   ownership, direct simplification, and the behavior contract before any edit.
+   If a review still fails after one retry, or delegation is unavailable, the
+   agent stops without editing.
+3. **Apply and verify.** The agent applies only clear simplifications, skips
+   uncertain proposals, preserves useful tests and error handling, and checks
+   the final diff (with an independent reviewer for substantive diffs).
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/simplify-pass/SKILL.md)
 has the exact review and verification rules.
 
 ## What you get
 
-- What became simpler, and the checks that show behavior did not change.
-- Proposals it did not apply, with reasons.
+- Focused simplifications and checks showing behavior stayed intact.
+- Skipped proposals with reasons.
 
-A failed check, or doubt about kept behavior, leaves the result incomplete.
+A failed check or doubt about kept behavior leaves the result incomplete.

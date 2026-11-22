@@ -29,54 +29,54 @@ const turns: Turn[] = [
   {
     request: "Write a spec for rate limiting on the public API.",
     skill: "planning",
-    does: "It writes the spec from the repository and changes no code. A public API is a public contract, so a separate reviewer critiques the spec first.",
+    does: "It writes the spec from the repository without editing code. A separate reviewer critiques this public API spec first.",
     reads: [
-      { file: "spec.md", when: "the format for a specification" },
+      { file: "spec.md", when: "spec format" },
       {
         file: "technical-prose.md",
         from: "technical-writing",
-        when: "writing rules for the spec",
+        when: "writing rules",
       },
     ],
   },
   {
     request: "Implement the spec and open a PR.",
     skill: "engineering",
-    does: "It makes the smallest change that meets the spec and reruns the affected checks. A separate reviewer checks this risky change first, or the agent says none was available.",
+    does: "It makes the smallest change that meets the spec and reruns affected checks. A separate reviewer checks it first, or the agent says none was available.",
     reads: [
       {
         file: "testing-and-debugging.md",
-        when: "only if reproducing or testing the change is unclear",
+        when: "if reproducing or testing is unclear",
       },
       {
         file: "delegation-and-review.md",
-        when: "because the change needs a separate reviewer",
+        when: "for a separate reviewer",
       },
       {
         file: "commit-and-pr-hygiene.md",
-        when: "before it commits or opens the PR",
+        when: "before committing or opening the PR",
       },
     ],
   },
   {
     request: "Review the PR before I merge it.",
     skill: "review",
-    does: "It reports only findings it can back with evidence and changes nothing. If tests changed a lot, it also calls test-audit.",
+    does: "It changes no files and reports only evidence-backed findings. It also runs test-audit if tests changed heavily.",
     reads: [
       {
         file: "delegation-and-review.md",
         from: "engineering",
-        when: "to say whether the review is independent of the change's author",
+        when: "to report whether the review was independent",
       },
     ],
   },
   {
     request: "Rewrite the PR description so API users can follow it.",
     skill: "technical-writing",
-    does: "It rewrites the description from the branch and its checks.",
+    does: "It rewrites the description from the branch and checks.",
     reads: [
-      { file: "pull-requests.md", when: "the format for a PR description" },
-      { file: "technical-prose.md", when: "the writing rules for any technical text" },
+      { file: "pull-requests.md", when: "PR description format" },
+      { file: "technical-prose.md", when: "writing rules" },
     ],
   },
 ];
@@ -103,9 +103,9 @@ onMounted(() => {
   <section class="intro" aria-labelledby="title">
     <h1 id="title">Skills and setup for Claude and Codex.</h1>
     <p class="lede">
-      A skill is a set of reusable instructions that a coding agent loads when
-      a task needs it, such as reviewing a change or writing a plan. Start
-      with Workflow. The rest is optional.
+      Reusable skills and optional setup for Claude Code and Codex. A skill
+      gives your agent task instructions, such as reviewing a branch or writing
+      a plan. Start with Workflow. Everything else is optional.
     </p>
     <dl class="fg-site-facts">
       <div>
@@ -135,7 +135,7 @@ onMounted(() => {
     <ol class="fg-site-steps">
       <li>
         <div>
-          <p>Install the Workflow plugin.</p>
+          <p>Add the plugin marketplace and install Workflow.</p>
           <HostCommands
             :claude="commands.claude"
             :codex="commands.codex"
@@ -145,7 +145,7 @@ onMounted(() => {
       </li>
       <li>
         <div>
-          <p>In Codex, restart so a new session loads the plugin.</p>
+          <p>In Codex, restart to load the plugin.</p>
         </div>
       </li>
       <li>
@@ -159,11 +159,11 @@ onMounted(() => {
       <li>
         <div>
           <p>
-            The agent picks the
-            <a href="/filip-stack/skills/review/"><code>review</code></a> skill
-            on its own. It reads every changed file, changes none, and lists
-            findings ranked by impact with a file and line each, or says it
-            found none it can back with evidence.
+            The agent picks
+            <a href="/filip-stack/skills/review/"><code>review</code></a> on its
+            own. It reads every changed file without editing anything, then
+            lists evidence-backed findings ranked by impact with file and line
+            numbers, or reports none.
           </p>
         </div>
       </li>
@@ -174,10 +174,10 @@ onMounted(() => {
     <h2 id="workflow-title">How Workflow works</h2>
     <div class="prose">
       <p>
-        Workflow's {{ catalog.workflow.length }} skills install together as one
-        plugin. Describe a task, and the host picks the skill whose
-        description fits, or name one yourself. Each skill reads a
-        longer guide only when the task needs it.
+        Workflow installs {{ catalog.workflow.length }} engineering skills in
+        one plugin with no hooks. Describe your task, and Claude Code or Codex
+        picks the matching skill, or name one yourself. Extra guides load only
+        when needed.
       </p>
     </div>
     <h3 id="workflow-example" class="workflow-heading">
@@ -190,13 +190,13 @@ onMounted(() => {
           <p>“{{ turn.request }}”</p>
         </div>
         <div class="flow__skill">
-          <p class="flow__label">The host picks</p>
+          <p class="flow__label">Skill picked</p>
           <p>
             <a :href="`/filip-stack/skills/${turn.skill}/`"
               ><code>{{ turn.skill }}</code></a
             >. {{ turn.does }}
           </p>
-          <p class="flow__label">Extra guides it reads</p>
+          <p class="flow__label">Guides it reads</p>
           <ul class="flow__reads">
             <li v-for="read in turn.reads" :key="read.file">
               <code>{{ read.file }}</code
@@ -210,20 +210,23 @@ onMounted(() => {
     <h3 class="workflow-heading">The {{ catalog.workflow.length }} Workflow skills</h3>
     <SkillList :skills="catalog.workflow" :trait="false" />
     <p class="hint">
-      <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a>
-      tests a plan before the spec.
-      <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> and
-      <a href="/filip-stack/skills/full-stop/"><code>full-stop</code></a>
-      give a final review before merge. Add a council threshold to full-stop to hold the handoff for a council score. These standalone skills run only
-      when you ask.
+      Use <a href="/filip-stack/skills/grill-me/"><code>grill-me</code></a> to
+      question an idea before writing a spec. Use
+      <a href="/filip-stack/skills/sol-loop/"><code>sol-loop</code></a> to
+      review code in rounds, or
+      <a href="/filip-stack/skills/full-stop/"><code>full-stop</code></a> to
+      take a change through review and CI with an optional council threshold
+      (minimum multi-model score). These standalone skills run only when you
+      ask.
     </p>
   </section>
 
   <section id="standalone" aria-labelledby="standalone-title">
     <h2 id="standalone-title">Standalone skills</h2>
     <p class="section-intro">
-      Install the ones you want, replacing <code>&lt;name&gt;</code> with a
-      skill below. Run the command again to update.
+      Install only the standalone skills you need, along with any dependencies
+      listed for your chosen skill. Replace <code>&lt;name&gt;</code> with a
+      skill below, and rerun to update.
     </p>
     <UiCodeBlock
       :code="commands.standalone"
@@ -241,22 +244,22 @@ onMounted(() => {
       <li>
         <a href="/filip-stack/cli/">filip-stack CLI</a>
         <p>
-          The same global guidance, agent profiles, and output styles on every
-          machine.
+          Apply shared global guidance, profiles, and output styles, and sync
+          skills across machines.
         </p>
       </li>
       <li>
         <a href="/filip-stack/design-system/">Design system</a>
         <p>
-          The visual rules agents follow for pages, mockups, and explainers,
-          installed as a plugin.
+          A separate plugin with the visual rules agents follow for UI and
+          visual work.
         </p>
       </li>
       <li>
         <a href="/filip-stack/field-guide/">Field Guide</a>
         <p>
-          A plugin that remembers your preferences and corrections across
-          sessions.
+          An optional plugin that remembers your preferences and corrections
+          across sessions.
         </p>
       </li>
     </ul>
@@ -270,8 +273,8 @@ onMounted(() => {
           >Agent-ready environments</a
         >
         <p>
-          Set up a repository so agents can check their own work, with a
-          worked audit.
+          Set up a repository so agents can verify their own work, with a worked
+          audit.
         </p>
       </li>
     </ul>

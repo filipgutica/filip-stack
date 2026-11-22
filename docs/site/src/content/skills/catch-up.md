@@ -4,29 +4,28 @@ related: [checkpoint]
 
 ## What it does
 
-Catch-up answers from the conversation alone. It runs no commands, so it
-returns in seconds, and it does not recheck the repository.
+Run catch-up in any thread with no input. The agent reads only chat with no
+tool calls, replying in seconds without checking your repo. You get four
+one-sentence lines covering goal, progress, current state, and next step.
+Unlike [checkpoint](../checkpoint/), it skips branch checks and handoffs.
 
 ## When to use it
 
-Install the skill, then run `/catch-up` in Claude or `$catch-up` in Codex when
-you return to a thread and have lost track of it. It runs only when you call
-it. For verified branch state and check results, use
-[checkpoint](../checkpoint/).
+Run `/catch-up` in Claude or `$catch-up` in Codex when returning to a thread.
+It runs only when called. If you invoke it for verified branch state, check
+results, or a handoff, it points you to [checkpoint](../checkpoint/) and stops.
 
 ## How it works
 
-The agent links PRs, files, and threads the conversation names, and marks
-claims the conversation never verified.
+The agent links PRs, files, and threads from chat, flags unverified claims, and
+notes on `Now` when a thread can close.
 
 [SKILL.md](https://github.com/filipgutica/filip-stack/blob/main/skills/catch-up/SKILL.md)
-has the exact format.
+has the format.
 
 ## What you get
 
-Four lines:
-
-- Goal: what the thread is for.
-- Done: what it has reached so far.
-- Now: what is in progress or waiting, or that the thread can close.
-- Next: the next step and who owns it.
+- **Goal:** objective.
+- **Done:** progress so far.
+- **Now:** active, waiting, or ready to close.
+- **Next:** next step and owner.
