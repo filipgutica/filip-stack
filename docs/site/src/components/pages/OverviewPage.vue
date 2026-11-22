@@ -262,6 +262,15 @@ onMounted(() => {
           across sessions.
         </p>
       </li>
+      <li>
+        <a href="https://github.com/filipgutica/filip-stack#guardrails">Guardrails</a>
+        <p>
+          An optional plugin that checks your agent's shell commands. It blocks
+          AI co-author trailers and "Generated with" footers in commits, PRs,
+          and issues, and asks you before a 1Password (<code>op</code>) command
+          runs. In Codex, that prompt also needs Host config.
+        </p>
+      </li>
     </ul>
   </section>
 
