@@ -1,3 +1,11 @@
+## [6.26.1](https://github.com/filipgutica/filip-stack/compare/v6.26.0...v6.26.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **hooks:** lint the commit message by absolute path ([ab90baa](https://github.com/filipgutica/filip-stack/commit/ab90baa163d652338461d6b9130c1439d8873a6f))
+* **hooks:** lint the message file git passes, by absolute path ([b372bb7](https://github.com/filipgutica/filip-stack/commit/b372bb7fe6d9fa9b65b9de4c59ed57081c2c7657))
+
 # [6.26.0](https://github.com/filipgutica/filip-stack/compare/v6.25.0...v6.26.0) (2026-11-21)
 
 
