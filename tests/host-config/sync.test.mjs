@@ -392,6 +392,17 @@ test('published skills outside the baseline are reported as unselected and not i
   assert.equal(installed.components.find(({ name }) => name === 'skills').unselected, undefined)
 })
 
+test('an unreadable skill location omits unselected instead of blocking the skills component', (t) => {
+  const context = fixture(t)
+  installedTools(context, { empty: true })
+  fleetBaseline(context, { baseline: { skills: [], plugins: ['example', 'second'] }, agents: ['codex'] })
+  put(join(context.home, '.claude/skills'), 'not a directory\n')
+  const report = JSON.parse(success(context.sync('--dry-run', '--environment-id', 'this-machine')))
+  const skills = report.components.find(({ name }) => name === 'skills')
+  assert.equal(skills.state, 'planned')
+  assert.equal(skills.unselected, undefined)
+})
+
 for (const kind of ['foreign-owned', 'unmanaged']) {
   test(`a baseline preserves ${kind === 'unmanaged' ? 'an' : 'a'} ${kind} skill with the same name`, (t) => {
     const context = fixture(t)

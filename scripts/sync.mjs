@@ -246,12 +246,16 @@ const refreshSkills = () => {
   })
   // Published standalone skills this machine neither installs nor excludes, so a new skill reaches the report before the baseline adopts it.
   // Read committed skills from HEAD, so a sparse checkout or an uncommitted draft does not change the list.
-  const unselected = git('ls-tree', '-r', '--name-only', 'HEAD', '--', 'skills').split('\n')
-    .map((path) => path.match(/^skills\/([^/]+)\/SKILL\.md$/u)?.[1])
-    .filter((name) => name && !desired.includes(name) && !policy.excluded.skills.includes(name))
-    // A copy installed without a filip-stack lock entry is still installed, so it is not unselected.
-    .filter((name) => !existsSync(join(home, '.agents', 'skills', name)) && !lstatSync(join(claudeHome, 'skills', name), { throwIfNoEntry: false }))
-    .sort()
+  // The list is informational: when it cannot be built, omit it rather than change the skills result.
+  let unselected = []
+  try {
+    unselected = git('ls-tree', '-r', '--name-only', 'HEAD', '--', 'skills').split('\n')
+      .map((path) => path.match(/^skills\/([^/]+)\/SKILL\.md$/u)?.[1])
+      .filter((name) => name && !desired.includes(name) && !policy.excluded.skills.includes(name))
+      // A copy installed without a filip-stack lock entry is still installed, so it is not unselected.
+      .filter((name) => !existsSync(join(home, '.agents', 'skills', name)) && !lstatSync(join(claudeHome, 'skills', name), { throwIfNoEntry: false }))
+      .sort()
+  } catch {}
   const blocked = skills.filter(({ state }) => state === 'blocked')
   return {
     skills,
