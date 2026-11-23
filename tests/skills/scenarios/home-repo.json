@@ -78,26 +78,51 @@
       ]
     },
     {
-      "id": "hr-member-skill-link-missing",
-      "task": "You are running $home-repo to set up a home repo that checks out member repos into a workspace folder and links their skills into the home repo's .agents/skills and .claude/skills, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity. You ran the linking command for a member repo that ships one skill. Its .agents/skills link resolves to the member skill. Its .claude/skills link could not be created because the sandbox blocked the write, and the command printed only a warning.",
+      "id": "hr-member-skills-both-folders",
+      "task": "You are running $home-repo to set up a home repo. The user's design checks out member repos into a workspace folder inside the home repo and links their skills into the home repo's skill folders, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity.",
       "options": {
-        "continue": "report the setup as done and continue to the next step",
-        "incomplete": "report the setup as incomplete, name the missing link, and fix it before continuing"
+        "agents-only": "link each member skill into .agents/skills only",
+        "both": "link each member skill into both .agents/skills and .claude/skills",
+        "none": "link no member skills into the home repo"
       },
       "accept": [
-        "incomplete"
+        "both"
       ],
       "needsNewGuidance": true
     },
     {
-      "id": "hr-control-member-skill-links-resolve",
-      "task": "You are running $home-repo to set up a home repo that checks out member repos into a workspace folder and links their skills into the home repo's .agents/skills and .claude/skills, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity. You ran the linking command for a member repo that ships one skill. Its .agents/skills and .claude/skills links both resolve to the member skill, and the command exited successfully.",
+      "id": "hr-control-no-member-skills",
+      "task": "You are running $home-repo to set up a home repo. Agents work in each member repo through its own checkout and pointer, and the user's design does not link member repos' skills into the home repo. The user works in Claude Code, Codex, and Antigravity.",
       "options": {
-        "continue": "report the setup as done and continue to the next step",
-        "incomplete": "report the setup as incomplete, name the missing link, and fix it before continuing"
+        "agents-only": "link each member skill into .agents/skills only",
+        "both": "link each member skill into both .agents/skills and .claude/skills",
+        "none": "link no member skills into the home repo"
       },
       "accept": [
-        "continue"
+        "none"
+      ]
+    },
+    {
+      "id": "hr-link-command-blocked",
+      "task": "You are running $home-repo and writing the command that links member repos' skills into the home repo's .agents/skills and .claude/skills. Decide what it does when it cannot create one host's link for a member skill, for example because a sandbox blocks the write, while the other host's link works.",
+      "options": {
+        "exit-zero": "print a warning and exit 0",
+        "exit-nonzero": "exit non-zero and name the missing link"
+      },
+      "accept": [
+        "exit-nonzero"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-link-command-no-skills",
+      "task": "You are running $home-repo and writing the command that links member repos' skills into the home repo's .agents/skills and .claude/skills. Decide what it does for a member repo that ships no skills, so there is nothing to link.",
+      "options": {
+        "exit-zero": "print a warning and exit 0",
+        "exit-nonzero": "exit non-zero and name the missing link"
+      },
+      "accept": [
+        "exit-zero"
       ]
     }
   ]
