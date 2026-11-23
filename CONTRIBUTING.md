@@ -171,7 +171,11 @@ pnpm --dir docs/site dev
 ## Releases and versioning
 
 CI runs `semantic-release` on pushes to `main` using
-[Conventional Commits](https://www.conventionalcommits.org/):
+[Conventional Commits](https://www.conventionalcommits.org/). PRs merge by
+squash: the PR title becomes the commit title on `main`, and the branch's commit
+messages become its body, so footers such as `BREAKING CHANGE:` carry over. CI
+lints the PR title with commitlint. Choose the title's type for the whole PR's
+release impact, such as `fix:` when a docs PR also fixes a plugin bug.
 
 | In the commit message | Version bump |
 | --- | --- |

@@ -19,9 +19,9 @@ This is a repository development skill. Keep it outside `plugins/`; the Claude e
 
 ## Publish and merge
 
-1. Commit the accepted files if needed, push the current topic branch, and create or update its PR against main. Describe the actual change and verification. With `gh`, pass multiline descriptions through `--body-file`.
+1. Commit the accepted files if needed, push the current topic branch, and create or update its PR against main. Give the PR a Conventional Commit title: the squash merge makes it the commit that semantic-release reads, so choose its type for the whole PR's release impact, such as `fix:` when a docs PR also fixes a plugin bug. Describe the actual change and verification. With `gh`, pass multiline descriptions through `--body-file`.
 2. Confirm the remote branch SHA equals the local candidate. Merge only after every required check on that exact PR head has passed; failed, pending, or unavailable checks block merging. Resolve applicable review feedback and verify there are no unresolved review threads or blocking reviews.
-3. Recheck the PR head and mergeability immediately before merging. Use `gh pr merge <number> --merge --match-head-commit <sha>` when merge commits remain supported. Do not bypass branch protection or force-push to make a merge succeed. If the candidate changes, repeat the affected review and checks.
+3. Recheck the PR head and mergeability immediately before merging. Use `gh pr merge <number> --squash --match-head-commit <sha>`. Do not bypass branch protection or force-push to make a merge succeed. If the candidate changes, repeat the affected review and checks.
 
 ## Wait for the release
 
