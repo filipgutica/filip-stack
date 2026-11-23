@@ -47,7 +47,7 @@ Default lineup:
 
 Fable 5.2 (`claude-fable-5-2`, high effort) is the arbiter, not a member: it runs only as Arbitrate describes.
 
-In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member and the arbiter. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`, such as `thinking_level` for Gemini 4 Neon on the Antigravity provider. The default lineup uses three providers: Codex for Sol, Claude for Opus, and Antigravity for Neon.
+In T3 Code, resolve targets with `orchestrator_capabilities`, then use `delegate_task` for each member and the arbiter. Search for an omitted model before declaring it unavailable. Map effort through the model's advertised `target.options`, such as `thought_level` for Gemini 4 Neon on the Antigravity provider. The default lineup uses three providers: Codex for Sol, Claude for Opus, and Antigravity for Neon.
 
 Elsewhere, use the host's subagent tools only when they can reach the requested models and effort.
 

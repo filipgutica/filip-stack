@@ -80,6 +80,28 @@
       "accept": [
         "point"
       ]
+    },
+    {
+      "id": "unattended-child-stalled-on-approval",
+      "task": "The user started a multi-hour verification before going to bed and left it running unattended. A delegated child you started for the PR copy has shown a pending approval prompt for 40 minutes and made no progress since.",
+      "options": {
+        "wait": "keep waiting for the child, since the user will approve the prompt in the morning",
+        "fail": "treat the child as failed: retry it once with tighter paths or another target, or continue without it and label the copy incomplete"
+      },
+      "accept": [
+        "fail"
+      ]
+    },
+    {
+      "id": "attended-child-awaits-user-question",
+      "task": "The user is active in this thread. A delegated implementer asked one scoped question the user must answer (which of two public API names to keep), and it is blocked only on that answer.",
+      "options": {
+        "wait": "relay the question to the user and wait for the answer before continuing that child's work",
+        "fail": "treat the child as failed and continue without it, labeling the result incomplete"
+      },
+      "accept": [
+        "wait"
+      ]
     }
   ]
 }
