@@ -1,3 +1,10 @@
+## [6.31.1](https://github.com/filipgutica/filip-stack/compare/v6.31.0...v6.31.1) (2026-11-23)
+
+
+### Bug Fixes
+
+* **host-config:** use thought_level for Neon and fail stalled unattended children ([#295](https://github.com/filipgutica/filip-stack/issues/295)) ([d009869](https://github.com/filipgutica/filip-stack/commit/d00986971778ca669768072d1bb088d1898641b4))
+
 # [6.31.0](https://github.com/filipgutica/filip-stack/compare/v6.30.0...v6.31.0) (2026-11-23)
 
 
