@@ -111,8 +111,7 @@
       },
       "accept": [
         "exit-nonzero"
-      ],
-      "needsNewGuidance": true
+      ]
     },
     {
       "id": "hr-control-link-command-no-skills",
