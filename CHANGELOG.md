@@ -1,3 +1,10 @@
+# [6.30.0](https://github.com/filipgutica/filip-stack/compare/v6.29.0...v6.30.0) (2026-11-23)
+
+
+### Features
+
+* **workflow:** explain a simple bug fix plainly in PR descriptions ([#291](https://github.com/filipgutica/filip-stack/issues/291)) ([15a85d5](https://github.com/filipgutica/filip-stack/commit/15a85d5fc49eb8f2052f054cd1a4cc34921d3a59))
+
 # [6.29.0](https://github.com/filipgutica/filip-stack/compare/v6.28.0...v6.29.0) (2026-11-23)
 
 
