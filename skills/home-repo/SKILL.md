@@ -18,6 +18,7 @@ Settle these from the request, and ask only about what it leaves open:
 - **Member repos.** In T3 Code, a Workbench workspace's repos are the default list.
 - **Skills to move.** Move only skills used for this body of work. Generic skills stay where they live, such as a shared skills repo or the user level. A skill that already has a home repo stays there. Each skill has exactly one home.
 - **Plugin marketplaces** to register, if any.
+- **Checkout model.** The default is one home folder per task with member repos cloned into `workspace/` (step 3). When the user states another design, such as worktrees of each local clone, follow it: leave out step 3's checkout parts and write step 4's member-repo line for that design.
 
 Moving a skill out of a repo that another tool distributes, such as a fleet sync, stops that distribution. Confirm each such move with the user.
 
@@ -44,11 +45,23 @@ CODEOWNERS              # team-shared only: one named owner per skill
 .claude/skills/<name> -> ../../.agents/skills/<name>   # real directory, one relative link per skill
 .claude/settings.json   # extraKnownMarketplaces + enabledPlugins, when plugins apply
 docs/adr/               # cross-repo decisions that last; created with the first ADR
+workspace/<repo>/       # gitignored: this task's member-repo checkouts
 ```
 
 Create a file only when it has content.
 
-Skills load because sessions start in this repo, so the repo needs no install script. When the home repo checks out member repos and links their skills into its own skill folders, every host must list every linked skill. Link each one into both `.agents/skills` and `.claude/skills`. Make the linking command fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
+**One home folder per task.** Each task runs in its own home folder: a clone or a git worktree of the home repo. Hosts that start each thread in its own worktree, such as T3 Code, give every thread one, so parallel tasks need no setup. Elsewhere, add one per task with `git worktree add --detach ../<home>-<slug> origin/main`.
+
+**Member repos are clones in `workspace/`.** Check each member repo out into the home folder's `workspace/<repo>/` with `git clone --reference-if-able ${CODE_ROOT:-$HOME/code}/<repo> <remote> workspace/<repo>`, which borrows objects from the local clone, so it is fast. Clones, not worktrees of the local clone, keep every git write inside the home folder, where sandboxes allow it, and let two tasks branch the same member repo at once. The local clones stay read-only object sources. Give the repo a checkout script with these commands:
+
+- **add:** clone a repo, or a named set of repos, into `workspace/` on a branch.
+- **status:** each checkout's branch, uncommitted files, unpushed commits, and stashes.
+- **clean:** delete checkouts, refusing any with uncommitted, unpushed, or stashed work.
+- **link:** link member skills, as below.
+
+Add a start-work skill that reads the task and runs **add**, and a wrap-up skill that checks PRs and runs **clean**.
+
+Skills load because sessions start in this repo, so the repo needs no install script. When member repos have skills, the **link** command puts each one in front of every host: link each one into both `.agents/skills` and `.claude/skills`. Make it fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
 
 Done when the files match the approved plan table.
 
@@ -56,8 +69,8 @@ Done when the files match the approved plan table.
 
 - **Intro:** two or three lines naming the body of work and saying that sessions start here.
 - **Tracking:** one GitHub issue per body of work, holding the goal, decisions, open questions, and links. Comments carry updates. An existing ticket tracker stays the record for its tickets.
-- **Before changing code:** switch into the target repo or a worktree of it, and read its `AGENTS.md` or `CLAUDE.md`.
-- **Repo table grouped by area:** `Repo | Owns | Path | Remote`. Paths are `${CODE_ROOT:-$HOME/code}/<repo>`. When a path is missing, ask once, then clone there.
+- **Working in a member repo:** the session stays in the home folder root. Run git as `git -C workspace/<repo> ...` and other commands with `workspace/<repo>` as the working directory. Before changing code, read its `AGENTS.md` or `CLAUDE.md` and any fitting `SKILL.md` by path, because hosts load no instruction files from folders below where the session started. A session restarted inside `workspace/<repo>` loses the home repo's guidance and skills.
+- **Repo table grouped by area:** `Repo | Owns | Remote`. Local clones live at `${CODE_ROOT:-$HOME/code}/<repo>`: read them to explore a repo before checking it out, and edit only in `workspace/`. When a clone is missing, ask once where clones live, then clone there.
 - **Skills:** one line per skill naming its trigger.
 
 Product-specific rules stay in the product repo.
@@ -105,5 +118,6 @@ Done when each moved skill has exactly one copy that a discovery root reaches.
 - `enabledPlugins` does not install anything. Each person trusts the folder, runs `claude plugin install <plugin>@<marketplace> --scope project`, restarts, and checks `/plugin`.
 - Codex finds repo skills in `.agents/skills`, looking from the working directory up to the repo root.
 - Claude Code's sandbox blocks writes to `.claude/skills`, so create those links outside it.
+- Sandboxes can block `git clone` into `workspace/`: it needs the network and copies git's hook templates. Run **add** outside the sandbox when it fails.
 - A session started in a product repo does not load the home repo's skills. That is expected.
 - Issues carry plans as text. Link larger artifacts, such as a PR, a file in a repo, or a published page, from the issue body or a comment.

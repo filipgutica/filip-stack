@@ -123,6 +123,52 @@
       "accept": [
         "exit-zero"
       ]
+    },
+    {
+      "id": "hr-work-from-home-root",
+      "task": "You are running $home-repo and writing the home repo's AGENTS.md. The user's design checks out member repos into a gitignored workspace/ folder inside the home repo. Decide what AGENTS.md tells an agent to do before it changes code in a member repo.",
+      "options": {
+        "stay": "keep the session in the home folder root, run commands against workspace/<repo>, and read the member repo's AGENTS.md by path",
+        "switch": "start the session in the member repo, or in a worktree of its local clone, then read its AGENTS.md"
+      },
+      "accept": [
+        "stay"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-user-chose-worktrees",
+      "task": "You are running $home-repo and writing the home repo's AGENTS.md. The user chose a design with no workspace/ folder: each member repo is cloned once, each task gets a worktree of that clone, and sessions are started there. Decide what AGENTS.md tells an agent to do before it changes code in a member repo.",
+      "options": {
+        "stay": "keep the session in the home folder root, run commands against workspace/<repo>, and read the member repo's AGENTS.md by path",
+        "switch": "start the session in the member repo, or in a worktree of its local clone, then read its AGENTS.md"
+      },
+      "accept": [
+        "switch"
+      ]
+    },
+    {
+      "id": "hr-parallel-tasks-clone",
+      "task": "You are running $home-repo and writing the home repo's AGENTS.md. The user's design checks out member repos into a gitignored workspace/ folder inside the home repo. Two tasks must change the same member repo at the same time. Decide how AGENTS.md sets that up.",
+      "options": {
+        "clone": "run each task in its own home folder and clone the member repo into that folder's workspace/",
+        "worktree": "add a git worktree of the member repo's local clone for each task"
+      },
+      "accept": [
+        "clone"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-parallel-user-chose-worktrees",
+      "task": "You are running $home-repo and writing the home repo's AGENTS.md. The user chose a design with no workspace/ folder: each member repo is cloned once, each task gets a worktree of that clone, and sessions are started there. Two tasks must change the same member repo at the same time. Decide how AGENTS.md sets that up.",
+      "options": {
+        "clone": "run each task in its own home folder and clone the member repo into that folder's workspace/",
+        "worktree": "add a git worktree of the member repo's local clone for each task"
+      },
+      "accept": [
+        "worktree"
+      ]
     }
   ]
 }
