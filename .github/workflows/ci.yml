@@ -37,7 +37,7 @@ jobs:
         if: github.event_name == 'pull_request'
         env:
           PR_TITLE: ${{ github.event.pull_request.title }}
-        run: printf '%s\n' "$PR_TITLE" | npx --no-install commitlint
+        run: printf '%s\n' "$PR_TITLE" | npx --no-install commitlint --config .github/commitlint-pr-title.mjs
 
       - name: Check plugins
         run: pnpm check

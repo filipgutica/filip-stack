@@ -13,6 +13,7 @@
   // These default exports are consumed by their tools, rather than imported by source.
   "ignoreExports": [
     { "file": "commitlint.config.js", "exports": ["default"] },
+    { "file": ".github/commitlint-pr-title.mjs", "exports": ["default"] },
     { "file": "docs/site/astro.config.mjs", "exports": ["default"] },
     { "file": "docs/site/playwright.config.ts", "exports": ["default"] },
     // promptfoo loads these prompt functions and assertions from evals/*.yaml.
