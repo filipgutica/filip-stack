@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 A **home repo** is where agent sessions and threads start for a body of work that spans several repos ([pattern](https://www.aihero.dev/the-home-repo-pattern)). It holds the skills, `AGENTS.md`, and path pointers for that body of work. The agent works in each product repo through its pointer. Product repos keep their own `AGENTS.md`, build commands, and code.
 
-**Audit:** for an existing home repo, skip step 1, and take its checkout model from its `AGENTS.md`. Run step 2's inventory on the home repo and its member repos, report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
+**Audit:** for an existing home repo, skip step 1, take its checkout model from its `AGENTS.md`, and apply step 1's checkout-model rule to it. Run step 2's inventory on the home repo and its member repos, report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
 
 ## 1. Decide
 
@@ -57,7 +57,7 @@ Create a file only when it has content.
 - **add:** clone a repo into `workspace/` on a branch, optionally a named set of repos at once.
 - **status:** each checkout's branch, uncommitted files, unpushed commits, and stashes.
 - **clean:** delete checkouts, refusing any with uncommitted, unpushed, or stashed work.
-- **link:** link member skills, as below.
+- **link:** when the design links member skills, link them, as below.
 
 Add a start-work skill that reads the task and runs **add**, and a wrap-up skill that checks PRs and runs **clean**.
 
@@ -103,7 +103,7 @@ Done when the user has the PR and issue links.
 
 ## 7. Verify, then retire the old copies
 
-1. Clone the pushed branch into a temporary directory. With `workspace/` checkouts, run **add** for one member repo from the clone's root and confirm it lands in `workspace/<repo>` on the requested branch. When the home repo links member-repo skills, check out the members and run the linking command there until it succeeds. Start a fresh session in Claude Code, Codex, and Antigravity, and confirm that every skill, including each linked member-repo skill, loads from the clone's path. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
+1. Clone the pushed branch into a temporary directory. With the default checkout script, run **add** for one member repo from the clone's root and confirm it lands in `workspace/<repo>` on the requested branch. When the home repo links member-repo skills, check out the members and run the linking command there until it succeeds. Start a fresh session in Claude Code, Codex, and Antigravity, and confirm that every skill, including each linked member-repo skill, loads from the clone's path. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
 2. Retire each old copy only when every person and machine that still needs the skill can load it from the merged home repo. For a private repo, that includes repo access and a clone on each machine.
    - Back it up outside every discovery root.
    - Remove its user-level links and its old source folder. When the old source lives in another repo, remove it there through that repo's own PR.

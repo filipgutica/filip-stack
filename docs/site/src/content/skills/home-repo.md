@@ -14,10 +14,10 @@ holds only lasting cross-repo decisions. Skills load because sessions start in
 the repo, with no install script. A session started in a product repo does not
 load the home repo's skills.
 
-Each task gets its own home folder, a clone or worktree of the home repo, and
-hosts that open a worktree per thread create that folder for you. Member
-repos are cloned into that folder's `workspace/`, and the session stays in the
-home folder root while it works in them.
+By default, each task gets its own home folder, a clone or worktree of the home
+repo, and hosts that open a worktree per thread create that folder for you.
+Member repos are cloned into that folder's `workspace/`, and the session stays
+in the home folder root while it works in them.
 
 ## When to use it
 
