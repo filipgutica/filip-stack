@@ -1,5 +1,6 @@
 # Models for each host's guidance, through the local CLIProxyAPI.
 # The label is the host whose guidance the prompt functions render.
+# List one main-thread model per host: the models that run the guidance day to day.
 - id: openai:chat:claude-opus-5-5
   label: claude
   config: &cliproxy
@@ -7,8 +8,5 @@
     apiKeyEnvar: CLIPROXY_API_KEY
     omitDefaults: true
 - id: openai:chat:gpt-6.2-sol
-  label: codex
-  config: *cliproxy
-- id: openai:chat:gpt-6.2-astra
   label: codex
   config: *cliproxy

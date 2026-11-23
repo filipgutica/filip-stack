@@ -17,6 +17,7 @@ Read applicable repository and project guidance before writing. Explicit user in
 ```
 
 - **Lead with the why.** One or two sentences: the problem and the resulting behavior. Leave out the implementation history.
+- **Explain a simple bug plainly.** When a few plain sentences explain a bug fix, put them in the Description: what was wrong, who it affected, and what the fix does. Add Root cause or Impact sections only when the bug needs them, such as a race that takes several steps to explain.
 - **Write for the team.** Leave out background reviewers already know, such as how the platform, config, or flags work. Describe only what this PR changes.
 - **One bullet per behavior.** Bold the area, then one plain sentence with the rule as a reviewer sees it. Leave out conditions and internals that don't change that behavior.
 - **Short by default.** Keep each Changes bullet to one line and How to verify to a few steps. Name a file, repository, or identifier only when the reviewer needs it to follow the change; the diff lists the rest.

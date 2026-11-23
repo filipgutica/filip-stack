@@ -25,7 +25,7 @@ This page explains how the parts fit together. To add a scenario or a test, or t
 | File | Role |
 | --- | --- |
 | `<name>.yaml` | promptfoo config: two prompts labeled `base` and `working tree`, the providers, a test generator, and one `javascript` assertion |
-| `providers.yaml` | The models, through the local CLIProxyAPI. The label (`claude` or `codex`) names the host whose guidance a prompt renders. |
+| `providers.yaml` | One main-thread model per host (Opus 5.5 and Sol 6.2), through the local CLIProxyAPI. The label (`claude` or `codex`) names the host whose guidance a prompt renders. |
 | `host-guidance.mjs`, `routing.mjs`, `rules.mjs` | Prompt functions, test generators, and scoring. `rules.mjs` builds every rules test: `rulesEval` for a fixed set of files, and the skill-rules tests |
 | `workflow-rules.mjs`, `coding-standards.mjs`, `hill-climb.mjs`, `retrieval.mjs`, `handoff.mjs`, `delegation-rules.mjs`, `host-rules.mjs` | Rules tests that `rulesEval` builds |
 | `skill-scenarios.mjs` | Reads `tests/skills/scenarios/<skill>.json` and the `--no-base` and `--skill` options |

@@ -85,16 +85,16 @@ test('the autonomy eval compares both guidance versions and applies the gate', a
   // The stub always answers "ask user", so only needsNewGuidance scenarios
   // that reject that answer can fail the gate, even when the guidance differs.
   const { status, output } = await runEval({
-    args: ['autonomy', '--base', 'HEAD', '--attempts', '1', '--model', 'gpt-6.2-sol', '--model', 'gpt-6.2-astra'],
+    args: ['autonomy', '--base', 'HEAD', '--attempts', '1', '--model', 'gpt-6.2-sol', '--model', 'claude-opus-5-5'],
     env,
   })
 
   assert.equal(requests.length, 44, output)
   assert.deepEqual(Object.keys(requests[0]).sort(), ['messages', 'model'])
   assert.equal(requests.filter(({ model }) => model === 'gpt-6.2-sol').length, 22)
-  assert.equal(requests.filter(({ model }) => model === 'gpt-6.2-astra').length, 22)
+  assert.equal(requests.filter(({ model }) => model === 'claude-opus-5-5').length, 22)
   assert.match(output, /^## codex guidance, gpt-6\.2-sol$/mu)
-  assert.match(output, /^## codex guidance, gpt-6\.2-astra$/mu)
+  assert.match(output, /^## claude guidance, claude-opus-5-5$/mu)
   assert.match(output, /^\| archive-intent \| ask user \| 1\/1 \| 1\/1 \| ask user \|$/mu)
   assert.match(output, /^\| helper-name \| decide \| 0\/1 \| 0\/1 \| ask user \|$/mu)
   assert.match(output, /^6 scenario result\(s\) regressed against HEAD/mu)

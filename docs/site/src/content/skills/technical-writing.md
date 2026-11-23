@@ -29,6 +29,8 @@ prose while leaving decisions to Planning. For a read-only audit, use
    paragraph.
 3. For PR descriptions, it states the problem before the new behavior and
    stays short: one line per change, and only the file names a reviewer needs.
+   A simple bug fix is a few plain sentences, without Root cause or Impact
+   sections.
    It adds fitting verification (runnable commands or requests for backend,
    API, or CLI changes) and notes real gaps.
 4. It rereads as a newcomer, separating facts from open questions.

@@ -320,7 +320,8 @@ attempt, any missed attempt under `--no-base`, or any provider error.
 
 ### Check a new model
 
-1. Add the model to `evals/providers.yaml`.
+1. Replace the model it succeeds in `evals/providers.yaml`, which lists one
+   main-thread model per host.
 2. Run each test with `--no-base --model <id>`, starting with `--dry-run`.
 3. Fix failing guidance, then run normal base comparisons to confirm no
    regressions on existing models.
