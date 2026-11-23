@@ -1,4 +1,5 @@
 commit-msg:
   commands:
     commitlint:
-      run: npx --no-install commitlint --edit {1}
+      # An absolute path: commitlint resolves a relative one against the first .git it finds going up, which in a nested checkout can be an outer worktree's.
+      run: npx --no-install commitlint --edit "$(git rev-parse --absolute-git-dir)/COMMIT_EDITMSG"
