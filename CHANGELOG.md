@@ -1,3 +1,15 @@
+# [6.28.0](https://github.com/filipgutica/filip-stack/compare/v6.27.0...v6.28.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* **skills:** verify member skill links after checkout; test the missing-link case ([8a40147](https://github.com/filipgutica/filip-stack/commit/8a40147af8bc673ef143b4d22872ce3b2fd49586))
+
+
+### Features
+
+* **skills:** make home-repo link member skills for every host ([69303ea](https://github.com/filipgutica/filip-stack/commit/69303ea49c7a20deed85627fca0ba03a233492fd))
+
 # [6.27.0](https://github.com/filipgutica/filip-stack/compare/v6.26.1...v6.27.0) (2026-11-23)
 
 
