@@ -1,3 +1,15 @@
+# [6.31.0](https://github.com/filipgutica/filip-stack/compare/v6.30.0...v6.31.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* **evals:** retry provider 5xx answers with backoff in the eval runner ([#294](https://github.com/filipgutica/filip-stack/issues/294)) ([fd0fea4](https://github.com/filipgutica/filip-stack/commit/fd0fea413803f696ed7de1bc71582b850a6f732b))
+
+
+### Features
+
+* **skills:** give home-repo a per-task home folder and workspace checkouts ([#293](https://github.com/filipgutica/filip-stack/issues/293)) ([fb3f442](https://github.com/filipgutica/filip-stack/commit/fb3f442f215bf681156acb80b3acc911207392d2))
+
 # [6.30.0](https://github.com/filipgutica/filip-stack/compare/v6.29.0...v6.30.0) (2026-11-23)
 
 
