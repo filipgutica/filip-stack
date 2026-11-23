@@ -174,7 +174,8 @@ CI runs `semantic-release` on pushes to `main` using
 [Conventional Commits](https://www.conventionalcommits.org/). PRs merge by
 squash: the PR title becomes the commit title on `main`, and the branch's commit
 messages become its body, so footers such as `BREAKING CHANGE:` carry over. CI
-lints the PR title with commitlint.
+lints the PR title with commitlint. Only the title's type sets the release, so
+choose it for the whole PR, such as `fix:` when a docs PR also fixes a plugin bug.
 
 | In the commit message | Version bump |
 | --- | --- |
