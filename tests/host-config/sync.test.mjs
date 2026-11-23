@@ -386,6 +386,10 @@ test('published skills outside the baseline are reported as unselected and not i
   put(join(context.repo, 'skills', 'draft', 'SKILL.md'), 'An uncommitted draft.\n')
   const preview = JSON.parse(success(context.sync('--dry-run', '--environment-id', 'this-machine')))
   assert.deepEqual(preview.components.find(({ name }) => name === 'skills').unselected, ['extra'])
+  // A hand-installed copy without a filip-stack lock entry counts as installed.
+  put(join(context.home, '.agents/skills/extra/SKILL.md'), 'A hand-installed extra skill.\n')
+  const installed = JSON.parse(success(context.sync('--dry-run', '--environment-id', 'this-machine')))
+  assert.equal(installed.components.find(({ name }) => name === 'skills').unselected, undefined)
 })
 
 for (const kind of ['foreign-owned', 'unmanaged']) {

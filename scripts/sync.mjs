@@ -249,6 +249,8 @@ const refreshSkills = () => {
   const unselected = git('ls-tree', '-r', '--name-only', 'HEAD', '--', 'skills').split('\n')
     .map((path) => path.match(/^skills\/([^/]+)\/SKILL\.md$/u)?.[1])
     .filter((name) => name && !desired.includes(name) && !policy.excluded.skills.includes(name))
+    // A copy installed without a filip-stack lock entry is still installed, so it is not unselected.
+    .filter((name) => !existsSync(join(home, '.agents', 'skills', name)) && !lstatSync(join(claudeHome, 'skills', name), { throwIfNoEntry: false }))
     .sort()
   const blocked = skills.filter(({ state }) => state === 'blocked')
   return {
