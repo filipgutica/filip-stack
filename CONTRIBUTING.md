@@ -315,7 +315,9 @@ pnpm eval:view                   # opens saved results in the promptfoo viewer
 Flags: `--base <ref>` (default `origin/main`), `--attempts <n>` (default `3`),
 `--model <id>` (from `evals/providers.yaml`), and `--api-key-file <path>`. The
 CLIProxyAPI key comes from `--api-key-file` first, then `CLIPROXY_API_KEY`, then
-`~/.config/secrets/cliproxy-client-key`. Ask before a paid run. `eval:routing`
+`~/.config/secrets/cliproxy-client-key`. The runner retries a provider's 5xx answer
+up to four times with exponential backoff starting at 60 seconds; set
+`PROMPTFOO_REQUEST_BACKOFF_MS` to change it. Ask before a paid run. `eval:routing`
 runs only affected steps and exits `0` when nothing routable changed.
 
 After promptfoo finishes, the gate in `evals/run.mjs` fails on any regression

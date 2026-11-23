@@ -88,7 +88,9 @@ const config = join(evalsDir, `${name}.yaml`)
 process.env.EVAL_BASE_REF = options.base
 process.env.EVAL_NO_BASE = noBase ? '1' : ''
 process.env.EVAL_SKILL = options.skill ?? ''
-const env = { ...process.env, PROMPTFOO_DISABLE_TELEMETRY: '1', PROMPTFOO_DISABLE_UPDATE: '1' }
+// Provider overloads answer 5xx; retry them with exponential backoff (60 s, 120 s, ...) instead
+// of recording an error the gate rejects. The environment can override either value.
+const env = { PROMPTFOO_RETRY_5XX: 'true', PROMPTFOO_REQUEST_BACKOFF_MS: '60000', ...process.env, PROMPTFOO_DISABLE_TELEMETRY: '1', PROMPTFOO_DISABLE_UPDATE: '1' }
 const run = (args, extraEnv = {}) => {
   const result = spawnSync(promptfoo, args, { stdio: 'inherit', env: { ...env, ...extraEnv } })
   if (result.error) throw result.error
