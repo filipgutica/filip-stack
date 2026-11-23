@@ -42,7 +42,7 @@ has the layout and the exact steps.
 - A thin `CLAUDE.md` that imports `AGENTS.md`.
 - A setup-only `README`.
 - Skills under `.agents/skills` with one `.claude/skills` link each.
-- A checkout script that adds, reports, cleans, and links member repos in `workspace/`, plus start-work and wrap-up skills that run it.
+- By default, a checkout script that adds, reports, cleans, and links member repos in `workspace/`, plus start-work and wrap-up skills that run it.
 - When the home repo links member repos' skills, a link for each in both skill folders and a check that Claude, Codex, and Antigravity each list them.
 - Optional `.claude/settings.json` for plugin marketplaces.
 - `CODEOWNERS` only for team-shared repos.
