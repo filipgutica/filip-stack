@@ -112,6 +112,4 @@ h1 code { overflow-wrap: anywhere; }
 }
 @media (max-width: 640px) {
   .fg-site-docs > main { gap: var(--space-8); }
-  .pager { grid-template-columns: minmax(0, 1fr); }
-  .pager a[rel='next'] { grid-column: auto; }
 }
