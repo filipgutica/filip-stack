@@ -76,6 +76,53 @@
       "accept": [
         "retire"
       ]
+    },
+    {
+      "id": "hr-member-skills-both-folders",
+      "task": "You are running $home-repo to set up a home repo. The user's design checks out member repos into a workspace folder inside the home repo and links their skills into the home repo's skill folders, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity.",
+      "options": {
+        "agents-only": "link each member skill into .agents/skills only",
+        "both": "link each member skill into both .agents/skills and .claude/skills",
+        "none": "link no member skills into the home repo"
+      },
+      "accept": [
+        "both"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-no-member-skills",
+      "task": "You are running $home-repo to set up a home repo. Agents work in each member repo through its own checkout and pointer, and the user's design does not link member repos' skills into the home repo. The user works in Claude Code, Codex, and Antigravity.",
+      "options": {
+        "agents-only": "link each member skill into .agents/skills only",
+        "both": "link each member skill into both .agents/skills and .claude/skills",
+        "none": "link no member skills into the home repo"
+      },
+      "accept": [
+        "none"
+      ]
+    },
+    {
+      "id": "hr-link-command-blocked",
+      "task": "You are running $home-repo and writing the command that links member repos' skills into the home repo's .agents/skills and .claude/skills. Decide what it does when it cannot create one host's link for a member skill, for example because a sandbox blocks the write, while the other host's link works.",
+      "options": {
+        "exit-zero": "print a warning and exit 0",
+        "exit-nonzero": "exit non-zero and name the missing link"
+      },
+      "accept": [
+        "exit-nonzero"
+      ]
+    },
+    {
+      "id": "hr-control-link-command-no-skills",
+      "task": "You are running $home-repo and writing the command that links member repos' skills into the home repo's .agents/skills and .claude/skills. Decide what it does for a member repo that ships no skills, so there is nothing to link.",
+      "options": {
+        "exit-zero": "print a warning and exit 0",
+        "exit-nonzero": "exit non-zero and name the missing link"
+      },
+      "accept": [
+        "exit-zero"
+      ]
     }
   ]
 }

@@ -40,7 +40,7 @@ AGENTS.md
 CLAUDE.md               # real file: one line naming AGENTS.md as canonical, then "@AGENTS.md"
 README.md               # setup only: clone, trust the folder, install plugins, export credentials
 CODEOWNERS              # team-shared only: one named owner per skill
-.agents/skills/<name>/                                 # real skill folders (Codex discovery)
+.agents/skills/<name>/                                 # real folders for skills this repo owns (Codex discovery)
 .claude/skills/<name> -> ../../.agents/skills/<name>   # real directory, one relative link per skill
 .claude/settings.json   # extraKnownMarketplaces + enabledPlugins, when plugins apply
 docs/adr/               # cross-repo decisions that last; created with the first ADR
@@ -48,7 +48,7 @@ docs/adr/               # cross-repo decisions that last; created with the first
 
 Create a file only when it has content.
 
-Skills load because sessions start in this repo, so the repo needs no install script. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
+Skills load because sessions start in this repo, so the repo needs no install script. When the home repo checks out member repos and links their skills into its own skill folders, every host must list every linked skill. Link each one into both `.agents/skills` and `.claude/skills`. Make the linking command fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
 
 Done when the files match the approved plan table.
 
@@ -90,7 +90,7 @@ Done when the user has the PR and issue links.
 
 ## 7. Verify, then retire the old copies
 
-1. Clone the pushed branch into a temporary directory, start a session there, and confirm that every skill loads from the clone's path in Claude Code and in Codex. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
+1. Clone the pushed branch into a temporary directory. When the home repo links member-repo skills, check out the members and run the linking command there until it succeeds. Start a fresh session in Claude Code, Codex, and Antigravity, and confirm that every skill, including each linked member-repo skill, loads from the clone's path. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
 2. Retire each old copy only when every person and machine that still needs the skill can load it from the merged home repo. For a private repo, that includes repo access and a clone on each machine.
    - Back it up outside every discovery root.
    - Remove its user-level links and its old source folder. When the old source lives in another repo, remove it there through that repo's own PR.
@@ -104,5 +104,6 @@ Done when each moved skill has exactly one copy that a discovery root reaches.
 - Claude Code documents per-skill symlinks. A symlinked `.claude/skills` directory is not documented.
 - `enabledPlugins` does not install anything. Each person trusts the folder, runs `claude plugin install <plugin>@<marketplace> --scope project`, restarts, and checks `/plugin`.
 - Codex finds repo skills in `.agents/skills`, looking from the working directory up to the repo root.
+- Claude Code's sandbox blocks writes to `.claude/skills`, so create those links outside it.
 - A session started in a product repo does not load the home repo's skills. That is expected.
 - Issues carry plans as text. Link larger artifacts, such as a PR, a file in a repo, or a published page, from the issue body or a comment.

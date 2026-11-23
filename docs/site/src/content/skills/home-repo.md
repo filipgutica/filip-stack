@@ -37,6 +37,7 @@ has the layout and the exact steps.
 - A thin `CLAUDE.md` that imports `AGENTS.md`.
 - A setup-only `README`.
 - Skills under `.agents/skills` with one `.claude/skills` link each.
+- When the home repo links member repos' skills, a link for each in both skill folders and a check that Claude, Codex, and Antigravity each list them.
 - Optional `.claude/settings.json` for plugin marketplaces.
 - `CODEOWNERS` only for team-shared repos.
 - A first GitHub issue for an in-flight body of work.
