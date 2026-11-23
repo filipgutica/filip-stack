@@ -14,8 +14,8 @@ holds only lasting cross-repo decisions. Skills load because sessions start in
 the repo, with no install script. A session started in a product repo does not
 load the home repo's skills.
 
-Each task gets its own home folder, a clone or worktree of the home repo, so
-hosts that open a worktree per thread run tasks in parallel with no setup. Member
+Each task gets its own home folder, a clone or worktree of the home repo, and
+hosts that open a worktree per thread create that folder for you. Member
 repos are cloned into that folder's `workspace/`, and the session stays in the
 home folder root while it works in them.
 
@@ -43,7 +43,7 @@ has the layout and the exact steps.
 - A setup-only `README`.
 - Skills under `.agents/skills` with one `.claude/skills` link each.
 - A checkout script that adds, reports, cleans, and links member repos in `workspace/`, plus start-work and wrap-up skills that run it.
-- A link for each member skill in both skill folders and a check that Claude, Codex, and Antigravity each list them.
+- When the home repo links member repos' skills, a link for each in both skill folders and a check that Claude, Codex, and Antigravity each list them.
 - Optional `.claude/settings.json` for plugin marketplaces.
 - `CODEOWNERS` only for team-shared repos.
 - A first GitHub issue for an in-flight body of work.

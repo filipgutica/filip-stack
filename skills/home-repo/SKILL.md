@@ -8,7 +8,7 @@ disable-model-invocation: true
 
 A **home repo** is where agent sessions and threads start for a body of work that spans several repos ([pattern](https://www.aihero.dev/the-home-repo-pattern)). It holds the skills, `AGENTS.md`, and path pointers for that body of work. The agent works in each product repo through its pointer. Product repos keep their own `AGENTS.md`, build commands, and code.
 
-**Audit:** for an existing home repo, skip step 1. Run step 2's inventory on the home repo and its member repos, report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
+**Audit:** for an existing home repo, skip step 1, and take its checkout model from its `AGENTS.md`. Run step 2's inventory on the home repo and its member repos, report each gap against the layout in step 3, the AGENTS.md contents in step 4, and the checks in steps 5 and 7, and change nothing.
 
 ## 1. Decide
 
@@ -18,7 +18,7 @@ Settle these from the request, and ask only about what it leaves open:
 - **Member repos.** In T3 Code, a Workbench workspace's repos are the default list.
 - **Skills to move.** Move only skills used for this body of work. Generic skills stay where they live, such as a shared skills repo or the user level. A skill that already has a home repo stays there. Each skill has exactly one home.
 - **Plugin marketplaces** to register, if any.
-- **Checkout model.** The default is one home folder per task with member repos cloned into `workspace/` (step 3). When the user states another design, such as worktrees of each local clone, follow it: leave out step 3's checkout parts and write step 4's member-repo line for that design.
+- **Checkout model.** The default is one home folder per task with member repos cloned into `workspace/` (step 3). When the user states another design, such as worktrees of each local clone, follow it: leave out step 3's checkout parts and write step 4's member-repo and repo-table lines for that design.
 
 Moving a skill out of a repo that another tool distributes, such as a fleet sync, stops that distribution. Confirm each such move with the user.
 
@@ -50,18 +50,18 @@ workspace/<repo>/       # gitignored: this task's member-repo checkouts
 
 Create a file only when it has content.
 
-**One home folder per task.** Each task runs in its own home folder: a clone or a git worktree of the home repo. Hosts that start each thread in its own worktree, such as T3 Code, give every thread one, so parallel tasks need no setup. Elsewhere, add one per task with `git worktree add --detach ../<home>-<slug> origin/main`.
+**One home folder per task.** Each task runs in its own home folder: a clone or a git worktree of the home repo. Hosts that start each thread in its own worktree, such as T3 Code, give every thread one automatically. Elsewhere, add one per task with `git worktree add --detach ../<home>-<slug> origin/<default-branch>`.
 
 **Member repos are clones in `workspace/`.** Check each member repo out into the home folder's `workspace/<repo>/` with `git clone --reference-if-able ${CODE_ROOT:-$HOME/code}/<repo> <remote> workspace/<repo>`, which borrows objects from the local clone, so it is fast. Clones, not worktrees of the local clone, keep every git write inside the home folder, where sandboxes allow it, and let two tasks branch the same member repo at once. The local clones stay read-only object sources. Give the repo a checkout script with these commands:
 
-- **add:** clone a repo, or a named set of repos, into `workspace/` on a branch.
+- **add:** clone a repo into `workspace/` on a branch, optionally a named set of repos at once.
 - **status:** each checkout's branch, uncommitted files, unpushed commits, and stashes.
 - **clean:** delete checkouts, refusing any with uncommitted, unpushed, or stashed work.
 - **link:** link member skills, as below.
 
 Add a start-work skill that reads the task and runs **add**, and a wrap-up skill that checks PRs and runs **clean**.
 
-Skills load because sessions start in this repo, so the repo needs no install script. When member repos have skills, the **link** command puts each one in front of every host: link each one into both `.agents/skills` and `.claude/skills`. Make it fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
+Skills load because sessions start in this repo, so the repo needs no install script. When the design links member skills, the **link** command puts each one in front of every host: link each one into both `.agents/skills` and `.claude/skills`. Make it fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
 
 Done when the files match the approved plan table.
 
@@ -103,7 +103,7 @@ Done when the user has the PR and issue links.
 
 ## 7. Verify, then retire the old copies
 
-1. Clone the pushed branch into a temporary directory. When the home repo links member-repo skills, check out the members and run the linking command there until it succeeds. Start a fresh session in Claude Code, Codex, and Antigravity, and confirm that every skill, including each linked member-repo skill, loads from the clone's path. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
+1. Clone the pushed branch into a temporary directory. With `workspace/` checkouts, run **add** for one member repo from the clone's root and confirm it lands in `workspace/<repo>` on the requested branch. When the home repo links member-repo skills, check out the members and run the linking command there until it succeeds. Start a fresh session in Claude Code, Codex, and Antigravity, and confirm that every skill, including each linked member-repo skill, loads from the clone's path. A listed name alone can come from an installed copy, so use a clean profile or another check that shows the path. For a team-shared repo, a teammate on a clean profile also runs one skill end to end.
 2. Retire each old copy only when every person and machine that still needs the skill can load it from the merged home repo. For a private repo, that includes repo access and a clone on each machine.
    - Back it up outside every discovery root.
    - Remove its user-level links and its old source folder. When the old source lives in another repo, remove it there through that repo's own PR.
