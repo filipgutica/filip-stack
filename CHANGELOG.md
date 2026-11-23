@@ -1,3 +1,17 @@
+# [6.27.0](https://github.com/filipgutica/filip-stack/compare/v6.26.1...v6.27.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* **sync:** leave hand-installed skills out of unselected ([0673643](https://github.com/filipgutica/filip-stack/commit/06736431358c941ee9a71cf70295b004abc66aa1))
+* **sync:** omit unselected when the skill lookup fails ([c6e0105](https://github.com/filipgutica/filip-stack/commit/c6e0105fa03a1dcbbdfb38cca48860cc5418e0c1))
+* **sync:** read unselected skills from the committed tree ([faa2eb6](https://github.com/filipgutica/filip-stack/commit/faa2eb6a39cecdac47656e0c6904d42aef32b12a))
+
+
+### Features
+
+* **sync:** report published skills outside the baseline as unselected ([f6d476d](https://github.com/filipgutica/filip-stack/commit/f6d476d121f791eac4807b0575ed4e3e53a42d21))
+
 ## [6.26.1](https://github.com/filipgutica/filip-stack/compare/v6.26.0...v6.26.1) (2026-11-23)
 
 
