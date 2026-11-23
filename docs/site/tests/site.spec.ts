@@ -227,6 +227,15 @@ test("the shared appearance picker persists dark across routes and resets to sys
   await expect(page.locator("html")).not.toHaveClass(/dark/);
 });
 
+test("on a phone, Previous and Next share one row", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/filip-stack/skills/engineering/");
+  const prev = await page.locator('.pager a[rel="prev"]').boundingBox();
+  const next = await page.locator('.pager a[rel="next"]').boundingBox();
+  expect(next!.y).toBe(prev!.y);
+  expect(next!.x).toBeGreaterThan(prev!.x + prev!.width);
+});
+
 test("the phone drawer supports escape, focus return, and cross-page navigation", async ({
   page,
 }) => {
