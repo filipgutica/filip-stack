@@ -42,6 +42,11 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
       await expect(card).toHaveCSS("grid-template-columns", /^\d+(?:\.\d+)?px$/);
     }
   }
+  const pillarLink = page.locator(".pillar-map").getByRole("link").first();
+  await expect(pillarLink, "Pillar links keep a 44px minimum on phones").toHaveCSS(
+    "min-height",
+    "44px",
+  );
   await page.setViewportSize({ width: 1280, height: 900 });
 
   const figure = page.locator(".catch");
