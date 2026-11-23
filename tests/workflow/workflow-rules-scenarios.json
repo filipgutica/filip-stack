@@ -371,8 +371,8 @@
       "id": "pr-description-simple-bug",
       "task": "You are writing the Description of a PR that fixes a bug. Viewers could not export reports even though their role grants export, because the permission check read the wrong role field. The fix is a one-line change.",
       "options": {
-        "plain": "explain what was wrong, who it affected, and the fix in a few plain sentences",
-        "sections": "add separate Root cause, Impact, and Fix sections before Changes"
+        "plain": "state what was wrong, why it happened, who it affected, and the fix in plain sentences in the Description",
+        "sections": "state the same facts under separate Root cause, Impact, and Fix sections before Changes"
       },
       "accept": [
         "plain"
@@ -382,11 +382,11 @@
       "id": "pr-description-race-bug",
       "task": "You are writing the Description of a PR that fixes a bug. About one nightly import in twenty dropped rows, because two workers could claim the same batch; a reviewer needs the four-step claim sequence to see why the new row lock and retry close the race.",
       "options": {
-        "plain": "explain the bug and the fix in two plain sentences, leaving out the claim sequence",
-        "rootcause": "add a Root cause section that walks through the claim sequence, then Changes"
+        "plain": "state what was wrong, why it happened, who it affected, and the fix in plain sentences in the Description",
+        "sections": "state the same facts under separate Root cause, Impact, and Fix sections before Changes"
       },
       "accept": [
-        "rootcause"
+        "sections"
       ]
     }
   ]
