@@ -1,3 +1,16 @@
+# [6.29.0](https://github.com/filipgutica/filip-stack/compare/v6.28.0...v6.29.0) (2026-11-23)
+
+
+### Bug Fixes
+
+* **host-config:** require marked UI screenshots and point evidence rules to their owners ([3249b77](https://github.com/filipgutica/filip-stack/commit/3249b7755ea7c6971c420b3e397ae9c26aca7c02))
+* **host-config:** scope text-only evidence to agent-only loops and redact all shared evidence ([0faad8a](https://github.com/filipgutica/filip-stack/commit/0faad8abb8817f0f196385ac6140515861ac305f))
+
+
+### Features
+
+* **host-config:** require reproducible claims and audience-fit evidence ([c3e8de8](https://github.com/filipgutica/filip-stack/commit/c3e8de8abb501eb017854aa10ffce2c992da42e9))
+
 # [6.28.0](https://github.com/filipgutica/filip-stack/compare/v6.27.0...v6.28.0) (2026-11-23)
 
 
