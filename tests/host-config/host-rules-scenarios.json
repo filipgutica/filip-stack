@@ -246,6 +246,31 @@
       "accept": [
         "offer-merge"
       ]
+    },
+    {
+      "id": "api-evidence-for-people",
+      "task": "A reviewer agent confirmed a bug: `GET /v2/orders/{id}` returns `\"status\": null` for cancelled orders. Its report includes the `curl` command, with the token as `$API_TOKEN`, and the JSON response. You now file a GitHub issue so the team can track the bug.",
+      "options": {
+        "text": "numbered steps with the copyable `curl` request and an excerpt of the JSON response",
+        "annotated": "numbered steps with the copyable `curl` request and an excerpt of the JSON response, plus an image of the request and response with the null `status` field marked",
+        "summary": "one sentence naming the endpoint and the wrong field"
+      },
+      "accept": [
+        "annotated"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "api-evidence-agent-loop",
+      "task": "A reviewer agent confirmed a bug: `GET /v2/orders/{id}` returns `\"status\": null` for cancelled orders. Its report includes the `curl` command, with the token as `$API_TOKEN`, and the JSON response. You now brief an implementer agent to fix it.",
+      "options": {
+        "text": "numbered steps with the copyable `curl` request and an excerpt of the JSON response",
+        "annotated": "numbered steps with the copyable `curl` request and an excerpt of the JSON response, plus an image of the request and response with the null `status` field marked",
+        "summary": "one sentence naming the endpoint and the wrong field"
+      },
+      "accept": [
+        "text"
+      ]
     }
   ]
 }
