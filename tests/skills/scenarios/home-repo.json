@@ -78,28 +78,26 @@
       ]
     },
     {
-      "id": "hr-member-skills-every-host",
-      "task": "You are running $home-repo to set up a home repo. The user's design checks out member repos into a workspace folder inside the home repo and links their skills into the home repo's skill folders, so threads started in the home repo can use them. The user works in Claude Code and Codex.",
+      "id": "hr-member-skill-link-missing",
+      "task": "You are running $home-repo to set up a home repo that checks out member repos into a workspace folder and links their skills into the home repo's .agents/skills and .claude/skills, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity. You ran the linking command for a member repo that ships one skill. Its .agents/skills link resolves to the member skill. Its .claude/skills link could not be created because the sandbox blocked the write, and the command printed only a warning.",
       "options": {
-        "agents-only": "link each member skill into .agents/skills only, which Codex reads",
-        "every-host": "link each member skill into both .agents/skills and .claude/skills, and make the linking command fail when a link does not resolve",
-        "none": "leave member skills in their own repos and link nothing"
+        "continue": "report the setup as done and continue to the next step",
+        "incomplete": "report the setup as incomplete, name the missing link, and fix it before continuing"
       },
       "accept": [
-        "every-host"
+        "incomplete"
       ],
       "needsNewGuidance": true
     },
     {
-      "id": "hr-control-no-member-skills",
-      "task": "You are running $home-repo to set up a home repo. Agents work in each member repo through its own checkout and pointer, and the user's design does not link member repos' skills into the home repo. The user works in Claude Code and Codex.",
+      "id": "hr-control-member-skill-links-resolve",
+      "task": "You are running $home-repo to set up a home repo that checks out member repos into a workspace folder and links their skills into the home repo's .agents/skills and .claude/skills, so threads started there can use them. The user works in Claude Code, Codex, and Antigravity. You ran the linking command for a member repo that ships one skill. Its .agents/skills and .claude/skills links both resolve to the member skill, and the command exited successfully.",
       "options": {
-        "agents-only": "link each member skill into .agents/skills only, which Codex reads",
-        "every-host": "link each member skill into both .agents/skills and .claude/skills, and make the linking command fail when a link does not resolve",
-        "none": "leave member skills in their own repos and link nothing"
+        "continue": "report the setup as done and continue to the next step",
+        "incomplete": "report the setup as incomplete, name the missing link, and fix it before continuing"
       },
       "accept": [
-        "none"
+        "continue"
       ]
     }
   ]
