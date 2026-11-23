@@ -76,6 +76,31 @@
       "accept": [
         "retire"
       ]
+    },
+    {
+      "id": "hr-member-skills-every-host",
+      "task": "You are running $home-repo to set up a home repo. The user's design checks out member repos into a workspace folder inside the home repo and links their skills into the home repo's skill folders, so threads started in the home repo can use them. The user works in Claude Code and Codex.",
+      "options": {
+        "agents-only": "link each member skill into .agents/skills only, which Codex reads",
+        "every-host": "link each member skill into both .agents/skills and .claude/skills, and make the linking command fail when a link does not resolve",
+        "none": "leave member skills in their own repos and link nothing"
+      },
+      "accept": [
+        "every-host"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-no-member-skills",
+      "task": "You are running $home-repo to set up a home repo. Agents work in each member repo through its own checkout and pointer, and the user's design does not link member repos' skills into the home repo. The user works in Claude Code and Codex.",
+      "options": {
+        "agents-only": "link each member skill into .agents/skills only, which Codex reads",
+        "every-host": "link each member skill into both .agents/skills and .claude/skills, and make the linking command fail when a link does not resolve",
+        "none": "leave member skills in their own repos and link nothing"
+      },
+      "accept": [
+        "none"
+      ]
     }
   ]
 }
