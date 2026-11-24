@@ -74,6 +74,15 @@ Guidance travels on two channels [A1]:
 - **Advisory**: the prompt, `AGENTS.md` / `CLAUDE.md`, skills. The model weighs it and may decide it does not apply.
 - **Enforced**: hooks, deny rules, the sandbox, the type checker, linters, required CI checks. Each runs at its action boundary (a tool call, a commit, a merge) whatever the model decides.
 
+Four layers carry these channels, from the agent outward:
+
+1. **Host and sandbox**: the coding tool and its harness decide what the agent can reach at all.
+2. **Instruction files and skills**: advisory guidance.
+3. **Hooks**: enforced at each tool call and when the agent tries to finish.
+4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. This is the layer that physically stops unreviewed, unverified, or untested code from reaching the default branch and production, whoever wrote it.
+
+Make every gate one cheap local command. People run gates that cost nothing, and an agent runs every gate its instructions name. Hooks and required CI then block what still slips through.
+
 Put each rule on the channel that matches its exceptions:
 
 - A rule with zero exceptions is enforced. OpenAI reported the same move in early 2026: when documentation falls short, the rule becomes code [O1].

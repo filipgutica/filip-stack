@@ -207,7 +207,7 @@ onMounted(() => {
       <ul>
         <li>A <strong>deny rule</strong> is a host rule that blocks given files or paths, such as secrets in <code>.env</code>.</li>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
-        <li><strong>Required CI</strong> is CI set to block a merge when it fails.</li>
+        <li><strong>Required CI</strong> is CI set to block a merge when it fails. With the repository's rules (branch protection or rulesets on GitHub, GitLab, and similar), it keeps unreviewed, unverified, or untested code out of the main branch and production, whether an agent or a person wrote it.</li>
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
       <p>
@@ -334,6 +334,19 @@ onMounted(() => {
       </template>
     </UiFigure>
     <div class="prose">
+      <p>Four layers carry these channels, from the agent outward:</p>
+      <ol>
+        <li><strong>The host and its sandbox</strong> decide what the agent can reach at all.</li>
+        <li><strong>Instruction files and skills</strong> advise.</li>
+        <li><strong>Hooks</strong> enforce at each tool call and when the agent tries to finish.</li>
+        <li><strong>Repository rules and required CI</strong> enforce at merge. They physically stop an agent or a person from merging code that fails its checks or skipped review.</li>
+      </ol>
+      <p>
+        Make every check one cheap command to run locally: tests, lint, type
+        checks, complexity, and coverage. People run checks that cost them
+        nothing, and an agent runs every check its instructions name. Hooks
+        and required CI then block what still slips through.
+      </p>
       <p>Choose the channel by whether the rule allows exceptions.</p>
       <ul>
         <li>
@@ -426,6 +439,7 @@ onMounted(() => {
           <li>Lint, dead code, unused dependencies, complexity, and duplication checks.</li>
           <li>Warnings fail builds, and every suppression states why.</li>
           <li>Error messages say how to fix failures.</li>
+          <li>A dependency audit, such as <code>pnpm audit</code>, runs in the gate, and automated update pull requests (Renovate or Dependabot) pass the same gates as any other change.</li>
         </ul>
       </template>
     </PillarSection>
@@ -450,6 +464,7 @@ onMounted(() => {
           <li>Each layer owns one risk: unit for pure logic, component for public contracts, integration for real boundaries, and end-to-end for key user journeys.</li>
           <li>Regression tests fail before the fix.</li>
           <li>Mutation testing on critical modules proves tests can fail.</li>
+          <li>Performance budgets on the app (bundle size, page load, latency) and on test and CI duration fail the build when crossed.</li>
         </ul>
       </template>
     </PillarSection>
@@ -499,7 +514,8 @@ onMounted(() => {
       <template #good>
         <ul>
           <li>Leave anything a tool can check to pillar 2.</li>
-          <li>Check every change against its spec or ticket. Run angles like security or performance only when the diff carries that risk.</li>
+          <li>Check every change against its spec or ticket. Run other angles only when the diff carries that risk: simplicity for over-engineered code, test value for brittle or overlapping tests, security, or performance.</li>
+          <li>Automated reviewers in CI, such as CodeRabbit or the Codex and Claude code review integrations, run on every pull request without anyone starting them. Their findings are checked like any other.</li>
           <li>A person authorizes merges, per PR or in advance under pillar 7.</li>
         </ul>
       </template>

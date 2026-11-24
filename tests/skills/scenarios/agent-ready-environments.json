@@ -67,6 +67,29 @@
       "accept": [
         "policy"
       ]
+    },
+    {
+      "id": "are-dependency-gate-missing",
+      "task": "You are auditing a Node web app for agent readiness. Verified: one `pnpm check` command runs types, lint, dead-code, and complexity checks locally and in CI; clean main passes; a ruleset requires that CI check and blocks direct pushes to main; suppressions are counted. No dependency audit runs anywhere, and dependency updates are made by hand when someone remembers.",
+      "options": {
+        "complete": "Report no top gap for pillar 2",
+        "dependency": "Name the missing dependency gate as pillar 2's top gap: add a dependency audit to the check and automated dependency update pull requests"
+      },
+      "accept": [
+        "dependency"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "are-dependency-gate-present",
+      "task": "You are auditing a Node web app for agent readiness. Verified: one `pnpm check` command runs types, lint, dead-code, and complexity checks locally and in CI; clean main passes; a ruleset requires that CI check and blocks direct pushes to main; suppressions are counted. `pnpm check` also runs `pnpm audit`, and Renovate opens dependency update pull requests that run the same checks.",
+      "options": {
+        "complete": "Report no top gap for pillar 2",
+        "dependency": "Name the missing dependency gate as pillar 2's top gap: add a dependency audit to the check and automated dependency update pull requests"
+      },
+      "accept": [
+        "complete"
+      ]
     }
   ]
 }

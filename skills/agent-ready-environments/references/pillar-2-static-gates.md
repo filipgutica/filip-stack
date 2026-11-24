@@ -16,6 +16,7 @@ carry the fix, and "taste" rules encoded as checks instead of prose [O1] (unconf
 - Warnings fail the build or do not exist.
 - Each suppression carries a reason, and the total count is tracked.
 - Error messages say how to fix the problem.
+- Dependency gates: a vulnerability audit (`pnpm audit`, `npm audit`, `pip-audit`, `cargo audit`) in the gate, and automated update pull requests (Renovate, Dependabot) that pass the same gates as any other change.
 
 **Audit check.**
 
@@ -24,6 +25,8 @@ carry the fix, and "taste" rules encoded as checks instead of prose [O1] (unconf
 - Count suppressions by kind: inline directives (`eslint-disable`, `@ts-expect-error`, `# type: ignore`, `//nolint`, `#[allow]`), rules turned off in configuration, and allowlist entries. Scope filters that exclude code the repository does not own are not suppressions.
 - Compare with a commit from three months ago. For an area younger than that, compare with its first commit and say so.
 - Check where the gate runs: a `Stop` hook, pre-push, a required CI check, or only optional CI.
+- Read the default branch's protection or ruleset (for example with `gh api`): it requires the gate and blocks direct pushes.
+- Check for a dependency audit and automated dependency updates.
 
 **Anti-patterns.** Gates that run only in CI, so the agent learns about
 failures after it pushes. Warnings nobody fails on. Lint rules for preferences
