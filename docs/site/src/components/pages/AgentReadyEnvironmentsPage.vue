@@ -922,7 +922,7 @@ onMounted(() => {
 .pillar-map { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }
 .pillar-map > li { display: grid; gap: var(--space-2); align-content: start; }
 .pillar-map ul { display: grid; gap: var(--space-2); margin: 0; padding: 0; list-style: none; }
-.pillar-map a { display: grid; align-content: center; min-height: var(--control-lg); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-inline); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
+.pillar-map a { display: grid; align-content: center; min-height: var(--control-touch); padding: var(--space-2) var(--space-3); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-inline); background: var(--color-surface-raised); color: var(--color-text); font-size: var(--text-md); text-decoration: none; }
 @media (hover: hover) { .pillar-map a:hover { border-color: var(--color-border); text-decoration: none; } }
 /* Figures 3 and 5: the pillar number is a tag, not a position. */
 .pillar-tag { display: block; width: fit-content; margin-top: var(--space-1); color: var(--color-muted); font-size: var(--text-xs); }

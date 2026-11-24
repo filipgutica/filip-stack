@@ -12,8 +12,8 @@ importers:
         specifier: 7.0.3
         version: 7.0.3(@types/node@22.20.5)(astro@7.3.6(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1))(esbuild@0.28.2)(jiti@2.7.0)(vue@3.5.43(typescript@6.0.3))(yaml@2.9.1)
       '@filipgutica/ui':
-        specifier: 2.2.1
-        version: 2.2.1(vue@3.5.43(typescript@6.0.3))
+        specifier: 2.5.0
+        version: 2.5.0(vue@3.5.43(typescript@6.0.3))
       astro:
         specifier: 7.3.6
         version: 7.3.6(@types/node@22.20.5)(jiti@2.7.0)(yaml@2.9.1)
@@ -561,12 +561,12 @@ packages:
     cpu: [x64]
     os: [win32]
 
-  '@filipgutica/design-system@1.0.21':
-    resolution: {integrity: sha512-95Gu91G14E/t4VXVD0PclT9U3pV5vmtjun5oNAivycyXmgrJ91Q4z8P3BkI2qRJwzcNbbMZpoiTxt8q4DlBUFg==}
+  '@filipgutica/design-system@1.0.34':
+    resolution: {integrity: sha512-28Gyjn1ms65RTpGmpUmlXYrprn+FkemjBpTBPIoZ+CMXRchzjG1qrFQRVfuEpeVjjy+YRr/6gmbDb9WYC2dWBw==}
     engines: {node: '>=22.12'}
 
-  '@filipgutica/ui@2.2.1':
-    resolution: {integrity: sha512-qBBhUCKaqCp1sab7+vN1wHBFst9CyLOzF8zp5kEAHf89EwyLqk1DGvlvUksj8fUXowzjpTPt3aMdhGp1rPg1XA==}
+  '@filipgutica/ui@2.5.0':
+    resolution: {integrity: sha512-EFoNVQPuDtE8raCCWv3H8oWeuaNtQ9hHFP6PcArSl0atQf1nAEyKbQYcOmus71G4PJHJQ/KVJ+E579+NE0kK6g==}
     engines: {node: '>=22.12'}
     peerDependencies:
       vue: ^3.5.0
@@ -2973,13 +2973,13 @@ snapshots:
   '@esbuild/win32-x64@0.28.2':
     optional: true
 
-  '@filipgutica/design-system@1.0.21':
+  '@filipgutica/design-system@1.0.34':
     dependencies:
       jsonc-parser: 3.3.1
 
-  '@filipgutica/ui@2.2.1(vue@3.5.43(typescript@6.0.3))':
+  '@filipgutica/ui@2.5.0(vue@3.5.43(typescript@6.0.3))':
     dependencies:
-      '@filipgutica/design-system': 1.0.21
+      '@filipgutica/design-system': 1.0.34
       '@vueuse/core': 14.4.0(vue@3.5.43(typescript@6.0.3))
       reka-ui: 2.11.0(vue@3.5.43(typescript@6.0.3))
       shiki: 3.23.0
