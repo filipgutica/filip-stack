@@ -189,7 +189,7 @@ for a decision only a person can make (see the stage table above).
 **Autonomy** states, from verified workflow and authorization evidence:
 
 - How far an agent can carry a change in this repository without a person, by the stages above, and the first stage where it stops.
-- For each stop, whether it is a missing gate (a check the agent cannot run, such as an app that does not start in its sandbox) or a sign-off the owner chose (merge, deploy, irreversible actions). Keep chosen sign-offs as policy. Authorizing them in advance is an option for the owner under pillar 7, not a fix.
+- For each stop, whether it is a verified gap or a sign-off the owner chose (merge, deploy, irreversible actions). A gap is a check the agent cannot run, such as an app that does not start in its sandbox, or a missing decision, such as an unattended run with no named sign-off; a missing decision has a `Person` owner. Keep chosen sign-offs as policy. Authorizing them in advance is an option for the owner under pillar 7, not a fix.
 - For a verified gap, the fix that unlocks the next stage, and its owner. When the first stop is a chosen sign-off, report that policy as the stopping point, with no fix.
 
 Mark any stop you could not verify as unverified. The fix list keeps its blast-radius order.

@@ -58,11 +58,11 @@ const scorecard = [
     channel: "Enforced and advisory",
   },
   {
-    pillar: 2,
-    name: "Static gates",
-    gap: "About 4,700 lines of root scripts and tests had no static check.",
-    fix: "Add a type check or Fallow to pnpm check.",
-    channel: "Enforced",
+    pillar: 3,
+    name: "Test gates",
+    gap: "No 20-test sample, no single-test command in AGENTS.md, and an unverified flake rate.",
+    fix: "Run the sample and add node --test <file> to AGENTS.md.",
+    channel: "Advisory",
   },
 ];
 const glossary = [
@@ -638,7 +638,7 @@ onMounted(() => {
     <div class="prose">
       <ul>
         <li>Give each pillar the highest level its verified evidence meets. Checks you could not run stay Unverified.</li>
-        <li>When a pillar covers several files, skills, or review angles, score the weakest.</li>
+        <li>When a pillar covers several files, skills, or review angles, score the weakest one that applies.</li>
         <li>Mark a pillar N/A when it does not apply, with a one-line reason, and leave it out of the total.</li>
         <li>The strongest evidence is a run in a fresh checkout inside the sandbox. Reading a script supports level 1 at most.</li>
       </ul>
@@ -760,10 +760,10 @@ onMounted(() => {
     </div>
     <div class="prose">
       <p>
-        The other five gaps: <code>AGENTS.md</code> had no single-test
-        command, pull requests had no fresh-context reviewer, no duplication
-        tool ran, some documented commands were never run, and global guidance
-        had no baseline test.
+        The other five gaps: about 4,700 lines of root scripts and tests had
+        no static check, pull requests had no fresh-context reviewer, no
+        duplication tool ran, some documented commands were never run, and
+        global guidance had no baseline test.
       </p>
       <p>Fixes merged since:</p>
       <ul>
