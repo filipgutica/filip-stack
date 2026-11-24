@@ -27,7 +27,8 @@ this skill with [maintenance.md](references/maintenance.md).
 ## Who builds it, and when it acts
 
 A person, or an agent at a person's request, builds the environment once and
-grows it. Then it acts at each stage of every task:
+grows it. This table follows one example workflow, a code change headed for a
+pull request; each row says when it applies:
 
 | Stage | What acts | Pillars |
 | --- | --- | --- |
@@ -189,7 +190,7 @@ for a decision only a person can make (see the stage table above).
 
 - How far an agent can carry a change in this repository without a person, by the stages above, and the first stage where it stops.
 - For each stop, whether it is a missing gate (a check the agent cannot run, such as an app that does not start in its sandbox) or a sign-off the owner chose (merge, deploy, irreversible actions). Keep chosen sign-offs as policy. Authorizing them in advance is an option for the owner under pillar 7, not a fix.
-- The fix that unlocks the next stage, and its owner.
+- For a verified gap, the fix that unlocks the next stage, and its owner. When the first stop is a chosen sign-off, report that policy as the stopping point, with no fix.
 
 Mark any stop you could not verify as unverified. The fix list keeps its blast-radius order.
 

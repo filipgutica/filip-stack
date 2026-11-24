@@ -218,9 +218,8 @@ onMounted(() => {
     <UiFigure class="lesson-figure" :number="2">
       <TimelineFigure />
       <template #caption>
-        Where each pillar acts on one change. Setup happens once and
-        maintenance on its own schedule; the stages between repeat for each
-        change.
+        One example workflow: a code change headed for a pull request. Each
+        row says when it applies.
       </template>
     </UiFigure>
     <div class="prose">

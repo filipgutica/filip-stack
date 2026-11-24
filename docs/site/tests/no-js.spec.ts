@@ -202,6 +202,7 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   await expect(page.getByText(/Mark a pillar N\/A/)).toBeVisible();
   // Both audit kinds stay named now that the mode tabs are gone.
   await expect(page.getByText(/audits two things: the repository itself, and its agent/)).toBeVisible();
+  await expect(page.getByText(/ships guidance, like Filip Stack, needs both\./)).toBeVisible();
   await followPillarFromMap(page, {
     link: "Reproducible environment Pillar 6",
     anchor: "pillar-6-reproducible-environment",
