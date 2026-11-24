@@ -207,7 +207,7 @@ onMounted(() => {
       <ul>
         <li>A <strong>deny rule</strong> is a host rule that blocks given files or paths, such as secrets in <code>.env</code>.</li>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
-        <li><strong>Required CI</strong> is CI set to block a merge when it fails. With the repository's rules (branch protection or rulesets on GitHub, GitLab, and similar) requiring checks and an approval, with no direct pushes or bypass, it keeps code that fails its checks or skipped review out of the main branch, whether an agent or a person wrote it.</li>
+        <li><strong>Required CI</strong> is CI set to block a merge when it fails. With the repository's rules (branch protection or rulesets on GitHub, GitLab, and similar) requiring checks on the commit being merged and an approval of its latest changes, with no direct pushes or bypass, it keeps code that fails its checks or skipped review out of the main branch, whether an agent or a person wrote it.</li>
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
       <p>
@@ -339,7 +339,7 @@ onMounted(() => {
         <li><strong>The host and its sandbox</strong> decide what the agent can reach at all.</li>
         <li><strong>Instruction files and skills</strong> advise.</li>
         <li><strong>Hooks</strong> enforce at each tool call and when the agent tries to finish.</li>
-        <li><strong>Repository rules and required CI</strong> enforce at merge. Set to require checks and an approval, with no direct pushes or bypass, they physically stop an agent or a person from merging code that fails its checks or skipped review. Production deploys need a gate of their own.</li>
+        <li><strong>Repository rules and required CI</strong> enforce at merge. Set to require checks on the commit being merged and an approval of its latest changes, with no direct pushes or bypass, they physically stop an agent or a person from merging code that fails its checks or skipped review. Production deploys need a gate of their own.</li>
       </ol>
       <p>
         Put the fast checks (tests, lint, type checks, complexity, coverage)
@@ -564,7 +564,8 @@ onMounted(() => {
         <li>Where does the result go, and who signs off?</li>
       </ol>
       <p>
-        Put rules that must never break in deny rules, hooks, or the sandbox.
+        Put rules that must never break in deny rules, hooks, or the sandbox,
+        or in repository rules, which enforce them at merge.
         A model that judges whether an action is safe can be wrong.
       </p>
       <template #check>

@@ -79,7 +79,7 @@ Four layers carry these channels, from the agent outward:
 1. **Host and sandbox**: the coding tool and its harness decide what the agent can reach at all.
 2. **Instruction files and skills**: advisory guidance.
 3. **Hooks**: enforced at each tool call and when the agent tries to finish.
-4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. With required checks on the current head, a required approval, no direct pushes, and no bypass for agent tokens, they physically stop code that fails its checks or skipped review from reaching the default branch, whoever wrote it. Production deploys need their own gate, such as deployment protection rules. A green check still misses behavior no test covers; pillars 3 and 5 address that.
+4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. With required checks on the commit being merged, a required approval of the latest changes (stale approvals dismissed on push), no direct pushes, and no bypass for agent tokens, they physically stop code that fails its checks or skipped review from reaching the default branch, whoever wrote it. Production deploys need their own gate, such as deployment protection rules. A green check still misses behavior no test covers; pillars 3 and 5 address that.
 
 Put the fast verification checks (tests, lint, type checks, complexity, coverage) behind one cheap local command, and name it in the instruction files. People run checks that cost them nothing, and an agent usually runs the command its instructions name. Hooks and required CI enforce it where no exception is acceptable.
 
