@@ -200,6 +200,8 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   // The published #scoring anchor still lands on the scoring rules.
   await expect(page.locator("#scoring")).toHaveText("How a pillar is scored");
   await expect(page.getByText(/Mark a pillar N\/A/)).toBeVisible();
+  // Both audit kinds stay named now that the mode tabs are gone.
+  await expect(page.getByText(/audits two things: the repository itself, and its agent/)).toBeVisible();
   await followPillarFromMap(page, {
     link: "Reproducible environment Pillar 6",
     anchor: "pillar-6-reproducible-environment",

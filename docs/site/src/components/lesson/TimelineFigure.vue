@@ -1,16 +1,17 @@
 <script setup lang="ts">
 import { lessonPillars } from "./pillars";
 
-// Figure 2 answers "when does each piece run": one task, setup to merge.
+// Figure 2 answers "when does each piece run": one code change headed for a
+// pull request, from setup to maintenance.
 const stages = [
   { when: "Once, ahead of time", who: "You, or an agent you ask", what: "Build the setup command, checks, tests, deny rules, and AGENTS.md.", pillars: [6, 2, 3, 7, 4, 1] },
-  { when: "Session start", who: "The host", what: "Loads AGENTS.md and skill descriptions.", pillars: [4] },
+  { when: "Session start", who: "The host", what: "Loads the instruction files it is set up to read, such as AGENTS.md, and skill descriptions.", pillars: [4] },
   { when: "Every tool call", who: "Sandbox, deny rules, hooks", what: "Allow or block each command and file access.", pillars: [7] },
-  { when: "While working", who: "The agent", what: "Runs the check command and tests, and starts the seeded app to look at its change.", pillars: [2, 3, 6] },
-  { when: "Before it says done", who: "A Stop hook", what: "Runs the check command. A failure goes back to the agent.", pillars: [2, 3] },
-  { when: "Pull request", who: "Required CI and a reviewer agent", what: "CI reruns the checks. The reviewer runs the review angles the diff calls for.", pillars: [2, 3, 5] },
+  { when: "While working", who: "The agent", what: "Runs the check command and tests. When the change affects the running app, starts the seeded app and looks.", pillars: [2, 3, 6] },
+  { when: "Before it says done", who: "A Stop hook, if set up", what: "Runs the check command. A failure goes back to the agent.", pillars: [2, 3] },
+  { when: "Pull request", who: "Required CI and a reviewer agent", what: "CI reruns the checks. The reviewer checks the diff against its spec, plus any review angle the diff triggers.", pillars: [2, 3, 5] },
   { when: "Merge", who: "A person", what: "Approves, per pull request or in advance with stated limits.", pillars: [7] },
-  { when: "Periodically", who: "Whoever maintains the guidance", what: "Re-audits, and tests whether the guidance still helps after a model release.", pillars: [8] },
+  { when: "On its own schedule", who: "Whoever maintains the guidance", what: "Re-audits, and tests whether the guidance still helps after a model release.", pillars: [8] },
 ];
 const anchor = (number: number) =>
   `#${lessonPillars[number - 1]!.file.replace(/\.md$/, "")}`;

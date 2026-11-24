@@ -72,6 +72,7 @@ const glossary = [
   { term: "Fresh context", definition: "A separate session that sees only the spec and the diff, not the author's reasoning." },
   { term: "Harness", definition: "The tool that runs the agent, such as Claude Code or Codex, and its settings." },
   { term: "Health check", definition: "The last setup step: it confirms the app started and fails loudly when something is missing." },
+  { term: "Host", definition: "The tool that runs the agent, such as Claude Code or Codex. It loads instructions and enforces limits." },
   { term: "Hook", definition: "A script the host runs automatically at an event, such as a tool call or the agent finishing." },
   { term: "Required CI", definition: "CI checks configured to block a merge when they fail." },
   { term: "Review angle", definition: "A focused review for one risk, such as security or performance." },
@@ -174,10 +175,7 @@ onMounted(() => {
   <section aria-labelledby="who-does-what">
     <h2 id="who-does-what">Who does what</h2>
     <div class="prose">
-      <p>
-        Six parties share the work. People decide and sign off. The agent
-        works. Tools enforce.
-      </p>
+      <p>Six parties share the work.</p>
     </div>
     <dl class="jobs jobs--cast">
       <div v-for="member in cast" :key="member.who">
@@ -198,27 +196,34 @@ onMounted(() => {
     <h2 id="when-each-piece-runs">When each piece runs</h2>
     <div class="prose">
       <p>
-        The agent runs inside a <strong>harness</strong>, the tool that runs it,
-        such as Claude Code or Codex. The harness enforces limits through a
+        The agent runs inside a <strong>host</strong>, the tool that runs it,
+        such as Claude Code or Codex. The host reads <strong>instruction
+        files</strong> such as <code>AGENTS.md</code>: plain-text notes on how
+        to work in the repository. It enforces limits through a
         <strong>sandbox</strong>, which restricts the files, commands, and
         network hosts the agent can reach, and through <strong>hooks</strong>,
         scripts it runs automatically at events such as a tool call.
       </p>
-      <p>Figure 2 follows one task from setup to merge.</p>
-    </div>
-    <UiFigure class="lesson-figure" :number="2">
-      <TimelineFigure />
-      <template #caption>
-        Where each pillar acts. Setup happens once; the other stages repeat
-        on every task.
-      </template>
-    </UiFigure>
-    <div class="prose">
       <ul>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
         <li><strong>Required CI</strong> is CI set to block a merge when it fails.</li>
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
+      <p>
+        Figure 2 follows one code change on its way to a pull request. Each
+        stage names the pillars at work, the eight areas this guide covers
+        below.
+      </p>
+    </div>
+    <UiFigure class="lesson-figure" :number="2">
+      <TimelineFigure />
+      <template #caption>
+        Where each pillar acts on one change. Setup happens once and
+        maintenance on its own schedule; the stages between repeat for each
+        change.
+      </template>
+    </UiFigure>
+    <div class="prose">
       <p>Each piece on this timeline does one of three jobs.</p>
     </div>
   </section>
@@ -451,7 +456,7 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <template #who>Your team chooses the review angles, what triggers each, and a read-only reviewer agent.</template>
-      <template #when>On each pull request, before a person approves the merge.</template>
+      <template #when>On each pull request, before it merges.</template>
       <p>
         A reviewer in a fresh context never saw the author's reasoning, so it
         is not swayed by it. Asked to find problems, a model always finds some,
@@ -476,7 +481,7 @@ onMounted(() => {
       :reference-base="referenceBase"
     >
       <template #who>Your team, or an agent you ask, scripts setup, seed data, and teardown, and proves them inside the agent's sandbox.</template>
-      <template #when>At the start of every task, in a fresh <strong>worktree</strong>: a separate git checkout that starts without ignored files or installed dependencies.</template>
+      <template #when>Whenever the agent needs to see its change running. It starts from a fresh <strong>worktree</strong>: a separate git checkout without ignored files or installed dependencies.</template>
       <p>
         Agents need a running app with realistic test data. A setup failure may
         not stop them:
@@ -576,21 +581,15 @@ onMounted(() => {
     <h3 id="new-project">New project</h3>
     <div class="prose">
       <p>
-        Add the gates before you write code, while they cost the least. In
-        this order:
+        Add the gates before you write code, while they cost the least. Aim
+        first for an agent that can start the app, run every check, and stay
+        out of what it must never touch. Then it can carry a change to a pull
+        request that a person reviews, and each later gate lets that person
+        review less.
       </p>
-    </div>
-    <ol class="fg-site-steps">
-      <li>Pillar 6: one command for setup, run, and teardown, with seed data and a health check. Verify inside the sandbox.</li>
-      <li>Pillars 2 and 3: strict types, lint, dead-code and boundary checks, and a single-file test command behind one <code>check</code> command required by CI.</li>
-      <li>Pillar 7: deny rules and sandbox limits for every “never” rule.</li>
-      <li>Pillar 4: a short <code>AGENTS.md</code> with those commands. Add a rule only after correcting the agent twice.</li>
-      <li>Pillars 1 and 5: grow with the code. Record decisions as you make them and add review checks as risk appears.</li>
-    </ol>
-    <div class="prose">
       <p>
-        After steps 1 to 3, the agent can carry a task to a pull request that a
-        person reviews. Each later gate lets that person review less of it.
+        Ask the skill to set up a new project, or follow the order in its
+        <a :href="skill.source">New project procedure</a>.
       </p>
     </div>
   </section>
@@ -601,6 +600,11 @@ onMounted(() => {
       <p>
         An audit turns the eight pillar checks into scores, a statement of how
         much the agent can do alone, and an ordered fix list.
+      </p>
+      <p>
+        The skill audits two things: the repository itself, and its agent
+        guidance (instruction files, skills, and review gates). A repository
+        that ships guidance, like Filip Stack, needs both.
       </p>
     </div>
     <h3 id="scoring">How a pillar is scored</h3>
@@ -661,7 +665,7 @@ onMounted(() => {
       <ul>
         <li>Each pillar's score, evidence, top gap, and fix.</li>
         <li>For each fix, its channel (advisory or enforced) and its owner: an agent can build it, or a person must decide it.</li>
-        <li>What an agent can do unattended today, where a person first has to step in, and the fix that unlocks the next stage.</li>
+        <li>How far an agent can carry a change today, where it first stops, and the fix that unlocks the next stage. Sign-offs the team chose stay as policy.</li>
         <li>Each check it could not verify, and what that check needs.</li>
       </ul>
       <p>
@@ -955,7 +959,6 @@ onMounted(() => {
 .ladder > li > span:last-child { color: var(--color-muted); }
 .ladder__score { font-size: var(--text-xl); font-weight: var(--weight-semibold); font-variant-numeric: tabular-nums; }
 
-.fg-site-steps { max-width: var(--measure); font-size: var(--text-md); }
 
 /* Figure 4: the pillars grouped by job. */
 .pillar-map { display: grid; grid-template-columns: 1fr 1.3fr 1fr; gap: var(--space-4); margin: 0; padding: 0; list-style: none; }

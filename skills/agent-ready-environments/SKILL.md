@@ -31,12 +31,13 @@ grows it. Then it acts at each stage of every task:
 
 | Stage | What acts | Pillars |
 | --- | --- | --- |
-| Session start | Instruction files and skill descriptions load | 4, 8 |
+| Session start | The host loads the instruction files and skill descriptions it is configured to read | 4 |
 | Every tool call | Sandbox, deny rules, and hooks allow or block | 7 |
-| While working | The agent runs the check command and tests, and observes the seeded app | 2, 3, 6 |
-| Before "done" | A `Stop` hook or the workflow runs the check command; a failure returns to the agent | 2, 3 |
-| Pull request | Required CI reruns the checks; a fresh-context reviewer runs the angles the diff calls for | 2, 3, 5 |
+| While working | The agent runs the check command and tests, and observes the seeded app when the change needs runtime verification | 2, 3, 6 |
+| Before "done" | A configured `Stop` hook or the workflow runs the check command; a failure returns to the agent | 2, 3 |
+| Pull request | Required CI reruns the checks; a fresh-context reviewer checks the diff against the spec and runs the angles it triggers | 2, 3, 5 |
 | Merge, deploy, irreversible actions | A person signs off, per action or in advance with stated limits | 7 |
+| Guidance or model change | Evaluate the guidance against a no-guidance baseline | 8 |
 
 Code shape (pillar 1) shapes every stage: it decides which example the agent copies.
 
@@ -184,11 +185,13 @@ running them needs).
 `Owner` says who makes the fix: `Agent` for work an agent can build, `Person`
 for a decision only a person can make (see the stage table above).
 
-**Autonomy** states, from the scores:
+**Autonomy** states, from verified workflow and authorization evidence:
 
-- What an agent can do unattended in this repository today, and the first stage where a person must step in.
-- For each such step, whether it is a missing gate (a person catches what a check could) or a deliberate sign-off (merge, deploy, irreversible actions). Keep deliberate sign-offs; the fix for a repeated one is authorization in advance under pillar 7.
-- The fix that unlocks the next stage.
+- How far an agent can carry a change in this repository without a person, by the stages above, and the first stage where it stops.
+- For each stop, whether it is a missing gate (a check the agent cannot run, such as an app that does not start in its sandbox) or a sign-off the owner chose (merge, deploy, irreversible actions). Keep chosen sign-offs as policy. Authorizing them in advance is an option for the owner under pillar 7, not a fix.
+- The fix that unlocks the next stage, and its owner.
+
+Mark any stop you could not verify as unverified. The fix list keeps its blast-radius order.
 
 Order fixes by blast radius first: any unenforced pillar 7 rule (secrets,
 protected paths, irreversible actions) comes first, together with any defect
