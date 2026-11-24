@@ -3,6 +3,7 @@ import { onMounted, ref } from "vue";
 import { UiAlert, UiBadge, UiBreadcrumbs, UiCodeBlock, UiFigure, UiScore } from "@filipgutica/ui";
 import type { Catalog } from "../../catalog";
 import CatchFigure from "../lesson/CatchFigure.vue";
+import LessonContents from "../lesson/LessonContents.vue";
 import PillarSection from "../lesson/PillarSection.vue";
 import TimelineFigure from "../lesson/TimelineFigure.vue";
 import { sources } from "../lesson/sources";
@@ -20,15 +21,34 @@ const repository = "https://github.com/filipgutica/filip-stack";
 const install =
   "npx skills add filipgutica/filip-stack -g -a claude-code codex -s agent-ready-environments -y";
 const contents = [
-  { id: "why-agents-stop-early", label: "Why agents stop early" },
-  { id: "who-does-what", label: "Who does what" },
-  { id: "when-each-piece-runs", label: "When each piece runs" },
-  { id: "tell-check-bound", label: "Three jobs: tell, check, bound" },
-  { id: "the-pillars", label: "The eight pillars" },
-  { id: "where-to-start", label: "Where to start" },
-  { id: "audit-procedure", label: "Run an audit" },
-  { id: "worked-example", label: "Worked example: this repository" },
-  { id: "maintenance", label: "Keeping guidance current" },
+  {
+    label: "The idea",
+    items: [
+      { id: "who-does-what", label: "Who does what" },
+      { id: "when-each-piece-runs", label: "When each piece runs" },
+      { id: "why-agents-stop-early", label: "See it in action" },
+    ],
+  },
+  {
+    label: "The pillars",
+    items: [
+      { id: "the-pillars", label: "The eight pillars" },
+      { id: "tell-check-bound", label: "Three jobs" },
+      { id: "placement-advisory-or-enforced", label: "Advisory or enforced" },
+    ],
+  },
+  {
+    label: "Put it to work",
+    items: [
+      { id: "where-to-start", label: "Where to start" },
+      { id: "audit-procedure", label: "Run an audit" },
+      { id: "worked-example", label: "Worked example" },
+    ],
+  },
+  {
+    label: "Keep it current",
+    items: [{ id: "maintenance", label: "Keeping guidance current" }],
+  },
 ];
 // The cast answers "who builds the gates": people decide and sign off, the
 // agent works inside the environment, and tools enforce it.
@@ -113,14 +133,36 @@ onMounted(() => {
     />
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
-      The more a coding agent can check its own work, and the firmer its
-      limits, the more autonomy you can safely give it. An agent-ready
-      environment supplies those checks and limits. Without them, you become
-      the agent's test suite.
+      Your team already catches mistakes with a dev setup, tests, CI, code
+      review, and access rules. A coding agent is a fast teammate that never
+      asks questions and stops when work looks done. An agent-ready
+      environment lets it use that setup alone.
     </p>
     <p>
-      In a hurry? Go to <a href="#where-to-start">Where to start</a>.
+      The more it checks its own work, and the firmer its limits, the more it
+      can do without you. Without that, you become its test suite.
     </p>
+    <div class="glance" role="region" aria-labelledby="at-a-glance">
+      <p id="at-a-glance" class="lesson-label">At a glance</p>
+      <dl>
+        <div>
+          <dt>Goal</dt>
+          <dd>Let the agent carry a change to review, leaving only decisions for a person.</dd>
+        </div>
+        <div>
+          <dt><a href="#who-does-what">Who builds it</a></dt>
+          <dd>You build it once, and an agent can do the setup work. A person decides what counts as done, what must never happen, and who signs off.</dd>
+        </div>
+        <div>
+          <dt><a href="#when-each-piece-runs">When it runs</a></dt>
+          <dd>At each stage of a change, from the agent's first step to the merge.</dd>
+        </div>
+        <div>
+          <dt><a href="#where-to-start">Where to start</a></dt>
+          <dd>Audit an existing repository with the companion skill, or add the gates before you code a new project.</dd>
+        </div>
+      </dl>
+    </div>
     <dl class="fg-site-facts">
       <div>
         <dt>Reading time</dt>
@@ -135,47 +177,13 @@ onMounted(() => {
         </dd>
       </div>
     </dl>
-    <nav class="lesson-contents" aria-labelledby="lesson-contents-title">
-      <p id="lesson-contents-title" class="lesson-label">In this lesson</p>
-      <ol>
-        <li v-for="item in contents" :key="item.id">
-          <a :href="`#${item.id}`">{{ item.label }}</a>
-        </li>
-      </ol>
-    </nav>
-  </section>
-
-  <section aria-labelledby="why-agents-stop-early">
-    <h2 id="why-agents-stop-early">Why agents stop early</h2>
-    <div class="prose">
-      <p>
-        A coding agent edits files, runs the checks it has, and stops when the
-        work <em>looks</em> done. What it catches depends on what the
-        environment gives it:
-      </p>
-      <ul>
-        <li>Type checks and tests catch code errors.</li>
-        <li>A <strong>seeded app</strong>, a running app preloaded with sample data, shows crashes on real pages.</li>
-        <li>A <strong>deny rule</strong>, a host rule that blocks given files, keeps the agent out of secrets such as <code>.env</code>.</li>
-      </ul>
-      <p>Turn each safeguard on in Figure 1 to see who catches each problem.</p>
-    </div>
-    <UiFigure class="lesson-figure" :number="1">
-      <CatchFigure />
-      <template #caption>
-        Who catches it? The same change with and without four parts of an
-        agent-ready environment. Illustrative scenario.
-      </template>
-    </UiFigure>
-    <div class="prose">
-      <p>That raises two questions: who sets these safeguards up, and when do they run?</p>
-    </div>
+    <LessonContents :parts="contents" />
   </section>
 
   <section aria-labelledby="who-does-what">
     <h2 id="who-does-what">Who does what</h2>
     <div class="prose">
-      <p>Six parties share the work.</p>
+      <p>Six parties share the work, so no single person has to catch every mistake.</p>
     </div>
     <dl class="jobs jobs--cast">
       <div v-for="member in cast" :key="member.who">
@@ -183,26 +191,19 @@ onMounted(() => {
         <dd>{{ member.does }}</dd>
       </div>
     </dl>
-    <div class="prose">
-      <p>
-        An agent can build most of the environment for you: setup scripts,
-        seed data, checks, tests, and hooks. Only a person can decide what
-        counts as done, which rules must never break, and who signs off.
-      </p>
-    </div>
   </section>
 
   <section aria-labelledby="when-each-piece-runs">
     <h2 id="when-each-piece-runs">When each piece runs</h2>
     <div class="prose">
       <p>
-        The agent runs inside a <strong>host</strong>, the tool that runs it,
-        such as Claude Code or Codex. The host reads <strong>instruction
-        files</strong> such as <code>AGENTS.md</code>: plain-text notes on how
-        to work in the repository. It enforces limits through a
-        <strong>sandbox</strong>, which restricts the files, commands, and
-        network hosts the agent can reach, and through <strong>hooks</strong>,
-        scripts it runs automatically at events such as a tool call.
+        A <strong>host</strong>, such as Claude Code or Codex, is the tool that
+        runs the agent. It reads <strong>instruction files</strong> such as
+        <code>AGENTS.md</code>: plain-text notes on how to work in the
+        repository. It enforces limits through a <strong>sandbox</strong>,
+        which restricts the files, commands, and network hosts the agent can
+        reach, and through <strong>hooks</strong>, scripts it runs
+        automatically at events such as a tool call.
       </p>
       <ul>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
@@ -210,12 +211,11 @@ onMounted(() => {
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
       <p>
-        Figure 2 follows one code change on its way to a pull request. Each
-        stage names the pillars at work, the eight areas this guide covers
-        below.
+        Figure 1 follows one code change on its way to a pull request. Each
+        stage tags its pillars, the eight areas this guide covers later.
       </p>
     </div>
-    <UiFigure class="lesson-figure" :number="2">
+    <UiFigure class="lesson-figure" :number="1">
       <TimelineFigure />
       <template #caption>
         One example workflow: a code change headed for a pull request. Each
@@ -223,18 +223,55 @@ onMounted(() => {
       </template>
     </UiFigure>
     <div class="prose">
-      <p>Each piece on this timeline does one of three jobs.</p>
+      <p>
+        That is the sequence on paper. Next, see what happens to one change
+        when those safeguards are off or on.
+      </p>
     </div>
   </section>
 
-  <section aria-labelledby="tell-check-bound">
-    <h2 id="tell-check-bound">Three jobs: tell, check, bound</h2>
+  <section aria-labelledby="why-agents-stop-early">
+    <h2 id="why-agents-stop-early">See it in action</h2>
     <div class="prose">
       <p>
-        An agent-ready environment has eight areas, called pillars. Each does
-        one job.
+        A coding agent edits files, runs the checks it has, and stops when the
+        work <em>looks</em> done. What it catches depends on what the
+        environment gives it.
+      </p>
+      <p>
+        Figure 2 tests four safeguards: a check command and tests for code
+        errors, a <strong>seeded app</strong> (a running app preloaded with
+        sample data) for crashes on real pages, and a <strong>deny
+        rule</strong> (a host rule that blocks given files) to keep the agent
+        out of secrets such as <code>.env</code>. Turn each one on to see who
+        catches each hidden problem.
       </p>
     </div>
+    <UiFigure class="lesson-figure" :number="2">
+      <CatchFigure />
+      <template #caption>
+        Who catches it? The same change with and without four parts of an
+        agent-ready environment. Illustrative scenario.
+      </template>
+    </UiFigure>
+    <div class="prose">
+      <p>
+        Each safeguard in Figure 2 belongs to one of eight areas, called
+        pillars, that make up an agent-ready environment.
+      </p>
+    </div>
+  </section>
+
+  <section aria-labelledby="the-pillars">
+    <h2 id="the-pillars">The eight pillars</h2>
+    <div class="prose">
+      <p>
+        Every pillar does one of three jobs: tell, check, or bound. Each rule
+        also travels on one of two channels: advisory text the agent can
+        weigh, or an enforced gate that runs regardless.
+      </p>
+    </div>
+    <h3 id="tell-check-bound">Three jobs: tell, check, bound</h3>
     <dl class="jobs">
       <div>
         <dt>Tell</dt>
@@ -260,7 +297,7 @@ onMounted(() => {
     </dl>
     <div class="prose">
       <p>
-        In Figure 1, the check command, tests, and seeded app check the work,
+        In Figure 2, the check command, tests, and seeded app check the work,
         and the deny rule bounds it. Written rules only tell. They cannot
         verify results.
       </p>
@@ -268,10 +305,9 @@ onMounted(() => {
 
     <h3 id="placement-advisory-or-enforced">Advisory or enforced</h3>
     <div class="prose">
-      <p>A rule reaches the agent on one of two channels.</p>
       <ul>
-        <li><strong>Advisory</strong> guidance is text: prompts, <code>AGENTS.md</code> or <code>CLAUDE.md</code>, and skills. The agent may skip it.</li>
-        <li><strong>Enforced</strong> checks, such as hooks or required CI, run at a tool call, commit, or merge regardless.</li>
+        <li><strong>Advisory</strong> guidance is text: prompts, <code>AGENTS.md</code> or <code>CLAUDE.md</code>, and skills. The agent weighs it and may skip it.</li>
+        <li><strong>Enforced</strong> checks, such as hooks, deny rules, or required CI, run at a tool call, commit, or merge regardless.</li>
       </ul>
     </div>
     <UiFigure class="lesson-figure" :number="3">
@@ -299,7 +335,7 @@ onMounted(() => {
       </template>
     </UiFigure>
     <div class="prose">
-      <p>Choose the channel by the rule's exceptions.</p>
+      <p>Choose the channel by whether the rule allows exceptions.</p>
       <ul>
         <li>
           Enforce rules with no exceptions. When text fails, put the rule in
@@ -319,16 +355,11 @@ onMounted(() => {
           Write error messages that state how to fix the failure.
         </li>
       </ul>
-      <p>The eight pillars put these jobs and channels to work.</p>
     </div>
-  </section>
-
-  <section aria-labelledby="the-pillars">
-    <h2 id="the-pillars">The eight pillars</h2>
     <div class="prose">
       <p>
-        Each pillar says who builds it, when it runs, and how an audit checks
-        it. Its linked reference has the full criteria.
+        Below are the eight pillars, grouped by job. Each says who builds it,
+        when it runs, and how an audit checks it, and links its full criteria.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="4">
@@ -558,7 +589,10 @@ onMounted(() => {
       </template>
     </PillarSection>
     <div class="prose">
-      <p>You do not need all eight pillars to begin.</p>
+      <p>
+        You do not need all eight pillars to begin: audit an existing
+        repository, or add the gates before you write code on a new one.
+      </p>
     </div>
   </section>
 
@@ -589,6 +623,10 @@ onMounted(() => {
       <p>
         Ask the skill to set up a new project, or follow the order in its
         <a :href="skill.source">New project procedure</a>.
+      </p>
+      <p>
+        When you ask the skill for an audit, here is how it scores each pillar
+        and orders the fixes.
       </p>
     </div>
   </section>
@@ -787,7 +825,10 @@ onMounted(() => {
         borrowed dependencies, scored 10 of 24. Code shape and test gates
         reached 2. Fresh setup still failed, keeping pillar 6 at 1.
       </p>
-      <p>Once the gates run, the written guidance still ages as models change.</p>
+      <p>
+        Once the gates are in place, the written guidance still ages as vendor
+        sources change and newer models improve.
+      </p>
     </div>
   </section>
 
@@ -922,18 +963,19 @@ onMounted(() => {
 
 <style scoped>
 .lesson-label { display: block; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
-.lesson-contents { display: grid; gap: var(--space-2); padding-top: var(--space-4); border-top: 1px solid var(--color-border-subtle); }
-.lesson-contents ol { max-width: none; margin: 0; padding-inline-start: 1.5em; columns: 2 15rem; column-gap: var(--space-8); font-size: var(--text-md); }
-.lesson-contents li { padding-block: 2px; break-inside: avoid; }
-.lesson-contents li::marker { color: var(--color-muted); font-variant-numeric: tabular-nums; }
-.lesson-contents a { text-decoration: none; }
-.lesson-contents a:hover { text-decoration: underline; }
 
 .jobs { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); margin: 0; }
 .jobs > div { display: grid; gap: var(--space-1); align-content: start; padding-top: var(--space-3); border-top: 1px solid var(--color-border-subtle); }
 .jobs dt { font-weight: var(--weight-semibold); }
 .jobs dd { margin: 0; color: var(--color-muted); font-size: var(--text-md); }
 .jobs--cast { margin-block: var(--space-4); }
+
+/* At a glance: the four answers a new reader needs, each linking to its section. */
+.glance { display: grid; gap: var(--space-3); max-width: var(--measure); margin-block: var(--space-2) var(--space-4); padding: var(--space-4); border: 1px solid var(--color-border-subtle); border-radius: var(--radius-panel); background: var(--color-surface-raised); }
+.glance dl { display: grid; gap: var(--space-3); margin: 0; }
+.glance dl > div { display: grid; grid-template-columns: 9rem minmax(0, 1fr); gap: var(--space-3); font-size: var(--text-md); }
+.glance dt { font-weight: var(--weight-semibold); }
+.glance dd { margin: 0; color: var(--color-muted); }
 
 
 /* UiFigure sets no outer margin; the lesson spaces its figures here. */
@@ -996,6 +1038,7 @@ onMounted(() => {
 
 @media (max-width: 800px) {
   .jobs { grid-template-columns: minmax(0, 1fr); }
+  .glance dl > div { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
   .channels { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); }
   .channels > li + li::before { content: '↓'; top: calc(-1 * var(--space-5)); left: 50%; width: auto; height: var(--space-5); line-height: var(--space-5); translate: -50% 0; }
   .ladder { grid-template-columns: minmax(0, 1fr); }

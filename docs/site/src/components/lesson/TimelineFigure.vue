@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { lessonPillars } from "./pillars";
 
-// Figure 2 answers "when does each piece run": one code change headed for a
+// Figure 1 answers "when does each piece run": one code change headed for a
 // pull request, from setup to maintenance.
 const stages = [
   { when: "Once, ahead of time", who: "You, or an agent you ask", what: "Build the setup command, checks, tests, deny rules, and AGENTS.md.", pillars: [6, 2, 3, 7, 4, 1] },
@@ -39,7 +39,7 @@ const title = (number: number) => lessonPillars[number - 1]!.title;
 </template>
 
 <style scoped>
-/* Figure 2: one task as a vertical timeline. Each stage reads left to right:
+/* Figure 1: one task as a vertical timeline. Each stage reads left to right:
    when, who acts, what happens, and the pillars at work. */
 .timeline { display: grid; gap: 0; max-width: none; margin: 0; padding: 0; list-style: none; font-size: var(--text-md); counter-reset: stage; }
 .timeline__stage { position: relative; display: grid; grid-template-columns: 11rem 13rem minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: baseline; padding: var(--space-3) 0 var(--space-3) var(--space-8); border-top: 1px solid var(--color-border-subtle); counter-increment: stage; }
