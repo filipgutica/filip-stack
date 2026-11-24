@@ -192,14 +192,14 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   await expect(steps.getByRole("link")).toHaveText(
     [7, 6, 3, 2, 5, 1, 8, 4].map((pillar) => `Pillar ${pillar}`),
   );
-  // Every audit mode is visible as its own heading.
-  for (const name of ["New project", "Existing repository", "Engineering guidance"])
-    await expect(page.getByRole("heading", { level: 3, name, exact: true })).toBeVisible();
+  // The timeline shows every stage of a task without JavaScript.
+  await expect(
+    page.getByRole("list", { name: "One task, from setup to merge" }).getByRole("listitem"),
+  ).toHaveCount(8);
+  await expect(page.getByRole("heading", { level: 3, name: "New project", exact: true })).toBeVisible();
   // The published #scoring anchor still lands on the scoring rules.
   await expect(page.locator("#scoring")).toHaveText("How a pillar is scored");
-  const handAudit = page.locator("details.lesson-disclosure");
-  await handAudit.locator("summary").click();
-  await expect(handAudit.getByText(/Mark a pillar N\/A/)).toBeVisible();
+  await expect(page.getByText(/Mark a pillar N\/A/)).toBeVisible();
   await followPillarFromMap(page, {
     link: "Reproducible environment Pillar 6",
     anchor: "pillar-6-reproducible-environment",

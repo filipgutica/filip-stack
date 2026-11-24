@@ -25,5 +25,29 @@
       "prompt": "Check the onboarding flow in the running app before it ships: states, copy, and keyboard access.",
       "expectedSkill": "interface-design"
     }
+  ],
+  "rules": [
+    {
+      "id": "are-report-autonomy",
+      "task": "You finished a read-only agent-readiness audit of a web app repository. Scores: static gates 2, test gates 2, reproducible environment 1 (the seed script fails in the agent's sandbox), bounded autonomy 2 (merge needs a person's approval on every PR). You are writing the report.",
+      "options": {
+        "table": "write the Evidence section, the score table with fixes, Skill gaps, and Unverified",
+        "autonomy": "write the Evidence section and score table, then state what an agent can do unattended today, where a person first steps in (the person catches UI bugs because the seeded app does not start), and that fixing the seed script unlocks the next stage, then Skill gaps and Unverified"
+      },
+      "accept": [
+        "autonomy"
+      ]
+    },
+    {
+      "id": "are-keep-signoff",
+      "task": "You are auditing a repository for agent readiness. Every gate passes and is required in CI, and a person approves each merge. The team asks how agents can work with more autonomy.",
+      "options": {
+        "remove": "recommend removing the merge approval so agents merge on green CI",
+        "advance": "keep the merge as a person's sign-off and recommend authorizing merges in advance with a stated scope, enforced limits, a run cap, and a named sign-off on the result"
+      },
+      "accept": [
+        "advance"
+      ]
+    }
   ]
 }

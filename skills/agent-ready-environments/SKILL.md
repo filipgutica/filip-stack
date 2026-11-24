@@ -6,8 +6,15 @@ description: Audit or set up a repository, or a body of engineering guidance, fo
 # Agent-ready environments
 
 An agent stops when the work *looks* done [A1]. The environment decides whether
-"looks done" and "is done" are the same thing. Every pillar in this skill does
-one of three jobs:
+"looks done" and "is done" are the same thing.
+
+The goal is **earned autonomy**: an environment where the agent checks its own
+work, runs inside firm limits, and follows a workflow from task to reviewed
+pull request, so a person steps in only for decisions that need one. Each gap
+this skill finds is a place where a person still acts as the test suite or the
+guardrail. Each fix moves that person to a sign-off.
+
+Every pillar in this skill does one of three jobs:
 
 - **Tell** the agent what it cannot see in the repository.
 - **Check** the work with something that comes back red or green.
@@ -16,6 +23,26 @@ one of three jobs:
 Each pillar has a reference file with its sources, what good looks like, the
 audit check, and anti-patterns; the pillar table links them. When a new model ships or a source changes, review
 this skill with [maintenance.md](references/maintenance.md).
+
+## Who builds it, and when it acts
+
+A person, or an agent at a person's request, builds the environment once and
+grows it. Then it acts at each stage of every task:
+
+| Stage | What acts | Pillars |
+| --- | --- | --- |
+| Session start | Instruction files and skill descriptions load | 4, 8 |
+| Every tool call | Sandbox, deny rules, and hooks allow or block | 7 |
+| While working | The agent runs the check command and tests, and observes the seeded app | 2, 3, 6 |
+| Before "done" | A `Stop` hook or the workflow runs the check command; a failure returns to the agent | 2, 3 |
+| Pull request | Required CI reruns the checks; a fresh-context reviewer runs the angles the diff calls for | 2, 3, 5 |
+| Merge, deploy, irreversible actions | A person signs off, per action or in advance with stated limits | 7 |
+
+Code shape (pillar 1) shapes every stage: it decides which example the agent copies.
+
+Agents can build most of the environment: setup scripts, seed data, checks,
+tests, hooks, and review configuration. A person decides what agents cannot:
+what counts as done, the "never" rules, spend and turn caps, and who signs off.
 
 ## Durable and decaying guidance
 
@@ -123,6 +150,9 @@ Gates are cheapest to add at zero lines of code.
 4. Pillar 4: a short `AGENTS.md` with the commands from steps 1 and 2. Add lines only after the agent has to be corrected twice [A1, O3].
 5. Pillars 1 and 5 grow with the code: record each decision when it is made, and add review angles as risk appears.
 
+With steps 1 to 3 in place, the agent can carry a task to a pull request that a
+person reviews. Each later gate lets the person review less of it.
+
 ### Existing repository
 
 1. Time a fresh worktree to a seeded, running app inside the agent's sandbox. Record cold setup (from nothing) and warm setup (prerequisites already present) separately, with each manual step.
@@ -144,12 +174,21 @@ Gates are cheapest to add at zero lines of code.
 
 ## Report
 
-Write an Evidence section, then this table, then Skill gaps (where this
-skill was hard to apply) and Unverified (checks skipped, and what running
-them needs).
+Write an Evidence section, then this table, then Autonomy, then Skill gaps
+(where this skill was hard to apply) and Unverified (checks skipped, and what
+running them needs).
 
-| Pillar | Score | Evidence | Top gap | Fix | Channel |
-| --- | --- | --- | --- | --- | --- |
+| Pillar | Score | Evidence | Top gap | Fix | Channel | Owner |
+| --- | --- | --- | --- | --- | --- | --- |
+
+`Owner` says who makes the fix: `Agent` for work an agent can build, `Person`
+for a decision only a person can make (see the stage table above).
+
+**Autonomy** states, from the scores:
+
+- What an agent can do unattended in this repository today, and the first stage where a person must step in.
+- For each such step, whether it is a missing gate (a person catches what a check could) or a deliberate sign-off (merge, deploy, irreversible actions). Keep deliberate sign-offs; the fix for a repeated one is authorization in advance under pillar 7.
+- The fix that unlocks the next stage.
 
 Order fixes by blast radius first: any unenforced pillar 7 rule (secrets,
 protected paths, irreversible actions) comes first, together with any defect

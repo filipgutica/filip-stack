@@ -42,8 +42,10 @@ has the criteria, audit modes, and evidence rules.
 
 ## What you get
 
-- Evidence and a table of scores, gaps, fixes, and advisory or enforced
-  channels.
+- Evidence and a table of scores, gaps, fixes, advisory or enforced
+  channels, and whether an agent or a person owns each fix.
+- What an agent can do unattended today, where a person still steps in, and
+  the fix that unlocks the next step.
 - Fixes ordered by blast radius (secrets and irreversible actions), durability,
   then cost.
 - Unverified checks, what they need, and where the skill was hard to apply.

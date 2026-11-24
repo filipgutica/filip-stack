@@ -14,7 +14,7 @@ import {
   openMaintenanceFromContents,
 } from "./guide";
 
-test("the lesson's figure, audit modes, and links work after hydration", async ({
+test("the lesson's figures and links work after hydration", async ({
   page,
 }) => {
   await page.goto("/filip-stack/");
@@ -69,18 +69,19 @@ test("the lesson's figure, audit modes, and links work after hydration", async (
     await figure.getByRole("button", { name }).click();
   await expect(tally).toContainText("All 4 are stopped before the agent says done.");
 
-  const modes = page.getByRole("tablist", { name: "Audit mode" });
-  await expect(modes.getByRole("tab", { selected: true })).toHaveText(
-    "Existing repository",
-  );
-  await modes.getByRole("tab", { name: "Engineering guidance" }).click();
+  // Figure 2 answers when each piece runs: one task, setup to merge, with
+  // each stage linking the pillars at work there.
+  const timeline = page.getByRole("list", { name: "One task, from setup to merge" });
+  await expect(timeline.getByRole("listitem")).toHaveCount(8);
+  await timeline
+    .getByRole("listitem")
+    .filter({ hasText: /^Merge/ })
+    .getByRole("link", { name: "Pillar 7" })
+    .click();
+  await expect(page).toHaveURL(/#pillar-7-bounded-autonomy$/);
   await expect(
-    page.getByText("Check the instruction files, skills, and review gates."),
-  ).toBeVisible();
-  // The new-project steps sit under "Where to start", outside the tabs.
-  await expect(
-    page.getByText("Add the gates before you write code, while they cost the least."),
-  ).toBeVisible();
+    page.getByRole("heading", { name: "Pillar 7: Bounded autonomy", exact: true }),
+  ).toBeInViewport();
 
   await followPillarFromMap(page, {
     link: "Code shape Pillar 1",

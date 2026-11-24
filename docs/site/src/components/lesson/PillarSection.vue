@@ -1,8 +1,9 @@
 <script setup lang="ts">
 import { UiBadge } from "@filipgutica/ui";
 
-// One pillar: why it matters and its audit check stay open; the longer
-// "good looks like" list sits in a native disclosure that works without JS.
+// One pillar: who builds it, when it runs, why it matters, and its audit check
+// stay open; the longer "good looks like" list sits in a native disclosure
+// that works without JS.
 const { number, title, job, reference, referenceBase } = defineProps<{
   number: number;
   title: string;
@@ -20,6 +21,16 @@ const id = reference.replace(/\.md$/, "");
       <h3 :id="id">Pillar {{ number }}: {{ title }}</h3>
       <UiBadge>{{ job }}</UiBadge>
     </div>
+    <dl class="pillar__facts">
+      <div>
+        <dt class="pillar__label">Who builds it</dt>
+        <dd><slot name="who" /></dd>
+      </div>
+      <div>
+        <dt class="pillar__label">When it runs</dt>
+        <dd><slot name="when" /></dd>
+      </div>
+    </dl>
     <div class="prose"><slot /></div>
     <p class="pillar__check">
       <span class="pillar__label">Audit check</span>
@@ -39,6 +50,9 @@ const id = reference.replace(/\.md$/, "");
 .pillar { display: grid; gap: var(--space-3); padding-top: var(--space-6); border-top: 1px solid var(--color-border-subtle); }
 .pillar__head { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); }
 .pillar__head h3 { margin: 0; }
+.pillar__facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); max-width: var(--measure); margin: 0; font-size: var(--text-md); }
+.pillar__facts dd { margin: 0; }
+@media (max-width: 800px) { .pillar__facts { grid-template-columns: minmax(0, 1fr); gap: var(--space-2); } }
 .pillar__check { max-width: var(--measure); font-size: var(--text-md); }
 .pillar__label { display: block; color: var(--color-muted); font-size: var(--text-xs); font-weight: var(--weight-semibold); }
 .pillar__more { max-width: var(--measure); }
