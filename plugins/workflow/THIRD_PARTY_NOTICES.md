@@ -74,7 +74,7 @@ SOFTWARE.
 ## ASD-STE100 skill
 
 Source: https://github.com/danyuchn/asd-ste100-skill
-Baseline: `65c8ab6ef5fc` (default branch, reviewed 2026-11-20)
+Baseline: `d714e5364e16` (default branch, reviewed 2026-11-24)
 Adapted in: `technical-writing`
 
 The technical-prose reference adapts its guidance on sentence structure,
