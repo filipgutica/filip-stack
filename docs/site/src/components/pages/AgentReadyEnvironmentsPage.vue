@@ -133,14 +133,13 @@ onMounted(() => {
     />
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
-      Your team already catches mistakes with a dev setup, tests, CI, code
-      review, and access rules. A coding agent is a fast teammate that stops
-      when the work looks done, even when it missed a problem. An
-      agent-ready environment lets it use that setup alone.
+      An agent-ready environment is the setup a coding agent needs to check
+      its own work and stay within safe limits: commands that test the code,
+      an app it can run, and rules it cannot break.
     </p>
     <p>
-      The more it checks its own work, and the firmer its limits, the more it
-      can do without you. Without that, you become its test suite.
+      The more of that setup it has, the more work it can finish without you
+      checking every step.
     </p>
     <div class="glance" role="region" aria-labelledby="at-a-glance">
       <p id="at-a-glance" class="lesson-label">At a glance</p>
