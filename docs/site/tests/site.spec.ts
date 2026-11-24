@@ -69,7 +69,7 @@ test("the lesson's figures and links work after hydration", async ({
     await figure.getByRole("button", { name }).click();
   await expect(tally).toContainText("All 4 are stopped before the agent says done.");
 
-  // Figure 2 answers when each piece runs: one task, setup to merge, with
+  // Figure 1 answers when each piece runs: one task, setup to merge, with
   // each stage linking the pillars at work there.
   const timeline = page.getByRole("list", { name: "One task, from setup to merge" });
   await expect(timeline.getByRole("listitem")).toHaveCount(8);

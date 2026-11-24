@@ -134,9 +134,9 @@ onMounted(() => {
     <h1 id="agent-ready-environments">Agent-ready environments</h1>
     <p class="lede">
       Your team already catches mistakes with a dev setup, tests, CI, code
-      review, and access rules. A coding agent is a fast teammate that never
-      asks questions and stops when work looks done. An agent-ready
-      environment lets it use that setup alone.
+      review, and access rules. A coding agent is a fast teammate that stops
+      when the work looks done, even when it missed a problem. An
+      agent-ready environment lets it use that setup alone.
     </p>
     <p>
       The more it checks its own work, and the firmer its limits, the more it
@@ -159,7 +159,7 @@ onMounted(() => {
         </div>
         <div>
           <dt><a href="#where-to-start">Where to start</a></dt>
-          <dd>Audit an existing repository with the companion skill, or add the gates before you code a new project.</dd>
+          <dd>Ask an agent to audit an existing repository, or add the gates before you code a new project.</dd>
         </div>
       </dl>
     </div>
@@ -206,6 +206,7 @@ onMounted(() => {
         automatically at events such as a tool call.
       </p>
       <ul>
+        <li>A <strong>deny rule</strong> is a host rule that blocks given files or paths, such as secrets in <code>.env</code>.</li>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
         <li><strong>Required CI</strong> is CI set to block a merge when it fails.</li>
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
@@ -241,9 +242,8 @@ onMounted(() => {
       <p>
         Figure 2 tests four safeguards: a check command and tests for code
         errors, a <strong>seeded app</strong> (a running app preloaded with
-        sample data) for crashes on real pages, and a <strong>deny
-        rule</strong> (a host rule that blocks given files) to keep the agent
-        out of secrets such as <code>.env</code>. Turn each one on to see who
+        sample data) for crashes on real pages, and a deny rule to keep the
+        agent out of secrets such as <code>.env</code>. Turn each one on to see who
         catches each hidden problem.
       </p>
     </div>
