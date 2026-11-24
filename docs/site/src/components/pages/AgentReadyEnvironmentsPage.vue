@@ -207,7 +207,7 @@ onMounted(() => {
       <ul>
         <li>A <strong>deny rule</strong> is a host rule that blocks given files or paths, such as secrets in <code>.env</code>.</li>
         <li>A <strong><code>Stop</code> hook</strong> runs when the agent tries to finish, and sends any failing check back to it.</li>
-        <li><strong>Required CI</strong> is CI set to block a merge when it fails. With the repository's rules (branch protection or rulesets on GitHub, GitLab, and similar), it keeps unreviewed, unverified, or untested code out of the main branch and production, whether an agent or a person wrote it.</li>
+        <li><strong>Required CI</strong> is CI set to block a merge when it fails. With the repository's rules (branch protection or rulesets on GitHub, GitLab, and similar) requiring checks and an approval, with no direct pushes or bypass, it keeps code that fails its checks or skipped review out of the main branch, whether an agent or a person wrote it.</li>
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
       <p>
@@ -339,13 +339,14 @@ onMounted(() => {
         <li><strong>The host and its sandbox</strong> decide what the agent can reach at all.</li>
         <li><strong>Instruction files and skills</strong> advise.</li>
         <li><strong>Hooks</strong> enforce at each tool call and when the agent tries to finish.</li>
-        <li><strong>Repository rules and required CI</strong> enforce at merge. They physically stop an agent or a person from merging code that fails its checks or skipped review.</li>
+        <li><strong>Repository rules and required CI</strong> enforce at merge. Set to require checks and an approval, with no direct pushes or bypass, they physically stop an agent or a person from merging code that fails its checks or skipped review. Production deploys need a gate of their own.</li>
       </ol>
       <p>
-        Make every check one cheap command to run locally: tests, lint, type
-        checks, complexity, and coverage. People run checks that cost them
-        nothing, and an agent runs every check its instructions name. Hooks
-        and required CI then block what still slips through.
+        Put the fast checks (tests, lint, type checks, complexity, coverage)
+        behind one cheap local command, and name it in the instruction files.
+        People run checks that cost them nothing, and an agent usually runs
+        the command its instructions name. Hooks and required CI enforce it
+        where no exception is acceptable.
       </p>
       <p>Choose the channel by whether the rule allows exceptions.</p>
       <ul>
@@ -567,7 +568,8 @@ onMounted(() => {
         A model that judges whether an action is safe can be wrong.
       </p>
       <template #check>
-        Every “never” rule is a deny rule, hook, or sandbox limit. Unattended
+        Every “never” rule is a deny rule, hook, sandbox limit, or repository
+        rule. Unattended
         runs have turn or spend caps and named sign-off.
       </template>
       <template #good>
@@ -705,7 +707,8 @@ onMounted(() => {
         <li>Find the command that runs all static checks (types and lint).</li>
         <li>Run it on clean <code>main</code>. Note commit, duration, and result.</li>
         <li>Check that CI runs the same command, and count suppressions.</li>
-        <li>Compare with pillar 2's audit check and Figure 5. Take the highest verified level.</li>
+        <li>Compare with pillar 2's audit check and Figure 5. Level 2 needs the run above.</li>
+        <li>For level 3, confirm the branch rules require the check to merge, and that its results are tracked over at least 20 runs or 30 days.</li>
       </ol>
       <p>
         Write one gap and its fix, such as making an optional CI check required

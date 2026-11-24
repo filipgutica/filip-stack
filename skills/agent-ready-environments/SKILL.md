@@ -79,9 +79,9 @@ Four layers carry these channels, from the agent outward:
 1. **Host and sandbox**: the coding tool and its harness decide what the agent can reach at all.
 2. **Instruction files and skills**: advisory guidance.
 3. **Hooks**: enforced at each tool call and when the agent tries to finish.
-4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. This is the layer that physically stops unreviewed, unverified, or untested code from reaching the default branch and production, whoever wrote it.
+4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. With required checks on the current head, a required approval, no direct pushes, and no bypass for agent tokens, they physically stop code that fails its checks or skipped review from reaching the default branch, whoever wrote it. Production deploys need their own gate, such as deployment protection rules. A green check still misses behavior no test covers; pillars 3 and 5 address that.
 
-Make every gate one cheap local command. People run gates that cost nothing, and an agent runs every gate its instructions name. Hooks and required CI then block what still slips through.
+Put the fast verification checks (tests, lint, type checks, complexity, coverage) behind one cheap local command, and name it in the instruction files. People run checks that cost them nothing, and an agent usually runs the command its instructions name. Hooks and required CI enforce it where no exception is acceptable.
 
 Put each rule on the channel that matches its exceptions:
 
@@ -117,7 +117,7 @@ Scoring rules:
 | [4](references/pillar-4-documentation.md) | Documentation: a map, decisions, workflows, glossary | Tell | Every always-loaded line passes the two-question test or the decay test; every documented command runs |
 | [5](references/pillar-5-review-gates.md) | Review gates chosen by risk | Check | Each review angle has a trigger, runs read-only in fresh context, and its findings are verified before they are fixed |
 | [6](references/pillar-6-reproducible-environment.md) | Reproducible environment: one command, seeded, observable | Check | A fresh worktree, inside the agent's own sandbox, reaches a seeded, healthy, running app with one command; two worktrees run at once without collisions |
-| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a named sign-off on the result |
+| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, sandbox limit, or forge rule; unattended runs have turn or spend caps and a named sign-off on the result |
 | [8](references/pillar-8-guidance-evaluated.md) | Guidance is evaluated | Tell | Each instruction file or skill has evidence that it changes behavior against a no-guidance baseline |
 
 Pillars 7 and 8 extend the original six. Both come from the same vendor
