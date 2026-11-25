@@ -1,3 +1,10 @@
+# [6.32.0](https://github.com/filipgutica/filip-stack/compare/v6.31.1...v6.32.0) (2026-11-25)
+
+
+### Features
+
+* **agent-ready-environments:** show gate owners and timing, and aim audits at earned autonomy ([#298](https://github.com/filipgutica/filip-stack/issues/298)) ([d369718](https://github.com/filipgutica/filip-stack/commit/d3697184a4b23de09a344c91476e9d6787c8b5b2))
+
 ## [6.31.1](https://github.com/filipgutica/filip-stack/compare/v6.31.0...v6.31.1) (2026-11-23)
 
 
