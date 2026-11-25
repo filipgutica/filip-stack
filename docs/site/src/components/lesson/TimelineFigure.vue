@@ -61,7 +61,7 @@ const title = (number: number) => lessonPillars[number - 1]!.title;
 <style scoped>
 /* Figure 1: setup above, the numbered path of one change, maintenance below.
    The dashed bands mark what sits outside the path. */
-.path { display: grid; gap: var(--space-3); font-size: var(--text-md); }
+.path { display: grid; gap: var(--space-3); font-size: var(--text-md); container-type: inline-size; }
 .path__band { display: grid; grid-template-columns: 13rem minmax(0, 1fr) auto; gap: var(--space-1) var(--space-4); align-items: baseline; max-width: none; margin: 0; padding: var(--space-3); border: 1px dashed var(--color-border); border-radius: var(--radius-panel); color: var(--color-muted); }
 .path__label { color: var(--color-text); font-weight: var(--weight-semibold); }
 .path__pillars { display: flex; flex-wrap: wrap; gap: var(--space-1) var(--space-2); justify-content: end; }
@@ -73,7 +73,8 @@ const title = (number: number) => lessonPillars[number - 1]!.title;
 .timeline__who { color: var(--color-muted); font-size: var(--text-sm); }
 .pillar-tag { color: var(--color-muted); font-size: var(--text-xs); }
 @media (hover: hover) { .pillar-tag:hover { color: var(--color-text); } }
-@media (max-width: 800px) {
+/* Stack by the figure's own width, so a narrow content column stacks too. */
+@container (max-width: 760px) {
   .path__band, .timeline__stage { grid-template-columns: minmax(0, 1fr); gap: var(--space-1); }
   .path__pillars { justify-content: start; }
 }
