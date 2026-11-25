@@ -18,13 +18,14 @@ formatting and lint to CI [O2], and says Codex reviews every pull request at Ope
 
   | Angle | Trigger |
   | --- | --- |
-  | Simplicity and reuse | A new abstraction, helper, or dependency |
-  | Test value | Tests added, removed, or changed |
+  | Simplicity and reuse (over-engineering) | A new abstraction, helper, or dependency |
+  | Test value (brittle tests, overlap across test layers) | Tests added, removed, or changed |
   | Security | Authentication, input handling, secrets, permissions |
   | Performance | Hot paths, queries, loops over unbounded data |
   | Coding standards | Rules no linter can express |
 
 - The reviewer gets the spec and the diff, not the author's reasoning.
+- Automated independent reviewers in CI (CodeRabbit, or Codex or Claude code review integrations) run on each pull request without a person starting them. Their prompts carry the triggers and skips above, and their findings are triaged like any other.
 - Each finding is checked against the code before anyone fixes it. A findings-audit pass removes false positives and duplicates.
 - A person authorizes the merge per action or in advance under the scoped authorization in [pillar 7](pillar-7-bounded-autonomy.md). Missing authorization is a gap; the absence of a repeated approval prompt is not.
 

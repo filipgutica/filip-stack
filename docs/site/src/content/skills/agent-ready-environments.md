@@ -42,8 +42,11 @@ has the criteria, audit modes, and evidence rules.
 
 ## What you get
 
-- Evidence and a table of scores, gaps, fixes, and advisory or enforced
-  channels.
+- Evidence and a table of scores, gaps, fixes, advisory or enforced
+  channels, and whether an agent or a person owns each fix.
+- How far an agent can carry a change today and where it first stops. A
+  verified gap gets the fix that unlocks the next stage; a sign-off the team
+  chose is reported as policy.
 - Fixes ordered by blast radius (secrets and irreversible actions), durability,
   then cost.
 - Unverified checks, what they need, and where the skill was hard to apply.

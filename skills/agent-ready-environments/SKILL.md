@@ -6,8 +6,15 @@ description: Audit or set up a repository, or a body of engineering guidance, fo
 # Agent-ready environments
 
 An agent stops when the work *looks* done [A1]. The environment decides whether
-"looks done" and "is done" are the same thing. Every pillar in this skill does
-one of three jobs:
+"looks done" and "is done" are the same thing.
+
+The goal is **earned autonomy**: an environment where the agent checks its own
+work, runs inside firm limits, and follows a workflow from task to reviewed
+pull request, so a person steps in only for decisions that need one. Each gap
+this skill finds is a place where a person still acts as the test suite or the
+guardrail. Each fix moves that person to a sign-off.
+
+Every pillar in this skill does one of three jobs:
 
 - **Tell** the agent what it cannot see in the repository.
 - **Check** the work with something that comes back red or green.
@@ -16,6 +23,28 @@ one of three jobs:
 Each pillar has a reference file with its sources, what good looks like, the
 audit check, and anti-patterns; the pillar table links them. When a new model ships or a source changes, review
 this skill with [maintenance.md](references/maintenance.md).
+
+## Who builds it, and when it acts
+
+A person, or an agent at a person's request, builds the environment once and
+grows it. This table follows one example workflow, a code change headed for a
+pull request; each row says when it applies:
+
+| Stage | What acts | Pillars |
+| --- | --- | --- |
+| Session start | The host loads the instruction files and skill descriptions it is configured to read | 4 |
+| Every tool call | Sandbox, deny rules, and hooks allow or block | 7 |
+| While working | The agent runs the check command and tests, and observes the seeded app when the change needs runtime verification | 2, 3, 6 |
+| Before "done" | A configured `Stop` hook or the workflow runs the check command; a failure returns to the agent | 2, 3 |
+| Pull request | Required CI reruns the checks; a fresh-context reviewer checks the diff against the spec and runs the angles it triggers | 2, 3, 5 |
+| Merge, deploy, irreversible actions | A person signs off, per action or in advance with stated limits | 7 |
+| Guidance or model change | Evaluate the guidance against a no-guidance baseline | 8 |
+
+Code shape (pillar 1) shapes every stage: it decides which example the agent copies.
+
+Agents can build most of the environment: setup scripts, seed data, checks,
+tests, hooks, and review configuration. A person decides what agents cannot:
+what counts as done, the "never" rules, spend and turn caps, and who signs off.
 
 ## Durable and decaying guidance
 
@@ -44,6 +73,15 @@ Guidance travels on two channels [A1]:
 
 - **Advisory**: the prompt, `AGENTS.md` / `CLAUDE.md`, skills. The model weighs it and may decide it does not apply.
 - **Enforced**: hooks, deny rules, the sandbox, the type checker, linters, required CI checks. Each runs at its action boundary (a tool call, a commit, a merge) whatever the model decides.
+
+Four layers carry these channels, from the agent outward:
+
+1. **Host and sandbox**: the coding tool and its harness decide what the agent can reach at all.
+2. **Instruction files and skills**: advisory guidance.
+3. **Hooks**: enforced at each tool call and when the agent tries to finish.
+4. **Forge rules and required CI** (branch protection or rulesets on GitHub, GitLab, or similar): enforced at merge. With required checks on the commit being merged (including a review check, when review must block the merge), a required approval of the latest changes (stale approvals dismissed on push) or an advance authorization under pillar 7 that the rules enforce, no direct pushes, and no bypass for agent tokens, they physically stop code that fails its checks or skipped review from reaching the default branch, whoever wrote it. Production deploys need their own gate, such as deployment protection rules. A green check still misses behavior no test covers; pillars 3 and 5 address that.
+
+Put the fast verification checks (tests, lint, type checks, complexity, coverage) behind one cheap local command, and name it in the instruction files. People run checks that cost them nothing, and an agent usually runs the command its instructions name. Hooks and required CI enforce it where no exception is acceptable.
 
 Put each rule on the channel that matches its exceptions:
 
@@ -79,7 +117,7 @@ Scoring rules:
 | [4](references/pillar-4-documentation.md) | Documentation: a map, decisions, workflows, glossary | Tell | Every always-loaded line passes the two-question test or the decay test; every documented command runs |
 | [5](references/pillar-5-review-gates.md) | Review gates chosen by risk | Check | Each review angle has a trigger, runs read-only in fresh context, and its findings are verified before they are fixed |
 | [6](references/pillar-6-reproducible-environment.md) | Reproducible environment: one command, seeded, observable | Check | A fresh worktree, inside the agent's own sandbox, reaches a seeded, healthy, running app with one command; two worktrees run at once without collisions |
-| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, or sandbox limit; unattended runs have turn or spend caps and a named sign-off on the result |
+| [7](references/pillar-7-bounded-autonomy.md) | Bounded autonomy | Bound | Every "never" rule is a deny rule, hook, sandbox limit, or forge rule; unattended runs have turn or spend caps and a named sign-off on the result |
 | [8](references/pillar-8-guidance-evaluated.md) | Guidance is evaluated | Tell | Each instruction file or skill has evidence that it changes behavior against a no-guidance baseline |
 
 Pillars 7 and 8 extend the original six. Both come from the same vendor
@@ -123,6 +161,9 @@ Gates are cheapest to add at zero lines of code.
 4. Pillar 4: a short `AGENTS.md` with the commands from steps 1 and 2. Add lines only after the agent has to be corrected twice [A1, O3].
 5. Pillars 1 and 5 grow with the code: record each decision when it is made, and add review angles as risk appears.
 
+With steps 1 to 3 in place, the agent can carry a task to a pull request that a
+person reviews. Each later gate lets the person review less of it.
+
 ### Existing repository
 
 1. Time a fresh worktree to a seeded, running app inside the agent's sandbox. Record cold setup (from nothing) and warm setup (prerequisites already present) separately, with each manual step.
@@ -144,12 +185,23 @@ Gates are cheapest to add at zero lines of code.
 
 ## Report
 
-Write an Evidence section, then this table, then Skill gaps (where this
-skill was hard to apply) and Unverified (checks skipped, and what running
-them needs).
+Write an Evidence section, then this table, then Autonomy, then Skill gaps
+(where this skill was hard to apply) and Unverified (checks skipped, and what
+running them needs).
 
-| Pillar | Score | Evidence | Top gap | Fix | Channel |
-| --- | --- | --- | --- | --- | --- |
+| Pillar | Score | Evidence | Top gap | Fix | Channel | Owner |
+| --- | --- | --- | --- | --- | --- | --- |
+
+`Owner` says who makes the fix: `Agent` for work an agent can build, `Person`
+for a decision only a person can make (see the stage table above).
+
+**Autonomy** states, from verified workflow and authorization evidence:
+
+- How far an agent can carry a change in this repository without a person, by the stages above, and the first stage where it stops.
+- For each stop, whether it is a verified gap or a sign-off the owner chose (merge, deploy, irreversible actions). A gap is anything that makes a person step in where a gate could, for example a check the agent cannot run (an app that does not start in its sandbox), an agreed rule with no enforcement (a protected path with no deny rule), or a missing decision (an unattended run with no named sign-off). A missing decision has a `Person` owner. Keep chosen sign-offs as policy. Authorizing them in advance is an option for the owner under pillar 7, not a fix.
+- For a verified gap, the fix that unlocks the next stage, and its owner. When the first stop is a chosen sign-off, report that policy as the stopping point, with no fix.
+
+Mark any stop you could not verify as unverified. The fix list keeps its blast-radius order.
 
 Order fixes by blast radius first: any unenforced pillar 7 rule (secrets,
 protected paths, irreversible actions) comes first, together with any defect

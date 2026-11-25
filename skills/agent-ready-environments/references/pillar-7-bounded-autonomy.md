@@ -10,7 +10,7 @@ Source keys refer to the Sources list in [SKILL.md](../SKILL.md).
 4. What stops it?
 5. Where does the result go, and who signs off?
 
-Rules that must never be broken belong in deny rules, hooks, or the sandbox.
+Rules that must never be broken belong in deny rules, hooks, or the sandbox, or in forge rules, which enforce them at merge.
 A model-based safety classifier is a judgment call and can be wrong [A1].
 
 **Good looks like.** Deny rules for secrets and protected paths. Worktree or
@@ -22,6 +22,6 @@ of a repeated approval prompt is not.
 
 **Audit check.** List every "never" rule in the guidance and confirm each is
 enforced. Confirm that unattended runs have caps and a named sign-off on the result.
-Accept configuration that the host or forge reports as active (for example a
+Read the default branch's rules: required checks on the commit being merged (including a review check, when review must block the merge), a required approval of the latest changes (stale approvals dismissed on push) unless merges are authorized in advance within enforced limits, no direct pushes, and a bypass list that excludes agent tokens. Check that production deploys have their own gate. Accept configuration that the host or forge reports as active (for example a
 ruleset read with `gh api`, or the host's effective deny rules) as evidence that
 a rule is enforced; a rule stated only in prose is level 1.

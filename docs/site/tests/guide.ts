@@ -36,7 +36,14 @@ export const openMaintenanceFromContents = async (page: Page) => {
     name: "In this lesson",
     exact: true,
   });
-  await expect(contents.getByRole("link")).toHaveCount(9);
+  // The contents group the lesson into the four parts of its story.
+  await expect(contents.locator(".contents__part")).toHaveText([
+    "The idea",
+    "The pillars",
+    "Put it to work",
+    "Keep it current",
+  ]);
+  await expect(contents.getByRole("link")).toHaveCount(10);
   await contents
     .getByRole("link", { name: "Keeping guidance current", exact: true })
     .click();

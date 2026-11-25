@@ -25,5 +25,95 @@
       "prompt": "Check the onboarding flow in the running app before it ships: states, copy, and keyboard access.",
       "expectedSkill": "interface-design"
     }
+  ],
+  "rules": [
+    {
+      "id": "are-autonomy-agent-fix",
+      "task": "You are writing the full report of an agent-readiness audit of a web app repository. Verified: one check command runs in CI and is required; a single test file runs with one command; deny rules block secrets; unattended runs have a turn cap; the team's written policy requires a person to approve every merge. The seed script fails inside the agent's sandbox because it reads a missing environment variable that has a safe local default, so the agent cannot start the app to verify UI changes. Unattended runs name the tech lead as sign-off on their results.",
+      "options": {
+        "agent": "In the Autonomy section, name the first stop and give its fix to an agent to build",
+        "person": "In the Autonomy section, name the first stop and give its fix to a person to decide",
+        "policy": "In the Autonomy section, report the first stop as a chosen sign-off, with no fix",
+        "omit": "Report the score table and the fix list only, with no Autonomy section"
+      },
+      "accept": [
+        "agent"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "are-autonomy-person-fix",
+      "task": "You are writing the full report of an agent-readiness audit of a web app repository. Verified: one check command runs in CI and is required; a single test file runs with one command; deny rules block secrets; unattended runs have a turn cap; the team's written policy requires a person to approve every merge. The seed script starts the app in the sandbox. Unattended runs have no named sign-off on their results, and no one has decided who should give it.",
+      "options": {
+        "agent": "In the Autonomy section, name the first stop and give its fix to an agent to build",
+        "person": "In the Autonomy section, name the first stop and give its fix to a person to decide",
+        "policy": "In the Autonomy section, report the first stop as a chosen sign-off, with no fix",
+        "omit": "Report the score table and the fix list only, with no Autonomy section"
+      },
+      "accept": [
+        "person"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "are-autonomy-chosen-signoff",
+      "task": "You are writing the full report of an agent-readiness audit of a web app repository. Verified: one check command runs in CI and is required; a single test file runs with one command; deny rules block secrets; unattended runs have a turn cap; the team's written policy requires a person to approve every merge. The seed script starts the app in the sandbox. Unattended runs name the tech lead as sign-off on their results.",
+      "options": {
+        "agent": "In the Autonomy section, name the first stop and give its fix to an agent to build",
+        "person": "In the Autonomy section, name the first stop and give its fix to a person to decide",
+        "policy": "In the Autonomy section, report the first stop as a chosen sign-off, with no fix",
+        "omit": "Report the score table and the fix list only, with no Autonomy section"
+      },
+      "accept": [
+        "policy"
+      ]
+    },
+    {
+      "id": "are-dependency-audit-missing",
+      "files": [
+        "skills/agent-ready-environments/references/pillar-2-static-gates.md"
+      ],
+      "task": "You are auditing a Node web app for agent readiness. Verified: one `pnpm check` command runs types, lint, dead-code, and complexity checks locally and in CI; clean main passes; a ruleset requires that CI check and blocks direct pushes to main; suppressions are counted. No dependency audit runs anywhere. Renovate opens dependency update pull requests that run the same checks.",
+      "options": {
+        "complete": "Report no top gap for pillar 2",
+        "audit": "Name a missing dependency audit as pillar 2's top gap",
+        "updates": "Name missing automated dependency update pull requests as pillar 2's top gap"
+      },
+      "accept": [
+        "audit"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "are-dependency-updates-missing",
+      "files": [
+        "skills/agent-ready-environments/references/pillar-2-static-gates.md"
+      ],
+      "task": "You are auditing a Node web app for agent readiness. Verified: one `pnpm check` command runs types, lint, dead-code, and complexity checks locally and in CI; clean main passes; a ruleset requires that CI check and blocks direct pushes to main; suppressions are counted. `pnpm check` also runs `pnpm audit`. Dependency updates are made by hand when someone remembers.",
+      "options": {
+        "complete": "Report no top gap for pillar 2",
+        "audit": "Name a missing dependency audit as pillar 2's top gap",
+        "updates": "Name missing automated dependency update pull requests as pillar 2's top gap"
+      },
+      "accept": [
+        "updates"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "are-dependency-gates-present",
+      "files": [
+        "skills/agent-ready-environments/references/pillar-2-static-gates.md"
+      ],
+      "task": "You are auditing a Node web app for agent readiness. Verified: one `pnpm check` command runs types, lint, dead-code, and complexity checks locally and in CI; clean main passes; a ruleset requires that CI check and blocks direct pushes to main; suppressions are counted. `pnpm check` also runs `pnpm audit`. Renovate opens dependency update pull requests that run the same checks.",
+      "options": {
+        "complete": "Report no top gap for pillar 2",
+        "audit": "Name a missing dependency audit as pillar 2's top gap",
+        "updates": "Name missing automated dependency update pull requests as pillar 2's top gap"
+      },
+      "accept": [
+        "complete"
+      ]
+    }
   ]
 }

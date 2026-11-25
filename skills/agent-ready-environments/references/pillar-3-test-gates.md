@@ -25,6 +25,7 @@ test that cannot fail gives a false green.
 - A single test file runs with one command. Tests are fast and deterministic.
 - Coverage is measured on changed lines. Mutation testing on critical modules (Stryker, mutmut, cargo-mutants) proves the tests can fail.
 - Review flags deleted tests and weakened assertions.
+- Performance budgets: thresholds on app metrics (bundle size, page load, endpoint or query latency) and on test and CI duration fail the build when crossed.
 
 Example in this repository: the `test-audit` skill's authoring gate.
 
@@ -33,6 +34,7 @@ Example in this repository: the `test-audit` skill's authoring gate.
 - The single-file command exists and is in the instruction file.
 - Record the flake rate over the last twenty runs of each test workflow. A flake is a test failure on a commit that passes on retry of the same commit with no change. Cancelled runs and failures on different commits are not flakes; report them separately.
 - Run a mutation sample on one critical module.
+- List performance budgets for the app and for test and CI duration, and whether a crossed budget fails the build.
 - Sample twenty test declarations (a table-driven test counts once), spread across the layers. Map each to one contract and one credible regression. Mark tests that restate the source, duplicate another layer, or need a test-only production export.
 
 **Anti-patterns.** The same scenario at every layer. Snapshot tests of
