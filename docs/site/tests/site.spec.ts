@@ -69,10 +69,10 @@ test("the lesson's figures and links work after hydration", async ({
     await figure.getByRole("button", { name }).click();
   await expect(tally).toContainText("All 4 are stopped before the agent says done.");
 
-  // Figure 1 answers when each piece runs: one task, setup to merge, with
+  // Figure 1 answers when each piece runs: the path of one change to merge, with
   // each stage linking the pillars at work there.
-  const timeline = page.getByRole("list", { name: "One task, from setup to merge" });
-  await expect(timeline.getByRole("listitem")).toHaveCount(8);
+  const timeline = page.getByRole("list", { name: "The path of one change, from first step to merge" });
+  await expect(timeline.getByRole("listitem")).toHaveCount(6);
   await timeline
     .getByRole("listitem")
     .filter({ hasText: /^Merge/ })

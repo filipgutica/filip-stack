@@ -194,8 +194,8 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   );
   // The timeline shows every stage of a task without JavaScript.
   await expect(
-    page.getByRole("list", { name: "One task, from setup to merge" }).getByRole("listitem"),
-  ).toHaveCount(8);
+    page.getByRole("list", { name: "The path of one change, from first step to merge" }).getByRole("listitem"),
+  ).toHaveCount(6);
   await expect(page.getByRole("heading", { level: 3, name: "New project", exact: true })).toBeVisible();
   // The published #scoring anchor still lands on the scoring rules.
   await expect(page.locator("#scoring")).toHaveText("How a pillar is scored");

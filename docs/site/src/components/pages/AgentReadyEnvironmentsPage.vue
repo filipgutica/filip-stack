@@ -211,15 +211,16 @@ onMounted(() => {
         <li>A <strong>review angle</strong> is a focused review for one risk, such as security.</li>
       </ul>
       <p>
-        Figure 1 follows one code change on its way to a pull request. Each
-        stage tags its pillars, the eight areas this guide covers later.
+        Figure 1 follows the path one code change takes, from the agent's
+        first step to merge, and what checks it at each point. Each point
+        tags its pillars, the eight areas this guide covers later.
       </p>
     </div>
     <UiFigure class="lesson-figure" :number="1">
       <TimelineFigure />
       <template #caption>
-        One example workflow: a code change headed for a pull request. Each
-        row says when it applies.
+        The path of one change. Setup happens once before any change, and
+        maintenance runs on its own schedule.
       </template>
     </UiFigure>
     <div class="prose">
