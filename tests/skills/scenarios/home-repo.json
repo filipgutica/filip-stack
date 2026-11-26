@@ -176,7 +176,7 @@
       "options": {
         "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
         "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
-        "none": "PR descriptions do not name the tracking issue"
+        "tracker": "PR descriptions reference the work the way the existing tracker's convention says, with no GitHub issue syntax"
       },
       "accept": [
         "partof"
@@ -189,10 +189,35 @@
       "options": {
         "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
         "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
-        "none": "PR descriptions do not name the tracking issue"
+        "tracker": "PR descriptions reference the work the way the existing tracker's convention says, with no GitHub issue syntax"
       },
       "accept": [
-        "none"
+        "tracker"
+      ]
+    },
+    {
+      "id": "hr-wrap-up-issue-already-closed",
+      "task": "You are running $home-repo to set up a home repo and are writing its wrap-up skill's issue step. Consider a thread whose tracking issue links three PRs. All three have merged, the issue's goal is met, and the user approved the outcome draft. The last PR said `Closes` for the issue, so GitHub closed the issue when that PR merged. Decide what the skill tells the agent to do with the issue.",
+      "options": {
+        "close": "file the follow-ups, post the outcome with their links, then run the close command",
+        "skip": "file the follow-ups, post the outcome with their links, and skip the close command",
+        "reopen": "reopen the issue, then post the outcome"
+      },
+      "accept": [
+        "skip"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-wrap-up-issue-open",
+      "task": "You are running $home-repo to set up a home repo and are writing its wrap-up skill's issue step. Consider a thread whose tracking issue links three PRs. All three have merged, the issue's goal is met, and the user approved the outcome draft. Every PR said `Part of` for the issue, so the issue is still open. Decide what the skill tells the agent to do with the issue.",
+      "options": {
+        "close": "file the follow-ups, post the outcome with their links, then run the close command",
+        "skip": "file the follow-ups, post the outcome with their links, and skip the close command",
+        "reopen": "reopen the issue, then post the outcome"
+      },
+      "accept": [
+        "close"
       ]
     }
   ]

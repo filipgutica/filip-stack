@@ -38,7 +38,7 @@ has the layout and the exact steps.
 
 ## What you get
 
-- `AGENTS.md` with an intro, the tracking rule (each PR references its issue, and only the PR that finishes it says `Closes`, so GitHub closes the issue on merge), a repo table grouped by area (`Repo | Owns | Remote`), and one line per skill.
+- `AGENTS.md` with an intro, the tracking rule (each PR references its issue, and only the PR that finishes it says `Closes`, so GitHub closes the issue by default when that PR merges into the default branch), a repo table grouped by area (`Repo | Owns | Remote`), and one line per skill.
 - A thin `CLAUDE.md` that imports `AGENTS.md`.
 - A setup-only `README`.
 - Skills under `.agents/skills` with one `.claude/skills` link each.
