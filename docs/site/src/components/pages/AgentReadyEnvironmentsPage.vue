@@ -3,7 +3,6 @@ import { onMounted, ref } from "vue";
 import { UiAlert, UiBadge, UiBreadcrumbs, UiCodeBlock, UiFigure, UiScore } from "@filipgutica/ui";
 import type { Catalog } from "../../catalog";
 import CatchFigure from "../lesson/CatchFigure.vue";
-import LessonContents from "../lesson/LessonContents.vue";
 import PillarSection from "../lesson/PillarSection.vue";
 import TimelineFigure from "../lesson/TimelineFigure.vue";
 import { sources } from "../lesson/sources";
@@ -20,36 +19,6 @@ const referenceBase = skill.source.replace(/SKILL\.md$/, "references/");
 const repository = "https://github.com/filipgutica/filip-stack";
 const install =
   "npx skills add filipgutica/filip-stack -g -a claude-code codex -s agent-ready-environments -y";
-const contents = [
-  {
-    label: "The idea",
-    items: [
-      { id: "who-does-what", label: "Who does what" },
-      { id: "when-each-piece-runs", label: "When each piece runs" },
-      { id: "why-agents-stop-early", label: "See it in action" },
-    ],
-  },
-  {
-    label: "The pillars",
-    items: [
-      { id: "the-pillars", label: "The eight pillars" },
-      { id: "tell-check-bound", label: "Three jobs" },
-      { id: "placement-advisory-or-enforced", label: "Advisory or enforced" },
-    ],
-  },
-  {
-    label: "Put it to work",
-    items: [
-      { id: "where-to-start", label: "Where to start" },
-      { id: "audit-procedure", label: "Run an audit" },
-      { id: "worked-example", label: "Worked example" },
-    ],
-  },
-  {
-    label: "Keep it current",
-    items: [{ id: "maintenance", label: "Keeping guidance current" }],
-  },
-];
 // The cast answers "who builds the gates": people decide and sign off, the
 // agent works inside the environment, and tools enforce it.
 const cast = [
@@ -176,7 +145,6 @@ onMounted(() => {
         </dd>
       </div>
     </dl>
-    <LessonContents :parts="contents" />
   </section>
 
   <section aria-labelledby="who-does-what">

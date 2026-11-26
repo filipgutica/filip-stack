@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { UiSiteHeader, UiSiteNav } from "@filipgutica/ui/site";
 import type { Catalog, CatalogSkill, SkillContent } from "./catalog";
+import { pageContents } from "./page-contents";
 import OverviewPage from "./components/pages/OverviewPage.vue";
 import CliPage from "./components/pages/CliPage.vue";
 import DesignSystemPage from "./components/pages/DesignSystemPage.vue";
@@ -47,11 +48,20 @@ const order = groups.flatMap(({ items }) => items);
 const position = order.findIndex(({ current }) => current);
 const previous = order[position - 1];
 const next = order[position + 1];
+
+const contents = skill && content
+  ? [{
+      items: [
+        ...content.sections.map(({ id, heading }) => ({ href: `#${id}`, label: heading })),
+        ...(content.related.length ? [{ href: "#related", label: "Related skills" }] : []),
+      ],
+    }]
+  : pageContents[page];
 </script>
 
 <template>
   <a class="fg-site-skip" href="#main">Skip to content</a>
-  <!-- The library's docs shell: header, rail, main, and footer are direct children. -->
+  <!-- The docs shell places the rail and contents before main. -->
   <div class="fg-site-docs">
     <UiSiteHeader
       project="filip-stack"
@@ -61,7 +71,7 @@ const next = order[position + 1];
         { label: 'Changelog', href: `${repository}/blob/main/CHANGELOG.md` },
       ]"
     />
-    <UiSiteNav label="Documentation" :groups="groups" />
+    <UiSiteNav label="Documentation" :groups="groups" :contents="contents" />
     <main id="main" class="fg-site-prose">
       <SkillPage
         v-if="skill && content"

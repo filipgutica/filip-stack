@@ -217,3 +217,15 @@ test("the lesson reads in full and its anchor links work without JavaScript", as
   await openMaintenanceFromContents(page);
   await expectSkillLinks(page);
 });
+
+test("the lesson contents follow the rail as a second phone disclosure without JavaScript", async ({ page }) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto("/filip-stack/agent-ready-environments/");
+  const rail = page.locator(".fg-site-rail > details");
+  const disclosure = page.locator(".fg-site-rail + .fg-site-contents > details");
+  await expect(rail).toHaveJSProperty("open", false);
+  await expect(disclosure).toHaveJSProperty("open", false);
+  await disclosure.locator("summary").click();
+  await openMaintenanceFromContents(page);
+  await expect(rail).toHaveJSProperty("open", false);
+});
