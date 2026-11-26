@@ -88,11 +88,13 @@ test("the lesson's figures and links work after hydration", async ({
     anchor: "pillar-1-code-shape",
     heading: "Pillar 1: Code shape",
   });
-  await openMaintenanceFromContents(page);
+  const maintenance = await openMaintenanceFromContents(page);
+  await expect(maintenance).toHaveAttribute("aria-current", "location");
   await expectSkillLinks(page);
 });
 
-test("Previous and Next walk the sidebar order", async ({ page }) => {
+test("the page and section navigation follow their reading orders", async ({ page }) => {
+  await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto("/filip-stack/");
   const order = await page
     .getByRole("navigation", { name: "Documentation", exact: true })
@@ -101,6 +103,16 @@ test("Previous and Next walk the sidebar order", async ({ page }) => {
   expect(order).toHaveLength(routes.length);
   for (const [index, href] of order.entries()) {
     await page.goto(href!);
+    if (href !== "/filip-stack/agent-ready-environments/") {
+      const sections = page.getByRole("navigation", { name: "On this page", exact: true });
+      await expect(sections).toBeVisible();
+      const headings = await page.locator("main h2").evaluateAll((elements) =>
+        elements.map((element) => [element.textContent?.trim(), `#${element.id}`]),
+      );
+      expect(await sections.getByRole("link").evaluateAll((links) =>
+        links.map((link) => [link.textContent?.trim(), link.getAttribute("href")]),
+      ), href!).toEqual(headings);
+    }
     const previous = page.locator('a[rel="prev"]');
     const next = page.locator('a[rel="next"]');
     if (index === 0) await expect(previous).toHaveCount(0);
@@ -108,6 +120,19 @@ test("Previous and Next walk the sidebar order", async ({ page }) => {
     if (index === order.length - 1) await expect(next).toHaveCount(0);
     else await expect(next).toHaveAttribute("href", order[index + 1]!);
   }
+});
+
+test("the lesson contents open above main in a narrow frame", async ({ page }) => {
+  await page.setViewportSize({ width: 1000, height: 900 });
+  await page.goto("/filip-stack/agent-ready-environments/");
+  const disclosure = page.locator(".fg-site-contents > details");
+  await expect(disclosure).toHaveJSProperty("open", false);
+  await disclosure.locator("summary").click();
+  const contents = page.getByRole("navigation", { name: "On this page", exact: true });
+  await expect(contents).toBeVisible();
+  const contentsBox = (await contents.boundingBox())!;
+  const mainBox = (await page.locator("main").boundingBox())!;
+  expect(contentsBox.y + contentsBox.height).toBeLessThanOrEqual(mainBox.y);
 });
 
 test("every route is reachable and marks only its current navigation link", async ({
@@ -254,7 +279,9 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
   const drawer = page.getByRole("dialog", { name: "Documentation" });
   await trigger.click();
   await expect(drawer).toBeVisible();
-  await expect(drawer.getByRole("link")).toHaveCount(routes.length);
+  await expect(drawer.getByRole("navigation").first()).toHaveAccessibleName("On this page");
+  await expect(drawer.getByRole("navigation", { name: "Documentation", exact: true }).getByRole("link"))
+    .toHaveCount(routes.length);
   await page.keyboard.press("Escape");
   await expect(drawer).toBeHidden();
   await expect(trigger).toBeFocused();
@@ -284,6 +311,12 @@ test("the phone drawer supports escape, focus return, and cross-page navigation"
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBe(true);
+  await longLabel.click();
+  await drawer.getByRole("navigation", { name: "On this page", exact: true })
+    .getByRole("link", { name: "Who does what", exact: true }).click();
+  await expect(drawer).toBeHidden();
+  await expect(page).toHaveURL(/#who-does-what$/);
+  await expect(page.getByRole("heading", { name: "Who does what", exact: true })).toBeInViewport();
 });
 
 for (const theme of themes)
@@ -317,10 +350,9 @@ test("the design system page links the catalogue", async ({ page }) => {
   // Keep the test offline: answer design system requests with a stub page.
   await page.route(`${site}**`, (route) => route.fulfill({ contentType: "text/html", body: "<title>Design system</title>" }));
   await page.goto("/filip-stack/design-system/");
-  await expect(page.getByRole("link", { name: "Component catalogue", exact: true })).toHaveAttribute(
-    "href",
-    `${site}components.html`,
-  );
+  await expect(
+    page.getByRole("main").getByRole("link", { name: "Component catalogue", exact: true }),
+  ).toHaveAttribute("href", `${site}components.html`);
 });
 
 // A local copy of the button drifts from the library's raise, hover, and press.

@@ -33,24 +33,34 @@ export const followPillarFromMap = async (
 
 export const openMaintenanceFromContents = async (page: Page) => {
   const contents = page.getByRole("navigation", {
-    name: "In this lesson",
+    name: "On this page",
     exact: true,
   });
-  // The contents group the lesson into the four parts of its story.
-  await expect(contents.locator(".contents__part")).toHaveText([
-    "The idea",
-    "The pillars",
-    "Put it to work",
-    "Keep it current",
-  ]);
-  await expect(contents.getByRole("link")).toHaveCount(10);
-  await contents
-    .getByRole("link", { name: "Keeping guidance current", exact: true })
-    .click();
+  const parts = [
+    ["The idea", "#who-does-what", "#when-each-piece-runs", "#why-agents-stop-early"],
+    ["The pillars", "#the-pillars", "#tell-check-bound", "#placement-advisory-or-enforced"],
+    ["Put it to work", "#where-to-start", "#audit-procedure", "#worked-example"],
+    ["Keep it current", "#maintenance"],
+  ] as const;
+  const groups = contents.getByRole("group");
+  await expect(groups).toHaveCount(parts.length);
+  for (const [index, [name, ...anchors]] of parts.entries()) {
+    const group = groups.nth(index);
+    await expect(group).toHaveAccessibleName(name);
+    expect(await group.getByRole("link").evaluateAll(
+      (links) => links.map((link) => link.getAttribute("href")),
+    )).toEqual(anchors);
+  }
+  const maintenance = contents.getByRole("link", {
+    name: "Keeping guidance current",
+    exact: true,
+  });
+  await maintenance.click();
   await expect(page).toHaveURL(/#maintenance$/);
   await expect(
     page.getByRole("heading", { name: "Keeping guidance current", exact: true }),
   ).toBeInViewport();
+  return maintenance;
 };
 
 export const expectSkillLinks = (page: Page) =>
