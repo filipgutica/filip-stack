@@ -50,6 +50,7 @@ export const openMaintenanceFromContents = async (page: Page) => {
     expect(await group.getByRole("link").evaluateAll(
       (links) => links.map((link) => link.getAttribute("href")),
     )).toEqual(anchors);
+    for (const anchor of anchors) await expect(page.locator(`main ${anchor}`)).toHaveCount(1);
   }
   const maintenance = contents.getByRole("link", {
     name: "Keeping guidance current",
