@@ -169,6 +169,56 @@
       "accept": [
         "worktree"
       ]
+    },
+    {
+      "id": "hr-tracking-issue-part-of",
+      "task": "You are running $home-repo to set up a home repo and are writing the tracking rule in its AGENTS.md. Each body of work has one GitHub tracking issue in the home repo, and it usually spans several PRs in different member repos that merge in an order nobody knows in advance. Decide what each PR description says about the tracking issue.",
+      "options": {
+        "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
+        "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
+        "tracker": "PR descriptions reference the work the way the existing tracker's convention says, with no GitHub issue syntax"
+      },
+      "accept": [
+        "partof"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-tracking-in-jira",
+      "task": "You are running $home-repo to set up a home repo and are writing the tracking rule in its AGENTS.md. The user's design tracks each body of work in Jira, and the home repo has GitHub issues turned off. A body of work usually spans several PRs in different member repos that merge in an order nobody knows in advance. Decide what each PR description says about the tracking issue.",
+      "options": {
+        "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
+        "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
+        "tracker": "PR descriptions reference the work the way the existing tracker's convention says, with no GitHub issue syntax"
+      },
+      "accept": [
+        "tracker"
+      ]
+    },
+    {
+      "id": "hr-wrap-up-issue-already-closed",
+      "task": "You are running $home-repo to set up a home repo and are writing its wrap-up skill's issue step. Consider a thread whose tracking issue links three PRs. All three have merged, the issue's goal is met, and the user approved the outcome draft. The issue's state is closed. Decide what the skill tells the agent to do with the issue.",
+      "options": {
+        "close": "file the follow-ups, post the outcome with their links, then run the close command",
+        "skip": "file the follow-ups, post the outcome with their links, and skip the close command",
+        "reopen": "reopen the issue, then post the outcome"
+      },
+      "accept": [
+        "skip"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-wrap-up-issue-open",
+      "task": "You are running $home-repo to set up a home repo and are writing its wrap-up skill's issue step. Consider a thread whose tracking issue links three PRs. All three have merged, the issue's goal is met, and the user approved the outcome draft. The issue's state is open. Decide what the skill tells the agent to do with the issue.",
+      "options": {
+        "close": "file the follow-ups, post the outcome with their links, then run the close command",
+        "skip": "file the follow-ups, post the outcome with their links, and skip the close command",
+        "reopen": "reopen the issue, then post the outcome"
+      },
+      "accept": [
+        "close"
+      ]
     }
   ]
 }
