@@ -59,7 +59,7 @@ Create a file only when it has content.
 - **clean:** delete checkouts, refusing any with uncommitted, unpushed, or stashed work.
 - **link:** when the design links member skills, link them, as below.
 
-Add a start-work skill that reads the task and runs **add**, and a wrap-up skill that checks PRs and runs **clean**.
+Add a start-work skill that reads the task and runs **add**, and a wrap-up skill that checks PRs, updates the tracking issue, and runs **clean**. The wrap-up skill reads the issue and checks every PR it links. When every linked PR is merged and the issue's goal is met, it files each follow-up as an issue in the repo it concerns, posts the outcome with their links, and closes the issue as completed. Otherwise it posts the outcome and says why the issue stays open.
 
 Skills load because sessions start in this repo, so the repo needs no install script. When the design links member skills, the **link** command puts each one in front of every host: link each one into both `.agents/skills` and `.claude/skills`. Make it fail, naming the link, when any host path does not resolve to that skill, and treat the setup as incomplete until it succeeds. GitHub issues in this repo hold the plans and artifacts for each body of work. Add a folder for them only when an issue shows it needs one.
 
@@ -68,7 +68,7 @@ Done when the files match the approved plan table.
 ## 4. Write AGENTS.md
 
 - **Intro:** two or three lines naming the body of work and saying that sessions start here.
-- **Tracking:** one GitHub issue per body of work, holding the goal, decisions, open questions, and links. Comments carry updates. An existing ticket tracker stays the record for its tickets.
+- **Tracking:** one GitHub issue per body of work, holding the goal, decisions, open questions, and links. Comments carry updates. An existing ticket tracker stays the record for its tickets. Each PR names its issue in its description: `Closes <owner>/<repo>#<n>` when the PR finishes the issue, so GitHub closes it when the PR merges into the default branch, or `Part of <owner>/<repo>#<n>` when the PR is one of several for a tracking issue. Only the PR that finishes a tracking issue says `Closes`.
 - **Working in a member repo:** the session stays in the home folder root. Run git as `git -C workspace/<repo> ...` and other commands with `workspace/<repo>` as the working directory. Before changing code, read its `AGENTS.md` or `CLAUDE.md` and any fitting `SKILL.md` by path, because hosts load no instruction files from folders below where the session started. A session restarted inside `workspace/<repo>` loses the home repo's guidance and skills.
 - **Repo table grouped by area:** `Repo | Owns | Remote`. Local clones live at `${CODE_ROOT:-$HOME/code}/<repo>`: read them to explore a repo before checking it out, and edit only in `workspace/`. When a clone is missing, ask once where clones live, then clone there.
 - **Skills:** one line per skill naming its trigger.
