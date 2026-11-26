@@ -169,6 +169,31 @@
       "accept": [
         "worktree"
       ]
+    },
+    {
+      "id": "hr-tracking-issue-part-of",
+      "task": "You are running $home-repo to set up a home repo and are writing the tracking rule in its AGENTS.md. Each body of work has one GitHub tracking issue in the home repo, and it usually spans several PRs in different member repos that merge in an order nobody knows in advance. Decide what each PR description says about the tracking issue.",
+      "options": {
+        "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
+        "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
+        "none": "PR descriptions do not name the tracking issue"
+      },
+      "accept": [
+        "partof"
+      ],
+      "needsNewGuidance": true
+    },
+    {
+      "id": "hr-control-tracking-in-jira",
+      "task": "You are running $home-repo to set up a home repo and are writing the tracking rule in its AGENTS.md. The user's design tracks each body of work in Jira, and the home repo has GitHub issues turned off. A body of work usually spans several PRs in different member repos that merge in an order nobody knows in advance. Decide what each PR description says about the tracking issue.",
+      "options": {
+        "closes": "each PR description says `Closes <owner>/<repo>#<n>` for the tracking issue",
+        "partof": "each PR description says `Part of <owner>/<repo>#<n>`, and only the PR whose merge finishes the issue says `Closes`",
+        "none": "PR descriptions do not name the tracking issue"
+      },
+      "accept": [
+        "none"
+      ]
     }
   ]
 }
