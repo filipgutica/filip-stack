@@ -1,3 +1,10 @@
+# [6.33.0](https://github.com/filipgutica/filip-stack/compare/v6.32.0...v6.33.0) (2026-11-26)
+
+
+### Features
+
+* **site:** add on-page section navigation ([#301](https://github.com/filipgutica/filip-stack/issues/301)) ([9e24a95](https://github.com/filipgutica/filip-stack/commit/9e24a95029a0952031f9058ce4a7880ea4e22e42))
+
 # [6.32.0](https://github.com/filipgutica/filip-stack/compare/v6.31.1...v6.32.0) (2026-11-25)
 
 
