@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, join, resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
@@ -161,11 +161,13 @@ const normalizeRemote = (remote) => {
 // An inherited GIT_DIR or GIT_WORK_TREE would make git describe another repository.
 const gitEnv = (env) => Object.fromEntries(Object.entries(env).filter(([name]) => !name.startsWith('GIT_')))
 
+const gitIn = ({ cwd, env }) => (args) => spawnSync('git', ['-C', cwd, ...args], {
+  encoding: 'utf8', env: gitEnv(env), timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'],
+})
+
 /** Returns the normalized `origin` of the repository containing `cwd`, or '' outside a repository or without an origin. */
 const repoIdentityOf = ({ cwd, env = process.env }) => {
-  const git = (args) => spawnSync('git', ['-C', cwd, ...args], {
-    encoding: 'utf8', env: gitEnv(env), timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'],
-  })
+  const git = gitIn({ cwd, env })
   // The configured URL, as written, and the URL git uses after `url.*.insteadOf` rewrites. A
   // rewrite could turn a host alias into github.com, so both must name the same repository.
   const configured = git(['config', '--get-all', 'remote.origin.url'])
@@ -176,6 +178,44 @@ const repoIdentityOf = ({ cwd, env = process.env }) => {
   return urls.length === 1 && sameRepo(normalizeRemote(resolved.stdout.trim()), identity)
     ? identity
     : normalizeRemote(`${urls.join('\n')}\n${resolved.stdout.trim()}`)
+}
+
+// The path a remote URL names on this machine: a `file://` URL's path, or a URL with no scheme and
+// no `host:` before its first slash. Null for any other remote.
+const localRemotePath = (url) => {
+  if (/^file:\/\//iu.test(url)) return url.slice('file://'.length)
+  if (url.includes('://')) return null
+  const colon = url.indexOf(':')
+  const slash = url.indexOf('/')
+  return colon !== -1 && (slash === -1 || colon < slash) ? null : url
+}
+
+const realPathOf = (path) => {
+  try {
+    return realpathSync(path)
+  } catch {
+    return path
+  }
+}
+
+/**
+ * Returns the identity that scopes todos and work items to the checkout containing `cwd`, or ''
+ * outside a checkout. A remote other than a local path keeps the router's `repoIdentityOf`. An
+ * origin that is a local path names the repository at its real path, resolved against the
+ * checkout, so two checkouts with `origin` at `../upstream` differ when their upstreams do. With no
+ * origin, the repository's common git directory names it, the same for each of its worktrees.
+ * Routing never uses this identity.
+ */
+const scopeIdentityOf = ({ cwd, env = process.env }) => {
+  const git = gitIn({ cwd, env })
+  const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'])
+  if (common.status !== 0) return ''
+  const urls = git(['config', '--get-all', 'remote.origin.url']).stdout.split('\n').filter(Boolean)
+  if (urls.length === 0) return normalizeRemote(realPathOf(common.stdout.trim()))
+  const path = urls.length === 1 ? localRemotePath(urls[0]) : null
+  if (path === null) return repoIdentityOf({ cwd, env })
+  const top = git(['rev-parse', '--show-toplevel'])
+  return normalizeRemote(realPathOf(resolve(top.status === 0 ? top.stdout.trim() : cwd, path)))
 }
 
 /**
@@ -319,8 +359,8 @@ const guardPatterns = [
 const guardReason = (text) => guardPatterns.find(({ pattern }) => pattern.test(text))?.reason ?? null
 
 // Local todos and work items. Each is one file in `local/`, in the snapshot's item shape, with
-// `identity`, the repository identity of the directory it was saved in, so `work start` can show
-// the ones for that repository. The identity never leaves this machine.
+// `identity`, the scope identity (`scopeIdentityOf`) of the checkout it was saved in, so commands
+// in that checkout see it. The identity never leaves this machine.
 
 const readLocalItems = (env) => {
   const dir = localDir(env)
@@ -1214,26 +1254,27 @@ const viewItems = ({ config, env }) => [
 const inCurrentEpoch = ({ item, epoch }) => (epoch === null || item.epoch == null ? item.source === 'queued' : item.epoch === epoch)
 
 /**
- * Whether an item belongs to the working directory's repo: a local item by its identity, a board
- * item by its `repo` label and the configured board's current epoch.
+ * Whether an item belongs to the checkout containing `cwd`: a local item by its identity, a board
+ * item by its `repo` label and the configured board's current epoch. Null outside a checkout.
  */
 const repoScope = ({ config, env, cwd }) => {
-  const identity = repoIdentityOf({ cwd, env })
-  const repo = allowlistedRepo({ identity, allowlist: config.allowlist })
+  const identity = scopeIdentityOf({ cwd, env })
+  if (identity === '') return null
   const epoch = currentSnapshot({ config, env })?.epoch ?? null
   return (item) => (item.source === 'local'
-    ? identity !== '' && sameRepo(item.identity, identity)
-    : repo !== null && sameRepo(item.labels.repo, repo) && inCurrentEpoch({ item, epoch }))
+    ? sameRepo(item.identity, identity)
+    : sameRepo(`github.com/${item.labels.repo}`, identity) && inCurrentEpoch({ item, epoch }))
 }
 
 /**
- * The items a command may see (spec §5). In a harness session (a session key is set), only the
- * working directory's repo's: another repo's item reads exactly as an unknown rid, so no lookup or
- * list shows it to an agent. A command the user types, with no session key, sees every item.
+ * The items a command may see (spec §5). Inside a git checkout, whatever the session, only that
+ * checkout's repo's: another repo's item reads exactly as an unknown rid, so no list or lookup
+ * shows it. Outside any checkout, every item.
  */
 const visibleItems = ({ config, env, cwd }) => {
   const items = viewItems({ config, env })
-  return sessionKeyOf(env).source === null ? items : items.filter(repoScope({ config, env, cwd }))
+  const inRepo = repoScope({ config, env, cwd })
+  return inRepo === null ? items : items.filter(inRepo)
 }
 
 const nouns = { [todoChannel]: 'todo', [workChannel]: 'work item' }
@@ -1391,7 +1432,8 @@ const flagOf = (item) => {
  * item is this repo's by its `repo` label, a local one by its identity.
  */
 const startContext = ({ config, env, cwd, exclude }) => {
-  const open = viewItems({ config, env }).filter(repoScope({ config, env, cwd })).filter((item) => item.rid !== exclude && isOpen(item))
+  const inRepo = repoScope({ config, env, cwd }) ?? (() => false)
+  const open = viewItems({ config, env }).filter(inRepo).filter((item) => item.rid !== exclude && isOpen(item))
   const work = open.filter(({ channel }) => channel === workChannel)
   const pending = work.filter(isPending)
   const refusals = refusedReplies({ config, env })
@@ -1434,7 +1476,7 @@ const workStart = async ({ args, env, cwd, out }) => {
     out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
     out(`${rid}: ${await syncAfterWrite({ config, env, name: queued.name, repo: decision.repo, out })}`)
   } else {
-    rid = saveLocalRoot({ kind: 'work', text, labels: { thread, issue }, identity: repoIdentityOf({ cwd, env }), config, env })
+    rid = saveLocalRoot({ kind: 'work', text, labels: { thread, issue }, identity: scopeIdentityOf({ cwd, env }), config, env })
     out(`${rid}: saved on this machine only (${decision.reason})`)
   }
   for (const line of startContext({ config, env, cwd, exclude: rid })) out(line)
@@ -1527,7 +1569,7 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   const config = readConfig(env)
   const decision = routeHere({ config, env, cwd })
   if (decision.target !== 'board') {
-    out(`${saveLocalRoot({ kind: 'todo', text, identity: repoIdentityOf({ cwd, env }), config, env })}: saved on this machine only (${decision.reason})`)
+    out(`${saveLocalRoot({ kind: 'todo', text, identity: scopeIdentityOf({ cwd, env }), config, env })}: saved on this machine only (${decision.reason})`)
     return 0
   }
   const { rid, name } = queueIntent({ fields: { kind: 'todo', channel: todoChannel, text, repo: decision.repo, machine: config.machine }, repo: decision.repo, config, env })

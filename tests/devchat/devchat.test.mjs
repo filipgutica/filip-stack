@@ -1687,8 +1687,8 @@ test('a target must be a seen item of the configured board, of the right kind, i
   const otherShow = await work(['show', item], { cwd: elsewhere })
   assert.deepEqual({ status: otherShow.status, stdout: otherShow.stdout, stderr: otherShow.stderr }, { status: 1, stdout: '', stderr: unknownWork })
   assert.doesNotMatch((await work(['list'], { cwd: elsewhere })).stdout, new RegExp(item, 'u'))
-  // A command the user types, with no session key, sees every repo's items.
-  assert.equal((await devchatAsync({ args: ['work', 'show', item], cwd: elsewhere, sessionEnv: {} })).status, 0)
+  // Outside any git checkout, a command sees every repo's items.
+  assert.equal((await devchatAsync({ args: ['work', 'show', item], cwd: root, sessionEnv: {} })).status, 0)
   const unseen = await work(['note', `work-${'0'.repeat(8)}-00000000`, 'Never seen.'])
   assert.equal(unseen.status, 1)
   assert.match(unseen.stderr, /no work item on this machine has that rid/u)
@@ -1901,9 +1901,59 @@ test('one long pending item never pushes the others out of pickup', async () => 
   assert.ok(show.stdout.includes(answerCallFor(long, turn)), show.stdout)
 })
 
+// Inside a git checkout, every todo and work command sees only that checkout's repo, whatever the
+// session; outside any checkout, it sees every item.
+const localRid = (result, kind) => result.stdout.match(new RegExp(`^(${kind}-[a-z0-9-]+): saved on this machine only`, 'mu'))?.[1]
+const unknownRid = (noun, list) => `devchat: no ${noun} on this machine has that rid: run devchat sync, or find it with devchat ${list} list\n`
+
+test("an Antigravity session in a T3 thread cannot see or resolve another repo's local work item", () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const sessionEnv = { T3CODE_THREAD_ID: 't3-antigravity' }
+  const repoA = makeRepo('scope-a', `git@github.com:${allowed}/scope-a.git`)
+  const repoB = makeRepo('scope-b', `git@github.com:${allowed}/scope-b.git`)
+  const item = localRid(devchat({ args: ['work', 'start', 'A goal in repo A.'], cwd: repoA, sessionEnv }), 'work')
+  assert.ok(item)
+  for (const args of [['show', item], ['done', item], ['done'], ['note', item, 'From repo B.']]) {
+    const result = devchat({ args: ['work', ...args], cwd: repoB, sessionEnv })
+    assert.equal(result.status, 1, args.join(' '))
+    assert.doesNotMatch(`${result.stdout}${result.stderr}`, /A goal in repo A/u, args.join(' '))
+  }
+  assert.equal(devchat({ args: ['work', 'show', item], cwd: repoB, sessionEnv }).stderr, unknownRid('work item', 'work'))
+  assert.doesNotMatch(devchat({ args: ['work', 'list'], cwd: repoB, sessionEnv }).stdout, new RegExp(item, 'u'))
+  assert.equal(readJson(join(localDir(), `${item}.json`)).labels.status, 'open')
+  assert.equal(devchat({ args: ['work', 'done', item], cwd: repoA, sessionEnv }).status, 0)
+})
+
+test('checkouts whose origin is a relative path to different repositories keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const clones = ['one', 'two'].map((name) => {
+    makeRepo(`relative-${name}/upstream`)
+    return makeRepo(`relative-${name}/clone`, '../upstream')
+  })
+  const [first, second] = clones.map((cwd, index) => localRid(devchat({ args: ['todo', 'add', `Todo ${index + 1}.`], cwd }), 'todo'))
+  const listed = clones.map((cwd) => devchat({ args: ['todo', 'list'], cwd }).stdout)
+  assert.match(listed[0], new RegExp(first, 'u'))
+  assert.doesNotMatch(listed[0], new RegExp(second, 'u'))
+  assert.match(listed[1], new RegExp(second, 'u'))
+  assert.doesNotMatch(listed[1], new RegExp(first, 'u'))
+  assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[1] }).stderr, unknownRid('todo', 'todo'))
+  assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[0] }).status, 0)
+})
+
+test('a checkout with no origin keeps its own work items', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const [fresh, other] = [makeRepo('no-origin-fresh'), makeRepo('no-origin-other')]
+  const item = localRid(devchat({ args: ['work', 'start', 'No origin.'], cwd: fresh }), 'work')
+  assert.ok(item)
+  assert.equal(devchat({ args: ['work', 'show', item], cwd: other }).stderr, unknownRid('work item', 'work'))
+  const done = devchat({ args: ['work', 'done', item], cwd: fresh })
+  assert.equal(done.status, 0, done.stderr)
+  assert.equal(readJson(join(localDir(), `${item}.json`)).labels.status, 'done')
+})
+
 test('a rid prefix must be unique among open and resolved items', () => {
   writeConfig({ mode: 'off', githubLogin: allowed })
-  const item = (rid, status) => ({ rid, channel: 'work', text: `Item ${rid}.`, labels: { rid, status }, createdAt: '2026-01-01T00:00:00.000Z', replies: [] })
+  const item = (rid, status) => ({ rid, channel: 'work', text: `Item ${rid}.`, labels: { rid, status }, identity: `github.com/${allowed}/tools`, createdAt: '2026-01-01T00:00:00.000Z', replies: [] })
   mkdirSync(localDir(), { recursive: true })
   writeFileSync(join(localDir(), 'work-abc-11111111.json'), JSON.stringify(item('work-abc-11111111', 'done')))
   writeFileSync(join(localDir(), 'work-abc-22222222.json'), JSON.stringify(item('work-abc-22222222', 'open')))
