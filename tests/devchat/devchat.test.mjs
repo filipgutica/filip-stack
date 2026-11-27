@@ -486,13 +486,15 @@ after(async () => {
 
 const setEpoch = (epoch) => asOwner({ path: `/messages/${marker.id}/labels`, method: 'POST', body: { set: { epoch } } })
 
-// Plays the devchat app: writes each todo intent in `inbox` as its canonical todo, then sets
-// `applied` on its marker to the last intent it handled. Returns that cursor.
-const applyInbox = async () => {
+// Plays the devchat app: writes each todo intent in `inbox` as its canonical todo, or labels it
+// `refused` when `refuse` names its rid, then sets `applied` on its marker to the last intent it
+// handled. Returns that cursor.
+const applyInbox = async ({ refuse = {} } = {}) => {
   const intents = (await asOwner({ path: '/threads?channel=inbox&limit=500' })).threads.map(({ message }) => message).filter(({ thread }) => thread !== 'app')
-  for (const message of intents) {
+  for (const message of intents.filter(({ labels }) => !labels.refused)) {
     const intent = JSON.parse(message.text)
-    await asOwner({ path: '/messages', method: 'POST', body: { channel: 'todos', id: `app:${intent.rid}`, text: intent.text, labels: { rid: intent.rid, status: 'open', host: intent.machine, repo: intent.repo } } })
+    if (refuse[intent.rid]) await asOwner({ path: `/messages/${message.id}/labels`, method: 'POST', body: { set: { refused: refuse[intent.rid] } } })
+    else await asOwner({ path: '/messages', method: 'POST', body: { channel: 'todos', id: `app:${intent.rid}`, text: intent.text, labels: { rid: intent.rid, status: 'open', host: intent.machine, repo: intent.repo } } })
   }
   const applied = String(Math.max(...intents.map(({ id }) => Number(id))))
   await asOwner({ path: `/messages/${appMarker.id}/labels`, method: 'POST', body: { set: { applied } } })
@@ -583,7 +585,7 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.deepEqual(Object.keys(sent).sort(), ['board', 'body', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
   assert.deepEqual({ target: sent.target, repo: sent.repo, lane: sent.lane, board: sent.board }, { target: rid, repo: `${allowed}/tools`, lane: 'repo', board: proxy.url })
 
-  // This is the only test that runs the app, so the marker has no `applied` label yet.
+  // No test has run the app yet, so the marker has no `applied` label.
   assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, null, 'no cursor yet')
   const applied = await applyInbox()
   mkdirSync(localDir(), { recursive: true })
@@ -599,8 +601,8 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.ok(posts().every(({ body: raw }) => JSON.parse(raw).channel === 'inbox'), 'every write is an inbox post')
 
   const list = await devchatAsync({ args: ['todo', 'list'] })
-  assert.match(list.stdout, /todo-local-1 {2}2026-01-01 {2}local {2}Water the plants\./u)
-  assert.match(list.stdout, new RegExp(`${rid} {2}\\d{4}-\\d{2}-\\d{2} {2}board {2}Review the handoff\\.`, 'u'))
+  assert.match(list.stdout, /todo-local-1 {2}2026-01-01 {2}local {3}Water the plants\./u)
+  assert.match(list.stdout, new RegExp(`${rid} {2}\\d{4}-\\d{2}-\\d{2} {2}board {3}Review the handoff\\.`, 'u'))
 })
 
 test('offline writes send in queue order, and a resend replays byte-identically', async () => {
@@ -623,6 +625,35 @@ test('offline writes send in queue order, and a resend replays byte-identically'
   assert.deepEqual(posts().map(({ body }) => body), [firstSent.body], 'the same bytes again')
   assert.equal(readJson(join(stateDir(), 'outbox', 'sent', queued[0])).inboxId, firstSent.inboxId, 'the board returns the first post')
   for (const rid of rids) assert.equal((await inboxPostsFor(rid)).length, 1, `${rid} posted once`)
+})
+
+test('todo list shows queued and sent board todos until sync retires them as applied or refused', async () => {
+  const listed = async () => (await devchatAsync({ args: ['todo', 'list'] })).stdout
+  const [kept] = await queueOffline(['Waiting to send.'])
+  assert.match(await listed(), new RegExp(`${kept} {2}\\S+ {2}queued {2}Waiting to send\\.`, 'u'))
+  await syncOk()
+  assert.match(await listed(), new RegExp(`${kept} {2}\\S+ {2}sent {4}Waiting to send\\.`, 'u'))
+
+  const add = await devchatAsync({ args: ['todo', 'add', 'Refuse me.'] })
+  const refused = ridOf(add.stdout)
+  assert.match(add.stdout, /: sent$/mu)
+  await applyInbox({ refuse: { [refused]: 'the repo is not on the allowlist' } })
+  const sync = await syncOk()
+  assert.match(sync.stdout, new RegExp(`^refused ${refused}: the repo is not on the allowlist$`, 'mu'))
+  assert.deepEqual(filesIn('outbox', 'sent'), [], 'both decided intents retire')
+  const [rejectedFile] = filesIn('outbox', 'rejected')
+  assert.equal(readJson(join(stateDir(), 'outbox', 'rejected', rejectedFile)).refused, 'the repo is not on the allowlist')
+  const list = await listed()
+  assert.match(list, new RegExp(`${kept} {2}\\S+ {2}board {3}Waiting to send\\.`, 'u'))
+  assert.doesNotMatch(list, new RegExp(refused, 'u'))
+
+  // Mode off has no board: the list reads only local/, though a snapshot and outbox exist.
+  await queueOffline(['Still queued.'])
+  writeConfig({ mode: 'off' })
+  assert.match(await devchatAsync({ args: ['todo', 'add', 'Local only.'] }).then(({ stdout }) => stdout), /saved on this machine only \(mode off\)/u)
+  const offList = await listed()
+  assert.match(offList, /local {3}Local only\./u)
+  assert.doesNotMatch(offList, /board|queued|sent/u)
 })
 
 test('a network error or a 5xx stops the flush until the next run', async () => {

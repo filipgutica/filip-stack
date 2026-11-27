@@ -425,6 +425,7 @@ const outboxNames = (dir) => {
     .sort()
 }
 const pendingOutbox = (env) => outboxNames(outboxDir(env))
+const sentNames = (env) => outboxNames(sentDir(env))
 
 const maxOutboxEntryBytes = 64 * 1024
 
@@ -681,6 +682,30 @@ const flush = async ({ client, config, env, out }) => {
   }
 }
 
+// Board message IDs are log indexes, so a cursor covers every ID at or below it.
+const isCovered = ({ id, applied }) => [id, applied].every((value) => isString(value) && /^\d+$/u.test(value)) && BigInt(id) <= BigInt(applied)
+
+/**
+ * Retires each sent intent the app has decided, which the `applied` cursor says (spec §3, decided
+ * intents). One the app labelled `refused` moves to `rejected/` with its reason, which sync
+ * prints. Any other covered intent was applied, so its file goes.
+ */
+const retireDecided = async ({ client, env, applied, out }) => {
+  const covered = sentNames(env)
+    .map((name) => ({ name, entry: readOutboxEntry(join(sentDir(env), name)).entry }))
+    .filter(({ entry }) => isCovered({ id: entry?.inboxId, applied }))
+  if (covered.length === 0) return
+  const refused = new Map((await pullChannel({ client, channel: 'inbox', label: 'refused' })).map((message) => [message.thread, message.labels.refused]))
+  for (const { name, entry } of covered) {
+    const reason = refused.get(entry.target)
+    if (reason !== undefined) {
+      writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
+      out(`refused ${entry.target}: ${reason}`)
+    }
+    unlinkSync(join(sentDir(env), name))
+  }
+}
+
 const syncSteps = async ({ config, env, out, client }) => {
   const snapshot = readSnapshot(env)
   const epoch = await readBoardEpoch(client)
@@ -693,6 +718,7 @@ const syncSteps = async ({ config, env, out, client }) => {
   const items = await pullSnapshotItems(client)
   writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, epoch, applied, items })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
+  await retireDecided({ client, env, applied, out })
 }
 
 /**
@@ -719,15 +745,17 @@ const runSync = async ({ config, env, out = () => {}, signal }) => {
 // already succeeded, so no outcome here fails the command.
 const postWriteSyncMs = 3000
 
-const syncAfterWrite = async ({ config, env, name }) => {
+const syncAfterWrite = async ({ config, env, name, out }) => {
   let reason
   try {
-    const result = await runSync({ config, env, signal: AbortSignal.timeout(postWriteSyncMs) })
+    // Of this sync's lines, only a refusal of an earlier intent is news to the user here.
+    const refusals = (line) => line.startsWith('refused ') && out(line)
+    const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs) })
     reason = result.locked ? 'another sync is running' : result.stopped
   } catch (error) {
     reason = error.message
   }
-  if (existsSync(join(sentDir(env), name))) return 'sent'
+  if (!existsSync(join(outboxDir(env), name))) return 'sent'
   return `not sent yet (${reason ?? 'it is still queued'}): the next devchat sync sends it`
 }
 
@@ -761,20 +789,39 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   }
   const { rid, name } = queueTodo({ text, repo: decision.repo, config, env })
   out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
-  out(`${rid}: ${await syncAfterWrite({ config, env, name })}`)
+  out(`${rid}: ${await syncAfterWrite({ config, env, name, out })}`)
   return 0
+}
+
+// The todo intents this machine queued or sent that the app has not decided yet.
+const outstandingTodos = (env) => [
+  ...pendingOutbox(env).map((name) => ({ path: join(outboxDir(env), name), source: 'queued' })),
+  ...sentNames(env).map((name) => ({ path: join(sentDir(env), name), source: 'sent' })),
+].flatMap(({ path, source }) => {
+  const { entry } = readOutboxEntry(path)
+  const intent = isString(entry?.body) ? parseJson(parseJson(entry.body)?.text) : undefined
+  if (!isRecord(intent) || intent.kind !== 'todo' || ![intent.rid, intent.text, entry.queuedAt].every(isString)) return []
+  return [{ rid: intent.rid, channel: todoChannel, text: intent.text, labels: { status: 'open' }, createdAt: entry.queuedAt, source }]
+})
+
+// The offline view of board todos (spec §3): the snapshot's, then outstanding ones it lacks.
+const boardTodos = (env) => {
+  const pulled = (readSnapshot(env)?.items ?? []).filter((item) => item.channel === todoChannel).map((item) => ({ ...item, source: 'board' }))
+  const pulledRids = new Set(pulled.map(({ rid }) => rid))
+  return [...pulled, ...outstandingTodos(env).filter(({ rid }) => !pulledRids.has(rid))]
 }
 
 const todoList = ({ args, env, out }) => {
   if (args.length > 0) throw new UsageError('usage: devchat todo list')
-  const board = (readSnapshot(env)?.items ?? []).filter((item) => item.channel === todoChannel).map((item) => ({ ...item, source: 'board' }))
   const local = readLocalTodos(env).map((item) => ({ ...item, source: 'local' }))
+  // Mode off has no board, so it lists `local/` only (spec §3).
+  const board = readConfig(env).mode === 'off' ? [] : boardTodos(env)
   const open = [...board, ...local].filter(isOpen).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
   if (open.length === 0) {
     out('No open todos.')
     return
   }
-  for (const item of open) out(`${item.rid}  ${item.createdAt.slice(0, 10)}  ${item.source.padEnd(5)}  ${item.text}`)
+  for (const item of open) out(`${item.rid}  ${item.createdAt.slice(0, 10)}  ${item.source.padEnd(6)}  ${item.text}`)
 }
 
 const todoResolve = (status) => ({ args, env, out }) => {
