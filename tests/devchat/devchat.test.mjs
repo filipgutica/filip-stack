@@ -32,6 +32,7 @@ mkdirSync(fakeBin)
 writeFileSync(join(fakeBin, 'systemctl'), `#!/bin/sh
 printf '%s\\n' "$*" >> "$HOME/systemctl.log"
 case "$*" in
+  *"\${FAKE_SYSTEMCTL_FAIL:-no such call}"*) exit 1 ;;
   *enable*) touch "$HOME/timer-enabled" ;;
   *is-active*) if [ -f "$HOME/timer-enabled" ]; then echo active; else echo inactive; exit 3; fi ;;
 esac
@@ -945,7 +946,10 @@ test('setup --dry-run prints every step and changes nothing', { skip: process.pl
   assert.equal(dryRun.status, 0, dryRun.stderr)
   const configFile = join(env.XDG_CONFIG_HOME, 'devchat', 'config.json')
   const units = join(env.XDG_CONFIG_HOME, 'systemd', 'user')
+  const shim = join(home, '.local', 'bin', 'devchat')
+  const files = [configFile, join(stateDir(), 'plugin-path'), shim, join(units, 'devchat-sync.service'), join(units, 'devchat-sync.timer')]
   assert.deepEqual(dryRun.stdout.trim().split('\n'), [
+    ...files.map((file) => `preflight ${file}: ok, new`),
     `would write ${configFile}: mode readwrite, GitHub login ${allowed}, allowlist ${allowed}, board https://${boardHost}:8443/api/board`,
     `would write ${join(stateDir(), 'plugin-path')}: plugin root and version`,
     `would write ${join(home, '.local', 'bin', 'devchat')}`,
@@ -957,6 +961,19 @@ test('setup --dry-run prints every step and changes nothing', { skip: process.pl
   ])
   assert.deepEqual(readdirSync(home), [], 'nothing written')
   assert.deepEqual(networkCalls(), [])
+
+  // A file setup did not write is refused in the preflight, in a dry run and a real run alike.
+  mkdirSync(join(home, '.local', 'bin'), { recursive: true })
+  writeFileSync(shim, '#!/bin/sh\necho "my own devchat"\n')
+  for (const extra of [['--dry-run'], []]) {
+    const refused = await devchatAsync({ args: ['setup', '--host', boardHost, ...setupArgs, ...extra], preload: true })
+    assert.equal(refused.status, 1, extra.join(' '))
+    assert.match(refused.stdout, new RegExp(`preflight ${shim}: refused, not written by devchat setup\n`, 'u'))
+    assert.match(refused.stdout, new RegExp(`setup changed nothing\\. Move each refused file aside, or remove it, and run setup again: ${shim}$`, 'mu'))
+    assert.doesNotMatch(refused.stdout, /^(?:would )?(?:write|run) /mu, 'no step runs')
+  }
+  assert.deepEqual(readdirSync(home), ['.local'], 'nothing else written')
+  assert.equal(readFileSync(shim, 'utf8'), '#!/bin/sh\necho "my own devchat"\n')
 
   const usage = await devchatAsync({ args: ['setup', '--host', boardHost, '--github-login', allowed] })
   assert.equal(usage.status, 1)
@@ -988,4 +1005,17 @@ test('setup writes the config, the shim, and the timer, then runs doctor', { ski
   const stale = spawnSync(join(home, '.local', 'bin', 'devchat'), ['todo', 'list'], { encoding: 'utf8', env, timeout: 10_000 })
   assert.equal(stale.status, 127)
   assert.match(stale.stderr, /the plugin path file is missing or stale/u)
+
+  // A rerun updates setup's own files.
+  const rerun = await devchatAsync({ args: ['setup', '--board-url', proxy.url, ...setupArgs] })
+  assert.equal(rerun.status, 0, rerun.stdout)
+  assert.match(rerun.stdout, new RegExp(`preflight ${join(home, '.local', 'bin', 'devchat')}: ok, setup updates it`, 'u'))
+})
+
+test('setup stops before enabling the timer when an earlier step fails', { skip: process.platform !== 'linux' && 'the fake timer is systemd' }, async () => {
+  const run = await devchatAsync({ args: ['setup', '--board-url', proxy.url, ...setupArgs], sessionEnv: { FAKE_SYSTEMCTL_FAIL: 'daemon-reload' } })
+  assert.equal(run.status, 1)
+  assert.match(run.stdout, /FAIL systemctl --user daemon-reload failed .*\nsetup stopped: the steps after this one did not run\n$/u)
+  assert.deepEqual(readFileSync(join(home, 'systemctl.log'), 'utf8').split('\n').filter(Boolean), ['--user daemon-reload'], 'enable never ran')
+  assert.doesNotMatch(run.stdout, /devchat doctor:/u)
 })

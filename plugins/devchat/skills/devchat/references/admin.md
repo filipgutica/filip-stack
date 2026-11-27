@@ -3,7 +3,7 @@
 Run these only when the user asks. Use the same launcher as the agent command. After `devchat setup`, the `devchat` command on PATH runs the same script.
 
 ```text
-devchat todo list            # open todos from the board snapshot and this machine, oldest first, each with its rid and source
+devchat todo list            # open todos, oldest first, each with its rid and source: board, queued, sent, or local
 devchat todo done <rid>      # mark a todo on this machine done; a unique rid prefix is enough
 devchat todo drop <rid>      # drop a todo on this machine
 devchat sync                 # send the outbox, then pull the board into the snapshot
@@ -13,7 +13,8 @@ devchat guard < <file>       # exit 0 when the text passes the guard, 1 with the
 ```
 
 - `todo done` and `todo drop` change only todos on this machine. Resolve a board todo in the devchat UI.
-- `setup` joins a board without sudo: it writes the config, installs the `~/.local/bin/devchat` shim and a 15-minute sync timer (a systemd user timer on Linux, a launchd agent on macOS), then runs `doctor`. Run it with `--dry-run` first and show the user the steps. `--board-url <url>` replaces `--host` and `--port`.
+- `setup` joins a board without sudo: it writes the config, installs the `~/.local/bin/devchat` shim and a 15-minute sync timer (a systemd user timer on Linux, a launchd agent on macOS), then runs `doctor`. It checks every file first, and changes nothing when one exists that setup did not write; it names that file. Run it with `--dry-run` first and show the user the steps. `--board-url <url>` replaces `--host` and `--port`; the URL must use https, or http on a loopback host.
+- In mode `off`, `todo list` shows only todos on this machine.
 
 ## Where devchat keeps its files
 

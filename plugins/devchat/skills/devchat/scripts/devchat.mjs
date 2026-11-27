@@ -5,7 +5,7 @@
 // request. A board write goes to `outbox/`, and `devchat sync` alone sends it, with plain `fetch`.
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -1030,7 +1030,12 @@ const shellQuote = (value) => `'${value.replaceAll("'", "'\\''")}'`
 const systemdQuote = (value) => `"${value.replace(/[\\"]/gu, '\\$&').replaceAll('%', '%%')}"`
 const xmlEscape = (value) => value.replace(/[<>&'"]/gu, (character) => `&#${character.codePointAt(0)};`)
 
+// Setup writes this line into every shim, unit, and plist it installs, and replaces only a file
+// that carries it.
+const managedMarker = 'devchat-managed: devchat setup wrote this file and replaces it when rerun'
+
 const shimScript = (env) => `#!/bin/sh
+# ${managedMarker}
 # devchat shim, written by devchat setup. It runs the plugin that the plugin path file names; the
 # session hook and devchat setup keep that file current.
 plugin_root=$(sed -n 1p ${shellQuote(pluginPathFile(env))} 2>/dev/null)
@@ -1043,7 +1048,8 @@ exec /bin/sh "$launcher" "$@"
 `
 
 const systemdUnits = (env) => ({
-  [`${timerUnit}.service`]: `[Unit]
+  [`${timerUnit}.service`]: `# ${managedMarker}
+[Unit]
 Description=devchat sync
 
 [Service]
@@ -1051,7 +1057,8 @@ Type=oneshot
 Environment=${systemdQuote(`XDG_CONFIG_HOME=${configHome(env)}`)} ${systemdQuote(`XDG_STATE_HOME=${stateHome(env)}`)}
 ExecStart=/bin/sh ${systemdQuote(shimPath())} sync
 `,
-  [`${timerUnit}.timer`]: `[Unit]
+  [`${timerUnit}.timer`]: `# ${managedMarker}
+[Unit]
 Description=Run devchat sync every 15 minutes
 
 [Timer]
@@ -1065,6 +1072,7 @@ WantedBy=timers.target
 
 const launchdPlist = (env) => `<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- ${managedMarker} -->
 <plist version="1.0">
 <dict>
   <key>Label</key><string>${launchdLabel}</string>
@@ -1076,8 +1084,43 @@ const launchdPlist = (env) => `<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 `
 
+// The nearest folder that exists on the way to `path` must be a writable directory.
+const canCreate = (path) => {
+  let folder = dirname(path)
+  while (!existsSync(folder)) folder = dirname(folder)
+  try {
+    accessSync(folder, constants.W_OK)
+    return statSync(folder).isDirectory()
+  } catch {
+    return false
+  }
+}
+
+/** Returns why setup must not write `path`, or null. `managed` files must carry the marker. */
+const destinationProblem = ({ path, managed = false, json = false }) => {
+  let stat
+  try {
+    stat = lstatSync(path)
+  } catch (error) {
+    if (error.code !== 'ENOENT') return error.code
+    return canCreate(path) ? null : 'its folder cannot be created or written'
+  }
+  if (!stat.isFile()) return 'not a regular file'
+  const text = readFileSync(path, 'utf8')
+  if (managed && !text.includes(managedMarker)) return 'not written by devchat setup'
+  if (json && !isRecord(parseJson(text))) return 'not a JSON object'
+  try {
+    accessSync(path, constants.W_OK)
+    return null
+  } catch {
+    return 'not writable'
+  }
+}
+
 const fileStep = ({ path, content, mode = 0o644 }) => ({
   describe: `write ${path}`,
+  path,
+  preflight: () => destinationProblem({ path, managed: true }),
   run: () => {
     writeAtomic(path, content)
     chmodSync(path, mode)
@@ -1097,6 +1140,8 @@ const configStep = ({ env, settings }) => {
   const path = configPath(env)
   return {
     describe: `write ${path}: mode ${settings.mode}, GitHub login ${settings.githubLogin}, allowlist ${settings.allowlist.join(', ')}, board ${settings.boardUrl}`,
+    path,
+    preflight: () => destinationProblem({ path, json: true }),
     run: () => {
       // Keep the keys setup does not set, such as `machine`.
       const existing = existsSync(path) ? readJson(path) : {}
@@ -1126,32 +1171,48 @@ const timerSteps = (env) => {
   return [{ describe: `skip the sync timer: ${process.platform} has none devchat installs. Run "devchat sync" every 15 minutes with your scheduler`, run: () => {} }]
 }
 
+const pluginPathStep = (env) => {
+  const path = pluginPathFile(env)
+  return {
+    describe: `write ${path}: plugin root and version`,
+    path,
+    preflight: () => destinationProblem({ path }),
+    run: () => refreshPluginPath({ root: pluginRoot, version: pluginVersion(pluginRoot), env }),
+  }
+}
+
+// Checks every file setup would write before it writes any. Returns the refused paths.
+const preflight = ({ steps, out }) => steps.filter((step) => step.preflight).flatMap((step) => {
+  const problem = step.preflight()
+  out(`preflight ${step.path}: ${problem ? `refused, ${problem}` : existsSync(step.path) ? 'ok, setup updates it' : 'ok, new'}`)
+  return problem ? [step.path] : []
+})
+
 const setup = async ({ args, env, cwd, out }) => {
   const { dryRun, settings } = readSetupArgs(args)
-  const steps = [
-    configStep({ env, settings }),
-    { describe: `write ${pluginPathFile(env)}: plugin root and version`, run: () => refreshPluginPath({ root: pluginRoot, version: pluginVersion(pluginRoot), env }) },
-    fileStep({ path: shimPath(), content: shimScript(env), mode: 0o755 }),
-    ...timerSteps(env),
-  ]
+  const steps = [configStep({ env, settings }), pluginPathStep(env), fileStep({ path: shimPath(), content: shimScript(env), mode: 0o755 }), ...timerSteps(env)]
+  const refused = preflight({ steps, out })
+  if (refused.length > 0) {
+    out(`setup changed nothing. Move each refused file aside, or remove it, and run setup again: ${refused.join(', ')}`)
+    return 1
+  }
   if (dryRun) {
     for (const step of steps) out(`would ${step.describe}`)
     out('would run devchat doctor')
     return 0
   }
-  let failed = false
   for (const step of steps) {
     out(step.describe)
     try {
       step.run()
     } catch (error) {
-      failed = true
       out(`FAIL ${error.message}`)
+      out('setup stopped: the steps after this one did not run')
+      return 1
     }
   }
   out('devchat doctor:')
-  const code = await doctor({ args: [], env, cwd, out })
-  return failed ? 1 : code
+  return doctor({ args: [], env, cwd, out })
 }
 
 const commands = { todo, guard, doctor, sync, setup }
