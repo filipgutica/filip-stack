@@ -447,7 +447,7 @@ const requestTimeoutMs = 10_000
 
 const boardClient = ({ boardUrl, signal }) => {
   const base = boardUrl.replace(/\/+$/u, '')
-  const call = async ({ url, method = 'GET', body, headers, missingOk = false }) => {
+  const call = async ({ url, method = 'GET', body, headers }) => {
     const timeout = AbortSignal.timeout(requestTimeoutMs)
     const where = `${method} ${new URL(url).pathname}`
     let response
@@ -458,7 +458,6 @@ const boardClient = ({ boardUrl, signal }) => {
     }
     if (!response.ok) {
       await response.body?.cancel()
-      if (missingOk && response.status === 404) return null
       throw new SyncStop(`${where} answered ${response.status}`)
     }
     try {
@@ -470,17 +469,16 @@ const boardClient = ({ boardUrl, signal }) => {
   return {
     get: (path) => call({ url: `${base}${path}` }),
     post: ({ body, profile }) => call({ url: `${base}/messages`, method: 'POST', body, headers: { 'content-type': 'application/json', 'x-board-profile': profile } }),
-    // The devchat app serves `/devchat.json` at the root of the board's HTTPS origin.
-    appStatus: () => call({ url: new URL('/devchat.json', `${base}/`).href, missingOk: true }),
   }
 }
 
-/** Reads every thread root in a channel, page by page. */
-const pullChannel = async ({ client, channel }) => {
+/** Reads every thread root in a channel, page by page; with `label`, only roots that carry that label key. */
+const pullChannel = async ({ client, channel, label }) => {
   const roots = []
   let before = null
   do {
     const query = new URLSearchParams({ channel, limit: '500' })
+    if (label) query.set('label', label)
     if (before) query.set('before', before)
     const page = await client.get(`/threads?${query}`)
     if (!Array.isArray(page?.threads)) throw new SyncStop(`GET /threads?channel=${channel} sent an unexpected answer`)
@@ -496,6 +494,15 @@ const readBoardEpoch = async (client) => {
   const epoch = marker?.labels?.epoch
   if (typeof epoch !== 'string') throw new SyncStop('the board has no marker with an epoch: the host setup posts it')
   return epoch
+}
+
+/**
+ * Reads the app's `applied` cursor: the label on the app marker, the `inbox` root whose client ID
+ * is `app` (devchat's `docs/layout.md`). No marker or no label yet means no cursor yet.
+ */
+const readApplied = async (client) => {
+  const marker = (await pullChannel({ client, channel: 'inbox', label: 'applied' })).find((message) => message.thread === 'app')
+  return marker?.labels?.applied ?? null
 }
 
 // The snapshot keeps open and blocked roots of these channels, in the local item shape.
@@ -620,8 +627,7 @@ const syncSteps = async ({ config, env, out, client }) => {
     throw new SyncStop(`the board epoch is ${epoch} and the snapshot's is ${snapshot.epoch}: nothing is sent or pulled until the outbox is reconciled`)
   }
   if (config.mode === 'readwrite') await flush({ client, config, env, out })
-  const status = await client.appStatus()
-  const applied = ['string', 'number'].includes(typeof status?.applied) ? String(status.applied) : null
+  const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
   const items = await pullSnapshotItems(client)
   writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, epoch, applied, items })

@@ -413,9 +413,9 @@ test('the hook launcher never runs a Node shim from PATH', () => {
 })
 
 // Board tests. A real board from `@filipgutica/devchat/testing` sits behind a proxy that plays
-// `tailscale serve`: it adds the tailnet login and the board's host, serves the app's
-// `/devchat.json`, logs each request's raw body, and injects failures on demand. CLI runs here
-// spawn asynchronously, because the proxy answers from this process.
+// `tailscale serve`: it adds the tailnet login and the board's host, logs each request's raw
+// body, and injects failures on demand. The test plays the devchat app through the owner token.
+// CLI runs here spawn asynchronously, because the proxy answers from this process.
 const boardHost = 'board.example.test'
 const boardLogin = 'user@example.com'
 const machine = 'test-box'
@@ -423,10 +423,11 @@ const profile = `${machine}-claude`
 let board
 let proxy
 let marker
+let appMarker
 
 const startTailnetProxy = async (upstreamUrl) => {
   const upstream = new URL(upstreamUrl)
-  const state = { requests: [], fault: () => null, app: null }
+  const state = { requests: [], fault: () => null, onRequest: () => {} }
   const forward = ({ req, res, body }) => {
     const headers = { host: boardHost, 'tailscale-user-login': boardLogin }
     for (const name of ['content-type', 'x-board-profile']) if (req.headers[name]) headers[name] = req.headers[name]
@@ -439,9 +440,8 @@ const startTailnetProxy = async (upstreamUrl) => {
     const fault = state.fault(req)
     if (fault === 'hang') return
     if (typeof fault === 'number') return res.writeHead(fault).end('{"error":{}}')
-    if (req.url !== '/devchat.json') return setTimeout(() => forward({ req, res, body }), fault?.delayMs ?? 0)
-    if (!state.app) return res.writeHead(404).end()
-    res.writeHead(200, { 'content-type': 'application/json' }).end(JSON.stringify(state.app))
+    // A held request reaches the board only once the test resolves `until`.
+    Promise.resolve(fault?.until).then(() => forward({ req, res, body }))
   }
   const server = createServer((req, res) => {
     const chunks = []
@@ -449,6 +449,7 @@ const startTailnetProxy = async (upstreamUrl) => {
     req.on('end', () => {
       const body = Buffer.concat(chunks).toString('utf8')
       state.requests.push({ method: req.method, path: req.url, body, profile: req.headers['x-board-profile'] })
+      state.onRequest(req)
       answer({ req, res, body })
     })
   })
@@ -474,6 +475,8 @@ before(async () => {
   board = await startBoardServer({ directory: root })
   proxy = await startTailnetProxy(board.url)
   ;({ message: marker } = await asOwner({ path: '/messages', method: 'POST', body: { channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } } }))
+  // The app posts its marker in `inbox` and labels it `applied` after its first batch.
+  ;({ message: appMarker } = await asOwner({ path: '/messages', method: 'POST', body: { channel: 'inbox', id: 'app', text: 'devchat app marker' } }))
 })
 after(async () => {
   proxy?.close()
@@ -482,14 +485,17 @@ after(async () => {
 
 const setEpoch = (epoch) => asOwner({ path: `/messages/${marker.id}/labels`, method: 'POST', body: { set: { epoch } } })
 
-// Plays the devchat app: writes each todo intent in `inbox` as its canonical todo, then moves `applied`.
+// Plays the devchat app: writes each todo intent in `inbox` as its canonical todo, then sets
+// `applied` on its marker to the last intent it handled. Returns that cursor.
 const applyInbox = async () => {
-  const { threads } = await asOwner({ path: '/threads?channel=inbox&limit=500' })
-  for (const { message } of threads) {
+  const intents = (await asOwner({ path: '/threads?channel=inbox&limit=500' })).threads.map(({ message }) => message).filter(({ thread }) => thread !== 'app')
+  for (const message of intents) {
     const intent = JSON.parse(message.text)
     await asOwner({ path: '/messages', method: 'POST', body: { channel: 'todos', id: `app:${intent.rid}`, text: intent.text, labels: { rid: intent.rid, status: 'open', host: intent.machine, repo: intent.repo } } })
   }
-  proxy.app = { name: 'devchat', applied: String(Math.max(...threads.map(({ message }) => Number(message.id)))) }
+  const applied = String(Math.max(...intents.map(({ id }) => Number(id))))
+  await asOwner({ path: `/messages/${appMarker.id}/labels`, method: 'POST', body: { set: { applied } } })
+  return applied
 }
 
 const inboxPostsFor = async (rid) => (await asOwner({ path: '/threads?channel=inbox&limit=500' })).threads.filter(({ message }) => message.thread === rid)
@@ -508,7 +514,7 @@ const boardSession = { CLAUDE_CODE_SESSION_ID: 'board-session' }
 const joinBoard = ({ mode = 'readwrite', boardUrl = proxy.url, machineName = machine } = {}) => {
   proxy.requests = []
   proxy.fault = () => null
-  proxy.app = null
+  proxy.onRequest = () => {}
   writeConfig({ ...readwrite, mode, machine: machineName, boardUrl })
   if (!existsSync(join(stateDir(), 'sessions'))) startSession({ key: boardSession.CLAUDE_CODE_SESSION_ID, cwd: repos.allowed })
 }
@@ -569,7 +575,9 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.deepEqual(Object.keys(sent).sort(), ['body', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
   assert.deepEqual({ target: sent.target, repo: sent.repo, lane: sent.lane }, { target: rid, repo: `${allowed}/tools`, lane: 'repo' })
 
-  await applyInbox()
+  // This is the only test that runs the app, so the marker has no `applied` label yet.
+  assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, null, 'no cursor yet')
+  const applied = await applyInbox()
   mkdirSync(localDir(), { recursive: true })
   writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
   const sync = await devchatAsync({ args: ['sync'] })
@@ -577,7 +585,7 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   const snapshot = readJson(join(stateDir(), 'snapshot.json'))
   assert.equal(snapshot.schema, 1)
   assert.ok(Date.parse(snapshot.pulledAt) <= Date.now())
-  assert.deepEqual({ epoch: snapshot.epoch, applied: snapshot.applied }, { epoch: '1', applied: proxy.app.applied })
+  assert.deepEqual({ epoch: snapshot.epoch, applied: snapshot.applied }, { epoch: '1', applied })
   assert.equal(snapshot.items.find((item) => item.rid === rid)?.labels.repo, `${allowed}/tools`)
   assert.deepEqual(readdirSync(stateDir()).filter((name) => name.endsWith('.tmp')), [], 'the snapshot is written by rename')
   assert.ok(proxy.requests.every(({ method, path }) => method === 'GET' || path === '/api/board/messages'), 'the client writes only to /messages')
@@ -686,12 +694,19 @@ test('one flusher: a second sync exits while another holds the outbox lock', asy
   assert.equal(posts().length, 1)
   assert.equal(existsSync(lock), false, 'sync releases its lock')
 
-  // Two syncs at once: the slow first one holds the lock, so the second sends nothing.
+  // Two syncs at once: the proxy holds the first one's send, so it holds the lock while the second runs.
   await queueOffline(['Race me.'])
-  proxy.fault = (req) => (req.method === 'POST' ? { delayMs: 1500 } : null)
-  const [first, second] = await Promise.all([devchatAsync({ args: ['sync'] }), new Promise((resolve) => setTimeout(resolve, 500)).then(() => devchatAsync({ args: ['sync'] }))])
-  assert.deepEqual([first.status, second.status], [0, 0], `${first.stderr}${second.stderr}`)
+  let release
+  const released = new Promise((resolve) => { release = resolve })
+  const sending = new Promise((resolve) => { proxy.onRequest = (req) => req.method === 'POST' && resolve() })
+  proxy.fault = (req) => (req.method === 'POST' ? { until: released } : null)
+  const first = devchatAsync({ args: ['sync'] })
+  await sending
+  const second = await devchatAsync({ args: ['sync'] })
+  release()
+  assert.equal(second.status, 0, second.stderr)
   assert.match(second.stdout, /another devchat sync holds the outbox lock/u)
+  assert.equal((await first).status, 0)
   assert.equal(posts().length, 1)
 })
 
