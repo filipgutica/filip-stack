@@ -173,7 +173,7 @@ const repoIdentityOf = ({ cwd, env = process.env }) => {
   if (configured.status !== 0 || resolved.status !== 0) return ''
   const urls = configured.stdout.split('\n').filter(Boolean)
   const identity = normalizeRemote(urls.join('\n'))
-  return urls.length === 1 && normalizeRemote(resolved.stdout.trim()) === identity
+  return urls.length === 1 && sameRepo(normalizeRemote(resolved.stdout.trim()), identity)
     ? identity
     : normalizeRemote(`${urls.join('\n')}\n${resolved.stdout.trim()}`)
 }
@@ -599,9 +599,18 @@ const queueIntent = ({ fields, repo, config, env, epoch = intendedEpoch({ config
     throw new UsageError(`the ${intentNouns[fields.kind]} is too long for the board: its intent is ${size} characters, and the board takes at most ${boardTextLimit}. Shorten it and try again. Nothing was saved.`)
   }
   const queuedAt = new Date().toISOString()
-  const name = `${queuedAt.replace(/[-:.]/gu, '')}-post-${rid}.json`
+  const name = nextOutboxName({ env, rid })
   writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, epoch, body: requestBodyOf(intent), queuedAt })
   return { rid, name }
+}
+
+// Outbox names sort in queue order by a sequence number, never by the clock, so a reply queued
+// after its root always sorts after it: `q` and 12 digits, which also sort after the time-stamped
+// names of earlier versions. Two writers at the same moment may share a number; their rids then
+// order them, and neither is the other's root.
+const nextOutboxName = ({ env, rid }) => {
+  const used = [outboxDir(env), sentDir(env), rejectedDir(env)].flatMap(outboxNames).map((name) => /^q(\d{12})-/u.exec(name)?.[1]).filter(Boolean)
+  return `q${String(Math.max(0, ...used.map(Number)) + 1).padStart(12, '0')}-post-${rid}.json`
 }
 
 // Every `.json` name in an outbox folder, whatever it is, so a directory, a symbolic link, or
@@ -976,6 +985,9 @@ const flush = async ({ client, config, env, epoch, out, outcomes }) => {
     }
     // A file queued with the epoch unknown takes the epoch of the first sync that reads the
     // marker. One queued under another epoch is held: the board was restored after it was queued.
+    // A reply queued on a root still in outbox/ takes the root's epoch, or none when the root has
+    // none: it sorts after the root, so this loop stamps it right after the root, under the same
+    // epoch, or stops at the root first.
     if (entry.epoch == null) writeJsonAtomic(path, { ...entry, epoch })
     else if (entry.epoch !== epoch) {
       throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`, heldBrief)
@@ -1027,7 +1039,7 @@ const retireDecided = ({ env, decided, items, out }) => {
       writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
       out(`refused ${entry.target}: ${reason}`, { repo: entry.repo })
       const root = items.find((item) => item.rid === intentOfEntry(entry)?.root)
-      if (root && isPending(root)) out(`not applied: ${root.rid} waits on a reply. ${answerCall(root)}`, { repo: entry.repo })
+      if (root && isPending(root)) out(`not applied: ${root.rid} ${root.changed ? changedNote : `waits on a reply. ${answerCall(root)}`}`, { repo: entry.repo })
     }
     ignoreMissing(() => unlinkSync(join(sentDir(env), name)))
   }
@@ -1195,6 +1207,33 @@ const viewItems = ({ config, env }) => [
   ...readLocalItems(env).map((item) => ({ ...item, source: 'local' })),
 ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
+// A board item is in the configured board's current epoch when its epoch is the snapshot's, or,
+// for a root still queued with the epoch unknown, when a reply can bind to it at flush.
+const inCurrentEpoch = ({ item, epoch }) => (item.epoch == null ? item.source === 'queued' : item.epoch === epoch)
+
+/**
+ * Whether an item belongs to the working directory's repo: a local item by its identity, a board
+ * item by its `repo` label and the configured board's current epoch.
+ */
+const repoScope = ({ config, env, cwd }) => {
+  const identity = repoIdentityOf({ cwd, env })
+  const repo = allowlistedRepo({ identity, allowlist: config.allowlist })
+  const epoch = currentSnapshot({ config, env })?.epoch ?? null
+  return (item) => (item.source === 'local'
+    ? identity !== '' && sameRepo(item.identity, identity)
+    : repo !== null && sameRepo(item.labels.repo, repo) && inCurrentEpoch({ item, epoch }))
+}
+
+/**
+ * The items a command may see (spec §5). In a harness session (a session key is set), only the
+ * working directory's repo's: another repo's item reads exactly as an unknown rid, so no lookup or
+ * list shows it to an agent. A command the user types, with no session key, sees every item.
+ */
+const visibleItems = ({ config, env, cwd }) => {
+  const items = viewItems({ config, env })
+  return sessionKeyOf(env).source === null ? items : items.filter(repoScope({ config, env, cwd }))
+}
+
 const nouns = { [todoChannel]: 'todo', [workChannel]: 'work item' }
 const listCommands = { [todoChannel]: 'devchat todo list', [workChannel]: 'devchat work list' }
 
@@ -1215,9 +1254,9 @@ const threadItem = ({ items, noun, env }) => {
  * A rid this machine has not seen names nothing: run sync first. The argument may be anything the
  * agent pasted, so no error prints it.
  */
-const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
+const findTarget = ({ prefix, channel, openOnly = false, config, env, cwd }) => {
   const noun = nouns[channel]
-  const items = viewItems({ config, env }).filter((item) => item.channel === channel)
+  const items = visibleItems({ config, env, cwd }).filter((item) => item.channel === channel)
   if (prefix === undefined) return threadItem({ items, noun, env })
   if (!ridPattern.test(prefix)) throw new UsageError(`the ${noun} rid is not a devchat rid: it holds letters, digits, and . _ : - only`)
   const exact = items.filter((item) => item.rid === prefix)
@@ -1229,17 +1268,13 @@ const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
 }
 
 /**
- * Checks that this session may write on a board item, and returns the router's decision: a board
- * route, from the item's own repo, and the item seen in the configured board's current epoch. A
- * board restore since would make the item another board's, so a reply to it waits for a sync.
- * Nothing about the item prints before this passes.
+ * Checks that this session may write on a board item, and returns the router's decision. The
+ * item's repo and epoch need no check here: `findTarget` sees only this repo's items of the
+ * configured board's current epoch. Nothing about the item prints before this passes.
  */
 const boardWriteTo = ({ target, config, env, cwd }) => {
   const decision = routeHere({ config, env, cwd })
   if (decision.target !== 'board') throw new UsageError(`${target.rid} is on the board, and this session's writes stay on this machine (${decision.reason}). Nothing was saved.`)
-  if (!sameRepo(target.labels.repo, decision.repo)) throw new UsageError(`${target.rid} is not an item of ${decision.repo}, where this session writes. Nothing was saved.`)
-  const epoch = currentSnapshot({ config, env })?.epoch
-  if (target.epoch == null || target.epoch !== epoch) throw new UsageError(`${target.rid} is not in this machine's snapshot of the board's current epoch: run devchat sync, then try again. Nothing was saved.`)
   return decision
 }
 
@@ -1354,10 +1389,7 @@ const flagOf = (item) => {
  * item is this repo's by its `repo` label, a local one by its identity.
  */
 const startContext = ({ config, env, cwd, exclude }) => {
-  const identity = repoIdentityOf({ cwd, env })
-  const repo = allowlistedRepo({ identity, allowlist: config.allowlist })
-  const here = (item) => (item.source === 'local' ? identity !== '' && sameRepo(item.identity, identity) : repo !== null && sameRepo(item.labels.repo, repo))
-  const open = viewItems({ config, env }).filter((item) => item.rid !== exclude && isOpen(item) && here(item))
+  const open = viewItems({ config, env }).filter(repoScope({ config, env, cwd })).filter((item) => item.rid !== exclude && isOpen(item))
   const work = open.filter(({ channel }) => channel === workChannel)
   const pending = work.filter(isPending)
   const refusals = refusedReplies({ config, env })
@@ -1421,7 +1453,7 @@ const workNote = async ({ args, env, cwd, out }) => {
     block: values.blocked ? 1 : undefined,
   }
   const config = readConfig(env)
-  const target = findTarget({ prefix, channel: workChannel, config, env })
+  const target = findTarget({ prefix, channel: workChannel, config, env, cwd })
   if (values.pr !== undefined) fields.pr = requirePr({ value: values.pr, repo: repoOfItem(target), board: target.source !== 'local', config })
   await writeReply({ target, fields, config, env, cwd, out })
   // While a reply is pending, a note that does not name `turn` is stored and changes nothing (spec §2).
@@ -1437,7 +1469,7 @@ const workResolve = (kind) => async ({ args, env, cwd, out }) => {
   if (positionals.length > 1 || (kind === 'drop' && positionals.length !== 1)) throw new UsageError(usage)
   const re = values.re === undefined ? undefined : requireRid({ value: values.re, name: '--re' })
   const config = readConfig(env)
-  const target = findTarget({ prefix: positionals[0], channel: workChannel, openOnly: true, config, env })
+  const target = findTarget({ prefix: positionals[0], channel: workChannel, openOnly: true, config, env, cwd })
   if (target.source !== 'local') boardWriteTo({ target, config, env, cwd })
   // While the view shows a pending reply, a resolve without `re` sends nothing: the app would
   // refuse it, and the user's message would wait unseen (spec §4).
@@ -1451,9 +1483,9 @@ const workResolve = (kind) => async ({ args, env, cwd, out }) => {
   return 0
 }
 
-const workList = ({ args, env, out }) => {
+const workList = ({ args, env, cwd, out }) => {
   if (args.length > 0) throw new UsageError('usage: devchat work list')
-  const open = viewItems({ config: readConfig(env), env }).filter((item) => item.channel === workChannel && isOpen(item))
+  const open = visibleItems({ config: readConfig(env), env, cwd }).filter((item) => item.channel === workChannel && isOpen(item))
   if (open.length === 0) {
     out('No open work items.')
     return
@@ -1463,14 +1495,19 @@ const workList = ({ args, env, out }) => {
 
 // Shows what this machine knows of a work item, replies in full: the snapshot keeps replies only
 // while one is pending, and a local item keeps all of its own.
-const workShow = ({ args, env, out }) => {
+const workShow = ({ args, env, cwd, out }) => {
   if (args.length !== 1) throw new UsageError('usage: devchat work show <rid>')
-  const item = findTarget({ prefix: args[0], channel: workChannel, config: readConfig(env), env })
+  const item = findTarget({ prefix: args[0], channel: workChannel, config: readConfig(env), env, cwd })
   const { status = 'open', repo, issue } = item.labels
   out(`${item.rid}  ${item.source}  ${status}${repo ? `  ${repo}` : ''}${issue ? `  issue ${issue}` : ''}`)
   if (item.text) out(item.text)
+  // A changed item's replies are older than its thread: show none, and no call, until a sync.
+  if (item.changed) {
+    out(`This item ${changedNote}.`)
+    return
+  }
   for (const reply of item.replies ?? []) out(`  ${reply.labels.by ?? 'unknown'} (${reply.labels.kind ?? 'reply'}): ${reply.text}`)
-  if (isPending(item)) out(item.changed ? `This item ${changedNote}.` : answerCall(item))
+  if (isPending(item)) out(answerCall(item))
 }
 
 const workCommands = { start: workStart, note: workNote, done: workResolve('done'), drop: workResolve('drop'), list: workList, show: workShow }
@@ -1497,9 +1534,9 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   return 0
 }
 
-const todoList = ({ args, env, out }) => {
+const todoList = ({ args, env, cwd, out }) => {
   if (args.length > 0) throw new UsageError('usage: devchat todo list')
-  const open = viewItems({ config: readConfig(env), env }).filter((item) => item.channel === todoChannel && isOpen(item))
+  const open = visibleItems({ config: readConfig(env), env, cwd }).filter((item) => item.channel === todoChannel && isOpen(item))
   if (open.length === 0) {
     out('No open todos.')
     return
@@ -1511,7 +1548,7 @@ const todoList = ({ args, env, out }) => {
 const todoResolve = (kind) => async ({ args, env, cwd, out }) => {
   if (args.length !== 1) throw new UsageError(`usage: devchat todo ${kind} <rid>`)
   const config = readConfig(env)
-  const target = findTarget({ prefix: args[0], channel: todoChannel, openOnly: true, config, env })
+  const target = findTarget({ prefix: args[0], channel: todoChannel, openOnly: true, config, env, cwd })
   await writeReply({ target, fields: { kind, text: '' }, config, env, cwd, out })
 }
 

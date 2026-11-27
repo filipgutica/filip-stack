@@ -72,6 +72,9 @@ repos.rewrittenAway = makeRepo('rewritten-away', `git@github.com:${allowed}/tool
 execFileSync('git', ['-C', repos.rewrittenAway, 'config', 'url.git@git.example.test:.insteadOf', 'git@github.com:'])
 repos.allowedSsh = makeRepo('allowed-ssh', `ssh://git@github.com/${allowed}/notes.git`)
 repos.allowedSlash = makeRepo('allowed-slash', `https://github.com/${allowed}/notes/`)
+// A rewrite that changes only the case of the owner names the same repository.
+repos.rewrittenCase = makeRepo('rewritten-case', `git@github.com:${allowed}/notes.git`)
+execFileSync('git', ['-C', repos.rewrittenCase, 'config', `url.git@github.com:${allowed.toUpperCase()}/.insteadOf`, `git@github.com:${allowed}/`])
 
 // A fresh home per test, with no session key inherited from the harness running the tests.
 let home
@@ -212,7 +215,7 @@ test('only a github.com remote in a supported form is an allowlisted identity', 
   writeConfig(readwrite)
   startSession({ key: 'k', cwd: repos.allowed })
   const routeIn = (cwd) => devchat({ args: ['doctor'], cwd, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'k' } }).stdout.match(/route here: (.*)/u)[1]
-  for (const cwd of [repos.allowedSsh, repos.allowedSlash, repos.allowedHttps]) assert.equal(routeIn(cwd), `board (${allowed}/notes)`, cwd)
+  for (const cwd of [repos.allowedSsh, repos.allowedSlash, repos.allowedHttps, repos.rewrittenCase]) assert.equal(routeIn(cwd), `board (${allowed}/notes)`, cwd)
   for (const [index, name] of Object.keys(lookalikes).entries()) {
     assert.equal(routeIn(repos[`lookalike${index}`]), 'this machine only (the working directory is not an allowlisted repo)', name)
   }
@@ -621,7 +624,7 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, null, 'no cursor yet')
   const applied = await applyInbox()
   mkdirSync(localDir(), { recursive: true })
-  writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', identity: `github.com/${allowed}/tools`, labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
   await syncOk()
   const snapshot = readJson(join(stateDir(), 'snapshot.json'))
   assert.equal(snapshot.schema, 1)
@@ -1662,6 +1665,8 @@ test('--issue and --pr name only allowlisted repos on the board, at queue time',
   assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), ['#3', `https://github.com/${allowed}/work-${workRepos}/pull/7`, `https://github.com/${allowed}/tools/pull/8`])
 })
 
+const unknownWork = 'devchat: no work item on this machine has that rid: run devchat sync, or find it with devchat work list\n'
+
 test('a target must be a seen item of the configured board, of the right kind, in this session\'s repo', async () => {
   joinWork()
   const repo = `${allowed}/work-${workRepos}`
@@ -1678,12 +1683,22 @@ test('a target must be a seen item of the configured board, of the right kind, i
   const elsewhere = makeRepo(`work-${workRepos}-other`, `git@github.com:${allowed}/work-${workRepos}-other.git`)
   const otherRepo = await work(['note', item, 'From another repo.'], { cwd: elsewhere })
   assert.equal(otherRepo.status, 1)
-  assert.match(otherRepo.stderr, new RegExp(`${item} is not an item of ${allowed}/work-${workRepos}-other, where this session writes\\. Nothing was saved\\.`, 'u'))
+  assert.equal(otherRepo.stderr, unknownWork, "another repo's item reads as an unknown rid")
+  const otherShow = await work(['show', item], { cwd: elsewhere })
+  assert.deepEqual({ status: otherShow.status, stdout: otherShow.stdout, stderr: otherShow.stderr }, { status: 1, stdout: '', stderr: unknownWork })
+  assert.doesNotMatch((await work(['list'], { cwd: elsewhere })).stdout, new RegExp(item, 'u'))
+  // A command the user types, with no session key, sees every repo's items.
+  assert.equal((await devchatAsync({ args: ['work', 'show', item], cwd: elsewhere, sessionEnv: {} })).status, 0)
   const unseen = await work(['note', `work-${'0'.repeat(8)}-00000000`, 'Never seen.'])
   assert.equal(unseen.status, 1)
   assert.match(unseen.stderr, /no work item on this machine has that rid/u)
   assert.deepEqual(filesIn('outbox'), [])
   assert.equal(filesIn('outbox', 'sent').length, before, 'nothing was queued')
+  // Prefix matching sees only this repo's items: `work-` names the one item here, not all of them.
+  const here = ridIn((await work(['start', 'Elsewhere.'], { cwd: elsewhere })).stdout, 'work')
+  const byPrefix = await work(['note', 'work-', 'By prefix.'], { cwd: elsewhere })
+  assert.equal(byPrefix.status, 0, byPrefix.stderr)
+  assert.equal(sentIntents().at(-1).root, here)
   assert.equal((await devchatAsync({ args: ['todo', 'done', uiTodo], cwd: workRepo })).status, 0, 'the todo resolves as a todo')
 })
 
@@ -1763,11 +1778,79 @@ test('pickup shows no call for an item whose thread moved past the turn it read'
   }
   const show = await work(['show', item], { preload: true })
   assert.match(show.stdout, /This item changed since the last sync: run devchat sync, then answer it\.\n$/u)
-  assert.doesNotMatch(show.stdout, /devchat work note/u)
+  assert.doesNotMatch(show.stdout, /devchat work note|Which format|Use CSV/u, 'no call and no replies')
   await syncOk()
   const second = await work(['start', 'Pick up again.'], { preload: true })
   assert.ok(second.stdout.includes(pickupLine({ item, turn: newer })), second.stdout)
   assert.ok(second.stdout.includes('  the user replied: A later reply.\n'), second.stdout)
+})
+
+test('a refused resolve on a changed item reports the change, never the call it read', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  userReply({ item, text: 'One more thing.' })
+  const done = ridIn((await work(['done', item, '--re', reply], { preload: true })).stdout, 'done')
+  await syncOk()
+  writerPass()
+  // Between the sync's root listing and its reads of the replies, the user replies again.
+  let injected = false
+  workProxy.fault = (req) => {
+    if (!injected && req.url.startsWith('/api/board/messages/')) {
+      injected = true
+      userReply({ item, text: 'And another.' })
+    }
+    return null
+  }
+  const sync = await syncOk()
+  workProxy.fault = () => null
+  assert.ok(injected)
+  assert.match(sync.stdout, new RegExp(`^refused ${done}: pending\nnot applied: ${item} changed since the last sync: run devchat sync, then answer it$`, 'mu'))
+  assert.doesNotMatch(sync.stdout, /--re/u)
+})
+
+test('offline from the first run, a resolve on a root still in outbox/ is queued, and both send with one epoch', async () => {
+  joinWork()
+  rmSync(join(stateDir(), 'snapshot.json'), { force: true })
+  workProxy.fault = () => 503
+  const todo = ridIn((await devchatAsync({ args: ['todo', 'add', 'Offline todo.'], cwd: workRepo })).stdout, 'todo')
+  const todoDone = await devchatAsync({ args: ['todo', 'done', todo], cwd: workRepo })
+  assert.equal(todoDone.status, 0, todoDone.stderr)
+  const item = ridIn((await work(['start', 'Offline work.'])).stdout, 'work')
+  const workDone = await work(['done'])
+  assert.equal(workDone.status, 0, workDone.stderr)
+  assert.doesNotMatch((await devchatAsync({ args: ['todo', 'list'], cwd: workRepo })).stdout, new RegExp(todo, 'u'))
+  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), [null, null, null, null])
+  workProxy.fault = () => null
+  await syncOk()
+  assert.deepEqual(filesIn('outbox', 'sent').slice(-4).map((name) => readJson(join(stateDir(), 'outbox', 'sent', name)).epoch), ['1', '1', '1', '1'])
+  writerPass()
+  await syncOk()
+  assert.equal((await rootLabels(item)).status, 'done')
+  const todoRoot = (await ownerRead(`/threads?${new URLSearchParams({ channel: 'todos', label: `rid=${todo}` })}`)).threads[0]?.message.labels
+  assert.equal(todoRoot?.status, 'done')
+})
+
+test('the outbox sends in queue order whatever the clock says', async () => {
+  joinWork()
+  // Every write in this test reads one fixed time, so a name taken from the clock could not order them.
+  const clock = join(root, 'fixed-clock.mjs')
+  writeFileSync(clock, `const fixed = Date.parse('2030-01-01T00:00:00.000Z')
+const Real = Date
+globalThis.Date = class extends Real {
+  constructor(...args) { super(...(args.length > 0 ? args : [fixed])) }
+  static now() { return fixed }
+}
+`)
+  const sessionEnv = { ...boardSession, T3CODE_THREAD_ID: thread, NODE_OPTIONS: `--import=${pathToFileURL(clock).href}` }
+  workProxy.fault = () => 503
+  const item = ridIn((await work(['start', 'Fixed clock.'], { sessionEnv })).stdout, 'work')
+  assert.equal((await work(['done'], { sessionEnv })).status, 0)
+  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).target.split('-')[0]), ['work', 'done'])
+  workProxy.fault = () => null
+  await syncOk()
+  writerPass()
+  await syncOk()
+  assert.equal((await rootLabels(item)).status, 'done')
 })
 
 test("a write's own sync reports only its repo's refusals; devchat sync reports all", async () => {
@@ -1834,7 +1917,7 @@ const setWorkEpoch = async (epoch) => {
   assert.ok(response.ok, `the epoch label answered ${response.status}`)
 }
 
-test('a reply never crosses a board restore: its root must be in the snapshot of the current epoch', async () => {
+test('a reply never crosses a board restore: a root seen under another epoch reads as unknown', async () => {
   joinWork()
   const [repoA, threadA] = [workRepo, thread]
   const item = ridIn((await work(['start', 'Before the restore.'])).stdout, 'work')
@@ -1847,7 +1930,7 @@ test('a reply never crosses a board restore: its root must be in the snapshot of
     ;[workRepo, thread] = [repoA, threadA]
     const note = await work(['note', item, 'After the restore.'], { preload: true })
     assert.equal(note.status, 1)
-    assert.match(note.stderr, new RegExp(`${item} is not in this machine's snapshot of the board's current epoch: run devchat sync, then try again\\. Nothing was saved\\.`, 'u'))
+    assert.equal(note.stderr, unknownWork)
     assert.deepEqual(filesIn('outbox'), [])
     await syncOk()
     assert.equal((await work(['note', item, 'After the sync.'])).status, 1, 'the epoch 1 root is gone from the view')
@@ -1864,7 +1947,7 @@ test("work done in another repo or a local session prints nothing of the item's 
   workRepo = makeRepo(`work-${workRepos}-elsewhere`, `git@github.com:${allowed}/work-${workRepos}-elsewhere.git`)
   const elsewhere = await work(['done', item])
   assert.equal(elsewhere.status, 1)
-  assert.match(elsewhere.stderr, /is not an item of .*, where this session writes\. Nothing was saved\./u)
+  assert.equal(elsewhere.stderr, unknownWork)
   const local = await work(['drop', item], { sessionEnv: { CODEX_THREAD_ID: 'codex-session' } })
   assert.equal(local.status, 1)
   for (const result of [elsewhere, local]) assert.doesNotMatch(`${result.stdout}${result.stderr}`, leaks)
