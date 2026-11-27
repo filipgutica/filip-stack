@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict'
-import { execFileSync, spawnSync } from 'node:child_process'
+import { execFileSync, spawn, spawnSync } from 'node:child_process'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -35,6 +35,19 @@ const repos = {
   alias: makeRepo('alias', `git@github-alias:${allowed}/tools.git`),
   noRemote: makeRepo('no-remote'),
 }
+// Remotes that only look like an allowlisted github.com repository.
+const lookalikes = {
+  'another host carrying a github path': `https://git.example.test/team@github.com/${allowed}/tools.git`,
+  'a relative path': `github.com/${allowed}/tools`,
+  'a query string': `https://github.com/${allowed}/tools?ref=main`,
+  'a fragment': `https://github.com/${allowed}/tools#main`,
+  'user information on https': `https://token@github.com/${allowed}/tools.git`,
+  'a port': `ssh://git@github.com:2222/${allowed}/tools.git`,
+  'a nested path': `https://github.com/${allowed}/tools/extra`,
+}
+for (const [index, remote] of Object.values(lookalikes).entries()) repos[`lookalike${index}`] = makeRepo(`lookalike-${index}`, remote)
+repos.allowedSsh = makeRepo('allowed-ssh', `ssh://git@github.com/${allowed}/notes.git`)
+repos.allowedSlash = makeRepo('allowed-slash', `https://github.com/${allowed}/notes/`)
 
 // A fresh home per test, with no session key inherited from the harness running the tests.
 let home
@@ -58,14 +71,24 @@ const writeConfig = (config) => {
   writeFileSync(join(env.XDG_CONFIG_HOME, 'devchat', 'config.json'), JSON.stringify(config))
 }
 
+// Each harness tells its hook apart the way it runs plugin hooks: Codex sets PLUGIN_ROOT and
+// Claude Code sets CLAUDE_PLUGIN_ROOT.
+const harnessEnv = { claude: { CLAUDE_PLUGIN_ROOT: pluginRoot }, codex: { PLUGIN_ROOT: pluginRoot } }
+const hookInput = ({ key, cwd, source = 'startup' }) => JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source })
+
 // Runs the hook through the exact command hooks.json registers.
-const runHook = ({ input, extraEnv = {} }) => spawnSync('/bin/sh', ['-c', hookCommand], {
-  input, encoding: 'utf8', env: { ...env, PLUGIN_ROOT: pluginRoot, ...extraEnv },
+const runHook = ({ input, harness = 'claude', extraEnv = {} }) => spawnSync('/bin/sh', ['-c', hookCommand], {
+  input, encoding: 'utf8', env: { ...env, ...harnessEnv[harness], ...extraEnv },
 })
-const startSession = ({ key, cwd, source = 'startup' }) => {
-  const result = runHook({ input: JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source }) })
+const startSession = ({ key, cwd, source, harness }) => {
+  const result = runHook({ input: hookInput({ key, cwd, source }), harness })
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '', 'the hook prints nothing')
+}
+const sessionRecord = () => {
+  const [file, ...others] = readdirSync(join(stateDir(), 'sessions'))
+  assert.deepEqual(others, [], 'one session record')
+  return (({ repo, conflicting }) => ({ repo, conflicting }))(readJson(join(stateDir(), 'sessions', file)))
 }
 const devchat = ({ args, cwd = repos.allowed, sessionEnv = {}, input = '' }) => spawnSync('/bin/sh', [launcher, ...args], {
   cwd, input, encoding: 'utf8', env: { ...env, ...sessionEnv },
@@ -105,7 +128,9 @@ test('the CLI routes each source as the table says, with zero outbound requests'
     { name: 'no session key', start: repos.allowed, cwd: repos.allowed, sessionEnv: {}, reason: 'no session key' },
     { name: 'no session record', cwd: repos.allowed, reason: 'no session record' },
     { name: 'conflicting record', start: repos.allowed, restart: repos.other, cwd: repos.allowed, reason: 'conflicting session record' },
-    { name: 'two differing session keys', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'row', CODEX_THREAD_ID: 'other' }, reason: 'no session key' },
+    { name: 'both harness keys set', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'row', CODEX_THREAD_ID: 'other' }, reason: 'no session key' },
+    { name: 'both harness keys set to the same ID', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'row', CODEX_THREAD_ID: 'row' }, reason: 'no session key' },
+    { name: 'a Claude record read with the same ID as a Codex key', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CODEX_THREAD_ID: 'row' }, reason: 'no session record' },
   ]
   for (const row of rows) {
     rmSync(stateDir(), { recursive: true, force: true })
@@ -126,39 +151,68 @@ test('the CLI routes each source as the table says, with zero outbound requests'
   }
 })
 
-test('the hook records the stdin session_id that both harness keys read', () => {
+test("each harness's hook records the stdin session_id that only that harness's key reads", () => {
   writeConfig({ mode: 'readwrite', githubLogin: allowed })
-  const started = Date.now()
-  startSession({ key: 'session-1', cwd: repos.allowed })
-  assert.ok(Date.now() - started < 5000, 'the hook stays inside its 5 s budget')
-  const [file] = readdirSync(join(stateDir(), 'sessions'))
-  assert.doesNotMatch(file, /session-1/u, 'the file name is a hash of the key')
-  assert.equal(readJson(join(stateDir(), 'sessions', file)).repo, `github.com/${allowed}/tools`)
-  for (const sessionEnv of [{ CLAUDE_CODE_SESSION_ID: 'session-1' }, { CODEX_THREAD_ID: 'session-1' }]) {
-    const doctor = devchat({ args: ['doctor'], sessionEnv })
-    assert.match(doctor.stdout, new RegExp(`session key: ${Object.keys(sessionEnv)[0]}`, 'u'))
-    assert.match(doctor.stdout, /session record: recorded/u)
-    assert.match(doctor.stdout, new RegExp(`route here: board \\(${allowed}/tools\\)`, 'u'))
+  const keys = { claude: 'CLAUDE_CODE_SESSION_ID', codex: 'CODEX_THREAD_ID' }
+  for (const [harness, variable] of Object.entries(keys)) {
+    rmSync(stateDir(), { recursive: true, force: true })
+    const started = Date.now()
+    startSession({ key: 'session-1', cwd: repos.allowed, harness })
+    assert.ok(Date.now() - started < 5000, 'the hook stays inside its 5 s budget')
+    const [file] = readdirSync(join(stateDir(), 'sessions'))
+    assert.doesNotMatch(file, /session-1/u, 'the file name is a hash of the key')
+    assert.equal(sessionRecord().repo, `github.com/${allowed}/tools`)
+    for (const [otherHarness, otherVariable] of Object.entries(keys)) {
+      const doctor = devchat({ args: ['doctor'], sessionEnv: { [otherVariable]: 'session-1' } })
+      assert.match(doctor.stdout, new RegExp(`session key: ${otherVariable}`, 'u'))
+      if (otherHarness === harness) {
+        assert.match(doctor.stdout, /session record: recorded/u, harness)
+        assert.match(doctor.stdout, new RegExp(`route here: board \\(${allowed}/tools\\)`, 'u'), harness)
+      } else {
+        assert.match(doctor.stdout, /route here: this machine only \(no session record\)/u, `${harness} record, ${otherHarness} key`)
+      }
+    }
   }
   assert.deepEqual(networkCalls(), [], 'the hook and doctor import and call no network module')
+})
+
+test('only a github.com remote in a supported form is an allowlisted identity', () => {
+  writeConfig({ mode: 'readwrite', githubLogin: allowed })
+  startSession({ key: 'k', cwd: repos.allowed })
+  const routeIn = (cwd) => devchat({ args: ['doctor'], cwd, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'k' } }).stdout.match(/route here: (.*)/u)[1]
+  for (const cwd of [repos.allowedSsh, repos.allowedSlash, repos.allowedHttps]) assert.equal(routeIn(cwd), `board (${allowed}/notes)`, cwd)
+  for (const [index, name] of Object.keys(lookalikes).entries()) {
+    assert.equal(routeIn(repos[`lookalike${index}`]), 'this machine only (the working directory is not an allowlisted repo)', name)
+  }
+})
+
+test("racing hooks never leave a compaction's repo as a clean start", async () => {
+  // A startup from a non-allowlisted repo and a compaction from an allowlisted one both find no
+  // record. Whichever writes first, the result must not be a clean record of the allowlisted repo.
+  const spawnHook = (input) => new Promise((resolve) => {
+    const child = spawn('/bin/sh', ['-c', hookCommand], { env: { ...env, ...harnessEnv.claude }, stdio: ['pipe', 'ignore', 'ignore'] })
+    child.on('close', resolve)
+    child.stdin.end(input)
+  })
+  for (let round = 0; round < 15; round += 1) {
+    rmSync(stateDir(), { recursive: true, force: true })
+    await Promise.all([
+      spawnHook(hookInput({ key: `race-${round}`, cwd: repos.other })),
+      spawnHook(hookInput({ key: `race-${round}`, cwd: repos.allowed, source: 'compact' })),
+    ])
+    assert.notDeepEqual(sessionRecord(), { repo: `github.com/${allowed}/tools`, conflicting: false }, `round ${round}`)
+  }
 })
 
 test('a second start from another repo marks the record conflicting for good', () => {
   startSession({ key: 'k', cwd: repos.allowed })
   startSession({ key: 'k', cwd: repos.other })
   startSession({ key: 'k', cwd: repos.allowed })
-  const [file] = readdirSync(join(stateDir(), 'sessions'))
-  assert.deepEqual(
-    (({ repo, conflicting }) => ({ repo, conflicting }))(readJson(join(stateDir(), 'sessions', file))),
-    { repo: `github.com/${allowed}/tools`, conflicting: true },
-  )
+  assert.deepEqual(sessionRecord(), { repo: `github.com/${allowed}/tools`, conflicting: true })
 })
 
 test('a compaction keeps the record, and a resume from another repo still conflicts', () => {
-  const record = () => {
-    const [file] = readdirSync(join(stateDir(), 'sessions'))
-    return (({ repo, conflicting }) => ({ repo, conflicting }))(readJson(join(stateDir(), 'sessions', file)))
-  }
+  const record = sessionRecord
   startSession({ key: 'k', cwd: repos.allowed })
   startSession({ key: 'k', cwd: repos.other, source: 'compact' })
   assert.deepEqual(record(), { repo: `github.com/${allowed}/tools`, conflicting: false })
@@ -289,4 +343,19 @@ test('the plugin registers its hook and both marketplace entries', () => {
   assert.deepEqual(Object.keys(hooks), ['SessionStart'])
   assert.equal(hooks.SessionStart[0].matcher, undefined, 'every start, resume included, reaches the hook')
   assert.match(hookCommand, /scripts\/run-node\.sh" --fail-open "\$\{PLUGIN_ROOT:-\$\{CLAUDE_PLUGIN_ROOT\}\}\/hooks\/devchat-session\.mjs"/u)
+})
+
+test('the hook launcher never runs a Node shim from PATH', () => {
+  const bin = mkdtempSync(join(home, 'bin-'))
+  const marker = join(home, 'shim-ran')
+  writeFileSync(join(bin, 'node'), `#!/bin/sh\ntouch '${marker}'\nexec '${process.execPath}' "$@"\n`)
+  chmodSync(join(bin, 'node'), 0o755)
+  const script = join(home, 'noop.mjs')
+  writeFileSync(script, '')
+  const { DEVCHAT_NODE, NODE_OPTIONS, ...rest } = env
+  const result = spawnSync('/bin/sh', [join(pluginRoot, 'scripts/run-node.sh'), '--fail-open', script], {
+    encoding: 'utf8', env: { ...rest, PATH: `${bin}:/usr/bin:/bin`, NVM_BIN: '' },
+  })
+  assert.equal(result.status, 0, result.stderr)
+  assert.equal(existsSync(marker), false, 'the PATH node shim never ran')
 })

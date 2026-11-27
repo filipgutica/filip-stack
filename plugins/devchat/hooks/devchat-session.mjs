@@ -21,9 +21,14 @@ const pluginVersion = () => {
   return 'unknown'
 }
 
+// Codex sets PLUGIN_ROOT for plugin hooks and Claude Code sets CLAUDE_PLUGIN_ROOT, as Field
+// Guide's hook relies on. Without either the harness is unknown, so nothing is recorded.
+const harness = () => (process.env.PLUGIN_ROOT ? 'codex' : process.env.CLAUDE_PLUGIN_ROOT ? 'claude' : null)
+
 const run = (input) => {
-  if (typeof input.session_id === 'string' && input.session_id && typeof input.cwd === 'string' && input.cwd) {
-    recordSession({ key: input.session_id, cwd: input.cwd, compaction: input.source === 'compact' })
+  const current = harness()
+  if (current && typeof input.session_id === 'string' && input.session_id && typeof input.cwd === 'string' && input.cwd) {
+    recordSession({ key: { harness: current, id: input.session_id }, cwd: input.cwd, compaction: input.source === 'compact' })
   }
   refreshPluginPath({ root: pluginRoot, version: pluginVersion() })
 }

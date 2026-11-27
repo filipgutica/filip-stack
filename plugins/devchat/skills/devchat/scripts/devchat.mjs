@@ -5,7 +5,7 @@
 // the board is refused until `devchat setup` and the outbox exist.
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { accessSync, constants, existsSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, writeFileSync } from 'node:fs'
+import { accessSync, constants, existsSync, linkSync, mkdirSync, readFileSync, readdirSync, realpathSync, renameSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -26,8 +26,12 @@ const configPath = (env) => join(env.XDG_CONFIG_HOME || join(homedir(), '.config
 const stateDir = (env = process.env) => join(env.XDG_STATE_HOME || join(homedir(), '.local', 'state'), 'devchat')
 const localDir = (env) => join(stateDir(env), 'local')
 const pluginPathFile = (env) => join(stateDir(env), 'plugin-path')
-// A session key arrives from hook stdin and from the environment, so its file name is a hash.
-const sessionPath = ({ key, env }) => join(stateDir(env), 'sessions', `${createHash('sha256').update(key).digest('hex').slice(0, 32)}.json`)
+// A session key is a harness and that harness's session ID, so an ID one harness recorded never
+// answers for another. It arrives from hook stdin and from the environment, so its file name is a hash.
+const sessionPath = ({ key, env }) => {
+  const digest = createHash('sha256').update(`${key.harness}\0${key.id}`).digest('hex').slice(0, 32)
+  return join(stateDir(env), 'sessions', `${digest}.json`)
+}
 
 const readJson = (path) => JSON.parse(readFileSync(path, 'utf8'))
 
@@ -38,6 +42,22 @@ const writeAtomic = (path, content) => {
   renameSync(temporary, path)
 }
 const writeJsonAtomic = (path, value) => writeAtomic(path, `${JSON.stringify(value, null, 2)}\n`)
+
+/** Writes `path` complete and only if it does not exist yet; returns false when it already did. */
+const writeExclusive = (path, content) => {
+  mkdirSync(dirname(path), { recursive: true })
+  const temporary = `${path}.${process.pid}.${randomBytes(4).toString('hex')}.tmp`
+  writeFileSync(temporary, content, { mode: 0o600 })
+  try {
+    linkSync(temporary, path)
+    return true
+  } catch (error) {
+    if (error.code === 'EEXIST') return false
+    throw error
+  } finally {
+    unlinkSync(temporary)
+  }
+}
 
 // Config
 
@@ -79,19 +99,26 @@ const readConfig = (env = process.env) => {
 
 // Repository identity
 
-/** Normalizes a git remote to `host/path`, as Field Guide does: `git@github.com:o/r.git` gives `github.com/o/r`. */
+// The only remote forms that name a github.com repository: `git@github.com:o/r`,
+// `ssh://git@github.com/o/r`, and `https://github.com/o/r`, each with an optional `.git` and
+// trailing slash. Anything else (another host, user information on https, a port, a query, a
+// fragment, a local path, a nested path) is not a github.com identity.
+const githubOwner = '[A-Za-z0-9](?:[A-Za-z0-9-]{0,38})'
+const githubRepo = '(?!\\.{1,2}(?:\\.git)?/?$)[A-Za-z0-9._-]{1,100}?'
+const githubRemote = new RegExp(
+  `^(?:git@github\\.com:|ssh://git@github\\.com/|https://github\\.com/)(${githubOwner})/(${githubRepo})(?:\\.git)?/?$`,
+  'iu',
+)
+
+/**
+ * Returns a remote's repository identity: `github.com/<owner>/<repo>` for a github.com remote,
+ * otherwise `other:<hash>`. The hash lets two sessions compare remotes without storing them.
+ */
 const normalizeRemote = (remote) => {
   if (!remote) return ''
-  const scpStyle = remote.match(/^[^@]+@([^:]+):(.+)$/)
-  if (scpStyle) {
-    return `${scpStyle[1].toLowerCase()}/${scpStyle[2]}`.replace(/\/+$/, '').replace(/\.git$/i, '')
-  }
-  const withoutTransport = remote.replace(/^[a-z][a-z0-9+.-]*:\/\//i, '').replace(/^.*@/, '')
-  const firstSlash = withoutTransport.indexOf('/')
-  const normalized = firstSlash > 0
-    ? `${withoutTransport.slice(0, firstSlash).toLowerCase()}${withoutTransport.slice(firstSlash)}`
-    : withoutTransport
-  return normalized.replace(/\/+$/, '').replace(/\.git$/i, '')
+  const match = githubRemote.exec(remote)
+  if (match) return `github.com/${match[1]}/${match[2]}`
+  return `other:${createHash('sha256').update(remote).digest('hex').slice(0, 32)}`
 }
 
 // An inherited GIT_DIR or GIT_WORK_TREE would make git describe another repository.
@@ -110,7 +137,7 @@ const repoIdentityOf = ({ cwd, env = process.env }) => {
  * allowlist, else null. A host alias, a port, a nested path, or no remote is never allowlisted.
  */
 const allowlistedRepo = ({ identity, allowlist }) => {
-  const match = /^github\.com\/([^/]+)\/([^/]+)$/u.exec(identity ?? '')
+  const match = /^github\.com\/([^/]+)\/([^/]+)$/u.exec(identity ?? '') // only normalizeRemote makes this form
   if (!match) return null
   const owner = match[1].toLowerCase()
   return allowlist.some((entry) => entry.toLowerCase() === owner) ? `${match[1]}/${match[2]}` : null
@@ -118,15 +145,19 @@ const allowlistedRepo = ({ identity, allowlist }) => {
 
 // Sessions
 
+const sessionVariables = { claude: 'CLAUDE_CODE_SESSION_ID', codex: 'CODEX_THREAD_ID' }
+
 /**
- * Reads the session key the harness set: Claude Code's `CLAUDE_CODE_SESSION_ID` or Codex's
- * `CODEX_THREAD_ID`. Both set to different values is ambiguous and gives no key.
+ * Reads the session key of the harness running this command: Claude Code's
+ * `CLAUDE_CODE_SESSION_ID` or Codex's `CODEX_THREAD_ID`. Both set means one harness runs inside
+ * the other, so the harness is unknown and there is no key.
  */
 const sessionKeyOf = (env = process.env) => {
-  const found = ['CLAUDE_CODE_SESSION_ID', 'CODEX_THREAD_ID'].filter((name) => env[name])
+  const found = Object.entries(sessionVariables).filter(([, name]) => env[name])
   if (found.length === 0) return { key: null, source: null }
-  if (found.length === 2 && env[found[0]] !== env[found[1]]) return { key: null, source: 'ambiguous' }
-  return { key: env[found[0]], source: found[0] }
+  if (found.length > 1) return { key: null, source: 'ambiguous' }
+  const [[harness, name]] = found
+  return { key: { harness, id: env[name] }, source: name }
 }
 
 /** Reads a session record. An unreadable record counts as conflicting, so it routes to local. */
@@ -142,22 +173,27 @@ const readSessionRecord = ({ key, env = process.env }) => {
 }
 
 /**
- * Records the repository identity of a session's starting directory under its session key. A
- * later start under the same key from another identity marks the record conflicting, for good.
- * A compaction is not a start: the agent may have moved to another directory since, so it only
- * fills a missing record and never compares.
+ * Records the repository identity of a session's starting directory under its session key
+ * (`{ harness, id }`). A later start under the same key from another identity marks the record
+ * conflicting, for good. A compaction is not a start: the agent may have moved to another
+ * directory since, so it only fills a missing record and never compares.
+ *
+ * Only the first record is written as not conflicting, and that write is exclusive: when two
+ * hooks race, the loser sees the winner's record, and a start compares against it.
  */
 export const recordSession = ({ key, cwd, compaction = false, env = process.env, now = new Date() }) => {
-  const existing = readSessionRecord({ key, env })
+  const path = sessionPath({ key, env })
+  const record = ({ repo, conflicting }) => `${JSON.stringify({ schema: 1, repo, conflicting, recordedAt: now.toISOString() }, null, 2)}\n`
+  let existing = readSessionRecord({ key, env })
   if (existing && compaction) return
   const repo = repoIdentityOf({ cwd, env })
-  if (existing && !existing.conflicting && existing.repo === repo) return
-  writeJsonAtomic(sessionPath({ key, env }), {
-    schema: 1,
-    repo: existing ? existing.repo : repo,
-    conflicting: existing !== null,
-    recordedAt: now.toISOString(),
-  })
+  if (!existing) {
+    if (writeExclusive(path, record({ repo, conflicting: false }))) return
+    if (compaction) return
+    existing = readSessionRecord({ key, env })
+  }
+  if (existing.conflicting || existing.repo === repo) return
+  writeAtomic(path, record({ repo: existing.repo, conflicting: true }))
 }
 
 /**

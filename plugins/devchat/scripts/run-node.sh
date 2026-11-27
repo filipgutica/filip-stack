@@ -32,6 +32,23 @@ accept_node() {
 
 if [ -n "${DEVCHAT_NODE:-}" ]; then
   accept_node "$DEVCHAT_NODE" || true
+elif [ "$fail_open" = true ]; then
+  # Hooks run before the session and inside its time limit, so they use an installed Node binary
+  # only. A version-manager shim (Volta, asdf, mise), which `node` on PATH may be, can download a
+  # runtime and write outside devchat's state. Without an installed binary the hook does nothing.
+  for candidate in \
+    ${NVM_BIN:+"$NVM_BIN/node"} \
+    "${HOME:-/nonexistent}"/.nvm/versions/node/*/bin/node \
+    "${HOME:-/nonexistent}"/.local/share/fnm/node-versions/*/installation/bin/node \
+    "${HOME:-/nonexistent}"/.volta/tools/image/node/*/bin/node \
+    "${HOME:-/nonexistent}"/.asdf/installs/nodejs/*/bin/node \
+    "${HOME:-/nonexistent}"/.local/share/mise/installs/node/*/bin/node \
+    /opt/homebrew/bin/node /home/linuxbrew/.linuxbrew/bin/node /usr/local/bin/node /usr/bin/node
+  do
+    if accept_node "$candidate"; then
+      break
+    fi
+  done
 else
   path_node=$(command -v node 2>/dev/null || true)
   if [ -n "$path_node" ]; then
