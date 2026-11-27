@@ -200,8 +200,8 @@ codex plugin add guardrails@filip-stack        # Codex, then restart Codex
 
 devchat is a separate, optional plugin and the client for
 [devchat](https://github.com/filipgutica/devchat), a self-hosted board for todos,
-work items, and agent messages. A todo goes to the board or stays on the
-machine, as the router decides; `devchat setup` joins a board.
+work items, and agent messages. A todo or work item goes to the board or stays
+on the machine, as the router decides; `devchat setup` joins a board.
 
 ```sh
 claude plugin install devchat@filip-stack   # Claude Code
@@ -217,6 +217,12 @@ codex plugin add devchat@filip-stack        # Codex, then restart Codex
   Everything else stays on the machine. A board write waits in the outbox
   until a sync sends it: right after the write, from a 15-minute timer, or
   with `devchat sync`. Mode `read` pulls the board and sends nothing.
+- **Work items:** An agent runs `devchat work start` when work starts, `work
+  note` to hand off or ask you a question, and `work done` at wrap-up.
+  `work start` also prints this repo's open items and every reply you left
+  for an agent, with the one call that answers it. While a reply waits, a
+  note that does not answer it changes nothing, and `work done` sends
+  nothing.
 - **Setup:** `devchat setup --host <tailnet host> --github-login <login> --mode
   readwrite` writes the config, installs a `devchat` command in
   `~/.local/bin`, and a sync timer, without sudo. Add `--dry-run` to see the
