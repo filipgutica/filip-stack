@@ -1207,9 +1207,11 @@ const viewItems = ({ config, env }) => [
   ...readLocalItems(env).map((item) => ({ ...item, source: 'local' })),
 ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
-// A board item is in the configured board's current epoch when its epoch is the snapshot's, or,
-// for a root still queued with the epoch unknown, when a reply can bind to it at flush.
-const inCurrentEpoch = ({ item, epoch }) => (item.epoch == null ? item.source === 'queued' : item.epoch === epoch)
+// A board item is in the configured board's current epoch when its epoch is the snapshot's. With
+// no snapshot of the board yet, or a root queued with the epoch unknown, only a root still in
+// outbox/ counts: a reply takes its epoch and sorts after it, so flush sends both under one epoch,
+// or holds the root first. A sent root waits for a sync, which may find the board restored.
+const inCurrentEpoch = ({ item, epoch }) => (epoch === null || item.epoch == null ? item.source === 'queued' : item.epoch === epoch)
 
 /**
  * Whether an item belongs to the working directory's repo: a local item by its identity, a board

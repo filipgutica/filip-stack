@@ -1808,27 +1808,31 @@ test('a refused resolve on a changed item reports the change, never the call it 
   assert.doesNotMatch(sync.stdout, /--re/u)
 })
 
-test('offline from the first run, a resolve on a root still in outbox/ is queued, and both send with one epoch', async () => {
-  joinWork()
-  rmSync(join(stateDir(), 'snapshot.json'), { force: true })
-  workProxy.fault = () => 503
-  const todo = ridIn((await devchatAsync({ args: ['todo', 'add', 'Offline todo.'], cwd: workRepo })).stdout, 'todo')
-  const todoDone = await devchatAsync({ args: ['todo', 'done', todo], cwd: workRepo })
-  assert.equal(todoDone.status, 0, todoDone.stderr)
-  const item = ridIn((await work(['start', 'Offline work.'])).stdout, 'work')
-  const workDone = await work(['done'])
-  assert.equal(workDone.status, 0, workDone.stderr)
-  assert.doesNotMatch((await devchatAsync({ args: ['todo', 'list'], cwd: workRepo })).stdout, new RegExp(todo, 'u'))
-  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), [null, null, null, null])
-  workProxy.fault = () => null
-  await syncOk()
-  assert.deepEqual(filesIn('outbox', 'sent').slice(-4).map((name) => readJson(join(stateDir(), 'outbox', 'sent', name)).epoch), ['1', '1', '1', '1'])
-  writerPass()
-  await syncOk()
-  assert.equal((await rootLabels(item)).status, 'done')
-  const todoRoot = (await ownerRead(`/threads?${new URLSearchParams({ channel: 'todos', label: `rid=${todo}` })}`)).threads[0]?.message.labels
-  assert.equal(todoRoot?.status, 'done')
-})
+// Fully offline, nothing is stamped. With only posts failing, a sync stamps each root with the
+// board's epoch before its post fails, and still no snapshot exists.
+for (const [outage, fault] of [['fully offline', () => 503], ['with only posts failing', (req) => (req.method === 'POST' ? 503 : null)]]) {
+  test(`${outage} from the first run, a resolve on a root not yet in a snapshot is queued, and both send with one epoch`, async () => {
+    joinWork()
+    rmSync(join(stateDir(), 'snapshot.json'), { force: true })
+    workProxy.fault = fault
+    const todo = ridIn((await devchatAsync({ args: ['todo', 'add', 'Offline todo.'], cwd: workRepo })).stdout, 'todo')
+    const todoDone = await devchatAsync({ args: ['todo', 'done', todo], cwd: workRepo })
+    assert.equal(todoDone.status, 0, todoDone.stderr)
+    const item = ridIn((await work(['start', 'Offline work.'])).stdout, 'work')
+    const workDone = await work(['done'])
+    assert.equal(workDone.status, 0, workDone.stderr)
+    assert.doesNotMatch((await devchatAsync({ args: ['todo', 'list'], cwd: workRepo })).stdout, new RegExp(todo, 'u'))
+    assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), outage === 'fully offline' ? [null, null, null, null] : ['1', '1', null, null])
+    workProxy.fault = () => null
+    await syncOk()
+    assert.deepEqual(filesIn('outbox', 'sent').slice(-4).map((name) => readJson(join(stateDir(), 'outbox', 'sent', name)).epoch), ['1', '1', '1', '1'])
+    writerPass()
+    await syncOk()
+    assert.equal((await rootLabels(item)).status, 'done')
+    const todoRoot = (await ownerRead(`/threads?${new URLSearchParams({ channel: 'todos', label: `rid=${todo}` })}`)).threads[0]?.message.labels
+    assert.equal(todoRoot?.status, 'done')
+  })
+}
 
 test('the outbox sends in queue order whatever the clock says', async () => {
   joinWork()
