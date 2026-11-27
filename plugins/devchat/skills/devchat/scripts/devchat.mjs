@@ -144,10 +144,13 @@ const readSessionRecord = ({ key, env = process.env }) => {
 /**
  * Records the repository identity of a session's starting directory under its session key. A
  * later start under the same key from another identity marks the record conflicting, for good.
+ * A compaction is not a start: the agent may have moved to another directory since, so it only
+ * fills a missing record and never compares.
  */
-export const recordSession = ({ key, cwd, env = process.env, now = new Date() }) => {
-  const repo = repoIdentityOf({ cwd, env })
+export const recordSession = ({ key, cwd, compaction = false, env = process.env, now = new Date() }) => {
   const existing = readSessionRecord({ key, env })
+  if (existing && compaction) return
+  const repo = repoIdentityOf({ cwd, env })
   if (existing && !existing.conflicting && existing.repo === repo) return
   writeJsonAtomic(sessionPath({ key, env }), {
     schema: 1,

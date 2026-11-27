@@ -62,8 +62,8 @@ const writeConfig = (config) => {
 const runHook = ({ input, extraEnv = {} }) => spawnSync('/bin/sh', ['-c', hookCommand], {
   input, encoding: 'utf8', env: { ...env, PLUGIN_ROOT: pluginRoot, ...extraEnv },
 })
-const startSession = ({ key, cwd }) => {
-  const result = runHook({ input: JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source: 'startup' }) })
+const startSession = ({ key, cwd, source = 'startup' }) => {
+  const result = runHook({ input: JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source }) })
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '', 'the hook prints nothing')
 }
@@ -152,6 +152,22 @@ test('a second start from another repo marks the record conflicting for good', (
     (({ repo, conflicting }) => ({ repo, conflicting }))(readJson(join(stateDir(), 'sessions', file))),
     { repo: `github.com/${allowed}/tools`, conflicting: true },
   )
+})
+
+test('a compaction keeps the record, and a resume from another repo still conflicts', () => {
+  const record = () => {
+    const [file] = readdirSync(join(stateDir(), 'sessions'))
+    return (({ repo, conflicting }) => ({ repo, conflicting }))(readJson(join(stateDir(), 'sessions', file)))
+  }
+  startSession({ key: 'k', cwd: repos.allowed })
+  startSession({ key: 'k', cwd: repos.other, source: 'compact' })
+  assert.deepEqual(record(), { repo: `github.com/${allowed}/tools`, conflicting: false })
+  startSession({ key: 'k', cwd: repos.other, source: 'resume' })
+  assert.deepEqual(record(), { repo: `github.com/${allowed}/tools`, conflicting: true })
+
+  rmSync(stateDir(), { recursive: true, force: true })
+  startSession({ key: 'k', cwd: repos.other, source: 'compact' })
+  assert.deepEqual(record(), { repo: 'github.com/other-owner/service', conflicting: false }, 'a compaction fills a missing record')
 })
 
 test('the hook fails open, prints nothing, and opens no socket', () => {

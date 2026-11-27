@@ -23,7 +23,7 @@ const pluginVersion = () => {
 
 const run = (input) => {
   if (typeof input.session_id === 'string' && input.session_id && typeof input.cwd === 'string' && input.cwd) {
-    recordSession({ key: input.session_id, cwd: input.cwd })
+    recordSession({ key: input.session_id, cwd: input.cwd, compaction: input.source === 'compact' })
   }
   refreshPluginPath({ root: pluginRoot, version: pluginVersion() })
 }
