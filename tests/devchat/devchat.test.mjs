@@ -142,7 +142,7 @@ test('route decides by provenance first, then mode, then both allowlists', () =>
   for (const [change, expected] of rows) assert.deepEqual(route({ ...base, ...change }), expected, JSON.stringify(change))
 })
 
-test('the CLI routes each source as the table says, with zero outbound requests', () => {
+test('the CLI routes each source as the table says; only a board route attempts a request', () => {
   const rows = [
     { name: 'allowlisted start and cwd', start: repos.allowed, cwd: repos.allowedHttps, target: 'board' },
     { name: 'non-allowlisted start, allowlisted cwd', start: repos.other, cwd: repos.allowed, reason: 'the session started outside an allowlisted repo' },
@@ -505,11 +505,11 @@ before(async () => {
 const boardSession = { CLAUDE_CODE_SESSION_ID: 'board-session' }
 
 /** A Claude Code session started in an allowlisted repo, in mode readwrite, against the proxy or an offline URL. */
-const joinBoard = ({ mode = 'readwrite', boardUrl = proxy.url } = {}) => {
+const joinBoard = ({ mode = 'readwrite', boardUrl = proxy.url, machineName = machine } = {}) => {
   proxy.requests = []
   proxy.fault = () => null
   proxy.app = null
-  writeConfig({ ...readwrite, mode, machine, boardUrl })
+  writeConfig({ ...readwrite, mode, machine: machineName, boardUrl })
   if (!existsSync(join(stateDir(), 'sessions'))) startSession({ key: boardSession.CLAUDE_CODE_SESSION_ID, cwd: repos.allowed })
 }
 
@@ -695,6 +695,15 @@ test('one flusher: a second sync exits while another holds the outbox lock', asy
   assert.equal(posts().length, 1)
 })
 
+test('a machine name the board would refuse as a profile still sends', async () => {
+  joinBoard({ machineName: '9-Desk_Top.example.lan' })
+  const add = await devchatAsync({ args: ['todo', 'add', 'Any host name works.'] })
+  assert.equal(add.status, 0, add.stderr)
+  assert.match(add.stdout, /: sent$/mu)
+  assert.equal(posts()[0].profile, 'Desk-Top-example-lan-claude')
+  assert.equal(JSON.parse(JSON.parse(posts()[0].body).text).machine, '9-Desk_Top.example.lan')
+})
+
 test('mode read pulls and never sends', async () => {
   await queueOffline(['Stay queued.'])
   joinBoard({ mode: 'read' })
@@ -748,6 +757,7 @@ test('the check at flush sends only what the router queued', async () => {
     'an extra intent field': { ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, status: 'done' }) }) },
     'a mismatched id': { ...entry, body: JSON.stringify({ channel: 'inbox', id: 'other', text: JSON.stringify(intent) }) },
     'labels on the post': { ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) },
+    'a profile the board refuses': { ...entry, profile: 'box.local', body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, by: 'box.local' }) }) },
   }
   for (const [index, value] of Object.values(planted).entries()) writeFileSync(join(stateDir(), 'outbox', `0000-${index}.json`), JSON.stringify(value))
   writeFileSync(join(stateDir(), 'outbox', '0000-9.json'), 'not json')
@@ -756,7 +766,7 @@ test('the check at flush sends only what the router queued', async () => {
   assert.deepEqual(posts().map(({ body }) => body), [entry.body], 'only the queued file is sent')
   assert.equal(filesIn('outbox', 'rejected').length, Object.keys(planted).length + 1)
   const doctor = await devchatAsync({ args: ['doctor'] })
-  assert.match(doctor.stdout, /FAIL outbox: 0 queued, 1 sent, 7 rejected/u)
+  assert.match(doctor.stdout, /FAIL outbox: 0 queued, 1 sent, 8 rejected/u)
 })
 
 test('doctor reports the board, the outbox, the snapshot, and the timer', async () => {

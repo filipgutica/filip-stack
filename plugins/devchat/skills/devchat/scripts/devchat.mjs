@@ -357,10 +357,10 @@ const saveLocalTodo = ({ text, config, env }) => {
 
 // Outbox
 
-/**
- * Returns this machine's board profile for Claude Code writes, `<machine>-claude`. Board profile
- * names start with a letter and hold at most 32 letters, digits, and hyphens.
- */
+// Board profile names start with a letter and hold at most 32 letters, digits, and hyphens.
+const profilePattern = /^[A-Za-z][A-Za-z0-9-]{0,31}$/u
+
+/** Returns this machine's board profile for Claude Code writes, `<machine>-claude`, as a valid profile name. */
 const profileOf = (machine) => {
   const name = machine.replace(/[^A-Za-z0-9-]+/gu, '-').replace(/^[^A-Za-z]+/u, '').slice(0, 25).replace(/-+$/u, '')
   return `${name || 'devchat'}-claude`
@@ -414,6 +414,8 @@ const intentProblem = ({ entry, body, intent, config }) => {
     [hasExactly(intent, todoIntentFields) && intent.v === 1 && intent.kind === 'todo' && intent.channel === todoChannel, 'the intent is not a release 1 todo'],
     [ridPattern.test(String(intent.rid)) && intent.rid === body.id && intent.rid === entry.target, 'the intent rid does not match the post id'],
     [entry.lane === 'repo' && intent.by === entry.profile && intent.repo === entry.repo, 'the intent does not match its outbox record'],
+    // The board refuses a bad profile with a 400, which would stop every flush at this file.
+    [profilePattern.test(String(entry.profile)), 'the profile is not a board profile name'],
     [allowlistedRepo({ identity: `github.com/${intent.repo}`, allowlist: config.allowlist }) === intent.repo, 'the source repo is not on the allowlist'],
     [typeof intent.text === 'string' && intent.text.trim().length > 0 && intent.text.length <= maxTextLength, 'the todo text is empty or too long'],
     [[intent.by, intent.repo, intent.machine].every(isLabelValue), 'a provenance field is not a board label value'],
