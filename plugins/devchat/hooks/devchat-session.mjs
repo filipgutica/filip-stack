@@ -4,22 +4,10 @@
 // stdin `session_id`, and refreshes the plugin path file the `devchat` shim reads. It prints
 // nothing, opens no socket, and fails open: any error leaves the session to start normally, and
 // the router then keeps that session's writes on this machine.
-import { readFileSync } from 'node:fs'
 import { fileURLToPath } from 'node:url'
-import { recordSession, refreshPluginPath } from '../skills/devchat/scripts/devchat.mjs'
+import { pluginVersion, recordSession, refreshPluginPath } from '../skills/devchat/scripts/devchat.mjs'
 
 const pluginRoot = fileURLToPath(new URL('..', import.meta.url)).replace(/\/$/u, '')
-
-const pluginVersion = () => {
-  for (const manifest of ['.claude-plugin/plugin.json', '.codex-plugin/plugin.json']) {
-    try {
-      return JSON.parse(readFileSync(`${pluginRoot}/${manifest}`, 'utf8')).version
-    } catch {
-      // Try the next harness's manifest; each install carries at least one.
-    }
-  }
-  return 'unknown'
-}
 
 // Codex sets PLUGIN_ROOT for plugin hooks and Claude Code sets CLAUDE_PLUGIN_ROOT, as Field
 // Guide's hook relies on. Without either the harness is unknown, so nothing is recorded.
@@ -32,7 +20,7 @@ const run = (input) => {
     const subagent = typeof input.agent_id === 'string' && input.agent_id.length > 0
     recordSession({ key: { harness: current, id: input.session_id }, cwd: input.cwd, source: input.source, subagent })
   }
-  refreshPluginPath({ root: pluginRoot, version: pluginVersion() })
+  refreshPluginPath({ root: pluginRoot, version: pluginVersion(pluginRoot) })
 }
 
 const skip = (error) => {
