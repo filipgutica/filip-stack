@@ -847,6 +847,26 @@ test("another board's snapshot is replaced, whatever its cursor", async () => {
   }
 })
 
+test("another board's epoch does not stop sync", async () => {
+  // Board A, another URL to the same proxy, is at epoch 2 when this machine last synced.
+  joinBoard({ boardUrl: proxy.url.replace('127.0.0.1', 'localhost') })
+  await setEpoch('2')
+  try {
+    await syncOk()
+  } finally {
+    await setEpoch('1')
+  }
+  const path = join(stateDir(), 'snapshot.json')
+  const { board, ...withoutBoard } = readJson(path)
+  for (const snapshot of ['board A', 'no board URL']) {
+    if (snapshot === 'no board URL') writeFileSync(path, JSON.stringify(withoutBoard))
+    joinBoard()
+    assert.match((await devchatAsync({ args: ['doctor'] })).stdout, /ok {3}board: reachable, marker epoch 1\n/u, snapshot)
+    const sync = await syncOk()
+    assert.match(sync.stdout, /snapshot: \d+ open item\(s\), epoch 1/u, snapshot)
+  }
+})
+
 test('an epoch change during sync keeps the snapshot and the receipts', async () => {
   joinBoard()
   const add = await devchatAsync({ args: ['todo', 'add', 'Restored away.'] })

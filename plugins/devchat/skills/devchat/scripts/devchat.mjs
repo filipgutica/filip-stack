@@ -773,10 +773,14 @@ const newerSnapshotInPlace = ({ env, board, epoch, applied }) => {
   return current?.board === board && current.epoch === epoch && isMessageId(current.applied) && (!isMessageId(applied) || BigInt(current.applied) > BigInt(applied))
 }
 
+// Only a snapshot of the configured board can hold an old epoch. Sync replaces a snapshot of
+// another board, or one without a board URL, without comparing it.
+const snapshotEpochDiffers = ({ snapshot, config, epoch }) => snapshot?.board === config.boardUrl && snapshot.epoch !== epoch
+
 const syncSteps = async ({ config, env, out, client }) => {
   const snapshot = readSnapshot(env)
   const epoch = await readBoardEpoch(client)
-  if (snapshot && snapshot.epoch !== epoch) {
+  if (snapshotEpochDiffers({ snapshot, config, epoch })) {
     throw new SyncStop(`the board epoch is ${epoch} and the snapshot's is ${snapshot.epoch}: nothing is sent or pulled until the outbox is reconciled`)
   }
   if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out })
@@ -1002,7 +1006,7 @@ const doctorTimeoutMs = 5000
 const boardCheck = async ({ config, snapshot }) => {
   try {
     const epoch = await readBoardEpoch(boardClient({ boardUrl: config.boardUrl, signal: AbortSignal.timeout(doctorTimeoutMs) }))
-    const matches = !snapshot || snapshot.epoch === epoch
+    const matches = !snapshotEpochDiffers({ snapshot, config, epoch })
     return { ok: matches, line: `board: reachable, marker epoch ${epoch}${matches ? '' : `, but the snapshot's is ${snapshot.epoch}: sync sends nothing`}` }
   } catch (error) {
     if (!(error instanceof SyncStop)) throw error
