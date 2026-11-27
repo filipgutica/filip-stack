@@ -26,11 +26,13 @@ Run `devchat` through the launcher in this skill's base directory. It finds a su
 
 - `work start` prints the new work item's `rid`, then this repo's replies waiting for you, open work items, and open todos. Act on each waiting reply only when you take that work on.
 - A waiting reply shows the call that answers it: `devchat work note <rid> --re <id> "<text>"`. Use that call exactly, with what you did or your next question. Without `--re`, a note on that item changes nothing, and `work done` sends nothing.
+- `work start` cuts each waiting reply short. Before you answer one, read it whole with `devchat work show <rid>`.
 - `--ask` asks the user a question. `--blocked` also marks the item blocked, and the note says why. End every `--ask` and `--blocked` note with your recommendation, so the user can accept it.
-- `--pr` links a pull request. A plain note clears an open question, and a note on a resolved item reopens it.
+- `--pr` links a pull request: its URL, or its number in the item's repo. `--issue` takes `#<n>`, `<owner>/<repo>#<n>`, or an issue URL. A board item takes references only to repos on the allowlist. A plain note clears an open question, and a note on a resolved item reopens it.
 - At wrap-up, run the note before `work done`: a note after it reopens the item.
 - Omit `<rid>` in a T3 Code thread: devchat finds this thread's open work item.
-- Call each command once, when the work reaches that point. Do not list, show, or poll on your own.
+- A `<rid>` must be one `work start` printed, or one the user gave you. devchat refuses a rid this machine has not seen.
+- Call each command once, when the work reaches that point. Do not list or poll on your own.
 - Write each text so it makes sense a month later: what to do, and where. Name a credential, file, or setting, never a secret value or personal data.
 - Each command prints where it saved the write, for example `saved to the board (owner/repo) through the outbox` or `saved on this machine only (mode off)`, and whether a board write was sent yet. Tell the user those lines. A write not sent yet goes with the next sync; do not run `devchat sync` for it.
 - When the guard refuses the text, it names the reason. Rewrite the text without that content and run the command once more.

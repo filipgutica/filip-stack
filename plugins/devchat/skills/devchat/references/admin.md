@@ -7,7 +7,7 @@ devchat todo list            # open todos, oldest first, each with its rid and s
 devchat todo done <rid>      # resolve a todo; a unique rid prefix is enough
 devchat todo drop <rid>      # drop a todo
 devchat work list            # open work items, oldest first, each with its rid, source, and whether a reply waits
-devchat work show <rid>      # a work item, the replies this machine keeps, and the call that answers a waiting reply
+devchat work show <rid>      # a work item, the replies this machine keeps in full, and the call that answers a waiting reply
 devchat work drop <rid> [--re <id>]   # drop a work item
 devchat sync                 # send the outbox, then pull the board into the snapshot
 devchat doctor               # config, mode, state, session record, route here; with the board on: board, epoch, outbox, snapshot, timer
@@ -15,7 +15,8 @@ devchat setup --host <tailnet host> [--port 8443] --github-login <login> --mode 
 devchat guard < <file>       # exit 0 when the text passes the guard, 1 with the reason
 ```
 
-- A todo or work item kept on this machine resolves in its record. A board item resolves through an intent, which only a session whose writes reach the board can send; from a terminal, resolve it in the devchat UI.
+- A todo or work item kept on this machine resolves in its record. A board item resolves through an intent, which only a session whose writes reach the board, from the item's own repo, can send; from a terminal, resolve it in the devchat UI.
+- A command names only an item this machine has seen on the configured board, by rid or a prefix unique among open and resolved items. Run `devchat sync` to see a newer one. The snapshot keeps the latest 500 resolved roots of each channel, by their labels, so a note can still reopen one.
 - While a user's reply waits on a work item, `work drop` and `work done` send nothing without `--re` naming that reply, and print the call that answers it.
 - `setup` joins a board without sudo: it writes the config, installs the `~/.local/bin/devchat` shim and a 15-minute sync timer (a systemd user timer on Linux, a launchd agent on macOS), then runs `doctor`. It checks every file first, and changes nothing when one exists that setup did not write; it names that file. Run it with `--dry-run` first and show the user the steps. `--board-url <url>` replaces `--host` and `--port`; the URL must use https, or http on a loopback host.
 - In mode `off`, `todo list` and `work list` show only items on this machine.

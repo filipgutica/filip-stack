@@ -377,39 +377,55 @@ const foldRows = {
   drop: resolveRow,
 }
 
+// The pending guard: an agent's post while `ask=answered` that does not name `turn` with `re`.
+const blockedByPending = (labels, post) => post.by !== 'user' && labels.ask === 'answered' && !(post.re !== undefined && post.re === labels.turn)
+
 /** Returns a root's labels after one more post in its thread, `post` being that post's labels (spec §2). */
 export const foldStep = (labels, post) => {
   const state = { ...labels }
-  const answersTurn = post.re !== undefined && post.re === state.turn
-  if (post.by !== 'user' && state.ask === 'answered' && !answersTurn) return state
+  if (blockedByPending(state, post)) return state
   if (Object.hasOwn(foldRows, post.kind)) foldRows[post.kind](state, post)
   return state
 }
 
-/** Folds one reply, `{ labels, text, createdAt }`, into its root item, and keeps the reply. */
-const foldReply = (item, reply) => ({
-  ...item,
-  labels: foldStep({ status: 'open', ...item.labels }, reply.labels),
-  replies: [...(item.replies ?? []), reply],
-})
+/**
+ * Folds one reply, `{ labels, text, createdAt }`, into its root item, and keeps the reply. A
+ * resolve the pending guard stops is left out: the app refuses it, so it never joins the thread.
+ */
+const foldReply = (item, reply) => {
+  if (isResolveKind(reply.labels.kind) && blockedByPending(item.labels, reply.labels)) return item
+  return {
+    ...item,
+    labels: foldStep({ status: 'open', ...item.labels }, reply.labels),
+    replies: [...(item.replies ?? []), reply],
+  }
+}
 
 // A root is pending while `ask=answered`: the user replied, and no agent post has answered the
 // reply `turn` names (spec §2).
 const isPending = (item) => item.labels.ask === 'answered'
 
+// The unanswered messages after one more reply. A user reply after the root's `turn` came after
+// the labels this machine read, so it waits for the next sync rather than pair with an older `re`.
+const unansweredAfter = ({ unanswered, reply, pastTurn }) => {
+  const { by, kind, re } = reply.labels
+  if (isResolveKind(kind)) return []
+  if (by === 'user') return kind === 'answer' && !pastTurn ? [...unanswered, reply] : unanswered
+  return re === undefined ? unanswered : unanswered.slice(unanswered.findIndex(({ labels }) => labels.rid === re) + 1)
+}
+
 /**
- * The user's unanswered messages on a pending root (spec §2), from its replies in log order: each
- * user reply, less every one up to the reply an agent post names with `re`. A resolve answers all.
+ * The user's unanswered messages on a pending root (spec §2), from its replies in log order, up
+ * to the one its `turn` names: each user reply, less every one up to the reply an agent post
+ * names with `re`. A resolve answers all.
  */
 const unansweredOf = (item) => {
   if (!isPending(item)) return []
   let unanswered = []
+  let pastTurn = false
   for (const reply of item.replies ?? []) {
-    const { by, kind, re } = reply.labels
-    if (kind === 'done' || kind === 'drop') unanswered = []
-    else if (by === 'user') {
-      if (kind === 'answer') unanswered.push(reply)
-    } else if (re !== undefined) unanswered = unanswered.slice(unanswered.findIndex(({ labels }) => labels.rid === re) + 1)
+    unanswered = unansweredAfter({ unanswered, reply, pastTurn })
+    pastTurn ||= reply.labels.rid === item.labels.turn
   }
   return unanswered
 }
@@ -452,10 +468,43 @@ const requireRid = ({ value, name }) => {
 // The app reads a PR's number from the end of its URL's path, as `/pull/<n>`, and refuses any other.
 const prNumberOf = (url) => (URL.canParse(url) ? /\/pull\/(\d{1,9})\/?$/u.exec(new URL(url).pathname)?.[1] ?? null : null)
 
-const requirePr = (url) => {
-  requireLabel({ value: url, name: '--pr' })
-  if (!/^https?:\/\//iu.test(url) || prNumberOf(url) === null) throw new UsageError('--pr must be a pull request URL ending in /pull/<number>')
-  return url
+// References. A structured reference names its repo, and the board takes one only to an
+// allowlisted repo (spec §5): at queue time and again at flush. A bare number names the item's
+// own repo.
+const githubName = '([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))/([A-Za-z0-9._-]{1,100})'
+const shortIssue = new RegExp(`^${githubName}#\\d{1,9}$`, 'u')
+const issueUrl = new RegExp(`^https://github\\.com/${githubName}/issues/\\d{1,9}/?$`, 'u')
+const pullUrl = new RegExp(`^https://github\\.com/${githubName}/pull/\\d{1,9}/?$`, 'u')
+const repoOfMatch = (match) => (match ? `${match[1]}/${match[2]}` : null)
+
+/** The `owner/repo` an `--issue` reference names: '' for a bare `#<n>` or `<n>`, null for a form devchat does not take. */
+const issueRepoOf = (value) => (/^#?\d{1,9}$/u.test(value) ? '' : repoOfMatch(shortIssue.exec(value) ?? issueUrl.exec(value)))
+/** The `owner/repo` a `--pr` URL names, or null when it is not a github.com pull request URL. */
+const prRepoOf = (url) => repoOfMatch(pullUrl.exec(url))
+const isAllowlisted = ({ repo, allowlist }) => repo === '' || allowlistedRepo({ identity: `github.com/${repo}`, allowlist }) === repo
+
+const requireIssue = ({ value, board, config }) => {
+  requireLabel({ value, name: '--issue' })
+  const repo = issueRepoOf(value)
+  if (repo === null) throw new UsageError('--issue must be #<number>, <owner>/<repo>#<number>, or a github.com issue URL')
+  if (board && !isAllowlisted({ repo, allowlist: config.allowlist })) throw new UsageError('--issue names a repo whose owner is not on the allowlist, and the board takes no reference to it. Nothing was saved.')
+  return value
+}
+
+/**
+ * Checks `--pr`: a github.com pull request URL, or a number in `repo`, the target item's repo. A
+ * board item takes only a pull request in an allowlisted repo.
+ */
+const requirePr = ({ value, repo, board, config }) => {
+  requireLabel({ value, name: '--pr' })
+  if (/^#?\d{1,9}$/u.test(value)) {
+    if (!repo) throw new UsageError('--pr takes a number only for an item in a github.com repo: give the pull request URL')
+    return `https://github.com/${repo}/pull/${value.replace('#', '')}`
+  }
+  const named = prRepoOf(value)
+  if (named === null) throw new UsageError('--pr must be a github.com pull request URL, or a pull request number in the item\'s repo')
+  if (board && !isAllowlisted({ repo: named, allowlist: config.allowlist })) throw new UsageError('--pr names a repo whose owner is not on the allowlist, and the board takes no reference to it. Nothing was saved.')
+  return value
 }
 
 const newRid = (kind) => `${kind}-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`
@@ -620,7 +669,8 @@ const intentProblem = ({ entry, body, intent, config }) => {
     // A resolve has no text: the app writes its fixed text.
     [() => (isResolveKind(intent.kind) ? intent.text === '' : intent.text.trim().length > 0 && intent.text.length <= maxTextLength), 'the text is empty or too long'],
     [() => labels.every(isLabelValue), 'a provenance field is not a board label value'],
-    [() => intent.pr === undefined || prNumberOf(intent.pr) !== null, 'the pr is not a pull request URL'],
+    [() => intent.pr === undefined || prRepoOf(intent.pr) !== null, 'the pr is not a pull request URL'],
+    [() => [intent.issue === undefined ? '' : issueRepoOf(intent.issue), intent.pr === undefined ? '' : prRepoOf(intent.pr)].every((repo) => repo !== null && isAllowlisted({ repo, allowlist: config.allowlist })), 'a reference names a repo off the allowlist'],
     [() => strings.every((field) => !guardReason(field)), 'the guard refused an outbound field'],
     [() => entry.body === requestBodyOf(canonicalIntent(intent)), 'the request body is not in canonical form'],
   ]
@@ -761,28 +811,40 @@ const readReplies = async ({ client, id }) => {
  * The replies the snapshot keeps for a pending root (spec §3): the last three, the user's
  * unanswered messages however old, and the question each of those answers with `re`.
  */
-const keptReplies = (messages) => {
+const keptReplies = ({ messages, labels }) => {
   const replies = messages
     .filter((message) => !message.deleted && isRecord(message.labels) && isString(message.labels.rid))
     .map((message) => ({ labels: message.labels, text: message.text, createdAt: message.createdAt }))
-  const unanswered = unansweredOf({ labels: { ask: 'answered' }, replies })
+  const unanswered = unansweredOf({ labels, replies })
   const asked = new Set(unanswered.map(({ labels }) => labels.re))
   const kept = new Set([...replies.slice(-3), ...unanswered])
   return replies.filter((reply) => kept.has(reply) || asked.has(reply.labels.rid))
 }
 
+// How many resolved roots per channel the snapshot keeps, newest first, labels only: a note can
+// reopen one, and a command can name only a root this machine has seen.
+const resolvedKept = 500
+
+/** Pulls the open roots, with replies for each pending one, and the latest resolved roots by their labels. */
 const pullSnapshotItems = async (client) => {
   const items = []
+  const resolved = []
   for (const channel of snapshotChannels) {
+    const closed = []
     for (const message of await pullChannel({ client, channel })) {
       if (message.deleted || typeof message.labels?.rid !== 'string') continue
       const item = snapshotItem(message)
-      if (!isOpen(item)) continue
-      if (isPending(item)) item.replies = keptReplies(await readReplies({ client, id: message.id }))
+      if (!isOpen(item)) {
+        closed.push({ rid: item.rid, channel, text: '', labels: item.labels, createdAt: item.createdAt })
+        continue
+      }
+      // The replies are read after the root's labels, so they can run past its `turn`.
+      if (isPending(item)) item.replies = keptReplies({ messages: await readReplies({ client, id: message.id }), labels: item.labels })
       items.push(item)
     }
+    resolved.push(...closed.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, resolvedKept))
   }
-  return items
+  return { items, resolved }
 }
 
 // Sync (spec §3). One flusher per device: sync takes a lock file in `outbox/`, and a second sync
@@ -944,14 +1006,15 @@ const intentOfEntry = (entry) => {
 
 // A refused intent moves to `rejected/` with its reason code, which sync prints as it is. Any
 // other decided intent was applied, so its file goes. A refused reply on a root that still waits
-// for its pending reply also prints the call that answers it (spec §4).
+// for its pending reply also prints the call that answers it (spec §4). Each line names the
+// intent's source repo, so a write's own sync can print only that repo's (`syncAfterWrite`).
 const retireDecided = ({ env, decided, items, out }) => {
   for (const { name, entry, reason } of decided) {
     if (reason !== undefined) {
       writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
-      out(`refused ${entry.target}: ${reason}`)
+      out(`refused ${entry.target}: ${reason}`, { repo: entry.repo })
       const root = items.find((item) => item.rid === intentOfEntry(entry)?.root)
-      if (root && isPending(root)) out(`not applied: ${root.rid} waits on a reply. ${answerCall(root)}`)
+      if (root && isPending(root)) out(`not applied: ${root.rid} waits on a reply. ${answerCall(root)}`, { repo: entry.repo })
     }
     ignoreMissing(() => unlinkSync(join(sentDir(env), name)))
   }
@@ -983,7 +1046,7 @@ const syncSteps = async ({ config, env, out, client, outcomes }) => {
   if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out, outcomes })
   const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
-  const items = await pullSnapshotItems(client)
+  const { items, resolved } = await pullSnapshotItems(client)
   const decided = await readDecided({ client, config, env, epoch, applied })
   // A restore during this sync would make every read above an old board's. Read the epoch again
   // before anything local changes.
@@ -996,7 +1059,7 @@ const syncSteps = async ({ config, env, out, client, outcomes }) => {
     out('a newer snapshot is already in place: this sync leaves it and its receipts')
     return
   }
-  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, board: config.boardUrl, epoch, applied, items })
+  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, board: config.boardUrl, epoch, applied, items, resolved })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
   retireDecided({ env, decided, items, out })
 }
@@ -1026,13 +1089,14 @@ const runSync = async ({ config, env, out = () => {}, signal, outcomes = new Map
 // already succeeded, so no outcome here fails the command.
 const postWriteSyncMs = 3000
 
-const syncAfterWrite = async ({ config, env, name, out }) => {
+const syncAfterWrite = async ({ config, env, name, repo, out }) => {
   // What this sync's flush did with each file, by name.
   const outcomes = new Map()
   let reason
   try {
-    // Of this sync's lines, only a refusal of an earlier intent is news to the user here.
-    const refusals = (line) => (line.startsWith('refused ') || line.startsWith('not applied: ')) && out(line)
+    // Of this sync's lines, only a refusal of an earlier intent from this write's repo is news
+    // here. `devchat sync` prints every refusal.
+    const refusals = (line, about) => about?.repo === repo && out(line)
     const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs), outcomes })
     reason = result.locked ? 'another sync is running' : result.stopped
   } catch (error) {
@@ -1065,31 +1129,45 @@ const sync = async ({ args, env, out }) => {
 // that the app has not decided yet, folded in queue order, then the records in `local/`. So an
 // item marked done offline leaves the view at once; the app decides when it ingests the intent.
 
-// The intents this machine queued or sent that the app has not decided yet, in queue order. A rid
-// in both folders, after a crash or two flushers, counts once, as its `sent/` copy.
-const outstandingIntents = (env) => {
+// The snapshot of the configured board, or null: another board's snapshot is no view of this one.
+const currentSnapshot = ({ config, env }) => {
+  const snapshot = readSnapshot(env)
+  return snapshot?.board === config.boardUrl ? snapshot : null
+}
+
+// An outbox entry belongs to the configured board's view when it was queued for that board and,
+// once both know the epoch, for that epoch. An entry queued with the epoch unknown takes the next.
+const ofThisBoard = ({ entry, config, snapshot }) => entry.board === config.boardUrl
+  && (entry.epoch == null || snapshot == null || entry.epoch === snapshot.epoch)
+
+// The intents this machine queued or sent for the configured board that the app has not decided
+// yet, in queue order. A rid in both folders, after a crash or two flushers, counts once, as its
+// `sent/` copy.
+const outstandingIntents = ({ config, snapshot, env }) => {
   const found = new Map()
   for (const [dir, source] of [[sentDir(env), 'sent'], [outboxDir(env), 'queued']]) {
     for (const name of outboxNames(dir)) {
       const { entry } = readOutboxEntry(join(dir, name))
       const intent = intentOfEntry(entry)
-      if (!intent || !isString(entry.queuedAt) || found.has(intent.rid)) continue
+      if (!intent || !isString(entry.queuedAt) || !ofThisBoard({ entry, config, snapshot }) || found.has(intent.rid)) continue
       found.set(intent.rid, { name, intent, queuedAt: entry.queuedAt, source })
     }
   }
   return [...found.values()].sort((a, b) => a.name.localeCompare(b.name))
 }
 
-const boardView = (env) => {
-  const items = new Map((readSnapshot(env)?.items ?? []).map((item) => [item.rid, { ...item, source: 'board' }]))
-  for (const { intent, queuedAt, source } of outstandingIntents(env)) {
+/** The configured board's items: the snapshot's open and resolved roots, with this machine's outstanding intents folded in. */
+const boardView = ({ config, env }) => {
+  const snapshot = currentSnapshot({ config, env })
+  const roots = [...(snapshot?.items ?? []), ...(snapshot?.resolved ?? [])]
+  const items = new Map(roots.map((item) => [item.rid, { ...item, source: 'board' }]))
+  for (const { intent, queuedAt, source } of outstandingIntents({ config, snapshot, env })) {
     if (isRootKind(intent.kind)) {
       if (items.has(intent.rid)) continue
       const labels = definedLabels({ rid: intent.rid, status: 'open', repo: intent.repo, thread: intent.thread, issue: intent.issue })
       items.set(intent.rid, { rid: intent.rid, channel: intent.channel, text: intent.text, labels, createdAt: queuedAt, source })
       continue
     }
-    // A reply on a root the view lacks, such as one resolved before the last sync, waits for the app.
     const root = items.get(intent.root)
     if (root) items.set(root.rid, foldReply(root, { labels: postLabelsOf(intent), text: replyTextOf(intent), createdAt: queuedAt }))
   }
@@ -1098,52 +1176,47 @@ const boardView = (env) => {
 
 /** Every todo and work item this machine knows, oldest first, each with its `source`: board, queued, sent, or local. Mode off has no board. */
 const viewItems = ({ config, env }) => [
-  ...(config.mode === 'off' ? [] : boardView(env)),
+  ...(config.mode === 'off' ? [] : boardView({ config, env })),
   ...readLocalItems(env).map((item) => ({ ...item, source: 'local' })),
 ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
 const nouns = { [todoChannel]: 'todo', [workChannel]: 'work item' }
-// Whole root rids, never a prefix: one this client makes for the channel (`newRid`), or one the UI
-// makes (`ui-` and a lowercase UUID).
-const uiRid = '|ui-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
-const wholeRootRid = {
-  [todoChannel]: new RegExp(`^(?:todo-[a-z0-9]+-[0-9a-f]{8}${uiRid})$`, 'u'),
-  [workChannel]: new RegExp(`^(?:work-[a-z0-9]+-[0-9a-f]{8}${uiRid})$`, 'u'),
+const listCommands = { [todoChannel]: 'devchat todo list', [workChannel]: 'devchat work list' }
+
+const threadItem = ({ items, noun, env }) => {
+  const thread = env.T3CODE_THREAD_ID
+  if (!thread) throw new UsageError(`give the ${noun} rid: without one, devchat looks for this T3 thread's open ${noun}, and T3CODE_THREAD_ID is not set`)
+  const ofThread = items.filter((item) => isOpen(item) && item.labels.thread === thread)
+  if (ofThread.length === 1) return ofThread[0]
+  throw new UsageError(ofThread.length === 0
+    ? `no open ${noun} belongs to this T3 thread: give its rid`
+    : `${ofThread.length} open ${noun}s belong to this T3 thread: give one rid of ${ofThread.map(({ rid }) => rid).join(', ')}`)
 }
 
 /**
- * Finds the item a command names: by rid or a unique prefix of one, or, for a work item named by
- * neither, the open one whose `thread` is this T3 thread (`T3CODE_THREAD_ID`, F24). A resolve names
- * only open items. A whole root rid this machine does not know is taken as a board root: a
- * resolved root has left the snapshot, and a note may still reopen it. The app looks the rid up at
- * ingest, and refuses the intent as `root` when no such root exists. A prefix never leaves the view.
+ * Finds the item a command names, in this machine's view of the configured board and `local/`:
+ * by its rid or a prefix unique among all of them, or, for a work item named by neither, the open
+ * one whose `thread` is this T3 thread (`T3CODE_THREAD_ID`, F24). A resolve names only open items.
+ * A rid this machine has not seen names nothing: run sync first. The argument may be anything the
+ * agent pasted, so no error prints it.
  */
 const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
   const noun = nouns[channel]
   const items = viewItems({ config, env }).filter((item) => item.channel === channel)
-  if (prefix === undefined) {
-    const thread = env.T3CODE_THREAD_ID
-    if (!thread) throw new UsageError(`give the ${noun} rid: without one, devchat looks for this T3 thread's open ${noun}, and T3CODE_THREAD_ID is not set`)
-    const ofThread = items.filter((item) => isOpen(item) && item.labels.thread === thread)
-    if (ofThread.length === 1) return ofThread[0]
-    throw new UsageError(ofThread.length === 0
-      ? `no open ${noun} belongs to this T3 thread: give its rid`
-      : `${ofThread.length} open ${noun}s belong to this T3 thread: give one rid of ${ofThread.map(({ rid }) => rid).join(', ')}`)
-  }
+  if (prefix === undefined) return threadItem({ items, noun, env })
+  if (!ridPattern.test(prefix)) throw new UsageError(`the ${noun} rid is not a devchat rid: it holds letters, digits, and . _ : - only`)
   const exact = items.filter((item) => item.rid === prefix)
   const matches = exact.length > 0 ? exact : items.filter((item) => item.rid.startsWith(prefix))
-  const candidates = openOnly ? matches.filter(isOpen) : matches
-  if (candidates.length === 1) return candidates[0]
-  if (candidates.length > 1) throw new UsageError(`${prefix} matches ${candidates.length} ${noun}s: ${candidates.map(({ rid }) => rid).join(', ')}`)
-  if (matches.length > 0) throw new UsageError(`${prefix} is already resolved`)
-  if (config.mode !== 'off' && wholeRootRid[channel].test(prefix)) return { rid: prefix, channel, labels: {}, source: 'unknown' }
-  throw new UsageError(`no ${openOnly ? 'open ' : ''}${noun} on this machine matches ${prefix}`)
+  if (matches.length > 1) throw new UsageError(`that rid prefix matches ${matches.length} ${noun}s: ${matches.map(({ rid }) => rid).join(', ')}`)
+  if (matches.length === 0) throw new UsageError(`no ${noun} on this machine has that rid: run devchat sync, or find it with ${listCommands[channel]}`)
+  if (openOnly && !isOpen(matches[0])) throw new UsageError(`${matches[0].rid} is already resolved`)
+  return matches[0]
 }
 
 /**
  * Writes one reply, `fields` without `v`, `rid`, `by`, and `root`, on `target`. An item kept on
  * this machine folds it into its `local/` record. A board item takes it as an intent, which needs
- * a board route: a session whose writes stay on this machine saves nothing.
+ * a board route from the item's own repo: anything else saves nothing.
  */
 const writeReply = async ({ target, fields, config, env, cwd, out }) => {
   const intent = { ...fields, root: target.rid }
@@ -1157,41 +1230,54 @@ const writeReply = async ({ target, fields, config, env, cwd, out }) => {
   }
   const decision = routeHere({ config, env, cwd })
   if (decision.target !== 'board') throw new UsageError(`${target.rid} is on the board, and this session's writes stay on this machine (${decision.reason}). Nothing was saved.`)
-  if (target.source === 'unknown') out(`${target.rid} is not in this machine's view: the board looks it up, and refuses the write when it has no such item`)
+  if (target.labels.repo !== decision.repo) throw new UsageError(`${target.rid} is not an item of ${decision.repo}, where this session writes. Nothing was saved.`)
   const { rid, name } = queueIntent({ fields: intent, repo: decision.repo, config, env })
   out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
-  out(`${rid}: ${await syncAfterWrite({ config, env, name, out })}`)
+  out(`${rid}: ${await syncAfterWrite({ config, env, name, repo: decision.repo, out })}`)
 }
 
-// Pending replies (spec §13, pickup): each unanswered message, the question it answers, and the
-// one call that answers them all, with `--re <turn>`.
+// The repo `--pr <number>` names: a board item's `repo`, or a local item's github.com repo.
+const repoOfItem = (item) => item.labels.repo ?? /^github\.com\/([^/]+\/[^/]+)$/u.exec(item.identity ?? '')?.[1]
+
+// Pending replies (spec §13, pickup): for each pending item one line with the call that answers
+// every unanswered message, `--re <turn>`, then the messages, cut short.
 
 const oneLine = (text, max) => {
   const flat = text.replace(/\s+/gu, ' ').trim()
   return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
 }
 
-const answerCall = (item) => `Answer it: devchat work note ${item.rid} --re ${item.labels.turn} "<what you did, or the next question>"`
+const replyCall = (item) => `devchat work note ${item.rid} --re ${item.labels.turn} "<what you did, or the next question>"`
+const answerCall = (item) => `Answer it: ${replyCall(item)}`
 
-const pendingLines = ({ item, notes = [] }) => {
+/** The one line pickup always prints for a pending item: its rid, its goal, and the call. */
+const pendingSummary = (item) => `${item.rid}  ${oneLine(item.text, 48)}  answer: ${replyCall(item)}`
+
+/** A pending item's unanswered messages, each with the question it answers, cut short. */
+const pendingReplies = (item) => {
   const asks = new Map((item.replies ?? []).filter(({ labels }) => labels.kind === 'ask').map((reply) => [reply.labels.rid, reply]))
-  return [
-    `${item.rid}  ${oneLine(item.text, 72)}`,
-    ...unansweredOf(item).flatMap((reply) => [
-      ...(asks.has(reply.labels.re) ? [`  you asked: ${oneLine(asks.get(reply.labels.re).text, 100)}`] : []),
-      `  the user replied: ${oneLine(reply.text, 160)}`,
-    ]),
-    ...notes,
-    `  ${answerCall(item)}`,
-  ]
+  return unansweredOf(item).flatMap((reply) => [
+    ...(asks.has(reply.labels.re) ? [`  you asked: ${oneLine(asks.get(reply.labels.re).text, 100)}`] : []),
+    `  the user replied: ${oneLine(reply.text, 120)}`,
+  ])
 }
 
-// The intents the app refused, which sync moved to `rejected/` with their reason code.
-const refusedReplies = (env) => outboxNames(rejectedDir(env)).flatMap((name) => {
-  const { entry } = readOutboxEntry(join(rejectedDir(env), name))
-  const intent = intentOfEntry(entry)
-  return intent?.root !== undefined && isString(entry.refused) ? [{ intent, reason: entry.refused }] : []
-})
+const pendingLines = (item) => [
+  pendingSummary(item),
+  ...pendingReplies(item),
+  `  Read them whole: devchat work show ${item.rid}`,
+]
+
+// The intents the app refused for the configured board, which sync moved to `rejected/` with
+// their reason code.
+const refusedReplies = ({ config, env }) => {
+  const snapshot = currentSnapshot({ config, env })
+  return outboxNames(rejectedDir(env)).flatMap((name) => {
+    const { entry } = readOutboxEntry(join(rejectedDir(env), name))
+    const intent = intentOfEntry(entry)
+    return intent?.root !== undefined && isString(entry.refused) && ofThisBoard({ entry, config, snapshot }) ? [{ intent, reason: entry.refused }] : []
+  })
+}
 
 const contextBudget = 1024
 // Room kept for the line that says how much did not fit.
@@ -1199,18 +1285,19 @@ const moreLineBytes = 80
 
 /**
  * The lines of `sections` that fit in 1 KB, in order. A block shows whole or not at all, and once
- * one does not fit, nothing after it shows, so a cut never splits a call or reorders the list.
+ * one does not fit, nothing after it shows, so a cut never splits a call or reorders the list. A
+ * section marked `always` shows whatever its size: it holds the calls that answer waiting replies.
  */
 const fitSections = (sections) => {
   const lines = []
   let used = 0
   let omitted = 0
-  for (const { header, blocks } of sections) {
+  for (const { header, blocks, always = false } of sections) {
     let headed = false
     for (const block of blocks) {
       const candidate = headed ? block : [header, ...block]
       const size = candidate.reduce((sum, line) => sum + Buffer.byteLength(line) + 1, 0)
-      if (omitted > 0 || used + size > contextBudget - moreLineBytes) {
+      if (!always && (omitted > 0 || used + size > contextBudget - moreLineBytes)) {
         omitted += 1
         continue
       }
@@ -1230,9 +1317,10 @@ const flagOf = (item) => {
 }
 
 /**
- * What `work start` prints about this repo (spec §4), in at most 1 KB: pending replies first, with
- * the call that answers each and any reply the app refused while it waited, then open work items,
- * then open todos. A board item is this repo's by its `repo` label, a local one by its identity.
+ * What `work start` prints about this repo (spec §4), in at most 1 KB: first one line per pending
+ * item with the call that answers it, and any reply the app refused while it waited, whatever
+ * their size; then the waiting messages, cut short; then open work items; then open todos. A board
+ * item is this repo's by its `repo` label, a local one by its identity.
  */
 const startContext = ({ config, env, cwd, exclude }) => {
   const identity = repoIdentityOf({ cwd, env })
@@ -1240,12 +1328,14 @@ const startContext = ({ config, env, cwd, exclude }) => {
   const here = (item) => (item.source === 'local' ? identity !== '' && item.identity === identity : repo !== null && item.labels.repo === repo)
   const open = viewItems({ config, env }).filter((item) => item.rid !== exclude && isOpen(item) && here(item))
   const work = open.filter(({ channel }) => channel === workChannel)
-  const refusals = refusedReplies(env)
+  const pending = work.filter(isPending)
+  const refusals = refusedReplies({ config, env })
   const notesFor = (item) => refusals
     .filter(({ intent }) => intent.root === item.rid)
     .map(({ intent, reason }) => `  not applied: ${intent.rid} (${intent.kind}), refused: ${reason}`)
   const lines = fitSections([
-    { header: 'Replies waiting for you; answer each with its call:', blocks: work.filter(isPending).map((item) => pendingLines({ item, notes: notesFor(item) })) },
+    { header: 'Replies waiting for you; answer each with its call:', blocks: pending.map((item) => [pendingSummary(item), ...notesFor(item)]), always: true },
+    { header: 'What the user replied, cut short; devchat work show <rid> prints it whole:', blocks: pending.map((item) => [`${item.rid}:`, ...pendingReplies(item)]) },
     { header: 'Open work items here; add a note with devchat work note <rid> "<text>":', blocks: work.filter((item) => !isPending(item)).map((item) => [`${item.rid}  ${flagOf(item)}${oneLine(item.text, 80)}`]) },
     { header: 'Open todos here:', blocks: open.filter(({ channel }) => channel === todoChannel).map((item) => [`${item.rid}  ${oneLine(item.text, 80)}`]) },
   ])
@@ -1267,17 +1357,17 @@ const workStart = async ({ args, env, cwd, out }) => {
   const { values, positionals } = parseCommand({ args, options: { issue: { type: 'string' } }, usage })
   if (positionals.length !== 1) throw new UsageError(usage)
   const text = requireText(positionals[0], 'goal')
-  const issue = values.issue === undefined ? undefined : requireLabel({ value: values.issue, name: '--issue' })
   // The T3 thread that starts the item (F24): a later call without a rid finds the item by it.
   const thread = env.T3CODE_THREAD_ID ? requireLabel({ value: env.T3CODE_THREAD_ID, name: 'T3CODE_THREAD_ID' }) : undefined
   const config = readConfig(env)
   const decision = routeHere({ config, env, cwd })
+  const issue = values.issue === undefined ? undefined : requireIssue({ value: values.issue, board: decision.target === 'board', config })
   let rid
   if (decision.target === 'board') {
     const queued = queueIntent({ fields: { kind: 'work', channel: workChannel, text, repo: decision.repo, machine: config.machine, thread, issue }, repo: decision.repo, config, env })
     rid = queued.rid
     out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
-    out(`${rid}: ${await syncAfterWrite({ config, env, name: queued.name, out })}`)
+    out(`${rid}: ${await syncAfterWrite({ config, env, name: queued.name, repo: decision.repo, out })}`)
   } else {
     rid = saveLocalRoot({ kind: 'work', text, labels: { thread, issue }, identity: repoIdentityOf({ cwd, env }), config, env })
     out(`${rid}: saved on this machine only (${decision.reason})`)
@@ -1297,16 +1387,16 @@ const workNote = async ({ args, env, cwd, out }) => {
     kind: question ? 'ask' : 'note',
     text: requireText(text, 'note'),
     re: values.re === undefined ? undefined : requireRid({ value: values.re, name: '--re' }),
-    pr: values.pr === undefined ? undefined : requirePr(values.pr),
     block: values.blocked ? 1 : undefined,
   }
   const config = readConfig(env)
   const target = findTarget({ prefix, channel: workChannel, config, env })
+  if (values.pr !== undefined) fields.pr = requirePr({ value: values.pr, repo: repoOfItem(target), board: target.source !== 'local', config })
   await writeReply({ target, fields, config, env, cwd, out })
   // While a reply is pending, a note that does not name `turn` is stored and changes nothing (spec §2).
   if (isPending(target) && fields.re !== target.labels.turn) {
     out(`${target.rid} waits on a reply from the user, so this ${intentNouns[fields.kind]} changes nothing there until you answer it:`)
-    for (const line of pendingLines({ item: target })) out(line)
+    for (const line of pendingLines(target)) out(line)
   }
 }
 
@@ -1321,7 +1411,7 @@ const workResolve = (kind) => async ({ args, env, cwd, out }) => {
   // refuse it, and the user's message would wait unseen (spec §4).
   if (isPending(target) && re === undefined) {
     out(`${target.rid} waits on a reply from the user, so work ${kind} sent nothing:`)
-    for (const line of pendingLines({ item: target })) out(line)
+    for (const line of pendingLines(target)) out(line)
     out(`  Then resolve it: devchat work ${kind} ${target.rid} --re ${target.labels.turn}`)
     return 1
   }
@@ -1339,17 +1429,16 @@ const workList = ({ args, env, out }) => {
   for (const item of open) out(`${item.rid}  ${item.createdAt.slice(0, 10)}  ${item.source.padEnd(6)}  ${flagOf(item)}${item.text}`)
 }
 
-// Shows what this machine knows of a work item: the snapshot keeps replies only while one is
-// pending, and a local item keeps all of its own.
+// Shows what this machine knows of a work item, replies in full: the snapshot keeps replies only
+// while one is pending, and a local item keeps all of its own.
 const workShow = ({ args, env, out }) => {
   if (args.length !== 1) throw new UsageError('usage: devchat work show <rid>')
   const item = findTarget({ prefix: args[0], channel: workChannel, config: readConfig(env), env })
-  if (item.source === 'unknown') throw new UsageError(`no work item on this machine matches ${item.rid}`)
   const { status = 'open', repo, issue } = item.labels
   out(`${item.rid}  ${item.source}  ${status}${repo ? `  ${repo}` : ''}${issue ? `  issue ${issue}` : ''}`)
-  out(item.text)
-  for (const reply of item.replies ?? []) out(`  ${reply.labels.by ?? 'unknown'} (${reply.labels.kind ?? 'reply'}): ${oneLine(reply.text, 200)}`)
-  if (isPending(item)) for (const line of pendingLines({ item }).slice(1)) out(line)
+  if (item.text) out(item.text)
+  for (const reply of item.replies ?? []) out(`  ${reply.labels.by ?? 'unknown'} (${reply.labels.kind ?? 'reply'}): ${reply.text}`)
+  if (isPending(item)) out(answerCall(item))
 }
 
 const workCommands = { start: workStart, note: workNote, done: workResolve('done'), drop: workResolve('drop'), list: workList, show: workShow }
@@ -1372,7 +1461,7 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   }
   const { rid, name } = queueIntent({ fields: { kind: 'todo', channel: todoChannel, text, repo: decision.repo, machine: config.machine }, repo: decision.repo, config, env })
   out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
-  out(`${rid}: ${await syncAfterWrite({ config, env, name, out })}`)
+  out(`${rid}: ${await syncAfterWrite({ config, env, name, repo: decision.repo, out })}`)
   return 0
 }
 
