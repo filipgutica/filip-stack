@@ -1,3 +1,10 @@
+# [6.35.0](https://github.com/filipgutica/filip-stack/compare/v6.34.0...v6.35.0) (2026-11-27)
+
+
+### Features
+
+* **devchat:** queue board writes in an outbox and sync them with the board ([#305](https://github.com/filipgutica/filip-stack/issues/305)) ([d996929](https://github.com/filipgutica/filip-stack/commit/d9969295f89440bfafee90da47719e34de173c75))
+
 # [6.34.0](https://github.com/filipgutica/filip-stack/compare/v6.33.0...v6.34.0) (2026-11-27)
 
 
