@@ -16,6 +16,10 @@
     {
       "name": "guardrails",
       "source": "./plugins/guardrails"
+    },
+    {
+      "name": "devchat",
+      "source": "./plugins/devchat"
     }
   ]
 }

@@ -43,6 +43,7 @@ Workflow is enough to start. Every other part is optional.
 | [Standalone skills](#standalone-skills) | Independent skills you install individually | Skills CLI |
 | [Field Guide](#field-guide) | Memory of your preferences, corrections, and lessons | Plugin |
 | [Guardrails](#guardrails) | Shell hook blocking AI attribution and prompting before 1Password commands | Plugin |
+| [devchat](#devchat) | Client for devchat, a self-hosted board for todos and agent work; this version keeps todos on the machine | Plugin |
 | [Host config](#host-config) | Shared global guidance and agent profiles across machines | Homebrew CLI and a checkout |
 | [Design system](https://github.com/filipgutica/design-system) | Design language agents follow for visual work | Plugin, from its own marketplace |
 
@@ -194,6 +195,38 @@ codex plugin add guardrails@filip-stack        # Codex, then restart Codex
   only a plain `op ...` command; the hook denies wrapped or chained `op` calls
   and asks the agent to run the plain form.
 - **Antigravity:** Prompts on every 1Password call, even one approved earlier.
+
+## devchat
+
+devchat is a separate, optional plugin and the client for
+[devchat](https://github.com/filipgutica/devchat), a self-hosted board for todos,
+work items, and agent messages. This version has no network code: every todo
+stays on the machine, and board writes arrive with `devchat setup` in a later
+release.
+
+```sh
+claude plugin install devchat@filip-stack   # Claude Code
+codex plugin add devchat@filip-stack        # Codex, then restart Codex
+```
+
+- **Session hook:** At `SessionStart`, the hook records the repository the
+  session started in, so the write router can tell where a write came from. It
+  prints nothing, opens no network connection, and steps aside on any error.
+- **Router:** A write can reach the board only from a recorded Claude Code
+  session, in mode `readwrite`, when the starting repository and the working
+  directory are both GitHub repositories whose owner is on your allowlist.
+  Everything else stays on the machine. This version does not send board
+  writes yet: a write the router sends to the board is refused.
+- **Config:** `~/.config/devchat/config.json` (or under `$XDG_CONFIG_HOME`)
+  holds `mode`, `githubLogin`, and `allowlist`. Without it the mode is `off`.
+  State lives in `~/.local/state/devchat` (or under `$XDG_STATE_HOME`).
+- **Codex:** Every write stays on the machine, even with a trusted hook and a
+  session record. Codex can skip the hook on resume, and records the first
+  turn's directory, so a record does not prove where the session started.
+- **Antigravity:** The hook does not run, so every write stays on the machine.
+
+The skill's [SKILL.md](plugins/devchat/skills/devchat/SKILL.md) lists the
+commands agents call.
 
 ## Host config
 
