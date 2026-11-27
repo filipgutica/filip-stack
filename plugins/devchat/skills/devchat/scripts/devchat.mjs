@@ -5,7 +5,7 @@
 // request. A board write goes to `outbox/`, and `devchat sync` alone sends it, with plain `fetch`.
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { accessSync, chmodSync, constants, existsSync, linkSync, mkdirSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -385,74 +385,116 @@ const profileOf = (machine) => {
 }
 
 // The fields of a release 1 todo intent, as devchat's `src/shared/layout.ts` defines it, and of
-// the outbox record that carries it.
-const todoIntentFields = ['v', 'rid', 'kind', 'channel', 'text', 'by', 'repo', 'machine']
-const outboxFields = ['schema', 'op', 'target', 'profile', 'repo', 'lane', 'body', 'queuedAt']
+// the outbox record that carries it. `board` is the normalized board URL the file was queued for.
+const outboxFields = ['schema', 'op', 'target', 'profile', 'repo', 'lane', 'board', 'body', 'queuedAt']
+// Board refuses a post whose text is longer than this, in UTF-16 code units. An intent's post text
+// is the serialized intent.
+const boardTextLimit = 10_000
+
+// The canonical todo intent and request body. Sync compares a file's stored body with these bytes,
+// so a body that parses to the same values through duplicate keys or other spellings is refused.
+const todoIntentOf = ({ rid, text, by, repo, machine }) => ({ v: 1, rid, kind: 'todo', channel: todoChannel, text, by, repo, machine })
+const requestBodyOf = (intent) => JSON.stringify({ channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
 
 /**
  * Queues a todo intent: one label-free `inbox` post whose `id` is the intent's `rid`, so a retry
- * replays it. The request body is stored as the exact string sync sends, so every retry is
- * byte-identical. Returns the rid and the outbox file name, which sorts by queue time.
+ * replays it. The request body is stored as the exact canonical string sync sends, so every retry
+ * is byte-identical. Returns the rid and the outbox file name, which sorts by queue time.
  */
 const queueTodo = ({ text, repo, config, env }) => {
   const rid = newTodoRid()
   const profile = profileOf(config.machine)
-  const intent = { v: 1, rid, kind: 'todo', channel: todoChannel, text, by: profile, repo, machine: config.machine }
-  const body = JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent) })
+  const intent = todoIntentOf({ rid, text, by: profile, repo, machine: config.machine })
+  const size = JSON.stringify(intent).length
+  if (size > boardTextLimit) {
+    throw new UsageError(`the todo is too long for the board: its intent is ${size} characters, and the board takes at most ${boardTextLimit}. Shorten it and try again. Nothing was saved.`)
+  }
   const queuedAt = new Date().toISOString()
   const name = `${queuedAt.replace(/[-:.]/gu, '')}-post-${rid}.json`
-  writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', body, queuedAt })
+  writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, body: requestBodyOf(intent), queuedAt })
   return { rid, name }
 }
 
-const pendingOutbox = (env) => {
-  if (!existsSync(outboxDir(env))) return []
-  return readdirSync(outboxDir(env), { withFileTypes: true })
-    .filter((entry) => entry.isFile() && entry.name.endsWith('.json'))
+// Every outbox entry that is not a directory, so a symbolic link or other odd file is checked and
+// rejected rather than left in place.
+const outboxNames = (dir) => {
+  if (!existsSync(dir)) return []
+  return readdirSync(dir, { withFileTypes: true })
+    .filter((entry) => !entry.isDirectory() && entry.name.endsWith('.json'))
     .map(({ name }) => name)
     .sort()
+}
+const pendingOutbox = (env) => outboxNames(outboxDir(env))
+
+const maxOutboxEntryBytes = 64 * 1024
+
+/**
+ * Reads an outbox file through one descriptor: it never follows a symbolic link, never blocks on a
+ * FIFO, and reads only a regular file of at most 64 KiB. Returns `{ entry }` or `{ problem }`.
+ */
+const readOutboxEntry = (path) => {
+  let descriptor
+  try {
+    descriptor = openSync(path, constants.O_RDONLY | constants.O_NOFOLLOW | constants.O_NONBLOCK)
+    const stat = fstatSync(descriptor)
+    if (!stat.isFile()) return { problem: 'not a regular file' }
+    if (stat.size > maxOutboxEntryBytes) return { problem: `larger than ${maxOutboxEntryBytes} bytes` }
+    return { entry: JSON.parse(readFileSync(descriptor, 'utf8')) }
+  } catch (error) {
+    return { problem: error.code === 'ELOOP' ? 'a symbolic link' : 'not readable JSON' }
+  } finally {
+    if (descriptor !== undefined) closeSync(descriptor)
+  }
 }
 
 const isRecord = (value) => typeof value === 'object' && value !== null && !Array.isArray(value)
 const hasExactly = (value, keys) => isRecord(value) && Object.keys(value).length === keys.length && keys.every((key) => Object.hasOwn(value, key))
+const isString = (value) => typeof value === 'string'
 const ridPattern = /^[A-Za-z0-9][A-Za-z0-9._:-]{0,195}$/u
-const isLabelValue = (value) => typeof value === 'string' && value.length >= 1 && value.length <= 256 && !/\p{Cc}/u.test(value)
+const isLabelValue = (value) => isString(value) && value.length >= 1 && value.length <= 256 && !/\p{Cc}/u.test(value)
 
-const parseOutboxBody = (entry) => {
+const parseJson = (text) => {
   try {
-    const body = JSON.parse(entry.body)
-    return { body, intent: JSON.parse(body.text) }
+    return JSON.parse(text)
   } catch {
-    return null
+    return undefined
   }
 }
 
+// Field types and values follow devchat's intent schema, with no coercion. Each check runs only
+// after the ones before it pass.
 const intentProblem = ({ entry, body, intent, config }) => {
+  const fields = [intent.text, intent.by, intent.repo, intent.machine]
   const checks = [
-    [hasExactly(intent, todoIntentFields) && intent.v === 1 && intent.kind === 'todo' && intent.channel === todoChannel, 'the intent is not a release 1 todo'],
-    [ridPattern.test(String(intent.rid)) && intent.rid === body.id && intent.rid === entry.target, 'the intent rid does not match the post id'],
-    [entry.lane === 'repo' && intent.by === entry.profile && intent.repo === entry.repo, 'the intent does not match its outbox record'],
+    [() => hasExactly(intent, Object.keys(todoIntentOf({}))) && intent.v === 1 && intent.kind === 'todo' && intent.channel === todoChannel, 'the intent is not a release 1 todo'],
+    [() => fields.every(isString) && isString(intent.rid), 'an intent field is not a string'],
+    [() => ridPattern.test(intent.rid) && intent.rid === body.id && intent.rid === entry.target, 'the intent rid does not match the post id'],
+    [() => intent.by === entry.profile && intent.repo === entry.repo, 'the intent does not match its outbox record'],
     // The board refuses a bad profile with a 400, which would stop every flush at this file.
-    [profilePattern.test(String(entry.profile)), 'the profile is not a board profile name'],
-    [allowlistedRepo({ identity: `github.com/${intent.repo}`, allowlist: config.allowlist }) === intent.repo, 'the source repo is not on the allowlist'],
-    [typeof intent.text === 'string' && intent.text.trim().length > 0 && intent.text.length <= maxTextLength, 'the todo text is empty or too long'],
-    [[intent.by, intent.repo, intent.machine].every(isLabelValue), 'a provenance field is not a board label value'],
-    [[intent.text, intent.by, intent.repo, intent.machine].every((field) => !guardReason(field)), 'the guard refused an outbound field'],
+    [() => profilePattern.test(entry.profile) && intent.by !== 'user', 'the profile is not a board profile name'],
+    [() => allowlistedRepo({ identity: `github.com/${intent.repo}`, allowlist: config.allowlist }) === intent.repo, 'the source repo is not on the allowlist'],
+    [() => intent.text.trim().length > 0 && intent.text.length <= maxTextLength, 'the todo text is empty or too long'],
+    [() => [intent.by, intent.repo, intent.machine].every(isLabelValue), 'a provenance field is not a board label value'],
+    [() => fields.every((field) => !guardReason(field)), 'the guard refused an outbound field'],
+    [() => entry.body === requestBodyOf(todoIntentOf(intent)), 'the request body is not in canonical form'],
   ]
-  return checks.find(([passes]) => !passes)?.[1] ?? null
+  return checks.find(([passes]) => !passes())?.[1] ?? null
 }
 
 /**
  * The check at flush (spec §5). Sync sends only a todo intent shaped exactly as `queueTodo` wrote
- * it, from a repo still on the allowlist, whose every outbound field passes the guard again.
- * Returns why a file fails, or null.
+ * it, byte for byte, from a repo still on the allowlist, whose every outbound field passes the
+ * guard again. Returns why a file fails, or null.
  */
 const outboxProblem = ({ entry, config }) => {
-  if (!hasExactly(entry, outboxFields) || entry.schema !== 1 || entry.op !== 'post' || typeof entry.body !== 'string') return 'not a devchat outbox post'
-  const parsed = parseOutboxBody(entry)
-  if (!hasExactly(parsed?.body, ['channel', 'id', 'text']) || parsed.body.channel !== 'inbox') return 'the request is not an inbox post'
-  if (!isRecord(parsed.intent)) return 'the intent is not a release 1 todo'
-  return intentProblem({ entry, ...parsed, config })
+  const recordFields = [entry?.target, entry?.profile, entry?.repo, entry?.board, entry?.body, entry?.queuedAt]
+  if (!hasExactly(entry, outboxFields) || entry.schema !== 1 || entry.op !== 'post' || entry.lane !== 'repo' || !recordFields.every(isString)) return 'not a devchat outbox post'
+  const body = parseJson(entry.body)
+  if (!hasExactly(body, ['channel', 'id', 'text']) || body.channel !== 'inbox' || !isString(body.text)) return 'the request is not an inbox post'
+  if (body.text.length > boardTextLimit) return `the intent is longer than the board's ${boardTextLimit}-character limit`
+  const intent = parseJson(body.text)
+  if (!isRecord(intent)) return 'the intent is not a release 1 todo'
+  return intentProblem({ entry, body, intent, config })
 }
 
 // Board client. Every request goes to the configured board URL with plain `fetch`, and carries
@@ -613,20 +655,21 @@ const rejectOutboxFile = ({ env, name, problem, out }) => {
   out(`rejected ${name}: ${problem}`)
 }
 
-/** Sends the outbox in time order. The first failed send stops the flush; its file stays queued. */
+/**
+ * Sends the outbox in time order. A file that fails the check moves to `rejected/`. A file queued
+ * for another board stops the flush and stays, as does the first failed send.
+ */
 const flush = async ({ client, config, env, out }) => {
   for (const name of pendingOutbox(env)) {
     const path = join(outboxDir(env), name)
-    let entry = null
-    try {
-      entry = readJson(path)
-    } catch {
-      // An unreadable file fails the check below.
-    }
-    const problem = outboxProblem({ entry, config })
+    const { entry, problem: unreadable } = readOutboxEntry(path)
+    const problem = unreadable ?? outboxProblem({ entry, config })
     if (problem) {
       rejectOutboxFile({ env, name, problem, out })
       continue
+    }
+    if (entry.board !== config.boardUrl) {
+      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
     }
     const answer = await client.post({ body: entry.body, profile: entry.profile })
     if (typeof answer?.message?.id !== 'string') throw new SyncStop('POST /messages sent no message ID')

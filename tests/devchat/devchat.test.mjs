@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
 import { createServer, request } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -439,6 +439,7 @@ const startTailnetProxy = async (upstreamUrl) => {
   const answer = ({ req, res, body }) => {
     const fault = state.fault(req)
     if (fault === 'hang') return
+    if (fault === 'drop') return req.socket.destroy()
     if (typeof fault === 'number') return res.writeHead(fault).end('{"error":{}}')
     // A held request reaches the board only once the test resolves `until`.
     Promise.resolve(fault?.until).then(() => forward({ req, res, body }))
@@ -530,6 +531,12 @@ const devchatAsync = ({ args, cwd = repos.allowed, sessionEnv = boardSession, pr
   child.on('close', (status) => resolve({ status, stdout, stderr }))
 })
 
+/** Runs `devchat sync` and asserts it succeeded. */
+const syncOk = async () => {
+  const sync = await devchatAsync({ args: ['sync'] })
+  assert.equal(sync.status, 0, sync.stderr)
+  return sync
+}
 const filesIn = (...parts) => {
   const dir = join(stateDir(), ...parts)
   return existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')).sort() : []
@@ -537,14 +544,15 @@ const filesIn = (...parts) => {
 const posts = () => proxy.requests.filter(({ method }) => method === 'POST')
 const ridOf = (stdout) => stdout.match(/^(todo-[a-z0-9-]+): saved to the board/mu)?.[1]
 
-/** Queues todos while the board is unreachable, then points the config at the proxy. */
+/** Queues todos for the proxy's board while it answers 503, then lets it answer again. */
 const queueOffline = async (texts) => {
-  joinBoard({ boardUrl: offlineBoardUrl })
+  joinBoard()
+  proxy.fault = () => 503
   const rids = []
   for (const text of texts) {
     const add = await devchatAsync({ args: ['todo', 'add', text] })
     assert.equal(add.status, 0, add.stderr)
-    assert.match(add.stdout, /not sent yet \(the board is unreachable \(ECONNREFUSED\)\)/u)
+    assert.match(add.stdout, /not sent yet \(GET \/api\/board\/threads answered 503\)/u)
     rids.push(ridOf(add.stdout))
   }
   joinBoard()
@@ -572,16 +580,15 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.deepEqual({ channel: body.channel, id: body.id }, { channel: 'inbox', id: rid })
   assert.deepEqual(JSON.parse(body.text), { v: 1, rid, kind: 'todo', channel: 'todos', text: 'Review the handoff.', by: profile, repo: `${allowed}/tools`, machine })
   assert.equal(sent.inboxId, (await inboxPostsFor(rid))[0].message.id, 'the sent file keeps the inbox ID')
-  assert.deepEqual(Object.keys(sent).sort(), ['body', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
-  assert.deepEqual({ target: sent.target, repo: sent.repo, lane: sent.lane }, { target: rid, repo: `${allowed}/tools`, lane: 'repo' })
+  assert.deepEqual(Object.keys(sent).sort(), ['board', 'body', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
+  assert.deepEqual({ target: sent.target, repo: sent.repo, lane: sent.lane, board: sent.board }, { target: rid, repo: `${allowed}/tools`, lane: 'repo', board: proxy.url })
 
   // This is the only test that runs the app, so the marker has no `applied` label yet.
   assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, null, 'no cursor yet')
   const applied = await applyInbox()
   mkdirSync(localDir(), { recursive: true })
   writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
-  const sync = await devchatAsync({ args: ['sync'] })
-  assert.equal(sync.status, 0, sync.stderr)
+  await syncOk()
   const snapshot = readJson(join(stateDir(), 'snapshot.json'))
   assert.equal(snapshot.schema, 1)
   assert.ok(Date.parse(snapshot.pulledAt) <= Date.now())
@@ -601,8 +608,7 @@ test('offline writes send in queue order, and a resend replays byte-identically'
   const queued = filesIn('outbox')
   assert.equal(queued.length, 3)
   const stored = queued.map((name) => readFileSync(join(stateDir(), 'outbox', name), 'utf8'))
-  const sync = await devchatAsync({ args: ['sync'] })
-  assert.equal(sync.status, 0, sync.stderr)
+  await syncOk()
   assert.deepEqual(posts().map(({ body }) => JSON.parse(body).id), rids, 'time order')
   assert.deepEqual(posts().map(({ body }) => body), stored.map((text) => JSON.parse(text).body), 'the stored bytes')
   assert.deepEqual(filesIn('outbox'), [])
@@ -629,10 +635,10 @@ test('a network error or a 5xx stops the flush until the next run', async () => 
   assert.equal(filesIn('outbox').length, 2)
   assert.equal(existsSync(join(stateDir(), 'snapshot.json')), false, 'a stopped sync pulls nothing')
 
-  writeConfig({ ...readwrite, machine, boardUrl: offlineBoardUrl })
+  proxy.fault = () => 'drop'
   const offline = await devchatAsync({ args: ['sync'] })
   assert.equal(offline.status, 1)
-  assert.match(offline.stderr, /the board is unreachable \(ECONNREFUSED\)/u)
+  assert.match(offline.stderr, /devchat sync stopped: the board is unreachable/u)
   assert.equal(filesIn('outbox').length, 2)
 
   joinBoard()
@@ -722,8 +728,7 @@ test('a machine name the board would refuse as a profile still sends', async () 
 test('mode read pulls and never sends', async () => {
   await queueOffline(['Stay queued.'])
   joinBoard({ mode: 'read' })
-  const sync = await devchatAsync({ args: ['sync'] })
-  assert.equal(sync.status, 0, sync.stderr)
+  await syncOk()
   assert.deepEqual(posts(), [])
   assert.ok(proxy.requests.some(({ path }) => path.startsWith('/api/board/threads?channel=todos')), 'it pulls')
   assert.equal(readJson(join(stateDir(), 'snapshot.json')).schema, 1)
@@ -760,28 +765,73 @@ test('denied input and local routes make zero outbound requests, the post-write 
   assert.deepEqual(filesIn('outbox'), [])
 })
 
-test('the check at flush sends only what the router queued', async () => {
+test('the check at flush sends only what the router queued, byte for byte', async () => {
   const [rid] = await queueOffline(['A real todo.'])
   const [name] = filesIn('outbox')
   const entry = readJson(join(stateDir(), 'outbox', name))
   const intent = JSON.parse(JSON.parse(entry.body).text)
+  const withIntent = (changed, raw = JSON.stringify(changed)) => ({ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: raw }) })
   const planted = {
-    'a direct todos post': { ...entry, body: JSON.stringify({ channel: 'todos', id: rid, text: 'x' }) },
-    'a repo off the allowlist': { ...entry, repo: 'other-owner/service', body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, repo: 'other-owner/service' }) }) },
-    'guarded text': { ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, text: 'password=hunter2' }) }) },
-    'an extra intent field': { ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, status: 'done' }) }) },
-    'a mismatched id': { ...entry, body: JSON.stringify({ channel: 'inbox', id: 'other', text: JSON.stringify(intent) }) },
-    'labels on the post': { ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) },
-    'a profile the board refuses': { ...entry, profile: 'box.local', body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify({ ...intent, by: 'box.local' }) }) },
+    'a direct todos post': [{ ...entry, body: JSON.stringify({ channel: 'todos', id: rid, text: 'x' }) }, 'the request is not an inbox post'],
+    'a repo off the allowlist': [{ ...withIntent({ ...intent, repo: 'other-owner/service' }), repo: 'other-owner/service' }, 'the source repo is not on the allowlist'],
+    'guarded text': [withIntent({ ...intent, text: 'password=hunter2' }), 'the guard refused an outbound field'],
+    'an extra intent field': [withIntent({ ...intent, status: 'done' }), 'the intent is not a release 1 todo'],
+    'a string version': [withIntent({ ...intent, v: '1' }), 'the intent is not a release 1 todo'],
+    'a mismatched id': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: 'other', text: JSON.stringify(intent) }) }, 'the intent rid does not match the post id'],
+    'labels on the post': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) }, 'the request is not an inbox post'],
+    'a profile the board refuses': [{ ...withIntent({ ...intent, by: 'box.local' }), profile: 'box.local' }, 'the profile is not a board profile name'],
+    'a board that is not a string': [{ ...entry, board: 1 }, 'not a devchat outbox post'],
+    // JSON.parse keeps the last of two keys, so these parse to a valid todo, but not from the queued bytes.
+    'a duplicate key hiding guarded text': [withIntent(intent, JSON.stringify(intent).replace('"text":', '"text":"password=hunter2","text":')), 'the request body is not in canonical form'],
+    'a duplicate request key': [{ ...entry, body: entry.body.replace('{"channel":"inbox"', '{"channel":"todos","channel":"inbox"') }, 'the request body is not in canonical form'],
+    'an intent over the board limit': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: 'x'.repeat(10_001) }) }, "the intent is longer than the board's 10000-character limit"],
   }
-  for (const [index, value] of Object.values(planted).entries()) writeFileSync(join(stateDir(), 'outbox', `0000-${index}.json`), JSON.stringify(value))
-  writeFileSync(join(stateDir(), 'outbox', '0000-9.json'), 'not json')
-  const sync = await devchatAsync({ args: ['sync'] })
-  assert.equal(sync.status, 0, sync.stderr)
+  const outbox = join(stateDir(), 'outbox')
+  for (const [index, [value]] of Object.values(planted).entries()) writeFileSync(join(outbox, `0000-${String(index).padStart(2, '0')}.json`), JSON.stringify(value))
+  const odd = { '0001-text.json': 'not readable JSON', '0001-large.json': 'larger than 65536 bytes', '0001-link.json': 'a symbolic link' }
+  writeFileSync(join(outbox, '0001-text.json'), 'not json')
+  writeFileSync(join(outbox, '0001-large.json'), JSON.stringify({ ...entry, padding: 'x'.repeat(70_000) }))
+  writeFileSync(join(home, 'elsewhere.json'), JSON.stringify(entry))
+  symlinkSync(join(home, 'elsewhere.json'), join(outbox, '0001-link.json'))
+  if (spawnSync('mkfifo', [join(outbox, '0001-fifo.json')]).status === 0) odd['0001-fifo.json'] = 'not a regular file'
+
+  const sync = await syncOk()
   assert.deepEqual(posts().map(({ body }) => body), [entry.body], 'only the queued file is sent')
-  assert.equal(filesIn('outbox', 'rejected').length, Object.keys(planted).length + 1)
+  for (const [index, [label, [, reason]]] of Object.entries(planted).entries()) {
+    assert.match(sync.stdout, new RegExp(`rejected 0000-${String(index).padStart(2, '0')}\\.json: ${reason.replace(/[.()]/gu, '\\$&')}\n`, 'u'), label)
+  }
+  for (const [file, reason] of Object.entries(odd)) assert.match(sync.stdout, new RegExp(`rejected ${file}: ${reason}\n`, 'u'), file)
+  const rejected = Object.keys(planted).length + Object.keys(odd).length
+  assert.equal(filesIn('outbox', 'rejected').length, rejected)
+  assert.deepEqual(filesIn('outbox'), [], 'nothing stalls the queue')
   const doctor = await devchatAsync({ args: ['doctor'] })
-  assert.match(doctor.stdout, /FAIL outbox: 0 queued, 1 sent, 8 rejected/u)
+  assert.match(doctor.stdout, new RegExp(`FAIL outbox: 0 queued, 1 sent, ${rejected} rejected`, 'u'))
+})
+
+test('a todo whose intent fits the board limit exactly is sent; one character more is refused', async () => {
+  joinBoard()
+  const fixed = JSON.stringify({ v: 1, rid: `todo-${Date.now().toString(36)}-00000000`, kind: 'todo', channel: 'todos', text: '', by: profile, repo: `${allowed}/tools`, machine }).length
+  const fits = await devchatAsync({ args: ['todo', 'add', 'a'.repeat(10_000 - fixed)] })
+  assert.equal(fits.status, 0, fits.stderr)
+  assert.match(fits.stdout, /: sent$/mu, 'the board takes 10000 characters')
+  const over = await devchatAsync({ args: ['todo', 'add', 'a'.repeat(10_001 - fixed)] })
+  assert.equal(over.status, 1)
+  assert.match(over.stderr, /the todo is too long for the board: its intent is 10001 characters, and the board takes at most 10000\. Shorten it and try again\. Nothing was saved\./u)
+  assert.equal(posts().length, 1)
+})
+
+test('a file queued for another board stops sync and stays queued', { skip: process.platform !== 'linux' && 'setup runs the fake systemd timer' }, async () => {
+  await queueOffline(['For the first board.'])
+  // Another board URL that reaches the same proxy, so only the URL differs.
+  const otherBoard = proxy.url.replace('127.0.0.1', 'localhost')
+  const rerun = await devchatAsync({ args: ['setup', '--board-url', otherBoard, '--github-login', allowed, '--mode', 'readwrite'] })
+  assert.match(rerun.stdout, /write .*config\.json: mode readwrite/u, rerun.stderr)
+  const sync = await devchatAsync({ args: ['sync'] })
+  assert.equal(sync.status, 1)
+  assert.match(sync.stderr, /\.json was queued for another board than the configured one: nothing is sent/u)
+  assert.equal(filesIn('outbox').length, 1, 'the file stays')
+  assert.deepEqual(filesIn('outbox', 'rejected'), [])
+  assert.deepEqual(posts(), [])
 })
 
 test('doctor reports the board, the outbox, the snapshot, and the timer', async () => {
