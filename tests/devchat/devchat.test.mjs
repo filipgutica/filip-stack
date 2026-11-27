@@ -831,6 +831,22 @@ test('a changed board epoch stops sync before it sends or pulls', async () => {
   }
 })
 
+test("another board's snapshot is replaced, whatever its cursor", async () => {
+  joinBoard()
+  await syncOk()
+  const path = join(stateDir(), 'snapshot.json')
+  const { applied } = readJson(path)
+  const otherBoard = proxy.url.replace('127.0.0.1', 'localhost')
+  // Board A's snapshot at the same epoch, with a higher cursor than this board's.
+  const planted = { schema: 1, pulledAt: new Date().toISOString(), epoch: '1', applied: String(BigInt(applied ?? '0') + 1000n), items: [] }
+  for (const board of [otherBoard, undefined]) {
+    writeFileSync(path, JSON.stringify({ ...planted, board }))
+    const sync = await syncOk()
+    assert.doesNotMatch(sync.stdout, /a newer snapshot is already in place/u, board ?? 'no board')
+    assert.deepEqual((({ board: pulled, applied: cursor }) => ({ pulled, cursor }))(readJson(path)), { pulled: proxy.url, cursor: applied }, board ?? 'no board')
+  }
+})
+
 test('an epoch change during sync keeps the snapshot and the receipts', async () => {
   joinBoard()
   const add = await devchatAsync({ args: ['todo', 'add', 'Restored away.'] })

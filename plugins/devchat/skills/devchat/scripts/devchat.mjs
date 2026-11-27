@@ -760,16 +760,17 @@ const retireDecided = ({ env, decided, out }) => {
   }
 }
 
-// An older sync that overlapped a newer one finds the newer snapshot in place: same epoch, a
-// higher cursor. It must not replace that snapshot, or retire receipts by its older cursor.
-const newerSnapshotInPlace = ({ env, epoch, applied }) => {
+// An older sync that overlapped a newer one finds the newer snapshot in place: same board and
+// epoch, a higher cursor. It must not replace that snapshot, or retire receipts by its older
+// cursor. Cursors of different boards do not compare, so another board's snapshot is replaced.
+const newerSnapshotInPlace = ({ env, board, epoch, applied }) => {
   let current
   try {
     current = readSnapshot(env)
   } catch {
     return false // An unreadable snapshot is replaced.
   }
-  return current?.epoch === epoch && isMessageId(current.applied) && (!isMessageId(applied) || BigInt(current.applied) > BigInt(applied))
+  return current?.board === board && current.epoch === epoch && isMessageId(current.applied) && (!isMessageId(applied) || BigInt(current.applied) > BigInt(applied))
 }
 
 const syncSteps = async ({ config, env, out, client }) => {
@@ -787,11 +788,14 @@ const syncSteps = async ({ config, env, out, client }) => {
   // before anything local changes.
   const now = await readBoardEpoch(client)
   if (now !== epoch) throw new SyncStop(`the board epoch changed from ${epoch} to ${now} during this sync: the snapshot and receipts stay as they were`)
-  if (newerSnapshotInPlace({ env, epoch, applied })) {
+  // The check and the rename below are not atomic. Two syncs inside the lock-bypass window can
+  // still leave the older snapshot. It is a read cache the next sync rebuilds, and each sync
+  // retires receipts only by its own cursor and refusals, so no data is lost.
+  if (newerSnapshotInPlace({ env, board: config.boardUrl, epoch, applied })) {
     out('a newer snapshot is already in place: this sync leaves it and its receipts')
     return
   }
-  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, epoch, applied, items })
+  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, board: config.boardUrl, epoch, applied, items })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
   retireDecided({ env, decided, out })
 }
