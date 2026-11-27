@@ -30,6 +30,7 @@ node tests/workflow/validate-contracts.mjs
 | --- | --- |
 | `test:workflow-contracts`, `test:skills` | Skill inventories, activation policy, budgets, links, and skill script tests |
 | `test:field-guide*`, `test:guardrails` | Field Guide boundary, schemas, hooks, storage, dreaming, and Guardrails rules |
+| `test:devchat` | devchat router, session hook, guard fixture, local todos, and the no-network contract |
 | `test:plugin-payload`, `validate-plugins` | Runtime payload exclusions and Claude, Codex, and Antigravity manifests |
 | `test:host-config` | Host config apply, helper scripts, design-system migration, CLI, and sync |
 | `test:evals` | Guidance test dry runs, gate logic, and a stubbed end-to-end run |
@@ -47,6 +48,7 @@ cli/                              Dependency-free filip-stack CLI launcher
 plugins/workflow/                 Workflow plugin (.antigravity-plugin, .claude-plugin, .codex-plugin, skills/, THIRD_PARTY_NOTICES.md)
 plugins/field-guide/              Local-learning plugin (hooks/, scripts/, skills/field-guide/)
 plugins/guardrails/               Rule-enforcement plugin (hooks/, scripts/)
+plugins/devchat/                  devchat client plugin (hooks/, scripts/, skills/devchat/)
 skills/                           Standalone skills installed with the skills CLI
 host-config/                      Global guidance, models.json, agents, rules, and styles
 .agents/skills/                   Repository development skills (linked from .claude/skills)

@@ -8,7 +8,7 @@ the current tree with these committed baselines and fail on new findings:
 | --- | --- | --- |
 | Unused files, exports, types and dependencies | `dead-code.json` | 0 |
 | Function complexity | `health.json` | 9: 2 critical, 5 high, 2 moderate |
-| Duplication | `dupes.json` | 11 clone groups, 22 instances |
+| Duplication | `dupes.json` | 13 clone groups, 26 instances |
 
 The root configuration covers scripts, tests, plugin hooks and scripts, and the
 site source and tests. It excludes skill and host templates, evaluation artifacts,

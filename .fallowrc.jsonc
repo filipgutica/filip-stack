@@ -7,6 +7,10 @@
     "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs",
     "plugins/field-guide/skills/field-guide/scripts/field-guide-dream.mjs",
     "plugins/guardrails/hooks/guardrails.mjs",
+    "plugins/devchat/hooks/devchat-session.mjs",
+    "plugins/devchat/skills/devchat/scripts/devchat.mjs",
+    // The devchat tests load this preload through NODE_OPTIONS.
+    "tests/devchat/no-network.mjs",
     "docs/site/src/pages/**/*.astro",
   ],
   "includeEntryExports": true,

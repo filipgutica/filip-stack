@@ -1,0 +1,16 @@
+{
+  "description": "Record the repository each devchat session started in, for the write router. Prints nothing and opens no network connection.",
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "/bin/sh \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/scripts/run-node.sh\" --fail-open \"${PLUGIN_ROOT:-${CLAUDE_PLUGIN_ROOT}}/hooks/devchat-session.mjs\"",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}

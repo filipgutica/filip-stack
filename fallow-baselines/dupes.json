@@ -10,7 +10,9 @@
     "tests/field-guide/field-guide-lifecycle.test.mjs:103-109|tests/field-guide/field-guide-lifecycle.test.mjs:86-93",
     "tests/field-guide/field-guide-lifecycle.test.mjs:111-118|tests/field-guide/field-guide-lifecycle.test.mjs:134-141",
     "plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:516-519|plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:776-780",
-    "tests/field-guide/field-guide-lifecycle.test.mjs:199-202|tests/field-guide/field-guide-lifecycle.test.mjs:68-81"
+    "tests/field-guide/field-guide-lifecycle.test.mjs:199-202|tests/field-guide/field-guide-lifecycle.test.mjs:68-81",
+    "plugins/devchat/skills/devchat/scripts/devchat.mjs:70-98|plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:118-150",
+    "plugins/devchat/skills/devchat/scripts/devchat.mjs:207-217|plugins/field-guide/skills/field-guide/scripts/field-guide.mjs:277-287"
   ],
   "clone_fingerprints": [
     "dup:26cde565:2",
@@ -23,6 +25,8 @@
     "dup:eaa36340:2",
     "dup:0df68b71:2",
     "dup:9257aa49:2",
-    "dup:a8fa6804:2"
+    "dup:a8fa6804:2",
+    "dup:5a75eac4:2",
+    "dup:179409ba:2"
   ]
 }

@@ -1,0 +1,15 @@
+[
+  {"name": "generic todo", "text": "Review the handoff before closing the thread.", "general": true, "workLane": true},
+  {"name": "plain punctuation", "text": "Check the queue, then retry once.", "general": true, "workLane": true},
+  {"name": "credential assignment", "text": "api_key=<secret>", "general": false, "workLane": false},
+  {"name": "private key marker", "text": "-----BEGIN PRIVATE KEY-----", "general": false, "workLane": false},
+  {"name": "bare URL", "text": "Read https://example.com/help", "general": true, "workLane": false},
+  {"name": "URL with query", "text": "Read https://example.com/help?view=summary", "general": false, "workLane": false},
+  {"name": "POSIX home path", "text": "Check /home/<user>/notes.txt", "general": false, "workLane": false},
+  {"name": "Windows home path", "text": "Check C:\\Users\\<user>\\notes.txt", "general": false, "workLane": false},
+  {"name": "relative file path", "text": "Check ./docs/notes.md", "general": true, "workLane": false},
+  {"name": "inline code", "text": "Run `example --check`", "general": true, "workLane": false},
+  {"name": "ticket key", "text": "Review ABC-123 tomorrow.", "general": true, "workLane": false},
+  {"name": "transcript marker", "text": "user: Review the changes.", "general": false, "workLane": false},
+  {"name": "encoded source text", "text": "Use the encoded text %2F", "general": false, "workLane": false}
+]
