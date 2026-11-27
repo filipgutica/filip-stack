@@ -1325,12 +1325,13 @@ test('work start prints at most 1 KB of context, whole items only', () => {
 // pass ingests `inbox` from the start, and must not meet the todos the tests above applied by hand.
 let workBoard
 let workProxy
+let workMarker
 const writerState = join(root, 'writer-state.json')
 before(async () => {
   mkdirSync(join(root, 'work-board'))
   workBoard = await startBoardServer({ directory: join(root, 'work-board') })
   workProxy = await startTailnetProxy(workBoard.url)
-  postAsHost({ on: workBoard, channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } })
+  workMarker = postAsHost({ on: workBoard, channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } })
 })
 after(async () => {
   workProxy?.close()
@@ -1616,10 +1617,12 @@ test('a session whose writes stay local keeps its work items local, and saves no
 
 test('the check at flush holds reply intents to their canonical shape', async () => {
   joinWork()
-  workProxy.fault = () => 503
   const item = ridIn((await work(['start', 'Check replies.'])).stdout, 'work')
-  await work(['note', item, 'A note.', '--pr', 'https://github.com/example-owner/tools/pull/3'])
-  const { intent, withIntent } = queuedFile(1)
+  workProxy.fault = () => 503
+  assert.ok(ridIn((await work(['start', 'Another root.'])).stdout, 'work'))
+  assert.ok(ridIn((await work(['note', item, 'A note.', '--pr', 'https://github.com/example-owner/tools/pull/3'])).stdout, 'note'))
+  const { entry: queuedNote, intent, withIntent } = queuedFile(1)
+  assert.equal(queuedNote.epoch, '1', 'a reply is queued under its root\'s epoch')
   const planted = {
     'a repo field on a reply': [withIntent({ ...intent, repo: `${allowed}/tools` }), 'the intent is not a release 1 intent'],
     'a pr on a resolve': [withIntent({ ...intent, kind: 'done', text: '' }), 'the intent is not a release 1 intent'],
@@ -1637,7 +1640,7 @@ test('the check at flush holds reply intents to their canonical shape', async ()
   for (const [index, [label, [, reason]]] of Object.entries(planted).entries()) {
     assert.match(sync.stdout, new RegExp(`rejected 0000-${index}\\.json: ${reason}\n`, 'u'), label)
   }
-  assert.deepEqual(sentIntents().map(({ kind }) => kind), ['work', 'note'], 'the queued intents go, byte for byte')
+  assert.deepEqual(sentIntents().map(({ kind }) => kind), ['work', 'work', 'note'], 'the queued intents go, byte for byte')
 })
 
 test('--issue and --pr name only allowlisted repos on the board, at queue time', async () => {
@@ -1734,21 +1737,33 @@ test('a resolve the pending guard stops does not hide a newer reply', async () =
   assert.ok(start.stdout.includes('  the user replied: Wait, one more thing first.\n'), start.stdout)
 })
 
-test('pickup pairs the --re call only with replies up to the turn it read', async () => {
+test('pickup shows no call for an item whose thread moved past the turn it read', async () => {
   joinWork()
-  const { item, reply } = await answeredItem()
+  const { item } = await answeredItem()
+  const { item: resolved, reply: resolvedTurn } = await answeredItem({ goal: 'Resolved meanwhile.' })
   let newer
-  // The user replies between the sync's root listing and its read of the item's replies.
+  // Between the sync's root listing and its reads of the items' replies, the user replies on one
+  // item, and an agent resolves the other.
   workProxy.fault = (req) => {
-    if (!newer && req.url.startsWith('/api/board/messages/')) newer = userReply({ item, text: 'A later reply.' })
+    if (!newer && req.url.startsWith('/api/board/messages/')) {
+      newer = userReply({ item, text: 'A later reply.' })
+      const intent = { v: 1, rid: `done-${randomUUID()}`, kind: 'done', root: resolved, text: '', by: profile, re: resolvedTurn }
+      postAsHost({ on: workBoard, channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+      writerPass()
+    }
     return null
   }
   await syncOk()
   workProxy.fault = () => null
   assert.ok(newer)
   const first = await work(['start', 'Pick up.'], { preload: true })
-  assert.ok(first.stdout.includes(pickupLine({ item, turn: reply })), first.stdout)
-  assert.doesNotMatch(first.stdout, /A later reply\./u, 'the later reply waits for the next sync')
+  for (const [rid, goal] of [[item, 'Ship the export fix.'], [resolved, 'Resolved meanwhile.']]) {
+    assert.ok(first.stdout.includes(`${rid}  ${goal}  changed since the last sync: run devchat sync, then answer it\n`), first.stdout)
+    assert.doesNotMatch(first.stdout, new RegExp(`devchat work note ${rid} --re|^${rid}:$`, 'mu'), 'no call and no replies')
+  }
+  const show = await work(['show', item], { preload: true })
+  assert.match(show.stdout, /This item changed since the last sync: run devchat sync, then answer it\.\n$/u)
+  assert.doesNotMatch(show.stdout, /devchat work note/u)
   await syncOk()
   const second = await work(['start', 'Pick up again.'], { preload: true })
   assert.ok(second.stdout.includes(pickupLine({ item, turn: newer })), second.stdout)
@@ -1810,4 +1825,92 @@ test('a rid prefix must be unique among open and resolved items', () => {
   assert.match(done.stderr, /that rid prefix matches 2 work items: work-abc-11111111, work-abc-22222222/u)
   assert.equal(readJson(join(localDir(), 'work-abc-22222222.json')).labels.status, 'open')
   assert.equal(devchat({ args: ['work', 'done', 'work-abc-2'] }).status, 0)
+})
+
+const setWorkEpoch = async (epoch) => {
+  const response = await fetch(`${workBoard.url}/messages/${workMarker.id}/labels`, {
+    method: 'POST', headers: { authorization: `Bearer ${workBoard.ownerToken}`, 'content-type': 'application/json' }, body: JSON.stringify({ set: { epoch } }),
+  })
+  assert.ok(response.ok, `the epoch label answered ${response.status}`)
+}
+
+test('a reply never crosses a board restore: its root must be in the snapshot of the current epoch', async () => {
+  joinWork()
+  const [repoA, threadA] = [workRepo, thread]
+  const item = ridIn((await work(['start', 'Before the restore.'])).stdout, 'work')
+  assert.equal(filesIn('outbox', 'sent').length, 1, 'sent, and not decided yet')
+  joinBoard({ via: proxy })
+  await syncOk()
+  try {
+    await setWorkEpoch('2')
+    joinWork()
+    ;[workRepo, thread] = [repoA, threadA]
+    const note = await work(['note', item, 'After the restore.'], { preload: true })
+    assert.equal(note.status, 1)
+    assert.match(note.stderr, new RegExp(`${item} is not in this machine's snapshot of the board's current epoch: run devchat sync, then try again\\. Nothing was saved\\.`, 'u'))
+    assert.deepEqual(filesIn('outbox'), [])
+    await syncOk()
+    assert.equal((await work(['note', item, 'After the sync.'])).status, 1, 'the epoch 1 root is gone from the view')
+    assert.deepEqual(filesIn('outbox'), [])
+  } finally {
+    await setWorkEpoch('1')
+  }
+})
+
+test("work done in another repo or a local session prints nothing of the item's thread", async () => {
+  joinWork()
+  const { item } = await answeredItem({ goal: 'A private goal.', answer: 'A private answer.' })
+  const leaks = /A private goal|Which format|A private answer|--re ui-/u
+  workRepo = makeRepo(`work-${workRepos}-elsewhere`, `git@github.com:${allowed}/work-${workRepos}-elsewhere.git`)
+  const elsewhere = await work(['done', item])
+  assert.equal(elsewhere.status, 1)
+  assert.match(elsewhere.stderr, /is not an item of .*, where this session writes\. Nothing was saved\./u)
+  const local = await work(['drop', item], { sessionEnv: { CODEX_THREAD_ID: 'codex-session' } })
+  assert.equal(local.status, 1)
+  for (const result of [elsewhere, local]) assert.doesNotMatch(`${result.stdout}${result.stderr}`, leaks)
+})
+
+test("a write's own sync names no outbox file when the outbox is held; devchat sync does", async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Held.'])).stdout, 'work')
+  workProxy.fault = () => 503
+  await work(['note', item, 'Queued.'])
+  workProxy.fault = () => null
+  const [name] = filesIn('outbox')
+  const path = join(stateDir(), 'outbox', name)
+  writeFileSync(path, JSON.stringify({ ...readJson(path), board: offlineBoardUrl }))
+  const start = await work(['start', 'Another.'])
+  assert.match(start.stdout, /not sent yet \(the outbox is held by a write queued for another board or epoch; run devchat sync for details\)/u)
+  assert.doesNotMatch(start.stdout, new RegExp(name.replace('.json', ''), 'u'))
+  const sync = await devchatAsync({ args: ['sync'] })
+  assert.equal(sync.status, 1)
+  assert.match(sync.stderr, new RegExp(`${name} was queued for another board than the configured one`, 'u'))
+})
+
+test('repos compare ignoring case: targets, pickup, and session records', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Any case.'])).stdout, 'work')
+  workRepo = makeRepo(`work-${workRepos}-upper`, `git@github.com:${allowed.toUpperCase()}/WORK-${workRepos}.git`)
+  const start = await work(['start', 'Upper case.'])
+  assert.match(start.stdout, new RegExp(`^${item} {2}Any case\\.$`, 'mu'), "this repo's item, whatever the case")
+  assert.equal((await work(['note', item, 'From the upper-case clone.'])).status, 0)
+
+  rmSync(join(stateDir(), 'sessions'), { recursive: true, force: true })
+  const lower = makeRepo('case-lower', `git@github.com:${allowed}/case.git`)
+  const upper = makeRepo('case-upper', `git@github.com:${allowed.toUpperCase()}/CASE.git`)
+  startSession({ key: 'case', cwd: lower })
+  startSession({ key: 'case', cwd: upper, source: 'resume' })
+  assert.deepEqual(sessionRecord().conflicting, false, 'the same repo in another case does not conflict')
+})
+
+test('--issue and --pr URLs match their scheme and host ignoring case, and their path exactly', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  const start = await work(['start', 'Case URLs.', '--issue', `HTTPS://GITHUB.COM/${repo}/issues/2`])
+  const item = ridIn(start.stdout, 'work')
+  assert.ok(item, start.stderr)
+  assert.equal((await work(['note', item, 'Upper host.', '--pr', `Https://GitHub.com/${repo}/pull/9`])).status, 0)
+  assert.equal((await work(['note', item, 'Upper path.', '--pr', `https://github.com/${repo}/PULL/9`], { preload: true })).status, 1)
+  assert.equal((await work(['note', item, 'Other owner.', '--pr', 'HTTPS://GITHUB.COM/other-owner/service/pull/9'], { preload: true })).status, 1)
+  assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), [`HTTPS://GITHUB.COM/${repo}/issues/2`, `Https://GitHub.com/${repo}/pull/9`])
 })

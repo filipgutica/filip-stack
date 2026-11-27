@@ -189,6 +189,9 @@ const allowlistedRepo = ({ identity, allowlist }) => {
   return allowlist.some((entry) => entry.toLowerCase() === owner) ? `${match[1]}/${match[2]}` : null
 }
 
+/** Whether two repo identities or `owner/repo` names are the same repo: GitHub ignores case in both parts. */
+const sameRepo = (a, b) => isString(a) && isString(b) && a.toLowerCase() === b.toLowerCase()
+
 // Sessions
 
 const sessionVariables = { claude: 'CLAUDE_CODE_SESSION_ID', codex: 'CODEX_THREAD_ID' }
@@ -240,7 +243,7 @@ export const recordSession = ({ key, cwd, source, subagent = false, env = proces
     if (writeExclusive(path, record({ repo, conflicting: false }))) return
     existing = readSessionRecord({ key, env })
   }
-  if (existing.conflicting || existing.repo === repo) return
+  if (existing.conflicting || sameRepo(existing.repo, repo)) return
   writeAtomic(path, record({ repo: existing.repo, conflicting: true }))
 }
 
@@ -405,29 +408,21 @@ const foldReply = (item, reply) => {
 // reply `turn` names (spec §2).
 const isPending = (item) => item.labels.ask === 'answered'
 
-// The unanswered messages after one more reply. A user reply after the root's `turn` came after
-// the labels this machine read, so it waits for the next sync rather than pair with an older `re`.
-const unansweredAfter = ({ unanswered, reply, pastTurn }) => {
+// The unanswered messages after one more reply.
+const unansweredAfter = ({ unanswered, reply }) => {
   const { by, kind, re } = reply.labels
   if (isResolveKind(kind)) return []
-  if (by === 'user') return kind === 'answer' && !pastTurn ? [...unanswered, reply] : unanswered
+  if (by === 'user') return kind === 'answer' ? [...unanswered, reply] : unanswered
   return re === undefined ? unanswered : unanswered.slice(unanswered.findIndex(({ labels }) => labels.rid === re) + 1)
 }
 
 /**
- * The user's unanswered messages on a pending root (spec §2), from its replies in log order, up
- * to the one its `turn` names: each user reply, less every one up to the reply an agent post
- * names with `re`. A resolve answers all.
+ * The user's unanswered messages on a pending root (spec §2), from its replies in log order: each
+ * user reply, less every one up to the reply an agent post names with `re`. A resolve answers all.
  */
 const unansweredOf = (item) => {
   if (!isPending(item)) return []
-  let unanswered = []
-  let pastTurn = false
-  for (const reply of item.replies ?? []) {
-    unanswered = unansweredAfter({ unanswered, reply, pastTurn })
-    pastTurn ||= reply.labels.rid === item.labels.turn
-  }
-  return unanswered
+  return (item.replies ?? []).reduce((unanswered, reply) => unansweredAfter({ unanswered, reply }), [])
 }
 
 /** Reads `snapshot.json`, the board state the last sync pulled, or returns null before the first sync. */
@@ -473,14 +468,16 @@ const prNumberOf = (url) => (URL.canParse(url) ? /\/pull\/(\d{1,9})\/?$/u.exec(n
 // own repo.
 const githubName = '([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))/([A-Za-z0-9._-]{1,100})'
 const shortIssue = new RegExp(`^${githubName}#\\d{1,9}$`, 'u')
-const issueUrl = new RegExp(`^https://github\\.com/${githubName}/issues/\\d{1,9}/?$`, 'u')
-const pullUrl = new RegExp(`^https://github\\.com/${githubName}/pull/\\d{1,9}/?$`, 'u')
+const issuePath = new RegExp(`^/${githubName}/issues/\\d{1,9}/?$`, 'u')
+const pullPath = new RegExp(`^/${githubName}/pull/\\d{1,9}/?$`, 'u')
 const repoOfMatch = (match) => (match ? `${match[1]}/${match[2]}` : null)
+// The path of a github.com URL, with the scheme and host matched ignoring case, as URLs read them.
+const githubPathOf = (url) => /^https:\/\/github\.com(\/.*)$/iu.exec(url)?.[1] ?? ''
 
 /** The `owner/repo` an `--issue` reference names: '' for a bare `#<n>` or `<n>`, null for a form devchat does not take. */
-const issueRepoOf = (value) => (/^#?\d{1,9}$/u.test(value) ? '' : repoOfMatch(shortIssue.exec(value) ?? issueUrl.exec(value)))
+const issueRepoOf = (value) => (/^#?\d{1,9}$/u.test(value) ? '' : repoOfMatch(shortIssue.exec(value) ?? issuePath.exec(githubPathOf(value))))
 /** The `owner/repo` a `--pr` URL names, or null when it is not a github.com pull request URL. */
-const prRepoOf = (url) => repoOfMatch(pullUrl.exec(url))
+const prRepoOf = (url) => repoOfMatch(pullPath.exec(githubPathOf(url)))
 const isAllowlisted = ({ repo, allowlist }) => repo === '' || allowlistedRepo({ identity: `github.com/${repo}`, allowlist }) === repo
 
 const requireIssue = ({ value, board, config }) => {
@@ -589,9 +586,11 @@ const intendedEpoch = ({ config, env }) => {
  * Queues an intent (`fields` without `v`, `rid`, and `by`): one label-free `inbox` post whose `id`
  * is the intent's `rid`, so a retry replays it. The request body is stored as the exact canonical
  * string sync sends, so every retry is byte-identical. `repo` is the source repo the router
- * allowlisted. Returns the rid and the outbox file name, which sorts by queue time.
+ * allowlisted. `epoch` defaults to the snapshot's; a reply takes its root's, so sync holds it
+ * when the board's has changed since. Returns the rid and the outbox file name, which sorts by
+ * queue time.
  */
-const queueIntent = ({ fields, repo, config, env }) => {
+const queueIntent = ({ fields, repo, config, env, epoch = intendedEpoch({ config, env }) }) => {
   const rid = newRid(fields.kind)
   const profile = profileOf(config.machine)
   const intent = canonicalIntent({ ...fields, v: 1, rid, by: profile })
@@ -601,7 +600,6 @@ const queueIntent = ({ fields, repo, config, env }) => {
   }
   const queuedAt = new Date().toISOString()
   const name = `${queuedAt.replace(/[-:.]/gu, '')}-post-${rid}.json`
-  const epoch = intendedEpoch({ config, env })
   writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, epoch, body: requestBodyOf(intent), queuedAt })
   return { rid, name }
 }
@@ -701,7 +699,15 @@ const outboxProblem = ({ entry, config }) => {
 // no credential: the tailnet identity comes from `tailscale serve`.
 
 /** A network error, a timeout, a non-2xx answer, or an unexpected body: sync stops, and the next run retries. */
-class SyncStop extends Error {}
+class SyncStop extends Error {
+  /** `brief` is the reason a write's own sync prints: it names no outbox file, so no other repo's rid. */
+  constructor(message, brief = message) {
+    super(message)
+    this.brief = brief
+  }
+}
+
+const heldBrief = 'the outbox is held by a write queued for another board or epoch; run devchat sync for details'
 
 const requestTimeoutMs = 10_000
 
@@ -807,18 +813,26 @@ const readReplies = async ({ client, id }) => {
   }
 }
 
+const foldedLabels = ['status', 'ask', 'turn']
+
 /**
  * The replies the snapshot keeps for a pending root (spec §3): the last three, the user's
- * unanswered messages however old, and the question each of those answers with `re`.
+ * unanswered messages however old, and the question each of those answers with `re`. Sync reads
+ * the replies after the root's labels, so the thread can have moved past them: `changed` says a
+ * post after the root's `turn` changes its state, and pickup then shows no call until a sync reads
+ * them together.
  */
 const keptReplies = ({ messages, labels }) => {
   const replies = messages
     .filter((message) => !message.deleted && isRecord(message.labels) && isString(message.labels.rid))
     .map((message) => ({ labels: message.labels, text: message.text, createdAt: message.createdAt }))
+  const turn = replies.findIndex((reply) => reply.labels.rid === labels.turn)
+  const folded = replies.slice(turn + 1).reduce((state, reply) => foldStep(state, reply.labels), labels)
+  const changed = turn < 0 || foldedLabels.some((key) => folded[key] !== labels[key])
   const unanswered = unansweredOf({ labels, replies })
   const asked = new Set(unanswered.map(({ labels }) => labels.re))
   const kept = new Set([...replies.slice(-3), ...unanswered])
-  return replies.filter((reply) => kept.has(reply) || asked.has(reply.labels.rid))
+  return { replies: replies.filter((reply) => kept.has(reply) || asked.has(reply.labels.rid)), changed }
 }
 
 // How many resolved roots per channel the snapshot keeps, newest first, labels only: a note can
@@ -838,8 +852,7 @@ const pullSnapshotItems = async (client) => {
         closed.push({ rid: item.rid, channel, text: '', labels: item.labels, createdAt: item.createdAt })
         continue
       }
-      // The replies are read after the root's labels, so they can run past its `turn`.
-      if (isPending(item)) item.replies = keptReplies({ messages: await readReplies({ client, id: message.id }), labels: item.labels })
+      if (isPending(item)) Object.assign(item, keptReplies({ messages: await readReplies({ client, id: message.id }), labels: item.labels }))
       items.push(item)
     }
     resolved.push(...closed.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, resolvedKept))
@@ -953,7 +966,7 @@ const flush = async ({ client, config, env, epoch, out, outcomes }) => {
     if (gone) continue
     // Only a valid, normalized board URL names another board; any other value fails the check below.
     if (isBoardUrl(entry?.board) && entry.board !== config.boardUrl) {
-      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
+      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`, heldBrief)
     }
     const problem = unreadable ?? outboxProblem({ entry, config })
     if (problem) {
@@ -965,7 +978,7 @@ const flush = async ({ client, config, env, epoch, out, outcomes }) => {
     // marker. One queued under another epoch is held: the board was restored after it was queued.
     if (entry.epoch == null) writeJsonAtomic(path, { ...entry, epoch })
     else if (entry.epoch !== epoch) {
-      throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`)
+      throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`, heldBrief)
     }
     const answer = await client.post({ body: entry.body, profile: entry.profile })
     if (!isMessageId(answer?.message?.id)) throw new SyncStop('POST /messages sent no message ID')
@@ -1078,7 +1091,7 @@ const runSync = async ({ config, env, out = () => {}, signal, outcomes = new Map
     await syncSteps({ config, env, out, client, outcomes })
     return { stopped: null }
   } catch (error) {
-    if (error instanceof SyncStop) return { stopped: error.message }
+    if (error instanceof SyncStop) return { stopped: error.message, brief: error.brief }
     throw error
   } finally {
     releaseSyncLock({ env, owner })
@@ -1096,9 +1109,9 @@ const syncAfterWrite = async ({ config, env, name, repo, out }) => {
   try {
     // Of this sync's lines, only a refusal of an earlier intent from this write's repo is news
     // here. `devchat sync` prints every refusal.
-    const refusals = (line, about) => about?.repo === repo && out(line)
+    const refusals = (line, about) => sameRepo(about?.repo, repo) && out(line)
     const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs), outcomes })
-    reason = result.locked ? 'another sync is running' : result.stopped
+    reason = result.locked ? 'another sync is running' : result.brief
   } catch (error) {
     reason = error.message
   }
@@ -1150,7 +1163,7 @@ const outstandingIntents = ({ config, snapshot, env }) => {
       const { entry } = readOutboxEntry(join(dir, name))
       const intent = intentOfEntry(entry)
       if (!intent || !isString(entry.queuedAt) || !ofThisBoard({ entry, config, snapshot }) || found.has(intent.rid)) continue
-      found.set(intent.rid, { name, intent, queuedAt: entry.queuedAt, source })
+      found.set(intent.rid, { name, intent, entry, queuedAt: entry.queuedAt, source })
     }
   }
   return [...found.values()].sort((a, b) => a.name.localeCompare(b.name))
@@ -1160,12 +1173,14 @@ const outstandingIntents = ({ config, snapshot, env }) => {
 const boardView = ({ config, env }) => {
   const snapshot = currentSnapshot({ config, env })
   const roots = [...(snapshot?.items ?? []), ...(snapshot?.resolved ?? [])]
-  const items = new Map(roots.map((item) => [item.rid, { ...item, source: 'board' }]))
-  for (const { intent, queuedAt, source } of outstandingIntents({ config, snapshot, env })) {
+  // Each board item carries the epoch it belongs to: the snapshot's, or its outbox entry's, which
+  // is null while the epoch was unknown when it was queued.
+  const items = new Map(roots.map((item) => [item.rid, { ...item, source: 'board', epoch: snapshot.epoch }]))
+  for (const { intent, entry, queuedAt, source } of outstandingIntents({ config, snapshot, env })) {
     if (isRootKind(intent.kind)) {
       if (items.has(intent.rid)) continue
       const labels = definedLabels({ rid: intent.rid, status: 'open', repo: intent.repo, thread: intent.thread, issue: intent.issue })
-      items.set(intent.rid, { rid: intent.rid, channel: intent.channel, text: intent.text, labels, createdAt: queuedAt, source })
+      items.set(intent.rid, { rid: intent.rid, channel: intent.channel, text: intent.text, labels, createdAt: queuedAt, source, epoch: entry.epoch ?? null })
       continue
     }
     const root = items.get(intent.root)
@@ -1214,9 +1229,24 @@ const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
 }
 
 /**
+ * Checks that this session may write on a board item, and returns the router's decision: a board
+ * route, from the item's own repo, and the item seen in the configured board's current epoch. A
+ * board restore since would make the item another board's, so a reply to it waits for a sync.
+ * Nothing about the item prints before this passes.
+ */
+const boardWriteTo = ({ target, config, env, cwd }) => {
+  const decision = routeHere({ config, env, cwd })
+  if (decision.target !== 'board') throw new UsageError(`${target.rid} is on the board, and this session's writes stay on this machine (${decision.reason}). Nothing was saved.`)
+  if (!sameRepo(target.labels.repo, decision.repo)) throw new UsageError(`${target.rid} is not an item of ${decision.repo}, where this session writes. Nothing was saved.`)
+  const epoch = currentSnapshot({ config, env })?.epoch
+  if (target.epoch == null || target.epoch !== epoch) throw new UsageError(`${target.rid} is not in this machine's snapshot of the board's current epoch: run devchat sync, then try again. Nothing was saved.`)
+  return decision
+}
+
+/**
  * Writes one reply, `fields` without `v`, `rid`, `by`, and `root`, on `target`. An item kept on
- * this machine folds it into its `local/` record. A board item takes it as an intent, which needs
- * a board route from the item's own repo: anything else saves nothing.
+ * this machine folds it into its `local/` record. A board item takes it as an intent queued under
+ * the item's epoch, which needs `boardWriteTo` to pass: anything else saves nothing.
  */
 const writeReply = async ({ target, fields, config, env, cwd, out }) => {
   const intent = { ...fields, root: target.rid }
@@ -1228,10 +1258,8 @@ const writeReply = async ({ target, fields, config, env, cwd, out }) => {
     out(`${rid}: saved on this machine only (${target.rid} is kept on this machine)`)
     return
   }
-  const decision = routeHere({ config, env, cwd })
-  if (decision.target !== 'board') throw new UsageError(`${target.rid} is on the board, and this session's writes stay on this machine (${decision.reason}). Nothing was saved.`)
-  if (target.labels.repo !== decision.repo) throw new UsageError(`${target.rid} is not an item of ${decision.repo}, where this session writes. Nothing was saved.`)
-  const { rid, name } = queueIntent({ fields: intent, repo: decision.repo, config, env })
+  const decision = boardWriteTo({ target, config, env, cwd })
+  const { rid, name } = queueIntent({ fields: intent, repo: decision.repo, epoch: target.epoch, config, env })
   out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
   out(`${rid}: ${await syncAfterWrite({ config, env, name, repo: decision.repo, out })}`)
 }
@@ -1250,11 +1278,14 @@ const oneLine = (text, max) => {
 const replyCall = (item) => `devchat work note ${item.rid} --re ${item.labels.turn} "<what you did, or the next question>"`
 const answerCall = (item) => `Answer it: ${replyCall(item)}`
 
-/** The one line pickup always prints for a pending item: its rid, its goal, and the call. */
-const pendingSummary = (item) => `${item.rid}  ${oneLine(item.text, 48)}  answer: ${replyCall(item)}`
+const changedNote = 'changed since the last sync: run devchat sync, then answer it'
+
+/** The one line pickup always prints for a pending item: its rid, its goal, and the call, or why it has none yet. */
+const pendingSummary = (item) => `${item.rid}  ${oneLine(item.text, 48)}  ${item.changed ? changedNote : `answer: ${replyCall(item)}`}`
 
 /** A pending item's unanswered messages, each with the question it answers, cut short. */
 const pendingReplies = (item) => {
+  if (item.changed) return []
   const asks = new Map((item.replies ?? []).filter(({ labels }) => labels.kind === 'ask').map((reply) => [reply.labels.rid, reply]))
   return unansweredOf(item).flatMap((reply) => [
     ...(asks.has(reply.labels.re) ? [`  you asked: ${oneLine(asks.get(reply.labels.re).text, 100)}`] : []),
@@ -1325,7 +1356,7 @@ const flagOf = (item) => {
 const startContext = ({ config, env, cwd, exclude }) => {
   const identity = repoIdentityOf({ cwd, env })
   const repo = allowlistedRepo({ identity, allowlist: config.allowlist })
-  const here = (item) => (item.source === 'local' ? identity !== '' && item.identity === identity : repo !== null && item.labels.repo === repo)
+  const here = (item) => (item.source === 'local' ? identity !== '' && sameRepo(item.identity, identity) : repo !== null && sameRepo(item.labels.repo, repo))
   const open = viewItems({ config, env }).filter((item) => item.rid !== exclude && isOpen(item) && here(item))
   const work = open.filter(({ channel }) => channel === workChannel)
   const pending = work.filter(isPending)
@@ -1335,7 +1366,7 @@ const startContext = ({ config, env, cwd, exclude }) => {
     .map(({ intent, reason }) => `  not applied: ${intent.rid} (${intent.kind}), refused: ${reason}`)
   const lines = fitSections([
     { header: 'Replies waiting for you; answer each with its call:', blocks: pending.map((item) => [pendingSummary(item), ...notesFor(item)]), always: true },
-    { header: 'What the user replied, cut short; devchat work show <rid> prints it whole:', blocks: pending.map((item) => [`${item.rid}:`, ...pendingReplies(item)]) },
+    { header: 'What the user replied, cut short; devchat work show <rid> prints it whole:', blocks: pending.filter((item) => !item.changed).map((item) => [`${item.rid}:`, ...pendingReplies(item)]) },
     { header: 'Open work items here; add a note with devchat work note <rid> "<text>":', blocks: work.filter((item) => !isPending(item)).map((item) => [`${item.rid}  ${flagOf(item)}${oneLine(item.text, 80)}`]) },
     { header: 'Open todos here:', blocks: open.filter(({ channel }) => channel === todoChannel).map((item) => [`${item.rid}  ${oneLine(item.text, 80)}`]) },
   ])
@@ -1407,12 +1438,13 @@ const workResolve = (kind) => async ({ args, env, cwd, out }) => {
   const re = values.re === undefined ? undefined : requireRid({ value: values.re, name: '--re' })
   const config = readConfig(env)
   const target = findTarget({ prefix: positionals[0], channel: workChannel, openOnly: true, config, env })
+  if (target.source !== 'local') boardWriteTo({ target, config, env, cwd })
   // While the view shows a pending reply, a resolve without `re` sends nothing: the app would
   // refuse it, and the user's message would wait unseen (spec §4).
   if (isPending(target) && re === undefined) {
     out(`${target.rid} waits on a reply from the user, so work ${kind} sent nothing:`)
     for (const line of pendingLines(target)) out(line)
-    out(`  Then resolve it: devchat work ${kind} ${target.rid} --re ${target.labels.turn}`)
+    if (!target.changed) out(`  Then resolve it: devchat work ${kind} ${target.rid} --re ${target.labels.turn}`)
     return 1
   }
   await writeReply({ target, fields: { kind, text: '', re }, config, env, cwd, out })
@@ -1438,7 +1470,7 @@ const workShow = ({ args, env, out }) => {
   out(`${item.rid}  ${item.source}  ${status}${repo ? `  ${repo}` : ''}${issue ? `  issue ${issue}` : ''}`)
   if (item.text) out(item.text)
   for (const reply of item.replies ?? []) out(`  ${reply.labels.by ?? 'unknown'} (${reply.labels.kind ?? 'reply'}): ${reply.text}`)
-  if (isPending(item)) out(answerCall(item))
+  if (isPending(item)) out(item.changed ? `This item ${changedNote}.` : answerCall(item))
 }
 
 const workCommands = { start: workStart, note: workNote, done: workResolve('done'), drop: workResolve('drop'), list: workList, show: workShow }
