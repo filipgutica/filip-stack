@@ -1,6 +1,6 @@
 {
   "name": "devchat",
-  "version": "6.33.0",
+  "version": "6.34.0",
   "description": "Client for devchat: keeps the user's todos and routes each write to the right store, starting with this machine only.",
   "author": {
     "name": "Filip Gutica"

@@ -1,3 +1,10 @@
+# [6.34.0](https://github.com/filipgutica/filip-stack/compare/v6.33.0...v6.34.0) (2026-11-27)
+
+
+### Features
+
+* **devchat:** add the devchat plugin with router, session hook, guard, and local todos ([#304](https://github.com/filipgutica/filip-stack/issues/304)) ([2ae54c9](https://github.com/filipgutica/filip-stack/commit/2ae54c9aa79138e80461a5fbeaed37fd06bed60f))
+
 # [6.33.0](https://github.com/filipgutica/filip-stack/compare/v6.32.0...v6.33.0) (2026-11-26)
 
 
