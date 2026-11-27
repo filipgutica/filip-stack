@@ -219,6 +219,8 @@ codex plugin add devchat@filip-stack        # Codex, then restart Codex
 - **Config:** `~/.config/devchat/config.json` (or under `$XDG_CONFIG_HOME`)
   holds `mode`, `githubLogin`, and `allowlist`. Without it the mode is `off`.
   State lives in `~/.local/state/devchat` (or under `$XDG_STATE_HOME`).
+- **Codex:** Review and trust plugin hooks to enable the session hook. Until
+  then, every write stays on the machine.
 - **Antigravity:** The hook does not run, so every write stays on the machine.
 
 The skill's [SKILL.md](plugins/devchat/skills/devchat/SKILL.md) lists the
