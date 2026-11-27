@@ -93,8 +93,10 @@ const loopbackHost = /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])$/u
  * `{ problem }`.
  */
 const checkBoardUrl = (value) => {
-  // `scheme://authority` first: the URL parser also accepts forms such as `https:/@host`.
-  if (typeof value !== 'string' || !/^[A-Za-z][A-Za-z0-9+.-]*:\/\/[^/?#]/u.test(value) || !URL.canParse(value)) return { problem: 'it is not a URL' }
+  // `scheme://authority` first: the URL parser also accepts forms such as `https:/@host`, reads a
+  // backslash as a slash, and drops tabs and newlines, so the raw authority must hold none.
+  const authority = typeof value === 'string' ? /^[A-Za-z][A-Za-z0-9+.-]*:\/\/([^/?#]+)/u.exec(value)?.[1] : undefined
+  if (authority === undefined || /[\\\t\n\f\r ]/u.test(authority) || !URL.canParse(value)) return { problem: 'it is not a URL' }
   const url = new URL(value)
   // `https://@host` parses with empty user information, so the raw text is checked too.
   if (url.username || url.password || /^[^/]*\/\/[^/]*@/u.test(value)) return { problem: 'it holds user information' }
@@ -484,9 +486,12 @@ const intentProblem = ({ entry, body, intent, config }) => {
  * it, byte for byte, from a repo still on the allowlist, whose every outbound field passes the
  * guard again. Returns why a file fails, or null.
  */
+const isBoardUrl = (value) => isString(value) && checkBoardUrl(value).url === value
+
 const outboxProblem = ({ entry, config }) => {
   const recordFields = [entry?.target, entry?.profile, entry?.repo, entry?.board, entry?.body, entry?.queuedAt]
   if (!hasExactly(entry, outboxFields) || entry.schema !== 1 || entry.op !== 'post' || entry.lane !== 'repo' || !recordFields.every(isString)) return 'not a devchat outbox post'
+  if (!isBoardUrl(entry.board)) return 'the board is not a normalized board URL'
   const body = parseJson(entry.body)
   if (!hasExactly(body, ['channel', 'id', 'text']) || body.channel !== 'inbox' || !isString(body.text)) return 'the request is not an inbox post'
   if (body.text.length > boardTextLimit) return `the intent is longer than the board's ${boardTextLimit}-character limit`
@@ -703,7 +708,8 @@ const flush = async ({ client, config, env, epoch, out }) => {
     const path = join(outboxDir(env), name)
     const { entry, problem: unreadable, gone } = readOutboxEntry(path)
     if (gone) continue
-    if (isString(entry?.board) && entry.board !== config.boardUrl) {
+    // Only a valid, normalized board URL names another board; any other value fails the check below.
+    if (isBoardUrl(entry?.board) && entry.board !== config.boardUrl) {
       throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
     }
     const problem = unreadable ?? outboxProblem({ entry, config })
@@ -729,25 +735,41 @@ const isCovered = ({ id, applied }) => isMessageId(id) && isMessageId(applied) &
 const sentHere = ({ entry, config, epoch }) => entry?.board === config.boardUrl && entry?.epoch === epoch
 
 /**
- * Retires each sent intent the app has decided, which the `applied` cursor of the board and epoch
- * it was sent to says (spec §3, decided intents). One the app labelled `refused` moves to
- * `rejected/` with the app's reason code, which sync prints as it is. Any other covered intent
- * was applied, so its file goes. An entry sent to another board or epoch stays.
+ * Finds the sent intents the app has decided, which the `applied` cursor of the board and epoch
+ * they were sent to says (spec §3, decided intents), with the app's reason code for each refused
+ * one. An entry sent to another board or epoch is not decided here.
  */
-const retireDecided = async ({ client, config, env, epoch, applied, out }) => {
+const readDecided = async ({ client, config, env, epoch, applied }) => {
   const covered = sentNames(env)
     .map((name) => ({ name, entry: readOutboxEntry(join(sentDir(env), name)).entry }))
     .filter(({ entry }) => sentHere({ entry, config, epoch }) && isCovered({ id: entry.inboxId, applied }))
-  if (covered.length === 0) return
+  if (covered.length === 0) return []
   const refused = new Map((await pullChannel({ client, channel: 'inbox', label: 'refused' })).map((message) => [message.id, message.labels.refused]))
-  for (const { name, entry } of covered) {
-    const reason = refused.get(entry.inboxId)
+  return covered.map((decided) => ({ ...decided, reason: refused.get(decided.entry.inboxId) }))
+}
+
+// A refused intent moves to `rejected/` with its reason code, which sync prints as it is. Any
+// other decided intent was applied, so its file goes.
+const retireDecided = ({ env, decided, out }) => {
+  for (const { name, entry, reason } of decided) {
     if (reason !== undefined) {
       writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
       out(`refused ${entry.target}: ${reason}`)
     }
     ignoreMissing(() => unlinkSync(join(sentDir(env), name)))
   }
+}
+
+// An older sync that overlapped a newer one finds the newer snapshot in place: same epoch, a
+// higher cursor. It must not replace that snapshot, or retire receipts by its older cursor.
+const newerSnapshotInPlace = ({ env, epoch, applied }) => {
+  let current
+  try {
+    current = readSnapshot(env)
+  } catch {
+    return false // An unreadable snapshot is replaced.
+  }
+  return current?.epoch === epoch && isMessageId(current.applied) && (!isMessageId(applied) || BigInt(current.applied) > BigInt(applied))
 }
 
 const syncSteps = async ({ config, env, out, client }) => {
@@ -760,9 +782,18 @@ const syncSteps = async ({ config, env, out, client }) => {
   const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
   const items = await pullSnapshotItems(client)
+  const decided = await readDecided({ client, config, env, epoch, applied })
+  // A restore during this sync would make every read above an old board's. Read the epoch again
+  // before anything local changes.
+  const now = await readBoardEpoch(client)
+  if (now !== epoch) throw new SyncStop(`the board epoch changed from ${epoch} to ${now} during this sync: the snapshot and receipts stay as they were`)
+  if (newerSnapshotInPlace({ env, epoch, applied })) {
+    out('a newer snapshot is already in place: this sync leaves it and its receipts')
+    return
+  }
   writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, epoch, applied, items })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
-  await retireDecided({ client, config, env, epoch, applied, out })
+  retireDecided({ env, decided, out })
 }
 
 /**

@@ -720,21 +720,22 @@ test('a second root carrying a marker label stops sync', async () => {
   await syncOk()
 })
 
-test('two flushes over one queue at once land one post per client ID, with no error', async () => {
+test('overlapping syncs land one post per client ID, and an older one leaves the newer snapshot', async () => {
   const rids = await queueOffline(['Race one.', 'Race two.', 'Race three.'])
   let release
   const released = new Promise((resolve) => { release = resolve })
   proxy.fault = (req) => (req.method === 'POST' ? { until: released } : null)
-  const postsReach = (count) => new Promise((resolve) => {
-    const check = () => (posts().length >= count ? resolve() : setTimeout(check, 10))
-    check()
+  const reached = (check) => new Promise((resolve) => {
+    const poll = () => (check() ? resolve() : setTimeout(poll, 10))
+    poll()
   })
+  const lock = join(stateDir(), 'outbox', 'sync.lock')
   const first = devchatAsync({ args: ['sync'] })
-  await postsReach(1)
+  await reached(() => posts().length >= 1)
   // Bypass the lock: the first sync is mid-flush, and the second takes a fresh lock.
-  rmSync(join(stateDir(), 'outbox', 'sync.lock'))
+  rmSync(lock)
   const second = devchatAsync({ args: ['sync'] })
-  await postsReach(2)
+  await reached(() => posts().length >= 2)
   release()
   for (const result of await Promise.all([first, second])) {
     assert.equal(result.status, 0, result.stderr)
@@ -744,6 +745,33 @@ test('two flushes over one queue at once land one post per client ID, with no er
   for (const rid of rids) assert.equal((await inboxPostsFor(rid)).length, 1, `${rid} landed once`)
   assert.deepEqual(filesIn('outbox'), [])
   assert.equal(filesIn('outbox', 'sent').length, rids.length)
+
+  // An older sync holds after reading the cursor. The app then applies the three intents, and a
+  // newer sync publishes that cursor and retires them before the older one finishes.
+  let releaseOlder
+  const olderHeld = new Promise((resolve) => { releaseOlder = resolve })
+  let cursorRead = false
+  let held = false
+  proxy.fault = (req) => {
+    if (!cursorRead) {
+      cursorRead = req.url.includes('label=applied')
+      return null
+    }
+    if (held) return null
+    held = true
+    return { until: olderHeld }
+  }
+  const older = devchatAsync({ args: ['sync'] })
+  await reached(() => held)
+  const applied = await applyInbox()
+  rmSync(lock)
+  await syncOk()
+  releaseOlder()
+  const olderSync = await older
+  assert.equal(olderSync.status, 0, olderSync.stderr)
+  assert.match(olderSync.stdout, /a newer snapshot is already in place: this sync leaves it and its receipts/u)
+  assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, applied, 'the newer snapshot survives')
+  assert.deepEqual(filesIn('outbox', 'sent'), [])
 })
 
 test('a network error or a 5xx stops the flush until the next run', async () => {
@@ -801,6 +829,32 @@ test('a changed board epoch stops sync before it sends or pulls', async () => {
   } finally {
     await setEpoch('1')
   }
+})
+
+test('an epoch change during sync keeps the snapshot and the receipts', async () => {
+  joinBoard()
+  const add = await devchatAsync({ args: ['todo', 'add', 'Restored away.'] })
+  assert.match(add.stdout, /: sent$/mu)
+  await applyInbox()
+  const path = join(stateDir(), 'snapshot.json')
+  const snapshot = readFileSync(path, 'utf8')
+  const [sent] = filesIn('outbox', 'sent')
+  // A restore lands between the first epoch read and the cursor read.
+  let restored
+  proxy.fault = (req) => (req.url.includes('label=applied') ? { until: (restored ??= setEpoch('2')) } : null)
+  try {
+    const stopped = await devchatAsync({ args: ['sync'] })
+    assert.equal(stopped.status, 1)
+    assert.match(stopped.stderr, /the board epoch changed from 1 to 2 during this sync: the snapshot and receipts stay as they were/u)
+    assert.equal(readFileSync(path, 'utf8'), snapshot)
+    assert.deepEqual(filesIn('outbox', 'sent'), [sent])
+    assert.deepEqual(filesIn('outbox', 'rejected'), [])
+  } finally {
+    await setEpoch('1')
+  }
+  joinBoard()
+  await syncOk()
+  assert.deepEqual(filesIn('outbox', 'sent'), [], 'back on epoch 1, the receipt retires')
 })
 
 test('one flusher: a second sync exits while another holds the outbox lock', async () => {
@@ -916,6 +970,8 @@ test('the check at flush sends only what the router queued, byte for byte', asyn
     'labels on the post': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) }, 'the request is not an inbox post'],
     'a profile the board refuses': [{ ...withIntent({ ...intent, by: 'box.local' }), profile: 'box.local' }, 'the profile is not a board profile name'],
     'a board that is not a string': [{ ...entry, board: 1 }, 'not a devchat outbox post'],
+    'an empty board': [{ ...entry, board: '' }, 'the board is not a normalized board URL'],
+    'a board URL not in normal form': [{ ...entry, board: `${entry.board}/` }, 'the board is not a normalized board URL'],
     // JSON.parse keeps the last of two keys, so these parse to a valid todo, but not from the queued bytes.
     'a duplicate key hiding guarded text': [withIntent(intent, JSON.stringify(intent).replace('"text":', '"text":"password=hunter2","text":')), 'the request body is not in canonical form'],
     'a duplicate request key': [{ ...entry, body: entry.body.replace('{"channel":"inbox"', '{"channel":"todos","channel":"inbox"') }, 'the request body is not in canonical form'],
@@ -1000,6 +1056,8 @@ test('setup and the config refuse a board URL with a credential slot or without 
     'http off loopback': 'http://board.example.test:8443/api/board',
     'another scheme': 'ftp://board.example.test/api/board',
     'no authority': 'https:/@board.example.test/api/secret-board',
+    'a backslash in the authority': 'https://board.example.test\\@secret.example.test/api/board',
+    'whitespace in the authority': 'https://board.example.test\t/api/secret-board',
   }
   const reasons = {
     'user information': 'it holds user information',
@@ -1009,6 +1067,8 @@ test('setup and the config refuse a board URL with a credential slot or without 
     'http off loopback': 'it must use https, or http on a loopback host',
     'another scheme': 'it must use https, or http on a loopback host',
     'no authority': 'it is not a URL',
+    'a backslash in the authority': 'it is not a URL',
+    'whitespace in the authority': 'it is not a URL',
   }
   for (const [name, url] of Object.entries(refused)) {
     const run = await devchatAsync({ args: ['setup', '--board-url', url, '--github-login', allowed, '--mode', 'readwrite'], preload: true })
