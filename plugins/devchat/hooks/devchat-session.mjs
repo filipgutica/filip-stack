@@ -28,7 +28,9 @@ const harness = () => (process.env.PLUGIN_ROOT ? 'codex' : process.env.CLAUDE_PL
 const run = (input) => {
   const current = harness()
   if (current && typeof input.session_id === 'string' && input.session_id && typeof input.cwd === 'string' && input.cwd) {
-    recordSession({ key: { harness: current, id: input.session_id }, cwd: input.cwd, compaction: input.source === 'compact' })
+    // A subagent's hook carries an `agent_id` (Field Guide's isMainThread uses the same signal).
+    const subagent = typeof input.agent_id === 'string' && input.agent_id.length > 0
+    recordSession({ key: { harness: current, id: input.session_id }, cwd: input.cwd, source: input.source, subagent })
   }
   refreshPluginPath({ root: pluginRoot, version: pluginVersion() })
 }

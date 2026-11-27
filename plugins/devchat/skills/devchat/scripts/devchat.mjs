@@ -126,10 +126,19 @@ const gitEnv = (env) => Object.fromEntries(Object.entries(env).filter(([name]) =
 
 /** Returns the normalized `origin` of the repository containing `cwd`, or '' outside a repository or without an origin. */
 const repoIdentityOf = ({ cwd, env = process.env }) => {
-  const result = spawnSync('git', ['-C', cwd, 'remote', 'get-url', 'origin'], {
+  const git = (args) => spawnSync('git', ['-C', cwd, ...args], {
     encoding: 'utf8', env: gitEnv(env), timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'],
   })
-  return result.status === 0 ? normalizeRemote(result.stdout.trim()) : ''
+  // The configured URL, as written, and the URL git uses after `url.*.insteadOf` rewrites. A
+  // rewrite could turn a host alias into github.com, so both must name the same repository.
+  const configured = git(['config', '--get-all', 'remote.origin.url'])
+  const resolved = git(['remote', 'get-url', 'origin'])
+  if (configured.status !== 0 || resolved.status !== 0) return ''
+  const urls = configured.stdout.split('\n').filter(Boolean)
+  const identity = normalizeRemote(urls.join('\n'))
+  return urls.length === 1 && normalizeRemote(resolved.stdout.trim()) === identity
+    ? identity
+    : normalizeRemote(`${urls.join('\n')}\n${resolved.stdout.trim()}`)
 }
 
 /**
@@ -174,22 +183,24 @@ const readSessionRecord = ({ key, env = process.env }) => {
 
 /**
  * Records the repository identity of a session's starting directory under its session key
- * (`{ harness, id }`). A later start under the same key from another identity marks the record
- * conflicting, for good. A compaction is not a start: the agent may have moved to another
- * directory since, so it only fills a missing record and never compares.
+ * (`{ harness, id }`). Only a top-level start (`startup` or `clear`) creates a record, so a
+ * session whose start went unrecorded stays unknown, and its writes stay on this machine. A later
+ * start, resume, or subagent start under the same key from another identity marks the record
+ * conflicting, for good. A compaction changes nothing: the agent may have moved since.
  *
  * Only the first record is written as not conflicting, and that write is exclusive: when two
- * hooks race, the loser sees the winner's record, and a start compares against it.
+ * hooks race, the loser sees the winner's record and compares against it.
  */
-export const recordSession = ({ key, cwd, compaction = false, env = process.env, now = new Date() }) => {
+export const recordSession = ({ key, cwd, source, subagent = false, env = process.env, now = new Date() }) => {
+  if (source === 'compact') return
   const path = sessionPath({ key, env })
   const record = ({ repo, conflicting }) => `${JSON.stringify({ schema: 1, repo, conflicting, recordedAt: now.toISOString() }, null, 2)}\n`
+  const establishes = !subagent && (source === 'startup' || source === 'clear')
   let existing = readSessionRecord({ key, env })
-  if (existing && compaction) return
+  if (!existing && !establishes) return
   const repo = repoIdentityOf({ cwd, env })
   if (!existing) {
     if (writeExclusive(path, record({ repo, conflicting: false }))) return
-    if (compaction) return
     existing = readSessionRecord({ key, env })
   }
   if (existing.conflicting || existing.repo === repo) return

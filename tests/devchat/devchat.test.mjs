@@ -46,6 +46,11 @@ const lookalikes = {
   'a nested path': `https://github.com/${allowed}/tools/extra`,
 }
 for (const [index, remote] of Object.values(lookalikes).entries()) repos[`lookalike${index}`] = makeRepo(`lookalike-${index}`, remote)
+// A host alias that `url.*.insteadOf` rewrites to github.com, and a github.com URL rewritten away.
+repos.rewrittenAlias = makeRepo('rewritten-alias', `git@github-alias:${allowed}/tools.git`)
+execFileSync('git', ['-C', repos.rewrittenAlias, 'config', 'url.git@github.com:.insteadOf', 'git@github-alias:'])
+repos.rewrittenAway = makeRepo('rewritten-away', `git@github.com:${allowed}/tools.git`)
+execFileSync('git', ['-C', repos.rewrittenAway, 'config', 'url.git@git.example.test:.insteadOf', 'git@github.com:'])
 repos.allowedSsh = makeRepo('allowed-ssh', `ssh://git@github.com/${allowed}/notes.git`)
 repos.allowedSlash = makeRepo('allowed-slash', `https://github.com/${allowed}/notes/`)
 
@@ -74,14 +79,14 @@ const writeConfig = (config) => {
 // Each harness tells its hook apart the way it runs plugin hooks: Codex sets PLUGIN_ROOT and
 // Claude Code sets CLAUDE_PLUGIN_ROOT.
 const harnessEnv = { claude: { CLAUDE_PLUGIN_ROOT: pluginRoot }, codex: { PLUGIN_ROOT: pluginRoot } }
-const hookInput = ({ key, cwd, source = 'startup' }) => JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source })
+const hookInput = ({ key, cwd, source = 'startup', agentId }) => JSON.stringify({ session_id: key, cwd, hook_event_name: 'SessionStart', source, agent_id: agentId })
 
 // Runs the hook through the exact command hooks.json registers.
 const runHook = ({ input, harness = 'claude', extraEnv = {} }) => spawnSync('/bin/sh', ['-c', hookCommand], {
   input, encoding: 'utf8', env: { ...env, ...harnessEnv[harness], ...extraEnv },
 })
-const startSession = ({ key, cwd, source, harness }) => {
-  const result = runHook({ input: hookInput({ key, cwd, source }), harness })
+const startSession = ({ key, cwd, source, harness, agentId }) => {
+  const result = runHook({ input: hookInput({ key, cwd, source, agentId }), harness })
   assert.equal(result.status, 0, result.stderr)
   assert.equal(result.stdout, '', 'the hook prints nothing')
 }
@@ -184,11 +189,14 @@ test('only a github.com remote in a supported form is an allowlisted identity', 
   for (const [index, name] of Object.keys(lookalikes).entries()) {
     assert.equal(routeIn(repos[`lookalike${index}`]), 'this machine only (the working directory is not an allowlisted repo)', name)
   }
+  for (const cwd of [repos.rewrittenAlias, repos.rewrittenAway]) {
+    assert.equal(routeIn(cwd), 'this machine only (the working directory is not an allowlisted repo)', cwd)
+  }
 })
 
-test("racing hooks never leave a compaction's repo as a clean start", async () => {
-  // A startup from a non-allowlisted repo and a compaction from an allowlisted one both find no
-  // record. Whichever writes first, the result must not be a clean record of the allowlisted repo.
+test('racing starts from two repos always end conflicting', async () => {
+  // Two starts under one key, from different repos, both find no record. Whichever writes first,
+  // the other must see its record and mark it conflicting.
   const spawnHook = (input) => new Promise((resolve) => {
     const child = spawn('/bin/sh', ['-c', hookCommand], { env: { ...env, ...harnessEnv.claude }, stdio: ['pipe', 'ignore', 'ignore'] })
     child.on('close', resolve)
@@ -198,9 +206,9 @@ test("racing hooks never leave a compaction's repo as a clean start", async () =
     rmSync(stateDir(), { recursive: true, force: true })
     await Promise.all([
       spawnHook(hookInput({ key: `race-${round}`, cwd: repos.other })),
-      spawnHook(hookInput({ key: `race-${round}`, cwd: repos.allowed, source: 'compact' })),
+      spawnHook(hookInput({ key: `race-${round}`, cwd: repos.allowed })),
     ])
-    assert.notDeepEqual(sessionRecord(), { repo: `github.com/${allowed}/tools`, conflicting: false }, `round ${round}`)
+    assert.equal(sessionRecord().conflicting, true, `round ${round}`)
   }
 })
 
@@ -219,9 +227,24 @@ test('a compaction keeps the record, and a resume from another repo still confli
   startSession({ key: 'k', cwd: repos.other, source: 'resume' })
   assert.deepEqual(record(), { repo: `github.com/${allowed}/tools`, conflicting: true })
 
+})
+
+test('only a top-level start creates a record', () => {
+  writeConfig({ mode: 'readwrite', githubLogin: allowed })
+  const routeHere = () => devchat({ args: ['doctor'], sessionEnv: { CLAUDE_CODE_SESSION_ID: 'k' } }).stdout.match(/route here: (.*)/u)[1]
+  // The session started elsewhere and its startup hook was missed; later events from an
+  // allowlisted repo must not establish provenance.
+  for (const event of [{ source: 'compact' }, { source: 'resume' }, { source: 'startup', agentId: 'agent-1' }, { source: 'unknown' }]) {
+    rmSync(stateDir(), { recursive: true, force: true })
+    startSession({ key: 'k', cwd: repos.allowed, ...event })
+    assert.equal(existsSync(join(stateDir(), 'sessions')), false, JSON.stringify(event))
+    assert.equal(routeHere(), 'this machine only (no session record)', JSON.stringify(event))
+  }
   rmSync(stateDir(), { recursive: true, force: true })
-  startSession({ key: 'k', cwd: repos.other, source: 'compact' })
-  assert.deepEqual(record(), { repo: 'github.com/other-owner/service', conflicting: false }, 'a compaction fills a missing record')
+  startSession({ key: 'k', cwd: repos.allowed, source: 'clear' })
+  assert.equal(routeHere(), `board (${allowed}/tools)`)
+  startSession({ key: 'k', cwd: repos.other, agentId: 'agent-1' })
+  assert.deepEqual(sessionRecord(), { repo: `github.com/${allowed}/tools`, conflicting: true }, 'a subagent start elsewhere still conflicts')
 })
 
 test('the hook fails open, prints nothing, and opens no socket', () => {
