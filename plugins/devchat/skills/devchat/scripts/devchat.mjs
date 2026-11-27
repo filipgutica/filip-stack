@@ -93,7 +93,8 @@ const loopbackHost = /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])$/u
  * `{ problem }`.
  */
 const checkBoardUrl = (value) => {
-  if (typeof value !== 'string' || !URL.canParse(value)) return { problem: 'it is not a URL' }
+  // `scheme://authority` first: the URL parser also accepts forms such as `https:/@host`.
+  if (typeof value !== 'string' || !/^[A-Za-z][A-Za-z0-9+.-]*:\/\/[^/?#]/u.test(value) || !URL.canParse(value)) return { problem: 'it is not a URL' }
   const url = new URL(value)
   // `https://@host` parses with empty user information, so the raw text is checked too.
   if (url.username || url.password || /^[^/]*\/\/[^/]*@/u.test(value)) return { problem: 'it holds user information' }
@@ -415,15 +416,9 @@ const queueTodo = ({ text, repo, config, env }) => {
   return { rid, name }
 }
 
-// Every outbox entry that is not a directory, so a symbolic link or other odd file is checked and
-// rejected rather than left in place.
-const outboxNames = (dir) => {
-  if (!existsSync(dir)) return []
-  return readdirSync(dir, { withFileTypes: true })
-    .filter((entry) => !entry.isDirectory() && entry.name.endsWith('.json'))
-    .map(({ name }) => name)
-    .sort()
-}
+// Every `.json` name in an outbox folder, whatever it is, so a directory, a symbolic link, or
+// another odd entry is checked and rejected rather than left in place.
+const outboxNames = (dir) => (existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')).sort() : [])
 const pendingOutbox = (env) => outboxNames(outboxDir(env))
 const sentNames = (env) => outboxNames(sentDir(env))
 
@@ -431,7 +426,8 @@ const maxOutboxEntryBytes = 64 * 1024
 
 /**
  * Reads an outbox file through one descriptor: it never follows a symbolic link, never blocks on a
- * FIFO, and reads only a regular file of at most 64 KiB. Returns `{ entry }` or `{ problem }`.
+ * FIFO, and reads only a regular file of at most 64 KiB. Returns `{ entry }`, `{ problem }`, or
+ * `{ gone: true }` when another flusher already moved the file.
  */
 const readOutboxEntry = (path) => {
   let descriptor
@@ -442,6 +438,7 @@ const readOutboxEntry = (path) => {
     if (stat.size > maxOutboxEntryBytes) return { problem: `larger than ${maxOutboxEntryBytes} bytes` }
     return { entry: JSON.parse(readFileSync(descriptor, 'utf8')) }
   } catch (error) {
+    if (error.code === 'ENOENT') return { gone: true }
     return { problem: error.code === 'ELOOP' ? 'a symbolic link' : 'not readable JSON' }
   } finally {
     if (descriptor !== undefined) closeSync(descriptor)
@@ -550,21 +547,35 @@ const pullChannel = async ({ client, channel, label }) => {
   return roots
 }
 
-/** Reads the board marker's `epoch`: the `sys` root whose client ID is `board`. */
+/**
+ * Returns the label on the one root in `channel` that carries it, or null when none does. Board
+ * does not expose a marker's client ID (`board`, `app`) to other readers, and only the host's
+ * service account can label these channels, so the label itself finds the marker. More than one
+ * such root stops sync.
+ */
+const readMarkerLabel = async ({ client, channel, label }) => {
+  const roots = await pullChannel({ client, channel, label })
+  if (roots.length > 1) throw new SyncStop(`${roots.length} roots in ${channel} carry ${label}; the host's marker must be the only one`)
+  return roots[0]?.labels?.[label] ?? null
+}
+
+/** Reads the board marker's `epoch`, the label on the one `sys` root that carries it. */
 const readBoardEpoch = async (client) => {
-  const marker = (await pullChannel({ client, channel: 'sys' })).find((message) => message.thread === 'board')
-  const epoch = marker?.labels?.epoch
-  if (typeof epoch !== 'string') throw new SyncStop('the board has no marker with an epoch: the host setup posts it')
+  const epoch = await readMarkerLabel({ client, channel: 'sys', label: 'epoch' })
+  if (epoch === null) throw new SyncStop('the board has no marker with an epoch: the host setup posts it')
   return epoch
 }
 
+const isMessageId = (value) => isString(value) && /^\d+$/u.test(value)
+
 /**
- * Reads the app's `applied` cursor: the label on the app marker, the `inbox` root whose client ID
- * is `app` (devchat's `docs/layout.md`). No marker or no label yet means no cursor yet.
+ * Reads the app's `applied` cursor, the label on the one `inbox` root that carries it: the app
+ * marker. No marker or no label yet means no cursor yet. The cursor is a Board message ID.
  */
 const readApplied = async (client) => {
-  const marker = (await pullChannel({ client, channel: 'inbox', label: 'applied' })).find((message) => message.thread === 'app')
-  return marker?.labels?.applied ?? null
+  const applied = await readMarkerLabel({ client, channel: 'inbox', label: 'applied' })
+  if (applied !== null && !isMessageId(applied)) throw new SyncStop('the app marker\'s applied label is not a message ID')
+  return applied
 }
 
 // The snapshot keeps open and blocked roots of these channels, in the local item shape.
@@ -663,59 +674,79 @@ const whileOwned = ({ env, owner, action }) => {
 const refreshSyncLock = ({ env, owner }) => whileOwned({ env, owner, action: (path) => utimesSync(path, new Date(), new Date()) })
 const releaseSyncLock = ({ env, owner }) => whileOwned({ env, owner, action: unlinkSync })
 
+// Two flushers can run at once: the lock only makes a second sync exit. So every move and removal
+// below treats a missing file as done by the other flusher, a resend only replays the post its
+// `id` names, and each file write is an atomic rename.
+const ignoreMissing = (action) => {
+  try {
+    action()
+  } catch (error) {
+    if (error.code !== 'ENOENT') throw error
+  }
+}
+
 const rejectOutboxFile = ({ env, name, problem, out }) => {
   mkdirSync(rejectedDir(env), { recursive: true })
-  renameSync(join(outboxDir(env), name), join(rejectedDir(env), name))
-  out(`rejected ${name}: ${problem}`)
+  ignoreMissing(() => {
+    renameSync(join(outboxDir(env), name), join(rejectedDir(env), name))
+    out(`rejected ${name}: ${problem}`)
+  })
 }
 
 /**
- * Sends the outbox in time order. A file that fails the check moves to `rejected/`. A file queued
- * for another board stops the flush and stays, as does the first failed send.
+ * Sends the outbox in time order. A file queued for another board stops the flush and stays, and
+ * no other check applies to it. A file that fails the check moves to `rejected/`. The first
+ * failed send stops the flush, and its file stays.
  */
-const flush = async ({ client, config, env, out }) => {
+const flush = async ({ client, config, env, epoch, out }) => {
   for (const name of pendingOutbox(env)) {
     const path = join(outboxDir(env), name)
-    const { entry, problem: unreadable } = readOutboxEntry(path)
+    const { entry, problem: unreadable, gone } = readOutboxEntry(path)
+    if (gone) continue
+    if (isString(entry?.board) && entry.board !== config.boardUrl) {
+      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
+    }
     const problem = unreadable ?? outboxProblem({ entry, config })
     if (problem) {
       rejectOutboxFile({ env, name, problem, out })
       continue
     }
-    if (entry.board !== config.boardUrl) {
-      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
-    }
     const answer = await client.post({ body: entry.body, profile: entry.profile })
-    if (typeof answer?.message?.id !== 'string') throw new SyncStop('POST /messages sent no message ID')
-    // The sent copy keeps the board's `inbox` ID. It is written before the queued file goes, so a
-    // crash between the two sends the file again, which the post `id` turns into a replay.
-    writeJsonAtomic(join(sentDir(env), name), { ...entry, inboxId: answer.message.id, sentAt: new Date().toISOString() })
-    unlinkSync(path)
+    if (!isMessageId(answer?.message?.id)) throw new SyncStop('POST /messages sent no message ID')
+    // The sent copy keeps the board's `inbox` ID and the epoch it was sent under. It is written
+    // before the queued file goes, so a crash between the two sends the file again, which the post
+    // `id` turns into a replay.
+    writeJsonAtomic(join(sentDir(env), name), { ...entry, inboxId: answer.message.id, epoch, sentAt: new Date().toISOString() })
+    ignoreMissing(() => unlinkSync(path))
     out(`sent ${entry.target}`)
   }
 }
 
-// Board message IDs are log indexes, so a cursor covers every ID at or below it.
-const isCovered = ({ id, applied }) => [id, applied].every((value) => isString(value) && /^\d+$/u.test(value)) && BigInt(id) <= BigInt(applied)
+// Board message IDs are log indexes: compare them as integers, never as strings ('9' < '10').
+const isCovered = ({ id, applied }) => isMessageId(id) && isMessageId(applied) && BigInt(id) <= BigInt(applied)
+
+// A sent entry belongs to the board and epoch it was sent to; only that board's cursor decides it.
+const sentHere = ({ entry, config, epoch }) => entry?.board === config.boardUrl && entry?.epoch === epoch
 
 /**
- * Retires each sent intent the app has decided, which the `applied` cursor says (spec §3, decided
- * intents). One the app labelled `refused` moves to `rejected/` with its reason, which sync
- * prints. Any other covered intent was applied, so its file goes.
+ * Retires each sent intent the app has decided, which the `applied` cursor of the board and epoch
+ * it was sent to says (spec §3, decided intents). One the app labelled `refused` moves to
+ * `rejected/` with the app's reason code, which sync prints as it is. Any other covered intent
+ * was applied, so its file goes. An entry sent to another board or epoch stays.
  */
-const retireDecided = async ({ client, env, applied, out }) => {
+const retireDecided = async ({ client, config, env, epoch, applied, out }) => {
   const covered = sentNames(env)
     .map((name) => ({ name, entry: readOutboxEntry(join(sentDir(env), name)).entry }))
-    .filter(({ entry }) => isCovered({ id: entry?.inboxId, applied }))
+    .filter(({ entry }) => sentHere({ entry, config, epoch }) && isCovered({ id: entry.inboxId, applied }))
   if (covered.length === 0) return
-  const refused = new Map((await pullChannel({ client, channel: 'inbox', label: 'refused' })).map((message) => [message.thread, message.labels.refused]))
+  const refused = new Map((await pullChannel({ client, channel: 'inbox', label: 'refused' })).map((message) => [message.id, message.labels.refused]))
   for (const { name, entry } of covered) {
-    const reason = refused.get(entry.target)
+    const reason = refused.get(entry.inboxId)
     if (reason !== undefined) {
       writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
       out(`refused ${entry.target}: ${reason}`)
     }
-    unlinkSync(join(sentDir(env), name))
+    ignoreMissing(() => unlinkSync(join(sentDir(env), name)))
   }
 }
 
@@ -725,13 +756,13 @@ const syncSteps = async ({ config, env, out, client }) => {
   if (snapshot && snapshot.epoch !== epoch) {
     throw new SyncStop(`the board epoch is ${epoch} and the snapshot's is ${snapshot.epoch}: nothing is sent or pulled until the outbox is reconciled`)
   }
-  if (config.mode === 'readwrite') await flush({ client, config, env, out })
+  if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out })
   const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
   const items = await pullSnapshotItems(client)
   writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, epoch, applied, items })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
-  await retireDecided({ client, env, applied, out })
+  await retireDecided({ client, config, env, epoch, applied, out })
 }
 
 /**
@@ -807,16 +838,21 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   return 0
 }
 
-// The todo intents this machine queued or sent that the app has not decided yet.
-const outstandingTodos = (env) => [
-  ...pendingOutbox(env).map((name) => ({ path: join(outboxDir(env), name), source: 'queued' })),
-  ...sentNames(env).map((name) => ({ path: join(sentDir(env), name), source: 'sent' })),
-].flatMap(({ path, source }) => {
-  const { entry } = readOutboxEntry(path)
-  const intent = isString(entry?.body) ? parseJson(parseJson(entry.body)?.text) : undefined
-  if (!isRecord(intent) || intent.kind !== 'todo' || ![intent.rid, intent.text, entry.queuedAt].every(isString)) return []
-  return [{ rid: intent.rid, channel: todoChannel, text: intent.text, labels: { status: 'open' }, createdAt: entry.queuedAt, source }]
-})
+// The todo intents this machine queued or sent that the app has not decided yet, one per rid. A
+// rid in both folders, after a crash or two flushers, shows its `sent/` copy.
+const outstandingTodos = (env) => {
+  const seen = new Set()
+  return [
+    ...sentNames(env).map((name) => ({ path: join(sentDir(env), name), source: 'sent' })),
+    ...pendingOutbox(env).map((name) => ({ path: join(outboxDir(env), name), source: 'queued' })),
+  ].flatMap(({ path, source }) => {
+    const { entry } = readOutboxEntry(path)
+    const intent = isString(entry?.body) ? parseJson(parseJson(entry.body)?.text) : undefined
+    if (!isRecord(intent) || intent.kind !== 'todo' || ![intent.rid, intent.text, entry.queuedAt].every(isString) || seen.has(intent.rid)) return []
+    seen.add(intent.rid)
+    return [{ rid: intent.rid, channel: todoChannel, text: intent.text, labels: { status: 'open' }, createdAt: entry.queuedAt, source }]
+  })
+}
 
 // The offline view of board todos (spec §3): the snapshot's, then outstanding ones it lacks.
 const boardTodos = (env) => {
@@ -903,10 +939,12 @@ const localChecks = ({ config, env, cwd }) => {
   ]
 }
 
-const outboxCheck = (env) => {
-  const count = (dir) => (existsSync(dir) ? readdirSync(dir).filter((name) => name.endsWith('.json')).length : 0)
-  const rejected = count(rejectedDir(env))
-  return { ok: rejected === 0, line: `outbox: ${pendingOutbox(env).length} queued, ${count(sentDir(env))} sent, ${rejected} rejected` }
+const outboxCheck = ({ config, env }) => {
+  const sent = sentNames(env)
+  const elsewhere = sent.filter((name) => readOutboxEntry(join(sentDir(env), name)).entry?.board !== config.boardUrl).length
+  const rejected = outboxNames(rejectedDir(env)).length
+  const sentLine = elsewhere > 0 ? `${sent.length} sent (${elsewhere} to another board)` : `${sent.length} sent`
+  return { ok: rejected === 0, line: `outbox: ${pendingOutbox(env).length} queued, ${sentLine}, ${rejected} rejected` }
 }
 
 // A machine that has not synced for 3 days fails doctor (spec §3).
@@ -962,7 +1000,7 @@ const doctorChecks = async ({ env, cwd }) => {
   } catch (error) {
     return [{ ok: false, line: `config: ${error.message}` }]
   }
-  const checks = [...localChecks({ config, env, cwd }), outboxCheck(env)]
+  const checks = [...localChecks({ config, env, cwd }), outboxCheck({ config, env })]
   try {
     snapshot = readSnapshot(env)
     checks.push(snapshotCheck({ config, snapshot }))
@@ -1084,37 +1122,36 @@ const launchdPlist = (env) => `<?xml version="1.0" encoding="UTF-8"?>
 </plist>
 `
 
-// The nearest folder that exists on the way to `path` must be a writable directory.
-const canCreate = (path) => {
+// Setup writes each file by an atomic rename, which needs write and search access to its folder,
+// or, for a folder it creates, to the nearest folder that exists.
+const canWriteIn = (path) => {
   let folder = dirname(path)
   while (!existsSync(folder)) folder = dirname(folder)
   try {
-    accessSync(folder, constants.W_OK)
+    accessSync(folder, constants.W_OK | constants.X_OK)
     return statSync(folder).isDirectory()
   } catch {
     return false
   }
 }
 
-/** Returns why setup must not write `path`, or null. `managed` files must carry the marker. */
+// The exact marker lines setup writes: a shell or unit comment, or an XML comment in a plist.
+const managedLines = [`# ${managedMarker}`, `<!-- ${managedMarker} -->`]
+
+/** Returns why setup must not write `path`, or null. A `managed` file must carry a marker line. */
 const destinationProblem = ({ path, managed = false, json = false }) => {
+  if (!canWriteIn(path)) return 'its folder is not writable and searchable'
   let stat
   try {
     stat = lstatSync(path)
   } catch (error) {
-    if (error.code !== 'ENOENT') return error.code
-    return canCreate(path) ? null : 'its folder cannot be created or written'
+    return error.code === 'ENOENT' ? null : error.code
   }
   if (!stat.isFile()) return 'not a regular file'
   const text = readFileSync(path, 'utf8')
-  if (managed && !text.includes(managedMarker)) return 'not written by devchat setup'
+  if (managed && !text.split('\n').some((line) => managedLines.includes(line))) return 'not written by devchat setup'
   if (json && !isRecord(parseJson(text))) return 'not a JSON object'
-  try {
-    accessSync(path, constants.W_OK)
-    return null
-  } catch {
-    return 'not writable'
-  }
+  return null
 }
 
 const fileStep = ({ path, content, mode = 0o644 }) => ({

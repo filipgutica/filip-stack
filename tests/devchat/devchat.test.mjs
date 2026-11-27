@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { createServer, request } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -473,12 +473,26 @@ const asOwner = async ({ path, method = 'GET', body }) => {
   return response.json()
 }
 
+// Posts as host setup and the app do: through Board's Node handle, as the board's owner. Board
+// then keys the post's thread by a hash, so no other reader sees its client ID.
+const devchatPackage = realpathSync(fileURLToPath(new URL('../../node_modules/@filipgutica/devchat/', import.meta.url)))
+const postAsHost = ({ channel, ...post }) => {
+  const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+    const { board } = await import('@vercel/board')
+    const posted = await board().post(${JSON.stringify(channel)}, ${JSON.stringify(post)})
+    process.stdout.write(JSON.stringify(posted.message ?? posted))
+  `], { cwd: devchatPackage, encoding: 'utf8', env: { ...process.env, XDG_CONFIG_HOME: board.configHome, BOARD_URL: board.url, BOARD_TOKEN: '', BOARD_PROFILE: '' } })
+  assert.equal(result.status, 0, result.stderr)
+  return JSON.parse(result.stdout)
+}
+
 before(async () => {
   board = await startBoardServer({ directory: root })
   proxy = await startTailnetProxy(board.url)
-  ;({ message: marker } = await asOwner({ path: '/messages', method: 'POST', body: { channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } } }))
+  marker = postAsHost({ channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } })
   // The app posts its marker in `inbox` and labels it `applied` after its first batch.
-  ;({ message: appMarker } = await asOwner({ path: '/messages', method: 'POST', body: { channel: 'inbox', id: 'app', text: 'devchat app marker' } }))
+  appMarker = postAsHost({ channel: 'inbox', id: 'app', text: 'devchat app marker' })
+  assert.ok(![marker.thread, appMarker.thread].some((thread) => ['board', 'app'].includes(thread)), 'Board hides the markers\' client IDs')
 })
 after(async () => {
   proxy?.close()
@@ -491,7 +505,7 @@ const setEpoch = (epoch) => asOwner({ path: `/messages/${marker.id}/labels`, met
 // `refused` when `refuse` names its rid, then sets `applied` on its marker to the last intent it
 // handled. Returns that cursor.
 const applyInbox = async ({ refuse = {} } = {}) => {
-  const intents = (await asOwner({ path: '/threads?channel=inbox&limit=500' })).threads.map(({ message }) => message).filter(({ thread }) => thread !== 'app')
+  const intents = (await asOwner({ path: '/threads?channel=inbox&limit=500' })).threads.map(({ message }) => message).filter(({ id }) => id !== appMarker.id)
   for (const message of intents.filter(({ labels }) => !labels.refused)) {
     const intent = JSON.parse(message.text)
     if (refuse[intent.rid]) await asOwner({ path: `/messages/${message.id}/labels`, method: 'POST', body: { set: { refused: refuse[intent.rid] } } })
@@ -583,7 +597,7 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.deepEqual({ channel: body.channel, id: body.id }, { channel: 'inbox', id: rid })
   assert.deepEqual(JSON.parse(body.text), { v: 1, rid, kind: 'todo', channel: 'todos', text: 'Review the handoff.', by: profile, repo: `${allowed}/tools`, machine })
   assert.equal(sent.inboxId, (await inboxPostsFor(rid))[0].message.id, 'the sent file keeps the inbox ID')
-  assert.deepEqual(Object.keys(sent).sort(), ['board', 'body', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
+  assert.deepEqual(Object.keys(sent).sort(), ['board', 'body', 'epoch', 'inboxId', 'lane', 'op', 'profile', 'queuedAt', 'repo', 'schema', 'sentAt', 'target'])
   assert.deepEqual({ target: sent.target, repo: sent.repo, lane: sent.lane, board: sent.board }, { target: rid, repo: `${allowed}/tools`, lane: 'repo', board: proxy.url })
 
   // No test has run the app yet, so the marker has no `applied` label.
@@ -635,15 +649,26 @@ test('todo list shows queued and sent board todos until sync retires them as app
   await syncOk()
   assert.match(await listed(), new RegExp(`${kept} {2}\\S+ {2}sent {4}Waiting to send\\.`, 'u'))
 
+  // A crash between the sent copy and the queued file's removal leaves both: the list shows one.
+  const [sentName] = filesIn('outbox', 'sent')
+  const { inboxId, epoch, sentAt, ...queuedCopy } = readJson(join(stateDir(), 'outbox', 'sent', sentName))
+  writeFileSync(join(stateDir(), 'outbox', sentName), JSON.stringify(queuedCopy))
+  assert.equal((await listed()).match(new RegExp(kept, 'gu')).length, 1)
+  assert.match(await listed(), new RegExp(`${kept} {2}\\S+ {2}sent {4}`, 'u'), 'the sent copy wins')
+  await syncOk()
+
   const add = await devchatAsync({ args: ['todo', 'add', 'Refuse me.'] })
   const refused = ridOf(add.stdout)
   assert.match(add.stdout, /: sent$/mu)
-  await applyInbox({ refuse: { [refused]: 'the repo is not on the allowlist' } })
+  const applied = await applyInbox({ refuse: { [refused]: 'repo' } })
+  // Message IDs compare as integers: '9' is below a two-digit cursor, though it sorts after it.
+  assert.ok(applied.length > 1 && applied[0] < '9', `cursor ${applied}`)
+  writeFileSync(join(stateDir(), 'outbox', 'sent', '0000-early.json'), JSON.stringify({ ...queuedCopy, target: 'todo-early', inboxId: '9', epoch: '1' }))
   const sync = await syncOk()
-  assert.match(sync.stdout, new RegExp(`^refused ${refused}: the repo is not on the allowlist$`, 'mu'))
-  assert.deepEqual(filesIn('outbox', 'sent'), [], 'both decided intents retire')
+  assert.match(sync.stdout, new RegExp(`^refused ${refused}: repo$`, 'mu'), 'the reason code prints as it is')
+  assert.deepEqual(filesIn('outbox', 'sent'), [], 'every decided intent retires, the one with ID 9 included')
   const [rejectedFile] = filesIn('outbox', 'rejected')
-  assert.equal(readJson(join(stateDir(), 'outbox', 'rejected', rejectedFile)).refused, 'the repo is not on the allowlist')
+  assert.equal(readJson(join(stateDir(), 'outbox', 'rejected', rejectedFile)).refused, 'repo')
   const list = await listed()
   assert.match(list, new RegExp(`${kept} {2}\\S+ {2}board {3}Waiting to send\\.`, 'u'))
   assert.doesNotMatch(list, new RegExp(refused, 'u'))
@@ -655,6 +680,70 @@ test('todo list shows queued and sent board todos until sync retires them as app
   const offList = await listed()
   assert.match(offList, /local {3}Local only\./u)
   assert.doesNotMatch(offList, /board|queued|sent/u)
+})
+
+test('a sent intent retires only against the board and epoch it was sent to', async () => {
+  joinBoard()
+  const add = await devchatAsync({ args: ['todo', 'add', 'Sent to board A.'] })
+  const rid = ridOf(add.stdout)
+  assert.match(add.stdout, /: sent$/mu)
+  const [name] = filesIn('outbox', 'sent')
+  assert.deepEqual((({ board: sentBoard, epoch }) => ({ sentBoard, epoch }))(readJson(join(stateDir(), 'outbox', 'sent', name))), { sentBoard: proxy.url, epoch: '1' })
+  await applyInbox({ refuse: { [rid]: 'invalid' } })
+
+  // Board B: another URL to the same proxy. Its cursor does not decide board A's intent.
+  joinBoard({ boardUrl: proxy.url.replace('127.0.0.1', 'localhost') })
+  const onB = await syncOk()
+  assert.doesNotMatch(onB.stdout, /refused/u)
+  assert.deepEqual(filesIn('outbox', 'sent'), [name], 'it stays in sent/')
+  assert.match((await devchatAsync({ args: ['doctor'] })).stdout, /outbox: 0 queued, 1 sent \(1 to another board\), 0 rejected/u)
+
+  joinBoard()
+  const onA = await syncOk()
+  assert.match(onA.stdout, new RegExp(`^refused ${rid}: invalid$`, 'mu'), 'back on board A, the refusal is reported')
+  assert.deepEqual(filesIn('outbox', 'sent'), [])
+})
+
+test('a second root carrying a marker label stops sync', async () => {
+  joinBoard()
+  const add = await devchatAsync({ args: ['todo', 'add', 'Not a marker.'] })
+  const [post] = await inboxPostsFor(ridOf(add.stdout))
+  const label = (labels) => asOwner({ path: `/messages/${post.message.id}/labels`, method: 'POST', body: labels })
+  await label({ set: { applied: '1' } })
+  try {
+    const stopped = await devchatAsync({ args: ['sync'] })
+    assert.equal(stopped.status, 1)
+    assert.match(stopped.stderr, /devchat sync stopped: 2 roots in inbox carry applied; the host's marker must be the only one/u)
+  } finally {
+    await label({ unset: ['applied'] })
+  }
+  await syncOk()
+})
+
+test('two flushes over one queue at once land one post per client ID, with no error', async () => {
+  const rids = await queueOffline(['Race one.', 'Race two.', 'Race three.'])
+  let release
+  const released = new Promise((resolve) => { release = resolve })
+  proxy.fault = (req) => (req.method === 'POST' ? { until: released } : null)
+  const postsReach = (count) => new Promise((resolve) => {
+    const check = () => (posts().length >= count ? resolve() : setTimeout(check, 10))
+    check()
+  })
+  const first = devchatAsync({ args: ['sync'] })
+  await postsReach(1)
+  // Bypass the lock: the first sync is mid-flush, and the second takes a fresh lock.
+  rmSync(join(stateDir(), 'outbox', 'sync.lock'))
+  const second = devchatAsync({ args: ['sync'] })
+  await postsReach(2)
+  release()
+  for (const result of await Promise.all([first, second])) {
+    assert.equal(result.status, 0, result.stderr)
+    assert.equal(result.stderr, '')
+  }
+  assert.ok(posts().length > rids.length, 'both flushed')
+  for (const rid of rids) assert.equal((await inboxPostsFor(rid)).length, 1, `${rid} landed once`)
+  assert.deepEqual(filesIn('outbox'), [])
+  assert.equal(filesIn('outbox', 'sent').length, rids.length)
 })
 
 test('a network error or a 5xx stops the flush until the next run', async () => {
@@ -839,6 +928,8 @@ test('the check at flush sends only what the router queued, byte for byte', asyn
   writeFileSync(join(outbox, '0001-large.json'), JSON.stringify({ ...entry, padding: 'x'.repeat(70_000) }))
   writeFileSync(join(home, 'elsewhere.json'), JSON.stringify(entry))
   symlinkSync(join(home, 'elsewhere.json'), join(outbox, '0001-link.json'))
+  mkdirSync(join(outbox, '0001-dir.json'))
+  odd['0001-dir.json'] = 'not a regular file'
   if (spawnSync('mkfifo', [join(outbox, '0001-fifo.json')]).status === 0) odd['0001-fifo.json'] = 'not a regular file'
 
   const sync = await syncOk()
@@ -870,7 +961,7 @@ test('a file queued for another board stops sync and stays queued', { skip: proc
   await queueOffline(['For the first board.'])
   // Another board URL that reaches the same proxy, so only the URL differs.
   const otherBoard = proxy.url.replace('127.0.0.1', 'localhost')
-  const rerun = await devchatAsync({ args: ['setup', '--board-url', otherBoard, '--github-login', allowed, '--mode', 'readwrite'] })
+  const rerun = await devchatAsync({ args: ['setup', '--board-url', otherBoard, '--github-login', allowed, '--mode', 'readwrite', '--allowlist', 'other-owner'] })
   assert.match(rerun.stdout, /write .*config\.json: mode readwrite/u, rerun.stderr)
   const sync = await devchatAsync({ args: ['sync'] })
   assert.equal(sync.status, 1)
@@ -908,6 +999,7 @@ test('setup and the config refuse a board URL with a credential slot or without 
     'a fragment': 'https://board.example.test:8443/api/board#secret-token',
     'http off loopback': 'http://board.example.test:8443/api/board',
     'another scheme': 'ftp://board.example.test/api/board',
+    'no authority': 'https:/@board.example.test/api/secret-board',
   }
   const reasons = {
     'user information': 'it holds user information',
@@ -916,6 +1008,7 @@ test('setup and the config refuse a board URL with a credential slot or without 
     'a fragment': 'it holds a query or a fragment',
     'http off loopback': 'it must use https, or http on a loopback host',
     'another scheme': 'it must use https, or http on a loopback host',
+    'no authority': 'it is not a URL',
   }
   for (const [name, url] of Object.entries(refused)) {
     const run = await devchatAsync({ args: ['setup', '--board-url', url, '--github-login', allowed, '--mode', 'readwrite'], preload: true })
@@ -941,6 +1034,17 @@ test('setup and the config refuse a board URL with a credential slot or without 
   assert.deepEqual(networkCalls(), [])
 })
 
+/** Runs setup as a dry run and for real, and asserts each refuses `path` in the preflight and runs no step. */
+const assertSetupRefuses = async ({ path, problem }) => {
+  for (const extra of [['--dry-run'], []]) {
+    const refused = await devchatAsync({ args: ['setup', '--host', boardHost, ...setupArgs, ...extra], preload: true })
+    assert.equal(refused.status, 1, extra.join(' '))
+    assert.match(refused.stdout, new RegExp(`preflight ${path}: refused, ${problem}\n`, 'u'))
+    assert.match(refused.stdout, new RegExp(`^setup changed nothing\\. Move each refused file aside, or remove it, and run setup again: .*${path}`, 'mu'))
+    assert.doesNotMatch(refused.stdout, /^(?:would )?(?:write|run) /mu, 'no step runs')
+  }
+}
+
 test('setup --dry-run prints every step and changes nothing', { skip: process.platform !== 'linux' && 'the steps name the systemd timer' }, async () => {
   const dryRun = await devchatAsync({ args: ['setup', '--host', boardHost, ...setupArgs, '--dry-run'], preload: true })
   assert.equal(dryRun.status, 0, dryRun.stderr)
@@ -962,22 +1066,29 @@ test('setup --dry-run prints every step and changes nothing', { skip: process.pl
   assert.deepEqual(readdirSync(home), [], 'nothing written')
   assert.deepEqual(networkCalls(), [])
 
-  // A file setup did not write is refused in the preflight, in a dry run and a real run alike.
-  mkdirSync(join(home, '.local', 'bin'), { recursive: true })
-  writeFileSync(shim, '#!/bin/sh\necho "my own devchat"\n')
-  for (const extra of [['--dry-run'], []]) {
-    const refused = await devchatAsync({ args: ['setup', '--host', boardHost, ...setupArgs, ...extra], preload: true })
-    assert.equal(refused.status, 1, extra.join(' '))
-    assert.match(refused.stdout, new RegExp(`preflight ${shim}: refused, not written by devchat setup\n`, 'u'))
-    assert.match(refused.stdout, new RegExp(`setup changed nothing\\. Move each refused file aside, or remove it, and run setup again: ${shim}$`, 'mu'))
-    assert.doesNotMatch(refused.stdout, /^(?:would )?(?:write|run) /mu, 'no step runs')
-  }
-  assert.deepEqual(readdirSync(home), ['.local'], 'nothing else written')
-  assert.equal(readFileSync(shim, 'utf8'), '#!/bin/sh\necho "my own devchat"\n')
-
   const usage = await devchatAsync({ args: ['setup', '--host', boardHost, '--github-login', allowed] })
   assert.equal(usage.status, 1)
   assert.match(usage.stderr, /usage: devchat setup/u)
+
+  // A file setup did not write is refused in the preflight, in a dry run and a real run alike. The
+  // marker counts only as its exact line.
+  mkdirSync(join(home, '.local', 'bin'), { recursive: true })
+  const foreign = '#!/bin/sh\necho "# devchat-managed: devchat setup wrote this file and replaces it when rerun"\n'
+  writeFileSync(shim, foreign)
+  await assertSetupRefuses({ path: shim, problem: 'not written by devchat setup' })
+  assert.deepEqual(readdirSync(home), ['.local'], 'nothing else written')
+  assert.equal(readFileSync(shim, 'utf8'), foreign)
+
+  // A folder setup cannot write in fails the preflight, even for a file that would be new. Root
+  // ignores folder modes, so this part needs an ordinary user.
+  if (process.getuid() === 0) return
+  rmSync(join(home, '.local'), { recursive: true })
+  mkdirSync(units, { recursive: true })
+  chmodSync(units, 0o555)
+  await assertSetupRefuses({ path: join(units, 'devchat-sync.service'), problem: 'its folder is not writable and searchable' })
+  assert.equal(existsSync(configFile), false, 'config.json is not written either')
+  assert.deepEqual(readdirSync(env.XDG_CONFIG_HOME), ['systemd'])
+  chmodSync(units, 0o755)
 })
 
 test('setup writes the config, the shim, and the timer, then runs doctor', { skip: process.platform !== 'linux' && 'the fake timer is systemd' }, async () => {
