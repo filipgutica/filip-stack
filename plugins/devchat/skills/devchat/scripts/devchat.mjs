@@ -377,6 +377,7 @@ const foldRows = {
   drop: resolveRow,
 }
 
+/** Returns a root's labels after one more post in its thread, `post` being that post's labels (spec §2). */
 export const foldStep = (labels, post) => {
   const state = { ...labels }
   const answersTurn = post.re !== undefined && post.re === state.turn
@@ -1102,13 +1103,20 @@ const viewItems = ({ config, env }) => [
 ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
 const nouns = { [todoChannel]: 'todo', [workChannel]: 'work item' }
+// Whole root rids, never a prefix: one this client makes for the channel (`newRid`), or one the UI
+// makes (`ui-` and a lowercase UUID).
+const uiRid = '|ui-[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}'
+const wholeRootRid = {
+  [todoChannel]: new RegExp(`^(?:todo-[a-z0-9]+-[0-9a-f]{8}${uiRid})$`, 'u'),
+  [workChannel]: new RegExp(`^(?:work-[a-z0-9]+-[0-9a-f]{8}${uiRid})$`, 'u'),
+}
 
 /**
  * Finds the item a command names: by rid or a unique prefix of one, or, for a work item named by
  * neither, the open one whose `thread` is this T3 thread (`T3CODE_THREAD_ID`, F24). A resolve names
- * only open items. A full rid this machine does not know is taken as a board root: a resolved root
- * has left the snapshot, and a note may still reopen it. The app looks the rid up at ingest, and
- * refuses the intent as `root` when no such root exists.
+ * only open items. A whole root rid this machine does not know is taken as a board root: a
+ * resolved root has left the snapshot, and a note may still reopen it. The app looks the rid up at
+ * ingest, and refuses the intent as `root` when no such root exists. A prefix never leaves the view.
  */
 const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
   const noun = nouns[channel]
@@ -1128,7 +1136,7 @@ const findTarget = ({ prefix, channel, openOnly = false, config, env }) => {
   if (candidates.length === 1) return candidates[0]
   if (candidates.length > 1) throw new UsageError(`${prefix} matches ${candidates.length} ${noun}s: ${candidates.map(({ rid }) => rid).join(', ')}`)
   if (matches.length > 0) throw new UsageError(`${prefix} is already resolved`)
-  if (config.mode !== 'off' && ridPattern.test(prefix)) return { rid: prefix, channel, labels: {}, source: 'unknown' }
+  if (config.mode !== 'off' && wholeRootRid[channel].test(prefix)) return { rid: prefix, channel, labels: {}, source: 'unknown' }
   throw new UsageError(`no ${openOnly ? 'open ' : ''}${noun} on this machine matches ${prefix}`)
 }
 
