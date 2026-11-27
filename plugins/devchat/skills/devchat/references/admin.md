@@ -17,4 +17,4 @@ devchat guard < <file>       # exit 0 when the text passes the guard, 1 with the
 
 ## Where a write goes
 
-A write reaches the board only from a Claude Code or Codex session whose hook recorded its starting repository, in mode `readwrite`, when both that repository and the working directory are github.com repositories whose owner is on the allowlist. Everything else stays on this machine, and the command says why. Antigravity runs no hooks, so its writes always stay on this machine.
+A write reaches the board only from a Claude Code session whose hook recorded its starting repository, in mode `readwrite`, when both that repository and the working directory are github.com repositories whose owner is on the allowlist. Everything else stays on this machine, and the command says why. Codex writes always stay on this machine: a Codex record does not prove where the session started. Antigravity runs no hooks, so its writes always stay on this machine too. This version refuses a write the router sends to the board; sending arrives with `devchat setup`.

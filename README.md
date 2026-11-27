@@ -212,15 +212,17 @@ codex plugin add devchat@filip-stack        # Codex, then restart Codex
 - **Session hook:** At `SessionStart`, the hook records the repository the
   session started in, so the write router can tell where a write came from. It
   prints nothing, opens no network connection, and steps aside on any error.
-- **Router:** A write can reach the board only from a recorded Claude Code or
-  Codex session, in mode `readwrite`, when the starting repository and the
-  working directory are both GitHub repositories whose owner is on your
-  allowlist. Everything else stays on the machine.
+- **Router:** A write can reach the board only from a recorded Claude Code
+  session, in mode `readwrite`, when the starting repository and the working
+  directory are both GitHub repositories whose owner is on your allowlist.
+  Everything else stays on the machine. This version does not send board
+  writes yet: a write the router sends to the board is refused.
 - **Config:** `~/.config/devchat/config.json` (or under `$XDG_CONFIG_HOME`)
   holds `mode`, `githubLogin`, and `allowlist`. Without it the mode is `off`.
   State lives in `~/.local/state/devchat` (or under `$XDG_STATE_HOME`).
-- **Codex:** Review and trust plugin hooks to enable the session hook. Until
-  then, every write stays on the machine.
+- **Codex:** Every write stays on the machine, even with a trusted hook and a
+  session record. Codex can skip the hook on resume, and records the first
+  turn's directory, so a record does not prove where the session started.
 - **Antigravity:** The hook does not run, so every write stays on the machine.
 
 The skill's [SKILL.md](plugins/devchat/skills/devchat/SKILL.md) lists the
