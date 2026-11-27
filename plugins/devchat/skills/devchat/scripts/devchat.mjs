@@ -77,13 +77,30 @@ const validateConfig = (config) => {
     return 'allowlist must be an array of GitHub owners'
   }
   if (config.machine !== undefined && typeof config.machine !== 'string') return 'machine must be a string'
-  if (config.boardUrl !== undefined && !isHttpUrl(config.boardUrl)) return 'boardUrl must be an http or https URL'
+  const urlProblem = config.boardUrl === undefined ? null : checkBoardUrl(config.boardUrl).problem
+  if (urlProblem) return `boardUrl is refused: ${urlProblem}`
   // Without a board URL, a mode that talks to the board has nowhere to go.
   if ((config.mode ?? 'off') !== 'off' && config.boardUrl === undefined) return `mode ${config.mode} needs boardUrl: run devchat setup`
   return null
 }
 
-const isHttpUrl = (value) => typeof value === 'string' && URL.canParse(value) && ['http:', 'https:'].includes(new URL(value).protocol)
+const loopbackHost = /^(?:localhost|127(?:\.\d{1,3}){3}|\[::1\])$/u
+
+/**
+ * The one check for a board URL, in the config and in setup. It refuses user information, a query,
+ * or a fragment, which could carry a credential, so no caller prints a refused URL. It requires
+ * `https:`, except on a loopback host. Returns `{ url }`, normalized without a trailing slash, or
+ * `{ problem }`.
+ */
+const checkBoardUrl = (value) => {
+  if (typeof value !== 'string' || !URL.canParse(value)) return { problem: 'it is not a URL' }
+  const url = new URL(value)
+  // `https://@host` parses with empty user information, so the raw text is checked too.
+  if (url.username || url.password || /^[^/]*\/\/[^/]*@/u.test(value)) return { problem: 'it holds user information' }
+  if (url.search || url.hash || /[?#]/u.test(value)) return { problem: 'it holds a query or a fragment' }
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && loopbackHost.test(url.hostname))) return { problem: 'it must use https, or http on a loopback host' }
+  return { url: `${url.origin}${url.pathname.replace(/\/+$/u, '')}` }
+}
 
 /**
  * Reads `config.json`. A missing file gives the defaults: mode `off`, no allowlist. An unreadable
@@ -96,7 +113,8 @@ const readConfig = (env = process.env) => {
   try {
     config = readJson(path)
   } catch (error) {
-    throw new UsageError(`${path} is not valid JSON: ${error.message}`)
+    // The parser's message can quote the file, and the file can hold a refused board URL.
+    throw new UsageError(`${path} is not valid JSON`)
   }
   const problem = validateConfig(config)
   if (problem) throw new UsageError(`${path}: ${problem}`)
@@ -107,7 +125,7 @@ const readConfig = (env = process.env) => {
     // The allowlist defaults to the configured GitHub login, and is empty without one.
     allowlist: config.allowlist ?? (config.githubLogin ? [config.githubLogin] : []),
     machine: config.machine ?? hostname(),
-    boardUrl: config.boardUrl,
+    boardUrl: config.boardUrl === undefined ? undefined : checkBoardUrl(config.boardUrl).url,
   }
 }
 
@@ -895,8 +913,8 @@ const readSetupArgs = (args) => {
   }
   if (!values['github-login'] || !['read', 'readwrite'].includes(values.mode) || Boolean(values.host) === Boolean(values['board-url'])) throw new UsageError(setupUsage)
   if (!/^\d{1,5}$/u.test(values.port)) throw new UsageError('--port takes a TCP port number')
-  const boardUrl = values['board-url'] ?? `https://${values.host}:${values.port}/api/board`
-  if (!isHttpUrl(boardUrl)) throw new UsageError(`${boardUrl} is not an http or https URL`)
+  const { url: boardUrl, problem } = checkBoardUrl(values['board-url'] ?? `https://${values.host}:${values.port}/api/board`)
+  if (problem) throw new UsageError(`the board URL is refused: ${problem}. Nothing was written.`)
   const allowlist = values.allowlist ? values.allowlist.split(',').map((owner) => owner.trim()).filter(Boolean) : [values['github-login']]
   return { dryRun: values['dry-run'], settings: { mode: values.mode, githubLogin: values['github-login'], allowlist, boardUrl } }
 }

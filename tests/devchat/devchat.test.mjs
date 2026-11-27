@@ -804,6 +804,47 @@ test('doctor reports the board, the outbox, the snapshot, and the timer', async 
 
 const setupArgs = ['--github-login', allowed, '--mode', 'readwrite']
 
+test('setup and the config refuse a board URL with a credential slot or without https, and never print it', async () => {
+  const refused = {
+    'user information': 'https://someone:secret-pass@board.example.test:8443/api/board',
+    'empty user information': 'https://@board.example.test:8443/api/board',
+    'a query': 'https://board.example.test:8443/api/board?secret-token=1',
+    'a fragment': 'https://board.example.test:8443/api/board#secret-token',
+    'http off loopback': 'http://board.example.test:8443/api/board',
+    'another scheme': 'ftp://board.example.test/api/board',
+  }
+  const reasons = {
+    'user information': 'it holds user information',
+    'empty user information': 'it holds user information',
+    'a query': 'it holds a query or a fragment',
+    'a fragment': 'it holds a query or a fragment',
+    'http off loopback': 'it must use https, or http on a loopback host',
+    'another scheme': 'it must use https, or http on a loopback host',
+  }
+  for (const [name, url] of Object.entries(refused)) {
+    const run = await devchatAsync({ args: ['setup', '--board-url', url, '--github-login', allowed, '--mode', 'readwrite'], preload: true })
+    assert.equal(run.status, 1, name)
+    assert.match(run.stderr, new RegExp(`the board URL is refused: ${reasons[name]}\\. Nothing was written\\.`, 'u'), name)
+    assert.ok(!`${run.stdout}${run.stderr}`.includes('secret') && !`${run.stdout}${run.stderr}`.includes(url), `${name}: the URL is not printed`)
+    assert.deepEqual(readdirSync(home), [], `${name}: nothing written`)
+
+    writeConfig({ mode: 'readwrite', githubLogin: allowed, boardUrl: url })
+    const doctor = await devchatAsync({ args: ['doctor'], preload: true })
+    assert.equal(doctor.status, 1, name)
+    assert.match(doctor.stdout, new RegExp(`FAIL config: .*boardUrl is refused: ${reasons[name]}`, 'u'), name)
+    assert.ok(!doctor.stdout.includes('secret'), `${name}: doctor does not print the URL`)
+    rmSync(env.XDG_CONFIG_HOME, { recursive: true, force: true })
+  }
+  const host = await devchatAsync({ args: ['setup', '--host', 'someone@board.example.test', '--github-login', allowed, '--mode', 'readwrite', '--dry-run'] })
+  assert.match(host.stderr, /the board URL is refused: it holds user information/u)
+  writeConfig({})
+  writeFileSync(join(env.XDG_CONFIG_HOME, 'devchat', 'config.json'), '{"boardUrl": "https://board.example.test/?secret-token=1",')
+  const broken = await devchatAsync({ args: ['doctor'], preload: true })
+  assert.match(broken.stdout, /FAIL config: .* is not valid JSON\n/u)
+  assert.ok(!broken.stdout.includes('secret'), 'a parse error does not quote the file')
+  assert.deepEqual(networkCalls(), [])
+})
+
 test('setup --dry-run prints every step and changes nothing', { skip: process.platform !== 'linux' && 'the steps name the systemd timer' }, async () => {
   const dryRun = await devchatAsync({ args: ['setup', '--host', boardHost, ...setupArgs, '--dry-run'], preload: true })
   assert.equal(dryRun.status, 0, dryRun.stderr)
