@@ -781,7 +781,7 @@ test('a network error or a 5xx stops the flush until the next run', async () => 
   assert.equal(failed.status, 1)
   assert.match(failed.stderr, /devchat sync stopped: POST \/api\/board\/messages answered 503/u)
   assert.equal(posts().length, 1, 'the first failure stops the flush')
-  assert.equal(filesIn('outbox').length, 2)
+  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), ['1', null], 'the first sync to read the marker stamps the file it tries')
   assert.equal(existsSync(join(stateDir(), 'snapshot.json')), false, 'a stopped sync pulls nothing')
 
   proxy.fault = () => 'drop'
@@ -865,6 +865,44 @@ test("another board's epoch does not stop sync", async () => {
     const sync = await syncOk()
     assert.match(sync.stdout, /snapshot: \d+ open item\(s\), epoch 1/u, snapshot)
   }
+})
+
+test('a todo queued under an older epoch is held, and one queued with the epoch unknown takes the next', async () => {
+  joinBoard()
+  await syncOk()
+  await queueOffline(['Queued under epoch 1.'])
+  // Board B, read only, replaces the snapshot. The next todo for board A has no epoch to queue under.
+  joinBoard({ mode: 'read', boardUrl: proxy.url.replace('127.0.0.1', 'localhost') })
+  await syncOk()
+  await queueOffline(['Queued with the epoch unknown.'])
+  const queued = filesIn('outbox')
+  assert.deepEqual(queued.map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), ['1', null])
+
+  // Board A is restored to epoch 2. B's snapshot does not stop sync, so the held file must.
+  await setEpoch('2')
+  try {
+    joinBoard()
+    const held = await devchatAsync({ args: ['sync'] })
+    assert.equal(held.status, 1)
+    assert.match(held.stderr, new RegExp(`${queued[0]} was queued under board epoch 1, and the board's is 2: nothing is sent`, 'u'))
+    assert.deepEqual(posts(), [])
+    assert.deepEqual(filesIn('outbox'), queued)
+  } finally {
+    await setEpoch('1')
+  }
+  joinBoard()
+  await syncOk()
+  assert.deepEqual(filesIn('outbox', 'sent').map((name) => readJson(join(stateDir(), 'outbox', 'sent', name)).epoch), ['1', '1'])
+})
+
+test('todo add reports a todo the check at flush rejects', async () => {
+  joinBoard({ machineName: 'tab\tbox' })
+  const add = await devchatAsync({ args: ['todo', 'add', 'From a machine name with a tab.'] })
+  assert.equal(add.status, 0, add.stderr)
+  assert.match(add.stdout, /: not sent: the check at flush rejected it \(a provenance field is not a board label value\) and moved it to outbox\/rejected\/$/mu)
+  assert.doesNotMatch(add.stdout, /: sent$/mu)
+  assert.deepEqual(posts(), [])
+  assert.equal(filesIn('outbox', 'rejected').length, 1)
 })
 
 test('an epoch change during sync keeps the snapshot and the receipts', async () => {
@@ -1004,6 +1042,7 @@ test('the check at flush sends only what the router queued, byte for byte', asyn
     'a string version': [withIntent({ ...intent, v: '1' }), 'the intent is not a release 1 todo'],
     'a mismatched id': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: 'other', text: JSON.stringify(intent) }) }, 'the intent rid does not match the post id'],
     'labels on the post': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) }, 'the request is not an inbox post'],
+    'a credential-shaped ID': [{ ...entry, target: 'AKIAABCDEFGHIJKLMNOP', body: JSON.stringify({ channel: 'inbox', id: 'AKIAABCDEFGHIJKLMNOP', text: JSON.stringify({ ...intent, rid: 'AKIAABCDEFGHIJKLMNOP' }) }) }, 'the guard refused an outbound field'],
     'a profile the board refuses': [{ ...withIntent({ ...intent, by: 'box.local' }), profile: 'box.local' }, 'the profile is not a board profile name'],
     'a board that is not a string': [{ ...entry, board: 1 }, 'not a devchat outbox post'],
     'an empty board': [{ ...entry, board: '' }, 'the board is not a normalized board URL'],

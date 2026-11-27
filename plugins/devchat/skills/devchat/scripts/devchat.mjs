@@ -389,7 +389,7 @@ const profileOf = (machine) => {
 
 // The fields of a release 1 todo intent, as devchat's `src/shared/layout.ts` defines it, and of
 // the outbox record that carries it. `board` is the normalized board URL the file was queued for.
-const outboxFields = ['schema', 'op', 'target', 'profile', 'repo', 'lane', 'board', 'body', 'queuedAt']
+const outboxFields = ['schema', 'op', 'target', 'profile', 'repo', 'lane', 'board', 'epoch', 'body', 'queuedAt']
 // Board refuses a post whose text is longer than this, in UTF-16 code units. An intent's post text
 // is the serialized intent.
 const boardTextLimit = 10_000
@@ -398,6 +398,17 @@ const boardTextLimit = 10_000
 // so a body that parses to the same values through duplicate keys or other spellings is refused.
 const todoIntentOf = ({ rid, text, by, repo, machine }) => ({ v: 1, rid, kind: 'todo', channel: todoChannel, text, by, repo, machine })
 const requestBodyOf = (intent) => JSON.stringify({ channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+
+// The board epoch a todo is queued for: the one in the configured board's snapshot, or null when
+// this machine has no readable snapshot of that board. Sync holds a file whose epoch has changed.
+const intendedEpoch = ({ config, env }) => {
+  try {
+    const snapshot = readSnapshot(env)
+    return snapshot?.board === config.boardUrl ? snapshot.epoch : null
+  } catch {
+    return null
+  }
+}
 
 /**
  * Queues a todo intent: one label-free `inbox` post whose `id` is the intent's `rid`, so a retry
@@ -414,7 +425,8 @@ const queueTodo = ({ text, repo, config, env }) => {
   }
   const queuedAt = new Date().toISOString()
   const name = `${queuedAt.replace(/[-:.]/gu, '')}-post-${rid}.json`
-  writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, body: requestBodyOf(intent), queuedAt })
+  const epoch = intendedEpoch({ config, env })
+  writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, epoch, body: requestBodyOf(intent), queuedAt })
   return { rid, name }
 }
 
@@ -475,7 +487,7 @@ const intentProblem = ({ entry, body, intent, config }) => {
     [() => allowlistedRepo({ identity: `github.com/${intent.repo}`, allowlist: config.allowlist }) === intent.repo, 'the source repo is not on the allowlist'],
     [() => intent.text.trim().length > 0 && intent.text.length <= maxTextLength, 'the todo text is empty or too long'],
     [() => [intent.by, intent.repo, intent.machine].every(isLabelValue), 'a provenance field is not a board label value'],
-    [() => fields.every((field) => !guardReason(field)), 'the guard refused an outbound field'],
+    [() => [...fields, intent.rid].every((field) => !guardReason(field)), 'the guard refused an outbound field'],
     [() => entry.body === requestBodyOf(todoIntentOf(intent)), 'the request body is not in canonical form'],
   ]
   return checks.find(([passes]) => !passes())?.[1] ?? null
@@ -490,7 +502,8 @@ const isBoardUrl = (value) => isString(value) && checkBoardUrl(value).url === va
 
 const outboxProblem = ({ entry, config }) => {
   const recordFields = [entry?.target, entry?.profile, entry?.repo, entry?.board, entry?.body, entry?.queuedAt]
-  if (!hasExactly(entry, outboxFields) || entry.schema !== 1 || entry.op !== 'post' || entry.lane !== 'repo' || !recordFields.every(isString)) return 'not a devchat outbox post'
+  // A file without an epoch was queued with the epoch unknown.
+  if (!hasExactly({ epoch: null, ...entry }, outboxFields) || !(entry.epoch == null || isString(entry.epoch)) || entry.schema !== 1 || entry.op !== 'post' || entry.lane !== 'repo' || !recordFields.every(isString)) return 'not a devchat outbox post'
   if (!isBoardUrl(entry.board)) return 'the board is not a normalized board URL'
   const body = parseJson(entry.body)
   if (!hasExactly(body, ['channel', 'id', 'text']) || body.channel !== 'inbox' || !isString(body.text)) return 'the request is not an inbox post'
@@ -703,7 +716,7 @@ const rejectOutboxFile = ({ env, name, problem, out }) => {
  * no other check applies to it. A file that fails the check moves to `rejected/`. The first
  * failed send stops the flush, and its file stays.
  */
-const flush = async ({ client, config, env, epoch, out }) => {
+const flush = async ({ client, config, env, epoch, out, outcomes }) => {
   for (const name of pendingOutbox(env)) {
     const path = join(outboxDir(env), name)
     const { entry, problem: unreadable, gone } = readOutboxEntry(path)
@@ -715,7 +728,14 @@ const flush = async ({ client, config, env, epoch, out }) => {
     const problem = unreadable ?? outboxProblem({ entry, config })
     if (problem) {
       rejectOutboxFile({ env, name, problem, out })
+      outcomes.set(name, { rejected: problem })
       continue
+    }
+    // A file queued with the epoch unknown takes the epoch of the first sync that reads the
+    // marker. One queued under another epoch is held: the board was restored after it was queued.
+    if (entry.epoch == null) writeJsonAtomic(path, { ...entry, epoch })
+    else if (entry.epoch !== epoch) {
+      throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`)
     }
     const answer = await client.post({ body: entry.body, profile: entry.profile })
     if (!isMessageId(answer?.message?.id)) throw new SyncStop('POST /messages sent no message ID')
@@ -724,6 +744,7 @@ const flush = async ({ client, config, env, epoch, out }) => {
     // `id` turns into a replay.
     writeJsonAtomic(join(sentDir(env), name), { ...entry, inboxId: answer.message.id, epoch, sentAt: new Date().toISOString() })
     ignoreMissing(() => unlinkSync(path))
+    outcomes.set(name, { sent: true })
     out(`sent ${entry.target}`)
   }
 }
@@ -777,13 +798,13 @@ const newerSnapshotInPlace = ({ env, board, epoch, applied }) => {
 // another board, or one without a board URL, without comparing it.
 const snapshotEpochDiffers = ({ snapshot, config, epoch }) => snapshot?.board === config.boardUrl && snapshot.epoch !== epoch
 
-const syncSteps = async ({ config, env, out, client }) => {
+const syncSteps = async ({ config, env, out, client, outcomes }) => {
   const snapshot = readSnapshot(env)
   const epoch = await readBoardEpoch(client)
   if (snapshotEpochDiffers({ snapshot, config, epoch })) {
     throw new SyncStop(`the board epoch is ${epoch} and the snapshot's is ${snapshot.epoch}: nothing is sent or pulled until the outbox is reconciled`)
   }
-  if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out })
+  if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out, outcomes })
   const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
   const items = await pullSnapshotItems(client)
@@ -810,12 +831,12 @@ const syncSteps = async ({ config, env, out, client }) => {
  * rename. Returns `{ locked: true }` when another sync holds the lock, else `{ stopped }`: null,
  * or why the run stopped.
  */
-const runSync = async ({ config, env, out = () => {}, signal }) => {
+const runSync = async ({ config, env, out = () => {}, signal, outcomes = new Map() }) => {
   const owner = takeSyncLock(env)
   if (!owner) return { locked: true }
   try {
     const client = boardClient({ boardUrl: config.boardUrl, signal, onAnswer: () => refreshSyncLock({ env, owner }) })
-    await syncSteps({ config, env, out, client })
+    await syncSteps({ config, env, out, client, outcomes })
     return { stopped: null }
   } catch (error) {
     if (error instanceof SyncStop) return { stopped: error.message }
@@ -830,16 +851,20 @@ const runSync = async ({ config, env, out = () => {}, signal }) => {
 const postWriteSyncMs = 3000
 
 const syncAfterWrite = async ({ config, env, name, out }) => {
+  // What this sync's flush did with each file, by name.
+  const outcomes = new Map()
   let reason
   try {
     // Of this sync's lines, only a refusal of an earlier intent is news to the user here.
     const refusals = (line) => line.startsWith('refused ') && out(line)
-    const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs) })
+    const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs), outcomes })
     reason = result.locked ? 'another sync is running' : result.stopped
   } catch (error) {
     reason = error.message
   }
-  if (!existsSync(join(outboxDir(env), name))) return 'sent'
+  const outcome = outcomes.get(name)
+  if (outcome?.sent) return 'sent'
+  if (outcome?.rejected) return `not sent: the check at flush rejected it (${outcome.rejected}) and moved it to outbox/rejected/`
   return `not sent yet (${reason ?? 'it is still queued'}): the next devchat sync sends it`
 }
 
