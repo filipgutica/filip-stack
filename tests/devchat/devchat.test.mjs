@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
-import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, writeFileSync } from 'node:fs'
+import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { createServer, request } from 'node:http'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
@@ -718,18 +718,32 @@ test('one flusher: a second sync exits while another holds the outbox lock', asy
   const lock = join(stateDir(), 'outbox', 'sync.lock')
   const namespace = existsSync('/proc/self/ns/pid') ? readlinkSync('/proc/self/ns/pid') : null
   writeFileSync(lock, JSON.stringify({ pid: process.pid, namespace, token: 'live' }))
+  // A live owner in this PID namespace holds the lock however old it is.
+  utimesSync(lock, new Date(Date.now() - 60 * 60_000), new Date(Date.now() - 60 * 60_000))
   const held = await devchatAsync({ args: ['sync'] })
   assert.equal(held.status, 0, held.stderr)
   assert.match(held.stdout, /another devchat sync holds the outbox lock; this one exits/u)
   assert.deepEqual(proxy.requests, [])
   assert.equal(readFileSync(lock, 'utf8'), JSON.stringify({ pid: process.pid, namespace, token: 'live' }), 'the live lock stays')
 
-  // A lock whose owner exited is stale.
-  writeFileSync(lock, JSON.stringify({ pid: spawnSync(process.execPath, ['-e', '']).pid, namespace, token: 'dead' }))
-  const takeover = await devchatAsync({ args: ['sync'] })
-  assert.equal(takeover.status, 0, takeover.stderr)
-  assert.equal(posts().length, 1)
+  // A lock from another PID namespace cannot be checked: it holds until its owner stops refreshing it.
+  const foreign = JSON.stringify({ pid: 1, namespace: 'pid:[0]', token: 'foreign' })
+  writeFileSync(lock, foreign)
+  utimesSync(lock, new Date(Date.now() - 14 * 60_000), new Date(Date.now() - 14 * 60_000))
+  assert.match((await devchatAsync({ args: ['sync'] })).stdout, /another devchat sync holds the outbox lock/u, 'refreshed 14 minutes ago')
+  assert.equal(readFileSync(lock, 'utf8'), foreign)
+  utimesSync(lock, new Date(Date.now() - 16 * 60_000), new Date(Date.now() - 16 * 60_000))
+  await syncOk()
+  assert.equal(posts().length, 1, 'not refreshed for 16 minutes: stale')
   assert.equal(existsSync(lock), false, 'sync releases its lock')
+  assert.deepEqual(readdirSync(join(stateDir(), 'outbox')).filter((name) => name.includes('.stale')), [], 'the stale lock is gone')
+
+  // A lock whose owner exited is stale, whatever its age.
+  await queueOffline(['Dead owner.'])
+  writeFileSync(lock, JSON.stringify({ pid: spawnSync(process.execPath, ['-e', '']).pid, namespace, token: 'dead' }))
+  await syncOk()
+  assert.equal(posts().length, 1)
+  assert.equal(existsSync(lock), false)
 
   // Two syncs at once: the proxy holds the first one's send, so it holds the lock while the second runs.
   await queueOffline(['Race me.'])

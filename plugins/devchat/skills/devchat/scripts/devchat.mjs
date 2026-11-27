@@ -5,7 +5,7 @@
 // request. A board write goes to `outbox/`, and `devchat sync` alone sends it, with plain `fetch`.
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
-import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, statSync, unlinkSync, writeFileSync } from 'node:fs'
+import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
@@ -506,7 +506,7 @@ class SyncStop extends Error {}
 
 const requestTimeoutMs = 10_000
 
-const boardClient = ({ boardUrl, signal }) => {
+const boardClient = ({ boardUrl, signal, onAnswer = () => {} }) => {
   const base = boardUrl.replace(/\/+$/u, '')
   const call = async ({ url, method = 'GET', body, headers }) => {
     const timeout = AbortSignal.timeout(requestTimeoutMs)
@@ -517,6 +517,7 @@ const boardClient = ({ boardUrl, signal }) => {
     } catch (error) {
       throw new SyncStop(`the board is unreachable (${error.cause?.code ?? error.cause?.message ?? error.name})`)
     }
+    onAnswer()
     if (!response.ok) {
       await response.body?.cancel()
       throw new SyncStop(`${where} answered ${response.status}`)
@@ -588,10 +589,15 @@ const pullSnapshotItems = async (client) => {
 }
 
 // Sync (spec §3). One flusher per device: sync takes a lock file in `outbox/`, and a second sync
-// exits. The lock holds its owner's PID and PID namespace. A PID proves its owner exited only in
-// the same namespace, because each sandboxed command can run in its own, so a lock is stale when
-// its owner exited there, or when it is older than any sync runs.
-const staleSyncLockMs = 15 * 60 * 1000
+// exits. A lock the OS frees on exit, such as an abstract Unix socket, is scoped to a network
+// namespace, and Claude Code's sandbox runs each command in its own; so a sandboxed post-write
+// sync and the timer's sync would not see each other. A file is seen from every namespace.
+//
+// The lock holds its owner's PID and PID namespace. In this PID namespace (always, on macOS), the
+// lock is stale once that PID has exited. A PID in another namespace cannot be checked, so that
+// lock is stale only when its owner has not refreshed it for 15 minutes; the owner refreshes it
+// after every board answer, and every request times out within 10 s.
+const staleForeignLockMs = 15 * 60 * 1000
 
 const pidNamespace = () => {
   try {
@@ -601,8 +607,9 @@ const pidNamespace = () => {
   }
 }
 
-const ownerExited = (owner) => {
-  if (owner.namespace !== pidNamespace()) return false
+const syncLockIsStale = ({ text, ageMs }) => {
+  const owner = parseJson(text)
+  if (owner?.namespace !== pidNamespace() || !Number.isSafeInteger(owner.pid)) return ageMs > staleForeignLockMs
   try {
     process.kill(owner.pid, 0)
     return false
@@ -611,26 +618,29 @@ const ownerExited = (owner) => {
   }
 }
 
-const syncLockIsStale = ({ text, ageMs }) => {
-  if (ageMs > staleSyncLockMs) return true
-  try {
-    return ownerExited(JSON.parse(text))
-  } catch {
-    return false // An unreadable lock is stale only by age.
-  }
-}
-
-// Removes a stale lock only while it still holds the content judged stale, so a lock another sync
-// took in the meantime survives. Returns whether the lock is gone.
-const clearStaleSyncLock = (path) => {
+/**
+ * Moves a stale lock aside with one rename, then checks that the file it moved holds the content
+ * it judged stale. If another sync took the lock in between, it links that lock back. Returns
+ * whether the stale lock is gone.
+ */
+const takeStaleSyncLock = (path) => {
+  const aside = `${path}.${process.pid}.${randomBytes(4).toString('hex')}.stale`
   try {
     const text = readFileSync(path, 'utf8')
     if (!syncLockIsStale({ text, ageMs: Date.now() - statSync(path).mtimeMs })) return false
-    if (readFileSync(path, 'utf8') === text) unlinkSync(path)
+    renameSync(path, aside)
+    const moved = readFileSync(aside, 'utf8')
+    if (moved !== text) linkSync(aside, path)
+    return moved === text
   } catch (error) {
-    if (error.code !== 'ENOENT') throw error
+    // ENOENT: the lock went before this sync read or moved it. EEXIST: a third sync took the lock
+    // before the moved one could go back, and that sync holds it now.
+    if (error.code === 'ENOENT') return true
+    if (error.code === 'EEXIST') return false
+    throw error
+  } finally {
+    rmSync(aside, { force: true })
   }
-  return true
 }
 
 /** Takes the outbox lock and returns its content, or null while another sync holds it. */
@@ -638,17 +648,20 @@ const takeSyncLock = (env) => {
   const path = syncLockPath(env)
   const owner = JSON.stringify({ pid: process.pid, namespace: pidNamespace(), token: randomBytes(8).toString('hex') })
   if (writeExclusive(path, owner)) return owner
-  return clearStaleSyncLock(path) && writeExclusive(path, owner) ? owner : null
+  return takeStaleSyncLock(path) && writeExclusive(path, owner) ? owner : null
 }
 
-const releaseSyncLock = ({ env, owner }) => {
+// Runs `action` only while the lock still holds this sync's content.
+const whileOwned = ({ env, owner, action }) => {
   const path = syncLockPath(env)
   try {
-    if (readFileSync(path, 'utf8') === owner) unlinkSync(path)
+    if (readFileSync(path, 'utf8') === owner) action(path)
   } catch (error) {
     if (error.code !== 'ENOENT') throw error
   }
 }
+const refreshSyncLock = ({ env, owner }) => whileOwned({ env, owner, action: (path) => utimesSync(path, new Date(), new Date()) })
+const releaseSyncLock = ({ env, owner }) => whileOwned({ env, owner, action: unlinkSync })
 
 const rejectOutboxFile = ({ env, name, problem, out }) => {
   mkdirSync(rejectedDir(env), { recursive: true })
@@ -731,7 +744,8 @@ const runSync = async ({ config, env, out = () => {}, signal }) => {
   const owner = takeSyncLock(env)
   if (!owner) return { locked: true }
   try {
-    await syncSteps({ config, env, out, client: boardClient({ boardUrl: config.boardUrl, signal }) })
+    const client = boardClient({ boardUrl: config.boardUrl, signal, onAnswer: () => refreshSyncLock({ env, owner }) })
+    await syncSteps({ config, env, out, client })
     return { stopped: null }
   } catch (error) {
     if (error instanceof SyncStop) return { stopped: error.message }
