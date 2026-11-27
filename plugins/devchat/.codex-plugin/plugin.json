@@ -1,7 +1,7 @@
 {
   "name": "devchat",
   "version": "6.34.0",
-  "description": "Client for devchat: keeps the user's todos and routes each write to the right store, starting with this machine only.",
+  "description": "Client for devchat: keeps the user's todos and routes each write to the devchat board or this machine.",
   "author": {
     "name": "Filip Gutica"
   },
@@ -9,7 +9,7 @@
   "interface": {
     "displayName": "devchat",
     "shortDescription": "Keep todos with devchat.",
-    "longDescription": "devchat's client keeps the user's todos. A session hook records the repository each session started in, so a router can decide where each write goes. This version keeps every write on the machine and opens no network connection.",
+    "longDescription": "devchat's client keeps the user's todos. A session hook records the repository each session started in, so a router can decide where each write goes. Codex writes stay on the machine; `devchat sync` sends Claude Code's board writes and pulls the board.",
     "developerName": "Filip Gutica",
     "category": "Productivity",
     "capabilities": [

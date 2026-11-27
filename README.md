@@ -43,7 +43,7 @@ Workflow is enough to start. Every other part is optional.
 | [Standalone skills](#standalone-skills) | Independent skills you install individually | Skills CLI |
 | [Field Guide](#field-guide) | Memory of your preferences, corrections, and lessons | Plugin |
 | [Guardrails](#guardrails) | Shell hook blocking AI attribution and prompting before 1Password commands | Plugin |
-| [devchat](#devchat) | Client for devchat, a self-hosted board for todos and agent work; this version keeps todos on the machine | Plugin |
+| [devchat](#devchat) | Client for devchat, a self-hosted board for todos and agent work | Plugin |
 | [Host config](#host-config) | Shared global guidance and agent profiles across machines | Homebrew CLI and a checkout |
 | [Design system](https://github.com/filipgutica/design-system) | Design language agents follow for visual work | Plugin, from its own marketplace |
 
@@ -200,9 +200,8 @@ codex plugin add guardrails@filip-stack        # Codex, then restart Codex
 
 devchat is a separate, optional plugin and the client for
 [devchat](https://github.com/filipgutica/devchat), a self-hosted board for todos,
-work items, and agent messages. This version has no network code: every todo
-stays on the machine, and board writes arrive with `devchat setup` in a later
-release.
+work items, and agent messages. A todo goes to the board or stays on the
+machine, as the router decides; `devchat setup` joins a board.
 
 ```sh
 claude plugin install devchat@filip-stack   # Claude Code
@@ -215,10 +214,16 @@ codex plugin add devchat@filip-stack        # Codex, then restart Codex
 - **Router:** A write can reach the board only from a recorded Claude Code
   session, in mode `readwrite`, when the starting repository and the working
   directory are both GitHub repositories whose owner is on your allowlist.
-  Everything else stays on the machine. This version does not send board
-  writes yet: a write the router sends to the board is refused.
+  Everything else stays on the machine. A board write waits in the outbox
+  until a sync sends it: right after the write, from a 15-minute timer, or
+  with `devchat sync`. Mode `read` pulls the board and sends nothing.
+- **Setup:** `devchat setup --host <tailnet host> --github-login <login> --mode
+  readwrite` writes the config, installs a `devchat` command in
+  `~/.local/bin`, and a sync timer, without sudo. Add `--dry-run` to see the
+  steps first. No token is stored: the tailnet identifies the machine.
 - **Config:** `~/.config/devchat/config.json` (or under `$XDG_CONFIG_HOME`)
-  holds `mode`, `githubLogin`, and `allowlist`. Without it the mode is `off`.
+  holds `mode`, `githubLogin`, `allowlist`, and `boardUrl`. Without it the
+  mode is `off`, and devchat makes no network request.
   State lives in `~/.local/state/devchat` (or under `$XDG_STATE_HOME`).
 - **Codex:** Every write stays on the machine, even with a trusted hook and a
   session record. Codex can skip the hook on resume, and records the first
