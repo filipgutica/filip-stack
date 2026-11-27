@@ -105,10 +105,11 @@ const localTodos = () => {
 
 test('route decides by provenance first, then mode, then both allowlists', () => {
   const allowedRecord = { repo: `github.com/${allowed}/tools`, conflicting: false }
-  const base = { mode: 'readwrite', sessionKey: 'k', record: allowedRecord, cwdIdentity: `github.com/${allowed}/notes`, allowlist: [allowed] }
+  const base = { mode: 'readwrite', sessionKey: { harness: 'claude', id: 'k' }, record: allowedRecord, cwdIdentity: `github.com/${allowed}/notes`, allowlist: [allowed] }
   const rows = [
     [{}, { target: 'board', repo: `${allowed}/notes` }],
     [{ sessionKey: null }, { target: 'local', reason: 'no session key' }],
+    [{ sessionKey: { harness: 'codex', id: 'k' } }, { target: 'local', reason: 'codex sessions stay on this machine' }],
     [{ record: null }, { target: 'local', reason: 'no session record' }],
     [{ record: { ...allowedRecord, conflicting: true } }, { target: 'local', reason: 'conflicting session record' }],
     [{ mode: 'off' }, { target: 'local', reason: 'mode off' }],
@@ -135,7 +136,7 @@ test('the CLI routes each source as the table says, with zero outbound requests'
     { name: 'conflicting record', start: repos.allowed, restart: repos.other, cwd: repos.allowed, reason: 'conflicting session record' },
     { name: 'both harness keys set', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'row', CODEX_THREAD_ID: 'other' }, reason: 'no session key' },
     { name: 'both harness keys set to the same ID', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'row', CODEX_THREAD_ID: 'row' }, reason: 'no session key' },
-    { name: 'a Claude record read with the same ID as a Codex key', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CODEX_THREAD_ID: 'row' }, reason: 'no session record' },
+    { name: 'a Claude record read with the same ID as a Codex key', start: repos.allowed, cwd: repos.allowed, sessionEnv: { CODEX_THREAD_ID: 'row' }, reason: 'codex sessions stay on this machine' },
   ]
   for (const row of rows) {
     rmSync(stateDir(), { recursive: true, force: true })
@@ -170,12 +171,11 @@ test("each harness's hook records the stdin session_id that only that harness's 
     for (const [otherHarness, otherVariable] of Object.entries(keys)) {
       const doctor = devchat({ args: ['doctor'], sessionEnv: { [otherVariable]: 'session-1' } })
       assert.match(doctor.stdout, new RegExp(`session key: ${otherVariable}`, 'u'))
-      if (otherHarness === harness) {
-        assert.match(doctor.stdout, /session record: recorded/u, harness)
-        assert.match(doctor.stdout, new RegExp(`route here: board \\(${allowed}/tools\\)`, 'u'), harness)
-      } else {
-        assert.match(doctor.stdout, /route here: this machine only \(no session record\)/u, `${harness} record, ${otherHarness} key`)
-      }
+      assert.match(doctor.stdout, otherHarness === harness ? /session record: recorded/u : /session record: no record/u, `${harness} record, ${otherHarness} key`)
+      const expectedRoute = otherHarness === 'codex'
+        ? 'this machine only (codex sessions stay on this machine)'
+        : otherHarness === harness ? `board (${allowed}/tools)` : 'this machine only (no session record)'
+      assert.equal(doctor.stdout.match(/route here: (.*)/u)[1], expectedRoute, `${harness} record, ${otherHarness} key`)
     }
   }
   assert.deepEqual(networkCalls(), [], 'the hook and doctor import and call no network module')

@@ -226,12 +226,16 @@ export const refreshPluginPath = ({ root, version, env = process.env }) => {
 const local = (reason) => ({ target: 'local', reason })
 
 /**
- * Decides where a write goes (spec §5). Unknown provenance is settled first: no session key, no
- * session record, or a conflicting record keeps the write on this machine. A board write needs
+ * Decides where a write goes (spec §5). Unknown provenance is settled first: no session key, a
+ * harness whose hook cannot prove where its session started (Codex, for now), no session record,
+ * or a conflicting record keeps the write on this machine. A board write needs
  * mode `readwrite` and both the session's starting repo and the working directory allowlisted.
  */
 export const route = ({ mode, sessionKey, record, cwdIdentity, allowlist }) => {
   if (!sessionKey) return local('no session key')
+  // Codex can skip an untrusted hook on resume, and records the first turn's directory, which a
+  // client may override. So a Codex record does not prove where the session started yet.
+  if (sessionKey.harness !== 'claude') return local(`${sessionKey.harness} sessions stay on this machine`)
   if (!record) return local('no session record')
   if (record.conflicting) return local('conflicting session record')
   if (mode !== 'readwrite') return local(`mode ${mode}`)
