@@ -2211,11 +2211,13 @@ const flat = (value) => String(value).replace(/\p{Cc}/gu, ' ')
 // The rollback list. Before the import every todo lived in GitHub, so the rid decides each line:
 // a resolved `todo:gh:<n>` is closed, and an open todo with any other rid is created. Every line is
 // safe to run twice and from every machine: a close is, and a create first looks for an issue that
-// already carries its `devchat-rid:` line, through the list API, which sees a new issue at once.
-// The create runs only when that list succeeded, so a failed list creates nothing.
+// already carries its `devchat-rid:` line. It reads every page of the issues API, which sees a new
+// issue at once and also lists pull requests, harmlessly. The create runs only when every page
+// was read, so a failed page creates nothing.
 const createCommand = ({ rid, text, body, repo }) => {
   const marker = `devchat-rid: ${flat(rid)}`
-  return `out=$(gh issue list -R ${repo} --state all --limit 1000 --json body --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(flat(text), Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(flat(body))} ${shellQuote(marker)})"; }`
+  const issues = shellQuote(`repos/${repo}/issues?state=all&per_page=100`)
+  return `out=$(gh api --paginate ${issues} --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(flat(text), Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(flat(body))} ${shellQuote(marker)})"; }`
 }
 
 /**

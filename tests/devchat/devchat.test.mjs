@@ -41,22 +41,27 @@ esac
 chmodSync(join(fakeBin, 'systemctl'), 0o755)
 // A stand-in for `gh`: it logs each call in the test's home, with a body's newlines as `|`. It
 // answers the todos skill's reads with a fake login (or the one in \`$HOME/gh-login\`) and the
-// issues in \`$HOME/gh-issues.json\`, keeps the body of each issue it creates, and lists those
-// bodies for \`issue list --json body\`, a list that fails while \`$HOME/gh-list-fails\` exists.
+// issues in \`$HOME/gh-issues.json\`. It keeps the body of each issue it creates in
+// \`$HOME/gh-created/<number>\`, and the issues API lists those bodies newest first: one page of 100,
+// or every page with \`--paginate\`. That list fails while \`$HOME/gh-list-fails\` exists.
 writeFileSync(join(fakeBin, 'gh'), `#!/bin/sh
 printf '%s' "$*" | tr '\\n' '|' >> "$HOME/gh.log"
 printf '\\n' >> "$HOME/gh.log"
+bodies() {
+  ls "$HOME/gh-created" 2>/dev/null | sort -rn | head -n "$1" | while read -r number; do cat "$HOME/gh-created/$number"; done
+}
 case "$1 $2" in
   'api user') cat "$HOME/gh-login" 2>/dev/null || echo example-login ;;
   'repo view') echo PRIVATE ;;
-  'issue list')
-    case "$*" in
-      *'--json body'*) [ -e "$HOME/gh-list-fails" ] && exit 1; cat "$HOME/gh-bodies" 2>/dev/null || true ;;
-      *) cat "$HOME/gh-issues.json" ;;
-    esac ;;
+  'api --paginate'|'api repos/'*)
+    [ -e "$HOME/gh-list-fails" ] && exit 1
+    if [ "$2" = --paginate ]; then bodies 1000000; else bodies 100; fi ;;
+  'issue list') cat "$HOME/gh-issues.json" ;;
   'issue create')
+    mkdir -p "$HOME/gh-created"
+    number=$(( $(ls "$HOME/gh-created" | wc -l) + 1 ))
     while [ $# -gt 0 ]; do
-      if [ "$1" = --body ]; then printf '%s\\n' "$2" >> "$HOME/gh-bodies"; fi
+      if [ "$1" = --body ]; then printf '%s\\n' "$2" > "$HOME/gh-created/$number"; fi
       shift
     done ;;
   'issue close') ;;
@@ -2168,7 +2173,7 @@ const replay = (lines) => {
 }
 const quoted = (value) => `'${value.replaceAll("'", `'\\''`)}'`
 /** The guarded create line export prints for a todo. */
-const createLine = ({ rid, where, title, from = 'devchat', host = machine }) => `create ${rid} ${where} out=$(gh issue list -R example-login/todos --state all --limit 1000 --json body --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF 'devchat-rid: ${rid}' || gh issue create -R example-login/todos --title ${quoted(title)} --body "$(printf '%s\\n\\n%s' ${quoted(`From: ${from} · Host: ${host}`)} 'devchat-rid: ${rid}')"; }`
+const createLine = ({ rid, where, title, from = 'devchat', host = machine }) => `create ${rid} ${where} out=$(gh api --paginate 'repos/example-login/todos/issues?state=all&per_page=100' --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF 'devchat-rid: ${rid}' || gh issue create -R example-login/todos --title ${quoted(title)} --body "$(printf '%s\\n\\n%s' ${quoted(`From: ${from} · Host: ${host}`)} 'devchat-rid: ${rid}')"; }`
 /** The stub's log line for that create. */
 const createCall = ({ rid, title, from = 'devchat', host = machine }) => `issue create -R example-login/todos --title ${title} --body From: ${from} · Host: ${host}||devchat-rid: ${rid}`
 const exportHeader = (pulled = '# Board lines: pulled from the board just now.') => [
@@ -2486,6 +2491,17 @@ test('a replayed create creates nothing when its issue list fails', async () => 
   const again = spawnSync('/bin/sh', ['-c', lines[0].split(' ').slice(3).join(' ')], { env })
   assert.notEqual(again.status, 0, 'the line fails with its list')
   assert.deepEqual(ghCalls().slice(calls).filter((call) => call.startsWith('issue create')), [])
+})
+
+test('a replayed create finds its marker on an issue older than the first 1000', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', 'Created long ago.'], cwd: root, sessionEnv: {} }), 'todo')
+  const lines = linesFor((await rollbackOf()).lines, [rid])
+  // The marked issue is the oldest of 1,001, so it is the 1,001st item, newest first.
+  mkdirSync(join(home, 'gh-created'))
+  writeFileSync(join(home, 'gh-created', '1'), `From: devchat · Host: ${machine}\n\ndevchat-rid: ${rid}\n`)
+  for (let number = 2; number <= 1001; number += 1) writeFileSync(join(home, 'gh-created', String(number)), `Filler ${number}.\n`)
+  assert.deepEqual(replay(lines), [])
 })
 
 test('export lists a todo a sync moves from the outbox to sent/ while it reads', async () => {
