@@ -1,21 +1,23 @@
 #!/usr/bin/env node
 
-// devchat client: the write router, the text guard, local todos, the board outbox and sync, setup,
-// and checks. A write the router keeps on this machine goes to `local/` and makes no network
-// request. A board write goes to `outbox/`, and `devchat sync` alone sends it, with plain `fetch`.
+// devchat client: the write router, the text guard, local todos and work items, the board outbox
+// and sync, setup, and checks. A write the router keeps on this machine goes to `local/` and makes
+// no network request. A board write goes to `outbox/`, and `devchat sync` alone sends it, with
+// plain `fetch`.
 import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
-import { dirname, join } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
 /** The commands the skill shows agents. The skill's command block must list exactly these. */
-export const agentCommands = ['todo add']
+export const agentCommands = ['work start', 'work note', 'work done', 'todo add']
 
 const modes = ['off', 'read', 'readwrite']
 const todoChannel = 'todos'
+const workChannel = 'work'
 const maxTextLength = 10_000
 
 class UsageError extends Error {}
@@ -159,11 +161,13 @@ const normalizeRemote = (remote) => {
 // An inherited GIT_DIR or GIT_WORK_TREE would make git describe another repository.
 const gitEnv = (env) => Object.fromEntries(Object.entries(env).filter(([name]) => !name.startsWith('GIT_')))
 
+const gitIn = ({ cwd, env }) => (args) => spawnSync('git', ['-C', cwd, ...args], {
+  encoding: 'utf8', env: gitEnv(env), timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'],
+})
+
 /** Returns the normalized `origin` of the repository containing `cwd`, or '' outside a repository or without an origin. */
 const repoIdentityOf = ({ cwd, env = process.env }) => {
-  const git = (args) => spawnSync('git', ['-C', cwd, ...args], {
-    encoding: 'utf8', env: gitEnv(env), timeout: 2000, stdio: ['ignore', 'pipe', 'ignore'],
-  })
+  const git = gitIn({ cwd, env })
   // The configured URL, as written, and the URL git uses after `url.*.insteadOf` rewrites. A
   // rewrite could turn a host alias into github.com, so both must name the same repository.
   const configured = git(['config', '--get-all', 'remote.origin.url'])
@@ -171,9 +175,38 @@ const repoIdentityOf = ({ cwd, env = process.env }) => {
   if (configured.status !== 0 || resolved.status !== 0) return ''
   const urls = configured.stdout.split('\n').filter(Boolean)
   const identity = normalizeRemote(urls.join('\n'))
-  return urls.length === 1 && normalizeRemote(resolved.stdout.trim()) === identity
+  return urls.length === 1 && sameRepo(normalizeRemote(resolved.stdout.trim()), identity)
     ? identity
     : normalizeRemote(`${urls.join('\n')}\n${resolved.stdout.trim()}`)
+}
+
+const scopeFailure = 'git could not read the repository here, so devchat shows and changes no item. Fix the repository, or run the command outside any git checkout. Nothing was saved.'
+
+/**
+ * Returns the identity that scopes todos and work items to the checkout containing `cwd`: the
+ * router's `github.com/<owner>/<repo>` for a GitHub checkout, and for any other the hash of the
+ * real path of its common git directory, which its linked worktrees share. Origin URLs are never
+ * read for the second. Returns '' only when git says `cwd` is not in a repository; any other git
+ * failure throws, so the command sees and changes nothing. Routing never uses this identity.
+ */
+const scopeIdentityOf = ({ cwd, env = process.env }) => {
+  const common = spawnSync('git', ['-C', cwd, 'rev-parse', '--git-common-dir'], {
+    encoding: 'utf8', env: { ...gitEnv(env), LC_ALL: 'C' }, timeout: 2000, stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  if (common.status !== 0) {
+    if (/^fatal: not a git repository/mu.test(common.stderr ?? '')) return ''
+    throw new UsageError(scopeFailure)
+  }
+  const identity = repoIdentityOf({ cwd, env })
+  if (identity.startsWith('github.com/')) return identity
+  // Resolved by the file system, never by collapsing `..` first: a `..` after a symbolic link
+  // leaves the link's target.
+  const dir = common.stdout.replace(/\n$/u, '')
+  try {
+    return normalizeRemote(realpathSync.native(isAbsolute(dir) ? dir : `${cwd}/${dir}`))
+  } catch {
+    throw new UsageError(scopeFailure)
+  }
 }
 
 /**
@@ -186,6 +219,9 @@ const allowlistedRepo = ({ identity, allowlist }) => {
   const owner = match[1].toLowerCase()
   return allowlist.some((entry) => entry.toLowerCase() === owner) ? `${match[1]}/${match[2]}` : null
 }
+
+/** Whether two repo identities or `owner/repo` names are the same repo: GitHub ignores case in both parts. */
+const sameRepo = (a, b) => isString(a) && isString(b) && a.toLowerCase() === b.toLowerCase()
 
 // Sessions
 
@@ -238,7 +274,7 @@ export const recordSession = ({ key, cwd, source, subagent = false, env = proces
     if (writeExclusive(path, record({ repo, conflicting: false }))) return
     existing = readSessionRecord({ key, env })
   }
-  if (existing.conflicting || existing.repo === repo) return
+  if (existing.conflicting || sameRepo(existing.repo, repo)) return
   writeAtomic(path, record({ repo: existing.repo, conflicting: true }))
 }
 
@@ -313,9 +349,11 @@ const guardPatterns = [
 /** Returns the reason the guard refuses `text`, or null when it passes. */
 const guardReason = (text) => guardPatterns.find(({ pattern }) => pattern.test(text))?.reason ?? null
 
-// Local todos. Each is one file in `local/`, in the snapshot's item shape.
+// Local todos and work items. Each is one file in `local/`, in the snapshot's item shape, with
+// `identity`, the scope identity (`scopeIdentityOf`) of the checkout it was saved in, so commands
+// in that checkout see it. The identity never leaves this machine.
 
-const readLocalTodos = (env) => {
+const readLocalItems = (env) => {
   const dir = localDir(env)
   if (!existsSync(dir)) return []
   return readdirSync(dir)
@@ -327,12 +365,96 @@ const readLocalTodos = (env) => {
         throw new UsageError(`${join(dir, name)} is not a readable devchat record: ${error.message}`)
       }
     })
-    .filter((item) => item.channel === todoChannel)
     .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 }
 
 // A board root with no `status` yet reads as open (spec §2).
 const isOpen = (item) => ['open', 'blocked'].includes(item.labels.status ?? 'open')
+
+// The fold (spec §2): a root's state labels after one more post in its thread, given the post's
+// labels. The release 1 rows: a note, a question, a user reply, and a resolve. The app folds with
+// the same table, and devchat's `fixtures/fold.json` keeps the two in step.
+//
+// Pending guard: while `ask=answered`, an agent's post changes the root only when its `re` equals
+// `turn`. The app stores such a note and changes nothing, and refuses such a resolve.
+const isResolved = (labels) => labels.status === 'done' || labels.status === 'dropped'
+
+const clearAsk = (state) => {
+  delete state.ask
+  delete state.turn
+}
+const resolveRow = (state, post) => {
+  clearAsk(state)
+  state.status = post.kind === 'done' ? 'done' : 'dropped'
+}
+// One row of the fold table per post kind: each changes `state`, the root's labels, in place.
+const foldRows = {
+  answer: (state, post) => {
+    if (post.by !== 'user' || post.rid === undefined) return
+    // A reply on a resolved thread reopens it before its own change applies.
+    if (isResolved(state)) state.status = 'open'
+    state.ask = 'answered'
+    state.turn = post.rid
+  },
+  note: (state, post) => {
+    clearAsk(state)
+    state.status = 'open'
+    for (const [key, value] of Object.entries(post)) if (key.startsWith('pr.')) state[key] = value
+  },
+  ask: (state, post) => {
+    if (post.rid === undefined) return
+    state.ask = 'open'
+    state.turn = post.rid
+    state.status = post.block === '1' ? 'blocked' : 'open'
+  },
+  done: resolveRow,
+  drop: resolveRow,
+}
+
+// The pending guard: an agent's post while `ask=answered` that does not name `turn` with `re`.
+const blockedByPending = (labels, post) => post.by !== 'user' && labels.ask === 'answered' && !(post.re !== undefined && post.re === labels.turn)
+
+/** Returns a root's labels after one more post in its thread, `post` being that post's labels (spec §2). */
+export const foldStep = (labels, post) => {
+  const state = { ...labels }
+  if (blockedByPending(state, post)) return state
+  if (Object.hasOwn(foldRows, post.kind)) foldRows[post.kind](state, post)
+  return state
+}
+
+/**
+ * Folds one reply, `{ labels, text, createdAt }`, into its root item, and keeps the reply. A
+ * resolve the pending guard stops is left out: the app refuses it, so it never joins the thread.
+ */
+const foldReply = (item, reply) => {
+  if (isResolveKind(reply.labels.kind) && blockedByPending(item.labels, reply.labels)) return item
+  return {
+    ...item,
+    labels: foldStep({ status: 'open', ...item.labels }, reply.labels),
+    replies: [...(item.replies ?? []), reply],
+  }
+}
+
+// A root is pending while `ask=answered`: the user replied, and no agent post has answered the
+// reply `turn` names (spec §2).
+const isPending = (item) => item.labels.ask === 'answered'
+
+// The unanswered messages after one more reply.
+const unansweredAfter = ({ unanswered, reply }) => {
+  const { by, kind, re } = reply.labels
+  if (isResolveKind(kind)) return []
+  if (by === 'user') return kind === 'answer' ? [...unanswered, reply] : unanswered
+  return re === undefined ? unanswered : unanswered.slice(unanswered.findIndex(({ labels }) => labels.rid === re) + 1)
+}
+
+/**
+ * The user's unanswered messages on a pending root (spec §2), from its replies in log order: each
+ * user reply, less every one up to the reply an agent post names with `re`. A resolve answers all.
+ */
+const unansweredOf = (item) => {
+  if (!isPending(item)) return []
+  return (item.replies ?? []).reduce((unanswered, reply) => unansweredAfter({ unanswered, reply }), [])
+}
 
 /** Reads `snapshot.json`, the board state the last sync pulled, or returns null before the first sync. */
 const readSnapshot = (env) => {
@@ -348,30 +470,92 @@ const readSnapshot = (env) => {
   return snapshot
 }
 
-const findOpenTodo = ({ prefix, env }) => {
-  if (!prefix) throw new UsageError('give the todo rid, or a unique prefix of it')
-  const matches = readLocalTodos(env).filter((item) => isOpen(item) && item.rid.startsWith(prefix))
-  if (matches.length === 1) return matches[0]
-  if (matches.length > 1) throw new UsageError(`${prefix} matches ${matches.length} todos: ${matches.map(({ rid }) => rid).join(', ')}`)
-  const onBoard = (readSnapshot(env)?.items ?? []).some((item) => item.channel === todoChannel && item.rid.startsWith(prefix))
-  throw new UsageError(onBoard ? `${prefix} is a board todo: resolve it in the devchat UI for now` : `no open todo on this machine matches ${prefix}`)
-}
-
-const requireText = (text) => {
-  if (typeof text !== 'string' || text.trim().length === 0) throw new UsageError('todo text is required')
-  if (text.length > maxTextLength) throw new UsageError(`todo text exceeds ${maxTextLength} characters`)
+const requireText = (text, noun = 'todo') => {
+  if (typeof text !== 'string' || text.trim().length === 0) throw new UsageError(`${noun} text is required`)
+  if (text.length > maxTextLength) throw new UsageError(`${noun} text exceeds ${maxTextLength} characters`)
   const reason = guardReason(text)
   if (reason) throw new UsageError(`the guard refused the text: ${reason}. Rewrite it without that and try again.`)
   return text
 }
 
-const newTodoRid = () => `todo-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`
+/** Checks a value bound for a board label: a label value the guard passes. */
+const requireLabel = ({ value, name }) => {
+  if (!isLabelValue(value)) throw new UsageError(`${name} must be 1 to 256 characters with no control characters`)
+  const reason = guardReason(value)
+  if (reason) throw new UsageError(`the guard refused ${name}: ${reason}`)
+  return value
+}
 
-const saveLocalTodo = ({ text, config, env }) => {
+const requireRid = ({ value, name }) => {
+  if (!ridPattern.test(value)) throw new UsageError(`${name} must be a devchat rid: letters, digits, and . _ : -`)
+  return value
+}
+
+// The app reads a PR's number from the end of its URL's path, as `/pull/<n>`, and refuses any other.
+const prNumberOf = (url) => (URL.canParse(url) ? /\/pull\/(\d{1,9})\/?$/u.exec(new URL(url).pathname)?.[1] ?? null : null)
+
+// References. A structured reference names its repo, and the board takes one only to an
+// allowlisted repo (spec §5): at queue time and again at flush. A bare number names the item's
+// own repo.
+const githubName = '([A-Za-z0-9](?:[A-Za-z0-9-]{0,38}))/([A-Za-z0-9._-]{1,100})'
+const shortIssue = new RegExp(`^${githubName}#\\d{1,9}$`, 'u')
+const issuePath = new RegExp(`^/${githubName}/issues/\\d{1,9}/?$`, 'u')
+const pullPath = new RegExp(`^/${githubName}/pull/\\d{1,9}/?$`, 'u')
+const repoOfMatch = (match) => (match ? `${match[1]}/${match[2]}` : null)
+// The path of a github.com URL, with the scheme and host matched ignoring case, as URLs read them.
+const githubPathOf = (url) => /^https:\/\/github\.com(\/.*)$/iu.exec(url)?.[1] ?? ''
+
+/** The `owner/repo` an `--issue` reference names: '' for a bare `#<n>` or `<n>`, null for a form devchat does not take. */
+const issueRepoOf = (value) => (/^#?\d{1,9}$/u.test(value) ? '' : repoOfMatch(shortIssue.exec(value) ?? issuePath.exec(githubPathOf(value))))
+/** The `owner/repo` a `--pr` URL names, or null when it is not a github.com pull request URL. */
+const prRepoOf = (url) => repoOfMatch(pullPath.exec(githubPathOf(url)))
+const isAllowlisted = ({ repo, allowlist }) => repo === '' || allowlistedRepo({ identity: `github.com/${repo}`, allowlist }) === repo
+
+const requireIssue = ({ value, board, config }) => {
+  requireLabel({ value, name: '--issue' })
+  const repo = issueRepoOf(value)
+  if (repo === null) throw new UsageError('--issue must be #<number>, <owner>/<repo>#<number>, or a github.com issue URL')
+  if (board && !isAllowlisted({ repo, allowlist: config.allowlist })) throw new UsageError('--issue names a repo whose owner is not on the allowlist, and the board takes no reference to it. Nothing was saved.')
+  return value
+}
+
+/**
+ * Checks `--pr`: a github.com pull request URL, or a number in `repo`, the target item's repo. A
+ * board item takes only a pull request in an allowlisted repo.
+ */
+const requirePr = ({ value, repo, board, config }) => {
+  requireLabel({ value, name: '--pr' })
+  if (/^#?\d{1,9}$/u.test(value)) {
+    if (!repo) throw new UsageError('--pr takes a number only for an item in a github.com repo: give the pull request URL')
+    return `https://github.com/${repo}/pull/${value.replace('#', '')}`
+  }
+  const named = prRepoOf(value)
+  if (named === null) throw new UsageError('--pr must be a github.com pull request URL, or a pull request number in the item\'s repo')
+  if (board && !isAllowlisted({ repo: named, allowlist: config.allowlist })) throw new UsageError('--pr names a repo whose owner is not on the allowlist, and the board takes no reference to it. Nothing was saved.')
+  return value
+}
+
+const newRid = (kind) => `${kind}-${Date.now().toString(36)}-${randomBytes(4).toString('hex')}`
+
+// The labels a post carries in the fold: what the app writes on the canonical post of a reply intent.
+const definedLabels = (labels) => Object.fromEntries(Object.entries(labels).filter(([, value]) => value !== undefined))
+const postLabelsOf = (intent) => definedLabels({
+  rid: intent.rid,
+  by: intent.by,
+  kind: intent.kind,
+  re: intent.re,
+  block: intent.block === 1 ? '1' : undefined,
+  ...(intent.pr === undefined ? {} : { [`pr.${prNumberOf(intent.pr)}`]: intent.pr }),
+})
+// The app writes a resolve with fixed text, because Board refuses a post with none.
+const replyTextOf = (intent) => ({ done: 'Resolved.', drop: 'Dropped.' })[intent.kind] ?? intent.text
+
+const saveLocalRoot = ({ kind, text, labels = {}, identity, config, env }) => {
   const now = new Date().toISOString()
-  const rid = newTodoRid()
+  const rid = newRid(kind)
+  const channel = kind === 'todo' ? todoChannel : workChannel
   writeJsonAtomic(join(localDir(env), `${rid}.json`), {
-    rid, channel: todoChannel, text, labels: { rid, status: 'open', host: config.machine }, createdAt: now, updatedAt: now,
+    rid, channel, text, labels: definedLabels({ rid, status: 'open', host: config.machine, ...labels }), identity, createdAt: now, updatedAt: now,
   })
   return rid
 }
@@ -387,19 +571,38 @@ const profileOf = (machine) => {
   return `${name || 'devchat'}-claude`
 }
 
-// The fields of a release 1 todo intent, as devchat's `src/shared/layout.ts` defines it, and of
-// the outbox record that carries it. `board` is the normalized board URL the file was queued for.
+// The fields of the outbox record that carries an intent. `target` is the intent's own rid, `repo`
+// the source repo the router allowlisted, and `board` the normalized board URL the file was queued for.
 const outboxFields = ['schema', 'op', 'target', 'profile', 'repo', 'lane', 'board', 'epoch', 'body', 'queuedAt']
 // Board refuses a post whose text is longer than this, in UTF-16 code units. An intent's post text
 // is the serialized intent.
 const boardTextLimit = 10_000
 
-// The canonical todo intent and request body. Sync compares a file's stored body with these bytes,
-// so a body that parses to the same values through duplicate keys or other spellings is refused.
-const todoIntentOf = ({ rid, text, by, repo, machine }) => ({ v: 1, rid, kind: 'todo', channel: todoChannel, text, by, repo, machine })
-const requestBodyOf = (intent) => JSON.stringify({ channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+// The release 1 intents the client sends, as devchat's `src/shared/layout.ts` defines them: the
+// fields of each kind in their canonical order, required ones first. A new root names its channel;
+// a reply names its root's rid. `thread`, `issue`, `re`, `pr`, and `block` are optional.
+const intentShapes = {
+  todo: { channel: todoChannel, required: ['v', 'rid', 'kind', 'channel', 'text', 'by', 'repo', 'machine'], optional: [] },
+  work: { channel: workChannel, required: ['v', 'rid', 'kind', 'channel', 'text', 'by', 'repo', 'machine'], optional: ['thread', 'issue'] },
+  note: { required: ['v', 'rid', 'kind', 'root', 'text', 'by'], optional: ['re', 'pr'] },
+  ask: { required: ['v', 'rid', 'kind', 'root', 'text', 'by'], optional: ['re', 'block'] },
+  done: { required: ['v', 'rid', 'kind', 'root', 'text', 'by'], optional: ['re'] },
+  drop: { required: ['v', 'rid', 'kind', 'root', 'text', 'by'], optional: ['re'] },
+}
+const isIntentKind = (kind) => isString(kind) && Object.hasOwn(intentShapes, kind)
+const isRootKind = (kind) => kind === 'todo' || kind === 'work'
+const isResolveKind = (kind) => kind === 'done' || kind === 'drop'
 
-// The board epoch a todo is queued for: the one in the configured board's snapshot, or null when
+// The canonical intent and request body. Sync compares a file's stored body with these bytes, so a
+// body that parses to the same values through duplicate keys or another order is refused.
+const canonicalIntent = (intent) => {
+  const { required, optional } = intentShapes[intent.kind]
+  return Object.fromEntries([...required, ...optional].filter((key) => intent[key] !== undefined).map((key) => [key, intent[key]]))
+}
+const requestBodyOf = (intent) => JSON.stringify({ channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+const intentNouns = { todo: 'todo', work: 'goal', note: 'note', ask: 'question' }
+
+// The board epoch an intent is queued for: the one in the configured board's snapshot, or null when
 // this machine has no readable snapshot of that board. Sync holds a file whose epoch has changed.
 const intendedEpoch = ({ config, env }) => {
   try {
@@ -411,23 +614,34 @@ const intendedEpoch = ({ config, env }) => {
 }
 
 /**
- * Queues a todo intent: one label-free `inbox` post whose `id` is the intent's `rid`, so a retry
- * replays it. The request body is stored as the exact canonical string sync sends, so every retry
- * is byte-identical. Returns the rid and the outbox file name, which sorts by queue time.
+ * Queues an intent (`fields` without `v`, `rid`, and `by`): one label-free `inbox` post whose `id`
+ * is the intent's `rid`, so a retry replays it. The request body is stored as the exact canonical
+ * string sync sends, so every retry is byte-identical. `repo` is the source repo the router
+ * allowlisted. `epoch` defaults to the snapshot's; a reply takes its root's, so sync holds it
+ * when the board's has changed since. Returns the rid and the outbox file name, which sorts by
+ * queue time.
  */
-const queueTodo = ({ text, repo, config, env }) => {
-  const rid = newTodoRid()
+const queueIntent = ({ fields, repo, config, env, epoch = intendedEpoch({ config, env }) }) => {
+  const rid = newRid(fields.kind)
   const profile = profileOf(config.machine)
-  const intent = todoIntentOf({ rid, text, by: profile, repo, machine: config.machine })
+  const intent = canonicalIntent({ ...fields, v: 1, rid, by: profile })
   const size = JSON.stringify(intent).length
   if (size > boardTextLimit) {
-    throw new UsageError(`the todo is too long for the board: its intent is ${size} characters, and the board takes at most ${boardTextLimit}. Shorten it and try again. Nothing was saved.`)
+    throw new UsageError(`the ${intentNouns[fields.kind]} is too long for the board: its intent is ${size} characters, and the board takes at most ${boardTextLimit}. Shorten it and try again. Nothing was saved.`)
   }
   const queuedAt = new Date().toISOString()
-  const name = `${queuedAt.replace(/[-:.]/gu, '')}-post-${rid}.json`
-  const epoch = intendedEpoch({ config, env })
+  const name = nextOutboxName({ env, rid })
   writeJsonAtomic(join(outboxDir(env), name), { schema: 1, op: 'post', target: rid, profile, repo, lane: 'repo', board: config.boardUrl, epoch, body: requestBodyOf(intent), queuedAt })
   return { rid, name }
+}
+
+// Outbox names sort in queue order by a sequence number, never by the clock, so a reply queued
+// after its root always sorts after it: `q` and 12 digits, which also sort after the time-stamped
+// names of earlier versions. Two writers at the same moment may share a number; their rids then
+// order them, and neither is the other's root.
+const nextOutboxName = ({ env, rid }) => {
+  const used = [outboxDir(env), sentDir(env), rejectedDir(env)].flatMap(outboxNames).map((name) => /^q(\d{12})-/u.exec(name)?.[1]).filter(Boolean)
+  return `q${String(Math.max(0, ...used.map(Number)) + 1).padStart(12, '0')}-post-${rid}.json`
 }
 
 // Every `.json` name in an outbox folder, whatever it is, so a directory, a symbolic link, or
@@ -476,27 +690,35 @@ const parseJson = (text) => {
 // Field types and values follow devchat's intent schema, with no coercion. Each check runs only
 // after the ones before it pass.
 const intentProblem = ({ entry, body, intent, config }) => {
-  const fields = [intent.text, intent.by, intent.repo, intent.machine]
+  const shape = intentShapes[intent.kind]
+  const strings = Object.entries(intent).filter(([key]) => key !== 'v' && key !== 'block').map(([, value]) => value)
+  const labels = ['by', 'repo', 'machine', 'thread', 'issue', 'pr'].filter((key) => intent[key] !== undefined).map((key) => intent[key])
   const checks = [
-    [() => hasExactly(intent, Object.keys(todoIntentOf({}))) && intent.v === 1 && intent.kind === 'todo' && intent.channel === todoChannel, 'the intent is not a release 1 todo'],
-    [() => fields.every(isString) && isString(intent.rid), 'an intent field is not a string'],
+    [() => isIntentKind(intent.kind) && shape.required.every((key) => Object.hasOwn(intent, key))
+      && Object.keys(intent).every((key) => shape.required.includes(key) || shape.optional.includes(key))
+      && intent.v === 1 && intent.channel === shape.channel && (intent.block === undefined || intent.block === 1), 'the intent is not a release 1 intent'],
+    [() => strings.every(isString), 'an intent field is not a string'],
     [() => ridPattern.test(intent.rid) && intent.rid === body.id && intent.rid === entry.target, 'the intent rid does not match the post id'],
-    [() => intent.by === entry.profile && intent.repo === entry.repo, 'the intent does not match its outbox record'],
+    [() => [intent.root, intent.re].every((rid) => rid === undefined || ridPattern.test(rid)), 'a target is not a rid'],
+    [() => intent.by === entry.profile && (!isRootKind(intent.kind) || intent.repo === entry.repo), 'the intent does not match its outbox record'],
     // The board refuses a bad profile with a 400, which would stop every flush at this file.
     [() => profilePattern.test(entry.profile) && intent.by !== 'user', 'the profile is not a board profile name'],
-    [() => allowlistedRepo({ identity: `github.com/${intent.repo}`, allowlist: config.allowlist }) === intent.repo, 'the source repo is not on the allowlist'],
-    [() => intent.text.trim().length > 0 && intent.text.length <= maxTextLength, 'the todo text is empty or too long'],
-    [() => [intent.by, intent.repo, intent.machine].every(isLabelValue), 'a provenance field is not a board label value'],
-    [() => [...fields, intent.rid].every((field) => !guardReason(field)), 'the guard refused an outbound field'],
-    [() => entry.body === requestBodyOf(todoIntentOf(intent)), 'the request body is not in canonical form'],
+    [() => allowlistedRepo({ identity: `github.com/${entry.repo}`, allowlist: config.allowlist }) === entry.repo, 'the source repo is not on the allowlist'],
+    // A resolve has no text: the app writes its fixed text.
+    [() => (isResolveKind(intent.kind) ? intent.text === '' : intent.text.trim().length > 0 && intent.text.length <= maxTextLength), 'the text is empty or too long'],
+    [() => labels.every(isLabelValue), 'a provenance field is not a board label value'],
+    [() => intent.pr === undefined || prRepoOf(intent.pr) !== null, 'the pr is not a pull request URL'],
+    [() => [intent.issue === undefined ? '' : issueRepoOf(intent.issue), intent.pr === undefined ? '' : prRepoOf(intent.pr)].every((repo) => repo !== null && isAllowlisted({ repo, allowlist: config.allowlist })), 'a reference names a repo off the allowlist'],
+    [() => strings.every((field) => !guardReason(field)), 'the guard refused an outbound field'],
+    [() => entry.body === requestBodyOf(canonicalIntent(intent)), 'the request body is not in canonical form'],
   ]
   return checks.find(([passes]) => !passes())?.[1] ?? null
 }
 
 /**
- * The check at flush (spec §5). Sync sends only a todo intent shaped exactly as `queueTodo` wrote
- * it, byte for byte, from a repo still on the allowlist, whose every outbound field passes the
- * guard again. Returns why a file fails, or null.
+ * The check at flush (spec §5). Sync sends only an intent shaped exactly as `queueIntent` wrote it,
+ * byte for byte, from a repo still on the allowlist, whose every outbound field passes the guard
+ * again. Returns why a file fails, or null.
  */
 const isBoardUrl = (value) => isString(value) && checkBoardUrl(value).url === value
 
@@ -509,7 +731,7 @@ const outboxProblem = ({ entry, config }) => {
   if (!hasExactly(body, ['channel', 'id', 'text']) || body.channel !== 'inbox' || !isString(body.text)) return 'the request is not an inbox post'
   if (body.text.length > boardTextLimit) return `the intent is longer than the board's ${boardTextLimit}-character limit`
   const intent = parseJson(body.text)
-  if (!isRecord(intent)) return 'the intent is not a release 1 todo'
+  if (!isRecord(intent)) return 'the intent is not a release 1 intent'
   return intentProblem({ entry, body, intent, config })
 }
 
@@ -517,7 +739,15 @@ const outboxProblem = ({ entry, config }) => {
 // no credential: the tailnet identity comes from `tailscale serve`.
 
 /** A network error, a timeout, a non-2xx answer, or an unexpected body: sync stops, and the next run retries. */
-class SyncStop extends Error {}
+class SyncStop extends Error {
+  /** `brief` is the reason a write's own sync prints: it names no outbox file, so no other repo's rid. */
+  constructor(message, brief = message) {
+    super(message)
+    this.brief = brief
+  }
+}
+
+const heldBrief = 'the outbox is held by a write queued for another board or epoch; run devchat sync for details'
 
 const requestTimeoutMs = 10_000
 
@@ -597,7 +827,7 @@ const readApplied = async (client) => {
 }
 
 // The snapshot keeps open and blocked roots of these channels, in the local item shape.
-const snapshotChannels = [todoChannel, 'work']
+const snapshotChannels = [todoChannel, workChannel]
 
 const snapshotItem = (message) => ({
   rid: message.labels.rid,
@@ -608,13 +838,66 @@ const snapshotItem = (message) => ({
   updatedAt: message.editedAt ?? message.createdAt,
 })
 
+const threadPageSize = 500
+
+/** Reads every reply of the thread whose root has board message ID `id`, oldest first. */
+const readReplies = async ({ client, id }) => {
+  const replies = []
+  let after = id
+  for (;;) {
+    const page = await client.get(`/messages/${encodeURIComponent(id)}?${new URLSearchParams({ after, limit: String(threadPageSize) })}`)
+    if (!Array.isArray(page?.replies)) throw new SyncStop('GET /messages/:id sent an unexpected answer')
+    replies.push(...page.replies)
+    if (page.replies.length < threadPageSize) return replies
+    after = page.replies.at(-1).id
+  }
+}
+
+const foldedLabels = ['status', 'ask', 'turn']
+
+/**
+ * The replies the snapshot keeps for a pending root (spec §3): the last three, the user's
+ * unanswered messages however old, and the question each of those answers with `re`. Sync reads
+ * the replies after the root's labels, so the thread can have moved past them: `changed` says a
+ * post after the root's `turn` changes its state, and pickup then shows no call until a sync reads
+ * them together.
+ */
+const keptReplies = ({ messages, labels }) => {
+  const replies = messages
+    .filter((message) => !message.deleted && isRecord(message.labels) && isString(message.labels.rid))
+    .map((message) => ({ labels: message.labels, text: message.text, createdAt: message.createdAt }))
+  const turn = replies.findIndex((reply) => reply.labels.rid === labels.turn)
+  const folded = replies.slice(turn + 1).reduce((state, reply) => foldStep(state, reply.labels), labels)
+  const changed = turn < 0 || foldedLabels.some((key) => folded[key] !== labels[key])
+  const unanswered = unansweredOf({ labels, replies })
+  const asked = new Set(unanswered.map(({ labels }) => labels.re))
+  const kept = new Set([...replies.slice(-3), ...unanswered])
+  return { replies: replies.filter((reply) => kept.has(reply) || asked.has(reply.labels.rid)), changed }
+}
+
+// How many resolved roots per channel the snapshot keeps, newest first, labels only: a note can
+// reopen one, and a command can name only a root this machine has seen.
+const resolvedKept = 500
+
+/** Pulls the open roots, with replies for each pending one, and the latest resolved roots by their labels. */
 const pullSnapshotItems = async (client) => {
   const items = []
+  const resolved = []
   for (const channel of snapshotChannels) {
-    const roots = await pullChannel({ client, channel })
-    items.push(...roots.filter((message) => !message.deleted && typeof message.labels?.rid === 'string').map(snapshotItem).filter(isOpen))
+    const closed = []
+    for (const message of await pullChannel({ client, channel })) {
+      if (message.deleted || typeof message.labels?.rid !== 'string') continue
+      const item = snapshotItem(message)
+      if (!isOpen(item)) {
+        closed.push({ rid: item.rid, channel, text: '', labels: item.labels, createdAt: item.createdAt })
+        continue
+      }
+      if (isPending(item)) Object.assign(item, keptReplies({ messages: await readReplies({ client, id: message.id }), labels: item.labels }))
+      items.push(item)
+    }
+    resolved.push(...closed.sort((a, b) => b.createdAt.localeCompare(a.createdAt)).slice(0, resolvedKept))
   }
-  return items
+  return { items, resolved }
 }
 
 // Sync (spec §3). One flusher per device: sync takes a lock file in `outbox/`, and a second sync
@@ -723,7 +1006,7 @@ const flush = async ({ client, config, env, epoch, out, outcomes }) => {
     if (gone) continue
     // Only a valid, normalized board URL names another board; any other value fails the check below.
     if (isBoardUrl(entry?.board) && entry.board !== config.boardUrl) {
-      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`)
+      throw new SyncStop(`${name} was queued for another board than the configured one: nothing is sent until the config names that board again, or the file leaves outbox/`, heldBrief)
     }
     const problem = unreadable ?? outboxProblem({ entry, config })
     if (problem) {
@@ -733,9 +1016,12 @@ const flush = async ({ client, config, env, epoch, out, outcomes }) => {
     }
     // A file queued with the epoch unknown takes the epoch of the first sync that reads the
     // marker. One queued under another epoch is held: the board was restored after it was queued.
+    // A reply queued on a root still in outbox/ takes the root's epoch, or none when the root has
+    // none: it sorts after the root, so this loop stamps it right after the root, under the same
+    // epoch, or stops at the root first.
     if (entry.epoch == null) writeJsonAtomic(path, { ...entry, epoch })
     else if (entry.epoch !== epoch) {
-      throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`)
+      throw new SyncStop(`${name} was queued under board epoch ${entry.epoch}, and the board's is ${epoch}: nothing is sent until the file leaves outbox/`, heldBrief)
     }
     const answer = await client.post({ body: entry.body, profile: entry.profile })
     if (!isMessageId(answer?.message?.id)) throw new SyncStop('POST /messages sent no message ID')
@@ -769,13 +1055,22 @@ const readDecided = async ({ client, config, env, epoch, applied }) => {
   return covered.map((decided) => ({ ...decided, reason: refused.get(decided.entry.inboxId) }))
 }
 
+const intentOfEntry = (entry) => {
+  const intent = isString(entry?.body) ? parseJson(parseJson(entry.body)?.text) : undefined
+  return isRecord(intent) && isIntentKind(intent.kind) && isString(intent.rid) && isString(intent.text) ? intent : null
+}
+
 // A refused intent moves to `rejected/` with its reason code, which sync prints as it is. Any
-// other decided intent was applied, so its file goes.
-const retireDecided = ({ env, decided, out }) => {
+// other decided intent was applied, so its file goes. A refused reply on a root that still waits
+// for its pending reply also prints the call that answers it (spec §4). Each line names the
+// intent's source repo, so a write's own sync can print only that repo's (`syncAfterWrite`).
+const retireDecided = ({ env, decided, items, out }) => {
   for (const { name, entry, reason } of decided) {
     if (reason !== undefined) {
       writeJsonAtomic(join(rejectedDir(env), name), { ...entry, refused: reason })
-      out(`refused ${entry.target}: ${reason}`)
+      out(`refused ${entry.target}: ${reason}`, { repo: entry.repo })
+      const root = items.find((item) => item.rid === intentOfEntry(entry)?.root)
+      if (root && isPending(root)) out(`not applied: ${root.rid} ${root.changed ? changedNote : `waits on a reply. ${answerCall(root)}`}`, { repo: entry.repo })
     }
     ignoreMissing(() => unlinkSync(join(sentDir(env), name)))
   }
@@ -807,7 +1102,7 @@ const syncSteps = async ({ config, env, out, client, outcomes }) => {
   if (config.mode === 'readwrite') await flush({ client, config, env, epoch, out, outcomes })
   const applied = await readApplied(client)
   const pulledAt = new Date().toISOString()
-  const items = await pullSnapshotItems(client)
+  const { items, resolved } = await pullSnapshotItems(client)
   const decided = await readDecided({ client, config, env, epoch, applied })
   // A restore during this sync would make every read above an old board's. Read the epoch again
   // before anything local changes.
@@ -820,9 +1115,9 @@ const syncSteps = async ({ config, env, out, client, outcomes }) => {
     out('a newer snapshot is already in place: this sync leaves it and its receipts')
     return
   }
-  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, board: config.boardUrl, epoch, applied, items })
+  writeJsonAtomic(snapshotPath(env), { schema: 1, pulledAt, board: config.boardUrl, epoch, applied, items, resolved })
   out(`snapshot: ${items.length} open item(s), epoch ${epoch}`)
-  retireDecided({ env, decided, out })
+  retireDecided({ env, decided, items, out })
 }
 
 /**
@@ -839,7 +1134,7 @@ const runSync = async ({ config, env, out = () => {}, signal, outcomes = new Map
     await syncSteps({ config, env, out, client, outcomes })
     return { stopped: null }
   } catch (error) {
-    if (error instanceof SyncStop) return { stopped: error.message }
+    if (error instanceof SyncStop) return { stopped: error.message, brief: error.brief }
     throw error
   } finally {
     releaseSyncLock({ env, owner })
@@ -850,15 +1145,16 @@ const runSync = async ({ config, env, out = () => {}, signal, outcomes = new Map
 // already succeeded, so no outcome here fails the command.
 const postWriteSyncMs = 3000
 
-const syncAfterWrite = async ({ config, env, name, out }) => {
+const syncAfterWrite = async ({ config, env, name, repo, out }) => {
   // What this sync's flush did with each file, by name.
   const outcomes = new Map()
   let reason
   try {
-    // Of this sync's lines, only a refusal of an earlier intent is news to the user here.
-    const refusals = (line) => line.startsWith('refused ') && out(line)
+    // Of this sync's lines, only a refusal of an earlier intent from this write's repo is news
+    // here. `devchat sync` prints every refusal.
+    const refusals = (line, about) => sameRepo(about?.repo, repo) && out(line)
     const result = await runSync({ config, env, out: refusals, signal: AbortSignal.timeout(postWriteSyncMs), outcomes })
-    reason = result.locked ? 'another sync is running' : result.stopped
+    reason = result.locked ? 'another sync is running' : result.brief
   } catch (error) {
     reason = error.message
   }
@@ -885,6 +1181,377 @@ const sync = async ({ args, env, out }) => {
   return 1
 }
 
+// The offline view (spec §3): the snapshot's roots, then every intent this machine queued or sent
+// that the app has not decided yet, folded in queue order, then the records in `local/`. So an
+// item marked done offline leaves the view at once; the app decides when it ingests the intent.
+
+// The snapshot of the configured board, or null: another board's snapshot is no view of this one.
+const currentSnapshot = ({ config, env }) => {
+  const snapshot = readSnapshot(env)
+  return snapshot?.board === config.boardUrl ? snapshot : null
+}
+
+// An outbox entry belongs to the configured board's view when it was queued for that board and,
+// once both know the epoch, for that epoch. An entry queued with the epoch unknown takes the next.
+const ofThisBoard = ({ entry, config, snapshot }) => entry.board === config.boardUrl
+  && (entry.epoch == null || snapshot == null || entry.epoch === snapshot.epoch)
+
+// The intents this machine queued or sent for the configured board that the app has not decided
+// yet, in queue order. A rid in both folders, after a crash or two flushers, counts once, as its
+// `sent/` copy.
+const outstandingIntents = ({ config, snapshot, env }) => {
+  const found = new Map()
+  for (const [dir, source] of [[sentDir(env), 'sent'], [outboxDir(env), 'queued']]) {
+    for (const name of outboxNames(dir)) {
+      const { entry } = readOutboxEntry(join(dir, name))
+      const intent = intentOfEntry(entry)
+      if (!intent || !isString(entry.queuedAt) || !ofThisBoard({ entry, config, snapshot }) || found.has(intent.rid)) continue
+      found.set(intent.rid, { name, intent, entry, queuedAt: entry.queuedAt, source })
+    }
+  }
+  return [...found.values()].sort((a, b) => a.name.localeCompare(b.name))
+}
+
+/** The configured board's items: the snapshot's open and resolved roots, with this machine's outstanding intents folded in. */
+const boardView = ({ config, env }) => {
+  const snapshot = currentSnapshot({ config, env })
+  const roots = [...(snapshot?.items ?? []), ...(snapshot?.resolved ?? [])]
+  // Each board item carries the epoch it belongs to: the snapshot's, or its outbox entry's, which
+  // is null while the epoch was unknown when it was queued.
+  const items = new Map(roots.map((item) => [item.rid, { ...item, source: 'board', epoch: snapshot.epoch }]))
+  for (const { intent, entry, queuedAt, source } of outstandingIntents({ config, snapshot, env })) {
+    if (isRootKind(intent.kind)) {
+      if (items.has(intent.rid)) continue
+      const labels = definedLabels({ rid: intent.rid, status: 'open', repo: intent.repo, thread: intent.thread, issue: intent.issue })
+      items.set(intent.rid, { rid: intent.rid, channel: intent.channel, text: intent.text, labels, createdAt: queuedAt, source, epoch: entry.epoch ?? null })
+      continue
+    }
+    const root = items.get(intent.root)
+    if (root) items.set(root.rid, foldReply(root, { labels: postLabelsOf(intent), text: replyTextOf(intent), createdAt: queuedAt }))
+  }
+  return [...items.values()]
+}
+
+/** Every todo and work item this machine knows, oldest first, each with its `source`: board, queued, sent, or local. Mode off has no board. */
+const viewItems = ({ config, env }) => [
+  ...(config.mode === 'off' ? [] : boardView({ config, env })),
+  ...readLocalItems(env).map((item) => ({ ...item, source: 'local' })),
+].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+
+// A board item is in the configured board's current epoch when its epoch is the snapshot's. With
+// no snapshot of the board yet, or a root queued with the epoch unknown, only a root still in
+// outbox/ counts: a reply takes its epoch and sorts after it, so flush sends both under one epoch,
+// or holds the root first. A sent root waits for a sync, which may find the board restored.
+const inCurrentEpoch = ({ item, epoch }) => (epoch === null || item.epoch == null ? item.source === 'queued' : item.epoch === epoch)
+
+/**
+ * Whether an item belongs to the checkout containing `cwd`: a local item by its identity, a board
+ * item by its `repo` label and the configured board's current epoch. Null outside a checkout.
+ */
+const repoScope = ({ config, env, cwd }) => {
+  const identity = scopeIdentityOf({ cwd, env })
+  if (identity === '') return null
+  const epoch = currentSnapshot({ config, env })?.epoch ?? null
+  return (item) => (item.source === 'local'
+    ? sameRepo(item.identity, identity)
+    : sameRepo(`github.com/${item.labels.repo}`, identity) && inCurrentEpoch({ item, epoch }))
+}
+
+/**
+ * The items a command may see (spec §5). Inside a git checkout, whatever the session, only that
+ * checkout's repo's: another repo's item reads exactly as an unknown rid, so no list or lookup
+ * shows it. Outside any checkout, every item.
+ */
+const visibleItems = ({ config, env, cwd }) => {
+  const items = viewItems({ config, env })
+  const inRepo = repoScope({ config, env, cwd })
+  return inRepo === null ? items : items.filter(inRepo)
+}
+
+const nouns = { [todoChannel]: 'todo', [workChannel]: 'work item' }
+const listCommands = { [todoChannel]: 'devchat todo list', [workChannel]: 'devchat work list' }
+
+const threadItem = ({ items, noun, env }) => {
+  const thread = env.T3CODE_THREAD_ID
+  if (!thread) throw new UsageError(`give the ${noun} rid: without one, devchat looks for this T3 thread's open ${noun}, and T3CODE_THREAD_ID is not set`)
+  const ofThread = items.filter((item) => isOpen(item) && item.labels.thread === thread)
+  if (ofThread.length === 1) return ofThread[0]
+  throw new UsageError(ofThread.length === 0
+    ? `no open ${noun} belongs to this T3 thread: give its rid`
+    : `${ofThread.length} open ${noun}s belong to this T3 thread: give one rid of ${ofThread.map(({ rid }) => rid).join(', ')}`)
+}
+
+/**
+ * Finds the item a command names, in this machine's view of the configured board and `local/`:
+ * by its rid or a prefix unique among all of them, or, for a work item named by neither, the open
+ * one whose `thread` is this T3 thread (`T3CODE_THREAD_ID`, F24). A resolve names only open items.
+ * A rid this machine has not seen names nothing: run sync first. The argument may be anything the
+ * agent pasted, so no error prints it.
+ */
+const findTarget = ({ prefix, channel, openOnly = false, config, env, cwd }) => {
+  const noun = nouns[channel]
+  const items = visibleItems({ config, env, cwd }).filter((item) => item.channel === channel)
+  if (prefix === undefined) return threadItem({ items, noun, env })
+  if (!ridPattern.test(prefix)) throw new UsageError(`the ${noun} rid is not a devchat rid: it holds letters, digits, and . _ : - only`)
+  const exact = items.filter((item) => item.rid === prefix)
+  const matches = exact.length > 0 ? exact : items.filter((item) => item.rid.startsWith(prefix))
+  if (matches.length > 1) throw new UsageError(`that rid prefix matches ${matches.length} ${noun}s: ${matches.map(({ rid }) => rid).join(', ')}`)
+  if (matches.length === 0) throw new UsageError(`no ${noun} on this machine has that rid: run devchat sync, or find it with ${listCommands[channel]}`)
+  if (openOnly && !isOpen(matches[0])) throw new UsageError(`${matches[0].rid} is already resolved`)
+  return matches[0]
+}
+
+/**
+ * Checks that this session may write on a board item, and returns the router's decision. The
+ * item's repo and epoch need no check here: `findTarget` sees only this repo's items of the
+ * configured board's current epoch. Nothing about the item prints before this passes.
+ */
+const boardWriteTo = ({ target, config, env, cwd }) => {
+  const decision = routeHere({ config, env, cwd })
+  if (decision.target !== 'board') throw new UsageError(`${target.rid} is on the board, and this session's writes stay on this machine (${decision.reason}). Nothing was saved.`)
+  return decision
+}
+
+/**
+ * Writes one reply, `fields` without `v`, `rid`, `by`, and `root`, on `target`. An item kept on
+ * this machine folds it into its `local/` record. A board item takes it as an intent queued under
+ * the item's epoch, which needs `boardWriteTo` to pass: anything else saves nothing.
+ */
+const writeReply = async ({ target, fields, config, env, cwd, out }) => {
+  const intent = { ...fields, root: target.rid }
+  if (target.source === 'local') {
+    const rid = newRid(fields.kind)
+    const now = new Date().toISOString()
+    const { source, ...item } = foldReply(target, { labels: postLabelsOf({ ...intent, rid, by: profileOf(config.machine) }), text: replyTextOf(intent), createdAt: now })
+    writeJsonAtomic(join(localDir(env), `${target.rid}.json`), { ...item, updatedAt: now })
+    out(`${rid}: saved on this machine only (${target.rid} is kept on this machine)`)
+    return
+  }
+  const decision = boardWriteTo({ target, config, env, cwd })
+  const { rid, name } = queueIntent({ fields: intent, repo: decision.repo, epoch: target.epoch, config, env })
+  out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
+  out(`${rid}: ${await syncAfterWrite({ config, env, name, repo: decision.repo, out })}`)
+}
+
+// The repo `--pr <number>` names: a board item's `repo`, or a local item's github.com repo.
+const repoOfItem = (item) => item.labels.repo ?? /^github\.com\/([^/]+\/[^/]+)$/u.exec(item.identity ?? '')?.[1]
+
+// Pending replies (spec §13, pickup): for each pending item one line with the call that answers
+// every unanswered message, `--re <turn>`, then the messages, cut short.
+
+const oneLine = (text, max) => {
+  const flat = text.replace(/\s+/gu, ' ').trim()
+  return flat.length > max ? `${flat.slice(0, max - 1)}…` : flat
+}
+
+const replyCall = (item) => `devchat work note ${item.rid} --re ${item.labels.turn} "<what you did, or the next question>"`
+const answerCall = (item) => `Answer it: ${replyCall(item)}`
+
+const changedNote = 'changed since the last sync: run devchat sync, then answer it'
+
+/** The one line pickup always prints for a pending item: its rid, its goal, and the call, or why it has none yet. */
+const pendingSummary = (item) => `${item.rid}  ${oneLine(item.text, 48)}  ${item.changed ? changedNote : `answer: ${replyCall(item)}`}`
+
+/** A pending item's unanswered messages, each with the question it answers, cut short. */
+const pendingReplies = (item) => {
+  if (item.changed) return []
+  const asks = new Map((item.replies ?? []).filter(({ labels }) => labels.kind === 'ask').map((reply) => [reply.labels.rid, reply]))
+  return unansweredOf(item).flatMap((reply) => [
+    ...(asks.has(reply.labels.re) ? [`  you asked: ${oneLine(asks.get(reply.labels.re).text, 100)}`] : []),
+    `  the user replied: ${oneLine(reply.text, 120)}`,
+  ])
+}
+
+const pendingLines = (item) => [
+  pendingSummary(item),
+  ...pendingReplies(item),
+  `  Read them whole: devchat work show ${item.rid}`,
+]
+
+// The intents the app refused for the configured board, which sync moved to `rejected/` with
+// their reason code.
+const refusedReplies = ({ config, env }) => {
+  const snapshot = currentSnapshot({ config, env })
+  return outboxNames(rejectedDir(env)).flatMap((name) => {
+    const { entry } = readOutboxEntry(join(rejectedDir(env), name))
+    const intent = intentOfEntry(entry)
+    return intent?.root !== undefined && isString(entry.refused) && ofThisBoard({ entry, config, snapshot }) ? [{ intent, reason: entry.refused }] : []
+  })
+}
+
+const contextBudget = 1024
+// Room kept for the line that says how much did not fit.
+const moreLineBytes = 80
+
+/**
+ * The lines of `sections` that fit in 1 KB, in order. A block shows whole or not at all, and once
+ * one does not fit, nothing after it shows, so a cut never splits a call or reorders the list. A
+ * section marked `always` shows whatever its size: it holds the calls that answer waiting replies.
+ */
+const fitSections = (sections) => {
+  const lines = []
+  let used = 0
+  let omitted = 0
+  for (const { header, blocks, always = false } of sections) {
+    let headed = false
+    for (const block of blocks) {
+      const candidate = headed ? block : [header, ...block]
+      const size = candidate.reduce((sum, line) => sum + Buffer.byteLength(line) + 1, 0)
+      if (!always && (omitted > 0 || used + size > contextBudget - moreLineBytes)) {
+        omitted += 1
+        continue
+      }
+      lines.push(...candidate)
+      used += size
+      headed = true
+    }
+  }
+  if (omitted > 0) lines.push(`${omitted} more not shown: devchat work list, devchat todo list`)
+  return lines
+}
+
+const flagOf = (item) => {
+  if (isPending(item)) return '[reply waiting] '
+  if (item.labels.ask === 'open') return '[question open] '
+  return item.labels.status === 'blocked' ? '[blocked] ' : ''
+}
+
+/**
+ * What `work start` prints about this repo (spec §4), in at most 1 KB: first one line per pending
+ * item with the call that answers it, and any reply the app refused while it waited, whatever
+ * their size; then the waiting messages, cut short; then open work items; then open todos. A board
+ * item is this repo's by its `repo` label, a local one by its identity.
+ */
+const startContext = ({ config, env, cwd, exclude }) => {
+  const inRepo = repoScope({ config, env, cwd }) ?? (() => false)
+  const open = viewItems({ config, env }).filter(inRepo).filter((item) => item.rid !== exclude && isOpen(item))
+  const work = open.filter(({ channel }) => channel === workChannel)
+  const pending = work.filter(isPending)
+  const refusals = refusedReplies({ config, env })
+  const notesFor = (item) => refusals
+    .filter(({ intent }) => intent.root === item.rid)
+    .map(({ intent, reason }) => `  not applied: ${intent.rid} (${intent.kind}), refused: ${reason}`)
+  const lines = fitSections([
+    { header: 'Replies waiting for you; answer each with its call:', blocks: pending.map((item) => [pendingSummary(item), ...notesFor(item)]), always: true },
+    { header: 'What the user replied, cut short; devchat work show <rid> prints it whole:', blocks: pending.filter((item) => !item.changed).map((item) => [`${item.rid}:`, ...pendingReplies(item)]) },
+    { header: 'Open work items here; add a note with devchat work note <rid> "<text>":', blocks: work.filter((item) => !isPending(item)).map((item) => [`${item.rid}  ${flagOf(item)}${oneLine(item.text, 80)}`]) },
+    { header: 'Open todos here:', blocks: open.filter(({ channel }) => channel === todoChannel).map((item) => [`${item.rid}  ${oneLine(item.text, 80)}`]) },
+  ])
+  return lines.length > 0 ? lines : ['Nothing else is open in this repo.']
+}
+
+const parseCommand = ({ args, options = {}, usage }) => {
+  try {
+    return parseArgs({ args, options, allowPositionals: true, strict: true })
+  } catch {
+    throw new UsageError(usage)
+  }
+}
+
+// Work commands
+
+const workStart = async ({ args, env, cwd, out }) => {
+  const usage = 'usage: devchat work start "<goal>" [--issue <ref>]'
+  const { values, positionals } = parseCommand({ args, options: { issue: { type: 'string' } }, usage })
+  if (positionals.length !== 1) throw new UsageError(usage)
+  const text = requireText(positionals[0], 'goal')
+  // The T3 thread that starts the item (F24): a later call without a rid finds the item by it.
+  const thread = env.T3CODE_THREAD_ID ? requireLabel({ value: env.T3CODE_THREAD_ID, name: 'T3CODE_THREAD_ID' }) : undefined
+  const config = readConfig(env)
+  const decision = routeHere({ config, env, cwd })
+  const issue = values.issue === undefined ? undefined : requireIssue({ value: values.issue, board: decision.target === 'board', config })
+  let rid
+  if (decision.target === 'board') {
+    const queued = queueIntent({ fields: { kind: 'work', channel: workChannel, text, repo: decision.repo, machine: config.machine, thread, issue }, repo: decision.repo, config, env })
+    rid = queued.rid
+    out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
+    out(`${rid}: ${await syncAfterWrite({ config, env, name: queued.name, repo: decision.repo, out })}`)
+  } else {
+    rid = saveLocalRoot({ kind: 'work', text, labels: { thread, issue }, identity: scopeIdentityOf({ cwd, env }), config, env })
+    out(`${rid}: saved on this machine only (${decision.reason})`)
+  }
+  for (const line of startContext({ config, env, cwd, exclude: rid })) out(line)
+}
+
+const workNote = async ({ args, env, cwd, out }) => {
+  const usage = 'usage: devchat work note [<rid>] "<text>" [--pr <url>] [--ask|--blocked] [--re <id>]'
+  const options = { pr: { type: 'string' }, ask: { type: 'boolean' }, blocked: { type: 'boolean' }, re: { type: 'string' } }
+  const { values, positionals } = parseCommand({ args, options, usage })
+  if (positionals.length < 1 || positionals.length > 2 || (values.ask && values.blocked)) throw new UsageError(usage)
+  const question = values.ask || values.blocked
+  if (question && values.pr !== undefined) throw new UsageError('--pr goes on a plain note, not on a question')
+  const [prefix, text] = positionals.length === 2 ? positionals : [undefined, positionals[0]]
+  const fields = {
+    kind: question ? 'ask' : 'note',
+    text: requireText(text, 'note'),
+    re: values.re === undefined ? undefined : requireRid({ value: values.re, name: '--re' }),
+    block: values.blocked ? 1 : undefined,
+  }
+  const config = readConfig(env)
+  const target = findTarget({ prefix, channel: workChannel, config, env, cwd })
+  if (values.pr !== undefined) fields.pr = requirePr({ value: values.pr, repo: repoOfItem(target), board: target.source !== 'local', config })
+  await writeReply({ target, fields, config, env, cwd, out })
+  // While a reply is pending, a note that does not name `turn` is stored and changes nothing (spec §2).
+  if (isPending(target) && fields.re !== target.labels.turn) {
+    out(`${target.rid} waits on a reply from the user, so this ${intentNouns[fields.kind]} changes nothing there until you answer it:`)
+    for (const line of pendingLines(target)) out(line)
+  }
+}
+
+const workResolve = (kind) => async ({ args, env, cwd, out }) => {
+  const usage = `usage: devchat work ${kind} ${kind === 'done' ? '[<rid>]' : '<rid>'} [--re <id>]`
+  const { values, positionals } = parseCommand({ args, options: { re: { type: 'string' } }, usage })
+  if (positionals.length > 1 || (kind === 'drop' && positionals.length !== 1)) throw new UsageError(usage)
+  const re = values.re === undefined ? undefined : requireRid({ value: values.re, name: '--re' })
+  const config = readConfig(env)
+  const target = findTarget({ prefix: positionals[0], channel: workChannel, openOnly: true, config, env, cwd })
+  if (target.source !== 'local') boardWriteTo({ target, config, env, cwd })
+  // While the view shows a pending reply, a resolve without `re` sends nothing: the app would
+  // refuse it, and the user's message would wait unseen (spec §4).
+  if (isPending(target) && re === undefined) {
+    out(`${target.rid} waits on a reply from the user, so work ${kind} sent nothing:`)
+    for (const line of pendingLines(target)) out(line)
+    if (!target.changed) out(`  Then resolve it: devchat work ${kind} ${target.rid} --re ${target.labels.turn}`)
+    return 1
+  }
+  await writeReply({ target, fields: { kind, text: '', re }, config, env, cwd, out })
+  return 0
+}
+
+const workList = ({ args, env, cwd, out }) => {
+  if (args.length > 0) throw new UsageError('usage: devchat work list')
+  const open = visibleItems({ config: readConfig(env), env, cwd }).filter((item) => item.channel === workChannel && isOpen(item))
+  if (open.length === 0) {
+    out('No open work items.')
+    return
+  }
+  for (const item of open) out(`${item.rid}  ${item.createdAt.slice(0, 10)}  ${item.source.padEnd(6)}  ${flagOf(item)}${item.text}`)
+}
+
+// Shows what this machine knows of a work item, replies in full: the snapshot keeps replies only
+// while one is pending, and a local item keeps all of its own.
+const workShow = ({ args, env, cwd, out }) => {
+  if (args.length !== 1) throw new UsageError('usage: devchat work show <rid>')
+  const item = findTarget({ prefix: args[0], channel: workChannel, config: readConfig(env), env, cwd })
+  const { status = 'open', repo, issue } = item.labels
+  out(`${item.rid}  ${item.source}  ${status}${repo ? `  ${repo}` : ''}${issue ? `  issue ${issue}` : ''}`)
+  if (item.text) out(item.text)
+  // A changed item's replies are older than its thread: show none, and no call, until a sync.
+  if (item.changed) {
+    out(`This item ${changedNote}.`)
+    return
+  }
+  for (const reply of item.replies ?? []) out(`  ${reply.labels.by ?? 'unknown'} (${reply.labels.kind ?? 'reply'}): ${reply.text}`)
+  if (isPending(item)) out(answerCall(item))
+}
+
+const workCommands = { start: workStart, note: workNote, done: workResolve('done'), drop: workResolve('drop'), list: workList, show: workShow }
+
+const work = ({ args: [subcommand, ...args], ...context }) => {
+  if (!Object.hasOwn(workCommands, subcommand ?? '')) throw new UsageError('usage: devchat work start "<goal>" | note [<rid>] "<text>" | done [<rid>] | list | show <rid> | drop <rid>')
+  return workCommands[subcommand]({ args, ...context })
+}
+
 // Todo commands
 
 const todoAdd = async ({ args, env, cwd, out }) => {
@@ -893,44 +1560,18 @@ const todoAdd = async ({ args, env, cwd, out }) => {
   const config = readConfig(env)
   const decision = routeHere({ config, env, cwd })
   if (decision.target !== 'board') {
-    out(`${saveLocalTodo({ text, config, env })}: saved on this machine only (${decision.reason})`)
+    out(`${saveLocalRoot({ kind: 'todo', text, identity: scopeIdentityOf({ cwd, env }), config, env })}: saved on this machine only (${decision.reason})`)
     return 0
   }
-  const { rid, name } = queueTodo({ text, repo: decision.repo, config, env })
+  const { rid, name } = queueIntent({ fields: { kind: 'todo', channel: todoChannel, text, repo: decision.repo, machine: config.machine }, repo: decision.repo, config, env })
   out(`${rid}: saved to the board (${decision.repo}) through the outbox`)
-  out(`${rid}: ${await syncAfterWrite({ config, env, name, out })}`)
+  out(`${rid}: ${await syncAfterWrite({ config, env, name, repo: decision.repo, out })}`)
   return 0
 }
 
-// The todo intents this machine queued or sent that the app has not decided yet, one per rid. A
-// rid in both folders, after a crash or two flushers, shows its `sent/` copy.
-const outstandingTodos = (env) => {
-  const seen = new Set()
-  return [
-    ...sentNames(env).map((name) => ({ path: join(sentDir(env), name), source: 'sent' })),
-    ...pendingOutbox(env).map((name) => ({ path: join(outboxDir(env), name), source: 'queued' })),
-  ].flatMap(({ path, source }) => {
-    const { entry } = readOutboxEntry(path)
-    const intent = isString(entry?.body) ? parseJson(parseJson(entry.body)?.text) : undefined
-    if (!isRecord(intent) || intent.kind !== 'todo' || ![intent.rid, intent.text, entry.queuedAt].every(isString) || seen.has(intent.rid)) return []
-    seen.add(intent.rid)
-    return [{ rid: intent.rid, channel: todoChannel, text: intent.text, labels: { status: 'open' }, createdAt: entry.queuedAt, source }]
-  })
-}
-
-// The offline view of board todos (spec §3): the snapshot's, then outstanding ones it lacks.
-const boardTodos = (env) => {
-  const pulled = (readSnapshot(env)?.items ?? []).filter((item) => item.channel === todoChannel).map((item) => ({ ...item, source: 'board' }))
-  const pulledRids = new Set(pulled.map(({ rid }) => rid))
-  return [...pulled, ...outstandingTodos(env).filter(({ rid }) => !pulledRids.has(rid))]
-}
-
-const todoList = ({ args, env, out }) => {
+const todoList = ({ args, env, cwd, out }) => {
   if (args.length > 0) throw new UsageError('usage: devchat todo list')
-  const local = readLocalTodos(env).map((item) => ({ ...item, source: 'local' }))
-  // Mode off has no board, so it lists `local/` only (spec §3).
-  const board = readConfig(env).mode === 'off' ? [] : boardTodos(env)
-  const open = [...board, ...local].filter(isOpen).sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+  const open = visibleItems({ config: readConfig(env), env, cwd }).filter((item) => item.channel === todoChannel && isOpen(item))
   if (open.length === 0) {
     out('No open todos.')
     return
@@ -938,15 +1579,15 @@ const todoList = ({ args, env, out }) => {
   for (const item of open) out(`${item.rid}  ${item.createdAt.slice(0, 10)}  ${item.source.padEnd(6)}  ${item.text}`)
 }
 
-const todoResolve = (status) => ({ args, env, out }) => {
-  if (args.length !== 1) throw new UsageError(`usage: devchat todo ${status === 'done' ? 'done' : 'drop'} <rid>`)
-  const item = findOpenTodo({ prefix: args[0], env })
-  const updated = { ...item, labels: { ...item.labels, status }, updatedAt: new Date().toISOString() }
-  writeJsonAtomic(join(localDir(env), `${item.rid}.json`), updated)
-  out(`${item.rid}: ${status} on this machine only`)
+// A todo on this machine resolves in its record; a board todo through a resolve intent.
+const todoResolve = (kind) => async ({ args, env, cwd, out }) => {
+  if (args.length !== 1) throw new UsageError(`usage: devchat todo ${kind} <rid>`)
+  const config = readConfig(env)
+  const target = findTarget({ prefix: args[0], channel: todoChannel, openOnly: true, config, env, cwd })
+  await writeReply({ target, fields: { kind, text: '' }, config, env, cwd, out })
 }
 
-const todoCommands = { add: todoAdd, list: todoList, done: todoResolve('done'), drop: todoResolve('dropped') }
+const todoCommands = { add: todoAdd, list: todoList, done: todoResolve('done'), drop: todoResolve('drop') }
 
 const todo = ({ args: [subcommand, ...args], ...context }) => {
   if (!Object.hasOwn(todoCommands, subcommand ?? '')) throw new UsageError('usage: devchat todo add "<text>" | list | done <rid> | drop <rid>')
@@ -1316,13 +1957,13 @@ const setup = async ({ args, env, cwd, out }) => {
   return doctor({ args: [], env, cwd, out })
 }
 
-const commands = { todo, guard, doctor, sync, setup }
+const commands = { work, todo, guard, doctor, sync, setup }
 
 /** Runs one CLI invocation and returns its exit code. */
 const main = async ({ argv, env = process.env, cwd = process.cwd(), out = (line) => process.stdout.write(`${line}\n`), stdin = () => readFileSync(0, 'utf8') }) => {
   const [command, ...args] = argv
   try {
-    if (!Object.hasOwn(commands, command ?? '')) throw new UsageError('usage: devchat <todo|sync|doctor|setup|guard> ...')
+    if (!Object.hasOwn(commands, command ?? '')) throw new UsageError('usage: devchat <work|todo|sync|doctor|setup|guard> ...')
     return (await commands[command]({ args, env, cwd, out, stdin })) ?? 0
   } catch (error) {
     if (!(error instanceof UsageError)) throw error

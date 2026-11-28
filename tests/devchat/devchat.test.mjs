@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict'
 import { execFileSync, spawn, spawnSync } from 'node:child_process'
+import { randomUUID } from 'node:crypto'
 import { chmodSync, existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, readlinkSync, realpathSync, rmSync, symlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { createServer, request } from 'node:http'
 import { tmpdir } from 'node:os'
@@ -7,7 +8,7 @@ import { join } from 'node:path'
 import { after, before, beforeEach, test } from 'node:test'
 import { fileURLToPath, pathToFileURL } from 'node:url'
 import { startBoardServer } from '@filipgutica/devchat/testing'
-import { agentCommands, route } from '../../plugins/devchat/skills/devchat/scripts/devchat.mjs'
+import { agentCommands, foldStep, route } from '../../plugins/devchat/skills/devchat/scripts/devchat.mjs'
 
 const repoRoot = fileURLToPath(new URL('../../', import.meta.url))
 const pluginRoot = join(repoRoot, 'plugins/devchat')
@@ -71,6 +72,9 @@ repos.rewrittenAway = makeRepo('rewritten-away', `git@github.com:${allowed}/tool
 execFileSync('git', ['-C', repos.rewrittenAway, 'config', 'url.git@git.example.test:.insteadOf', 'git@github.com:'])
 repos.allowedSsh = makeRepo('allowed-ssh', `ssh://git@github.com/${allowed}/notes.git`)
 repos.allowedSlash = makeRepo('allowed-slash', `https://github.com/${allowed}/notes/`)
+// A rewrite that changes only the case of the owner names the same repository.
+repos.rewrittenCase = makeRepo('rewritten-case', `git@github.com:${allowed}/notes.git`)
+execFileSync('git', ['-C', repos.rewrittenCase, 'config', `url.git@github.com:${allowed.toUpperCase()}/.insteadOf`, `git@github.com:${allowed}/`])
 
 // A fresh home per test, with no session key inherited from the harness running the tests.
 let home
@@ -211,7 +215,7 @@ test('only a github.com remote in a supported form is an allowlisted identity', 
   writeConfig(readwrite)
   startSession({ key: 'k', cwd: repos.allowed })
   const routeIn = (cwd) => devchat({ args: ['doctor'], cwd, sessionEnv: { CLAUDE_CODE_SESSION_ID: 'k' } }).stdout.match(/route here: (.*)/u)[1]
-  for (const cwd of [repos.allowedSsh, repos.allowedSlash, repos.allowedHttps]) assert.equal(routeIn(cwd), `board (${allowed}/notes)`, cwd)
+  for (const cwd of [repos.allowedSsh, repos.allowedSlash, repos.allowedHttps, repos.rewrittenCase]) assert.equal(routeIn(cwd), `board (${allowed}/notes)`, cwd)
   for (const [index, name] of Object.keys(lookalikes).entries()) {
     assert.equal(routeIn(repos[`lookalike${index}`]), 'this machine only (the working directory is not an allowlisted repo)', name)
   }
@@ -329,7 +333,7 @@ test('mode off runs every skill and admin command on this machine', () => {
   writeConfig({ mode: 'off', githubLogin: allowed })
   startSession({ key: 'k', cwd: repos.allowed })
   const sessionEnv = { CLAUDE_CODE_SESSION_ID: 'k' }
-  assert.deepEqual(agentCommands, ['todo add'])
+  assert.deepEqual(agentCommands, ['work start', 'work note', 'work done', 'todo add'])
 
   const add = devchat({ args: ['todo', 'add', 'Rotate the staging deploy key.'], sessionEnv })
   assert.equal(add.status, 0, add.stderr)
@@ -348,6 +352,22 @@ test('mode off runs every skill and admin command on this machine', () => {
   assert.deepEqual(localTodos().map(({ labels }) => labels.status).sort(), ['done', 'dropped'])
   assert.match(devchat({ args: ['todo', 'list'] }).stdout, /No open todos\./u)
   assert.equal(devchat({ args: ['todo', 'done', first.rid] }).status, 1, 'a resolved todo is not open')
+
+  const start = devchat({ args: ['work', 'start', 'Ship the export fix.', '--issue', '#12'], sessionEnv: { ...sessionEnv, T3CODE_THREAD_ID: 't3-local' } })
+  assert.equal(start.status, 0, start.stderr)
+  const item = start.stdout.match(/^(work-[a-z0-9-]+): saved on this machine only \(mode off\)$/mu)?.[1]
+  assert.ok(item, start.stdout)
+  const asked = devchat({ args: ['work', 'note', 'Which format? I recommend CSV.', '--blocked'], sessionEnv: { ...sessionEnv, T3CODE_THREAD_ID: 't3-local' } })
+  assert.equal(asked.status, 0, asked.stderr)
+  assert.match(devchat({ args: ['work', 'list'] }).stdout, new RegExp(`^${item} {2}\\d{4}-\\d{2}-\\d{2} {2}local {3}\\[question open\\] Ship the export fix\\.$`, 'mu'))
+  assert.equal(devchat({ args: ['work', 'note', item.slice(0, -2), 'The PR is up.', '--pr', 'https://github.com/example-owner/tools/pull/7'], sessionEnv }).status, 0)
+  const show = devchat({ args: ['work', 'show', item] })
+  assert.match(show.stdout, /local {2}open {2}issue #12\nShip the export fix\.\n.*\(ask\): Which format\? I recommend CSV\.\n.*\(note\): The PR is up\./u)
+  const stored = localTodos().find(({ rid }) => rid === item)
+  assert.deepEqual(stored.labels, { rid: item, status: 'open', host: stored.labels.host, thread: 't3-local', issue: '#12', 'pr.7': 'https://github.com/example-owner/tools/pull/7' })
+  assert.equal(devchat({ args: ['work', 'done'], sessionEnv: { ...sessionEnv, T3CODE_THREAD_ID: 't3-local' } }).status, 0)
+  assert.match(devchat({ args: ['work', 'list'] }).stdout, /No open work items\./u)
+  assert.equal(devchat({ args: ['work', 'drop', item] }).status, 1, 'a resolved item takes no resolve')
 
   const doctor = devchat({ args: ['doctor'], sessionEnv })
   assert.equal(doctor.status, 0, doctor.stdout)
@@ -476,12 +496,12 @@ const asOwner = async ({ path, method = 'GET', body }) => {
 // Posts as host setup and the app do: through Board's Node handle, as the board's owner. Board
 // then keys the post's thread by a hash, so no other reader sees its client ID.
 const devchatPackage = realpathSync(fileURLToPath(new URL('../../node_modules/@filipgutica/devchat/', import.meta.url)))
-const postAsHost = ({ channel, ...post }) => {
+const postAsHost = ({ on = board, channel, ...post }) => {
   const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
     const { board } = await import('@vercel/board')
     const posted = await board().post(${JSON.stringify(channel)}, ${JSON.stringify(post)})
     process.stdout.write(JSON.stringify(posted.message ?? posted))
-  `], { cwd: devchatPackage, encoding: 'utf8', env: { ...process.env, XDG_CONFIG_HOME: board.configHome, BOARD_URL: board.url, BOARD_TOKEN: '', BOARD_PROFILE: '' } })
+  `], { cwd: devchatPackage, encoding: 'utf8', env: { ...process.env, XDG_CONFIG_HOME: on.configHome, BOARD_URL: on.url, BOARD_TOKEN: '', BOARD_PROFILE: '' } })
   assert.equal(result.status, 0, result.stderr)
   return JSON.parse(result.stdout)
 }
@@ -528,11 +548,11 @@ before(async () => {
 })
 const boardSession = { CLAUDE_CODE_SESSION_ID: 'board-session' }
 
-/** A Claude Code session started in an allowlisted repo, in mode readwrite, against the proxy or an offline URL. */
-const joinBoard = ({ mode = 'readwrite', boardUrl = proxy.url, machineName = machine } = {}) => {
-  proxy.requests = []
-  proxy.fault = () => null
-  proxy.onRequest = () => {}
+/** A Claude Code session started in an allowlisted repo, in mode readwrite, against a proxy (`via`) or an offline URL. */
+const joinBoard = ({ via = proxy, mode = 'readwrite', boardUrl = via.url, machineName = machine } = {}) => {
+  via.requests = []
+  via.fault = () => null
+  via.onRequest = () => {}
   writeConfig({ ...readwrite, mode, machine: machineName, boardUrl })
   if (!existsSync(join(stateDir(), 'sessions'))) startSession({ key: boardSession.CLAUDE_CODE_SESSION_ID, cwd: repos.allowed })
 }
@@ -604,7 +624,7 @@ test('a board write queues one label-free inbox intent, and the post-write sync 
   assert.equal(readJson(join(stateDir(), 'snapshot.json')).applied, null, 'no cursor yet')
   const applied = await applyInbox()
   mkdirSync(localDir(), { recursive: true })
-  writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  writeFileSync(join(localDir(), 'note.json'), JSON.stringify({ rid: 'todo-local-1', channel: 'todos', text: 'Water the plants.', identity: `github.com/${allowed}/tools`, labels: { rid: 'todo-local-1', status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
   await syncOk()
   const snapshot = readJson(join(stateDir(), 'snapshot.json'))
   assert.equal(snapshot.schema, 1)
@@ -1028,18 +1048,23 @@ test('denied input and local routes make zero outbound requests, the post-write 
   assert.deepEqual(filesIn('outbox'), [])
 })
 
+/** The queued outbox file at `index`, its intent, and a copy of it carrying another intent. */
+const queuedFile = (index = 0) => {
+  const entry = readJson(join(stateDir(), 'outbox', filesIn('outbox')[index]))
+  const intent = JSON.parse(JSON.parse(entry.body).text)
+  const withIntent = (changed, raw = JSON.stringify(changed)) => ({ ...entry, body: JSON.stringify({ channel: 'inbox', id: intent.rid, text: raw }) })
+  return { entry, intent, withIntent }
+}
+
 test('the check at flush sends only what the router queued, byte for byte', async () => {
   const [rid] = await queueOffline(['A real todo.'])
-  const [name] = filesIn('outbox')
-  const entry = readJson(join(stateDir(), 'outbox', name))
-  const intent = JSON.parse(JSON.parse(entry.body).text)
-  const withIntent = (changed, raw = JSON.stringify(changed)) => ({ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: raw }) })
+  const { entry, intent, withIntent } = queuedFile()
   const planted = {
     'a direct todos post': [{ ...entry, body: JSON.stringify({ channel: 'todos', id: rid, text: 'x' }) }, 'the request is not an inbox post'],
     'a repo off the allowlist': [{ ...withIntent({ ...intent, repo: 'other-owner/service' }), repo: 'other-owner/service' }, 'the source repo is not on the allowlist'],
     'guarded text': [withIntent({ ...intent, text: 'password=hunter2' }), 'the guard refused an outbound field'],
-    'an extra intent field': [withIntent({ ...intent, status: 'done' }), 'the intent is not a release 1 todo'],
-    'a string version': [withIntent({ ...intent, v: '1' }), 'the intent is not a release 1 todo'],
+    'an extra intent field': [withIntent({ ...intent, status: 'done' }), 'the intent is not a release 1 intent'],
+    'a string version': [withIntent({ ...intent, v: '1' }), 'the intent is not a release 1 intent'],
     'a mismatched id': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: 'other', text: JSON.stringify(intent) }) }, 'the intent rid does not match the post id'],
     'labels on the post': [{ ...entry, body: JSON.stringify({ channel: 'inbox', id: rid, text: JSON.stringify(intent), labels: { status: 'done' } }) }, 'the request is not an inbox post'],
     'a credential-shaped ID': [{ ...entry, target: 'AKIAABCDEFGHIJKLMNOP', body: JSON.stringify({ channel: 'inbox', id: 'AKIAABCDEFGHIJKLMNOP', text: JSON.stringify({ ...intent, rid: 'AKIAABCDEFGHIJKLMNOP' }) }) }, 'the guard refused an outbound field'],
@@ -1264,4 +1289,811 @@ test('setup stops before enabling the timer when an earlier step fails', { skip:
   assert.match(run.stdout, /FAIL systemctl --user daemon-reload failed .*\nsetup stopped: the steps after this one did not run\n$/u)
   assert.deepEqual(readFileSync(join(home, 'systemctl.log'), 'utf8').split('\n').filter(Boolean), ['--user daemon-reload'], 'enable never ran')
   assert.doesNotMatch(run.stdout, /devchat doctor:/u)
+})
+
+test("the client fold gives devchat's fold fixture, row by row", () => {
+  const fixture = readJson(join(devchatPackage, 'fixtures/fold.json'))
+  assert.ok(fixture.length > 0)
+  for (const { name, steps: [root, ...replies] } of fixture) {
+    let labels = { ...root.post.labels, status: 'open' }
+    assert.deepEqual(labels, root.rootLabels, `${name}: root`)
+    for (const [index, { post, rootLabels }] of replies.entries()) {
+      labels = foldStep(labels, post.labels)
+      assert.deepEqual(labels, rootLabels, `${name}: step ${index + 1}`)
+    }
+  }
+  // The fixture has no resolve the pending guard stops, since ingest refuses one; the offline view folds it.
+  const pending = { rid: 'work-1', status: 'open', ask: 'answered', turn: 'answer-2' }
+  for (const re of [undefined, 'answer-1']) assert.deepEqual(foldStep(pending, { rid: 'done-1', by: 'agent', kind: 'done', re }), pending, `a resolve with re ${re}`)
+  assert.deepEqual(foldStep(pending, { rid: 'done-1', by: 'agent', kind: 'done', re: 'answer-2' }), { rid: 'work-1', status: 'done' })
+})
+
+test('work start prints at most 1 KB of context, whole items only', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  for (let index = 0; index < 12; index += 1) {
+    assert.equal(devchat({ args: ['work', 'start', `Item ${index}: ${'a long goal that fills the budget '.repeat(3)}`] }).status, 0)
+  }
+  assert.equal(devchat({ args: ['todo', 'add', 'Elsewhere.'], cwd: repos.other }).status, 0)
+  const start = devchat({ args: ['work', 'start', 'One more.'] })
+  assert.equal(start.status, 0, start.stderr)
+  const [, ...context] = start.stdout.trimEnd().split('\n')
+  assert.ok(Buffer.byteLength(context.join('\n')) <= 1024, `${Buffer.byteLength(context.join('\n'))} bytes`)
+  assert.equal(context[0], 'Open work items here; add a note with devchat work note <rid> "<text>":')
+  assert.match(context.at(-1), /^\d+ more not shown: devchat work list, devchat todo list$/u)
+  assert.ok(context.slice(1, -1).every((line) => /^work-[a-z0-9-]+ {2}Item \d+: /u.test(line)), 'whole item lines, oldest first')
+  assert.doesNotMatch(start.stdout, /One more\.|Elsewhere\./u, 'neither the new item nor another repo\'s todo')
+})
+
+// Work commands against devchat's real state writer, on a board of their own: the writer's first
+// pass ingests `inbox` from the start, and must not meet the todos the tests above applied by hand.
+let workBoard
+let workProxy
+let workMarker
+const writerState = join(root, 'writer-state.json')
+before(async () => {
+  mkdirSync(join(root, 'work-board'))
+  workBoard = await startBoardServer({ directory: join(root, 'work-board') })
+  workProxy = await startTailnetProxy(workBoard.url)
+  workMarker = postAsHost({ on: workBoard, channel: 'sys', id: 'board', text: 'devchat board marker', labels: { epoch: '1' } })
+})
+after(async () => {
+  workProxy?.close()
+  await workBoard?.stop()
+})
+
+// Runs `script` with the app's state writer (`createStateWriter`, from the package's built server
+// code: the package exports no app entry for tests) as the board's owner, as the host's app runs.
+const runWriter = (script) => {
+  const result = spawnSync(process.execPath, ['--input-type=module', '--eval', `
+    const { createStateWriter } = await import('./dist/server/writer.js')
+    const writer = createStateWriter({ settings: { allowlist: [${JSON.stringify(allowed)}], machines: {} }, stateFile: ${JSON.stringify(writerState)} })
+    ${script}
+  `], { cwd: devchatPackage, encoding: 'utf8', env: { ...process.env, XDG_CONFIG_HOME: workBoard.configHome, BOARD_URL: workBoard.url, BOARD_TOKEN: '', BOARD_PROFILE: '' } })
+  assert.equal(result.status, 0, result.stderr)
+  return result.stdout
+}
+/** One state writer pass: ingest `inbox`, write canonical posts, fold, move `applied`. */
+const writerPass = () => runWriter('await writer.pass()')
+/** The user's reply in a work thread, as the UI route writes it. Returns its rid. */
+const userReply = ({ item, re, text }) => {
+  const rid = `ui-${randomUUID()}`
+  const result = JSON.parse(runWriter(`process.stdout.write(JSON.stringify(await writer.writeUser(${JSON.stringify({ kind: 'answer', rid, root: item, re, text })})))`))
+  assert.equal(result.refused, undefined, `the UI write was refused: ${result.refused}`)
+  return rid
+}
+const ownerRead = async (path) => {
+  const response = await fetch(`${workBoard.url}${path}`, { headers: { authorization: `Bearer ${workBoard.ownerToken}` } })
+  assert.ok(response.ok, `GET ${path} answered ${response.status}`)
+  return response.json()
+}
+const rootLabels = async (rid) => (await ownerRead(`/threads?${new URLSearchParams({ channel: 'work', label: `rid=${rid}` })}`)).threads[0]?.message.labels
+
+// Each test works in a repo and a T3 thread of its own, because the board keeps the open items of
+// earlier tests, and `work start` shows this repo's.
+let thread
+let workRepo
+let workRepos = 0
+const joinWork = (options = {}) => {
+  workRepos += 1
+  thread = `t3-${randomUUID()}`
+  workRepo = makeRepo(`work-${workRepos}`, `git@github.com:${allowed}/work-${workRepos}.git`)
+  joinBoard({ via: workProxy, ...options })
+}
+const work = (args, options = {}) => devchatAsync({ args: ['work', ...args], cwd: workRepo, sessionEnv: { ...boardSession, T3CODE_THREAD_ID: thread }, ...options })
+const ridIn = (stdout, kind) => stdout.match(new RegExp(`^(${kind}-[a-z0-9-]+): saved`, 'mu'))?.[1]
+const sentIntents = () => workProxy.requests.filter(({ method }) => method === 'POST').map(({ body }) => JSON.parse(JSON.parse(body).text))
+const snapshotItem = (rid) => readJson(join(stateDir(), 'snapshot.json')).items.find((item) => item.rid === rid)
+const replyCallFor = (item, turn) => `devchat work note ${item} --re ${turn} "<what you did, or the next question>"`
+const answerCallFor = (item, turn) => `Answer it: ${replyCallFor(item, turn)}`
+/** The line `work start` always prints for a pending item. */
+const pickupLine = ({ item, turn, goal = 'Ship the export fix.' }) => `${item}  ${goal}  answer: ${replyCallFor(item, turn)}`
+
+/** A board work item whose question the user answered, written by the real writer, and synced here. */
+const answeredItem = async ({ goal = 'Ship the export fix.', answer = 'Use CSV.' } = {}) => {
+  const start = await work(['start', goal])
+  assert.equal(start.status, 0, start.stderr)
+  const item = ridIn(start.stdout, 'work')
+  const ask = ridIn((await work(['note', item, 'Which format? I recommend CSV.', '--ask'])).stdout, 'ask')
+  assert.ok(item && ask)
+  writerPass()
+  const reply = userReply({ item, re: ask, text: answer })
+  await syncOk()
+  return { item, ask, reply }
+}
+
+test('work start, note, and done send one label-free inbox intent each, with the fields of spec §2', async () => {
+  joinWork()
+  const start = await work(['start', 'Ship the export fix.', '--issue', 'example-owner/tools#12'])
+  assert.equal(start.status, 0, start.stderr)
+  const item = ridIn(start.stdout, 'work')
+  const repo = `${allowed}/work-${workRepos}`
+  assert.match(start.stdout, new RegExp(`^${item}: saved to the board \\(${repo}\\) through the outbox\n${item}: sent$`, 'mu'))
+  const pr = 'https://github.com/example-owner/tools/pull/12'
+  assert.equal((await work(['note', 'The draft is up.', '--pr', pr])).status, 0, 'the T3 thread names the item')
+  assert.equal((await work(['note', item.slice(0, -3), 'Which format? I recommend CSV.', '--ask', '--re', 'ui-0'])).status, 0, 'a unique prefix names it')
+  assert.equal((await work(['note', item, 'Blocked on access. I recommend asking the owner.', '--blocked'])).status, 0)
+  assert.equal((await work(['done', '--re', 'ui-0'])).status, 0)
+  const [workIntent, note, ask, blocked, done] = sentIntents()
+  const by = profile
+  assert.deepEqual(workIntent, { v: 1, rid: item, kind: 'work', channel: 'work', text: 'Ship the export fix.', by, repo, machine, thread, issue: 'example-owner/tools#12' })
+  assert.deepEqual(note, { v: 1, rid: note.rid, kind: 'note', root: item, text: 'The draft is up.', by, pr })
+  assert.deepEqual(ask, { v: 1, rid: ask.rid, kind: 'ask', root: item, text: 'Which format? I recommend CSV.', by, re: 'ui-0' })
+  assert.deepEqual(blocked, { v: 1, rid: blocked.rid, kind: 'ask', root: item, text: 'Blocked on access. I recommend asking the owner.', by, block: 1 })
+  assert.deepEqual(done, { v: 1, rid: done.rid, kind: 'done', root: item, text: '', by, re: 'ui-0' })
+  for (const { path, body } of workProxy.requests.filter(({ method }) => method === 'POST')) {
+    assert.equal(path, '/api/board/messages', 'the client writes only to /messages')
+    assert.deepEqual(Object.keys(JSON.parse(body)), ['channel', 'id', 'text'], 'no labels')
+    assert.equal(JSON.parse(body).channel, 'inbox', 'never todos, work, msg, or sched')
+  }
+
+  writerPass()
+  const labels = await rootLabels(item)
+  assert.deepEqual({ status: labels.status, issue: labels.issue, thread: labels.thread, pr: labels['pr.12'] }, { status: 'done', issue: 'example-owner/tools#12', thread, pr })
+})
+
+test('a sent intent stays in the offline view until applied covers it', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Wait for the app.'])).stdout, 'work')
+  assert.match((await work(['list'])).stdout, new RegExp(`^${item} {2}\\S+ {2}sent {4}Wait for the app\\.$`, 'mu'))
+  await syncOk()
+  assert.equal(snapshotItem(item), undefined, 'the app has not written it yet')
+  assert.match((await work(['list'])).stdout, new RegExp(`^${item} {2}\\S+ {2}sent `, 'mu'), 'still in the view, from sent/')
+  writerPass()
+  await syncOk()
+  assert.deepEqual(filesIn('outbox', 'sent'), [])
+  assert.match((await work(['list'])).stdout, new RegExp(`^${item} {2}\\S+ {2}board `, 'mu'))
+})
+
+test('with the network blocked, work start prints a pending reply with its --re call', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  assert.deepEqual(snapshotItem(item).labels.turn, reply)
+  const start = await work(['start', 'Another task.'], { preload: true })
+  assert.equal(start.status, 0, start.stderr)
+  assert.match(start.stdout, /: not sent yet \(the board is unreachable \(Error\)\): the next devchat sync sends it\n/u)
+  assert.ok(start.stdout.includes([
+    'Replies waiting for you; answer each with its call:',
+    pickupLine({ item, turn: reply }),
+    "What the user replied, cut short; devchat work show <rid> prints it whole:",
+    `${item}:`,
+    '  you asked: Which format? I recommend CSV.',
+    '  the user replied: Use CSV.',
+  ].join('\n')), start.stdout)
+  assert.deepEqual(networkCalls(), ['fetch'], 'only the post-write sync tried the board')
+})
+
+test('work done without --re while a reply is pending sends nothing; a resolve the app refuses is reported', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  const before = workProxy.requests.length
+  const done = await work(['done', item])
+  assert.equal(done.status, 1)
+  assert.match(done.stdout, new RegExp(`^${item} waits on a reply from the user, so work done sent nothing:$`, 'mu'))
+  assert.ok(done.stdout.includes(`${pickupLine({ item, turn: reply })}\n`), done.stdout)
+  assert.ok(done.stdout.includes(`  Read them whole: devchat work show ${item}\n  Then resolve it: devchat work done ${item} --re ${reply}\n`), done.stdout)
+  assert.equal(workProxy.requests.length, before, 'no request')
+  assert.deepEqual(filesIn('outbox'), [])
+
+  // A reply that arrives after this machine's last sync: the resolve goes, and the app refuses it.
+  const { item: late } = await answeredItem({ goal: 'A later reply.' })
+  const ask = ridIn((await work(['note', late, 'Anything else? I recommend no.', '--ask', '--re', snapshotItem(late).labels.turn])).stdout, 'ask')
+  writerPass()
+  await syncOk()
+  const newer = userReply({ item: late, re: ask, text: 'One more thing.' })
+  const resolve = await work(['done', late])
+  assert.equal(resolve.status, 0, resolve.stdout)
+  const resolveRid = ridIn(resolve.stdout, 'done')
+  writerPass()
+  const sync = await syncOk()
+  assert.match(sync.stdout, new RegExp(`^refused ${resolveRid}: pending$`, 'mu'))
+  assert.ok(sync.stdout.includes(`not applied: ${late} waits on a reply. ${answerCallFor(late, newer)}`), sync.stdout)
+  assert.equal((await rootLabels(late)).status, 'open')
+  const start = await work(['start', 'Next task.'])
+  assert.ok(start.stdout.includes(`${pickupLine({ item: late, turn: newer, goal: 'A later reply.' })}\n  not applied: ${resolveRid} (done), refused: pending\n`), start.stdout)
+})
+
+test('work note --re clears the reply; after a newer reply, that note clears nothing and the newer reply stays pending', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  const answered = await work(['note', item, 'Switched to CSV.', '--re', reply])
+  assert.doesNotMatch(answered.stdout, /waits on a reply/u)
+  assert.equal(snapshotItem(item).labels.ask, 'answered')
+  assert.match((await work(['list'])).stdout, new RegExp(`^${item} {2}\\S+ {2}board {3}Ship the export fix\\.$`, 'mu'), 'the queued note folds into the view')
+  writerPass()
+  assert.equal((await rootLabels(item)).ask, undefined, 'the writer clears ask')
+
+  // The same note, made offline against an older reply, reaches the writer after a newer one.
+  const { item: other, reply: older } = await answeredItem({ goal: 'An offline answer.' })
+  const offline = await work(['note', other, 'Done with CSV.', '--re', older], { preload: true })
+  assert.match(offline.stdout, /not sent yet/u)
+  const ask = (await rootLabels(other)).turn
+  assert.equal(ask, older)
+  const newer = userReply({ item: other, text: 'Also add a header row.' })
+  await syncOk()
+  writerPass()
+  assert.deepEqual({ ask: (await rootLabels(other)).ask, turn: (await rootLabels(other)).turn }, { ask: 'answered', turn: newer })
+  await syncOk()
+  const start = await work(['start', 'Pick up.'])
+  assert.ok(start.stdout.includes(pickupLine({ item: other, turn: newer, goal: 'An offline answer.' })), start.stdout)
+  assert.ok(start.stdout.includes(`${other}:\n  the user replied: Also add a header row.\n`), start.stdout)
+  assert.doesNotMatch(start.stdout, /the user replied: Use CSV\./u, 'the older reply is answered')
+})
+
+test('two user replies made while offline both print at work start, in order, and one --re note clears the item', async () => {
+  joinWork()
+  const { item, reply: first } = await answeredItem({ answer: 'Use CSV.' })
+  const second = userReply({ item, text: 'And gzip it.' })
+  await syncOk()
+  const start = await work(['start', 'Pick up both.'])
+  assert.ok(start.stdout.includes(pickupLine({ item, turn: second })), start.stdout)
+  assert.ok(start.stdout.includes(`${item}:\n  you asked: Which format? I recommend CSV.\n  the user replied: Use CSV.\n  the user replied: And gzip it.\n`), start.stdout)
+  assert.notEqual(first, second)
+  await work(['note', item, 'CSV, gzipped.', '--re', second])
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem(item).labels.ask, undefined)
+  const again = await work(['start', 'Again.'])
+  assert.match(again.stdout, new RegExp(`^${item} {2}Ship the export fix\\.$`, 'mu'), 'open, with no reply waiting')
+  assert.doesNotMatch(again.stdout, /Replies waiting/u)
+})
+
+test('the snapshot keeps the post turn names after four later notes', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem({ answer: 'Keep this one.' })
+  for (const text of ['One.', 'Two.', 'Three.', 'Four.']) {
+    const note = await work(['note', item, text])
+    assert.match(note.stdout, /waits on a reply from the user, so this note changes nothing there until you answer it:/u)
+  }
+  writerPass()
+  await syncOk()
+  const { labels, replies } = snapshotItem(item)
+  assert.equal(labels.turn, reply)
+  assert.deepEqual(replies.map(({ text }) => text), ['Which format? I recommend CSV.', 'Keep this one.', 'Two.', 'Three.', 'Four.'])
+  const start = await work(['start', 'Pick up.'], { preload: true })
+  assert.ok(start.stdout.includes(pickupLine({ item, turn: reply })), start.stdout)
+  assert.ok(start.stdout.includes(`  the user replied: Keep this one.\n`), start.stdout)
+})
+
+test('an item marked done offline leaves work start and work list before sync', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Finish offline.'])).stdout, 'work')
+  writerPass()
+  await syncOk()
+  assert.match((await work(['start', 'Look.'])).stdout, new RegExp(`^${item} {2}Finish offline\\.$`, 'mu'))
+  const done = await work(['done', item], { preload: true })
+  assert.equal(done.status, 0, done.stderr)
+  assert.doesNotMatch((await work(['start', 'Look again.'], { preload: true })).stdout, new RegExp(item, 'u'))
+  assert.doesNotMatch((await work(['list'], { preload: true })).stdout, new RegExp(item, 'u'))
+})
+
+test('a note on a resolved item reopens it: the snapshot keeps resolved roots by their labels', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Reopen me.'])).stdout, 'work')
+  await work(['done', item])
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem(item), undefined, 'not among the open items')
+  const resolved = readJson(join(stateDir(), 'snapshot.json')).resolved.find(({ rid }) => rid === item)
+  assert.deepEqual({ status: resolved.labels.status, text: resolved.text }, { status: 'done', text: '' })
+  assert.doesNotMatch((await work(['list'])).stdout, new RegExp(item, 'u'))
+  assert.equal((await work(['done', item])).status, 1, 'a resolve takes only an open item')
+  const note = await work(['note', item.slice(0, -2), 'One more fix.'])
+  assert.equal(note.status, 0, note.stderr)
+  writerPass()
+  assert.equal((await rootLabels(item)).status, 'open')
+  await syncOk()
+  assert.equal(snapshotItem(item).labels.status, 'open')
+})
+
+test('todo done resolves a board todo through a resolve intent', async () => {
+  joinWork()
+  const add = await devchatAsync({ args: ['todo', 'add', 'Resolve me on the board.'] })
+  const rid = ridOf(add.stdout)
+  writerPass()
+  await syncOk()
+  const done = await devchatAsync({ args: ['todo', 'done', rid] })
+  assert.equal(done.status, 0, done.stderr)
+  assert.deepEqual(sentIntents().at(-1), { v: 1, rid: ridIn(done.stdout, 'done'), kind: 'done', root: rid, text: '', by: profile })
+  assert.doesNotMatch((await devchatAsync({ args: ['todo', 'list'] })).stdout, new RegExp(rid, 'u'), 'gone from the view at once')
+  writerPass()
+  await syncOk()
+  assert.equal(readJson(join(stateDir(), 'snapshot.json')).items.some((item) => item.rid === rid), false)
+})
+
+test('a session whose writes stay local keeps its work items local, and saves nothing on a board item', async () => {
+  joinWork()
+  const boardItem = ridIn((await work(['start', 'On the board.'])).stdout, 'work')
+  const codex = { CODEX_THREAD_ID: 'codex-session', T3CODE_THREAD_ID: 't3-codex' }
+  const refused = await work(['note', boardItem, 'From Codex.'], { sessionEnv: codex, preload: true })
+  assert.equal(refused.status, 1)
+  assert.match(refused.stderr, new RegExp(`${boardItem} is on the board, and this session's writes stay on this machine \\(codex sessions stay on this machine\\)\\. Nothing was saved\\.`, 'u'))
+  const start = await work(['start', 'Kept here.'], { sessionEnv: codex, preload: true })
+  const item = ridIn(start.stdout, 'work')
+  assert.match(start.stdout, new RegExp(`^${item}: saved on this machine only \\(codex sessions stay on this machine\\)$`, 'mu'))
+  assert.match(start.stdout, new RegExp(`^${boardItem} {2}On the board\\.$`, 'mu'), 'board items of this repo show too')
+  assert.equal((await work(['note', 'Asking. I recommend yes.', '--ask'], { sessionEnv: codex, preload: true })).status, 0)
+  assert.equal((await work(['done'], { sessionEnv: codex, preload: true })).status, 0)
+  assert.equal(readJson(join(localDir(), `${item}.json`)).labels.status, 'done')
+  assert.deepEqual(networkCalls(), [], 'no request from the local session')
+  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).target), [], 'nothing queued')
+})
+
+test('the check at flush holds reply intents to their canonical shape', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Check replies.'])).stdout, 'work')
+  workProxy.fault = () => 503
+  assert.ok(ridIn((await work(['start', 'Another root.'])).stdout, 'work'))
+  assert.ok(ridIn((await work(['note', item, 'A note.', '--pr', 'https://github.com/example-owner/tools/pull/3'])).stdout, 'note'))
+  const { entry: queuedNote, intent, withIntent } = queuedFile(1)
+  assert.equal(queuedNote.epoch, '1', 'a reply is queued under its root\'s epoch')
+  const planted = {
+    'a repo field on a reply': [withIntent({ ...intent, repo: `${allowed}/tools` }), 'the intent is not a release 1 intent'],
+    'a pr on a resolve': [withIntent({ ...intent, kind: 'done', text: '' }), 'the intent is not a release 1 intent'],
+    'text on a resolve': [withIntent({ v: 1, rid: intent.rid, kind: 'done', root: item, text: 'x', by: profile }), 'the text is empty or too long'],
+    'a pr that is not a pull request': [withIntent({ ...intent, pr: 'https://github.com/example-owner/tools/issues/3' }), 'the pr is not a pull request URL'],
+    'a root that is not a rid': [withIntent({ ...intent, root: 'a|b' }), 'a target is not a rid'],
+    'a block that is not 1': [withIntent({ v: 1, rid: intent.rid, kind: 'ask', root: item, text: 'Q?', by: profile, block: true }), 'the intent is not a release 1 intent'],
+    'a pr in a repo off the allowlist': [withIntent({ ...intent, pr: 'https://github.com/other-owner/service/pull/3' }), 'a reference names a repo off the allowlist'],
+    'an issue in a repo off the allowlist': [(({ intent: root, withIntent: withRoot }) => withRoot({ ...root, issue: 'other-owner/service#3' }))(queuedFile(0)), 'a reference names a repo off the allowlist'],
+  }
+  const outbox = join(stateDir(), 'outbox')
+  for (const [index, [value]] of Object.values(planted).entries()) writeFileSync(join(outbox, `0000-${index}.json`), JSON.stringify(value))
+  workProxy.fault = () => null
+  const sync = await syncOk()
+  for (const [index, [label, [, reason]]] of Object.entries(planted).entries()) {
+    assert.match(sync.stdout, new RegExp(`rejected 0000-${index}\\.json: ${reason}\n`, 'u'), label)
+  }
+  assert.deepEqual(sentIntents().map(({ kind }) => kind), ['work', 'work', 'note'], 'the queued intents go, byte for byte')
+})
+
+test('--issue and --pr name only allowlisted repos on the board, at queue time', async () => {
+  joinWork()
+  const other = 'other-owner/service'
+  for (const args of [['start', 'Leak?', '--issue', `${other}#3`], ['start', 'Leak?', '--issue', `https://github.com/${other}/issues/3`], ['start', 'Odd?', '--issue', 'ABC-123']]) {
+    const refused = await work(args, { preload: true })
+    assert.equal(refused.status, 1, args.join(' '))
+    assert.doesNotMatch(refused.stderr, /other-owner/u, 'the refusal does not repeat the reference')
+  }
+  assert.deepEqual(filesIn('outbox'), [])
+  const start = await work(['start', 'Ship it.', '--issue', '#3'])
+  const item = ridIn(start.stdout, 'work')
+  for (const pr of [`https://github.com/${other}/pull/3`, 'https://example.test/x/y/pull/3']) {
+    assert.equal((await work(['note', item, 'A PR.', '--pr', pr], { preload: true })).status, 1, pr)
+  }
+  assert.equal((await work(['note', item, 'Own repo.', '--pr', '7'])).status, 0)
+  assert.equal((await work(['note', item, 'Allowlisted.', '--pr', `https://github.com/${allowed}/tools/pull/8`])).status, 0)
+  assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), ['#3', `https://github.com/${allowed}/work-${workRepos}/pull/7`, `https://github.com/${allowed}/tools/pull/8`])
+})
+
+const unknownWork = 'devchat: no work item on this machine has that rid: run devchat sync, or find it with devchat work list\n'
+
+test('a target must be a seen item of the configured board, of the right kind, in this session\'s repo', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  const uiTodo = `ui-${randomUUID()}`
+  assert.equal(JSON.parse(runWriter(`process.stdout.write(JSON.stringify(await writer.writeUser(${JSON.stringify({ kind: 'todo', rid: uiTodo, text: 'A UI todo.', repo })})))`)).refused, undefined)
+  const item = ridIn((await work(['start', 'Mine.'])).stdout, 'work')
+  writerPass()
+  await syncOk()
+  const before = filesIn('outbox', 'sent').length
+
+  const wrongKind = await work(['done', uiTodo])
+  assert.equal(wrongKind.status, 1)
+  assert.match(wrongKind.stderr, /no work item on this machine has that rid: run devchat sync, or find it with devchat work list/u)
+  const elsewhere = makeRepo(`work-${workRepos}-other`, `git@github.com:${allowed}/work-${workRepos}-other.git`)
+  const otherRepo = await work(['note', item, 'From another repo.'], { cwd: elsewhere })
+  assert.equal(otherRepo.status, 1)
+  assert.equal(otherRepo.stderr, unknownWork, "another repo's item reads as an unknown rid")
+  const otherShow = await work(['show', item], { cwd: elsewhere })
+  assert.deepEqual({ status: otherShow.status, stdout: otherShow.stdout, stderr: otherShow.stderr }, { status: 1, stdout: '', stderr: unknownWork })
+  assert.doesNotMatch((await work(['list'], { cwd: elsewhere })).stdout, new RegExp(item, 'u'))
+  // Outside any git checkout, a command sees every repo's items.
+  assert.equal((await devchatAsync({ args: ['work', 'show', item], cwd: root, sessionEnv: {} })).status, 0)
+  const unseen = await work(['note', `work-${'0'.repeat(8)}-00000000`, 'Never seen.'])
+  assert.equal(unseen.status, 1)
+  assert.match(unseen.stderr, /no work item on this machine has that rid/u)
+  assert.deepEqual(filesIn('outbox'), [])
+  assert.equal(filesIn('outbox', 'sent').length, before, 'nothing was queued')
+  // Prefix matching sees only this repo's items: `work-` names the one item here, not all of them.
+  const here = ridIn((await work(['start', 'Elsewhere.'], { cwd: elsewhere })).stdout, 'work')
+  const byPrefix = await work(['note', 'work-', 'By prefix.'], { cwd: elsewhere })
+  assert.equal(byPrefix.status, 0, byPrefix.stderr)
+  assert.equal(sentIntents().at(-1).root, here)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', uiTodo], cwd: workRepo })).status, 0, 'the todo resolves as a todo')
+})
+
+test('an invalid or unknown rid argument is never printed', async () => {
+  joinWork()
+  for (const rid of ['password=hunter2', 'AKIAABCDEFGHIJKLMNOP']) {
+    for (const args of [['note', rid, 'Text.'], ['done', rid], ['show', rid], ['drop', rid]]) {
+      const result = await work(args, { preload: true })
+      assert.equal(result.status, 1, args.join(' '))
+      assert.ok(!`${result.stdout}${result.stderr}`.includes(rid.slice(4)), `${args[0]} printed its rid argument`)
+    }
+    const todo = await devchatAsync({ args: ['todo', 'done', rid], cwd: workRepo, preload: true })
+    assert.ok(!todo.stderr.includes(rid.slice(4)))
+  }
+  assert.match((await work(['done', 'password=hunter2'], { preload: true })).stderr, /the work item rid is not a devchat rid/u)
+})
+
+test("another board's snapshot, replies, refusals, and thread items stay out of the view", async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  const refused = ridIn((await work(['done', item, '--re', 'ui-0'])).stdout, 'done')
+  writerPass()
+  await syncOk()
+  assert.equal(filesIn('outbox', 'rejected').length, 1, `${refused} was refused`)
+  const onA = await work(['start', 'On board A.'])
+  assert.ok(onA.stdout.includes(pickupLine({ item, turn: reply })), onA.stdout)
+
+  // The same repo and T3 thread, configured for board B.
+  const [repoA, threadA] = [workRepo, thread]
+  joinWork({ boardUrl: offlineBoardUrl })
+  ;[workRepo, thread] = [repoA, threadA]
+  const viaThread = await work(['note', 'Which item?'], { preload: true })
+  assert.equal(viaThread.status, 1)
+  assert.match(viaThread.stderr, /no open work item belongs to this T3 thread/u)
+  assert.equal((await work(['note', item, 'By rid.'], { preload: true })).status, 1)
+  const onB = await work(['start', 'On board B.'], { preload: true })
+  assert.equal(onB.status, 0, onB.stderr)
+  assert.doesNotMatch(onB.stdout, new RegExp(`${item}|${reply}|not applied`, 'u'))
+  assert.match(onB.stdout, /Nothing else is open in this repo\./u)
+  assert.doesNotMatch((await work(['list'], { preload: true })).stdout, new RegExp(item, 'u'))
+})
+
+test('a resolve the pending guard stops does not hide a newer reply', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  assert.equal((await work(['done', item, '--re', reply], { preload: true })).status, 0)
+  const newer = userReply({ item, text: 'Wait, one more thing first.' })
+  await syncOk()
+  const start = await work(['start', 'Pick up.'], { preload: true })
+  assert.ok(start.stdout.includes(pickupLine({ item, turn: newer })), start.stdout)
+  assert.ok(start.stdout.includes('  the user replied: Wait, one more thing first.\n'), start.stdout)
+})
+
+test('pickup shows no call for an item whose thread moved past the turn it read', async () => {
+  joinWork()
+  const { item } = await answeredItem()
+  const { item: resolved, reply: resolvedTurn } = await answeredItem({ goal: 'Resolved meanwhile.' })
+  let newer
+  // Between the sync's root listing and its reads of the items' replies, the user replies on one
+  // item, and an agent resolves the other.
+  workProxy.fault = (req) => {
+    if (!newer && req.url.startsWith('/api/board/messages/')) {
+      newer = userReply({ item, text: 'A later reply.' })
+      const intent = { v: 1, rid: `done-${randomUUID()}`, kind: 'done', root: resolved, text: '', by: profile, re: resolvedTurn }
+      postAsHost({ on: workBoard, channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+      writerPass()
+    }
+    return null
+  }
+  await syncOk()
+  workProxy.fault = () => null
+  assert.ok(newer)
+  const first = await work(['start', 'Pick up.'], { preload: true })
+  for (const [rid, goal] of [[item, 'Ship the export fix.'], [resolved, 'Resolved meanwhile.']]) {
+    assert.ok(first.stdout.includes(`${rid}  ${goal}  changed since the last sync: run devchat sync, then answer it\n`), first.stdout)
+    assert.doesNotMatch(first.stdout, new RegExp(`devchat work note ${rid} --re|^${rid}:$`, 'mu'), 'no call and no replies')
+  }
+  const show = await work(['show', item], { preload: true })
+  assert.match(show.stdout, /This item changed since the last sync: run devchat sync, then answer it\.\n$/u)
+  assert.doesNotMatch(show.stdout, /devchat work note|Which format|Use CSV/u, 'no call and no replies')
+  await syncOk()
+  const second = await work(['start', 'Pick up again.'], { preload: true })
+  assert.ok(second.stdout.includes(pickupLine({ item, turn: newer })), second.stdout)
+  assert.ok(second.stdout.includes('  the user replied: A later reply.\n'), second.stdout)
+})
+
+test('a refused resolve on a changed item reports the change, never the call it read', async () => {
+  joinWork()
+  const { item, reply } = await answeredItem()
+  userReply({ item, text: 'One more thing.' })
+  const done = ridIn((await work(['done', item, '--re', reply], { preload: true })).stdout, 'done')
+  await syncOk()
+  writerPass()
+  // Between the sync's root listing and its reads of the replies, the user replies again.
+  let injected = false
+  workProxy.fault = (req) => {
+    if (!injected && req.url.startsWith('/api/board/messages/')) {
+      injected = true
+      userReply({ item, text: 'And another.' })
+    }
+    return null
+  }
+  const sync = await syncOk()
+  workProxy.fault = () => null
+  assert.ok(injected)
+  assert.match(sync.stdout, new RegExp(`^refused ${done}: pending\nnot applied: ${item} changed since the last sync: run devchat sync, then answer it$`, 'mu'))
+  assert.doesNotMatch(sync.stdout, /--re/u)
+})
+
+// Fully offline, nothing is stamped. With only posts failing, a sync stamps each root with the
+// board's epoch before its post fails, and still no snapshot exists.
+for (const [outage, fault] of [['fully offline', () => 503], ['with only posts failing', (req) => (req.method === 'POST' ? 503 : null)]]) {
+  test(`${outage} from the first run, a resolve on a root not yet in a snapshot is queued, and both send with one epoch`, async () => {
+    joinWork()
+    rmSync(join(stateDir(), 'snapshot.json'), { force: true })
+    workProxy.fault = fault
+    const todo = ridIn((await devchatAsync({ args: ['todo', 'add', 'Offline todo.'], cwd: workRepo })).stdout, 'todo')
+    const todoDone = await devchatAsync({ args: ['todo', 'done', todo], cwd: workRepo })
+    assert.equal(todoDone.status, 0, todoDone.stderr)
+    const item = ridIn((await work(['start', 'Offline work.'])).stdout, 'work')
+    const workDone = await work(['done'])
+    assert.equal(workDone.status, 0, workDone.stderr)
+    assert.doesNotMatch((await devchatAsync({ args: ['todo', 'list'], cwd: workRepo })).stdout, new RegExp(todo, 'u'))
+    assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).epoch), outage === 'fully offline' ? [null, null, null, null] : ['1', '1', null, null])
+    workProxy.fault = () => null
+    await syncOk()
+    assert.deepEqual(filesIn('outbox', 'sent').slice(-4).map((name) => readJson(join(stateDir(), 'outbox', 'sent', name)).epoch), ['1', '1', '1', '1'])
+    writerPass()
+    await syncOk()
+    assert.equal((await rootLabels(item)).status, 'done')
+    const todoRoot = (await ownerRead(`/threads?${new URLSearchParams({ channel: 'todos', label: `rid=${todo}` })}`)).threads[0]?.message.labels
+    assert.equal(todoRoot?.status, 'done')
+  })
+}
+
+test('the outbox sends in queue order whatever the clock says', async () => {
+  joinWork()
+  // Every write in this test reads one fixed time, so a name taken from the clock could not order them.
+  const clock = join(root, 'fixed-clock.mjs')
+  writeFileSync(clock, `const fixed = Date.parse('2030-01-01T00:00:00.000Z')
+const Real = Date
+globalThis.Date = class extends Real {
+  constructor(...args) { super(...(args.length > 0 ? args : [fixed])) }
+  static now() { return fixed }
+}
+`)
+  const sessionEnv = { ...boardSession, T3CODE_THREAD_ID: thread, NODE_OPTIONS: `--import=${pathToFileURL(clock).href}` }
+  workProxy.fault = () => 503
+  const item = ridIn((await work(['start', 'Fixed clock.'], { sessionEnv })).stdout, 'work')
+  assert.equal((await work(['done'], { sessionEnv })).status, 0)
+  assert.deepEqual(filesIn('outbox').map((name) => readJson(join(stateDir(), 'outbox', name)).target.split('-')[0]), ['work', 'done'])
+  workProxy.fault = () => null
+  await syncOk()
+  writerPass()
+  await syncOk()
+  assert.equal((await rootLabels(item)).status, 'done')
+})
+
+test("a write's own sync reports only its repo's refusals; devchat sync reports all", async () => {
+  joinWork()
+  const repoA = workRepo
+  const item = ridIn((await work(['start', 'In repo A.'])).stdout, 'work')
+  writerPass()
+  await syncOk()
+  userReply({ item, text: 'A reply this machine has not seen.' })
+  const resolve = ridIn((await work(['done', item])).stdout, 'done')
+  writerPass()
+  workRepo = makeRepo(`work-${workRepos}-b`, `git@github.com:${allowed}/work-${workRepos}-b.git`)
+  const inB = await work(['start', 'In repo B.'])
+  assert.equal(inB.status, 0, inB.stderr)
+  assert.doesNotMatch(inB.stdout, new RegExp(`${item}|${resolve}|refused|not applied`, 'u'))
+  assert.deepEqual(filesIn('outbox', 'rejected').length, 1, 'the refusal was retired all the same')
+  workRepo = repoA
+  const inA = await work(['start', 'Back in repo A.'])
+  assert.ok(inA.stdout.includes(`  not applied: ${resolve} (done), refused: pending`), inA.stdout)
+
+  const other = ridIn((await work(['done', item])).stdout, 'done')
+  assert.equal(other, undefined, 'the pending reply now blocks work done here')
+})
+
+test('one long pending item never pushes the others out of pickup', async () => {
+  joinWork()
+  const { item: long, reply } = await answeredItem({ goal: 'A long thread.' })
+  let turn = reply
+  for (let index = 0; index < 6; index += 1) turn = userReply({ item: long, text: `${index} ${'x'.repeat(158)}` })
+  // Four more pending items, with goals of the 48 characters a call line keeps: their call lines
+  // alone pass the 1 KB budget.
+  const goalOf = (index) => `Thread ${index} ${'g'.repeat(39)}`
+  const others = []
+  for (let index = 0; index < 4; index += 1) others.push(await answeredItem({ goal: goalOf(index) }))
+  await syncOk()
+  const start = await work(['start', 'Pick up.'], { preload: true })
+  assert.ok(start.stdout.includes(pickupLine({ item: long, turn, goal: 'A long thread.' })), start.stdout)
+  for (const [index, { item, reply: turnOf }] of others.entries()) assert.ok(start.stdout.includes(pickupLine({ item, turn: turnOf, goal: goalOf(index) })), start.stdout)
+  assert.match(start.stdout, /\d+ more not shown: devchat work list, devchat todo list\n$/u)
+  const [, , ...context] = start.stdout.trimEnd().split('\n')
+  assert.ok(Buffer.byteLength(context.join('\n')) > 1024, 'the call lines show past the budget')
+  const show = await work(['show', long], { preload: true })
+  assert.ok(show.stdout.includes(`5 ${'x'.repeat(158)}`), 'work show prints a reply whole')
+  assert.ok(show.stdout.includes(answerCallFor(long, turn)), show.stdout)
+})
+
+// Inside a git checkout, every todo and work command sees only that checkout's repo, whatever the
+// session; outside any checkout, it sees every item.
+const localRid = (result, kind) => result.stdout.match(new RegExp(`^(${kind}-[a-z0-9-]+): saved on this machine only`, 'mu'))?.[1]
+const unknownRid = (noun, list) => `devchat: no ${noun} on this machine has that rid: run devchat sync, or find it with devchat ${list} list\n`
+
+test("an Antigravity session in a T3 thread cannot see or resolve another repo's local work item", () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const sessionEnv = { T3CODE_THREAD_ID: 't3-antigravity' }
+  const repoA = makeRepo('scope-a', `git@github.com:${allowed}/scope-a.git`)
+  const repoB = makeRepo('scope-b', `git@github.com:${allowed}/scope-b.git`)
+  const item = localRid(devchat({ args: ['work', 'start', 'A goal in repo A.'], cwd: repoA, sessionEnv }), 'work')
+  assert.ok(item)
+  for (const args of [['show', item], ['done', item], ['done'], ['note', item, 'From repo B.']]) {
+    const result = devchat({ args: ['work', ...args], cwd: repoB, sessionEnv })
+    assert.equal(result.status, 1, args.join(' '))
+    assert.doesNotMatch(`${result.stdout}${result.stderr}`, /A goal in repo A/u, args.join(' '))
+  }
+  assert.equal(devchat({ args: ['work', 'show', item], cwd: repoB, sessionEnv }).stderr, unknownRid('work item', 'work'))
+  assert.doesNotMatch(devchat({ args: ['work', 'list'], cwd: repoB, sessionEnv }).stdout, new RegExp(item, 'u'))
+  assert.equal(readJson(join(localDir(), `${item}.json`)).labels.status, 'open')
+  assert.equal(devchat({ args: ['work', 'done', item], cwd: repoA, sessionEnv }).status, 0)
+})
+
+/** Adds a todo in each of two checkouts, and asserts that neither sees or resolves the other's. */
+const assertApart = (clones) => {
+  const [first, second] = clones.map((cwd, index) => localRid(devchat({ args: ['todo', 'add', `Todo ${index + 1}.`], cwd }), 'todo'))
+  const listed = clones.map((cwd) => devchat({ args: ['todo', 'list'], cwd }).stdout)
+  assert.match(listed[0], new RegExp(first, 'u'))
+  assert.doesNotMatch(listed[0], new RegExp(second, 'u'))
+  assert.match(listed[1], new RegExp(second, 'u'))
+  assert.doesNotMatch(listed[1], new RegExp(first, 'u'))
+  assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[1] }).stderr, unknownRid('todo', 'todo'))
+  assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[0] }).status, 0)
+}
+
+test('checkouts whose origin is a relative path to different repositories keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  assertApart(['one', 'two'].map((name) => {
+    makeRepo(`relative-${name}/upstream`)
+    return makeRepo(`relative-${name}/clone`, '../upstream')
+  }))
+})
+
+// A checkout that is not a GitHub one is scoped by its own git directory; its origin is never read.
+test('two clones of one local upstream keep their todos apart, before and after one points at ../backup', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  makeRepo('shared/upstream')
+  makeRepo('shared/backup')
+  const clones = ['shared/a', 'shared/b'].map((name) => makeRepo(name, '../upstream'))
+  assertApart(clones)
+  execFileSync('git', ['-C', clones[1], 'remote', 'set-url', 'origin', '../backup'])
+  assertApart(clones)
+})
+
+test('a file:// origin with %20 and a path with a literal %20 keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const dir = join(root, 'repos', 'percent')
+  makeRepo('percent/up stream')
+  makeRepo('percent/up%20stream')
+  assertApart([makeRepo('percent/a', `file://${dir}/up%20stream`), makeRepo('percent/b', `${dir}/up%20stream`)])
+})
+
+test('an origin through a symbolic link and its lexical twin keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const dir = join(root, 'repos', 'linked')
+  mkdirSync(join(dir, 'elsewhere', 'inner'), { recursive: true })
+  const a = makeRepo('linked/a', 'link/../upstream')
+  symlinkSync(join(dir, 'elsewhere', 'inner'), join(a, 'link'))
+  assertApart([a, makeRepo('linked/b', `${dir}/a/upstream`)])
+})
+
+test('a git failure other than no repository scopes a command to nothing', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const [a, b] = [makeRepo('broken-a'), makeRepo('broken-b')]
+  const todo = localRid(devchat({ args: ['todo', 'add', 'In A.'], cwd: a }), 'todo')
+  assert.ok(todo)
+  writeFileSync(join(b, '.git', 'config'), `${readFileSync(join(b, '.git', 'config'), 'utf8')}[remote\n`)
+  const failure = 'devchat: git could not read the repository here, so devchat shows and changes no item. Fix the repository, or run the command outside any git checkout. Nothing was saved.\n'
+  for (const args of [['todo', 'list'], ['todo', 'done', todo]]) {
+    const result = devchat({ args, cwd: b })
+    assert.deepEqual({ status: result.status, stdout: result.stdout, stderr: result.stderr }, { status: 1, stdout: '', stderr: failure }, args.join(' '))
+  }
+  assert.equal(readJson(join(localDir(), `${todo}.json`)).labels.status, 'open')
+})
+
+test('a checkout with no origin keeps its own work items', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const [fresh, other] = [makeRepo('no-origin-fresh'), makeRepo('no-origin-other')]
+  const item = localRid(devchat({ args: ['work', 'start', 'No origin.'], cwd: fresh }), 'work')
+  assert.ok(item)
+  assert.equal(devchat({ args: ['work', 'show', item], cwd: other }).stderr, unknownRid('work item', 'work'))
+  const done = devchat({ args: ['work', 'done', item], cwd: fresh })
+  assert.equal(done.status, 0, done.stderr)
+  assert.equal(readJson(join(localDir(), `${item}.json`)).labels.status, 'done')
+})
+
+test('a rid prefix must be unique among open and resolved items', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const item = (rid, status) => ({ rid, channel: 'work', text: `Item ${rid}.`, labels: { rid, status }, identity: `github.com/${allowed}/tools`, createdAt: '2026-01-01T00:00:00.000Z', replies: [] })
+  mkdirSync(localDir(), { recursive: true })
+  writeFileSync(join(localDir(), 'work-abc-11111111.json'), JSON.stringify(item('work-abc-11111111', 'done')))
+  writeFileSync(join(localDir(), 'work-abc-22222222.json'), JSON.stringify(item('work-abc-22222222', 'open')))
+  const done = devchat({ args: ['work', 'done', 'work-abc'] })
+  assert.equal(done.status, 1)
+  assert.match(done.stderr, /that rid prefix matches 2 work items: work-abc-11111111, work-abc-22222222/u)
+  assert.equal(readJson(join(localDir(), 'work-abc-22222222.json')).labels.status, 'open')
+  assert.equal(devchat({ args: ['work', 'done', 'work-abc-2'] }).status, 0)
+})
+
+const setWorkEpoch = async (epoch) => {
+  const response = await fetch(`${workBoard.url}/messages/${workMarker.id}/labels`, {
+    method: 'POST', headers: { authorization: `Bearer ${workBoard.ownerToken}`, 'content-type': 'application/json' }, body: JSON.stringify({ set: { epoch } }),
+  })
+  assert.ok(response.ok, `the epoch label answered ${response.status}`)
+}
+
+test('a reply never crosses a board restore: a root seen under another epoch reads as unknown', async () => {
+  joinWork()
+  const [repoA, threadA] = [workRepo, thread]
+  const item = ridIn((await work(['start', 'Before the restore.'])).stdout, 'work')
+  assert.equal(filesIn('outbox', 'sent').length, 1, 'sent, and not decided yet')
+  joinBoard({ via: proxy })
+  await syncOk()
+  try {
+    await setWorkEpoch('2')
+    joinWork()
+    ;[workRepo, thread] = [repoA, threadA]
+    const note = await work(['note', item, 'After the restore.'], { preload: true })
+    assert.equal(note.status, 1)
+    assert.equal(note.stderr, unknownWork)
+    assert.deepEqual(filesIn('outbox'), [])
+    await syncOk()
+    assert.equal((await work(['note', item, 'After the sync.'])).status, 1, 'the epoch 1 root is gone from the view')
+    assert.deepEqual(filesIn('outbox'), [])
+  } finally {
+    await setWorkEpoch('1')
+  }
+})
+
+test("work done in another repo or a local session prints nothing of the item's thread", async () => {
+  joinWork()
+  const { item } = await answeredItem({ goal: 'A private goal.', answer: 'A private answer.' })
+  const leaks = /A private goal|Which format|A private answer|--re ui-/u
+  workRepo = makeRepo(`work-${workRepos}-elsewhere`, `git@github.com:${allowed}/work-${workRepos}-elsewhere.git`)
+  const elsewhere = await work(['done', item])
+  assert.equal(elsewhere.status, 1)
+  assert.equal(elsewhere.stderr, unknownWork)
+  const local = await work(['drop', item], { sessionEnv: { CODEX_THREAD_ID: 'codex-session' } })
+  assert.equal(local.status, 1)
+  for (const result of [elsewhere, local]) assert.doesNotMatch(`${result.stdout}${result.stderr}`, leaks)
+})
+
+test("a write's own sync names no outbox file when the outbox is held; devchat sync does", async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Held.'])).stdout, 'work')
+  workProxy.fault = () => 503
+  await work(['note', item, 'Queued.'])
+  workProxy.fault = () => null
+  const [name] = filesIn('outbox')
+  const path = join(stateDir(), 'outbox', name)
+  writeFileSync(path, JSON.stringify({ ...readJson(path), board: offlineBoardUrl }))
+  const start = await work(['start', 'Another.'])
+  assert.match(start.stdout, /not sent yet \(the outbox is held by a write queued for another board or epoch; run devchat sync for details\)/u)
+  assert.doesNotMatch(start.stdout, new RegExp(name.replace('.json', ''), 'u'))
+  const sync = await devchatAsync({ args: ['sync'] })
+  assert.equal(sync.status, 1)
+  assert.match(sync.stderr, new RegExp(`${name} was queued for another board than the configured one`, 'u'))
+})
+
+test('repos compare ignoring case: targets, pickup, and session records', async () => {
+  joinWork()
+  const item = ridIn((await work(['start', 'Any case.'])).stdout, 'work')
+  workRepo = makeRepo(`work-${workRepos}-upper`, `git@github.com:${allowed.toUpperCase()}/WORK-${workRepos}.git`)
+  const start = await work(['start', 'Upper case.'])
+  assert.match(start.stdout, new RegExp(`^${item} {2}Any case\\.$`, 'mu'), "this repo's item, whatever the case")
+  assert.equal((await work(['note', item, 'From the upper-case clone.'])).status, 0)
+
+  rmSync(join(stateDir(), 'sessions'), { recursive: true, force: true })
+  const lower = makeRepo('case-lower', `git@github.com:${allowed}/case.git`)
+  const upper = makeRepo('case-upper', `git@github.com:${allowed.toUpperCase()}/CASE.git`)
+  startSession({ key: 'case', cwd: lower })
+  startSession({ key: 'case', cwd: upper, source: 'resume' })
+  assert.deepEqual(sessionRecord().conflicting, false, 'the same repo in another case does not conflict')
+})
+
+test('--issue and --pr URLs match their scheme and host ignoring case, and their path exactly', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  const start = await work(['start', 'Case URLs.', '--issue', `HTTPS://GITHUB.COM/${repo}/issues/2`])
+  const item = ridIn(start.stdout, 'work')
+  assert.ok(item, start.stderr)
+  assert.equal((await work(['note', item, 'Upper host.', '--pr', `Https://GitHub.com/${repo}/pull/9`])).status, 0)
+  assert.equal((await work(['note', item, 'Upper path.', '--pr', `https://github.com/${repo}/PULL/9`], { preload: true })).status, 1)
+  assert.equal((await work(['note', item, 'Other owner.', '--pr', 'HTTPS://GITHUB.COM/other-owner/service/pull/9'], { preload: true })).status, 1)
+  assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), [`HTTPS://GITHUB.COM/${repo}/issues/2`, `Https://GitHub.com/${repo}/pull/9`])
 })
