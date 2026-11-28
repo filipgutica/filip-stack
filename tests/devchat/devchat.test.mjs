@@ -39,6 +39,36 @@ case "$*" in
 esac
 `)
 chmodSync(join(fakeBin, 'systemctl'), 0o755)
+// A stand-in for `gh`: it logs each call in the test's home, with a body's newlines as `|`. It
+// answers the todos skill's reads with a fake login (or the one in \`$HOME/gh-login\`) and the
+// issues in \`$HOME/gh-issues.json\`. It keeps the body of each issue it creates in
+// \`$HOME/gh-created/<number>\`, and the issues API lists those bodies newest first: one page of 100,
+// or every page with \`--paginate\`. That list fails while \`$HOME/gh-list-fails\` exists.
+writeFileSync(join(fakeBin, 'gh'), `#!/bin/sh
+printf '%s' "$*" | tr '\\n' '|' >> "$HOME/gh.log"
+printf '\\n' >> "$HOME/gh.log"
+bodies() {
+  ls "$HOME/gh-created" 2>/dev/null | sort -rn | head -n "$1" | while read -r number; do cat "$HOME/gh-created/$number"; done
+}
+case "$1 $2" in
+  'api user') cat "$HOME/gh-login" 2>/dev/null || echo example-login ;;
+  'repo view') echo PRIVATE ;;
+  'api --paginate'|'api repos/'*)
+    [ -e "$HOME/gh-list-fails" ] && exit 1
+    if [ "$2" = --paginate ]; then bodies 1000000; else bodies 100; fi ;;
+  'issue list') cat "$HOME/gh-issues.json" ;;
+  'issue create')
+    mkdir -p "$HOME/gh-created"
+    number=$(( $(ls "$HOME/gh-created" | wc -l) + 1 ))
+    while [ $# -gt 0 ]; do
+      if [ "$1" = --body ]; then printf '%s\\n' "$2" > "$HOME/gh-created/$number"; fi
+      shift
+    done ;;
+  'issue close') ;;
+  *) exit 1 ;;
+esac
+`)
+chmodSync(join(fakeBin, 'gh'), 0o755)
 
 const makeRepo = (name, remote) => {
   const dir = join(root, 'repos', name)
@@ -458,10 +488,11 @@ const startTailnetProxy = async (upstreamUrl) => {
     }).end(body)
   }
   const answer = ({ req, res, body }) => {
-    const fault = state.fault(req)
+    const fault = state.fault(req, body)
     if (fault === 'hang') return
     if (fault === 'drop') return req.socket.destroy()
     if (typeof fault === 'number') return res.writeHead(fault).end('{"error":{}}')
+    if (fault?.status) return res.writeHead(fault.status, { 'content-type': 'application/json' }).end(fault.body)
     // A held request reaches the board only once the test resolves `until`.
     Promise.resolve(fault?.until).then(() => forward({ req, res, body }))
   }
@@ -558,9 +589,10 @@ const joinBoard = ({ via = proxy, mode = 'readwrite', boardUrl = via.url, machin
 }
 
 // The CLI without the no-network preload, run asynchronously, unless the test keeps the preload.
-const devchatAsync = ({ args, cwd = repos.allowed, sessionEnv = boardSession, preload = false }) => new Promise((resolve) => {
+const devchatAsync = ({ args, cwd = repos.allowed, sessionEnv = boardSession, preload = false, input }) => new Promise((resolve) => {
   const { NODE_OPTIONS, ...withoutPreload } = env
-  const child = spawn('/bin/sh', [launcher, ...args], { cwd, env: { ...(preload ? env : withoutPreload), ...sessionEnv }, stdio: ['ignore', 'pipe', 'pipe'] })
+  const child = spawn('/bin/sh', [launcher, ...args], { cwd, env: { ...(preload ? env : withoutPreload), ...sessionEnv }, stdio: [input === undefined ? 'ignore' : 'pipe', 'pipe', 'pipe'] })
+  if (input !== undefined) child.stdin.end(input)
   let stdout = ''
   let stderr = ''
   child.stdout.on('data', (chunk) => { stdout += chunk })
@@ -916,8 +948,8 @@ test('a todo queued under an older epoch is held, and one queued with the epoch 
 })
 
 test('todo add reports a todo the check at flush rejects', async () => {
-  joinBoard({ machineName: 'tab\tbox' })
-  const add = await devchatAsync({ args: ['todo', 'add', 'From a machine name with a tab.'] })
+  joinBoard({ machineName: 'x'.repeat(257) })
+  const add = await devchatAsync({ args: ['todo', 'add', 'From a machine name too long for a label.'] })
   assert.equal(add.status, 0, add.stderr)
   assert.match(add.stdout, /: not sent: the check at flush rejected it \(a provenance field is not a board label value\) and moved it to outbox\/rejected\/$/mu)
   assert.doesNotMatch(add.stdout, /: sent$/mu)
@@ -2096,4 +2128,558 @@ test('--issue and --pr URLs match their scheme and host ignoring case, and their
   assert.equal((await work(['note', item, 'Upper path.', '--pr', `https://github.com/${repo}/PULL/9`], { preload: true })).status, 1)
   assert.equal((await work(['note', item, 'Other owner.', '--pr', 'HTTPS://GITHUB.COM/other-owner/service/pull/9'], { preload: true })).status, 1)
   assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), [`HTTPS://GITHUB.COM/${repo}/issues/2`, `Https://GitHub.com/${repo}/pull/9`])
+})
+
+// Admin: the todos import and its rollback list (spec §9), against the `gh` stub. Import runs in
+// mode readwrite only, so these tests join the work board.
+const ghIssues = (issues) => writeFileSync(join(home, 'gh-issues.json'), JSON.stringify(issues))
+const ghCalls = () => (existsSync(join(home, 'gh.log')) ? readFileSync(join(home, 'gh.log'), 'utf8').split('\n').filter(Boolean) : [])
+const ghIssue = (number, title, from) => ({ number, title, body: from === undefined ? 'Added by hand.' : `From: ${from} · Host: example-host`, createdAt: '2026-01-01T00:00:00Z' })
+const ghReads = /^(?:api user|repo view example-login\/todos|issue list -R example-login\/todos) /u
+const importSource = () => join(stateDir(), 'import-source.json')
+/** Runs import once to read its preview digest, then again with `--yes <digest>`, as an agent does after approval. */
+const importApproved = async (options = {}) => {
+  const preview = await devchatAsync({ args: ['admin', 'import'], cwd: root, sessionEnv: {}, ...options })
+  const digest = /^preview digest: ([0-9a-f]{12})$/mu.exec(preview.stdout)?.[1]
+  assert.ok(digest, `${preview.stdout}${preview.stderr}`)
+  return devchatAsync({ args: ['admin', 'import', '--yes', digest], cwd: root, sessionEnv: {}, ...options })
+}
+/** Starts an import that waits on its approval prompt; `answer` sends the reply and resolves to its result. */
+const waitingImport = async () => {
+  const { NODE_OPTIONS, ...childEnv } = env
+  const child = spawn('/bin/sh', [launcher, 'admin', 'import'], { cwd: root, env: childEnv, stdio: ['pipe', 'pipe', 'pipe'] })
+  const result = { stdout: '', stderr: '' }
+  child.stdout.on('data', (chunk) => { result.stdout += chunk })
+  child.stderr.on('data', (chunk) => { result.stderr += chunk })
+  const closed = new Promise((resolve) => child.on('close', (status) => resolve({ ...result, status })))
+  for (let tries = 0; !result.stdout.includes('[y/N]') && tries < 200; tries += 1) await new Promise((resolve) => setTimeout(resolve, 50))
+  assert.ok(result.stdout.includes('[y/N]'), `${result.stdout}${result.stderr}`)
+  return { answer: (input) => { child.stdin.end(input); return closed } }
+}
+const rollbackOf = async () => {
+  const calls = ghCalls().length
+  const exported = await devchatAsync({ args: ['admin', 'export', '--rollback'], cwd: root, sessionEnv: {} })
+  assert.equal(exported.status, 0, exported.stderr)
+  assert.deepEqual(ghCalls().slice(calls), ['api user --jq .login', 'repo view example-login/todos --json visibility --jq .visibility'], 'export only reads the repo name')
+  const all = exported.stdout.split('\n').filter(Boolean)
+  return { header: all.filter((line) => line.startsWith('#')), lines: all.filter((line) => !line.startsWith('#')) }
+}
+const linesFor = (lines, rids) => lines.filter((line) => rids.includes(line.split(' ')[1]))
+/** Runs each line's command with sh against the stub, and returns the issue creates and closes it made. */
+const replay = (lines) => {
+  const calls = ghCalls().length
+  for (const line of lines) execFileSync('/bin/sh', ['-c', line.split(' ').slice(3).join(' ')], { env })
+  return ghCalls().slice(calls).filter((call) => /^issue (?:create|close) /u.test(call))
+}
+/** Saves each list as `rollback-<name>.txt` and runs the replay loop admin.md documents over them. */
+const docReplay = (lists) => {
+  const doc = readFileSync(join(repoRoot, 'plugins/devchat/skills/devchat/references/admin.md'), 'utf8')
+  const loop = /^ {2}```sh\n([\s\S]*?)^ {2}```$/mu.exec(doc)[1].replace(/^ {2}/gmu, '')
+  const dir = mkdtempSync(join(home, 'replay-'))
+  for (const [name, lines] of Object.entries(lists)) writeFileSync(join(dir, `rollback-${name}.txt`), `${lines.join('\n')}\n`)
+  const calls = ghCalls().length
+  const run = spawnSync('/bin/sh', ['-c', loop], { cwd: dir, env, encoding: 'utf8' })
+  return { status: run.status, stderr: run.stderr, dir, calls: ghCalls().slice(calls).filter((call) => /^issue (?:create|close) /u.test(call)) }
+}
+const quoted = (value) => `'${value.replaceAll("'", `'\\''`)}'`
+/** The guarded create line export prints for a todo. */
+const createLine = ({ rid, where, title, from = 'devchat', host = machine }) => `create ${rid} ${where} out=$(gh api --paginate 'repos/example-login/todos/issues?state=all&per_page=100' --jq '.[].body') && { printf '%s\\n' "$out" | tr -d '\\r' | grep -xF 'devchat-rid: ${rid}' >/dev/null || gh issue create -R example-login/todos --title ${quoted(title)} --body "$(printf '%s\\n\\n%s' ${quoted(`From: ${from} · Host: ${host}`)} 'devchat-rid: ${rid}')"; }`
+/** The stub's log line for that create. */
+const createCall = ({ rid, title, from = 'devchat', host = machine }) => `issue create -R example-login/todos --title ${title} --body From: ${from} · Host: ${host}||devchat-rid: ${rid}`
+const exportHeader = (pulled = '# Board lines: pulled from the board just now.') => [
+  '# devchat rollback list for example-login/todos. Every list you replay must name this same repo.',
+  pulled,
+  "# Replay: run every line from every machine's list, in order. A create first checks the repo for its devchat-rid line, and a close is safe to repeat.",
+  '# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, with sh.',
+]
+const workInbox = async (rid) => (await ownerRead('/threads?channel=inbox&limit=500')).threads.filter(({ message }) => message.thread === rid)
+const onSecondMachine = async (run) => {
+  const [ownHome, ownEnv] = [home, env]
+  home = mkdtempSync(join(root, 'home-'))
+  env = { ...ownEnv, HOME: home, XDG_CONFIG_HOME: join(home, 'config'), XDG_STATE_HOME: join(home, 'state'), DEVCHAT_TEST_NETWORK_LOG: join(home, 'network.log') }
+  try {
+    writeConfig({ ...readwrite, boardUrl: workProxy.url, machine: 'second-box' })
+    return await run()
+  } finally {
+    [home, env] = [ownHome, ownEnv]
+  }
+}
+
+test('import refuses every mode but readwrite, and stops when its sync stops', async () => {
+  for (const mode of ['off', 'read']) {
+    writeConfig({ ...readwrite, mode, machine })
+    const result = devchat({ args: ['admin', 'import'], cwd: root })
+    assert.equal(result.status, 1)
+    assert.match(result.stderr, new RegExp(`import runs only in mode readwrite, on one machine; this one is in mode ${mode}\\. Nothing was imported\\.`, 'u'))
+  }
+  joinBoard({ boardUrl: offlineBoardUrl })
+  const offline = await devchatAsync({ args: ['admin', 'import'], cwd: root, sessionEnv: {} })
+  assert.equal(offline.status, 1)
+  assert.match(offline.stderr, /import syncs first, and that sync stopped: the board is unreachable/u)
+  assert.deepEqual(ghCalls(), [], 'no gh call before the sync succeeds')
+})
+
+test('import syncs, previews every issue with its From: line, and a declined import writes nothing', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  ghIssues([
+    ghIssue(1001, 'Board todo.', repo),
+    ghIssue(1002, 'Review the notes.', 'other-owner/service'),
+    ghIssue(1003, 'Call back.'),
+    { number: 1004, title: 'Clean /home/example/notes', body: 'From: x/y · Host: h' },
+    { number: 1005, title: 'Body refused.', body: 'From: x/y · Host: h\nSee /home/example/notes' },
+  ])
+  const preview = [
+    'example-login/todos: 5 open issue(s)',
+    `#1001  board (${repo})  Board todo.  From: ${repo}`,
+    '#1002  this machine only  Review the notes.  From: other-owner/service',
+    '#1003  this machine only  Call back.  From: (none)',
+    '#1004  refused: absolute home-directory path in the title',
+    '#1005  refused: absolute home-directory path in the body  Body refused.',
+  ].join('\n')
+  for (const input of ['n\n', '']) {
+    const declined = await devchatAsync({ args: ['admin', 'import'], cwd: root, sessionEnv: {}, input })
+    assert.equal(declined.status, 1)
+    assert.match(declined.stdout, /^preview digest: [0-9a-f]{12}$/mu)
+    assert.equal(declined.stdout.replace(/^preview digest: .*\n/mu, ''), `${preview}\nImport 3 todo(s)? [y/N]\nNothing was imported.\n`)
+  }
+  assert.ok(existsSync(join(stateDir(), 'snapshot.json')), 'import synced first')
+  assert.deepEqual([existsSync(localDir()), filesIn('outbox'), existsSync(importSource())], [false, [], false], 'a declined import writes nothing')
+
+  const approved = await devchatAsync({ args: ['admin', 'import'], cwd: root, sessionEnv: {}, input: 'y\n' })
+  assert.equal(approved.status, 0, approved.stderr)
+  assert.match(approved.stdout, /^imported 3: 1 queued for the board, 2 saved on this machine only\ntodo:gh:1001: sent$/mu)
+  const todos = Object.fromEntries(localTodos().map((item) => [item.rid, item]))
+  assert.deepEqual(Object.keys(todos).sort(), ['todo:gh:1002', 'todo:gh:1003'])
+  assert.equal(todos['todo:gh:1002'].identity, 'github.com/other-owner/service')
+  assert.equal(todos['todo:gh:1003'].identity, undefined, 'no From: repo, no identity')
+  assert.deepEqual(readJson(importSource()), { schema: 1, repo: 'example-login/todos' })
+  assert.ok(ghCalls().every((call) => ghReads.test(`${call} `)), ghCalls().join('\n'))
+  assert.doesNotMatch(`${approved.stdout}${approved.stderr}`, /\/home\/example/u)
+})
+
+test('import sends an allowlisted From: repo to the board and keeps any other here; the board keeps one post per rid', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  ghIssues([ghIssue(101, 'Board todo.', repo), ghIssue(102, 'Other repo todo.', 'other-owner/service')])
+  const first = await importApproved()
+  assert.equal(first.status, 0, first.stderr)
+  assert.match(first.stdout, new RegExp(`^#101  board \\(${repo}\\)  Board todo\\.  From: ${repo}$`, 'mu'))
+  assert.match(first.stdout, /^#102  this machine only {2}Other repo todo\.  From: other-owner\/service$/mu)
+  assert.match(first.stdout, /^imported 2: 1 queued for the board, 1 saved on this machine only\ntodo:gh:101: sent$/mu)
+  assert.deepEqual(sentIntents().find(({ rid }) => rid === 'todo:gh:101'), { v: 1, rid: 'todo:gh:101', kind: 'todo', channel: 'todos', text: 'Board todo.', by: profile, repo, machine })
+  assert.deepEqual(localTodos().map(({ rid }) => rid), ['todo:gh:102'])
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem('todo:gh:101').labels.repo, repo)
+
+  // A rerun after the title changed on GitHub posts the rid again; the board keeps the first post.
+  ghIssues([ghIssue(101, 'Board todo, edited on GitHub.', repo), ghIssue(102, 'Other repo todo.', 'other-owner/service')])
+  const rerun = await importApproved()
+  assert.equal(rerun.status, 0, rerun.stderr)
+  assert.match(rerun.stdout, /^#102  already imported, kept local$/mu)
+  assert.match(rerun.stdout, /^todo:gh:101: sent$/mu)
+  assert.equal((await workInbox('todo:gh:101')).length, 1, 'one inbox post per rid')
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem('todo:gh:101').text, 'Board todo.')
+})
+
+test("a 409 duplicate_id moves that post to rejected/, and the flush sends the rest", async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  ghIssues([ghIssue(9001, 'Imported on two machines.', repo)])
+  assert.equal((await importApproved()).status, 0)
+  const second = await onSecondMachine(async () => {
+    ghIssues([ghIssue(9001, 'Imported on two machines.', repo), ghIssue(9002, 'Only on the second machine.', repo)])
+    workProxy.fault = (req, body) => (req.method === 'POST' && JSON.parse(body).id === 'todo:gh:9001' ? { status: 409, body: '{"error":{"code":"duplicate_id","message":"id taken"}}' } : null)
+    try {
+      const result = await importApproved()
+      return { result, rejected: filesIn('outbox', 'rejected'), outbox: filesIn('outbox') }
+    } finally {
+      workProxy.fault = () => null
+    }
+  })
+  assert.equal(second.result.status, 0, second.result.stderr)
+  assert.match(second.result.stdout, /^todo:gh:9001: not sent: another post already holds its id on the board; moved to outbox\/rejected\/$/mu)
+  assert.match(second.result.stdout, /^todo:gh:9002: sent$/mu)
+  assert.deepEqual([second.rejected.length, second.outbox], [1, []])
+})
+
+test('export --rollback prints the release 1 drill as gh commands', async () => {
+  joinWork()
+  await syncOk()
+  const repo = `${allowed}/work-${workRepos}`
+  // Before the import every todo lived in GitHub, so an open board todo from before it is created too.
+  const earlier = ridOf((await devchatAsync({ args: ['todo', 'add', 'Added before the import.'], cwd: workRepo })).stdout)
+  writerPass()
+  await syncOk()
+  ghIssues([ghIssue(201, 'Imported, then done.', repo), ghIssue(202, 'Imported, then dropped.', repo), ghIssue(203, 'Imported, dropped offline.', repo)])
+  assert.equal((await importApproved()).status, 0)
+  writerPass()
+  await syncOk()
+  const added = ridOf((await devchatAsync({ args: ['todo', 'add', "Check the team's notes."], cwd: workRepo })).stdout)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', 'todo:gh:201'], cwd: workRepo })).status, 0)
+  assert.equal((await devchatAsync({ args: ['todo', 'drop', 'todo:gh:202'], cwd: workRepo })).status, 0)
+  writerPass()
+  await syncOk()
+  workProxy.fault = () => 503
+  const offline = ridOf((await devchatAsync({ args: ['todo', 'add', 'Added offline.'], cwd: workRepo })).stdout)
+  assert.equal((await devchatAsync({ args: ['todo', 'drop', 'todo:gh:203'], cwd: workRepo })).status, 0)
+  workProxy.fault = () => null
+  assert.ok(earlier && added && offline)
+
+  const { header, lines } = await rollbackOf()
+  assert.deepEqual(header, exportHeader())
+  const ours = linesFor(lines, [earlier, added, offline, 'todo:gh:201', 'todo:gh:202', 'todo:gh:203'])
+  assert.deepEqual([...ours].sort(), [
+    createLine({ rid: earlier, where: 'board', title: 'Added before the import.', from: repo }),
+    createLine({ rid: added, where: 'board', title: "Check the team's notes.", from: repo }),
+    'close todo:gh:201 board gh issue close 201 -R example-login/todos --reason completed',
+    "close todo:gh:202 board gh issue close 202 -R example-login/todos --reason 'not planned'",
+    createLine({ rid: offline, where: 'pending', title: 'Added offline.', from: repo }),
+    "close todo:gh:203 pending gh issue close 203 -R example-login/todos --reason 'not planned'",
+  ].sort())
+  // Replaying each command against the stub gives GitHub the drill's changes; a second replay
+  // creates nothing more, and repeats only the closes.
+  const closes = [
+    'issue close 201 -R example-login/todos --reason completed',
+    'issue close 202 -R example-login/todos --reason not planned',
+    'issue close 203 -R example-login/todos --reason not planned',
+  ]
+  assert.deepEqual(replay(ours).sort(), [
+    createCall({ rid: earlier, title: 'Added before the import.', from: repo }),
+    createCall({ rid: added, title: "Check the team's notes.", from: repo }),
+    createCall({ rid: offline, title: 'Added offline.', from: repo }),
+    ...closes,
+  ].sort())
+  assert.deepEqual(replay(ours).sort(), closes)
+  // The loop admin.md documents runs the same list, and names each line that fails.
+  const documented = docReplay({ first: [...header, ...ours] })
+  assert.deepEqual([documented.status, documented.calls.sort()], [0, closes])
+  writeFileSync(join(home, 'gh-list-fails'), '')
+  const failing = docReplay({ first: [...header, ...ours] })
+  rmSync(join(home, 'gh-list-fails'))
+  assert.equal(failing.status, 1)
+  assert.deepEqual(failing.stderr.split('\n').filter(Boolean), ours.filter((line) => line.startsWith('create ')).map((line) => `FAILED rollback-first.txt: ${line}`))
+  // A command that reads its input, as gh can when it prompts, does not swallow the next line.
+  assert.ok(existsSync(join(docReplay({ stdin: ['op rid where read swallowed', 'op rid where touch kept'] }).dir, 'kept')))
+})
+
+test("a sent todo the writer has not applied is created; a stale sent/ copy of one now done on the board is not", async () => {
+  joinWork()
+  await syncOk()
+  const repo = `${allowed}/work-${workRepos}`
+  const rid = ridOf((await devchatAsync({ args: ['todo', 'add', 'Done elsewhere.'], cwd: workRepo })).stdout)
+  assert.ok(rid && filesIn('outbox', 'sent').length === 1)
+  assert.deepEqual(linesFor((await rollbackOf()).lines, [rid]), [createLine({ rid, where: 'sent', title: 'Done elsewhere.', from: repo })])
+  // A second todo reaches this machine's snapshot open before the board resolves all three.
+  writerPass()
+  const synced = ridOf((await devchatAsync({ args: ['todo', 'add', 'Synced, then done elsewhere.'], cwd: workRepo })).stdout)
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem(synced)?.labels.status, 'open')
+  const sentCopy = ridOf((await devchatAsync({ args: ['todo', 'add', 'Sent copy kept.'], cwd: workRepo })).stdout)
+  writerPass()
+  for (const root of [rid, synced, sentCopy]) {
+    const intent = { v: 1, rid: `done-${randomUUID()}`, kind: 'done', root, text: '', by: profile }
+    postAsHost({ on: workBoard, channel: 'inbox', id: intent.rid, text: JSON.stringify(intent) })
+  }
+  writerPass()
+  // This machine never synced since: its snapshot shows one todo open, and sent/ holds the other's copy.
+  const stale = await rollbackOf()
+  assert.equal(filesIn('outbox', 'sent').length, 1)
+  assert.deepEqual(linesFor(stale.lines, [rid, synced, sentCopy]), [])
+})
+
+test('export --rollback lists every outbox entry, whatever the mode or the configured board', async () => {
+  joinBoard({ boardUrl: offlineBoardUrl })
+  const queued = ridOf((await devchatAsync({ args: ['todo', 'add', 'Queued, then mode off.'] })).stdout)
+  // A todo added and resolved in the same outbox needs no issue.
+  const cancelled = ridOf((await devchatAsync({ args: ['todo', 'add', 'Queued, then done.'] })).stdout)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', cancelled] })).status, 0)
+  assert.ok(queued && cancelled)
+  const line = createLine({ rid: queued, where: 'pending', title: 'Queued, then mode off.', from: `${allowed}/tools` })
+  for (const config of [{ ...readwrite, mode: 'off', boardUrl: offlineBoardUrl, machine }, { mode: 'off', githubLogin: allowed, machine }]) {
+    writeConfig(config)
+    const { header, lines } = await rollbackOf()
+    assert.deepEqual(lines, [line])
+    assert.deepEqual(header, exportHeader('# Board lines and 0 sent/ entries are left out (mode off): this list may be incomplete, but every line is still safe to run.'))
+  }
+})
+
+test("export --rollback lists this machine's local todos by rid", async () => {
+  joinWork()
+  const add = async (text) => localRid(await devchatAsync({ args: ['todo', 'add', text], cwd: root, sessionEnv: {} }), 'todo')
+  const kept = await add('Kept here.')
+  const finished = await add('Finished here.')
+  assert.equal((await devchatAsync({ args: ['todo', 'done', finished], cwd: root, sessionEnv: {} })).status, 0)
+  // Only a rid that is exactly todo:gh:<n> names an issue.
+  const lookalike = 'todo:gh:9.copy'
+  writeFileSync(join(localDir(), `${lookalike}.json`), JSON.stringify({ rid: lookalike, channel: 'todos', text: 'Look-alike.', labels: { rid: lookalike, status: 'done' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  const created = createLine({ rid: kept, where: 'local', title: 'Kept here.' })
+  const rids = [kept, finished, lookalike, 'todo:gh:1', 'todo:gh:2', 'todo:gh:3']
+  assert.deepEqual(linesFor((await rollbackOf()).lines, rids), [created], 'a resolved new todo gets no line')
+
+  ghIssues([ghIssue(1, 'Done here.'), ghIssue(2, 'Dropped here.'), ghIssue(3, 'Still open.')])
+  assert.equal((await importApproved()).status, 0)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', 'todo:gh:1'], cwd: root, sessionEnv: {} })).status, 0)
+  assert.equal((await devchatAsync({ args: ['todo', 'drop', 'todo:gh:2'], cwd: root, sessionEnv: {} })).status, 0)
+  assert.deepEqual(linesFor((await rollbackOf()).lines, rids).sort(), [
+    created,
+    'close todo:gh:1 local gh issue close 1 -R example-login/todos --reason completed',
+    "close todo:gh:2 local gh issue close 2 -R example-login/todos --reason 'not planned'",
+  ].sort(), 'an open imported todo gets no line')
+})
+
+test('an import approved from an older preview never overwrites a todo another import saved', async () => {
+  joinWork()
+  ghIssues([ghIssue(1, 'Raced.')])
+  const waiting = await waitingImport()
+  // While the first import waits on its prompt, a second one imports and the todo is done.
+  assert.equal((await importApproved()).status, 0)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', 'todo:gh:1'], cwd: root, sessionEnv: {} })).status, 0)
+  const first = await waiting.answer('y\n')
+  assert.equal(first.status, 1)
+  assert.match(first.stdout, /^#1 {2}already imported, kept local$/mu, 'the fresh preview')
+  assert.match(first.stderr, /changed since the approved preview \(digest [0-9a-f]{12}\): review the fresh preview above, and import again\. Nothing was imported\./u)
+  assert.equal(readJson(join(localDir(), 'todo:gh:1.json')).labels.status, 'done')
+})
+
+test('import re-reads the config after approval and refuses a changed mode, placement, or machine name', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  ghIssues([ghIssue(1101, 'Placed on the board.', repo)])
+  const config = { ...readwrite, boardUrl: workProxy.url, machine }
+  for (const [changed, message] of [
+    [{ ...config, allowlist: ['other-owner'] }, /the config, the issues, or this machine's records changed since the approved preview/u],
+    [{ ...config, boardUrl: offlineBoardUrl }, /the config, the issues, or this machine's records changed since the approved preview/u],
+    [{ ...config, machine: 'renamed-box' }, /the config, the issues, or this machine's records changed since the approved preview/u],
+    [{ ...config, mode: 'read' }, /the mode changed to read since the preview: import runs only in mode readwrite\. Nothing was imported\./u],
+  ]) {
+    writeConfig(config)
+    const waiting = await waitingImport()
+    writeConfig(changed)
+    const result = await waiting.answer('y\n')
+    assert.equal(result.status, 1)
+    assert.match(result.stderr, message)
+    assert.deepEqual([filesIn('outbox'), sentIntents().some(({ rid }) => rid === 'todo:gh:1101')], [[], false], 'nothing was written')
+  }
+  writeConfig({ ...config, allowlist: ['other-owner'] })
+  const waiting = await waitingImport()
+  writeConfig(config)
+  const result = await waiting.answer('y\n')
+  assert.match(result.stdout, new RegExp(`^#1101  board \\(${repo}\\)  Placed on the board\\.`, 'mu'), 'the fresh preview shows the new placement')
+})
+
+test('a local import stays local on a rerun, even once its repo is allowlisted', async () => {
+  joinWork()
+  ghIssues([ghIssue(1201, 'Kept local.', 'other-owner/service')])
+  assert.match((await importApproved()).stdout, /^imported 1: 0 queued for the board, 1 saved on this machine only$/mu)
+  writeConfig({ ...readwrite, boardUrl: workProxy.url, machine, allowlist: [allowed, 'other-owner'] })
+  const rerun = await importApproved()
+  assert.match(rerun.stdout, /^#1201  already imported, kept local$/mu)
+  assert.ok(!sentIntents().some(({ rid }) => rid === 'todo:gh:1201'))
+})
+
+test("two machines' lists, both naming one new todo, create one issue", async () => {
+  joinWork()
+  await syncOk()
+  const repo = `${allowed}/work-${workRepos}`
+  // This machine has sent the todo; the writer applies it, and a second machine pulls it.
+  const rid = ridOf((await devchatAsync({ args: ['todo', 'add', 'Listed twice.'], cwd: workRepo })).stdout)
+  const first = linesFor((await rollbackOf()).lines, [rid])
+  writerPass()
+  const second = linesFor(await onSecondMachine(async () => {
+    await syncOk()
+    return (await rollbackOf()).lines
+  }), [rid])
+  assert.deepEqual([first, second], [
+    [createLine({ rid, where: 'sent', title: 'Listed twice.', from: repo })],
+    [createLine({ rid, where: 'board', title: 'Listed twice.', from: repo })],
+  ])
+  assert.deepEqual(replay([...first, ...second]), [createCall({ rid, title: 'Listed twice.', from: repo })])
+})
+
+test('a replayed create creates nothing when its issue list fails', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', 'Listed once.'], cwd: root, sessionEnv: {} }), 'todo')
+  const lines = linesFor((await rollbackOf()).lines, [rid])
+  assert.deepEqual(replay(lines), [createCall({ rid, title: 'Listed once.' })])
+  writeFileSync(join(home, 'gh-list-fails'), '')
+  const calls = ghCalls().length
+  const again = spawnSync('/bin/sh', ['-c', lines[0].split(' ').slice(3).join(' ')], { env })
+  assert.notEqual(again.status, 0, 'the line fails with its list')
+  assert.deepEqual(ghCalls().slice(calls).filter((call) => call.startsWith('issue create')), [])
+})
+
+test('a replayed create finds its marker on an issue older than the first 1000', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', 'Created long ago.'], cwd: root, sessionEnv: {} }), 'todo')
+  const lines = linesFor((await rollbackOf()).lines, [rid])
+  // The marked issue is the oldest of 1,001, so it is the 1,001st item, newest first.
+  mkdirSync(join(home, 'gh-created'))
+  writeFileSync(join(home, 'gh-created', '1'), `From: devchat · Host: ${machine}\n\ndevchat-rid: ${rid}\n`)
+  for (let number = 2; number <= 1001; number += 1) writeFileSync(join(home, 'gh-created', String(number)), `Filler ${number}.\n`)
+  assert.deepEqual(replay(lines), [])
+})
+
+test("a board's 409 error code cannot add a line to the rollback list", async () => {
+  for (const [code, shown] of [
+    ['x\ncreate todo-evil-00000001 board touch PWNED #', 'with an unknown error code'],
+    ['duplicate_id', 'duplicate_id'],
+  ]) {
+    joinBoard()
+    proxy.fault = (req) => (req.method === 'GET' ? { status: 409, body: JSON.stringify({ error: { code } }) } : null)
+    const exported = await devchatAsync({ args: ['admin', 'export', '--rollback'], cwd: root, sessionEnv: {} })
+    proxy.fault = () => null
+    assert.equal(exported.status, 0, exported.stderr)
+    const lines = exported.stdout.split('\n').filter(Boolean)
+    assert.deepEqual(lines.filter((line) => !line.startsWith('#')), [], 'only header lines')
+    assert.match(exported.stdout, new RegExp(`^# Board lines and 0 sent/ entries are left out \\(the pull failed: GET /api/board/threads answered 409 ${shown}\\)`, 'mu'))
+    const replayed = docReplay({ only: lines })
+    assert.deepEqual([replayed.status, replayed.calls, existsSync(join(replayed.dir, 'PWNED'))], [0, [], false])
+  }
+})
+
+test('a replayed create matches its marker without -q, in a CRLF body, under pipefail', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', 'Edited on the web.'], cwd: root, sessionEnv: {} }), 'todo')
+  const [line] = linesFor((await rollbackOf()).lines, [rid])
+  mkdirSync(join(home, 'gh-created'))
+  // The newest issue carries the marker, in a body saved with CRLF; an older one is large enough
+  // that an early grep exit would leave printf writing into a closed pipe.
+  writeFileSync(join(home, 'gh-created', '1'), `${'Large body. '.repeat(100_000)}\n`)
+  writeFileSync(join(home, 'gh-created', '2'), `From: devchat · Host: ${machine}\r\n\r\ndevchat-rid: ${rid}\r\n`)
+  const calls = ghCalls().length
+  const run = spawnSync('bash', ['-o', 'pipefail', '-c', line.split(' ').slice(3).join(' ')], { env, encoding: 'utf8' })
+  assert.equal(run.status, 0, run.stderr)
+  assert.deepEqual(ghCalls().slice(calls).filter((call) => call.startsWith('issue create')), [])
+})
+
+test('a todo over 256 characters gets a cut title and keeps its full text in the body', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const text = `${'😀'.repeat(255)}é and more`
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', text], cwd: root, sessionEnv: {} }), 'todo')
+  assert.ok(rid)
+  assert.deepEqual(replay(linesFor((await rollbackOf()).lines, [rid])), [
+    `issue create -R example-login/todos --title ${'😀'.repeat(255)}é --body ${text}||From: devchat · Host: ${machine}||devchat-rid: ${rid}`,
+  ])
+})
+
+test('export lists a todo a sync moves from the outbox to sent/ while it reads', async () => {
+  joinBoard()
+  proxy.fault = () => 503
+  const rid = ridOf((await devchatAsync({ args: ['todo', 'add', 'Moved mid-export.'] })).stdout)
+  const [name] = filesIn('outbox')
+  assert.ok(rid && name)
+  // The move lands on export's first board read, after it read the outbox and sent/.
+  proxy.fault = () => {
+    proxy.fault = () => null
+    const path = join(stateDir(), 'outbox', name)
+    mkdirSync(join(stateDir(), 'outbox', 'sent'), { recursive: true })
+    writeFileSync(join(stateDir(), 'outbox', 'sent', name), JSON.stringify({ ...readJson(path), inboxId: 999999, epoch: '1' }))
+    rmSync(path)
+    return null
+  }
+  const { lines } = await rollbackOf()
+  assert.deepEqual(linesFor(lines, [rid]), [createLine({ rid, where: 'pending', title: 'Moved mid-export.', from: `${allowed}/tools` })])
+})
+
+test('a machine name with a newline is refused, and a stored one keeps each create on one line', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine: 'two\nlines' })
+  const refused = devchat({ args: ['todo', 'add', 'Never saved.'] })
+  assert.equal(refused.status, 1)
+  assert.match(refused.stderr, /machine must not hold control characters/u)
+  await assertSetupRefuses({ path: join(env.XDG_CONFIG_HOME, 'devchat', 'config.json'), problem: 'machine must not hold control characters' })
+
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = 'todo-stored-newline'
+  mkdirSync(localDir(), { recursive: true })
+  writeFileSync(join(localDir(), `${rid}.json`), JSON.stringify({ rid, channel: 'todos', text: 'Stored\nbefore.', labels: { rid, status: 'open', host: 'two\nlines' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  const lines = linesFor((await rollbackOf()).lines, [rid])
+  assert.deepEqual(lines, [createLine({ rid, where: 'local', title: 'Stored before.', host: 'two lines' })])
+  assert.deepEqual(replay(lines), [createCall({ rid, title: 'Stored before.', host: 'two lines' })])
+})
+
+test('export skips a record whose rid is malformed, and counts it in the header', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const kept = localRid(await devchatAsync({ args: ['todo', 'add', 'Kept.'], cwd: root, sessionEnv: {} }), 'todo')
+  const rid = 'todo-bad\ngh issue close 1'
+  writeFileSync(join(localDir(), 'malformed.json'), JSON.stringify({ rid, channel: 'todos', text: 'Malformed.', labels: { rid, status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  const { header, lines } = await rollbackOf()
+  assert.deepEqual(header.at(-1), '# 1 record skipped: malformed rid. Fix or remove each such file in local/ or outbox/, then export again.')
+  assert.deepEqual(lines, [createLine({ rid: kept, where: 'local', title: 'Kept.' })])
+})
+
+test('export stops when gh resolves another account than the one import claimed here', async () => {
+  joinWork()
+  ghIssues([ghIssue(1, 'From the first account.')])
+  assert.equal((await importApproved()).status, 0)
+  writeFileSync(join(home, 'gh-login'), 'other-login\n')
+  const exported = await devchatAsync({ args: ['admin', 'export', '--rollback'], cwd: root, sessionEnv: {} })
+  assert.deepEqual({ status: exported.status, stdout: exported.stdout }, { status: 1, stdout: '' })
+  assert.match(exported.stderr, /this machine imported from example-login\/todos, and gh now resolves to other-login\/todos: switch gh/u)
+})
+
+test('a POST 409 other than duplicate_id stops the flush', async () => {
+  joinBoard()
+  proxy.fault = (req) => (req.method === 'POST' ? { status: 409, body: '{"error":{"code":"conflict"}}' } : null)
+  const add = await devchatAsync({ args: ['todo', 'add', 'Conflicted.'] })
+  proxy.fault = () => null
+  assert.equal(add.status, 0, add.stderr)
+  assert.match(add.stdout, /: not sent yet \(POST \/api\/board\/messages answered 409 conflict\): the next devchat sync sends it$/mu)
+  assert.equal(filesIn('outbox').length, 1)
+  assert.deepEqual(filesIn('outbox', 'rejected'), [])
+})
+
+test('import stops before any write when gh resolves another account than it previewed or claimed', async () => {
+  joinWork()
+  ghIssues([ghIssue(1, 'From the first account.')])
+  // The account changes while the prompt waits.
+  const waiting = await waitingImport()
+  writeFileSync(join(home, 'gh-login'), 'other-login\n')
+  const switched = await waiting.answer('y\n')
+  assert.equal(switched.status, 1)
+  assert.match(switched.stderr, /gh now resolves to other-login\/todos, not example-login\/todos, the repo this preview read\. Nothing was imported\./u)
+  assert.deepEqual([existsSync(localDir()), existsSync(importSource())], [false, false])
+
+  rmSync(join(home, 'gh-login'))
+  assert.equal((await importApproved()).status, 0)
+  writeFileSync(join(home, 'gh-login'), 'other-login\n')
+  ghIssues([ghIssue(2, 'From the second account.')])
+  const other = await importApproved()
+  assert.equal(other.status, 1)
+  assert.match(other.stderr, /this machine imported from example-login\/todos, and this import reads other-login\/todos: switch gh/u)
+  assert.ok(!existsSync(join(localDir(), 'todo:gh:2.json')))
+  assert.deepEqual(readJson(importSource()).repo, 'example-login/todos')
+})
+
+test('an import the check at flush rejects is reported, and a rerun sends it', async () => {
+  joinBoard({ machineName: 'x'.repeat(257) })
+  ghIssues([ghIssue(301, 'Rejected at flush.', `${allowed}/tools`)])
+  const first = await importApproved()
+  assert.equal(first.status, 0, first.stderr)
+  assert.match(first.stdout, /^todo:gh:301: not sent: the check at flush rejected it \(a provenance field is not a board label value\) and moved it to outbox\/rejected\/$/mu)
+  joinBoard()
+  const rerun = await importApproved()
+  assert.match(rerun.stdout, new RegExp(`^#301  board \\(${allowed}/tools\\)  Rejected at flush\\.`, 'mu'))
+  assert.match(rerun.stdout, /^todo:gh:301: sent$/mu)
+})
+
+test('import --yes refuses a digest that does not match the preview, and shows the fresh one', async () => {
+  joinWork()
+  const digestOf = async () => /^preview digest: ([0-9a-f]{12})$/mu.exec((await devchatAsync({ args: ['admin', 'import'], cwd: root, sessionEnv: {} })).stdout)[1]
+  ghIssues([{ number: 1, title: 'Approved title.', body: 'From: thread-a · Host: h' }])
+  const digest = await digestOf()
+  // A changed title, or only a changed From: line with the same destination, changes the digest.
+  for (const issue of [{ number: 1, title: 'Changed after approval.', body: 'From: thread-a · Host: h' }, { number: 1, title: 'Approved title.', body: 'From: thread-b · Host: h' }]) {
+    ghIssues([issue])
+    const stale = await devchatAsync({ args: ['admin', 'import', '--yes', digest], cwd: root, sessionEnv: {} })
+    assert.equal(stale.status, 1)
+    assert.match(stale.stdout, new RegExp(`^#1 {2}this machine only {2}${issue.title.replace('.', '\\.')}`, 'mu'))
+    assert.match(stale.stdout, new RegExp(`^This preview's digest is [0-9a-f]{12}, not ${digest}: .* Nothing was imported\\.$`, 'mu'))
+  }
+  assert.ok(!existsSync(localDir()), 'nothing was imported')
+  assert.match((await devchatAsync({ args: ['admin', 'import', '--yes'], cwd: root, sessionEnv: {} })).stderr, /usage: devchat admin import \[--yes <digest>\]/u)
 })
