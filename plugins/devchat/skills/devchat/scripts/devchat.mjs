@@ -71,6 +71,13 @@ const writeExclusive = (path, content) => {
 
 // Config
 
+// The machine name goes into rollback commands and board labels, so it must stay on one line.
+const machineProblem = (machine) => {
+  if (machine !== undefined && typeof machine !== 'string') return 'machine must be a string'
+  if (/\p{Cc}/u.test(machine ?? '')) return 'machine must not hold control characters'
+  return null
+}
+
 const validateConfig = (config) => {
   if (typeof config !== 'object' || config === null || Array.isArray(config)) return 'config must be a JSON object'
   if (config.mode !== undefined && !modes.includes(config.mode)) return `mode must be one of ${modes.join(', ')}`
@@ -78,7 +85,8 @@ const validateConfig = (config) => {
   if (config.allowlist !== undefined && !(Array.isArray(config.allowlist) && config.allowlist.every((owner) => typeof owner === 'string'))) {
     return 'allowlist must be an array of GitHub owners'
   }
-  if (config.machine !== undefined && typeof config.machine !== 'string') return 'machine must be a string'
+  const machine = machineProblem(config.machine)
+  if (machine) return machine
   const urlProblem = config.boardUrl === undefined ? null : checkBoardUrl(config.boardUrl).problem
   if (urlProblem) return `boardUrl is refused: ${urlProblem}`
   // Without a board URL, a mode that talks to the board has nowhere to go.
@@ -1909,7 +1917,12 @@ const configStep = ({ env, settings }) => {
   return {
     describe: `write ${path}: mode ${settings.mode}, GitHub login ${settings.githubLogin}, allowlist ${settings.allowlist.join(', ')}, board ${settings.boardUrl}`,
     path,
-    preflight: () => destinationProblem({ path, json: true }),
+    preflight: () => {
+      const problem = destinationProblem({ path, json: true })
+      if (problem || !existsSync(path)) return problem
+      const existing = readJson(path)
+      return isRecord(existing) ? machineProblem(existing.machine) : null
+    },
     run: () => {
       // Keep the keys setup does not set, such as `machine`.
       const existing = existsSync(path) ? readJson(path) : {}
@@ -2111,10 +2124,11 @@ const saveImported = async ({ plans, config, env, out }) => {
   for (const { rid, name } of queued) out(`${rid}: ${outcomeText({ outcome: outcomes.get(name), reason })}`)
 }
 
-// A short digest of what the preview showed: the source repo, the mode and board, and each issue's number, title, raw
+// A short digest of what the preview showed: the source repo, the mode, board, and machine name
+// (the profile the posts carry), and each issue's number, title, raw
 // `From:` line, body guard result, and destination with its identity. `--yes` must name it, so an
 // agent imports only the set the user approved.
-const previewDigest = ({ repo, config, plans }) => createHash('sha256').update(JSON.stringify([repo, config.mode, config.boardUrl, ...plans.map(({ issue, plan }) => [
+const previewDigest = ({ repo, config, plans }) => createHash('sha256').update(JSON.stringify([repo, config.mode, config.boardUrl, config.machine, ...plans.map(({ issue, plan }) => [
   issue.number, issue.title, /^From:.*$/mu.exec(issue.body ?? '')?.[0] ?? '', guardReason(issue.body ?? '') ?? 'ok',
   plan.skip ?? (plan.board ? 'board' : 'local'), plan.board ?? plan.local ?? null,
 ])])).digest('hex').slice(0, 12)
@@ -2191,13 +2205,17 @@ const adminImport = async ({ args, env, out, ask }) => {
   return 0
 }
 
+// Control characters to spaces, so a value from the config or the board keeps a command on its line.
+const flat = (value) => String(value).replace(/\p{Cc}/gu, ' ')
+
 // The rollback list. Before the import every todo lived in GitHub, so the rid decides each line:
 // a resolved `todo:gh:<n>` is closed, and an open todo with any other rid is created. Every line is
 // safe to run twice and from every machine: a close is, and a create first looks for an issue that
 // already carries its `devchat-rid:` line, through the list API, which sees a new issue at once.
+// The create runs only when that list succeeded, so a failed list creates nothing.
 const createCommand = ({ rid, text, body, repo }) => {
-  const marker = `devchat-rid: ${rid}`
-  return `gh issue list -R ${repo} --state all --limit 1000 --json body --jq '.[].body' | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(text, Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(body)} ${shellQuote(marker)})"`
+  const marker = `devchat-rid: ${flat(rid)}`
+  return `out=$(gh issue list -R ${repo} --state all --limit 1000 --json body --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(flat(text), Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(flat(body))} ${shellQuote(marker)})"; }`
 }
 
 /** The line for one todo: `{ op, rid, line }`, or none. */
@@ -2251,10 +2269,10 @@ const exportRepo = (env) => {
 const entriesIn = (dir) => outboxNames(dir).map((name) => readOutboxEntry(join(dir, name)).entry)
 
 /** Every rollback line this machine knows, from each source, without a todo a queued resolve cancels. */
-const exportLines = ({ pull, config, env, repo }) => {
+const exportLines = ({ pull, queued, config, env, repo }) => {
   const intents = [
     ...(pull.unapplied ?? []).map((entry) => ({ intent: intentOfEntry(entry), where: 'sent' })),
-    ...entriesIn(outboxDir(env)).map((entry) => ({ intent: intentOfEntry(entry), where: 'pending' })),
+    ...queued.map((entry) => ({ intent: intentOfEntry(entry), where: 'pending' })),
   ].filter(({ intent }) => intent)
   // A todo never imported that a queued or unapplied resolve ends needs no issue.
   const cancelled = new Set(intents.filter(({ intent }) => isResolveKind(intent.kind) && importedIssue(intent.root) === undefined).map(({ intent }) => intent.root))
@@ -2273,6 +2291,9 @@ const adminExport = async ({ args, env, out }) => {
   if (args.length !== 1 || args[0] !== '--rollback') throw new UsageError('usage: devchat admin export --rollback')
   const config = readConfig(env)
   const repo = exportRepo(env)
+  // The outbox first, then `sent/`: a sync that moves an entry between the two reads leaves it in
+  // both lists, never in neither, and its create line is safe to run twice.
+  const queued = entriesIn(outboxDir(env))
   const sent = entriesIn(sentDir(env))
   const pull = await pullForExport({ config, sent })
   out(`# devchat rollback list for ${repo}. Every list you replay must name this same repo.`)
@@ -2281,7 +2302,7 @@ const adminExport = async ({ args, env, out }) => {
     : `# Board lines and ${sent.length} sent/ entries are left out (${pull.reason}): this list may be incomplete, but every line is still safe to run.`)
   out("# Replay: run every line from every machine's list, in order. A create first checks the repo for its devchat-rid line, and a close is safe to repeat.")
   out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, with sh.')
-  for (const { line } of exportLines({ pull, config, env, repo })) out(line)
+  for (const { line } of exportLines({ pull, queued, config, env, repo })) out(line)
   return 0
 }
 
