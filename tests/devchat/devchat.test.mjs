@@ -39,6 +39,19 @@ case "$*" in
 esac
 `)
 chmodSync(join(fakeBin, 'systemctl'), 0o755)
+// A stand-in for `gh`: it logs each call in the test's home, answers the todos skill's reads with a
+// fake login and the issues in \`$HOME/gh-issues.json\`, and accepts issue create and close.
+writeFileSync(join(fakeBin, 'gh'), `#!/bin/sh
+printf '%s\\n' "$*" >> "$HOME/gh.log"
+case "$1 $2" in
+  'api user') echo example-login ;;
+  'repo view') echo PRIVATE ;;
+  'issue list') cat "$HOME/gh-issues.json" ;;
+  'issue create'|'issue close') ;;
+  *) exit 1 ;;
+esac
+`)
+chmodSync(join(fakeBin, 'gh'), 0o755)
 
 const makeRepo = (name, remote) => {
   const dir = join(root, 'repos', name)
@@ -2096,4 +2109,138 @@ test('--issue and --pr URLs match their scheme and host ignoring case, and their
   assert.equal((await work(['note', item, 'Upper path.', '--pr', `https://github.com/${repo}/PULL/9`], { preload: true })).status, 1)
   assert.equal((await work(['note', item, 'Other owner.', '--pr', 'HTTPS://GITHUB.COM/other-owner/service/pull/9'], { preload: true })).status, 1)
   assert.deepEqual(sentIntents().map(({ issue, pr }) => issue ?? pr), [`HTTPS://GITHUB.COM/${repo}/issues/2`, `Https://GitHub.com/${repo}/pull/9`])
+})
+
+// Admin: the todos import and its rollback list (spec §9), against the `gh` stub.
+const ghIssues = (issues) => writeFileSync(join(home, 'gh-issues.json'), JSON.stringify(issues))
+const ghCalls = () => (existsSync(join(home, 'gh.log')) ? readFileSync(join(home, 'gh.log'), 'utf8').split('\n').filter(Boolean) : [])
+const ghIssue = (number, title, from) => ({ number, title, body: from === undefined ? 'Added by hand.' : `From: ${from} · Host: example-host`, createdAt: '2026-01-01T00:00:00Z' })
+const ghReads = /^(?:api user|repo view example-login\/todos|issue list -R example-login\/todos) /u
+
+test('import previews every issue with its From: line, and a declined import writes nothing', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  ghIssues([
+    ghIssue(1, 'Water the plants.', `${allowed}/tools`),
+    ghIssue(2, 'Review the notes.', 'other-owner/service'),
+    ghIssue(3, 'Call back.'),
+    { number: 4, title: 'Clean /home/example/notes', body: 'From: x/y · Host: h' },
+    { number: 5, title: 'Body refused.', body: 'From: x/y · Host: h\nSee /home/example/notes' },
+  ])
+  const preview = [
+    'example-login/todos: 5 open issue(s)',
+    `#1  this machine only  Water the plants.  From: ${allowed}/tools`,
+    '#2  this machine only  Review the notes.  From: other-owner/service',
+    '#3  this machine only  Call back.  From: (none)',
+    '#4  refused: absolute home-directory path in the title',
+    '#5  refused: absolute home-directory path in the body  Body refused.',
+    'Import 3 todo(s)? [y/N]',
+  ].join('\n')
+  for (const input of ['n\n', '']) {
+    const declined = devchat({ args: ['admin', 'import'], cwd: root, input })
+    assert.equal(declined.status, 1)
+    assert.equal(declined.stdout, `${preview}\nNothing was imported.\n`)
+  }
+  assert.ok(!existsSync(localDir()) && !existsSync(join(stateDir(), 'cutover.json')), 'a declined import writes nothing')
+
+  const approved = devchat({ args: ['admin', 'import'], cwd: root, input: 'y\n' })
+  assert.equal(approved.status, 0, approved.stderr)
+  assert.match(approved.stdout, /^imported 3: 0 queued for the board, 3 saved on this machine only$/mu)
+  const todos = Object.fromEntries(localTodos().map((item) => [item.rid, item]))
+  assert.deepEqual(Object.keys(todos).sort(), ['todo:gh:1', 'todo:gh:2', 'todo:gh:3'])
+  assert.equal(todos['todo:gh:2'].identity, 'github.com/other-owner/service')
+  assert.equal(todos['todo:gh:3'].identity, undefined, 'no From: repo, no identity')
+  assert.match(devchat({ args: ['todo', 'list'], cwd: repos.other }).stdout, /^todo:gh:2 .*Review the notes\.$/mu)
+  assert.equal(devchat({ args: ['todo', 'list'], cwd: root }).stdout.split('\n').filter(Boolean).length, 3)
+  assert.ok(ghCalls().every((call) => ghReads.test(`${call} `)), ghCalls().join('\n'))
+  assert.doesNotMatch(`${approved.stdout}${approved.stderr}`, /\/home\/example/u)
+})
+
+test("export --rollback closes this machine's imported todos, and names one it cannot see", () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  assert.match(devchat({ args: ['admin', 'export', '--rollback'], cwd: root }).stderr, /no cutover: devchat admin import never ran here/u)
+  ghIssues([ghIssue(1, 'Done here.'), ghIssue(2, 'Dropped here.'), ghIssue(3, 'Lost here.')])
+  assert.equal(devchat({ args: ['admin', 'import', '--yes'], cwd: root }).status, 0)
+  assert.equal(devchat({ args: ['todo', 'done', 'todo:gh:1'], cwd: root }).status, 0)
+  assert.equal(devchat({ args: ['todo', 'drop', 'todo:gh:2'], cwd: root }).status, 0)
+  rmSync(join(localDir(), 'todo:gh:3.json'))
+  const lines = devchat({ args: ['admin', 'export', '--rollback'], cwd: root }).stdout.split('\n').filter((line) => line && !line.startsWith('#'))
+  assert.deepEqual(lines, [
+    'close todo:gh:1 local gh issue close 1 -R example-login/todos --reason completed',
+    "close todo:gh:2 local gh issue close 2 -R example-login/todos --reason 'not planned'",
+    "check todo:gh:3 unknown # not in this machine's view: check issue 3 by hand",
+  ])
+})
+
+test('import sends an allowlisted From: repo to the board and keeps any other here; a rerun posts nothing', async () => {
+  joinWork()
+  const repo = `${allowed}/work-${workRepos}`
+  ghIssues([ghIssue(101, 'Board todo.', repo), ghIssue(102, 'Other repo todo.', 'other-owner/service')])
+  const unsynced = await devchatAsync({ args: ['admin', 'import', '--yes'], cwd: root, sessionEnv: {} })
+  assert.equal(unsynced.status, 1)
+  assert.match(unsynced.stderr, /import needs a snapshot of the board/u)
+  await syncOk()
+  const first = await devchatAsync({ args: ['admin', 'import', '--yes'], cwd: root, sessionEnv: {} })
+  assert.equal(first.status, 0, first.stderr)
+  assert.match(first.stdout, new RegExp(`^#101  board \\(${repo}\\)  Board todo\\.  From: ${repo}$`, 'mu'))
+  assert.match(first.stdout, /^#102  this machine only {2}Other repo todo\.  From: other-owner\/service$/mu)
+  assert.match(first.stdout, /^imported 2: 1 queued for the board, 1 saved on this machine only\nsent all 1 board todos$/mu)
+  const [intent] = sentIntents()
+  assert.deepEqual(intent, { v: 1, rid: 'todo:gh:101', kind: 'todo', channel: 'todos', text: 'Board todo.', by: profile, repo, machine })
+  assert.deepEqual(localTodos().map(({ rid }) => rid), ['todo:gh:102'])
+  writerPass()
+  await syncOk()
+  assert.equal(snapshotItem('todo:gh:101').labels.repo, repo)
+
+  ghIssues([ghIssue(101, 'Board todo, edited on GitHub.', repo), ghIssue(102, 'Other repo todo.', 'other-owner/service')])
+  const posts = sentIntents().length
+  const rerun = await devchatAsync({ args: ['admin', 'import', '--yes'], cwd: root, sessionEnv: {} })
+  assert.equal(rerun.status, 0, rerun.stderr)
+  assert.match(rerun.stdout, /^#101  already imported as todo:gh:101\n#102  already imported as todo:gh:102\nNothing to import\.$/mu)
+  assert.equal(sentIntents().length, posts, 'a rerun posts nothing')
+})
+
+test('export --rollback prints the release 1 drill as gh commands, and makes no request', async () => {
+  joinWork()
+  await syncOk()
+  const repo = `${allowed}/work-${workRepos}`
+  // A board todo the app applied before the cutover is not in the list.
+  assert.ok(ridOf((await devchatAsync({ args: ['todo', 'add', 'Before the cutover.'], cwd: workRepo })).stdout))
+  writerPass()
+  await syncOk()
+  ghIssues([ghIssue(201, 'Imported, then done.', repo), ghIssue(202, 'Imported, then dropped.', repo)])
+  assert.equal((await devchatAsync({ args: ['admin', 'import', '--yes'], cwd: root, sessionEnv: {} })).status, 0)
+  writerPass()
+  await syncOk()
+  const added = ridOf((await devchatAsync({ args: ['todo', 'add', "Check the team's notes."], cwd: workRepo })).stdout)
+  assert.equal((await devchatAsync({ args: ['todo', 'done', 'todo:gh:201'], cwd: workRepo })).status, 0)
+  assert.equal((await devchatAsync({ args: ['todo', 'drop', 'todo:gh:202'], cwd: workRepo })).status, 0)
+  writerPass()
+  await syncOk()
+  workProxy.fault = () => 503
+  const offline = ridOf((await devchatAsync({ args: ['todo', 'add', 'Added offline.'], cwd: workRepo })).stdout)
+  workProxy.fault = () => null
+  assert.ok(added && offline)
+
+  const calls = ghCalls().length
+  const exported = await devchatAsync({ args: ['admin', 'export', '--rollback'], cwd: root, sessionEnv: {}, preload: true })
+  assert.equal(exported.status, 0, exported.stderr)
+  assert.equal(ghCalls().length, calls, 'export runs no gh command')
+  assert.deepEqual(networkCalls(), [], 'export makes no request')
+  const body = `'From: ${repo} · Host: ${machine}'`
+  const lines = exported.stdout.split('\n').filter((line) => line && !line.startsWith('#'))
+  assert.deepEqual(lines, [
+    'close todo:gh:201 board gh issue close 201 -R example-login/todos --reason completed',
+    "close todo:gh:202 board gh issue close 202 -R example-login/todos --reason 'not planned'",
+    `create ${added} board gh issue create -R example-login/todos --title 'Check the team'\\''s notes.' --body ${body}`,
+    `create ${offline} pending gh issue create -R example-login/todos --title 'Added offline.' --body ${body}`,
+  ])
+
+  // Replaying each command against the stub gives GitHub the drill's four changes.
+  for (const line of lines) execFileSync('/bin/sh', ['-c', line.split(' ').slice(3).join(' ')], { env })
+  assert.deepEqual(ghCalls().slice(calls), [
+    'issue close 201 -R example-login/todos --reason completed',
+    'issue close 202 -R example-login/todos --reason not planned',
+    `issue create -R example-login/todos --title Check the team's notes. --body From: ${repo} · Host: ${machine}`,
+    `issue create -R example-login/todos --title Added offline. --body From: ${repo} · Host: ${machine}`,
+  ])
 })

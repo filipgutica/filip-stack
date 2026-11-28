@@ -39,4 +39,4 @@ Run `devchat` through the launcher in this skill's base directory. It finds a su
 
 ## Admin commands
 
-Only when the user asks to list, show, finish, or drop todos or work items, or to sync, set up, or check devchat, read [references/admin.md](references/admin.md).
+Only when the user asks to list, show, finish, or drop todos or work items, to sync, set up, or check devchat, or to import todos from the todos skill or roll that import back, read [references/admin.md](references/admin.md).
