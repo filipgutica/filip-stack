@@ -1,3 +1,10 @@
+# [6.37.0](https://github.com/filipgutica/filip-stack/compare/v6.36.0...v6.37.0) (2026-11-28)
+
+
+### Features
+
+* **devchat:** add admin import and export --rollback for todos ([#308](https://github.com/filipgutica/filip-stack/issues/308)) ([4d4fc12](https://github.com/filipgutica/filip-stack/commit/4d4fc1262fbe0335f961f32db7a200dbe9c4d6a2))
+
 # [6.36.0](https://github.com/filipgutica/filip-stack/compare/v6.35.0...v6.36.0) (2026-11-28)
 
 
