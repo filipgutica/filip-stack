@@ -765,8 +765,13 @@ const boardClient = ({ boardUrl, signal, onAnswer = () => {} }) => {
       throw new SyncStop(`the board is unreachable (${error.cause?.code ?? error.cause?.message ?? error.name})`)
     }
     onAnswer()
-    // Board's 409 `duplicate_id` means the id is taken for good and nothing was written.
-    if (response.status === 409 && (await response.json().catch(() => null))?.error?.code === 'duplicate_id') return { duplicateId: true }
+    // Board's 409 `duplicate_id` means the id is taken for good and nothing was written. Any other
+    // conflict stops the run, as every other error answer does.
+    if (response.status === 409) {
+      const code = (await response.json().catch(() => null))?.error?.code
+      if (code === 'duplicate_id') return { duplicateId: true }
+      throw new SyncStop(`${where} answered 409 ${code ?? 'without an error code'}`)
+    }
     if (!response.ok) {
       await response.body?.cancel()
       throw new SyncStop(`${where} answered ${response.status}`)
@@ -2043,6 +2048,7 @@ const claimImportSource = ({ env, repo }) => {
  */
 const planIssue = ({ issue, local, config }) => {
   const rid = importedRid(issue.number)
+  if (local.has(rid)) return { rid, skip: 'already imported, kept local' }
   const title = typeof issue.title === 'string' ? issue.title.trim() : ''
   if (title === '' || title.length > maxTextLength) return { rid, skip: 'refused: the title is empty or too long' }
   const titleReason = guardReason(title)
@@ -2052,7 +2058,7 @@ const planIssue = ({ issue, local, config }) => {
   const from = fromOf(issue.body)
   const identity = fromIdentity(from)
   const repo = allowlistedRepo({ identity, allowlist: config.allowlist })
-  if (repo === null) return local.has(rid) ? { rid, skip: `already imported as ${rid}` } : { rid, title, from, local: identity ?? undefined }
+  if (repo === null) return { rid, title, from, local: identity ?? undefined }
   const fields = { kind: 'todo', channel: todoChannel, text: title, repo, machine: config.machine }
   if (intentSize({ fields, rid, config }) > boardTextLimit) return { rid, title, skip: 'refused: too long for the board' }
   return { rid, title, from, board: repo, fields }
@@ -2105,10 +2111,10 @@ const saveImported = async ({ plans, config, env, out }) => {
   for (const { rid, name } of queued) out(`${rid}: ${outcomeText({ outcome: outcomes.get(name), reason })}`)
 }
 
-// A short digest of what the preview showed: the source repo, and each issue's number, title, raw
+// A short digest of what the preview showed: the source repo, the mode and board, and each issue's number, title, raw
 // `From:` line, body guard result, and destination with its identity. `--yes` must name it, so an
 // agent imports only the set the user approved.
-const previewDigest = ({ repo, plans }) => createHash('sha256').update(JSON.stringify([repo, ...plans.map(({ issue, plan }) => [
+const previewDigest = ({ repo, config, plans }) => createHash('sha256').update(JSON.stringify([repo, config.mode, config.boardUrl, ...plans.map(({ issue, plan }) => [
   issue.number, issue.title, /^From:.*$/mu.exec(issue.body ?? '')?.[0] ?? '', guardReason(issue.body ?? '') ?? 'ok',
   plan.skip ?? (plan.board ? 'board' : 'local'), plan.board ?? plan.local ?? null,
 ])])).digest('hex').slice(0, 12)
@@ -2126,19 +2132,43 @@ const syncBeforeImport = async ({ config, env }) => {
  * `devchat admin import [--yes <digest>]` (spec §9): syncs, previews every open issue of the todos
  * repo with its `From:` line, then, once approved, saves each as a todo with rid `todo:gh:<n>`.
  */
-const adminImport = async ({ args, env, out, ask }) => {
-  const approved = args[0] === '--yes' && args.length === 2 ? args[1] : null
-  if (args.length > 0 && approved === null) throw new UsageError('usage: devchat admin import [--yes <digest>]')
-  const config = readConfig(env)
-  await syncBeforeImport({ config, env })
+// Reads the todos repo and plans every issue against `config` and this machine's local records.
+const importPreview = ({ config, env }) => {
   const repo = todosRepoOf(env)
   const issues = openIssues({ repo, env })
   const local = new Set(readLocalItems(env).map(({ rid }) => rid))
   const plans = issues.map((issue) => ({ issue, plan: planIssue({ issue, local, config }) }))
+  return { repo, issues, plans, digest: previewDigest({ repo, config, plans }) }
+}
+
+const printPreview = ({ preview: { repo, issues, plans, digest }, out }) => {
   out(`${repo}: ${issues.length} open issue(s)`)
   for (const entry of plans) out(previewLine(entry))
-  const digest = previewDigest({ repo, plans })
   out(`preview digest: ${digest}`)
+}
+
+/**
+ * Re-checks an approved preview before any write. The `gh` account, the config (mode, board,
+ * allowlist), the issues, and the local records may have changed while the prompt waited: any change
+ * to what the preview showed refuses the import and prints the fresh preview.
+ */
+const recheckImport = ({ preview, env, out }) => {
+  const config = readConfig(env)
+  if (config.mode !== 'readwrite') throw new UsageError(`the mode changed to ${config.mode} since the preview: import runs only in mode readwrite. Nothing was imported.`)
+  const fresh = importPreview({ config, env })
+  if (!sameRepo(fresh.repo, preview.repo)) throw new UsageError(`gh now resolves to ${fresh.repo}, not ${preview.repo}, the repo this preview read. Nothing was imported.`)
+  if (fresh.digest === preview.digest) return config
+  printPreview({ preview: fresh, out })
+  throw new UsageError(`the config, the issues, or this machine's records changed since the approved preview (digest ${preview.digest}): review the fresh preview above, and import again. Nothing was imported.`)
+}
+
+const adminImport = async ({ args, env, out, ask }) => {
+  const approved = args[0] === '--yes' && args.length === 2 ? args[1] : null
+  if (args.length > 0 && approved === null) throw new UsageError('usage: devchat admin import [--yes <digest>]')
+  await syncBeforeImport({ config: readConfig(env), env })
+  const preview = importPreview({ config: readConfig(env), env })
+  printPreview({ preview, out })
+  const { repo, plans, digest } = preview
   const chosen = plans.map(({ plan }) => plan).filter((plan) => !plan.skip)
   if (chosen.length === 0) {
     out('Nothing to import.')
@@ -2155,66 +2185,84 @@ const adminImport = async ({ args, env, out, ask }) => {
       return 1
     }
   }
-  // The account may have changed while the prompt waited: resolve it again before any write.
-  const current = todosRepoOf(env)
-  if (!sameRepo(current, repo)) throw new UsageError(`gh now resolves to ${current}, not ${repo}, the repo this preview read. Nothing was imported.`)
+  const config = recheckImport({ preview, env, out })
   claimImportSource({ env, repo })
   await saveImported({ plans: chosen, config, env, out })
   return 0
 }
 
-// The rollback list has one owner per kind of line. Before the import every todo lived in GitHub,
-// so the rid decides each line: a resolved `todo:gh:<n>` is closed, and an open todo with any
-// other rid is created.
+// The rollback list. Before the import every todo lived in GitHub, so the rid decides each line:
+// a resolved `todo:gh:<n>` is closed, and an open todo with any other rid is created. Every line is
+// safe to run twice and from every machine: a close is, and a create first looks for an issue that
+// already carries its `devchat-rid:` line, through the list API, which sees a new issue at once.
+const createCommand = ({ rid, text, body, repo }) => {
+  const marker = `devchat-rid: ${rid}`
+  return `gh issue list -R ${repo} --state all --limit 1000 --json body --jq '.[].body' | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(text, Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(body)} ${shellQuote(marker)})"`
+}
+
+/** The line for one todo: `{ op, rid, line }`, or none. */
 const rollbackLine = ({ item, where, host, repo }) => {
   const issue = importedIssue(item.rid)
   if (issue !== undefined) {
     if (!isResolved(item.labels)) return []
     const reason = item.labels.status === 'done' ? 'completed' : shellQuote('not planned')
-    return [`close ${item.rid} ${where} gh issue close ${issue} -R ${repo} --reason ${reason}`]
+    return [{ op: 'close', rid: item.rid, line: `close ${item.rid} ${where} gh issue close ${issue} -R ${repo} --reason ${reason}` }]
   }
   if (!isOpen(item)) return []
-  const body = `From: ${item.labels.repo ?? 'devchat'} · Host: ${host}`
-  return [`create ${item.rid} ${where} gh issue create -R ${repo} --title ${shellQuote(oneLine(item.text, Infinity))} --body ${shellQuote(body)}`]
+  const command = createCommand({ rid: item.rid, text: item.text, body: `From: ${item.labels.repo ?? 'devchat'} · Host: ${host}`, repo })
+  return [{ op: 'create', rid: item.rid, line: `create ${item.rid} ${where} ${command}` }]
+}
+
+// The line an intent this machine queued or sent, and the board has not applied, stands for: a
+// todo root is created, and a resolve of an imported todo closes its issue.
+const intentLine = ({ intent, where, repo }) => {
+  if (intent.kind === 'todo') return rollbackLine({ item: { rid: intent.rid, text: intent.text, labels: { status: 'open', repo: intent.repo } }, where, host: intent.machine, repo })
+  if (isResolveKind(intent.kind)) return rollbackLine({ item: { rid: intent.root, labels: { status: intent.kind === 'done' ? 'done' : 'dropped' } }, where, repo })
+  return []
 }
 
 /**
- * Board lines come only from the board: one read-only pull, with no flush and no local write. A
- * `sent/` entry is the board's business; the ones its `applied` cursor does not cover yet are only
- * counted. Returns `{ lines }`, or `{ reason }` when the board section is left out.
+ * One read-only pull of the board: its todos, and the `sent/` entries its `applied` cursor does not
+ * cover yet. Returns `{ items, unapplied }`, or `{ reason }` when there is no board to pull.
  */
-const boardSection = async ({ config, env, repo }) => {
-  const sent = sentNames(env).map((name) => readOutboxEntry(join(sentDir(env), name)).entry)
-  if (config.mode === 'off' || !config.boardUrl) return { reason: config.mode === 'off' ? 'mode off' : 'no board URL', unverified: sent.length }
+const pullForExport = async ({ config, sent }) => {
+  if (config.mode === 'off' || !config.boardUrl) return { reason: config.mode === 'off' ? 'mode off' : 'no board URL' }
   try {
     const client = boardClient({ boardUrl: config.boardUrl })
     const epoch = await readBoardEpoch(client)
     const applied = await readApplied(client)
     const { items, resolved } = await pullSnapshotItems(client)
-    const unverified = sent.filter((entry) => !(sentHere({ entry, config, epoch }) && isCovered({ id: entry?.inboxId, applied }))).length
-    const lines = [...items, ...resolved].filter((item) => item.channel === todoChannel)
-      .flatMap((item) => rollbackLine({ item, where: 'board', host: item.labels.machine ?? config.machine, repo }))
-    return { lines, unverified }
+    const unapplied = sent.filter((entry) => !(sentHere({ entry, config, epoch }) && isCovered({ id: entry?.inboxId, applied })))
+    return { items: [...items, ...resolved].filter((item) => item.channel === todoChannel), unapplied }
   } catch (error) {
     if (!(error instanceof SyncStop)) throw error
-    return { reason: `the pull failed: ${error.message}`, unverified: sent.length }
+    return { reason: `the pull failed: ${error.message}` }
   }
 }
 
-// Pending lines: every `outbox/` entry, never posted, read by its own stored fields whatever the
-// mode or config. A resolve of a todo queued in the same outbox cancels its create.
-const outboxLines = ({ env, repo }) => {
-  const creates = new Map()
-  const closes = []
-  for (const name of outboxNames(outboxDir(env))) {
-    const intent = intentOfEntry(readOutboxEntry(join(outboxDir(env), name)).entry)
-    if (!intent) continue
-    if (intent.kind === 'todo') creates.set(intent.rid, rollbackLine({ item: { rid: intent.rid, text: intent.text, labels: { status: 'open', repo: intent.repo } }, where: 'pending', host: intent.machine, repo }))
-    else if (isResolveKind(intent.kind) && !creates.delete(intent.root) && importedIssue(intent.root) !== undefined) {
-      closes.push(...rollbackLine({ item: { rid: intent.root, labels: { status: intent.kind === 'done' ? 'done' : 'dropped' } }, where: 'pending', repo }))
-    }
-  }
-  return [...[...creates.values()].flat(), ...closes]
+// The repo export names: the one `gh` resolves to now, which must be the one import claimed here.
+const exportRepo = (env) => {
+  const repo = todosRepoOf(env)
+  const claimed = existsSync(importSourcePath(env)) ? readJson(importSourcePath(env)).repo : null
+  if (claimed !== null && !sameRepo(claimed, repo)) throw new UsageError(`this machine imported from ${claimed}, and gh now resolves to ${repo}: switch gh to the account that owns ${claimed}, then export again`)
+  return repo
+}
+
+const entriesIn = (dir) => outboxNames(dir).map((name) => readOutboxEntry(join(dir, name)).entry)
+
+/** Every rollback line this machine knows, from each source, without a todo a queued resolve cancels. */
+const exportLines = ({ pull, config, env, repo }) => {
+  const intents = [
+    ...(pull.unapplied ?? []).map((entry) => ({ intent: intentOfEntry(entry), where: 'sent' })),
+    ...entriesIn(outboxDir(env)).map((entry) => ({ intent: intentOfEntry(entry), where: 'pending' })),
+  ].filter(({ intent }) => intent)
+  // A todo never imported that a queued or unapplied resolve ends needs no issue.
+  const cancelled = new Set(intents.filter(({ intent }) => isResolveKind(intent.kind) && importedIssue(intent.root) === undefined).map(({ intent }) => intent.root))
+  return [
+    ...(pull.items ?? []).flatMap((item) => rollbackLine({ item, where: 'board', host: item.labels.machine ?? config.machine, repo })),
+    ...intents.flatMap(({ intent, where }) => intentLine({ intent, where, repo })),
+    ...readLocalItems(env).filter((item) => item.channel === todoChannel).flatMap((item) => rollbackLine({ item, where: 'local', host: item.labels.host ?? config.machine, repo })),
+  ].filter(({ op, rid }) => !(op === 'create' && cancelled.has(rid)))
 }
 
 /**
@@ -2224,16 +2272,16 @@ const outboxLines = ({ env, repo }) => {
 const adminExport = async ({ args, env, out }) => {
   if (args.length !== 1 || args[0] !== '--rollback') throw new UsageError('usage: devchat admin export --rollback')
   const config = readConfig(env)
-  const repo = todosRepoOf(env)
-  const board = await boardSection({ config, env, repo })
-  const local = readLocalItems(env).filter((item) => item.channel === todoChannel)
-    .flatMap((item) => rollbackLine({ item, where: 'local', host: item.labels.host ?? config.machine, repo }))
-  out(`# devchat rollback list for ${repo}.`)
-  out(board.lines ? '# Board lines: pulled from the board just now.' : `# Board lines: left out (${board.reason}).`)
-  out(`# ${board.unverified} sent/ entries are not yet confirmed by the board's applied cursor.`)
-  out('# Replay: take board lines from one export whose pull succeeded, and pending and local lines from every machine.')
-  out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, in order.')
-  for (const line of [...(board.lines ?? []), ...outboxLines({ env, repo }), ...local]) out(line)
+  const repo = exportRepo(env)
+  const sent = entriesIn(sentDir(env))
+  const pull = await pullForExport({ config, sent })
+  out(`# devchat rollback list for ${repo}. Every list you replay must name this same repo.`)
+  out(pull.items
+    ? '# Board lines: pulled from the board just now.'
+    : `# Board lines and ${sent.length} sent/ entries are left out (${pull.reason}): this list may be incomplete, but every line is still safe to run.`)
+  out("# Replay: run every line from every machine's list, in order. A create first checks the repo for its devchat-rid line, and a close is safe to repeat.")
+  out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, with sh.')
+  for (const { line } of exportLines({ pull, config, env, repo })) out(line)
   return 0
 }
 
