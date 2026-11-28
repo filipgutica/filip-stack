@@ -551,12 +551,13 @@ const postLabelsOf = (intent) => definedLabels({
 const replyTextOf = (intent) => ({ done: 'Resolved.', drop: 'Dropped.' })[intent.kind] ?? intent.text
 
 const saveLocalRoot = ({ kind, text, labels = {}, identity, config, env, rid = newRid(kind) }) => {
+  writeJsonAtomic(join(localDir(env), `${rid}.json`), localRoot({ kind, text, labels, identity, config, rid }))
+  return rid
+}
+const localRoot = ({ kind, text, labels, identity, config, rid }) => {
   const now = new Date().toISOString()
   const channel = kind === 'todo' ? todoChannel : workChannel
-  writeJsonAtomic(join(localDir(env), `${rid}.json`), {
-    rid, channel, text, labels: definedLabels({ rid, status: 'open', host: config.machine, ...labels }), identity, createdAt: now, updatedAt: now,
-  })
-  return rid
+  return { rid, channel, text, labels: definedLabels({ rid, status: 'open', host: config.machine, ...labels }), identity, createdAt: now, updatedAt: now }
 }
 
 // Outbox
@@ -1159,7 +1160,11 @@ const syncAfterWrite = async ({ config, env, name, repo, out }) => {
   } catch (error) {
     reason = error.message
   }
-  const outcome = outcomes.get(name)
+  return outcomeText({ outcome: outcomes.get(name), reason })
+}
+
+// What a sync's flush did with one outbox file, as a write reports it.
+const outcomeText = ({ outcome, reason }) => {
   if (outcome?.sent) return 'sent'
   if (outcome?.rejected) return `not sent: the check at flush rejected it (${outcome.rejected}) and moved it to outbox/rejected/`
   return `not sent yet (${reason ?? 'it is still queued'}): the next devchat sync sends it`
@@ -1234,8 +1239,8 @@ const boardView = ({ config, env }) => {
 }
 
 /** Every todo and work item this machine knows, oldest first, each with its `source`: board, queued, sent, or local. Mode off has no board. */
-const viewItems = ({ config, env }) => [
-  ...(config.mode === 'off' ? [] : boardView({ config, env })),
+const viewItems = ({ config, env, board = config.mode !== 'off' }) => [
+  ...(board ? boardView({ config, env }) : []),
   ...readLocalItems(env).map((item) => ({ ...item, source: 'local' })),
 ].sort((a, b) => a.createdAt.localeCompare(b.createdAt))
 
@@ -2004,11 +2009,28 @@ const fromIdentity = (from) => {
   return identity.startsWith('github.com/') ? identity : null
 }
 
-// Every rid this machine holds: the view (snapshot, outbox, sent, local) and refused intents.
+// Every rid this machine holds: the view (snapshot, outbox, sent, local) and intents the app
+// refused, which reached the board. One the check at flush rejected never left this machine.
 const knownRids = ({ config, env }) => new Set([
   ...viewItems({ config, env }).map(({ rid }) => rid),
-  ...outboxNames(rejectedDir(env)).map((name) => intentOfEntry(readOutboxEntry(join(rejectedDir(env), name)).entry)?.rid),
+  ...outboxNames(rejectedDir(env)).map((name) => readOutboxEntry(join(rejectedDir(env), name)).entry)
+    .filter((entry) => entry?.inboxId !== undefined).map((entry) => intentOfEntry(entry)?.rid),
 ])
+
+// The todos repo this machine imported from, recorded by the first approved import, so a rollback
+// never targets another account's repo after a `gh` account switch.
+const importSourcePath = (env) => join(stateDir(env), 'import-source.json')
+const recordedSource = (env) => (existsSync(importSourcePath(env)) ? readJson(importSourcePath(env)).repo : null)
+
+/** The repo `gh` resolves to now, checked against the recorded source: `{ repo, recorded }`. */
+const sourceRepo = (env) => {
+  const repo = todosRepoOf(env)
+  const recorded = recordedSource(env)
+  if (recorded !== null && !sameRepo(recorded, repo)) {
+    throw new UsageError(`this machine imported from ${recorded}, and gh now resolves to ${repo}: switch gh to the account that owns ${recorded}, then try again`)
+  }
+  return { repo: recorded ?? repo, recorded: recorded !== null }
+}
 
 /**
  * Decides one issue: `{ skip }` with the reason it is not imported, or `{ board: repo }` or
@@ -2057,58 +2079,79 @@ const readLine = () => {
   }
 }
 
+// Saves a local import only when no record holds its rid, through an exclusive link: an import
+// approved from an older preview never overwrites a todo another import saved, and maybe resolved.
+const saveLocalImport = ({ plan, config, env }) => writeExclusive(
+  join(localDir(env), `${plan.rid}.json`),
+  `${JSON.stringify(localRoot({ kind: 'todo', text: plan.title, labels: {}, identity: plan.local, config, rid: plan.rid }), null, 2)}\n`,
+)
+
 const saveImported = async ({ plans, config, env, out }) => {
-  const names = []
+  const queued = []
+  let saved = 0
   for (const plan of plans) {
-    if (plan.board) names.push(queueIntent({ fields: plan.fields, repo: plan.board, rid: plan.rid, config, env }).name)
-    else saveLocalRoot({ kind: 'todo', text: plan.title, identity: plan.local, rid: plan.rid, config, env })
+    if (plan.board) queued.push({ rid: plan.rid, name: queueIntent({ fields: plan.fields, repo: plan.board, rid: plan.rid, config, env }).name })
+    else if (saveLocalImport({ plan, config, env })) saved += 1
+    else out(`${plan.rid}: already imported, kept as it is`)
   }
-  out(`imported ${plans.length}: ${names.length} queued for the board, ${plans.length - names.length} saved on this machine only`)
-  if (names.length === 0) return
+  out(`imported ${queued.length + saved}: ${queued.length} queued for the board, ${saved} saved on this machine only`)
+  if (queued.length === 0) return
   const outcomes = new Map()
-  await runSync({ config, env, signal: AbortSignal.timeout(postWriteSyncMs), outcomes }).catch(() => {})
-  const sent = names.filter((name) => outcomes.get(name)?.sent).length
-  out(sent === names.length ? `sent all ${sent} board todos` : `sent ${sent} of ${names.length} board todos: the next devchat sync sends the rest`)
+  const result = await runSync({ config, env, signal: AbortSignal.timeout(postWriteSyncMs), outcomes }).catch((error) => ({ brief: error.message }))
+  const reason = result.locked ? 'another sync is running' : result.brief
+  for (const { rid, name } of queued) out(`${rid}: ${outcomeText({ outcome: outcomes.get(name), reason })}`)
 }
 
+// A short digest of what the preview showed: each issue's number, title, body guard result, and
+// destination. `--yes` must name it, so an agent imports only the set the user approved.
+const previewDigest = (plans) => createHash('sha256').update(JSON.stringify(plans.map(({ issue, plan }) => [
+  issue.number, issue.title, guardReason(issue.body ?? '') ?? 'ok', plan.skip ?? plan.board ?? 'local',
+]))).digest('hex').slice(0, 12)
+
 /**
- * `devchat admin import [--yes]` (spec §9): previews every open issue of the todos repo with its
- * `From:` line, then, once approved, saves each as a todo with rid `todo:gh:<n>`. A rerun skips
- * every rid this machine holds, so nothing posts twice.
+ * `devchat admin import [--yes <digest>]` (spec §9): previews every open issue of the todos repo
+ * with its `From:` line, then, once approved, saves each as a todo with rid `todo:gh:<n>`. A rerun
+ * skips every rid this machine holds, so nothing posts twice.
  */
 const adminImport = async ({ args, env, out, ask }) => {
-  if (args.length > 1 || (args.length === 1 && args[0] !== '--yes')) throw new UsageError('usage: devchat admin import [--yes]')
+  const approved = args[0] === '--yes' && args.length === 2 ? args[1] : null
+  if (args.length > 0 && approved === null) throw new UsageError('usage: devchat admin import [--yes <digest>]')
   const config = readConfig(env)
   if (config.mode === 'readwrite' && currentSnapshot({ config, env }) === null) {
     throw new UsageError('import needs a snapshot of the board to know what it holds: run devchat sync, then import again. Nothing was imported.')
   }
-  const repo = todosRepoOf(env)
+  const { repo } = sourceRepo(env)
   const issues = openIssues({ repo, env })
   const known = knownRids({ config, env })
   const plans = issues.map((issue) => ({ issue, plan: planIssue({ issue, known, config }) }))
   out(`${repo}: ${issues.length} open issue(s)`)
   for (const entry of plans) out(previewLine(entry))
+  const digest = previewDigest(plans)
+  out(`preview digest: ${digest}`)
   const chosen = plans.map(({ plan }) => plan).filter((plan) => !plan.skip)
   if (chosen.length === 0) {
     out('Nothing to import.')
     return 0
   }
-  if (args[0] !== '--yes') {
+  if (approved !== null && approved !== digest) {
+    out(`This preview's digest is ${digest}, not ${approved}: the issues changed since the approved preview. Show the user this preview, and run import --yes ${digest} once they approve it. Nothing was imported.`)
+    return 1
+  }
+  if (approved === null) {
     out(`Import ${chosen.length} todo(s)? [y/N]`)
     if (!/^y(?:es)?$/iu.test(ask().trim())) {
       out('Nothing was imported.')
       return 1
     }
   }
+  if (recordedSource(env) === null) writeJsonAtomic(importSourcePath(env), { schema: 1, repo })
   await saveImported({ plans: chosen, config, env, out })
   return 0
 }
 
 // The roots this machine's outbox still changes: every root and reply it queued or sent that the
-// app has not decided.
-const pendingRoots = ({ config, env }) => (config.mode === 'off'
-  ? new Set()
-  : new Set(outstandingIntents({ config, snapshot: currentSnapshot({ config, env }), env }).map(({ intent }) => intent.root ?? intent.rid)))
+// app has not decided, whatever the mode.
+const pendingRoots = ({ config, env }) => new Set(outstandingIntents({ config, snapshot: currentSnapshot({ config, env }), env }).map(({ intent }) => intent.root ?? intent.rid))
 
 /**
  * One rollback line per change: `<op> <rid> <where> <command>`, the command to the end of the line.
@@ -2118,7 +2161,7 @@ const pendingRoots = ({ config, env }) => (config.mode === 'off'
 const rollbackLines = ({ repo, config, env }) => {
   const pending = pendingRoots({ config, env })
   const whereOf = (item) => (pending.has(item.rid) ? 'pending' : item.source === 'local' ? 'local' : 'board')
-  return viewItems({ config, env }).filter((item) => item.channel === todoChannel).flatMap((item) => {
+  return viewItems({ config, env, board: true }).filter((item) => item.channel === todoChannel).flatMap((item) => {
     const issue = importedIssue(item.rid)
     if (issue !== undefined) {
       if (!isResolved(item.labels)) return []
@@ -2132,17 +2175,18 @@ const rollbackLines = ({ repo, config, env }) => {
 }
 
 /**
- * `devchat admin export --rollback` (spec §9): prints the replay list. It reads the todos repo's
- * name with `gh`, as import does, and changes nothing: no sync, no board request, no `gh` write.
+ * `devchat admin export --rollback` (spec §9): prints the replay list, in any mode. It reads the
+ * todos repo's name with `gh`, as import does, and changes nothing: no sync, no board request, no
+ * `gh` write. It targets the repo this machine imported from, and stops when `gh` resolves another.
  */
 const adminExport = ({ args, env, out }) => {
   if (args.length !== 1 || args[0] !== '--rollback') throw new UsageError('usage: devchat admin export --rollback')
   const config = readConfig(env)
-  const repo = todosRepoOf(env)
-  const pulledAt = config.mode === 'off' ? 'mode off' : currentSnapshot({ config, env })?.pulledAt ?? 'never'
+  const { repo, recorded } = sourceRepo(env)
   out(`# devchat rollback list for ${repo}: every todo change in this machine's view, on the board and on this machine.`)
-  out(`# Board state as of the last sync: ${pulledAt}. "pending" lines are still in this machine's outbox.`)
-  out('# Every machine lists the same "board" lines: replay them from one machine only, and "local" and "pending" lines from each machine.')
+  if (!recorded) out(`# This machine never imported: ${repo} is the todos repo of the account gh uses now.`)
+  out(`# Board state as of the last sync: ${currentSnapshot({ config, env })?.pulledAt ?? 'never'}. "pending" lines are still in this machine's outbox.`)
+  out('# Collect the lists from every machine first. Run each <op> <rid> once, whatever its <where> and on however many machines it appears.')
   out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, in order.')
   for (const line of rollbackLines({ repo, config, env })) out(line)
   return 0
