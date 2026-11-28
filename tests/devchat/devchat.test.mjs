@@ -2523,6 +2523,16 @@ test('a machine name with a newline is refused, and a stored one keeps each crea
   assert.deepEqual(replay(lines), [createCall({ rid, title: 'Stored before.', host: 'two lines' })])
 })
 
+test('export skips a record whose rid is malformed, and counts it in the header', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const kept = localRid(await devchatAsync({ args: ['todo', 'add', 'Kept.'], cwd: root, sessionEnv: {} }), 'todo')
+  const rid = 'todo-bad\ngh issue close 1'
+  writeFileSync(join(localDir(), 'malformed.json'), JSON.stringify({ rid, channel: 'todos', text: 'Malformed.', labels: { rid, status: 'open' }, createdAt: '2026-01-01T00:00:00.000Z' }))
+  const { header, lines } = await rollbackOf()
+  assert.deepEqual(header.at(-1), '# 1 record skipped: malformed rid. Fix or remove each such file in local/ or outbox/, then export again.')
+  assert.deepEqual(lines, [createLine({ rid: kept, where: 'local', title: 'Kept.' })])
+})
+
 test('export stops when gh resolves another account than the one import claimed here', async () => {
   joinWork()
   ghIssues([ghIssue(1, 'From the first account.')])

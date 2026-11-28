@@ -2218,8 +2218,13 @@ const createCommand = ({ rid, text, body, repo }) => {
   return `out=$(gh issue list -R ${repo} --state all --limit 1000 --json body --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(flat(text), Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(flat(body))} ${shellQuote(marker)})"; }`
 }
 
-/** The line for one todo: `{ op, rid, line }`, or none. */
+/**
+ * The line for one todo: `{ op, rid, line }`, or none. A record whose rid is not a devchat rid,
+ * which only a hand-edited or corrupt record holds, gets `{ op: 'skip' }`: its rid would break the
+ * line's `<op> <rid> <where>` prefix, and the header counts it.
+ */
 const rollbackLine = ({ item, where, host, repo }) => {
+  if (!(isString(item.rid) && ridPattern.test(item.rid))) return [{ op: 'skip' }]
   const issue = importedIssue(item.rid)
   if (issue !== undefined) {
     if (!isResolved(item.labels)) return []
@@ -2296,13 +2301,16 @@ const adminExport = async ({ args, env, out }) => {
   const queued = entriesIn(outboxDir(env))
   const sent = entriesIn(sentDir(env))
   const pull = await pullForExport({ config, sent })
+  const all = exportLines({ pull, queued, config, env, repo })
+  const skipped = all.filter(({ op }) => op === 'skip').length
   out(`# devchat rollback list for ${repo}. Every list you replay must name this same repo.`)
   out(pull.items
     ? '# Board lines: pulled from the board just now.'
     : `# Board lines and ${sent.length} sent/ entries are left out (${pull.reason}): this list may be incomplete, but every line is still safe to run.`)
   out("# Replay: run every line from every machine's list, in order. A create first checks the repo for its devchat-rid line, and a close is safe to repeat.")
   out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, with sh.')
-  for (const { line } of exportLines({ pull, queued, config, env, repo })) out(line)
+  if (skipped > 0) out(`# ${skipped} ${skipped === 1 ? 'record' : 'records'} skipped: malformed rid. Fix or remove each such file in local/ or outbox/, then export again.`)
+  for (const { op, line } of all) if (op !== 'skip') out(line)
   return 0
 }
 

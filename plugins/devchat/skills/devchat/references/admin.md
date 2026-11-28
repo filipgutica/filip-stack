@@ -41,6 +41,7 @@ devchat admin export --rollback   # pull the board, then print the gh commands t
   - `local`: this machine's `local/`.
 - A done or dropped imported todo always gets its `close`, wherever the resolve is. A queued or unapplied resolve of a todo that was never imported cancels that todo's `create`.
 - Export compares the repo `gh` resolves to now with the one import claimed on this machine, and stops when they differ. Every command names the repo with `-R`.
+- A record whose rid is not a devchat rid, which only a hand-edited or corrupt file holds, gets no line, and the header counts it as `N records skipped: malformed rid`.
 - To roll back, run every line from every machine's list, in order. Every list must name the same repo.
 - An imported todo that is not in the pull gets no line, so its issue stays open: one resolved on the board longer ago than the latest 500 resolved roots. A queued resolve of a board todo that was never imported cancels its `create` only on the machine that queued it; another machine's list still creates it.
 
