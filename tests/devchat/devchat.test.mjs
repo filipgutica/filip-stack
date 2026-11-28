@@ -1924,12 +1924,8 @@ test("an Antigravity session in a T3 thread cannot see or resolve another repo's
   assert.equal(devchat({ args: ['work', 'done', item], cwd: repoA, sessionEnv }).status, 0)
 })
 
-test('checkouts whose origin is a relative path to different repositories keep their todos apart', () => {
-  writeConfig({ mode: 'off', githubLogin: allowed })
-  const clones = ['one', 'two'].map((name) => {
-    makeRepo(`relative-${name}/upstream`)
-    return makeRepo(`relative-${name}/clone`, '../upstream')
-  })
+/** Adds a todo in each of two checkouts, and asserts that neither sees or resolves the other's. */
+const assertApart = (clones) => {
   const [first, second] = clones.map((cwd, index) => localRid(devchat({ args: ['todo', 'add', `Todo ${index + 1}.`], cwd }), 'todo'))
   const listed = clones.map((cwd) => devchat({ args: ['todo', 'list'], cwd }).stdout)
   assert.match(listed[0], new RegExp(first, 'u'))
@@ -1938,6 +1934,56 @@ test('checkouts whose origin is a relative path to different repositories keep t
   assert.doesNotMatch(listed[1], new RegExp(first, 'u'))
   assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[1] }).stderr, unknownRid('todo', 'todo'))
   assert.equal(devchat({ args: ['todo', 'done', first], cwd: clones[0] }).status, 0)
+}
+
+test('checkouts whose origin is a relative path to different repositories keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  assertApart(['one', 'two'].map((name) => {
+    makeRepo(`relative-${name}/upstream`)
+    return makeRepo(`relative-${name}/clone`, '../upstream')
+  }))
+})
+
+// A checkout that is not a GitHub one is scoped by its own git directory; its origin is never read.
+test('two clones of one local upstream keep their todos apart, before and after one points at ../backup', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  makeRepo('shared/upstream')
+  makeRepo('shared/backup')
+  const clones = ['shared/a', 'shared/b'].map((name) => makeRepo(name, '../upstream'))
+  assertApart(clones)
+  execFileSync('git', ['-C', clones[1], 'remote', 'set-url', 'origin', '../backup'])
+  assertApart(clones)
+})
+
+test('a file:// origin with %20 and a path with a literal %20 keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const dir = join(root, 'repos', 'percent')
+  makeRepo('percent/up stream')
+  makeRepo('percent/up%20stream')
+  assertApart([makeRepo('percent/a', `file://${dir}/up%20stream`), makeRepo('percent/b', `${dir}/up%20stream`)])
+})
+
+test('an origin through a symbolic link and its lexical twin keep their todos apart', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const dir = join(root, 'repos', 'linked')
+  mkdirSync(join(dir, 'elsewhere', 'inner'), { recursive: true })
+  const a = makeRepo('linked/a', 'link/../upstream')
+  symlinkSync(join(dir, 'elsewhere', 'inner'), join(a, 'link'))
+  assertApart([a, makeRepo('linked/b', `${dir}/a/upstream`)])
+})
+
+test('a git failure other than no repository scopes a command to nothing', () => {
+  writeConfig({ mode: 'off', githubLogin: allowed })
+  const [a, b] = [makeRepo('broken-a'), makeRepo('broken-b')]
+  const todo = localRid(devchat({ args: ['todo', 'add', 'In A.'], cwd: a }), 'todo')
+  assert.ok(todo)
+  writeFileSync(join(b, '.git', 'config'), `${readFileSync(join(b, '.git', 'config'), 'utf8')}[remote\n`)
+  const failure = 'devchat: git could not read the repository here, so devchat shows and changes no item. Fix the repository, or run the command outside any git checkout. Nothing was saved.\n'
+  for (const args of [['todo', 'list'], ['todo', 'done', todo]]) {
+    const result = devchat({ args, cwd: b })
+    assert.deepEqual({ status: result.status, stdout: result.stdout, stderr: result.stderr }, { status: 1, stdout: '', stderr: failure }, args.join(' '))
+  }
+  assert.equal(readJson(join(localDir(), `${todo}.json`)).labels.status, 'open')
 })
 
 test('a checkout with no origin keeps its own work items', () => {

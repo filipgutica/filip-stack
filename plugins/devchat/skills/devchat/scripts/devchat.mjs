@@ -8,7 +8,7 @@ import { spawnSync } from 'node:child_process'
 import { createHash, randomBytes } from 'node:crypto'
 import { accessSync, chmodSync, closeSync, constants, existsSync, fstatSync, linkSync, lstatSync, mkdirSync, openSync, readFileSync, readdirSync, readlinkSync, realpathSync, renameSync, rmSync, statSync, unlinkSync, utimesSync, writeFileSync } from 'node:fs'
 import { homedir, hostname } from 'node:os'
-import { dirname, join, resolve } from 'node:path'
+import { dirname, isAbsolute, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { parseArgs } from 'node:util'
 
@@ -180,42 +180,33 @@ const repoIdentityOf = ({ cwd, env = process.env }) => {
     : normalizeRemote(`${urls.join('\n')}\n${resolved.stdout.trim()}`)
 }
 
-// The path a remote URL names on this machine: a `file://` URL's path, or a URL with no scheme and
-// no `host:` before its first slash. Null for any other remote.
-const localRemotePath = (url) => {
-  if (/^file:\/\//iu.test(url)) return url.slice('file://'.length)
-  if (url.includes('://')) return null
-  const colon = url.indexOf(':')
-  const slash = url.indexOf('/')
-  return colon !== -1 && (slash === -1 || colon < slash) ? null : url
-}
-
-const realPathOf = (path) => {
-  try {
-    return realpathSync(path)
-  } catch {
-    return path
-  }
-}
+const scopeFailure = 'git could not read the repository here, so devchat shows and changes no item. Fix the repository, or run the command outside any git checkout. Nothing was saved.'
 
 /**
- * Returns the identity that scopes todos and work items to the checkout containing `cwd`, or ''
- * outside a checkout. A remote other than a local path keeps the router's `repoIdentityOf`. An
- * origin that is a local path names the repository at its real path, resolved against the
- * checkout, so two checkouts with `origin` at `../upstream` differ when their upstreams do. With no
- * origin, the repository's common git directory names it, the same for each of its worktrees.
- * Routing never uses this identity.
+ * Returns the identity that scopes todos and work items to the checkout containing `cwd`: the
+ * router's `github.com/<owner>/<repo>` for a GitHub checkout, and for any other the hash of the
+ * real path of its common git directory, which its linked worktrees share. Origin URLs are never
+ * read for the second. Returns '' only when git says `cwd` is not in a repository; any other git
+ * failure throws, so the command sees and changes nothing. Routing never uses this identity.
  */
 const scopeIdentityOf = ({ cwd, env = process.env }) => {
-  const git = gitIn({ cwd, env })
-  const common = git(['rev-parse', '--path-format=absolute', '--git-common-dir'])
-  if (common.status !== 0) return ''
-  const urls = git(['config', '--get-all', 'remote.origin.url']).stdout.split('\n').filter(Boolean)
-  if (urls.length === 0) return normalizeRemote(realPathOf(common.stdout.trim()))
-  const path = urls.length === 1 ? localRemotePath(urls[0]) : null
-  if (path === null) return repoIdentityOf({ cwd, env })
-  const top = git(['rev-parse', '--show-toplevel'])
-  return normalizeRemote(realPathOf(resolve(top.status === 0 ? top.stdout.trim() : cwd, path)))
+  const common = spawnSync('git', ['-C', cwd, 'rev-parse', '--git-common-dir'], {
+    encoding: 'utf8', env: { ...gitEnv(env), LC_ALL: 'C' }, timeout: 2000, stdio: ['ignore', 'pipe', 'pipe'],
+  })
+  if (common.status !== 0) {
+    if (/^fatal: not a git repository/mu.test(common.stderr ?? '')) return ''
+    throw new UsageError(scopeFailure)
+  }
+  const identity = repoIdentityOf({ cwd, env })
+  if (identity.startsWith('github.com/')) return identity
+  // Resolved by the file system, never by collapsing `..` first: a `..` after a symbolic link
+  // leaves the link's target.
+  const dir = common.stdout.replace(/\n$/u, '')
+  try {
+    return normalizeRemote(realpathSync.native(isAbsolute(dir) ? dir : `${cwd}/${dir}`))
+  } catch {
+    throw new UsageError(scopeFailure)
+  }
 }
 
 /**
