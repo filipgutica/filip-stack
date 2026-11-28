@@ -1962,16 +1962,16 @@ const setup = async ({ args, env, cwd, out }) => {
 // private `<login>/todos` repo. Import only reads it with `gh`; the rollback list only prints the
 // `gh` commands that replay this machine's changes there. Neither changes that repo.
 
-const cutoverPath = (env) => join(stateDir(env), 'cutover.json')
-const readCutover = (env) => (existsSync(cutoverPath(env)) ? readJson(cutoverPath(env)) : null)
 const importedRid = (number) => `todo:gh:${number}`
+// The issue number of an imported todo's rid, or undefined for any other rid.
+const importedIssue = (rid) => /^todo:gh:(\d+)$/u.exec(rid)?.[1]
 
 /** Runs a reading `gh` command and returns its stdout, or throws with gh's first error line. */
 const runGh = ({ args, env }) => {
   const result = spawnSync('gh', args, { encoding: 'utf8', env, timeout: 30_000, stdio: ['ignore', 'pipe', 'pipe'] })
   if (result.status !== 0) {
     const reason = (result.error?.message ?? result.stderr ?? '').trim().split('\n')[0] || `exit ${result.status}`
-    throw new UsageError(`gh ${args.slice(0, 2).join(' ')} failed: ${reason}. Nothing was imported.`)
+    throw new UsageError(`gh ${args.slice(0, 2).join(' ')} failed: ${reason}`)
   }
   return result.stdout
 }
@@ -1979,10 +1979,10 @@ const runGh = ({ args, env }) => {
 // The todos skill's repo: `<login>/todos` for the signed-in `gh` login, and only while it is private.
 const todosRepoOf = (env) => {
   const login = runGh({ args: ['api', 'user', '--jq', '.login'], env }).trim()
-  if (!new RegExp(`^${githubOwner}$`, 'u').test(login)) throw new UsageError('gh api user returned no GitHub login. Nothing was imported.')
+  if (!new RegExp(`^${githubOwner}$`, 'u').test(login)) throw new UsageError('gh api user returned no GitHub login')
   const repo = `${login}/todos`
   const visibility = runGh({ args: ['repo', 'view', repo, '--json', 'visibility', '--jq', '.visibility'], env }).trim()
-  if (visibility !== 'PRIVATE') throw new UsageError(`${repo} is not a private repository (${visibility || 'unknown'}). Nothing was imported.`)
+  if (visibility !== 'PRIVATE') throw new UsageError(`${repo} is not a private repository (${visibility || 'unknown'})`)
   return repo
 }
 
@@ -2057,14 +2057,6 @@ const readLine = () => {
   }
 }
 
-// The first approved import records the cutover: its time, the todos repo, and each imported rid's
-// issue number. A later import adds its rids and keeps the time.
-const recordCutover = ({ env, repo, plans }) => {
-  const cutover = readCutover(env) ?? { schema: 1, at: new Date().toISOString(), repo, imported: {} }
-  for (const plan of plans) cutover.imported[plan.rid] = { issue: Number(plan.rid.slice('todo:gh:'.length)), placement: plan.board ? 'board' : 'local' }
-  writeJsonAtomic(cutoverPath(env), cutover)
-}
-
 const saveImported = async ({ plans, config, env, out }) => {
   const names = []
   for (const plan of plans) {
@@ -2108,7 +2100,6 @@ const adminImport = async ({ args, env, out, ask }) => {
       return 1
     }
   }
-  recordCutover({ env, repo, plans: chosen })
   await saveImported({ plans: chosen, config, env, out })
   return 0
 }
@@ -2119,40 +2110,41 @@ const pendingRoots = ({ config, env }) => (config.mode === 'off'
   ? new Set()
   : new Set(outstandingIntents({ config, snapshot: currentSnapshot({ config, env }), env }).map(({ intent }) => intent.root ?? intent.rid)))
 
-/** One rollback line per change: `<op> <rid> <where> <command>`, the command to the end of the line. */
-const rollbackLines = ({ cutover, config, env }) => {
-  const items = viewItems({ config, env }).filter((item) => item.channel === todoChannel)
+/**
+ * One rollback line per change: `<op> <rid> <where> <command>`, the command to the end of the line.
+ * Before the import every todo lived in GitHub, so the rid decides: a resolved `todo:gh:<n>` is
+ * closed, and an open todo with any other rid is created. Nothing else changes GitHub.
+ */
+const rollbackLines = ({ repo, config, env }) => {
   const pending = pendingRoots({ config, env })
   const whereOf = (item) => (pending.has(item.rid) ? 'pending' : item.source === 'local' ? 'local' : 'board')
-  const lines = []
-  for (const item of items) {
-    const imported = cutover.imported[item.rid]
-    if (imported && isResolved(item.labels)) {
+  return viewItems({ config, env }).filter((item) => item.channel === todoChannel).flatMap((item) => {
+    const issue = importedIssue(item.rid)
+    if (issue !== undefined) {
+      if (!isResolved(item.labels)) return []
       const reason = item.labels.status === 'done' ? 'completed' : shellQuote('not planned')
-      lines.push(`close ${item.rid} ${whereOf(item)} gh issue close ${imported.issue} -R ${cutover.repo} --reason ${reason}`)
-    } else if (!imported && !item.rid.startsWith('todo:gh:') && isOpen(item) && item.createdAt >= cutover.at) {
-      const body = `From: ${item.labels.repo ?? 'devchat'} · Host: ${item.labels.machine ?? item.labels.host ?? config.machine}`
-      lines.push(`create ${item.rid} ${whereOf(item)} gh issue create -R ${cutover.repo} --title ${shellQuote(oneLine(item.text, Infinity))} --body ${shellQuote(body)}`)
+      return [`close ${item.rid} ${whereOf(item)} gh issue close ${issue} -R ${repo} --reason ${reason}`]
     }
-  }
-  const seen = new Set(items.map(({ rid }) => rid))
-  for (const [rid, { issue }] of Object.entries(cutover.imported)) {
-    if (!seen.has(rid)) lines.push(`check ${rid} unknown # not in this machine's view: check issue ${issue} by hand`)
-  }
-  return lines
+    if (!isOpen(item)) return []
+    const body = `From: ${item.labels.repo ?? 'devchat'} · Host: ${item.labels.machine ?? item.labels.host ?? config.machine}`
+    return [`create ${item.rid} ${whereOf(item)} gh issue create -R ${repo} --title ${shellQuote(oneLine(item.text, Infinity))} --body ${shellQuote(body)}`]
+  })
 }
 
-/** `devchat admin export --rollback` (spec §9): prints the replay list; it changes nothing and makes no request. */
+/**
+ * `devchat admin export --rollback` (spec §9): prints the replay list. It reads the todos repo's
+ * name with `gh`, as import does, and changes nothing: no sync, no board request, no `gh` write.
+ */
 const adminExport = ({ args, env, out }) => {
   if (args.length !== 1 || args[0] !== '--rollback') throw new UsageError('usage: devchat admin export --rollback')
-  const cutover = readCutover(env)
-  if (!cutover) throw new UsageError('this machine has no cutover: devchat admin import never ran here, so there is nothing to roll back')
   const config = readConfig(env)
+  const repo = todosRepoOf(env)
   const pulledAt = config.mode === 'off' ? 'mode off' : currentSnapshot({ config, env })?.pulledAt ?? 'never'
-  out(`# devchat rollback list for ${cutover.repo}: changes since the cutover at ${cutover.at}, on the board and on this machine.`)
+  out(`# devchat rollback list for ${repo}: every todo change in this machine's view, on the board and on this machine.`)
   out(`# Board state as of the last sync: ${pulledAt}. "pending" lines are still in this machine's outbox.`)
+  out('# Every machine lists the same "board" lines: replay them from one machine only, and "local" and "pending" lines from each machine.')
   out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, in order.')
-  for (const line of rollbackLines({ cutover, config, env })) out(line)
+  for (const line of rollbackLines({ repo, config, env })) out(line)
   return 0
 }
 

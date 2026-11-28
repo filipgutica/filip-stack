@@ -227,7 +227,7 @@ codex plugin add devchat@filip-stack        # Codex, then restart Codex
   issues of your private todos repo and, once you approve, imports each as a
   todo: to the board when its `From:` repo is on your allowlist, otherwise on
   the machine. `devchat admin export --rollback` prints the `gh` commands that
-  replay every change since the import, to go back to the todos skill.
+  move your todos back to the todos skill.
 - **Setup:** `devchat setup --host <tailnet host> --github-login <login> --mode
   readwrite` writes the config, installs a `devchat` command in
   `~/.local/bin`, and a sync timer, without sudo. Add `--dry-run` to see the
