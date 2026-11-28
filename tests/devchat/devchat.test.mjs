@@ -2171,9 +2171,19 @@ const replay = (lines) => {
   for (const line of lines) execFileSync('/bin/sh', ['-c', line.split(' ').slice(3).join(' ')], { env })
   return ghCalls().slice(calls).filter((call) => /^issue (?:create|close) /u.test(call))
 }
+/** Saves each list as `rollback-<name>.txt` and runs the replay loop admin.md documents over them. */
+const docReplay = (lists) => {
+  const doc = readFileSync(join(repoRoot, 'plugins/devchat/skills/devchat/references/admin.md'), 'utf8')
+  const loop = /^ {2}```sh\n([\s\S]*?)^ {2}```$/mu.exec(doc)[1].replace(/^ {2}/gmu, '')
+  const dir = mkdtempSync(join(home, 'replay-'))
+  for (const [name, lines] of Object.entries(lists)) writeFileSync(join(dir, `rollback-${name}.txt`), `${lines.join('\n')}\n`)
+  const calls = ghCalls().length
+  const run = spawnSync('/bin/sh', ['-c', loop], { cwd: dir, env, encoding: 'utf8' })
+  return { status: run.status, stderr: run.stderr, dir, calls: ghCalls().slice(calls).filter((call) => /^issue (?:create|close) /u.test(call)) }
+}
 const quoted = (value) => `'${value.replaceAll("'", `'\\''`)}'`
 /** The guarded create line export prints for a todo. */
-const createLine = ({ rid, where, title, from = 'devchat', host = machine }) => `create ${rid} ${where} out=$(gh api --paginate 'repos/example-login/todos/issues?state=all&per_page=100' --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF 'devchat-rid: ${rid}' || gh issue create -R example-login/todos --title ${quoted(title)} --body "$(printf '%s\\n\\n%s' ${quoted(`From: ${from} · Host: ${host}`)} 'devchat-rid: ${rid}')"; }`
+const createLine = ({ rid, where, title, from = 'devchat', host = machine }) => `create ${rid} ${where} out=$(gh api --paginate 'repos/example-login/todos/issues?state=all&per_page=100' --jq '.[].body') && { printf '%s\\n' "$out" | tr -d '\\r' | grep -xF 'devchat-rid: ${rid}' >/dev/null || gh issue create -R example-login/todos --title ${quoted(title)} --body "$(printf '%s\\n\\n%s' ${quoted(`From: ${from} · Host: ${host}`)} 'devchat-rid: ${rid}')"; }`
 /** The stub's log line for that create. */
 const createCall = ({ rid, title, from = 'devchat', host = machine }) => `issue create -R example-login/todos --title ${title} --body From: ${from} · Host: ${host}||devchat-rid: ${rid}`
 const exportHeader = (pulled = '# Board lines: pulled from the board just now.') => [
@@ -2344,6 +2354,16 @@ test('export --rollback prints the release 1 drill as gh commands', async () => 
     ...closes,
   ].sort())
   assert.deepEqual(replay(ours).sort(), closes)
+  // The loop admin.md documents runs the same list, and names each line that fails.
+  const documented = docReplay({ first: [...header, ...ours] })
+  assert.deepEqual([documented.status, documented.calls.sort()], [0, closes])
+  writeFileSync(join(home, 'gh-list-fails'), '')
+  const failing = docReplay({ first: [...header, ...ours] })
+  rmSync(join(home, 'gh-list-fails'))
+  assert.equal(failing.status, 1)
+  assert.deepEqual(failing.stderr.split('\n').filter(Boolean), ours.filter((line) => line.startsWith('create ')).map((line) => `FAILED rollback-first.txt: ${line}`))
+  // A command that reads its input, as gh can when it prompts, does not swallow the next line.
+  assert.ok(existsSync(join(docReplay({ stdin: ['op rid where read swallowed', 'op rid where touch kept'] }).dir, 'kept')))
 })
 
 test("a sent todo the writer has not applied is created; a stale sent/ copy of one now done on the board is not", async () => {
@@ -2502,6 +2522,49 @@ test('a replayed create finds its marker on an issue older than the first 1000',
   writeFileSync(join(home, 'gh-created', '1'), `From: devchat · Host: ${machine}\n\ndevchat-rid: ${rid}\n`)
   for (let number = 2; number <= 1001; number += 1) writeFileSync(join(home, 'gh-created', String(number)), `Filler ${number}.\n`)
   assert.deepEqual(replay(lines), [])
+})
+
+test("a board's 409 error code cannot add a line to the rollback list", async () => {
+  for (const [code, shown] of [
+    ['x\ncreate todo-evil-00000001 board touch PWNED #', 'with an unknown error code'],
+    ['duplicate_id', 'duplicate_id'],
+  ]) {
+    joinBoard()
+    proxy.fault = (req) => (req.method === 'GET' ? { status: 409, body: JSON.stringify({ error: { code } }) } : null)
+    const exported = await devchatAsync({ args: ['admin', 'export', '--rollback'], cwd: root, sessionEnv: {} })
+    proxy.fault = () => null
+    assert.equal(exported.status, 0, exported.stderr)
+    const lines = exported.stdout.split('\n').filter(Boolean)
+    assert.deepEqual(lines.filter((line) => !line.startsWith('#')), [], 'only header lines')
+    assert.match(exported.stdout, new RegExp(`^# Board lines and 0 sent/ entries are left out \\(the pull failed: GET /api/board/threads answered 409 ${shown}\\)`, 'mu'))
+    const replayed = docReplay({ only: lines })
+    assert.deepEqual([replayed.status, replayed.calls, existsSync(join(replayed.dir, 'PWNED'))], [0, [], false])
+  }
+})
+
+test('a replayed create matches its marker without -q, in a CRLF body, under pipefail', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', 'Edited on the web.'], cwd: root, sessionEnv: {} }), 'todo')
+  const [line] = linesFor((await rollbackOf()).lines, [rid])
+  mkdirSync(join(home, 'gh-created'))
+  // The newest issue carries the marker, in a body saved with CRLF; an older one is large enough
+  // that an early grep exit would leave printf writing into a closed pipe.
+  writeFileSync(join(home, 'gh-created', '1'), `${'Large body. '.repeat(100_000)}\n`)
+  writeFileSync(join(home, 'gh-created', '2'), `From: devchat · Host: ${machine}\r\n\r\ndevchat-rid: ${rid}\r\n`)
+  const calls = ghCalls().length
+  const run = spawnSync('bash', ['-o', 'pipefail', '-c', line.split(' ').slice(3).join(' ')], { env, encoding: 'utf8' })
+  assert.equal(run.status, 0, run.stderr)
+  assert.deepEqual(ghCalls().slice(calls).filter((call) => call.startsWith('issue create')), [])
+})
+
+test('a todo over 256 characters gets a cut title and keeps its full text in the body', async () => {
+  writeConfig({ mode: 'off', githubLogin: allowed, machine })
+  const text = `${'😀'.repeat(255)}é and more`
+  const rid = localRid(await devchatAsync({ args: ['todo', 'add', text], cwd: root, sessionEnv: {} }), 'todo')
+  assert.ok(rid)
+  assert.deepEqual(replay(linesFor((await rollbackOf()).lines, [rid])), [
+    `issue create -R example-login/todos --title ${'😀'.repeat(255)}é --body ${text}||From: devchat · Host: ${machine}||devchat-rid: ${rid}`,
+  ])
 })
 
 test('export lists a todo a sync moves from the outbox to sent/ while it reads', async () => {

@@ -773,12 +773,13 @@ const boardClient = ({ boardUrl, signal, onAnswer = () => {} }) => {
       throw new SyncStop(`the board is unreachable (${error.cause?.code ?? error.cause?.message ?? error.name})`)
     }
     onAnswer()
-    // Board's 409 `duplicate_id` means the id is taken for good and nothing was written. Any other
-    // conflict stops the run, as every other error answer does.
+    // Board's 409 `duplicate_id` on a POST means the id is taken for good and nothing was written.
+    // Any other conflict stops the run, as every other error answer does. The board's code is
+    // printed only when it is a plain code, since the message reaches the rollback header.
     if (response.status === 409) {
       const code = (await response.json().catch(() => null))?.error?.code
-      if (code === 'duplicate_id') return { duplicateId: true }
-      throw new SyncStop(`${where} answered 409 ${code ?? 'without an error code'}`)
+      if (method === 'POST' && code === 'duplicate_id') return { duplicateId: true }
+      throw new SyncStop(`${where} answered 409 ${code === undefined ? 'without an error code' : /^[a-z0-9_]{1,64}$/u.test(code) ? code : 'with an unknown error code'}`)
     }
     if (!response.ok) {
       await response.body?.cancel()
@@ -2214,10 +2215,18 @@ const flat = (value) => String(value).replace(/\p{Cc}/gu, ' ')
 // already carries its `devchat-rid:` line. It reads every page of the issues API, which sees a new
 // issue at once and also lists pull requests, harmlessly. The create runs only when every page
 // was read, so a failed page creates nothing.
+// The grep reads all its input (no `-q`), so under `pipefail` an early exit cannot fail `printf`
+// and run the create. `tr` drops the `\r` of a body edited on the web. GitHub takes a title of at
+// most 256 characters, so a longer todo is cut there and keeps its full text in the body.
+const titleMax = 256
 const createCommand = ({ rid, text, body, repo }) => {
   const marker = `devchat-rid: ${flat(rid)}`
   const issues = shellQuote(`repos/${repo}/issues?state=all&per_page=100`)
-  return `out=$(gh api --paginate ${issues} --jq '.[].body') && { printf '%s\\n' "$out" | grep -qxF ${shellQuote(marker)} || gh issue create -R ${repo} --title ${shellQuote(oneLine(flat(text), Infinity))} --body "$(printf '%s\\n\\n%s' ${shellQuote(flat(body))} ${shellQuote(marker)})"; }`
+  const full = oneLine(flat(text), Infinity)
+  const characters = [...full]
+  const parts = [...(characters.length > titleMax ? [full] : []), flat(body), marker]
+  const title = characters.slice(0, titleMax).join('')
+  return `out=$(gh api --paginate ${issues} --jq '.[].body') && { printf '%s\\n' "$out" | tr -d '\\r' | grep -xF ${shellQuote(marker)} >/dev/null || gh issue create -R ${repo} --title ${shellQuote(title)} --body "$(printf '${parts.map(() => '%s').join('\\n\\n')}' ${parts.map(shellQuote).join(' ')})"; }`
 }
 
 /**
@@ -2308,7 +2317,7 @@ const adminExport = async ({ args, env, out }) => {
   out(`# devchat rollback list for ${repo}. Every list you replay must name this same repo.`)
   out(pull.items
     ? '# Board lines: pulled from the board just now.'
-    : `# Board lines and ${sent.length} sent/ entries are left out (${pull.reason}): this list may be incomplete, but every line is still safe to run.`)
+    : `# Board lines and ${sent.length} sent/ entries are left out (${flat(pull.reason)}): this list may be incomplete, but every line is still safe to run.`)
   out("# Replay: run every line from every machine's list, in order. A create first checks the repo for its devchat-rid line, and a close is safe to repeat.")
   out('# Each line is <op> <rid> <where> <command>. Run each command, everything after the third space, with sh.')
   if (skipped > 0) out(`# ${skipped} ${skipped === 1 ? 'record' : 'records'} skipped: malformed rid. Fix or remove each such file in local/ or outbox/, then export again.`)
