@@ -1,7 +1,7 @@
 {
   "name": "devchat",
   "displayName": "devchat",
-  "version": "6.35.0",
+  "version": "6.36.0",
   "description": "Client for devchat: keeps the user's todos and routes each write to the devchat board or this machine. In Antigravity, use the skill directly: its session hook runs only in Claude Code and Codex, so every write stays on this machine.",
   "author": {
     "name": "Filip Gutica"

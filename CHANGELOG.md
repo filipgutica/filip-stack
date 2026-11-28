@@ -1,3 +1,10 @@
+# [6.36.0](https://github.com/filipgutica/filip-stack/compare/v6.35.0...v6.36.0) (2026-11-28)
+
+
+### Features
+
+* **devchat:** add work commands with pending replies ([#307](https://github.com/filipgutica/filip-stack/issues/307)) ([cbba1e7](https://github.com/filipgutica/filip-stack/commit/cbba1e7a607bf87a8faf634a121a23b04d48f21d))
+
 # [6.35.0](https://github.com/filipgutica/filip-stack/compare/v6.34.0...v6.35.0) (2026-11-27)
 
 

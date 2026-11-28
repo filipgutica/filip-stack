@@ -1,7 +1,7 @@
 {
   "name": "field-guide",
   "displayName": "Field Guide",
-  "version": "6.35.0",
+  "version": "6.36.0",
   "description": "Optional local guidance that learns durable preferences and corrections without loading its complete store into context. In Antigravity, use the skill directly: its lifecycle hooks run only in Claude Code and Codex.",
   "author": {
     "name": "Filip Gutica"
